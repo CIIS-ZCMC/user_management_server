@@ -42,6 +42,19 @@ return [
         ],
     ],
 
+
+    /* 
+    Guards for web included. TO FIX BUG
+    */
+
+    'guards' => [
+        'web' => [
+            'driver' => 'session',
+            'provider' => 'users',
+        ],
+
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | User Providers

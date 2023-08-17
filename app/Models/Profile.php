@@ -10,6 +10,7 @@ class Profile extends Model
 {
     use HasFactory;
 
+    protected $table = 'profile';
     protected $fillable = [
         "first_name",
         "middle_name",
@@ -26,6 +27,6 @@ class Profile extends Model
 
     public function user()
     {
-        return $this -> belongsTo(User::class);
+        return $this->belongsTo(User::class);
     }
 }

@@ -21,9 +21,11 @@ return new class extends Migration
             $table->string('sex');
             $table->string('contact')->nullable();
             $table->string('image_url')->nullable();
+            $table->unsignedBigInteger('FK_user_ID')->unsigned();
+            $table->foreign('FK_user_ID')->references('id')->on('users')->onUpdate('cascade');
             $table->date('created_at');
             $table->date('updated_at');
-            $table->boolean('deleted') -> default(0);
+            $table->boolean('deleted')->default(0);
         });
     }
 

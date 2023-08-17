@@ -13,6 +13,7 @@ use App\Models\Transaction;
 use App\Models\UserSystemRole;
 use App\Models\PersonalAccessToken;
 use Illuminate\Support\Str;
+use Illuminate\Support\Carbon;
 
 class User extends Authenticatable
 {
@@ -54,20 +55,20 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
-    
+
     public function createToken($abilities)
     {
-        $userID = $this -> id;
+        $userID = $this->id;
         $accessToken  = hash('sha256', Str::random(40));
         $expiration = Carbon::now()->addHour();
 
         $token = new PersonalAccessToken;
-        $token -> FK_user_ID = $id;
-        $token -> accessToken = $accessToken;
-        $token -> abilities = $abilities;
-        $token -> last_use_at = now();
-        $token -> expires_at = $expiration;
-        $token -> save();
+        $token->FK_user_ID = $id;
+        $token->accessToken = $accessToken;
+        $token->abilities = $abilities;
+        $token->last_use_at = now();
+        $token->expires_at = $expiration;
+        $token->save();
 
         $encryptToken = $encryptedToken = openssl_encrypt($accessToken, env("ENCRYPT_DECRYPT_ALGORITHM"), env("KEY"), 0, substr(md5(env("KEY")), 0, 16));
 
@@ -76,47 +77,46 @@ class User extends Authenticatable
 
     public function getSystemRole($request)
     {
-        $domain = $request -> getHost();
-        $userID = $this -> id;
+        $domain = $request->getHost();
+        $userID = $this->id;
 
         $abilities = DB::table('user_system_role as usr')
-                            -> select('sr.abilities') 
-                            -> join('system as s', 's.domain', $domain)
-                            -> join('system_role as sr', 'sr.id', 's.id')
-                            -> where('usr.FK_system_role_ID', 'sr.id')
-                            -> where('usr.FK_user_ID', $userID)
-                            -> first();
-        
+            ->select('sr.abilities')
+            ->join('system as s', 's.domain', $domain)
+            ->join('system_role as sr', 'sr.id', 's.id')
+            ->where('usr.FK_system_role_ID', 'sr.id')
+            ->where('usr.FK_user_ID', $userID)
+            ->first();
+
         return $abilities;
     }
 
-    public function can($request, $abilities)
-    {
-        $domain = $request -> getHost();
+    // public function can($request, $abilities)
+    // {
+    //     $domain = $request->getHost();
 
-        $systemAbilities = $this -> getAbilities($domain);
+    //     $systemAbilities = $this->getAbilities($domain);
 
-        if(!$systemAbilities)
-        {
-            return false;
-        }
-        
-        return $this -> validateAbilities($abilities, $systemAbilities);
-    }
+    //     if (!$systemAbilities) {
+    //         return false;
+    //     }
+
+    //     return $this->validateAbilities($abilities, $systemAbilities);
+    // }
 
     public function getAbilities($domain)
     {
-        $userID = $this -> id;
+        $userID = $this->id;
 
         /**
          * Get Abilities of User base on domain
          */
         $systemRole = DB::table('user_system_role as usr')
-            -> select('sr.abilities')
-            -> join('system_role as sr', 'sr.id', 'usr.FK_system_role_ID')
-            -> where('usr.FK_system_ID', 'sr.FK_system_ID')
-            -> where('usr.FK_role_ID', 'sr.FK_role_ID')
-            -> where('usr.FK_user_ID', $id) -> get();
+            ->select('sr.abilities')
+            ->join('system_role as sr', 'sr.id', 'usr.FK_system_role_ID')
+            ->where('usr.FK_system_ID', 'sr.FK_system_ID')
+            ->where('usr.FK_system_role_ID', 'sr.FK_role_ID')
+            ->where('usr.FK_user_ID', $userID)->get();
 
         $abilities = json_decode($systemRole['abilities']);
 
@@ -125,26 +125,28 @@ class User extends Authenticatable
 
     public function hasAccess($request)
     {
-        $domain = $request -> getHost();
+        $domain = $request->getHost();
+        $userID = $this->id;
 
         /**
          * Get Abilities of User base on domain
          */
         $systemRole = DB::table('user_system_role as usr')
-            -> select('s.id')
-            -> join('system_role as sr', 'sr.id', 'usr.FK_system_role_ID')
-            -> join('system as s', 's.id', 'usr.FK_system_ID')
-            -> where('usr.FK_system_ID', 'sr.FK_system_ID')
-            -> where('usr.FK_role_ID', 'sr.FK_role_ID')
-            -> where('usr.FK_user_ID', $id) -> get();
+            ->select('s.id')
+            ->join('system_role as sr', 'sr.id', 'usr.FK_system_role_ID')
+            ->join('system as s', 's.id', 'usr.FK_system_ID')
+            ->where('usr.FK_system_ID', 'sr.FK_system_ID')
+            ->where('usr.FK_system_role_ID', 'sr.FK_role_ID')
+            ->where('usr.FK_user_ID', $userID)->get();
 
+        // return $systemRole;
 
-        return !$systemRole;
+        return count($systemRole) >= 1;
     }
 
     public function validateAbilities($abilities, $systemAbilities)
     {
-        
+
         /**
          * Validate User Abilities
          */
@@ -161,16 +163,16 @@ class User extends Authenticatable
 
     public function profile()
     {
-        return $this -> hasOne(Profile::class);
+        return $this->hasOne(Profile::class);
     }
 
     public function transactions()
     {
-        return $this -> belongsToMany(Transaction::class);
+        return $this->belongsToMany(Transaction::class);
     }
 
     public function userSystemRoles()
     {
-        return $this -> belongsToMany(UserSystemRole::class);
+        return $this->belongsToMany(UserSystemRole::class);
     }
 }
