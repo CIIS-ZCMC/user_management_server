@@ -40,20 +40,14 @@ return [
             'driver' => 'custom-bearer-token',
             'provider' => 'users',
         ],
-    ],
-
-
-    /* 
-    Guards for web included. TO FIX BUG
-    */
-
-    'guards' => [
-        'web' => [
+     'web' => [
             'driver' => 'session',
             'provider' => 'users',
         ],
-
     ],
+
+
+  
 
     /*
     |--------------------------------------------------------------------------
