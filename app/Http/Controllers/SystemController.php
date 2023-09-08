@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Models\System;
 
+use App\Http\Requests\SystemRequest;
+
 class SystemController extends Controller
 {   public function index(Request $request)
     {
@@ -19,7 +21,7 @@ class SystemController extends Controller
         }
     }
     
-    public function store(Request $request)
+    public function store(SystemRequest $request)
     {
         try{
             $validator = Validator::make($request->all(), [
@@ -67,20 +69,15 @@ class SystemController extends Controller
             return response() -> json(['message' => $th -> getMessage()], 500);
         }
     }
-    public function update($id, Request $request)
+    public function update($id, SystemRequest $request)
     {
         try{
             $data = System::find($id);
-
-            $validator = Validator::make($request->all(), [
-                'name' => 'required|string|max:255',
-                'domain' => 'required|string|max:255'
-            ]);
             
-            if ($validator->fails()) {
-                return response()->json(['errors' => $validator->errors()], 422);
+            if (!$data) {
+                return response()->json(['message' => 'No record found.'], 404);
             }
-            
+
             $data = [
                 'name' => $request->input('name'),
                 'domain' => $request->input('domain')
@@ -92,11 +89,7 @@ class SystemController extends Controller
                 $cleanData[$key] = strip_tags($value); 
             }
 
-            $data -> name = $cleanData['name'];
-            $data -> domain = $cleanData['domain'];
-            $data -> created_at = now();
-            $data -> updated_at = now();
-            $data -> save();
+            $data -> update([$cleanData]);
 
             return response() -> json(['data' => "Success"], 200);
         }catch(\Throwable $th){
@@ -108,9 +101,7 @@ class SystemController extends Controller
     {
         try{
             $data = System::findOrFail($id);
-            $data -> deleted = TRUE;
-            $data -> updated_at = now();
-            $data -> save();
+            $data -> delete();
 
             return response() -> json(['data' => 'Success'], 200);
         }catch(\Throwable $th){

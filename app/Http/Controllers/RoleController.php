@@ -106,9 +106,7 @@ class RoleController extends Controller
     {
         try{
             $data = Role::findOrFail($id);
-            $data -> deleted = TRUE;
-            $data -> updated_at = now();
-            $data -> save();
+            $data -> delete();
 
             return response() -> json(['data' => 'Success'], 200);
         }catch(\Throwable $th){

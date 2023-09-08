@@ -10,6 +10,8 @@ class SystemRole extends Model
 {
     use HasFactory;
 
+    protected $table = 'systemroles';
+
     protected $fillable = [
         "abilities",
         "created_at",
@@ -22,3 +24,4 @@ class SystemRole extends Model
         return $this -> belongsToMany(userSystemRole::class);
     }
 }
+    

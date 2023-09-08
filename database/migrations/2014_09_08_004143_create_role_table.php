@@ -11,12 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('role', function (Blueprint $table) {
+        Schema::create('roles', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->date("created_at");
-            $table->date("updated_at");
-            $table->boolean('deleted') -> default(0);
+            $table->text('duties');
+            $table->boolean('active')->default(TRUE);
+            $table->softDelete();
+            $table->timestamps();
         });
     }
 

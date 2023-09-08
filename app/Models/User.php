@@ -19,6 +19,8 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
+    protected $table = 'users';
+
     /**
      * The attributes that are mass assignable.
      *
@@ -56,7 +58,7 @@ class User extends Authenticatable
     ];
 
 
-    public function createToken($abilities)
+    public function createToken()
     {
         $userID = $this->id;
         $accessToken  = hash('sha256', Str::random(40));
@@ -65,7 +67,6 @@ class User extends Authenticatable
         $token = new PersonalAccessToken;
         $token->FK_user_ID = $id;
         $token->accessToken = $accessToken;
-        $token->abilities = $abilities;
         $token->last_use_at = now();
         $token->expires_at = $expiration;
         $token->save();
@@ -91,19 +92,6 @@ class User extends Authenticatable
         return $abilities;
     }
 
-    // public function can($request, $abilities)
-    // {
-    //     $domain = $request->getHost();
-
-    //     $systemAbilities = $this->getAbilities($domain);
-
-    //     if (!$systemAbilities) {
-    //         return false;
-    //     }
-
-    //     return $this->validateAbilities($abilities, $systemAbilities);
-    // }
-
     public function getAbilities($domain)
     {
         $userID = $this->id;
@@ -121,6 +109,13 @@ class User extends Authenticatable
         $abilities = json_decode($systemRole['abilities']);
 
         return $abilities;
+    }
+
+    public function userApproved()
+    {
+        $userAccountStatus = $this->status && !$this->deactivated && !$this->deleted;
+
+        return $userAccountStatus;
     }
 
     public function hasAccess($request)
@@ -161,9 +156,9 @@ class User extends Authenticatable
         return false;
     }
 
-    public function profile()
+    public function employeeProfile()
     {
-        return $this->hasOne(Profile::class);
+        return $this->hasOne(EmployeeProfile::class);
     }
 
     public function transactions()

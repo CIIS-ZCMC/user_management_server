@@ -24,16 +24,22 @@ Route::namespace('App\Http\Controllers')->group(function () {
 /**
  * Validate Request from other system.
  */
-Route::middleware(['auth.api', 'abilitiesCheck:validate_token'])->group(function () {
-    Route::post('/validate', [UserController::class, 'validateRequest']);
-});
+// Route::middleware(['auth.api', 'abilitiesCheck:validate_token'])->group(function () {
+//     Route::post('/validate', [UserController::class, 'validateRequest']);
+// });
 
-Route::middleware(['auth.api', 'abilitiesCheck:create_users'])->group(function () {
-    Route::post('/users', [YourController::class, 'createUser']);
-});
+// Route::middleware(['auth.api', 'abilitiesCheck:create_users'])->group(function () {
+//     Route::post('/users', [YourController::class, 'createUser']);
+// });
 
-Route::middleware(['auth.api', 'abilitiesCheck:edit_users,delete_users'])->group(function () {
-    Route::put('/users/{id}', [YourController::class, 'updateUser']);
-    Route::delete('/users/{id}', [YourController::class, 'deleteUser']);
-});
+// Route::middleware(['auth.api', 'abilitiesCheck:edit_users,delete_users'])->group(function () {
+//     Route::put('/users/{id}', [YourController::class, 'updateUser']);
+//     Route::delete('/users/{id}', [YourController::class, 'deleteUser']);
+// });
 
+
+Route::middleware([AuthenticateWithCookie::class.':1'])->group(function(){
+    Route::namespace('App\Http\Controllers')->group(function(){
+        Route::get('profiles', 'ProfileController@index');
+    });
+});

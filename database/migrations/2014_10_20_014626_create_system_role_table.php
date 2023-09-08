@@ -11,16 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('systems', function (Blueprint $table) {
+        Schema::create('system_roles', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('domain');
-            $table->boolean('server-maintainance')->default(FALSE);
-            $table->boolean('server-down')->default(FALSE);
-            $table->boolean('server-active')->default(TRUE);
-            $table->datetime('created_at')->default(now());
-            $table->datetime('updated_at')->default(now());
+            $table->unsignedBigInteger('system_id')->unsigned();
+            $table->foreign('system_id')->references('id')->on('system');
             $table->softDelete();
+            $table->timestamps();
         });
     }
 
@@ -29,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('system');
+        Schema::dropIfExists('system_role');
     }
 };

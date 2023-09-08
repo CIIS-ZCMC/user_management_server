@@ -14,26 +14,14 @@ use App\Models\System;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
+use App\Http\Requests\SignInRequest;
+
 class UserController extends Controller
 {
 
-    public function authenticate(Request $request)
+    public function authenticate(SignInRequest $request)
     {
         try {
-
-
-            $validator = Validator::make($request->all(), [
-                'email' => 'required|string|max:255',
-                'password' => 'required|string|max:255',
-            ]);
-
-
-            if ($validator->fails()) {
-                return response()->json(['errors' => $validator->errors()], 422);
-            }
-
-
-
             $data = [
                 'email' => $request->email,
                 'password' => $request->password,
@@ -55,24 +43,14 @@ class UserController extends Controller
                 return response()->json(['message' => "Unauthorized"], 401);
             }
 
-            // /**
-            //  * Validate if the user has right to access the system
-            //  */
-
-            if (!$user->hasAccess($request)) {
-                return response()->json(['message' => "Unauthorized"], 401);
+            if (!$user->userApproved()) {
+                return response()->json(['message' => "Your account is not approved yet."], 401);
             }
 
-            $abilities = $user->getSystemRole($request->getHost(), $user);
+            $token = $user->createtoken();
 
-            // $profile = $user->profile();
-            // $token = $user->createToken($user->id, $abilities);
-
-            // $datas = [];
-            // $datas->profile;
-            // $datas->token;
-
-            return response()->json(['data' => $data], 200);
+            return response()->json(['data' => $data], 200)
+                ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 180, '/', null, true);
         } catch (\Throwable $th) {
             Log::channel('custom-error')->error("User Controller[authenticate] :" . $th->getMessage());
             return response()->json(['message' => $th->getMessage()], 500);

@@ -11,16 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('systems', function (Blueprint $table) {
+        Schema::create('employment_positions', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('domain');
-            $table->boolean('server-maintainance')->default(FALSE);
-            $table->boolean('server-down')->default(FALSE);
-            $table->boolean('server-active')->default(TRUE);
-            $table->datetime('created_at')->default(now());
-            $table->datetime('updated_at')->default(now());
             $table->softDelete();
+            $table->timestamps();
         });
     }
 
@@ -29,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('system');
+        Schema::dropIfExists('employment_position');
     }
 };
