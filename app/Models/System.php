@@ -23,9 +23,10 @@ class System extends Model
         "deleted"
     ];
     
+    public $timestamps = TRUE;
+
     public function systemRole()
     {
-        return $this->belongsToMany(SystemRole::class);
+        return $this->hasMany(SystemRole::class);
     }
-
 }

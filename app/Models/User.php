@@ -8,12 +8,12 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Support\Facades\DB;
-use App\Models\Profile;
-use App\Models\Transaction;
-use App\Models\UserSystemRole;
-use App\Models\PersonalAccessToken;
 use Illuminate\Support\Str;
-use Illuminate\Support\Carbon;
+
+use App\Models\AccessToken;
+use App\Models\EmployeeProfile;
+
+use Carbon\Carbon;
 
 class User extends Authenticatable
 {
@@ -30,7 +30,7 @@ class User extends Authenticatable
         'email',
         'password',
         'deactivated',
-        'status',
+        'approved',
         'otp',
         'created_at',
         'updated_at',
@@ -57,117 +57,49 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
+    public $timestamps = TRUE;
 
-    public function createToken()
+    public function createToken($publicKeyString)
     {
-        $userID = $this->id;
-        $accessToken  = hash('sha256', Str::random(40));
-        $expiration = Carbon::now()->addHour();
+        AccessToken::where('user_id', $this->id)->delete();
 
-        $token = new PersonalAccessToken;
-        $token->FK_user_ID = $id;
-        $token->accessToken = $accessToken;
-        $token->last_use_at = now();
-        $token->expires_at = $expiration;
-        $token->save();
+        $token  = hash('sha256', Str::random(40));
+        $token_exp = Carbon::now()->addHour();
 
-        $encryptToken = $encryptedToken = openssl_encrypt($accessToken, env("ENCRYPT_DECRYPT_ALGORITHM"), env("KEY"), 0, substr(md5(env("KEY")), 0, 16));
+        $accessToken = new AccessToken;
+        $accessToken->user_id = $this->id;
+        $accessToken->public_key = $publicKeyString;
+        $accessToken->token = $token;
+        $accessToken->token_exp = $token_exp;
+        $accessToken->save();
+
+        $encryptToken = $encryptedToken = openssl_encrypt($token, env("ENCRYPT_DECRYPT_ALGORITHM"), env("APP_KEY"), 0, substr(md5(env("APP_KEY")), 0, 16));
 
         return $encryptToken;
     }
 
-    public function getSystemRole($request)
+    public function accessToken()
     {
-        $domain = $request->getHost();
-        $userID = $this->id;
-
-        $abilities = DB::table('user_system_role as usr')
-            ->select('sr.abilities')
-            ->join('system as s', 's.domain', $domain)
-            ->join('system_role as sr', 'sr.id', 's.id')
-            ->where('usr.FK_system_role_ID', 'sr.id')
-            ->where('usr.FK_user_ID', $userID)
-            ->first();
-
-        return $abilities;
+        return $this->hasMany(AccessToken::class);
     }
 
-    public function getAbilities($domain)
+    public function isAprroved()
     {
-        $userID = $this->id;
-
-        /**
-         * Get Abilities of User base on domain
-         */
-        $systemRole = DB::table('user_system_role as usr')
-            ->select('sr.abilities')
-            ->join('system_role as sr', 'sr.id', 'usr.FK_system_role_ID')
-            ->where('usr.FK_system_ID', 'sr.FK_system_ID')
-            ->where('usr.FK_system_role_ID', 'sr.FK_role_ID')
-            ->where('usr.FK_user_ID', $userID)->get();
-
-        $abilities = json_decode($systemRole['abilities']);
-
-        return $abilities;
+        return $this->approved !== null && $this->deactived===null;
     }
 
-    public function userApproved()
+    public function isDeactivated()
     {
-        $userAccountStatus = $this->status && !$this->deactivated && !$this->deleted;
-
-        return $userAccountStatus;
+        return $this->deactivated === null;
     }
 
-    public function hasAccess($request)
+    public function isEmailVerified()
     {
-        $domain = $request->getHost();
-        $userID = $this->id;
-
-        /**
-         * Get Abilities of User base on domain
-         */
-        $systemRole = DB::table('user_system_role as usr')
-            ->select('s.id')
-            ->join('system_role as sr', 'sr.id', 'usr.FK_system_role_ID')
-            ->join('system as s', 's.id', 'usr.FK_system_ID')
-            ->where('usr.FK_system_ID', 'sr.FK_system_ID')
-            ->where('usr.FK_system_role_ID', 'sr.FK_role_ID')
-            ->where('usr.FK_user_ID', $userID)->get();
-
-        // return $systemRole;
-
-        return count($systemRole) >= 1;
-    }
-
-    public function validateAbilities($abilities, $systemAbilities)
-    {
-
-        /**
-         * Validate User Abilities
-         */
-        foreach ($abilities as $ability) {
-            foreach ($systemAbilities as $systemAbility) {
-                if ($ability === $systemAbility) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return $this->email_verified_at === null;
     }
 
     public function employeeProfile()
     {
         return $this->hasOne(EmployeeProfile::class);
-    }
-
-    public function transactions()
-    {
-        return $this->belongsToMany(Transaction::class);
-    }
-
-    public function userSystemRoles()
-    {
-        return $this->belongsToMany(UserSystemRole::class);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
 
 use Carbon\Carbon;
@@ -26,41 +27,31 @@ class AuthenticateWithCookie
         $cookieValue = $request->cookie(env('COOKIE_NAME'));
 
         if (!$cookieValue) {
-            return response()->json(['message' => 'UnAuthorized.'], 401);
+            return response()->json(['message' => 'Invalid request.'], Response::HTTP_UNAUTHORIZED);
         }
 
-        $cookie = json_decode($cookieValue);
+        $encryptedToken = json_decode($cookieValue);
+        $decryptedToken = openssl_decrypt($encryptedToken->token, env("ENCRYPT_DECRYPT_ALGORITHM"), env("APP_KEY"), 0, substr(md5(env("APP_KEY")), 0, 16));
 
-        $hasAccessToken = AccessToken::where('session_token', $cookie -> token)->first();
+        $hasAccessToken = AccessToken::where('token', $decryptedToken)->first();
 
         if(!$hasAccessToken)
         {
-            return response() -> json(['message' => 'UnAuthorized.'], 401);
+            return response() -> json(['message' => 'Invalid request.'], Response::HTTP_UNAUTHORIZED);
         }
 
         $tokenExpTime = Carbon::parse($hasAccessToken->token_exp);
-        $currentTime = Carbon::now();
         
         $isTokenExpired = $tokenExpTime->isPast();
 
         if ($isTokenExpired) {
-            return response()->json(['error' => 'Access token has expired'], 401);
+            return response()->json(['error' => 'Access token has expired'], Response::HTTP_UNAUTHORIZED);
         }
 
         $user = $hasAccessToken -> user;
         
         $request->merge(['user' => $user]);
-        
-        $allowedRoles = Collection::make($access);
-        $isNotAuthorize = !$allowedRoles->contains($user->role_id);
-
-        if($isNotAuthorize)
-        {
-            return abort(403, 'Unauthorized');
-        }
-
-        $hasAccessToken -> updateTokenExp();
-
+ 
         return $next($request);
     }
 }

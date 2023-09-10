@@ -17,6 +17,8 @@ return new class extends Migration
             $table->string('abbreviation')->nullable();
             $table->timestamps();
         });
+
+        DB::statement('ALTER TABLE departments AUTO_INCREMENT = 10000');
     }
 
     /**
@@ -24,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('department');
+        Schema::dropIfExists('departments');
     }
 };

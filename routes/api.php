@@ -15,31 +15,65 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::namespace('App\Http\Controllers')->group(function () {
-    Route::post('login', 'UserController@authenticate');
+    Route::post('signin', 'UserController@signIn');
     Route::post('send-otp', 'UserController@sendOTPEmail');
     Route::post('validate-otp', 'UserController@validateOTP');
     Route::post('reset-password', 'UserController@resetPassword');
 });
 
-/**
- * Validate Request from other system.
- */
-// Route::middleware(['auth.api', 'abilitiesCheck:validate_token'])->group(function () {
-//     Route::post('/validate', [UserController::class, 'validateRequest']);
-// });
-
-// Route::middleware(['auth.api', 'abilitiesCheck:create_users'])->group(function () {
-//     Route::post('/users', [YourController::class, 'createUser']);
-// });
-
-// Route::middleware(['auth.api', 'abilitiesCheck:edit_users,delete_users'])->group(function () {
-//     Route::put('/users/{id}', [YourController::class, 'updateUser']);
-//     Route::delete('/users/{id}', [YourController::class, 'deleteUser']);
-// });
-
-
-Route::middleware([AuthenticateWithCookie::class.':1'])->group(function(){
+Route::middleware('auth.cookie')->group(function(){
     Route::namespace('App\Http\Controllers')->group(function(){
-        Route::get('profiles', 'ProfileController@index');
+        Route::post('authenticity-check', 'UserController@isAuthenticated');
+
+        /**
+         * User Module
+         */
+        Route::middleware('auth.permission::user view')->group(function(){
+            Route::get('users', 'UserController@index');
+        });
+
+        Route::middleware('auth.permission::user create')->group(function(){
+            Route::post('user', 'UserController@store');
+        });
+
+        Route::middleware('auth.permission::user view')->group(function(){
+            Route::get('user/{id}', 'UserController@show');
+        });
+
+        Route::middleware('auth.permission::user update')->group(function(){
+            Route::put('user/{id}', 'UserController@update');
+        });
+
+        Route::middleware('auth.permission::user delete')->group(function(){
+            Route::delete('user/{id}', 'UserController@destroy');
+        });
+
+        /**
+         * Employee Module
+         */
+        Route::middleware('auth.permission::employee view')->group(function(){
+            Route::get('employee-profiles', 'EmployeeProfileController@index');
+        });
+
+        Route::middleware('auth.permission::employee create')->group(function(){
+            Route::post('employee-profile', 'EmployeeProfileController@store');
+        });
+
+        Route::middleware('auth.permission::employee view')->group(function(){
+            Route::get('employee-profile/{id}', 'EmployeeProfileController@show');
+        });
+
+        Route::middleware('auth.permission::employee update')->group(function(){
+            Route::put('employee-profile/{id}', 'EmployeeProfileController@update');
+        });
+
+        Route::middleware('auth.permission::employee delete')->group(function(){
+            Route::delete('employee-profile/{id}', 'EmployeeProfileController@destroy');
+        });
+
+        /**
+         * Module without authorization needed
+         */
+        Route::delete('signout', 'UserController@signOut');
     });
 });

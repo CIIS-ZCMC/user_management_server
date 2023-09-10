@@ -14,11 +14,14 @@ return new class extends Migration
         Schema::create('access_tokens', function (Blueprint $table) {
             $table->id();
             $table->text('token');
+            $table->text('public_key');
             $table->unsignedBigInteger('user_id')->unsigned();
             $table->foreign('user_id')->references('id')->on('users');
             $table->datetime('token_exp');
             $table->timestamps();
         });
+
+        DB::statement('ALTER TABLE access_tokens AUTO_INCREMENT = 10000');
     }
 
     /**
@@ -26,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('access_token');
+        Schema::dropIfExists('access_tokens');
     }
 };

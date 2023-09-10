@@ -16,7 +16,7 @@ class Department extends Model
         'abbreviation'
     ];
 
-    protected $timestamps = TRUE;
+    public $timestamps = TRUE;
 
     public function employee()
     {

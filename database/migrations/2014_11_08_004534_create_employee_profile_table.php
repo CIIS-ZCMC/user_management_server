@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('employee_profiles', function (Blueprint $table) {
             $table->id();
             $table->string('first_name');
-            $table->string('middle_name');
+            $table->string('middle_name')->nullable();
             $table->string('last_name');
-            $table->string('ext_name');
+            $table->string('ext_name')->nullable();
             $table->string('sex');
             $table->date('dob');
             $table->string('nationality');
@@ -25,12 +25,14 @@ return new class extends Migration
             $table->unsignedBigInteger('user_id')->unsigned()->nullable();
             $table->foreign('user_id')->references('id')->on('users');
             $table->unsignedBigInteger('department_id')->unsigned();
-            $table->foreign('department_id')->references('id')->on('department');
-            $table->unsignedBigInteger('employment_postion_id')->unsigned();
-            $table->foreign('employment_postion_id')->references('id')->on('employment_postion');
-            $table->softDelete();
+            $table->foreign('department_id')->references('id')->on('departments');
+            $table->unsignedBigInteger('employment_position_id')->unsigned();
+            $table->foreign('employment_position_id')->references('id')->on('employment_positions');
+            $table->softDeletes();
             $table->timestamps();
         });
+
+        DB::statement('ALTER TABLE employee_profiles AUTO_INCREMENT = 10000');
     }
 
     /**
@@ -38,6 +40,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('employee_profile');
+        Schema::dropIfExists('employee_profiles');
     }
 };

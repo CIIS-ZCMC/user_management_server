@@ -14,14 +14,17 @@ return new class extends Migration
         Schema::create('systems', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('domain');
+            $table->string('abbreviation');
+            $table->string('domain', 360);
             $table->boolean('server-maintainance')->default(FALSE);
             $table->boolean('server-down')->default(FALSE);
             $table->boolean('server-active')->default(TRUE);
             $table->datetime('created_at')->default(now());
             $table->datetime('updated_at')->default(now());
-            $table->softDelete();
+            $table->softDeletes();
         });
+
+        DB::statement('ALTER TABLE systems AUTO_INCREMENT = 10000');
     }
 
     /**
@@ -29,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('system');
+        Schema::dropIfExists('systems');
     }
 };

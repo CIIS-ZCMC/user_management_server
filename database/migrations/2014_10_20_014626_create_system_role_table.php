@@ -14,11 +14,14 @@ return new class extends Migration
         Schema::create('system_roles', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->text('description')->nullable();
             $table->unsignedBigInteger('system_id')->unsigned();
-            $table->foreign('system_id')->references('id')->on('system');
-            $table->softDelete();
+            $table->foreign('system_id')->references('id')->on('systems');
+            $table->softDeletes();
             $table->timestamps();
         });
+
+        DB::statement('ALTER TABLE system_roles AUTO_INCREMENT = 10000');
     }
 
     /**
@@ -26,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('system_role');
+        Schema::dropIfExists('system_roles');
     }
 };

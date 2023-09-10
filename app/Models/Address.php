@@ -21,7 +21,7 @@ class Address extends Model
         'is_residential'
     ];
 
-    protected $timestamps = TRUE;
+    public $timestamps = TRUE;
 
     public function employee()
     {

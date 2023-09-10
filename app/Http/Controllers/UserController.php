@@ -2,153 +2,183 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
+
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Hash;
-use App\Models\User;
-use App\Models\PersonalAccessToken;
-use App\Models\UserSystemRole;
-use App\Models\SystemRole;
-use App\Models\System;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
+use App\Models\User;
+
 use App\Http\Requests\SignInRequest;
+use App\Http\Requests\UserRegistrationRequest;
+
+use App\Http\Resources\AllUserResource;
+use App\Http\Resources\SignInResource;
 
 class UserController extends Controller
 {
 
-    public function authenticate(SignInRequest $request)
+    public function signIn(SignInRequest $request)
     {
         try {
+            $encodedPublicKey = $request->input('public_key');
+            $publicKey = base64_decode($encodedPublicKey);
+            // $publicKey = "-----BEGIN PUBLIC KEY-----
+            // MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAgEPpvyOn+OyxO6DewMUh
+            // NmhQ7utJrCo1F8UfmNrHs+Hnyc3g99EWFCNXLccEkK6W+Ek83NjEhKz0blGoozOV
+            // lqH8B9ZCm5UVn2GX/9N067d+gt+ghwBri4q5Pp30CKAKXCUBhYo3fXFJA2LzDGNJ
+            // 2MJrRQ4o7G2ncBRbvbX7GOGZoNETCMUYpr7syHvHAyu+T9yLqwvLDqH4wBp1BAD4
+            // J7cvJMfne2h+TDqUugTcdHwvl2jDvku/XYuBWSLmXdP/jPAplS3QakCit9xY2BvZ
+            // 90eaPLMtM5Uwcx5DyIPkVwcjV+tuUGa0o0y0ffpl7QHaaWYYyWZ77QVS1yRVqCtp
+            // aQIDAQAB
+            // -----END PUBLIC KEY-----";
+            $publicKeyPem = openssl_pkey_get_public($publicKey);
+            $publicKeyString = openssl_pkey_get_details($publicKeyPem)['key'];
+
+            if(!$publicKeyPem){
+                return response()->json(['message' => 'Invalid public key.'], Response::HTTP_BAD_REQUEST);
+            }
+
             $data = [
-                'email' => $request->email,
+                'employee_id' => $request->employee_id,
                 'password' => $request->password,
             ];
 
             $cleanData = [];
 
             foreach ($data as $key => $value) {
+                if($key === 'public_key'){
+                    break;
+                }
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $user = User::where('email', $cleanData['email'])->first();
+            $user = User::where('employee_id', $cleanData['employee_id'])->first();
 
             if (!$user) {
-                return response()->json(['message' => "Unauthorized"], 401);
+                return response()->json(['message' => "No account found with employee_id ".$cleanData['employee_id'].'.'], Response::HTTP_UNAUTHORIZED);
+            }            
+
+            $decryptedPassword = Crypt::decryptString($user->password_encrypted);
+
+            if (!Hash::check($cleanData['password'].env("SALT_VALUE"), $decryptedPassword)) {
+                return response()->json(['message' => "Employee id or password incorrect."], Response::HTTP_UNAUTHORIZED);
             }
 
-            if (!Hash::check($cleanData['password'] . env("SALT_VALUE"), $user['password'])) {
-                return response()->json(['message' => "Unauthorized"], 401);
+            if (!$user->isAprroved()) {
+                return response()->json(['message' => "Your account is not approved yet."], Response::HTTP_UNAUTHORIZED);
             }
 
-            if (!$user->userApproved()) {
-                return response()->json(['message' => "Your account is not approved yet."], 401);
-            }
+            $token = $user->createtoken($publicKeyString);
 
-            $token = $user->createtoken();
+            $employee_profile = $user->employeeProfile;
 
-            return response()->json(['data' => $data], 200)
-                ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 180, '/', null, true);
+            $name = $employee_profile->first_name.' '.$employee_profile->last_name;
+            $position = $employee_profile->employmentPosition->name;
+            $department = $employee_profile->department->name;    
+
+            $dataToEncrypt = [
+                'name' => $name,
+                'department' => $department,
+                'position' => $position
+            ];
+
+            $encryptedData = '';
+            openssl_public_encrypt(json_encode($dataToEncrypt), $encryptedData, $publicKeyPem, OPENSSL_PKCS1_OAEP_PADDING);
+            openssl_free_key($publicKeyPem);
+
+            return response()
+                ->json(['data' =>  $encryptedData], Response::HTTP_OK)
+                ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), true);
         } catch (\Throwable $th) {
-            Log::channel('custom-error')->error("User Controller[authenticate] :" . $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            $this->log('authenticate', $th->getMessage());
+            return response()->json(['message' => openssl_error_string()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
-    public function validateRequest(Request $request)
+    public function isAuthenticated(Request $request)
     {
-        try {
-            $user = $request->user();
+        try{
+            $publicKey = $request->input('public_key');
+            $publicKeyPem = openssl_pkey_get_public($publicKeyPem);
+            $publicKeyString = openssl_pkey_get_details($publicKeyPem)['key'];
 
-            $domain = $request->getHost();
-            $ip = '';
-            $method = '';
+            Log::channel('custom-info')->info('Client Public Key: '.$publicKeyPem);
 
-            /**
-             * If request didn't come from User Management Client Side
-             */
-            if ($domain !== 'localhost:5173') {
-                $ip = $request->input('ip');
-                $method = $request->input('method');
-            } else {
-                $ip = $request->ip();
-                $method = $request->method();
-            }
+            $user = $request->user;
 
-            $system = System::where('domain', $request->getHost())->first();
+            $accessToken = $user->accessToken;
+            
+            $accessToken->public_key = $publicKeyString;
+            $accessToken->save();
+            
+            $employee_profile = $user->employeeProfile;
 
-            $transaction = new Transaction;
-            $transaction->status = $method;
-            $transaction->FK_system_ID = $system;
-            $transaction->FK_user_ID = $user->id;
-            $transaction->ip = $ip;
-            $transaction->created_at = now();
-            $transaction->save();
+            $name = $employee_profile->first_name.' '.$employee_profile->last_name;
+            $position = $employee_profile->employmentPosition->name;
+            $department = $employee_profile->department->name;    
 
-            return response()->json(['data' => "Success"], 200);
-        } catch (\Throwable $th) {
-            Log::channel('custom-error')->error("User Controller[validateRequest] :" . $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 200);
+            $dataToEncrypt = json_encode([
+                'name' => $name,
+                'department' => $department,
+                'position' => $position
+            ]);
+
+            $encryptedData = '';
+            openssl_public_encrypt($dataToEncrypt, $encryptedData, $publicKeyPem, OPENSSL_PKCS1_OAEP_PADDING);
+            openssl_free_key($publicKeyPem);
+
+            return response()->json(['data' => $encryptedData], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->log('isAuthenticated', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
-    public function logout(Request $request)
+    public function signOut(Request $request)
     {
-        $user = $request->user();
-        $domain = $request->getHost();
-        $systemID = System::where('domain', $domain)->first();
+        try{
+            $user = $request->user;
+    
+            $user->accessToken->delete();
 
-        $userSystemRoles = $user->userSystemRoles();
-
-        foreach ($userSystemRoles as $userSystemRole) {
-            if ($userSystemRole->FK_system_ID === $systemID) {
-                $token = $userSystemRole->token();
-                $revoke = $token->revoke();
-
-                if (!$revoke) {
-                    break;
-                }
-
-                $detach = $userSystemRole->detach();
-
-                if ($detach) {
-                    return response()->json(['data' => 'Success'], 200);
-                }
-            }
+            return response()->json(['data' => '/'], Response::HTTP_OK)->cookie(env('COOKIE_NAME'), '', -1);;
+        }catch(\Throwable $th){
+            $this->log('logout', $th->getMessage());
+            return response()->json9(['message' => 'Failed to signout.'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
-        return response()->json9(['message' => 'Failed to signout.'], 500);
     }
 
     public function index(Request $request)
     {
-        try {
-            $data = User::all();
+        try{
+            $ip = $request -> ip();
 
-            return response()->json(['data' => $data], 200);
+            $cacheExpiration = Carbon::now()->addDay();
+
+            $user = Cache::remember('users', $cacheExpiration, function(){
+                return User::all();
+            });
+
+            return response()->json(['data' => AllUserResource::collection($user)], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            Log::channel('custom-error')->error("User Controller[index] :" . $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            $this->log('index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
-
-    public function store(Request $request)
+    public function store(UserRegistrationRequest $request)
     {
-        try {
-            $validator = Validator::make($request->all(), [
-                'email' => 'required|string|max:255',
-                'password' => 'required|string|max:255',
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json(['errors' => $validator->errors()], 422);
-            }
-
+        try{
             $data = [
-                'email' => $request->input('email'),
+                'employee_id' => $request->input('employee_id'),
                 'password' => $request->input('password'),
             ];
 
@@ -158,17 +188,15 @@ class UserController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $user = new User();
-            $user->email = $cleanData['email'];
-            $user->passsword = Hash::make($cleanData['password'] . env("SALT_VALUE"));
-            $user->created_at = now();
-            $user->updated_at = now();
-            $user->save();
+            $user = User::create([
+                'employee_id' => $cleanData->employee_id,
+                'password' => Crypt::encrypt(Hash::make($cleanData['password'].env("SALT_VALUE")))
+            ]);
 
-            return response()->json(['data' => "Success"], 200);
+            return response()->json(['message' => "Employee account has been successfully created."], Response::HTTP_CREATED);
         } catch (\Throwable $th) {
-            Log::channel('custom-error')->error("User Controller[store] :" . $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            $this->log('store', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -177,10 +205,10 @@ class UserController extends Controller
         try {
             $data = User::find($id);
 
-            return response()->json(['data' => $data], 200);
+            return response()->json(['data' => $data], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            Log::channel('custom-error')->error("User Controller[show] :" . $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            $this->log('show', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -191,7 +219,7 @@ class UserController extends Controller
             $user = User::find($id);
 
             if (!$user) {
-                return response()->json(['message' => "No user found."], 404);
+                return response()->json(['message' => "No user found."], Response::HTTP_NOT_FOUND);
             }
 
             $validator = Validator::make($request->all(), [
@@ -199,7 +227,7 @@ class UserController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return response()->json(['errors' => $validator->errors()], 422);
+                return response()->json(['message' => 'Data requirements did not match.'], Response::HTTP_BAD_REQUEST);
             }
 
             $data = [
@@ -212,15 +240,15 @@ class UserController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $user = new User();
-            $user->passsword = Hash::make($cleanData['password'] . env("SALT_VALUE"));
+            $user = new User;
+            $user->passsword = Crypt::encrypt(Hash::make($cleanData['password'].env("SALT_VALUE")));
             $user->updated_at = now();
             $user->save();
 
-            return response()->json(['data' => "Success"], 200);
+            return response()->json(['data' => "Success"], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            Log::channel('custom-error')->error("User Controller[changePassword] :" . $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            $this->log('resetPassword', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -232,10 +260,10 @@ class UserController extends Controller
             $user->updated_at = now();
             $user->save();
 
-            return $response()->json(['data' => "Success"], 200);
+            return $response()->json(['data' => "Success"], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            Log::channel('custom-error')->error("User Controller[approved] :" . $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            $this->log('approved', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -247,10 +275,10 @@ class UserController extends Controller
             $user->updated_at = now();
             $user->save();
 
-            return $response()->json(['data' => "Success"], 200);
+            return $response()->json(['data' => "Success"], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            Log::channel('custom-error')->error("User Controller[declined] :" . $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            $this->log('declined', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -261,7 +289,7 @@ class UserController extends Controller
             $user = User::find($id);
 
             if (!$user) {
-                return response()->json(['message' => "No user found."], 404);
+                return response()->json(['message' => "No user found."], Response::HTTP_NOT_FOUND);
             }
 
             $validator = Validator::make($request->all(), [
@@ -277,7 +305,7 @@ class UserController extends Controller
             ];
 
             if (!Hash::check($cleanData['password'] . env("SALT_VALUE"), $user['password'])) {
-                return response()->json(['message' => "UnAuthorized"], 401);
+                return response()->json(['message' => "UnAuthorized"], Response::HTTP_UNAUTHORIZED);
             }
 
 
@@ -285,10 +313,10 @@ class UserController extends Controller
             $user->updated_at = now();
             $user->save();
 
-            return $response()->json(['data' => "Success"], 200);
+            return $response()->json(['data' => "Success"], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            Log::channel('custom-error')->error("User Controller[deactivate] :" . $th->getMessage());
-            return reponse()->json(['message' => $th->getMessage()], 500);
+            $this->log('deactivate', $th->getMessage());
+            return reponse()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -296,10 +324,10 @@ class UserController extends Controller
     {
         try {
 
-            return response()->json(['data' => "Success"], 200);
+            return response()->json(['data' => "Success"], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            Log::channel('custom-error')->error("User Controller[sendOTPEmail] :" . $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            $this->log('sendOTPEmail', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -307,10 +335,10 @@ class UserController extends Controller
     {
         try {
 
-            return response()->json(['data' => "Success"], 200);
+            return response()->json(['data' => "Success"], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            Log::channel('custom-error')->error("User Controller[validateOTP] :" . $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            $this->log('validateOTP', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -323,9 +351,15 @@ class UserController extends Controller
             $user->updated_at = now();
             $user->save();
 
-            return response()->json(['data' => "Success"], 200);
+            return response()->json(['data' => "Success"], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            return response()->json(['message' => $th->getMessage()], 500);
+            $this->log('destroy', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    protected function log($action, $errorMessage)
+    {
+        Log::channel('custom-error')->error("User Controller[".$action."] :" . $errorMessage);
     }
 }

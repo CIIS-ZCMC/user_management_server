@@ -10,18 +10,34 @@ class SystemRole extends Model
 {
     use HasFactory;
 
-    protected $table = 'systemroles';
+    protected $table = 'system_roles';
 
     protected $fillable = [
-        "abilities",
-        "created_at",
+        "name",
+        "description",
         "updated_at",
-        "deleted"
+        "system_id"
     ];
 
-    public function userSystemRole()
+    public $timestamps = TRUE;
+
+    public function system()
     {
-        return $this -> belongsToMany(userSystemRole::class);
+        return $this->belongsTo(System::class);
+    }
+
+    public function permissions()
+    {
+        return $this->hasMany(SystemRolePermission::class);
+    }
+
+    public function hasPermission($routePermission)
+    {
+        $permissions = $this->permissions;
+
+        return $permissions->contains(function ($permission) {
+            return $permission->validate($routePermission);
+        });
     }
 }
     

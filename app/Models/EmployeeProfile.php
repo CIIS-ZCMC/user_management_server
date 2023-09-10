@@ -22,10 +22,30 @@ class EmployeeProfile extends Model
         'dialect'
     ];
 
-    protected $timestamps = TRUE;
+    public $timestamps = TRUE;
 
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function employmentPosition()
+    {
+        return $this->belongsTo(EmploymentPosition::class);
+    }
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function contact()
+    {
+        return $this->hasOne(Contact::class);
+    }
+
+    public function addresses()
+    {
+        return $this->hasMany(Address::class);
     }
 }

@@ -16,9 +16,10 @@ class Contact extends Model
         'phone_number',
         'tele_number',
         'emergency_contact',
+        'employee_profile_id'
     ];
 
-    protected $timestamps = TRUE;
+    public $timestamps = TRUE;
 
     public function employee()
     {

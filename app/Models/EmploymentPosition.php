@@ -16,5 +16,10 @@ class EmploymentPosition extends Model
         'total_employee'
     ];
 
-    protected $timestamps = TRUE;
+    public $timestamps = TRUE;
+
+    public function systemRoles()
+    {
+        return $this->hasMany(PositionSystemRole::class);
+    }
 }

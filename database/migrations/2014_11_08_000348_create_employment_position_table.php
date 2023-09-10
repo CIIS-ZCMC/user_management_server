@@ -14,9 +14,14 @@ return new class extends Migration
         Schema::create('employment_positions', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->softDelete();
+            $table->string('abbreviation')->nullable();
+            $table->integer('salary_grade');
+            $table->float('salary');
+            $table->softDeletes();
             $table->timestamps();
         });
+
+        DB::statement('ALTER TABLE employment_positions AUTO_INCREMENT = 10000');
     }
 
     /**
@@ -24,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('employment_position');
+        Schema::dropIfExists('employment_positions');
     }
 };

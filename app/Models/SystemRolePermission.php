@@ -15,17 +15,18 @@ class SystemRolePermission extends Model
         'action',
         'module',
         'active',
+        'system_role_id'
     ];
 
-    protected $timestamps = TRUE;
+    public $timestamps = TRUE;
 
 
-    public function system()
+    public function systemRole()
     {
         return $this->belongsTo(SystemRole::class);
     }
-
-    public function hasPermission($permission)
+ 
+    public function validate($permission)
     {
         list($action, $module) = explode(' ', $permission);
 

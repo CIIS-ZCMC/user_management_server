@@ -17,10 +17,12 @@ return new class extends Migration
             $table->string('phone_number')->nullable();
             $table->string('tele_number')->nullable();
             $table->string('emergency_contact')->nullable();
-            $table->unsignedBigInteger('employee_id')->unsigned();
-            $table->foreign('employee_id')->references('id')->on('employee');
+            $table->unsignedBigInteger('employee_profile_id')->unsigned();
+            $table->foreign('employee_profile_id')->references('id')->on('employee_profiles');
             $table->timestamps();
         });
+
+        DB::statement('ALTER TABLE contacts AUTO_INCREMENT = 10000');
     }
 
     /**

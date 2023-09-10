@@ -12,9 +12,16 @@ class AccessToken extends Model
     protected $table = 'access_tokens';
 
     public $fillable = [
+        'user_id',
+        'public_key',
         'token',
         'token_exp'
     ];
 
-    protected $timestamps = TRUE;
+    public $timestamps = TRUE;
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }
