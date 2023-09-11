@@ -28,14 +28,6 @@ class UserController extends Controller
     public function signIn(SignInRequest $request)
     {
         try {
-            // $encodedPublicKey = $request->input('public_key');
-            // $publicKey = base64_decode($encodedPublicKey);
-            // $publicKeyPem = openssl_pkey_get_public($publicKey);
-            // $publicKeyString = openssl_pkey_get_details($publicKeyPem)['key'];
-
-            // if(!$publicKeyPem){
-            //     return response()->json(['message' => 'Invalid public key.'], Response::HTTP_BAD_REQUEST);
-            // }
 
             $data = [
                 'employee_id' => $request->employee_id,
@@ -81,10 +73,6 @@ class UserController extends Controller
                 'position' => $position
             ];
 
-            // $encryptedData = '';
-            // openssl_public_encrypt(json_encode($dataToEncrypt), $encryptedData, $publicKeyPem, OPENSSL_PKCS1_OAEP_PADDING);
-            // openssl_free_key($publicKeyPem);
-
             return response()
                 ->json(['data' =>  $dataToEncrypt], Response::HTTP_OK)
                 ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), true);
@@ -97,19 +85,7 @@ class UserController extends Controller
     public function isAuthenticated(Request $request)
     {
         try{
-            // $publicKey = $request->input('public_key');
-            // $publicKeyPem = openssl_pkey_get_public($publicKeyPem);
-            // $publicKeyString = openssl_pkey_get_details($publicKeyPem)['key'];
-
-            // Log::channel('custom-info')->info('Client Public Key: '.$publicKeyPem);
-
             $user = $request->user;
-
-            // $accessToken = $user->accessToken;
-            
-            // $publicKeyString;
-            // $accessToken->public_key = 'NONE';
-            // $accessToken->save();
             
             $employee_profile = $user->employeeProfile;
 
@@ -122,10 +98,6 @@ class UserController extends Controller
                 'department' => $department,
                 'position' => $position
             ]);
-
-            // $encryptedData = '';
-            // openssl_public_encrypt($dataToEncrypt, $encryptedData, $publicKeyPem, OPENSSL_PKCS1_OAEP_PADDING);
-            // openssl_free_key($publicKeyPem);
 
             return response()->json(['data' => $dataToEncrypt], Response::HTTP_OK);
         }catch(\Throwable $th){
