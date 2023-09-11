@@ -28,23 +28,14 @@ class UserController extends Controller
     public function signIn(SignInRequest $request)
     {
         try {
-            $encodedPublicKey = $request->input('public_key');
-            $publicKey = base64_decode($encodedPublicKey);
-            // $publicKey = "-----BEGIN PUBLIC KEY-----
-            // MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAgEPpvyOn+OyxO6DewMUh
-            // NmhQ7utJrCo1F8UfmNrHs+Hnyc3g99EWFCNXLccEkK6W+Ek83NjEhKz0blGoozOV
-            // lqH8B9ZCm5UVn2GX/9N067d+gt+ghwBri4q5Pp30CKAKXCUBhYo3fXFJA2LzDGNJ
-            // 2MJrRQ4o7G2ncBRbvbX7GOGZoNETCMUYpr7syHvHAyu+T9yLqwvLDqH4wBp1BAD4
-            // J7cvJMfne2h+TDqUugTcdHwvl2jDvku/XYuBWSLmXdP/jPAplS3QakCit9xY2BvZ
-            // 90eaPLMtM5Uwcx5DyIPkVwcjV+tuUGa0o0y0ffpl7QHaaWYYyWZ77QVS1yRVqCtp
-            // aQIDAQAB
-            // -----END PUBLIC KEY-----";
-            $publicKeyPem = openssl_pkey_get_public($publicKey);
-            $publicKeyString = openssl_pkey_get_details($publicKeyPem)['key'];
+            // $encodedPublicKey = $request->input('public_key');
+            // $publicKey = base64_decode($encodedPublicKey);
+            // $publicKeyPem = openssl_pkey_get_public($publicKey);
+            // $publicKeyString = openssl_pkey_get_details($publicKeyPem)['key'];
 
-            if(!$publicKeyPem){
-                return response()->json(['message' => 'Invalid public key.'], Response::HTTP_BAD_REQUEST);
-            }
+            // if(!$publicKeyPem){
+            //     return response()->json(['message' => 'Invalid public key.'], Response::HTTP_BAD_REQUEST);
+            // }
 
             $data = [
                 'employee_id' => $request->employee_id,
@@ -76,7 +67,7 @@ class UserController extends Controller
                 return response()->json(['message' => "Your account is not approved yet."], Response::HTTP_UNAUTHORIZED);
             }
 
-            $token = $user->createtoken($publicKeyString);
+            $token = $user->createToken();
 
             $employee_profile = $user->employeeProfile;
 
@@ -90,12 +81,12 @@ class UserController extends Controller
                 'position' => $position
             ];
 
-            $encryptedData = '';
-            openssl_public_encrypt(json_encode($dataToEncrypt), $encryptedData, $publicKeyPem, OPENSSL_PKCS1_OAEP_PADDING);
-            openssl_free_key($publicKeyPem);
+            // $encryptedData = '';
+            // openssl_public_encrypt(json_encode($dataToEncrypt), $encryptedData, $publicKeyPem, OPENSSL_PKCS1_OAEP_PADDING);
+            // openssl_free_key($publicKeyPem);
 
             return response()
-                ->json(['data' =>  $encryptedData], Response::HTTP_OK)
+                ->json(['data' =>  $dataToEncrypt], Response::HTTP_OK)
                 ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), true);
         } catch (\Throwable $th) {
             $this->log('authenticate', $th->getMessage());
@@ -106,18 +97,19 @@ class UserController extends Controller
     public function isAuthenticated(Request $request)
     {
         try{
-            $publicKey = $request->input('public_key');
-            $publicKeyPem = openssl_pkey_get_public($publicKeyPem);
-            $publicKeyString = openssl_pkey_get_details($publicKeyPem)['key'];
+            // $publicKey = $request->input('public_key');
+            // $publicKeyPem = openssl_pkey_get_public($publicKeyPem);
+            // $publicKeyString = openssl_pkey_get_details($publicKeyPem)['key'];
 
-            Log::channel('custom-info')->info('Client Public Key: '.$publicKeyPem);
+            // Log::channel('custom-info')->info('Client Public Key: '.$publicKeyPem);
 
             $user = $request->user;
 
-            $accessToken = $user->accessToken;
+            // $accessToken = $user->accessToken;
             
-            $accessToken->public_key = $publicKeyString;
-            $accessToken->save();
+            // $publicKeyString;
+            // $accessToken->public_key = 'NONE';
+            // $accessToken->save();
             
             $employee_profile = $user->employeeProfile;
 
@@ -131,11 +123,11 @@ class UserController extends Controller
                 'position' => $position
             ]);
 
-            $encryptedData = '';
-            openssl_public_encrypt($dataToEncrypt, $encryptedData, $publicKeyPem, OPENSSL_PKCS1_OAEP_PADDING);
-            openssl_free_key($publicKeyPem);
+            // $encryptedData = '';
+            // openssl_public_encrypt($dataToEncrypt, $encryptedData, $publicKeyPem, OPENSSL_PKCS1_OAEP_PADDING);
+            // openssl_free_key($publicKeyPem);
 
-            return response()->json(['data' => $encryptedData], Response::HTTP_OK);
+            return response()->json(['data' => $dataToEncrypt], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->log('isAuthenticated', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -147,12 +139,16 @@ class UserController extends Controller
         try{
             $user = $request->user;
     
-            $user->accessToken->delete();
+            $accessToken = $user->accessToken;
+            
+            foreach ($accessToken as $token) {
+                $token->delete();
+            }
 
             return response()->json(['data' => '/'], Response::HTTP_OK)->cookie(env('COOKIE_NAME'), '', -1);;
         }catch(\Throwable $th){
             $this->log('logout', $th->getMessage());
-            return response()->json9(['message' => 'Failed to signout.'], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -260,7 +256,7 @@ class UserController extends Controller
             $user->updated_at = now();
             $user->save();
 
-            return $response()->json(['data' => "Success"], Response::HTTP_OK);
+            return response()->json(['data' => "Success"], Response::HTTP_OK);
         } catch (\Throwable $th) {
             $this->log('approved', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -275,7 +271,7 @@ class UserController extends Controller
             $user->updated_at = now();
             $user->save();
 
-            return $response()->json(['data' => "Success"], Response::HTTP_OK);
+            return response()->json(['data' => "Success"], Response::HTTP_OK);
         } catch (\Throwable $th) {
             $this->log('declined', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

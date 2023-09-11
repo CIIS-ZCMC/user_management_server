@@ -59,8 +59,9 @@ class User extends Authenticatable
 
     public $timestamps = TRUE;
 
-    public function createToken($publicKeyString)
+    public function createToken()
     {
+        // $publicKeyString
         AccessToken::where('user_id', $this->id)->delete();
 
         $token  = hash('sha256', Str::random(40));
@@ -68,7 +69,7 @@ class User extends Authenticatable
 
         $accessToken = new AccessToken;
         $accessToken->user_id = $this->id;
-        $accessToken->public_key = $publicKeyString;
+        $accessToken->public_key = 'NONE';
         $accessToken->token = $token;
         $accessToken->token_exp = $token_exp;
         $accessToken->save();
