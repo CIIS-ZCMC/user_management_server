@@ -11,21 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('addresses', function (Blueprint $table) {
+        Schema::create('employee_stations', function (Blueprint $table) {
             $table->id();
-            $table->string('street')->nullable();
-            $table->string('barangay')->nullable();
-            $table->string('city')->nullable();
-            $table->string('province')->nullable();
-            $table->string('zip_code')->nullable();
-            $table->string('country')->nullable();
-            $table->boolean('is_residential');
             $table->unsignedBigInteger('employee_profile_id')->unsigned();
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles');
+            $table->unsignedBigInteger('job_position_id')->unsigned();
+            $table->foreign('job_position_id')->references('id')->on('job_positions');
             $table->timestamps();
         });
-
-        DB::statement('ALTER TABLE addresses AUTO_INCREMENT = 10000');
     }
 
     /**
@@ -33,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('contacts');
+        Schema::dropIfExists('employee_stations');
     }
 };

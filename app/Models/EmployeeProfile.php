@@ -12,40 +12,27 @@ class EmployeeProfile extends Model
     protected $table = 'employee_profiles';
 
     public $fillable = [
-        'first_name',
-        'middle_name',
-        'last_name',
-        'sex',
-        'dob',
-        'nationality',
-        'religion',
-        'dialect'
+        'employee_id',
+        'profile_url',
+        'date_hired',
+        'job_type',
+        'password',
+        'password_created_date',
+        'password_expiration_date',
+        'department_id',
+        'employment_position_id',
+        'personal_information_id'
     ];
 
     public $timestamps = TRUE;
 
-    public function user()
+    public function personalInformation()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(PersonalInformation::class);
     }
 
-    public function employmentPosition()
+    public function employeeStation()
     {
-        return $this->belongsTo(EmploymentPosition::class);
-    }
-
-    public function department()
-    {
-        return $this->belongsTo(Department::class);
-    }
-
-    public function contact()
-    {
-        return $this->hasOne(Contact::class);
-    }
-
-    public function addresses()
-    {
-        return $this->hasMany(Address::class);
+        return $this->hasMany(EmployeeStation::class);
     }
 }

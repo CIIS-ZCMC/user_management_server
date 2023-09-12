@@ -5,21 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Address extends Model
+class References extends Model
 {
     use HasFactory;
 
-    protected $table = 'addresses';
+    protected $table = 'references';
 
     public $fillable = [
-        'street',
-        'barangay',
-        'city',
-        'province',
-        'zip_code',
-        'country',
-        'is_residential',
-        'telephone_no',
+        'name',
+        'address',
+        'contact_no',
         'personal_information_id'
     ];
 
@@ -27,6 +22,6 @@ class Address extends Model
 
     public function personalInformation()
     {
-        return $this->belongsTo(personalInformation::class);
+        return $this->belongsTo(PersonalInformation::class);
     }
 }

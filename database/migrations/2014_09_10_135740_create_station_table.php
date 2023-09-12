@@ -11,16 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('departments', function (Blueprint $table) {
+        Schema::create('station', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->string('code')->nullable();
-            $table->unsignedBigInteger('department_group_id')->unsigned();
-            $table->foreign('department_group_id')->references('id')->on('department_groups');
+            $table->unsignedBigInteger('department_id')->unsigned();
+            $table->foreign('department_id')->references('id')->on('departments');
             $table->timestamps();
         });
-
-        DB::statement('ALTER TABLE departments AUTO_INCREMENT = 10000');
     }
 
     /**
@@ -28,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('departments');
+        Schema::dropIfExists('station');
     }
 };

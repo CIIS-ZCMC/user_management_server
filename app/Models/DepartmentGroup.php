@@ -5,22 +5,21 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Department extends Model
+class DepartmentGroup extends Model
 {
     use HasFactory;
 
-    protected $table = 'departments';
+    protected $table = 'department_groups';
 
     public $fillable = [
-        'name',
         'code',
-        'department_group_id'
+        'name'
     ];
 
     public $timestamps = TRUE;
 
-    public function employee()
+    public function departments()
     {
-        return $this->hasMany(EmployeeProfile::class);
+        return $this->hasMany(Department::class);
     }
 }

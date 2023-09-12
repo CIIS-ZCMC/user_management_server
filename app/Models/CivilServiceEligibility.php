@@ -5,16 +5,18 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Contact extends Model
+class CivilServiceEligibility extends Model
 {
     use HasFactory;
 
-    protected $table = 'contacts';
+    protected $table = 'civil_service_eligibilities';
 
     public $fillable = [
-        'phone_number',
-        'email',
-        'personal_information_id'
+        'career_service',
+        'rating',
+        'date_of_examination',
+        'place_of_examination',
+        'license'
     ];
 
     public $timestamps = TRUE;

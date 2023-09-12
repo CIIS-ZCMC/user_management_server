@@ -17,8 +17,8 @@ return new class extends Migration
             $table->string('barangay');
             $table->string('city');
             $table->string('province');
-            $table->string('country')->default('Philippines');
             $table->string('zip_code');
+            $table->string('country')->default('Philippines');
             $table->boolean('is_residential')->default(FALSE);
             $table->string('telephone_no')->nullable();
             $table->unsignedBigInteger('personal_information_id')->unsigned();

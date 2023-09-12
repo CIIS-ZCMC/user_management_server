@@ -5,21 +5,17 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Address extends Model
+class Training extends Model
 {
     use HasFactory;
 
-    protected $table = 'addresses';
+    protected $table = 'trainings';
 
     public $fillable = [
-        'street',
-        'barangay',
-        'city',
-        'province',
-        'zip_code',
-        'country',
-        'is_residential',
-        'telephone_no',
+        'inclusive_date',
+        'is_lnd',
+        'conducted_by',
+        'total_hours',
         'personal_information_id'
     ];
 
@@ -27,6 +23,6 @@ class Address extends Model
 
     public function personalInformation()
     {
-        return $this->belongsTo(personalInformation::class);
+        return $this->belongsTo(PersonalInformation::class);
     }
 }

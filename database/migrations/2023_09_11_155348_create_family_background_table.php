@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('family_background', function (Blueprint $table) {
+        Schema::create('family_backgrounds', function (Blueprint $table) {
             $table->id();
             $table->string('spouse')->nullable();
             $table->string('address')->nullable();
