@@ -12,13 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('issuance_informations', function (Blueprint $table) {
-            $table->id();
+            $table->uuid()->primary();
             $table->string('license_no')->nullable();
             $table->string('govt_issued_id')->nullable();
             $table->datetime('ctc_issued_date')->nullable();
             $table->string('ctc_issued_at')->nullable();
-            $table->unsignedBigInteger('employee_profile_id')->unsigned();
-            $table->foreign('employee_profile_id')->references('id')->on('employee_profiles');
+            $table->uuid('employee_profile_id');
+            $table->foreign('employee_profile_id')->references('uuid')->on('employee_profiles');
             $table->timestamps();
         });
     }

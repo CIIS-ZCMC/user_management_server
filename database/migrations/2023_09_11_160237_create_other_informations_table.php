@@ -12,12 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('other_informations', function (Blueprint $table) {
-            $table->id();
+            $table->uuid()->primary();
             $table->string('hobbies');
             $table->string('recognition')->nullable();
             $table->string('organization')->nullable();
-            $table->unsignedBigInteger('personal_information_id')->unsigned();
-            $table->foreign('personal_information_id')->references('id')->on('personal_informations');
+            $table->uuid('personal_information_id');
+            $table->foreign('personal_information_id')->references('uuid')->on('personal_informations');
             $table->timestamps();
         });
     }

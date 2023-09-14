@@ -73,7 +73,7 @@ class ReferencesController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $references = References::update([$cleanData]);
+            $references -> update([$cleanData]);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){

@@ -76,7 +76,7 @@ class IdentificationController extends Controller
                 $cleanData[$key] =  $this->encryptData(strip_tags($value));
             }
 
-            $identification = Identification::update([$cleanData]);
+            $identification -> update([$cleanData]);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){

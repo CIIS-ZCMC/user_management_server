@@ -73,7 +73,7 @@ class LegalInformationQuestionController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $legal_information_question = LegalInformationQuestion::update([$cleanData]);
+            $legal_information_question -> update([$cleanData]);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){

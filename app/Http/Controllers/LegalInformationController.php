@@ -73,7 +73,7 @@ class LegalInformationController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $legal_information = LegalInformation::update([$cleanData]);
+            $legal_information -> update([$cleanData]);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){

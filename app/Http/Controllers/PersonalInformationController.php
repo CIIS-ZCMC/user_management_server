@@ -73,7 +73,7 @@ class PersonalInformationController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $personal_information = PersonalInformation::update([$cleanData]);
+            $personal_information -> update([$cleanData]);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){

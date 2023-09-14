@@ -9,7 +9,7 @@ class Station extends Model
 {
     use HasFactory;
 
-    protected $table = 'station';
+    protected $table = 'stations';
 
     public $fillable = [
         'name',

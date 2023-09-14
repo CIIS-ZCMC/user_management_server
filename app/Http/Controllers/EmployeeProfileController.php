@@ -83,7 +83,7 @@ class ProfileController extends Controller
     public function update($id, EmployeeProfileRequest $request)
     {
         try{
-            $employee_profile = EmployeeProfile::find($id);
+            $employee_profile -> EmployeeProfile::find($id);
 
             $cleanData = [];
 
@@ -93,7 +93,7 @@ class ProfileController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $employee_profile = EmployeeProfile::update([$cleanData]);
+            $employee_profile -> update([$cleanData]);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -109,7 +109,7 @@ class ProfileController extends Controller
 
             $file_value = $this->check_save_file($request->file('profile_image'));
 
-            $employee_profile = EmployeeProfile::update([$file_value]);
+            $employee_profile -> update([$file_value]);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){

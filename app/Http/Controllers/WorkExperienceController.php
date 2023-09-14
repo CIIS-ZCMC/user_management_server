@@ -73,7 +73,7 @@ class WorkExperienceController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $work_experience = WorkExperience::update([$cleanData]);
+            $work_experience -> update([$cleanData]);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){

@@ -73,7 +73,7 @@ class PasswordTrailController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $password_trail = PasswordTrail::update([$cleanData]);
+            $password_trail -> update([$cleanData]);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){

@@ -72,7 +72,7 @@ class JobPositionController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $job_position = JobPosition::update([$cleanData]);
+            $job_position -> update([$cleanData]);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){

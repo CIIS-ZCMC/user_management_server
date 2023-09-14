@@ -73,7 +73,7 @@ class FamilyBackgroundController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $family_background = FamilyBackground::update([$cleanData]);
+            $family_background -> update([$cleanData]);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){

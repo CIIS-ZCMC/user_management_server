@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('family_backgrounds', function (Blueprint $table) {
-            $table->id();
+            $table->uuid()->primary();
             $table->string('spouse')->nullable();
             $table->string('address')->nullable();
             $table->string('zip_code')->nullable();
@@ -31,8 +31,8 @@ return new class extends Migration
             $table->string('mother_middle_name')->nullable();
             $table->string('mother_last_name');
             $table->string('mother_ext_name')->nullable();
-            $table->unsignedBigInteger('personal_information_id')->unsigned();
-            $table->foreign('personal_information_id')->references('id')->on('personal_informations');
+            $table->uuid('personal_information_id');
+            $table->foreign('personal_information_id')->references('uuid')->on('personal_informations');
             $table->timestamps();
         });
     }

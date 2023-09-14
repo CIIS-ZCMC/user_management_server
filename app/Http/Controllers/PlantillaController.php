@@ -72,7 +72,7 @@ class PlantillaController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $plantilla = Plantilla::update([$cleanData]);
+            $plantilla -> update([$cleanData]);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){

@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('department_groups', function (Blueprint $table) {
-            $table->id();
+            $table->uuid()->primary();
             $table->string('code');
             $table->string('name');
             $table->timestamps();

@@ -12,11 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('login_trails', function (Blueprint $table) {
-            $table->id();
+            $table->uuid()->primary();
             $table->datetime('signin_datetime');
             $table->string('ip_address');
-            $table->unsignedBigInteger('employee_id')->unsigned();
-            $table->foreign('employee_id')->references('id')->on('employee_profiles');
+            $table->uuid('employee_profile_id');
+            $table->foreign('employee_profile_id')->references('uuid')->on('employee_profiles');
             $table->timestamps();
         });
     }

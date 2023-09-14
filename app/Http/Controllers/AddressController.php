@@ -72,7 +72,7 @@ class AddressController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $address = Address::update([$cleanData]);
+            $address -> update([$cleanData]);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){

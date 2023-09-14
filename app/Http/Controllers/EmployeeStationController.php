@@ -72,7 +72,7 @@ class EmployeeStationController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $employee_station = EmployeeStation::update([$cleanData]);
+            $employee_station -> update([$cleanData]);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){

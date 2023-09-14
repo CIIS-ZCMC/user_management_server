@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('addresses', function (Blueprint $table) {
-            $table->id();
+            $table->uuid()->primary();
             $table->string('street');
             $table->string('barangay');
             $table->string('city');
@@ -21,8 +21,8 @@ return new class extends Migration
             $table->string('country')->default('Philippines');
             $table->boolean('is_residential')->default(FALSE);
             $table->string('telephone_no')->nullable();
-            $table->unsignedBigInteger('personal_information_id')->unsigned();
-            $table->foreign('personal_information_id')->references('id')->on('personal_informations');
+            $table->uuid('personal_information_id');
+            $table->foreign('personal_information_id')->references('uuid')->on('personal_informations');
             $table->timestamps();
         });
     }

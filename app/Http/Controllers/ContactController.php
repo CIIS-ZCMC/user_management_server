@@ -78,7 +78,7 @@ class ContactController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $contact = Contact::update([$cleanData]);
+            $contact -> update([$cleanData]);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){

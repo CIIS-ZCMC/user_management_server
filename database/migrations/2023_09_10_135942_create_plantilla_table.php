@@ -12,13 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('plantillas', function (Blueprint $table) {
-            $table->id();
+            $table->uuid()->primary();
             $table->string('plantilla_no');
             $table->string('tranche')->nullable();
             $table->date('date')->default(now());
             $table->string('category')->nullable();
-            $table->unsignedBigInteger('job_position_id')->unsigned();
-            $table->foreign('job_position_id')->references('id')->on('job_positions');
+            $table->uuid('job_position_id');
+            $table->foreign('job_position_id')->references('uuid')->on('job_positions');
             $table->timestamps();
         });
     }

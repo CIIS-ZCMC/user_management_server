@@ -73,7 +73,7 @@ class OtherInformationController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $other_information = OtherInformation::update([$cleanData]);
+            $other_information -> update([$cleanData]);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){

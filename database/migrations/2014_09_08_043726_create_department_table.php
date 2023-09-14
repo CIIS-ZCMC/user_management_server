@@ -12,15 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('departments', function (Blueprint $table) {
-            $table->id();
+            $table->uuid()->primary();
             $table->string('name');
             $table->string('code')->nullable();
-            $table->unsignedBigInteger('department_group_id')->unsigned();
-            $table->foreign('department_group_id')->references('id')->on('department_groups');
+            $table->uuid('department_group_id')->nullable();
+            $table->foreign('department_group_id')->references('uuid')->on('department_groups');
             $table->timestamps();
         });
-
-        DB::statement('ALTER TABLE departments AUTO_INCREMENT = 10000');
     }
 
     /**

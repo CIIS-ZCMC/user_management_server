@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('systems', function (Blueprint $table) {
-            $table->id();
+            $table->uuid()->primary();
             $table->string('name');
-            $table->string('abbreviation');
+            $table->string('code');
             $table->string('domain', 360);
             $table->boolean('server-maintainance')->default(FALSE);
             $table->boolean('server-down')->default(FALSE);
@@ -23,8 +23,6 @@ return new class extends Migration
             $table->datetime('updated_at')->default(now());
             $table->softDeletes();
         });
-
-        DB::statement('ALTER TABLE systems AUTO_INCREMENT = 10000');
     }
 
     /**

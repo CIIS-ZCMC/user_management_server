@@ -12,16 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('system_roles', function (Blueprint $table) {
-            $table->id();
+            $table->uuid()->primary();
             $table->string('name');
             $table->text('description')->nullable();
-            $table->unsignedBigInteger('system_id')->unsigned();
-            $table->foreign('system_id')->references('id')->on('systems');
+            $table->uuid('system_id');
+            $table->foreign('system_id')->references('uuid')->on('systems');
             $table->softDeletes();
             $table->timestamps();
         });
-
-        DB::statement('ALTER TABLE system_roles AUTO_INCREMENT = 10000');
     }
 
     /**

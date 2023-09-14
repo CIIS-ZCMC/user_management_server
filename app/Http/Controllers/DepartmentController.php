@@ -64,7 +64,7 @@ class DepartmentController extends Controller
     public function update($id, DepartmentRequest $request)
     {
         try{
-            $department = Department::find($id);
+            $department -> Department::find($id);
 
             $cleanData = [];
 
@@ -72,7 +72,7 @@ class DepartmentController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $department = Department::update([$cleanData]);
+            $department -> update([$cleanData]);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){

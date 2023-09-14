@@ -73,7 +73,7 @@ class CivilServiceEligibilityController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $civil_service_eligibility = CivilServiceEligibility::update([$cleanData]);
+            $civil_service_eligibility -> update([$cleanData]);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){

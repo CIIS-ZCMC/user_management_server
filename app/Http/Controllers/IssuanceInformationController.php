@@ -73,7 +73,7 @@ class IssuanceInformationController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $issuance_information = IssuanceInformation::update([$cleanData]);
+            $issuance_information -> update([$cleanData]);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){

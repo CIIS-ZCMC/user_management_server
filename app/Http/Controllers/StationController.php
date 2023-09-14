@@ -72,7 +72,7 @@ class StationController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $station = Station::update([$cleanData]);
+            $station -> update([$cleanData]);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){

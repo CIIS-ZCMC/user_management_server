@@ -73,7 +73,7 @@ class TrainingController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $training = Training::update([$cleanData]);
+            $training -> update([$cleanData]);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){

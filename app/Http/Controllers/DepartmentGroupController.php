@@ -72,7 +72,7 @@ class DepartmentGroupController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $department_group = DepartmentGroup::update([$cleanData]);
+            $department_group -> update([$cleanData]);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
