@@ -20,6 +20,6 @@ class EmploymentPosition extends Model
 
     public function systemRoles()
     {
-        return $this->hasMany(PositionSystemRole::class);
+        return $this->hasMany(PositionSystemRole::class, 'position_system_role_id', 'uuid');
     }
 }

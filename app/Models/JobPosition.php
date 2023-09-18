@@ -12,6 +12,7 @@ class JobPosition extends Model
     protected $table = 'job_positions';
 
     public $fillable = [
+        'uuid',
         'name',
         'code',
         'salary_grade'
@@ -21,6 +22,6 @@ class JobPosition extends Model
 
     public function plantilla()
     {
-        return $this->belongsTo(Plantilla::class);
+        return $this->belongsTo(Plantilla::class, 'job_position_id');
     }
 }

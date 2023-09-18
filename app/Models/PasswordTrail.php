@@ -22,6 +22,6 @@ class PasswordTrail extends Model
 
     public function personalInformation()
     {
-        return $this->belongsTo(PersonalInformation::class);
+        return $this->belongsTo(EmployeeProfile::class, 'uuid');
     }
 }

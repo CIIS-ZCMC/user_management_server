@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use App\Http\Requests\PersonalInformationRequest;
 use App\Models\PersonalInformation;
 
@@ -30,11 +31,14 @@ class PersonalInformationController extends Controller
     public function store(PersonalInformationRequest $request)
     {
         try{
+            return 'test';
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
                 $cleanData[$key] = strip_tags($value);
             }
+
+            $cleanData['uuid'] = Str::uuid();
 
             $personal_information = PersonalInformation::create([$cleanData]);
 

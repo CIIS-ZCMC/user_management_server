@@ -19,8 +19,13 @@ class Department extends Model
 
     public $timestamps = TRUE;
 
-    public function employee()
+    public function employeeProfile()
     {
-        return $this->hasMany(EmployeeProfile::class);
+        return $this->hasMany(EmployeeProfile::class, 'department_id', 'uuid');
+    }
+
+    public function departmentGroup()
+    {
+        return $this->hasOne(DepartmentGroup::class, 'uuid');
     }
 }

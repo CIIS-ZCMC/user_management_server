@@ -15,15 +15,15 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::namespace('App\Http\Controllers')->group(function () {
-    Route::post('signin', 'UserController@signIn');
-    Route::post('send-otp', 'UserController@sendOTPEmail');
-    Route::post('validate-otp', 'UserController@validateOTP');
-    Route::post('reset-password', 'UserController@resetPassword');
+    Route::post('signin', 'EmployeeProfileController@signIn');
+    Route::post('send-otp', 'EmployeeProfileController@sendOTPEmail');
+    Route::post('validate-otp', 'EmployeeProfileController@validateOTP');
+    Route::post('reset-password', 'EmployeeProfileController@resetPassword');
 });
 
 Route::middleware('auth.cookie')->group(function(){
     Route::namespace('App\Http\Controllers')->group(function(){
-        Route::post('authenticity-check', 'UserController@isAuthenticated');
+        Route::post('authenticity-check', 'EmployeeProfileController@isAuthenticated');
 
         /**
          * User Module

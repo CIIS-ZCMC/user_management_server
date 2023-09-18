@@ -18,13 +18,13 @@ class EmployeeStation extends Model
 
     public $timestamps = TRUE;
 
-    public function employee()
+    public function employeeProfile()
     {
-        return $this->belongsTo(EmployeeProfile::class);
+        return $this->belongsTo(EmployeeProfile::class, 'uuid');
     }
 
     public function jobPosition()
     {
-        return $this->belongsTo(JobPosition::class);
+        return $this->belongsTo(JobPosition::class, 'uuid');
     }
 }

@@ -56,9 +56,10 @@ class UserSeeder extends Seeder
             'job_position_id' => JobPosition::where('code', 'CP III')->first()-> uuid,
             'station_id' => Station::where('code', 'Supply')->first()-> uuid,
             'personal_information_id' => $personalInformation -> uuid,
-            'password' => $encryptedPassword,
+            'password_encrypted' => $encryptedPassword,
             'password_created_date' => now(),
-            'password_expiration_date' => $fortyDaysExpiration
+            'password_expiration_date' => $fortyDaysExpiration,
+            'approved' => now()
         ]);
     }
 }

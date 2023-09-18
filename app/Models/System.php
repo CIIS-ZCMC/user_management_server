@@ -25,8 +25,8 @@ class System extends Model
     
     public $timestamps = TRUE;
 
-    public function systemRole()
+    public function systemRoles()
     {
-        return $this->hasMany(SystemRole::class);
+        return $this->hasMany(SystemRole::class, 'system_id');
     }
 }

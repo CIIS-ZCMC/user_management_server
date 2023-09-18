@@ -14,13 +14,13 @@ class LegalInformationQuestion extends Model
     public $fillable = [
         'content_question',
         'is_sub_question',
-        'legal_information_question_id'
+        'legal_iq_id'
     ];
 
     public $timestamps = TRUE;
 
     public function legalInformation()
     {
-        return $this->hasMany(LegalInformation::class);
+        return $this->hasMany(LegalInformation::class, 'legal_iq_id', 'uuid');
     }
 }

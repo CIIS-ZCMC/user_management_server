@@ -23,11 +23,11 @@ class Plantilla extends Model
 
     public function employees()
     {
-        return $this->hasMany(EmployeeProfile::class);
+        return $this->hasMany(EmployeeProfile::class, 'plantilla_id');
     }
 
     public function jobPosition()
     {
-        return $this->hasMany(JobPosition::class);
+        return $this->hasMany(JobPosition::class, 'uuid');
     }
 }

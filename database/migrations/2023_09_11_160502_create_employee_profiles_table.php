@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('employee_profiles', function (Blueprint $table) {
             $table->uuid()->primary();
+            $table->datetime('email_verified_at')->nullable();
             $table->string('employee_id')->nullable();
             $table->string('profile_url')->nullable();
             $table->date('date_hired')->nullable();
@@ -27,7 +28,7 @@ return new class extends Migration
             $table->foreign('plantilla_id')->references('uuid')->on('plantillas');
             $table->uuid('personal_information_id');
             $table->foreign('personal_information_id')->references('uuid')->on('personal_informations');
-            $table->text('password')->nullable();
+            $table->text('password_encrypted')->nullable();
             $table->datetime('password_created_date');
             $table->datetime('password_expiration_date');
             $table->integer('otp')->nullable();

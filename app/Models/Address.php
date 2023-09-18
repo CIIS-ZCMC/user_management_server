@@ -27,6 +27,6 @@ class Address extends Model
 
     public function personalInformation()
     {
-        return $this->belongsTo(personalInformation::class);
+        return $this->belongsTo(PersonalInformation::class, 'uuid');
     }
 }

@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\DB;
 
+use App\Models\JobPosition;
+use App\Models\System;
 use App\Models\SystemRole;
 use App\Models\PositionSystemRole;
 
@@ -20,18 +22,26 @@ class Authorization
     public function handle(Request $request, Closure $next, $routePermission): Response
     {   
         $user = $request->user;
-        $employee_profile = $user->employmentProfile;
-        $employment_position = $employee_profile->employmentPosition;
+    
+        $jobPosition = JobPosition::where('uuid', $user->job_position_id)->first();
 
-        $positionSystemRoleData = DB::table('position_system_roles as psr')
-            ->select('psr.id')
-            ->join('system_roles as sr', 'sr.id', 'psr.system_roles_id')
-            ->join('systems as s', 's.id', 'sr.system_id')
-            ->where('psr.employment_position_id', $employment_position->id)
-            ->where('s.abbreviation', env('SYSTEM_ABBREVIATION'))
+        list($action, $module) = explode(' ', $routePermission);
+
+        $systemRole = DB::table('systems as s')
+            ->join('system_roles as sr', 'sr.system_id', 's.uuid')
+            ->join('position_system_roles as psr', 'psr.system_role_id', 'sr.uuid')
+            ->join('system_role_permissions as srp', 'srp.system_role_id', 'sr.uuid')
+            ->join('job_positions as jp', 'jp.uuid', 'psr.job_position_id')
+            ->where('jp.uuid', $user->job_position_id)
+            ->where('s.code', env('SYSTEM_ABBREVIATION'))
+            ->where('srp.action', $action)
+            ->where('srp.module', $module)
+            ->select()
             ->first();
 
-        if($positionSystemRoleData === NULL){
+        return response()->json(['message' => $systemRole], 200);
+        
+        if($rolePermissions === null){
             return response()->json(['message'=>'Un-Authorized.'], 401);
         }
 

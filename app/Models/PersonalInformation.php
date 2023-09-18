@@ -12,6 +12,7 @@ class PersonalInformation extends Model
     protected $table = 'personal_informations';
 
     public $fillable = [
+        'uuid',
         'first_name',
         'middle_name',
         'last_name',
@@ -20,7 +21,7 @@ class PersonalInformation extends Model
         'name_title',
         'sex',
         'date_of_birth',
-        'palce_of_birth',
+        'place_of_birth',
         'civil_status',
         'date_of_marriage',
         'citizenship',
@@ -31,53 +32,63 @@ class PersonalInformation extends Model
 
     public $timestamps = TRUE;
 
+    public function employeeName()
+    {
+        $nameExtension = $this->name_extension===NULL?'':' '.$this->name_extion.' ';
+        $nameTitle = $this->name_title===NULL?'': ' '.$this->name_title;
+
+        $name = $this->first_name.' '.$this->last_name.$nameExtension.$nameTitle;
+
+        return $name;
+    }
+
     public function contact()
     {
-        return $this->hasOne(Contact::class);
+        return $this->hasOne(Contact::class, 'personal_information_id');
     }
 
     public function familyBackground()
     {
-        return $this->hasOne(FamilyBackground::class);
+        return $this->hasOne(FamilyBackground::class, 'personal_information_id');
     }
 
     public function identificationNumber()
     {
-        return $this->hasOne(IdentificationNumber::class);
+        return $this->hasOne(IdentificationNumber::class, 'personal_information_id');
     }
 
     public function workExperience()
     {
-        return $this->hasMany(WorkExperiences::class);
+        return $this->hasMany(WorkExperiences::class, 'personal_information_id');
     }
 
     public function training()
     {
-        return $this->hasMany(Training::class);
+        return $this->hasMany(Training::class, 'personal_information_id');
     }
 
     public function otherInformation()
     {
-        return $this->hasMany(OtherInformation::class);
+        return $this->hasMany(OtherInformation::class, 'personal_information_id');
     }
 
     public function civilServiceEligibility()
     {
-        return $this->hasMany(CivilServiceEligibility::class);
+        return $this->hasMany(CivilServiceEligibility::class, 'personal_information_id');
     }
 
     public function references()
     {
-        return $this->hasMany(References::class);
+        return $this->hasMany(References::class, 'personal_information_id');
     }
 
     public function employeeProfile()
     {
-        return $this->hasOne(EmployeeProfile::class);
+        return $this->hasOne(EmployeeProfile::class, 'personal_information_id');
     }
 
     public function passwordTrail()
     {
-        return $this->hasMany(PasswordTrail::class);
+        return $this->hasMany(PasswordTrail::class, 'personal_information_id');
     }
 }

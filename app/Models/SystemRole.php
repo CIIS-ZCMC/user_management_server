@@ -23,12 +23,12 @@ class SystemRole extends Model
 
     public function system()
     {
-        return $this->belongsTo(System::class);
+        return $this->belongsTo(System::class, 'uuid');
     }
 
     public function permissions()
     {
-        return $this->hasMany(SystemRolePermission::class);
+        return $this->hasMany(SystemRolePermission::class, 'system_role_id');
     }
 
     public function hasPermission($routePermission)

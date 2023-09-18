@@ -12,10 +12,16 @@ class LoginTrail extends Model
     protected $table = 'login_trails';
 
     public $fillable = [
+        'uuid',
         'signin_datetime',
         'ip_address',
-        'employee_id'
+        'employee_profile_id'
     ];
 
     public $timestamps = TRUE;
+
+    public function employeeProfile()
+    {
+        return $this->belongsTo(EmployeeProfile::class, 'employee_profile_id', 'uuid');
+    }
 }

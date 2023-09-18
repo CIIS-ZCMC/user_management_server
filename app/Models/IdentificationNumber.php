@@ -27,6 +27,6 @@ class IdentificationNumber extends Model
 
     public function personalInformation()
     {
-        return $this->belongsTo(PersonalInformation::class);
+        return $this->belongsTo(PersonalInformation::class, 'uuid');
     }
 }

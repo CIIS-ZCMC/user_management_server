@@ -12,10 +12,16 @@ class Station extends Model
     protected $table = 'stations';
 
     public $fillable = [
+        'uuid',
         'name',
         'code',
         'department_id'
     ];
 
     public $timestamps = TRUE;
+
+    public function employeeProfiles()
+    {
+        return $this->hasMany(EmployeeProfile::class, 'station_id');
+    }
 }

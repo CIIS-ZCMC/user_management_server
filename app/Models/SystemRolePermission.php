@@ -23,7 +23,7 @@ class SystemRolePermission extends Model
 
     public function systemRole()
     {
-        return $this->belongsTo(SystemRole::class);
+        return $this->belongsTo(SystemRole::class, 'uuid');
     }
  
     public function validate($permission)

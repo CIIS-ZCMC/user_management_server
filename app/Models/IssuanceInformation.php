@@ -16,13 +16,13 @@ class IssuanceInformation extends Model
         'govt_issued_id',
         'ctct_issued_date',
         'ctc_issued_at',
-        'employee_profile_id'
+        'personal_information_id'
     ];
 
     public $timestamps = TRUE;
     
     public function personalInformation()
     {
-        return $this->belongsTo(PersonalInformation::class);
+        return $this->belongsTo(PersonalInformation::class, 'uuid');
     }
 }

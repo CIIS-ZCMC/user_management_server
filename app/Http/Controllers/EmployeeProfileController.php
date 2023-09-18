@@ -5,15 +5,126 @@ namespace App\Http\Controllers;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;   
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use App\Http\Requests\SignInRequest;
 use App\Http\Requests\EmployeeProfileRequest;
+use App\Http\Resources\EmployeeProfileResource;
+use App\Http\Resources\SignInResource;
 use App\Models\EmployeeProfile;
+use App\Models\LoginTrail;
 
-use App\Http\Requests\ProfileRequest;
-
-class ProfileController extends Controller
+class EmployeeProfileController extends Controller
 {
+    public function signIn(SignInRequest $request)
+    {
+        try {
+            
+            $cleanData = [];
+
+            foreach ($request->all() as $key => $value) {
+                if($key === 'public_key'){
+                    break;
+                }
+                $cleanData[$key] = strip_tags($value);
+            }
+
+            $user = EmployeeProfile::where('employee_id', $cleanData['employee_id'])->first();
+
+            if (!$user) {
+                return response()->json(['message' => "Employee id or password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }            
+
+            $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
+
+            if (!Hash::check($cleanData['password'].env("SALT_VALUE"), $decryptedPassword)) {
+                return response()->json(['message' => "Employee id or password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+            
+            if(!$user->isDeactivated()){
+                return response()->json(['message' => "Account is deactivated."], Response::HTTP_FORBIDDEN);
+            }
+
+            if (!$user->isAprroved()) {
+                return response()->json(['message' => "Your account is not approved yet."], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $token = $user->createToken();
+
+            $personal_information = $user->personalInformation;
+
+            $name = $personal_information->employeeName();
+            $position = $user->position->name;
+            $department = $user->department->name;
+
+            $dataToEncrypt = [
+                'name' => $name,
+                'department' => $department,
+                'position' => $position
+            ];
+
+            LoginTrail::create([
+                'uuid' => Str::uuid(),
+                'signin_datetime' => now(),
+                'ip_address' => $request->ip(),
+                'employee_profile_id' => $user['uuid']
+            ]);
+
+            return response()
+                ->json(['data' =>  $dataToEncrypt], Response::HTTP_OK)
+                ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), true);
+        } catch (\Throwable $th) {
+            $this->errorLog('authenticate', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function isAuthenticated(Request $request)
+    {
+        try{
+            $user = $request->user;
+
+            $personal_information = $user->personalInformation;
+
+            $name = $personal_information->employeeName();
+            $position = $user->position->name;
+            $department = $user->department->name;
+
+            $dataToEncrypt = [
+                'name' => $name,
+                'department' => $department,
+                'position' => $position
+            ];
+
+            return response()->json(['data' => $dataToEncrypt], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->errorLog('isAuthenticated', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function signOut(Request $request)
+    {
+        try{
+            $user = $request->user;
+    
+            $accessToken = $user->accessToken;
+            
+            foreach ($accessToken as $token) {
+                $token->delete();
+            }
+
+            return response()->json(['data' => '/'], Response::HTTP_OK)->cookie(env('COOKIE_NAME'), '', -1);;
+        }catch(\Throwable $th){
+            $this->errorLog('logout', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public function index(Request $request)
     {
         try{
@@ -23,7 +134,7 @@ class ProfileController extends Controller
                 return EmployeeProfile::all();
             });
 
-            return response()->json(['data' => $employee_profiles], Response::HTTP_OK);
+            return response()->json(['data' => EmployeeProfileResource::collection($employee_profiles)], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], 500);
@@ -43,15 +154,6 @@ class ProfileController extends Controller
                 }
 
                 $cleanData[$key] = strip_tags($value);
-            }
-
-            if ($request->file('profile_image')->isValid()) {
-                $file = $request->file('profile_image');
-                $fileName = 'file_name.png';
-    
-                $file->move(public_path('employee/profiles'), $fileName);
-    
-                return response()->json(['message' => 'File uploaded successfully'], 200);
             }
 
             $employee_profile = EmployeeProfile::create([$cleanData]);

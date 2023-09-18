@@ -15,13 +15,13 @@ class LegalInformation extends Model
         'employee_id',
         'details',
         'answer',
-        'legal_information_question_id'
+        'legal_iq_id'
     ];
 
     public $timestamps = TRUE;
 
     public function legalInformationQuestion()
     {
-        return $this->belongsTo(LegalInformationQuestion::class);
+        return $this->belongsTo(LegalInformationQuestion::class, 'uuid', 'legal_iq_id');
     }
 }
