@@ -10,6 +10,8 @@ class FamilyBackground extends Model
     use HasFactory;
 
     protected $table = 'family_backgrounds';
+    protected $primaryKey = 'uuid';
+    public $incrementing = false;
 
     public $fillable = [
         'spouse',

@@ -10,6 +10,8 @@ class LegalInformationQuestion extends Model
     use HasFactory;
 
     protected $table = 'legal_information_questions';
+    protected $primaryKey = 'uuid';
+    public $incrementing = false;
 
     public $fillable = [
         'content_question',

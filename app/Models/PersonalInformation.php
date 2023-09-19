@@ -11,6 +11,9 @@ class PersonalInformation extends Model
 
     protected $table = 'personal_informations';
 
+    protected $primaryKey = 'uuid';
+    public $incrementing = false;
+    
     public $fillable = [
         'uuid',
         'first_name',

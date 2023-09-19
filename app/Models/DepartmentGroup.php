@@ -10,6 +10,8 @@ class DepartmentGroup extends Model
     use HasFactory;
 
     protected $table = 'department_groups';
+    protected $primaryKey = 'uuid';
+    public $incrementing = false;
 
     public $fillable = [
         'code',

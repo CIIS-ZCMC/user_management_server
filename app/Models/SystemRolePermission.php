@@ -10,6 +10,8 @@ class SystemRolePermission extends Model
     use HasFactory;
 
     protected $table = 'system_role_permissions';
+    protected $primaryKey = 'uuid';
+    public $incrementing = false;
 
     public $fillable = [
         'action',
@@ -26,10 +28,15 @@ class SystemRolePermission extends Model
         return $this->belongsTo(SystemRole::class, 'uuid');
     }
  
-    public function validate($permission)
+    public function validate($routePermission)
     {
-        list($action, $module) = explode(' ', $permission);
+        list($action, $module) = explode(' ', $routePermission);
 
         return $this->action === $action && $this->module===$module;
+    }
+
+    public function positionSystemRole()
+    {
+        return $this->hasMany(PositionSystemRole::class, 'uuid', 'system_role_id');
     }
 }

@@ -10,6 +10,8 @@ class IssuanceInformation extends Model
     use HasFactory;
 
     protected $table = 'issuance_informations';
+    protected $primaryKey = 'uuid';
+    public $incrementing = false;
 
     public $fillable = [
         'license_no',

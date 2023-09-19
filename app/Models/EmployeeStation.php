@@ -10,6 +10,8 @@ class EmployeeStation extends Model
     use HasFactory;
 
     protected $table = 'employee_stations';
+    protected $primaryKey = 'uuid';
+    public $incrementing = false;
 
     public $fillable = [
         'employee_profile_id',

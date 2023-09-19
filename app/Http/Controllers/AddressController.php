@@ -4,8 +4,12 @@ namespace App\Http\Controllers;
 
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use App\Http\Requests\AddressRequest;
+use App\Http\Resources\AddressResource;
 use App\Models\Address;
 
 class AddressController extends Controller
@@ -19,23 +23,41 @@ class AddressController extends Controller
                 return Address::all();
             });
 
-            return response()->json(['data' => $addresses], Response::HTTP_OK);
+            return response()->json(['data' => AddressResource::collection($addresses)], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], 500);
         }
     }
+
+    public function employeeAddress($id, Request $request)
+    {
+        try{
+            $addresses = Address::where('personal_information_id', $id)->get();
+
+            return response()->json(['data' => AddressResource::collection($addresses)], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->errorLog('employeeAddress', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], 500);
+        }
+    }
     
-    public function store(AddressRequest $request)
+    public function store(Request $request)
     {
         try{
             $cleanData = [];
+            
+            $cleanData['uuid'] = Str::uuid();
 
             foreach ($request->all() as $key => $value) {
-                $cleanData[$key] = strip_tags($value);
+                if (is_bool($value) || $value === null) {
+                    $cleanData[$key] = $value;
+                } else {
+                    $cleanData[$key] = strip_tags($value);
+                }
             }
 
-            $address = Address::create([$cleanData]);
+            $address = Address::create($cleanData);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -66,13 +88,22 @@ class AddressController extends Controller
         try{
             $address = Address::find($id);
 
+            if(!$address)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                $cleanData[$key] = strip_tags($value);
+                if (is_bool($value) || $value === null) {
+                    $cleanData[$key] = $value;
+                } else {
+                    $cleanData[$key] = strip_tags($value);
+                }
             }
 
-            $address -> update([$cleanData]);
+            $address->update($cleanData);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -91,7 +122,7 @@ class AddressController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $address -> delete();
+            $address->delete();
             
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){

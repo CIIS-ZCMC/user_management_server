@@ -10,6 +10,8 @@ class PasswordTrail extends Model
     use HasFactory;
 
     protected $table = 'password_trails';
+    protected $primaryKey = 'uuid';
+    public $incrementing = false;
 
     public $fillable = [
         'old_password',

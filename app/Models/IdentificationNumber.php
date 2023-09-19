@@ -10,6 +10,8 @@ class IdentificationNumber extends Model
     use HasFactory;
 
     protected $table = 'identification_numbers';
+    protected $primaryKey = 'uuid';
+    public $incrementing = false;
 
     public $fillable = [
         'gsis_id_no',

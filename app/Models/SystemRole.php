@@ -11,6 +11,8 @@ class SystemRole extends Model
     use HasFactory;
 
     protected $table = 'system_roles';
+    protected $primaryKey = 'uuid';
+    public $incrementing = false;
 
     protected $fillable = [
         "name",
@@ -28,16 +30,20 @@ class SystemRole extends Model
 
     public function permissions()
     {
-        return $this->hasMany(SystemRolePermission::class, 'system_role_id');
+        return $this->hasMany(SystemRolePermission::class, 'system_role_id', 'uuid');
     }
 
     public function hasPermission($routePermission)
     {
-        $permissions = $this->permissions;
+        // $permissions = $this->permissions;
 
-        return $permissions->contains(function ($permission) {
-            return $permission->validate($routePermission);
-        });
+        list($module, $action) = explode(' ', $routePermission);
+        $permission = SystemRolePermission::where('system_role_id',  $this->uuid)->where('action', $action)->where('module', $module)->first();
+
+        return $permission;
+        // return $permissions->contains(function ($permission) use ($routePermission) {
+        //     return $permission->validate($routePermission);
+        // });
     }
 }
     

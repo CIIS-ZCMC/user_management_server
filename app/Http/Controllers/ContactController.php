@@ -6,7 +6,10 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 use App\Http\Requests\ContactRequest;
+use App\Http\Resources\ContactResource;
 use App\Models\Contact;
 
 class ContactController extends Controller
@@ -20,23 +23,41 @@ class ContactController extends Controller
                 return Contact::all();
             });
 
-            return response()->json(['data' => $contacts], Response::HTTP_OK);
+            return response()->json(['data' => ContactResource::collection($contacts)], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], 500);
         }
     }
     
-    public function store(ContactRequest $request)
+    public function employeeContact($id, Request $request)
+    {
+        try{
+            $contact = Contact::where('personal_information_id', $id)->get();
+
+            return response()->json(['data' => new ContactResource($contact)], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->errorLog('index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], 500);
+        }
+    }
+    
+    public function store(Request $request)
     {
         try{ 
             $cleanData = [];
 
+            $cleanData['uuid'] = Str::uuid();
             foreach ($request->all() as $key => $value) {
+                if($key === 'email')
+                {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $contact = Contact::create([$cleanData]);
+            $contact = Contact::create($cleanData);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -55,7 +76,7 @@ class ContactController extends Controller
                 return response()->json(['message' => "No record found"], Response::HTTP_NOT_FOUND);
             }
 
-            return response()->json(['data' => $contact], Response::HTTP_OK);
+            return response()->json(['data' => new ContactResource($contact)], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], 500);
@@ -78,7 +99,7 @@ class ContactController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $contact -> update([$cleanData]);
+            $contact -> update($cleanData);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){

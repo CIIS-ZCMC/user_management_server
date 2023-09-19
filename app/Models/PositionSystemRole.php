@@ -10,6 +10,8 @@ class PositionSystemRole extends Model
     use HasFactory;
 
     protected $table = 'position_system_roles';
+    protected $primaryKey = 'uuid';
+    public $incrementing = false;
 
     public $fillable = [
         'job_position_id',

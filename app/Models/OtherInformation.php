@@ -10,6 +10,8 @@ class OtherInformation extends Model
     use HasFactory;
 
     protected $table = 'other_informations';
+    protected $primaryKey = 'uuid';
+    public $incrementing = false;
     
     public $fillable =  [
         'hobbies',

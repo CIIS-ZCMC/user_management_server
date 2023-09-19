@@ -12,21 +12,25 @@ class System extends Model
 
     protected $table = 'systems';
 
+    protected $primaryKey = 'uuid';
+    public $incrementing = false;
+
     protected $fillable = [
+        "uuid",
         "name",
         "domain",
+        "code",
         "server-maintainance",
         "server-down",
         "server-active",
         "created_at",
-        "updated_at",
-        "deleted"
+        "updated_at"
     ];
     
     public $timestamps = TRUE;
 
     public function systemRoles()
     {
-        return $this->hasMany(SystemRole::class, 'system_id');
+        return $this->hasMany(SystemRole::class, 'system_id', 'uuid');
     }
 }

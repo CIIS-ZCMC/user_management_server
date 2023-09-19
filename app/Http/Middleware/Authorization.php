@@ -27,32 +27,22 @@ class Authorization
 
         list($action, $module) = explode(' ', $routePermission);
 
-        $systemRole = DB::table('systems as s')
-            ->join('system_roles as sr', 'sr.system_id', 's.uuid')
-            ->join('position_system_roles as psr', 'psr.system_role_id', 'sr.uuid')
-            ->join('system_role_permissions as srp', 'srp.system_role_id', 'sr.uuid')
-            ->join('job_positions as jp', 'jp.uuid', 'psr.job_position_id')
-            ->where('jp.uuid', $user->job_position_id)
-            ->where('s.code', env('SYSTEM_ABBREVIATION'))
-            ->where('srp.action', $action)
-            ->where('srp.module', $module)
-            ->select()
-            ->first();
+        $system = System::where('code', env('SYSTEM_ABBREVIATION'))->first();
+        $systemRoles = $system->systemRoles;
+        $hasPermission = null;
 
-        return response()->json(['message' => $systemRole], 200);
+        foreach ($systemRoles as $systemRole) {
+            $positionSystemRole = PositionSystemRole::where('system_role_id', $systemRole->uuid)->where('job_position_id', $user->job_position_id)->first();
+            if(!$positionSystemRole){
+                continue;
+            }
+            $hasPermission = $systemRole->hasPermission($routePermission);
+        }
         
-        if($rolePermissions === null){
+        if(!$hasPermission){
             return response()->json(['message'=>'Un-Authorized.'], 401);
         }
-
-        $position_system_role = PositionSystemRole::find($positionSystemRoleData->id);
-        $system_role = SystemRole::find($position_system_role->system_role_id);
-
-        if(!$system_role->hasPermission($routePermission))
-        {
-            return response()->json(['message' => 'Un-Available'],400);
-        }
-
+        
         return $next($request);
     }
 }

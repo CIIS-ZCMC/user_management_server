@@ -10,6 +10,8 @@ class Plantilla extends Model
     use HasFactory;
 
     protected $table = 'plantillas';
+    protected $primaryKey = 'uuid';
+    public $incrementing = false;
 
     public $fillable = [
         'plantilla_no',

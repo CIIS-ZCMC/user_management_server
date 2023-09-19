@@ -10,6 +10,8 @@ class LegalInformation extends Model
     use HasFactory;
 
     protected $table = 'legal_informations';
+    protected $primaryKey = 'uuid';
+    public $incrementing = false;
 
     public $fillable = [
         'employee_id',

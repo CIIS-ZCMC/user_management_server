@@ -4,8 +4,12 @@ namespace App\Http\Controllers;
 
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use App\Http\Requests\JobPositionRequest;
+use App\Http\Resources\JobPositionResource;
 use App\Models\JobPosition;
 
 class JobPositionController extends Controller
@@ -19,7 +23,7 @@ class JobPositionController extends Controller
                 return JobPosition::all();
             });
 
-            return response()->json(['data' => $job_positions], Response::HTTP_OK);
+            return response()->json(['data' => JobPositionResource::collection($job_positions)], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], 500);
@@ -31,13 +35,15 @@ class JobPositionController extends Controller
         try{
             $cleanData = [];
 
+            $cleanData['uuid'] = Str::uuid();
+
             foreach ($request->all() as $key => $value) {
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $job_position = JobPosition::create([$cleanData]);
+            $job_position = JobPosition::create($cleanData);
 
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['data' => $job_position->uuid], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], 500);
@@ -47,14 +53,14 @@ class JobPositionController extends Controller
     public function show($id, Request $request)
     {
         try{
-            $job_position = JobPosition::findOrFail($id);
+            $job_position = JobPosition::find($id);
 
             if(!$job_position)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            return response()->json(['data' => $job_position], Response::HTTP_OK);
+            return response()->json(['data' => new JobPositionResource($job_position)], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], 500);
@@ -72,7 +78,7 @@ class JobPositionController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $job_position -> update([$cleanData]);
+            $job_position -> update($cleanData);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){

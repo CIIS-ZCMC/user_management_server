@@ -11,7 +11,7 @@ class ContactRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,7 +23,7 @@ class ContactRequest extends FormRequest
     {
         return [
             'phone_number' => 'required|string|max:255',  
-            'email' => 'nullable|string|max:255',
+            'email' => 'nullable|email|max:255',
             'personal_information_id' => 'required|integer'
         ];
     }

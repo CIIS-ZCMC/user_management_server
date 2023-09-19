@@ -27,7 +27,7 @@ class AuthenticateWithCookie
         $cookieValue = $request->cookie(env('COOKIE_NAME'));
 
         if (!$cookieValue) {
-            return response()->json(['message' => 'Invalid request.'], Response::HTTP_UNAUTHORIZED);
+            return response()->json(['message' => 'Un-Authorized.'], Response::HTTP_UNAUTHORIZED);
         }
 
 
@@ -38,7 +38,7 @@ class AuthenticateWithCookie
 
         if(!$hasAccessToken)
         {
-            return response() -> json(['message' => 'Invalid request.'], Response::HTTP_UNAUTHORIZED);
+            return response() -> json(['message' => 'Un-Authorized.'], Response::HTTP_UNAUTHORIZED);
         }
 
         $tokenExpTime = Carbon::parse($hasAccessToken->token_exp);

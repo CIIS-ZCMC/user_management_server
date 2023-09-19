@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use App\Http\Requests\PersonalInformationRequest;
 use App\Models\PersonalInformation;
@@ -28,19 +29,19 @@ class PersonalInformationController extends Controller
         }
     }
     
-    public function store(PersonalInformationRequest $request)
+    public function store(Request $request)
     {
         try{
-            return 'test';
+            // return $request;
             $cleanData = [];
+
+            $cleanData['uuid'] = Str::uuid();
 
             foreach ($request->all() as $key => $value) {
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $cleanData['uuid'] = Str::uuid();
-
-            $personal_information = PersonalInformation::create([$cleanData]);
+            $personal_information = PersonalInformation::create($cleanData);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -66,7 +67,7 @@ class PersonalInformationController extends Controller
         }
     }
     
-    public function update($id, PersonalInformationRequest $request)
+    public function update($id, Request $request)
     {
         try{
             $personal_information = PersonalInformation::find($id);
@@ -77,7 +78,7 @@ class PersonalInformationController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $personal_information -> update([$cleanData]);
+            $personal_information->update($cleanData);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){

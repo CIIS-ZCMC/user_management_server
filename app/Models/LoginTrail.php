@@ -10,6 +10,8 @@ class LoginTrail extends Model
     use HasFactory;
 
     protected $table = 'login_trails';
+    protected $primaryKey = 'uuid';
+    public $incrementing = false;
 
     public $fillable = [
         'uuid',

@@ -10,6 +10,8 @@ class EmploymentPosition extends Model
     use HasFactory;
 
     protected $table = 'employment_positions';
+    protected $primaryKey = 'uuid';
+    public $incrementing = false;
 
     public $fillable = [
         'name',

@@ -16,6 +16,8 @@ class EmployeeProfile extends Authenticatable
     use HasFactory;
 
     protected $table = 'employee_profiles';
+    protected $primaryKey = 'uuid';
+    public $incrementing = false;
 
     public $fillable = [
         'employee_id',

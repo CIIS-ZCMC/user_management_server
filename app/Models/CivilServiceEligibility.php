@@ -10,6 +10,8 @@ class CivilServiceEligibility extends Model
     use HasFactory;
 
     protected $table = 'civil_service_eligibilities';
+    protected $primaryKey = 'uuid';
+    public $incrementing = false;
 
     public $fillable = [
         'career_service',

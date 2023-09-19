@@ -11,7 +11,7 @@ class JobPositionRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -24,7 +24,7 @@ class JobPositionRequest extends FormRequest
         return [
             'code' => 'required|string|max:255',
             'name' => 'required|string|max:255',
-            'salary_grade' => 'required|float'
+            'salary_grade' => 'required|integer'
         ];
     }
 }

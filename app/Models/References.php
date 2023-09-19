@@ -10,6 +10,8 @@ class References extends Model
     use HasFactory;
 
     protected $table = 'references';
+    protected $primaryKey = 'uuid';
+    public $incrementing = false;
 
     public $fillable = [
         'name',

@@ -11,7 +11,7 @@ class AddressRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -28,9 +28,9 @@ class AddressRequest extends FormRequest
             'province' => 'required|string|max:255',
             'zip_code' => 'required|string|max:255',
             'country' => 'required|string|max:255',
-            'is_residential' => 'required|bool',
-            'telephone_no' => 'required|string|max:255',
-            'personal_information_id' => 'required|integer'
+            'is_residential' => 'required|boolean',
+            'telephone_no' => 'nullable|string|max:255',
+            'personal_information_id' => 'nullable|string|size:36'
         ];
     }
 }

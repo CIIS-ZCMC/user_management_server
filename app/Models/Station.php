@@ -10,6 +10,8 @@ class Station extends Model
     use HasFactory;
 
     protected $table = 'stations';
+    protected $primaryKey = 'uuid';
+    public $incrementing = false;
 
     public $fillable = [
         'uuid',

@@ -11,7 +11,7 @@ class PersonalInformationRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -34,8 +34,8 @@ class PersonalInformationRequest extends FormRequest
             'civil_status' => 'required|string|max:255',
             'date_of_marriage' => 'nullable|date',
             'citizenship' => 'required|string|max:255',
-            'height' => 'required|number',
-            'weight' => 'required|number',
+            'height' => 'required|integer',
+            'weight' => 'required|integer',
             'agency_employee_no' => 'nullable|string|max:255'
         ];
     }

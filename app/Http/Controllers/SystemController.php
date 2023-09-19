@@ -2,19 +2,29 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
 use App\Models\System;
 
 use App\Http\Requests\SystemRequest;
+use App\Http\Resources\SystemResource;
 
 class SystemController extends Controller
-{   public function index(Request $request)
+{   
+    public function index(Request $request)
     {
         try{
-            $data = System::all();
+            $cacheExpiration = Carbon::now()->addDay();
 
-            return response() -> json(['data' => $data], 200);
+            $systems = Cache::remember('systems', $cacheExpiration, function(){
+                return System::all();
+            });
+
+            return response() -> json(['data' => SystemResource::collection($systems)], 200);
         }catch(\Throwable $th){
             Log::channel('custom-error') -> error("System Controller[index] :".$th -> getMessage());
             return response() -> json(['message' => $th -> getMessage()], 500);
@@ -24,34 +34,22 @@ class SystemController extends Controller
     public function store(SystemRequest $request)
     {
         try{
-            $validator = Validator::make($request->all(), [
-                'name' => 'required|string|max:255',
-                'domain' => 'required|string|max:255'
-            ]);
-            
-            if ($validator->fails()) {
-                return response()->json(['errors' => $validator->errors()], 422);
-            }
-            
-            $data = [
-                'name' => $request->input('name'),
-                'domain' => $request->input('domain')
-            ];
-            
             $cleanData = [];
 
-            foreach ($data as $key => $value) {
+            $cleanData['uuid'] = Str::uuid();
+
+            foreach ($request->all() as $key => $value) {
+                if($key === 'domain')
+                {
+                    $cleanData[$key] = Crypt::encrypt($value);
+                    continue;
+                }
                 $cleanData[$key] = strip_tags($value); 
             }
 
-            $data = System::all();
-            $data -> name = $cleanData['name'];
-            $data -> domain = $cleanData['domain'];
-            $data -> created_at = now();
-            $data -> updated_at = now();
-            $data -> save();
+            $data = System::create($cleanData);
 
-            return response() -> json(['data' => $data], 200);
+            return response() -> json(['data' => 'Success'], 200);
         }catch(\Throwable $th){
             Log::channel('custom-error') -> error("System Controller[store] :".$th -> getMessage());
             return response() -> json(['message' => $th -> getMessage()], 500);
@@ -61,9 +59,9 @@ class SystemController extends Controller
     public function show($id, Request $request)
     {
         try{
-            $data = System::find($id);
+            $system = System::find($id);
 
-            return response() -> json(['data' => $data], 200);
+            return response() -> json(['data' => new SystemResource($system)], 200);
         }catch(\Throwable $th){
             Log::channel('custom-error') -> error("System Controller[show] :".$th -> getMessage());
             return response() -> json(['message' => $th -> getMessage()], 500);
@@ -77,19 +75,19 @@ class SystemController extends Controller
             if (!$data) {
                 return response()->json(['message' => 'No record found.'], 404);
             }
-
-            $data = [
-                'name' => $request->input('name'),
-                'domain' => $request->input('domain')
-            ];
             
             $cleanData = [];
 
-            foreach ($data as $key => $value) {
+            foreach ($request->all() as $key => $value) {
+                if($key === 'domain')
+                {
+                    $cleanData[$key] = Crypt::encrypt($value);
+                    continue;
+                }
                 $cleanData[$key] = strip_tags($value); 
             }
 
-            $data -> update([$cleanData]);
+            $data -> update($cleanData);
 
             return response() -> json(['data' => "Success"], 200);
         }catch(\Throwable $th){

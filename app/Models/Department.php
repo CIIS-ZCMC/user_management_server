@@ -10,6 +10,8 @@ class Department extends Model
     use HasFactory;
 
     protected $table = 'departments';
+    protected $primaryKey = 'uuid';
+    public $incrementing = false;
 
     public $fillable = [
         'name',
