@@ -2,124 +2,110 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
+use App\Http\Requests\SystemRoleRequest;
+use App\Http\Resources\SystemRoleResource;
 use App\Models\SystemRole;
 
 class SystemRoleController extends Controller
-{   public function index(Request $request)
+{   
+    public function index(Request $request)
     {
         try{
-            $data = SystemRole::all();
+            $cacheExpiration = Carbon::now()->addDay();
 
-            return response() -> json(['data' => $data], 200);
+            $systemRoles = Cache::remember('system_roles', $cacheExpiration, function(){
+                return SystemRole::all();
+            });
+
+            return response() -> json(['data' => SystemRoleResource::collection($systemRoles)], Response::HTTP_OK);
         }catch(\Throwable $th){
-            Log::channel('custom-error') -> error("SystemRole Controller[index] :".$th -> getMessage());
-            return response() -> json(['message' => $th -> getMessage()], 500);
+            $this->errorLog('index', $th->getMessage());
+            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function store(Request $request)
+    public function store(SystemRoleRequest $request)
     {
         try{  
-            $validator = Validator::make($request->all(), [
-                'FK_role_ID' => 'required|string|max:255',
-                'FK_system_ID' => 'required|string|max:255',
-                'abilities' => 'required|array'
-            ]);
-            
-            if ($validator->fails()) {
-                return response()->json(['errors' => $validator->errors()], 422);
-            }
-            
-            $data = [
-                'FK_role_ID' => $request->input('FK_role_ID'),
-                'FK_system_ID' => $request->input('FK_system_ID'),
-                'abilities' => $request->input('abilities')
-            ];
-            
             $cleanData = [];
 
-            foreach ($data as $key => $value) {
+            foreach ($request->all() as $key => $value) {
                 $cleanData[$key] = strip_tags($value); 
             }
 
+            $systemRole = SystemRole::create($cleanData);
 
-            $data = SystemRole::all();
-            $data -> FK_role_ID = $cleanData['FK_role_ID'];
-            $data -> FK_system_ID = $cleanData['FK_system_ID'];
-            $data -> abilities = $cleanData['abilities'];
-            $data -> created_at = now();
-            $data -> updated_at = now();
-            $data -> save();
-
-            return response() -> json(['data' => "Success"], 200);
+            return response() -> json(['data' => "Success"], Response::HTTP_OK);
         }catch(\Throwable $th){
-            Log::channel('custom-error') -> error("SystemRole Controller[store] :".$th -> getMessage());
-            return response() -> json(['message' => $th -> getMessage()], 500);
+            $this->errorLog('store', $th->getMessage());
+            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     public function show($id, Request $request)
     {
         try{
-            $data = SystemRole::find($id);
+            $systemRole = SystemRole::find($id);
 
-            return response() -> json(['data' => $data], 200);
+            if(!$systemRole){
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            return response() -> json(['data' => $systemRole], Response::HTTP_OK);
         }catch(\Throwable $th){
-            Log::channel('custom-error') -> error("SystemRole Controller[show] :".$th -> getMessage());
-            return response() -> json(['message' => $th -> getMessage()], 500);
+            $this->errorLog('show', $th->getMessage());
+            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    public function update($id, Request $request)
+    public function update($id, SystemRoleRequest $request)
     {
         try{
-            $data = System::find($id);
+            $systemRole = SystemRole::find($id);
 
-            $validator = Validator::make($request->all(), [
-                'FK_role_ID' => 'required|string|max:255',
-                'FK_system_ID' => 'required|string|max:255',
-                'abilities' => 'required|array'
-            ]);
-            
-            if ($validator->fails()) {
-                return response()->json(['errors' => $validator->errors()], 422);
-            }
-            
-            $data = [
-                'FK_role_ID' => $request->input('FK_role_ID'),
-                'FK_system_ID' => $request->input('FK_system_ID'),
-                'abilities' => $request->input('abilities')
-            ];
-            
             $cleanData = [];
 
-            foreach ($data as $key => $value) {
+            foreach ($request->all() as $key => $value) {
                 $cleanData[$key] = strip_tags($value); 
             }
 
-            $data -> FK_role_ID = $cleanData['FK_role_ID'];
-            $data -> FK_system_ID = $cleanData['FK_system_ID'];
-            $data -> abilities = $cleanData['abilities'];
-            $data -> created_at = now();
-            $data -> updated_at = now();
-            $data -> save();
+            $systemRole -> update($cleanData);
             
-            return response() -> json(['data' => "Success"], 200);
+            return response() -> json(['data' => "Success"], Response::HTTP_OK);
         }catch(\Throwable $th){
-            Log::channel('custom-error') -> error("SystemRole Controller[update] :".$th -> getMessage());
-            return response() -> json(['message' => $th -> getMessage()], 500);
+            $this->errorLog('update', $th->getMessage());
+            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     public function destroy($id, Request $request)
     {
         try{
-            $data = SystemRole::findOrFail($id);
+            $systemRole = SystemRole::findOrFail($id);
+
+            if(!$systemRole){
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
             $data -> delete();
 
-            return response() -> json(['data' => 'Success'], 200);
+            return response() -> json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            Log::channel('custom-error') -> error("SystemRole Controller[destroy] :".$th -> getMessage());
-            return response() -> json(['message' => $th -> getMessage()], 500);
+            $this->errorLog('destroy', $th->getMessage());
+            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    protected function infoLog($module, $message)
+    {
+        Log::channel('custom-info')->info('Personal Information Controller ['.$module.']: message: '.$errorMessage);
+    }
+
+    protected function errorLog($module, $errorMessage)
+    {
+        Log::channel('custom-error')->error('Personal Information Controller ['.$module.']: message: '.$errorMessage);
     }
 }

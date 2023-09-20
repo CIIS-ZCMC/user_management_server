@@ -14,6 +14,7 @@ class OtherInformation extends Model
     public $incrementing = false;
     
     public $fillable =  [
+        'uuid',
         'hobbies',
         'recognition',
         'organization',
@@ -24,6 +25,6 @@ class OtherInformation extends Model
 
     public function personalInformation()
     {
-        return $this->belongsTo(PersonalInformation::class, 'uuid');
+        return $this->belongsTo(PersonalInformation::class, 'personal_information_id','uuid');
     }
 }

@@ -15,8 +15,8 @@ return new class extends Migration
             $table->uuid()->primary();
             $table->string('name');
             $table->string('code')->nullable();
-            $table->uuid('department_group_id')->nullable();
-            $table->foreign('department_group_id')->references('uuid')->on('department_groups');
+            $table->uuid('division_id')->nullable();
+            $table->foreign('division_id')->references('uuid')->on('divisions');
             $table->timestamps();
         });
     }

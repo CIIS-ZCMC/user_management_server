@@ -26,4 +26,9 @@ class Station extends Model
     {
         return $this->hasMany(EmployeeProfile::class, 'station_id');
     }
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class, 'department_id', 'uuid');
+    }
 }

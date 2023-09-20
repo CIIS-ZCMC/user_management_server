@@ -26,7 +26,7 @@ class AddressController extends Controller
             return response()->json(['data' => AddressResource::collection($addresses)], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('index', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -38,7 +38,7 @@ class AddressController extends Controller
             return response()->json(['data' => AddressResource::collection($addresses)], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('employeeAddress', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
@@ -62,7 +62,7 @@ class AddressController extends Controller
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('index', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
@@ -79,7 +79,7 @@ class AddressController extends Controller
             return response()->json(['data' => $address], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('index', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
@@ -108,7 +108,7 @@ class AddressController extends Controller
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('index', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
@@ -127,17 +127,17 @@ class AddressController extends Controller
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('index', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
     protected function infoLog($module, $message)
     {
-        Log::channel('custom-info')->info('Personal Information Controller ['.$module.']: message: '.$errorMessage);
+        Log::channel('custom-info')->info('Address Controller ['.$module.']: message: '.$errorMessage);
     }
 
     protected function errorLog($module, $errorMessage)
     {
-        Log::channel('custom-error')->error('Personal Information Controller ['.$module.']: message: '.$errorMessage);
+        Log::channel('custom-error')->error('Address Controller ['.$module.']: message: '.$errorMessage);
     }
 }

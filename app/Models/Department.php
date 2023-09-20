@@ -14,9 +14,10 @@ class Department extends Model
     public $incrementing = false;
 
     public $fillable = [
+        'uuid',
         'name',
         'code',
-        'department_group_id'
+        'division_id'
     ];
 
     public $timestamps = TRUE;
@@ -26,8 +27,8 @@ class Department extends Model
         return $this->hasMany(EmployeeProfile::class, 'department_id', 'uuid');
     }
 
-    public function departmentGroup()
+    public function division()
     {
-        return $this->hasOne(DepartmentGroup::class, 'uuid');
+        return $this->belongsTo(Division::class, 'division_id', 'uuid');
     }
 }

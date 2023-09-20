@@ -4,12 +4,13 @@ namespace App\Http\Controllers;
 
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
-use App\Models\System;
 
+use App\Models\System;
 use App\Http\Requests\SystemRequest;
 use App\Http\Resources\SystemResource;
 
@@ -24,10 +25,10 @@ class SystemController extends Controller
                 return System::all();
             });
 
-            return response() -> json(['data' => SystemResource::collection($systems)], 200);
+            return response() -> json(['data' => SystemResource::collection($systems)], Response::HTTP_OK);
         }catch(\Throwable $th){
-            Log::channel('custom-error') -> error("System Controller[index] :".$th -> getMessage());
-            return response() -> json(['message' => $th -> getMessage()], 500);
+            $this->errorLog('index', $th->getMessage());
+            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
@@ -49,10 +50,10 @@ class SystemController extends Controller
 
             $data = System::create($cleanData);
 
-            return response() -> json(['data' => 'Success'], 200);
+            return response() -> json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            Log::channel('custom-error') -> error("System Controller[store] :".$th -> getMessage());
-            return response() -> json(['message' => $th -> getMessage()], 500);
+            $this->errorLog('store', $th->getMessage());
+            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -61,10 +62,10 @@ class SystemController extends Controller
         try{
             $system = System::find($id);
 
-            return response() -> json(['data' => new SystemResource($system)], 200);
+            return response() -> json(['data' => new SystemResource($system)], Response::HTTP_OK);
         }catch(\Throwable $th){
-            Log::channel('custom-error') -> error("System Controller[show] :".$th -> getMessage());
-            return response() -> json(['message' => $th -> getMessage()], 500);
+            $this->errorLog('show', $th->getMessage());
+            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     public function update($id, SystemRequest $request)
@@ -89,22 +90,37 @@ class SystemController extends Controller
 
             $data -> update($cleanData);
 
-            return response() -> json(['data' => "Success"], 200);
+            return response() -> json(['data' => "Success"], Response::HTTP_OK);
         }catch(\Throwable $th){
-            Log::channel('custom-error') -> error("System Controller[update] :".$th -> getMessage());
-            return response() -> json(['message' => $th -> getMessage()], 500);
+            $this->errorLog('update', $th->getMessage());
+            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     public function destroy($id, Request $request)
     {
         try{
-            $data = System::findOrFail($id);
-            $data -> delete();
+            $system = System::findOrFail($id);
 
-            return response() -> json(['data' => 'Success'], 200);
+            if(!$system){
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $system -> delete();
+
+            return response() -> json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            Log::channel('custom-error') -> error("System Controller[destroy] :".$th -> getMessage());
-            return response() -> json(['message' => $th -> getMessage()], 500);
+            $this->errorLog('destroy', $th->getMessage());
+            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    protected function infoLog($module, $message)
+    {
+        Log::channel('custom-info')->info('Station Controller ['.$module.']: message: '.$errorMessage);
+    }
+
+    protected function errorLog($module, $errorMessage)
+    {
+        Log::channel('custom-error')->error('Station Controller ['.$module.']: message: '.$errorMessage);
     }
 }

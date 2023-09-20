@@ -14,6 +14,7 @@ class References extends Model
     public $incrementing = false;
 
     public $fillable = [
+        'uuid',
         'name',
         'address',
         'contact_no',
@@ -24,6 +25,6 @@ class References extends Model
 
     public function personalInformation()
     {
-        return $this->belongsTo(PersonalInformation::class, 'uuid');
+        return $this->belongsTo(PersonalInformation::class, 'uuid', 'personal_information_id');
     }
 }

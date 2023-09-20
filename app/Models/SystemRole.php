@@ -35,15 +35,10 @@ class SystemRole extends Model
 
     public function hasPermission($routePermission)
     {
-        // $permissions = $this->permissions;
-
         list($module, $action) = explode(' ', $routePermission);
         $permission = SystemRolePermission::where('system_role_id',  $this->uuid)->where('action', $action)->where('module', $module)->first();
 
         return $permission;
-        // return $permissions->contains(function ($permission) use ($routePermission) {
-        //     return $permission->validate($routePermission);
-        // });
     }
 }
     

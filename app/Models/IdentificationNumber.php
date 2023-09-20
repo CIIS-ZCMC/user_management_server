@@ -14,6 +14,7 @@ class IdentificationNumber extends Model
     public $incrementing = false;
 
     public $fillable = [
+        'uuid',
         'gsis_id_no',
         'pag_ibig_id_no',
         'philhealth_id_no',
@@ -30,5 +31,39 @@ class IdentificationNumber extends Model
     public function personalInformation()
     {
         return $this->belongsTo(PersonalInformation::class, 'uuid');
+    }
+
+    public function decryptData($toEncrypt)
+    {
+        $encryptedData = null;
+
+        switch($toEncrypt){
+            case 'gsis_id_no':
+                $encryptedData = $this->gsis_id_no;
+                break;
+            case 'pag_ibig_id_no':
+                $encryptedData = $this->pag_ibig_id_no;
+                break;
+            case 'philhealth_id_no':
+                $encryptedData = $this->philhealth_id_no;
+                break;
+            case 'sss_id_no':
+                $encryptedData = $this->sss_id_no;
+                break;
+            case 'prc_id_no':
+                $encryptedData = $this->prc_id_no;
+                break;
+            case 'tin_id_no':
+                $encryptedData = $this->tin_id_no;
+                break;
+            case 'rdo_no':
+                $encryptedData = $this->rdo_no;
+                break;
+            case 'bank_account_no':
+                $encryptedData = $this->bank_account_no;
+                break;
+        }
+
+        return openssl_decrypt($encryptedData, env("ENCRYPT_DECRYPT_ALGORITHM"), env("DATA_KEY_ENCRYPTION"), 0, substr(md5(env("DATA_KEY_ENCRYPTION")), 0, 16));
     }
 }

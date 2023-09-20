@@ -14,6 +14,7 @@ class Plantilla extends Model
     public $incrementing = false;
 
     public $fillable = [
+        'uuid',
         'plantilla_no',
         'tranche',
         'date',
@@ -25,11 +26,11 @@ class Plantilla extends Model
 
     public function employees()
     {
-        return $this->hasMany(EmployeeProfile::class, 'plantilla_id');
+        return $this->hasMany(EmployeeProfile::class, 'plantilla_id', 'uuid');
     }
 
     public function jobPosition()
     {
-        return $this->hasMany(JobPosition::class, 'uuid');
+        return $this->belongsTo(JobPosition::class, 'job_position_id', 'uuid');
     }
 }

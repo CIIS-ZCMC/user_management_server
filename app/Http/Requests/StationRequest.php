@@ -11,7 +11,7 @@ class StationRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -21,10 +21,17 @@ class StationRequest extends FormRequest
      */
     public function rules(): array
     {
+        if($this->department_id === null){
+            return [
+                'code' => 'required|string|max:255',
+                'name' => 'required|string|max:255'
+            ];
+        }
+
         return [
             'code' => 'required|string|max:255',
             'name' => 'required|string|max:255',
-            'department_id' => 'required|integer'
+            'department_id' => 'nullable|string|size:36'
         ];
     }
 }

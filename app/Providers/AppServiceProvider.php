@@ -5,20 +5,56 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
 
-use App\Models\PersonalInformation;
-use App\Observers\PersonalInformationObserver;
-
-use App\Models\System;
-use App\Observers\SystemObserver;
-
-use App\Models\JobPosition;
-use App\Observers\JobPositionObserver;
-
 use App\Models\Address;
 use App\Observers\AddressObserver;
 
 use App\Models\Contact;
 use App\Observers\ContactObserver;
+
+use App\Models\Department;
+use App\Observers\DepartmentObserver;
+
+use App\Models\Division;
+use App\Observers\DivisionObserver;
+
+use App\Models\FamilyBackground;
+use App\Observers\FamilyBackgroundObserver;
+
+use App\Models\JobPosition;
+use App\Observers\JobPositionObserver;
+
+use App\Models\IdentificationNumber;
+use App\Observers\IdentificationNumberObserver;
+
+use App\Models\LegalInformationQuestion;
+use App\Observers\LegalInformationQuestionObserver;
+
+use App\Models\OtherInformation;
+use App\Observers\OtherInformationObserver;
+
+use App\Models\PersonalInformation;
+use App\Observers\PersonalInformationObserver;
+
+use App\Models\Plantilla;
+use App\Observers\PlantillaObserver;
+
+use App\Models\References;
+use App\Observers\ReferencesObserver;
+
+use App\Models\Station;
+use App\Observers\StationObserver;
+
+use App\Models\System;
+use App\Observers\SystemObserver;
+
+use App\Models\SystemRole;
+use App\Observers\SystemRoleObserver;
+
+use App\Models\Training;
+use App\Observers\TrainingObserver;
+
+use App\Models\WorkExperience;
+use App\Observers\WorkExperienceObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -37,9 +73,21 @@ class AppServiceProvider extends ServiceProvider
     {
         Schema::defaultStringLength(191);
         Address::observe(AddressObserver::class);
-        PersonalInformation::observe(PersonalInformationObserver::class);
-        JobPosition::observe(JobPositionObserver::class);
-        System::observe(SystemObserver::class);
         Contact::observe(ContactObserver::class);
+        Department::observe(DepartmentObserver::class);
+        Division::observe(DivisionObserver::class);
+        FamilyBackground::observe(FamilyBackgroundObserver::class);
+        JobPosition::observe(JobPositionObserver::class);
+        IdentificationNumber::observe(IdentificationNumberObserver::class);
+        LegalInformationQuestion::observe(LegalInformationQuestionObserver::class);
+        OtherInformation::observe(OtherInformationObserver::class);
+        PersonalInformation::observe(PersonalInformationObserver::class);
+        Plantilla::observe(PlantillaObserver::class);
+        References::observe(ReferencesObserver::class);
+        Station::observe(StationObserver::class);
+        System::observe(SystemObserver::class);
+        SystemRole::observe(SystemRoleObserver::class);
+        Training::observe(TrainingObserver::class);
+        WorkExperience::observe(WorkExperienceObserver::class);
     }
 }

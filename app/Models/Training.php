@@ -10,8 +10,11 @@ class Training extends Model
     use HasFactory;
 
     protected $table = 'trainings';
+    protected $primaryKey = 'uuid';
+    public $incrementing = false;
 
     public $fillable = [
+        'uuid',
         'inclusive_date',
         'is_lnd',
         'conducted_by',
@@ -23,6 +26,6 @@ class Training extends Model
 
     public function personalInformation()
     {
-        return $this->belongsTo(PersonalInformation::class, 'uuid');
+        return $this->belongsTo(PersonalInformation::class, 'uuid', 'personal_information_id');
     }
 }

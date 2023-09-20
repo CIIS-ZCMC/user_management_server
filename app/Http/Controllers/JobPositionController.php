@@ -26,7 +26,7 @@ class JobPositionController extends Controller
             return response()->json(['data' => JobPositionResource::collection($job_positions)], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('index', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
@@ -46,7 +46,7 @@ class JobPositionController extends Controller
             return response()->json(['data' => $job_position->uuid], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('index', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
@@ -63,7 +63,7 @@ class JobPositionController extends Controller
             return response()->json(['data' => new JobPositionResource($job_position)], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('index', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
@@ -83,7 +83,7 @@ class JobPositionController extends Controller
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('index', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
@@ -102,17 +102,17 @@ class JobPositionController extends Controller
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('index', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
     protected function infoLog($module, $message)
     {
-        Log::channel('custom-info')->info('Personal Information Controller ['.$module.']: message: '.$errorMessage);
+        Log::channel('custom-info')->info('Job Position Controller ['.$module.']: message: '.$errorMessage);
     }
 
     protected function errorLog($module, $errorMessage)
     {
-        Log::channel('custom-error')->error('Personal Information Controller ['.$module.']: message: '.$errorMessage);
+        Log::channel('custom-error')->error('Job Position Controller ['.$module.']: message: '.$errorMessage);
     }
 }

@@ -11,7 +11,7 @@ class LegalInformationQuestionRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -21,9 +21,16 @@ class LegalInformationQuestionRequest extends FormRequest
      */
     public function rules(): array
     {
+        if($this->legal_iq_id === null){
+            return [
+                'content_question' => 'required|string|max:255',
+                'is_sub_question' => 'required|boolean',
+            ];
+        }
+        
         return [
             'content_question' => 'required|string|max:255',
-            'is_sub_question' => 'required|bool',
+            'is_sub_question' => 'required|boolean',
             'legal_information_question_id' => 'required|integer',
         ];
     }

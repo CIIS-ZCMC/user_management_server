@@ -26,34 +26,29 @@ class ContactController extends Controller
             return response()->json(['data' => ContactResource::collection($contacts)], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('index', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
     public function employeeContact($id, Request $request)
     {
         try{
-            $contact = Contact::where('personal_information_id', $id)->get();
+            $contact = Contact::where('personal_information_id', $id)->first();
 
             return response()->json(['data' => new ContactResource($contact)], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('index', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function store(Request $request)
+    public function store(ContactRequest $request)
     {
         try{ 
             $cleanData = [];
 
             $cleanData['uuid'] = Str::uuid();
             foreach ($request->all() as $key => $value) {
-                if($key === 'email')
-                {
-                    $cleanData[$key] = $value;
-                    continue;
-                }
                 $cleanData[$key] = strip_tags($value);
             }
 
@@ -62,11 +57,11 @@ class ContactController extends Controller
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('store', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function show(Request $request)
+    public function show($id, Request $request)
     {
         try{  
             $contact = Contact::find($id);
@@ -79,14 +74,14 @@ class ContactController extends Controller
             return response()->json(['data' => new ContactResource($contact)], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('show', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function update($id, ContactRequest $request)
+    public function update($id, Request $request)
     {
         try{ 
-            $contact = Contact::find($id);
+            $contact = Contact::where("personal_information_id", $id)->first();
 
             if(!$contact)
             {
@@ -104,14 +99,14 @@ class ContactController extends Controller
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('update', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
     public function destroy($id, Request $request)
     {
         try{
-            $contact = Contact::findOrFail($id);
+            $contact = Contact::where("personal_information_id", $id)->first();
 
             if(!$contact)
             {
@@ -123,7 +118,7 @@ class ContactController extends Controller
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('destroy', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 

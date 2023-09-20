@@ -11,7 +11,7 @@ class DepartmentRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -24,7 +24,7 @@ class DepartmentRequest extends FormRequest
         return [
             'code' => 'required|string|max:255',
             'name' => 'required|string|max:255',
-            'department_group_id' => 'required|integer'
+            'division_id' => 'required|string|size:36'
         ];
     }
 }

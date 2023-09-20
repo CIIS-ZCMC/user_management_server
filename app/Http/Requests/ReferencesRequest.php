@@ -11,7 +11,7 @@ class ReferencesRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -21,11 +21,19 @@ class ReferencesRequest extends FormRequest
      */
     public function rules(): array
     {
+        if($this->personal_information_id === null){
+            return [
+                'name' => 'required|string|max:255',
+                'address' => 'required|string|max:255',
+                'contact_no' => 'required|string|max:255'
+            ];
+        }
+
         return [
             'name' => 'required|string|max:255',
             'address' => 'required|string|max:255',
             'contact_no' => 'required|string|max:255',
-            'personal_information_id' => 'required|integer',
+            'personal_information_id' => 'required|string|size:36',
         ];
     }
 }

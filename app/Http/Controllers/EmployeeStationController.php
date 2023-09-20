@@ -22,7 +22,7 @@ class EmployeeStationController extends Controller
             return response()->json(['data' => $employee_stations], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('index', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
@@ -40,7 +40,7 @@ class EmployeeStationController extends Controller
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('index', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
@@ -57,7 +57,7 @@ class EmployeeStationController extends Controller
             return response()->json(['data' => $employee_station], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('index', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
@@ -77,7 +77,7 @@ class EmployeeStationController extends Controller
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('index', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
@@ -96,17 +96,17 @@ class EmployeeStationController extends Controller
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('index', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
     protected function infoLog($module, $message)
     {
-        Log::channel('custom-info')->info('Personal Information Controller ['.$module.']: message: '.$errorMessage);
+        Log::channel('custom-info')->info('Employee Station Controller ['.$module.']: message: '.$errorMessage);
     }
 
     protected function errorLog($module, $errorMessage)
     {
-        Log::channel('custom-error')->error('Personal Information Controller ['.$module.']: message: '.$errorMessage);
+        Log::channel('custom-error')->error('Employee Station Controller ['.$module.']: message: '.$errorMessage);
     }
 }

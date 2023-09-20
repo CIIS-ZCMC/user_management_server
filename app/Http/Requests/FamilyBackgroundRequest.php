@@ -11,7 +11,7 @@ class FamilyBackgroundRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -25,7 +25,7 @@ class FamilyBackgroundRequest extends FormRequest
             'spouse' => 'nullable|string|max:255',
             'address' => 'nullable|string|max:255',
             'zip_code' => 'nullable|string|max:255',
-            'date_of_birth' => 'nullable|date',
+            'date_of_birth' => 'nullable|date:Y-m-d',
             'occupation' => 'nullable|string|max:255',
             'employer' => 'nullable|string|max:255',
             'business_address' => 'nullable|string|max:255',
@@ -40,6 +40,7 @@ class FamilyBackgroundRequest extends FormRequest
             'mother_middle_name' => 'nullable|string|max:255',
             'mother_last_name' => 'required|string|max:255',
             'mother_ext_name' => 'nullable|string|max:255',
+            'personal_information_id' => 'required|string|size:36'
         ];
     }
 }

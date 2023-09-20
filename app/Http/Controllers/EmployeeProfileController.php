@@ -137,7 +137,7 @@ class EmployeeProfileController extends Controller
             return response()->json(['data' => EmployeeProfileResource::collection($employee_profiles)], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('index', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
@@ -161,7 +161,7 @@ class EmployeeProfileController extends Controller
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('store', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
@@ -178,7 +178,7 @@ class EmployeeProfileController extends Controller
             return response()->json(['data' => $employee_profile], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('show', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
@@ -200,7 +200,7 @@ class EmployeeProfileController extends Controller
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('update', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
@@ -216,7 +216,7 @@ class EmployeeProfileController extends Controller
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('update', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
@@ -236,7 +236,7 @@ class EmployeeProfileController extends Controller
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('destroy', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 

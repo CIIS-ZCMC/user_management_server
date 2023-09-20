@@ -4,14 +4,14 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class PlatillaRequest extends FormRequest
+class SystemRoleRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,11 +22,9 @@ class PlatillaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'planttila_no' => 'required|string|max:255',
-            'tranche' => 'required|string|max:255',
-            'date' => 'required|date',
-            'category' => 'required|integer',
-            'job_position_id' => 'required|integer',
+            'name' => 'required|string|max:255',
+            'description' => 'required|text',
+            'system_id' => 'required|string|size:36'
         ];
     }
 }

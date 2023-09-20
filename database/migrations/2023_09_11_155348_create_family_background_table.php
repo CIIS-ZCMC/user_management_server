@@ -22,7 +22,7 @@ return new class extends Migration
             $table->date('business_address')->nullable();
             $table->string('telephone_no')->nullable();
             $table->string('tin_no')->nullable();
-            $table->date('rdo_no')->nullable();
+            $table->string('rdo_no')->nullable();
             $table->string('father_first_name');
             $table->string('father_middle_name')->nullable();
             $table->string('father_last_name');

@@ -6,7 +6,10 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 use App\Http\Requests\ReferencesRequest;
+use App\Http\Resources\ReferencesResource;
 use App\Models\References;
 
 class ReferencesController extends Controller
@@ -16,14 +19,26 @@ class ReferencesController extends Controller
         try{
             $cacheExpiration = Carbon::now()->addDay();
 
-            $referencess = Cache::remember('referencess', $cacheExpiration, function(){
+            $references = Cache::remember('references', $cacheExpiration, function(){
                 return References::all();
             });
 
-            return response()->json(['data' => $referencess], Response::HTTP_OK);
+            return response()->json(['data' => ReferencesResource::collection($references)], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('index', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function employeeReferrence($id, Request $request)
+    {
+        try{
+            $references = References::where('personal_information_id', $id)->get();
+
+            return response()->json(['data' => ReferencesResource::collection($references)], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->errorLog('index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
@@ -32,40 +47,42 @@ class ReferencesController extends Controller
         try{
             $cleanData = [];
 
+            $cleanData['uuid'] = Str::uuid();
+
             foreach ($request->all() as $key => $value) {
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $references = References::create([$cleanData]);
+            $references = References::create($cleanData);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('store', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
     public function show($id, Request $request)
     {
         try{
-            $references = References::findOrFail($id);
+            $reference = References::find($id);
 
-            if(!$references)
+            if(!$reference)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            return response()->json(['data' => $references], Response::HTTP_OK);
+            return response()->json(['data' => new ReferencesResource($reference)], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('show', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
     public function update($id, ReferencesRequest $request)
     {
         try{
-            $references = References::find($id);
+            $reference = References::find($id);
 
             $cleanData = [];
 
@@ -73,12 +90,12 @@ class ReferencesController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $references -> update([$cleanData]);
+            $reference -> update($cleanData);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('update', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
@@ -97,17 +114,17 @@ class ReferencesController extends Controller
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('destroy', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
     protected function infoLog($module, $message)
     {
-        Log::channel('custom-info')->info('Personal Information Controller ['.$module.']: message: '.$errorMessage);
+        Log::channel('custom-info')->info('References Controller ['.$module.']: message: '.$errorMessage);
     }
 
     protected function errorLog($module, $errorMessage)
     {
-        Log::channel('custom-error')->error('Personal Information Controller ['.$module.']: message: '.$errorMessage);
+        Log::channel('custom-error')->error('References Controller ['.$module.']: message: '.$errorMessage);
     }
 }
