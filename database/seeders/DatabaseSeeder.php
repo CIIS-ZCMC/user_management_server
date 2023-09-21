@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
         $this->call([DivisionSeeder::class]);
         $this->call([DepartmentSeeder::class]);
         $this->call([StationSeeder::class]);
+        $this->call([SalaryGradeSeeder::class]);
         $this->call([JobPositionSeeder::class]);
         $this->call([SystemSeeder::class]);
         $this->call([SystemRoleSeeder::class]);

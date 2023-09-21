@@ -11,12 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('employee_stations', function (Blueprint $table) {
+        Schema::create('salary_grades', function (Blueprint $table) {
             $table->uuid()->primary();
-            $table->uuid('employee_profile_id');
-            $table->foreign('employee_profile_id')->references('uuid')->on('employee_profiles');
-            $table->uuid('job_position_id');
-            $table->foreign('job_position_id')->references('uuid')->on('job_positions');
+            $table->integer('salary_grade_number');
+            $table->integer('step');
+            $table->double('amount');
+            $table->date('effective_at');
             $table->timestamps();
         });
     }
@@ -26,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('employee_stations');
+        Schema::dropIfExists('salary_grades');
     }
 };

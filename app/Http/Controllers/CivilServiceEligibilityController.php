@@ -6,7 +6,10 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 use App\Http\Requests\CivilServiceEligibilityRequest;
+use App\Http\Resources\CivilServiceEligibilityResource;
 use App\Models\CivilServiceEligibility;
 
 class CivilServiceEligibilityController extends Controller
@@ -20,25 +23,38 @@ class CivilServiceEligibilityController extends Controller
                 return CivilServiceEligibility::all();
             });
 
-            return response()->json(['data' => $civil_service_eligibilities], Response::HTTP_OK);
+            return response()->json(['data' => CivilServiceEligibilityResource::collection($civil_service_eligibilities)], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->errorLog('index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function employeeCivilServiceElibilities($id, Request $request)
+    {
+        try{
+            $civil_service_eligibilities = CivilServiceEligibility::where('personal_information_id', $id)->get();
+
+            return response()->json(['data' => CivilServiceEligibilityResource::collection($civil_service_eligibilities)], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function store(CivilServiceEligibilityRequest $request)
+    public function store(Request $request)
     {
         try{
             $cleanData = [];
 
+            $cleanData['uuid'] = Str::uuid();
             foreach ($request->all() as $key => $value) {
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $civil_service_eligibility = CivilServiceEligibility::create([$cleanData]);
+            $civil_service_eligibility = CivilServiceEligibility::create($cleanData);
 
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['data' => $civil_service_eligibility], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -48,7 +64,7 @@ class CivilServiceEligibilityController extends Controller
     public function show($id, Request $request)
     {
         try{
-            $civil_service_eligibility = CivilServiceEligibility::findOrFail($id);
+            $civil_service_eligibility = CivilServiceEligibility::find($id);
 
             if(!$civil_service_eligibility)
             {
@@ -62,10 +78,15 @@ class CivilServiceEligibilityController extends Controller
         }
     }
     
-    public function update($id, CivilServiceEligibilityRequest $request)
+    public function update($id, Request $request)
     {
         try{
             $civil_service_eligibility = CivilServiceEligibility::find($id);
+
+            if(!$civil_service_eligibility)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
 
             $cleanData = [];
 
@@ -73,7 +94,7 @@ class CivilServiceEligibilityController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $civil_service_eligibility -> update([$cleanData]);
+            $civil_service_eligibility -> update($cleanData);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){

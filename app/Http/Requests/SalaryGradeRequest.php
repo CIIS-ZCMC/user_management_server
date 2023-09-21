@@ -4,14 +4,14 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class EmployeeStationRequest extends FormRequest
+class SalaryGradeRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,8 +22,10 @@ class EmployeeStationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'employee_profile_id' => 'required|integer',
-            'job_position_id' => 'required|integer'
+            'salary_grade_number' => 'required|integer',
+            'step' => 'required|integer',
+            'amount' => 'required|float',
+            'effective_at' => 'required|date:Y-m-d'
         ];
     }
 }

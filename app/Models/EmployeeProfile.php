@@ -20,6 +20,7 @@ class EmployeeProfile extends Authenticatable
     public $incrementing = false;
 
     public $fillable = [
+        'uuid',
         'employee_id',
         'employee_verified_at',
         'profile_url',
@@ -27,7 +28,7 @@ class EmployeeProfile extends Authenticatable
         'job_type',
         'department_id',
         'station_id',
-        'employment_position_id',
+        'job_position_id',
         'job_position_id',
         'plantilla_id',
         'personal_information_id',
@@ -68,7 +69,7 @@ class EmployeeProfile extends Authenticatable
         return $this->belongsTo(PersonalInformation::class, 'personal_information_id', 'uuid');
     }
 
-    public function employeeStation()
+    public function station()
     {
         return $this->belongsTo(Station::class, 'station_id', 'uuid');
     }

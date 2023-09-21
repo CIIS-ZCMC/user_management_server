@@ -11,7 +11,7 @@ class LegalInformationRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -21,11 +21,19 @@ class LegalInformationRequest extends FormRequest
      */
     public function rules(): array
     {
+        if($this->employee_profile_id===null){
+            return [
+                'details' => 'nullable|text',
+                'answer' => 'required|boolean',
+                'legal_iq_id' => 'required|string|size:36',
+            ];
+        }
+
         return [
-            'employee_id' => 'required|integer',
-            'details' => 'required|text',
-            'answer' => 'required|string|max:255',
-            'legal_information_question_id' => 'required|integer',
+            'employee_profile_id' => 'required|string|size:36',
+            'details' => 'nullable|text',
+            'answer' => 'required|boolean',
+            'legal_iq_id' => 'required|string|size:36',
         ];
     }
 }

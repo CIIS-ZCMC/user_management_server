@@ -8,34 +8,23 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
-use App\Http\Requests\PasswordTrailRequest;
-use App\Http\Resources\PasswordTrailResource;
-use App\Models\PasswordTrail;
 
-class PasswordTrailController extends Controller
+use App\Http\Requests\SalaryGradeRequest;
+use App\Http\Resources\SalaryGradeResource;
+use App\Models\SalaryGrade;
+
+class SalaryGradeController extends Controller
 {
     public function index(Request $request)
     {
         try{
             $cacheExpiration = Carbon::now()->addDay();
 
-            $password_trails = Cache::remember('password_trails', $cacheExpiration, function(){
-                return PasswordTrail::all();
+            $salary_grades = Cache::remember('salary_grades', $cacheExpiration, function(){
+                return SalaryGrade::all();
             });
 
-            return response()->json(['data' => PasswordTrailResource::collection($password_trails)], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            $this->errorLog('index', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    public function employeePasswordTrail($id, Request $request)
-    {
-        try{
-            $password_trails = PasswordTrail::where('employee_profile_id', $id)->get();
-
-            return response()->json(['data' => PasswordTrailResource::collection($password_trails)], Response::HTTP_OK);
+            return response()->json(['data' => SalaryGradeResource::collection($salary_grades)], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -44,7 +33,7 @@ class PasswordTrailController extends Controller
     
     public function store(Request $request)
     {
-        try{
+        try{ 
             $cleanData = [];
 
             $cleanData['uuid'] = Str::uuid();
@@ -52,9 +41,9 @@ class PasswordTrailController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $password_trail = PasswordTrail::create($cleanData);
+            $salary_grade = SalaryGrade::create($cleanData);
 
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['data' => $salary_grade], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -63,29 +52,29 @@ class PasswordTrailController extends Controller
     
     public function show($id, Request $request)
     {
-        try{
-            $password_trail = PasswordTrail::find($id);
+        try{  
+            $salary_grade = SalaryGrade::find($id);
 
-            if(!$password_trail)
+            if(!$salary_grade)
             {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+                return response()->json(['message' => "No record found"], Response::HTTP_NOT_FOUND);
             }
 
-            return response()->json(['data' => $password_trail], Response::HTTP_OK);
+            return response()->json(['data' => new SalaryGradeResource($salary_grade)], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function update($id, PasswordTrailRequest $request)
+    public function update($id, Request $request)
     {
-        try{
-            $password_trail = PasswordTrail::find($id);
+        try{ 
+            $salary_grade = SalaryGrade::find($id);
 
-            if(!$password_trail)
+            if(!$salary_grade)
             {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+                return response()->json(['message' => "No record found"], Response::HTTP_NOT_FOUND);
             }
 
             $cleanData = [];
@@ -94,7 +83,7 @@ class PasswordTrailController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $password_trail -> update($cleanData);
+            $salary_grade -> update($cleanData);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -106,15 +95,15 @@ class PasswordTrailController extends Controller
     public function destroy($id, Request $request)
     {
         try{
-            $password_trail = PasswordTrail::findOrFail($id);
+            $salary_grade = SalaryGrade::find($id);
 
-            if(!$password_trail)
+            if(!$salary_grade)
             {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+                return response()->json(['message' => "No record found"], Response::HTTP_NOT_FOUND);
             }
 
-            $password_trail -> delete();
-            
+            $salary_grade -> delete();
+
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('destroy', $th->getMessage());
@@ -124,11 +113,11 @@ class PasswordTrailController extends Controller
 
     protected function infoLog($module, $message)
     {
-        Log::channel('custom-info')->info('Password Trail Controller ['.$module.']: message: '.$errorMessage);
+        Log::channel('custom-info')->info('Salary Grade Controller ['.$module.']: message: '.$errorMessage);
     }
 
     protected function errorLog($module, $errorMessage)
     {
-        Log::channel('custom-error')->error('Password Trail Controller ['.$module.']: message: '.$errorMessage);
+        Log::channel('custom-error')->error('Salary Grade Controller ['.$module.']: message: '.$errorMessage);
     }
 }

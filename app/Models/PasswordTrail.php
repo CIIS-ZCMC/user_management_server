@@ -14,8 +14,9 @@ class PasswordTrail extends Model
     public $incrementing = false;
 
     public $fillable = [
+        'uuid',
         'old_password',
-        'created_at',
+        'password_created_at',
         'expired_at',
         'employee_profile_id'
     ];

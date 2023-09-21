@@ -14,21 +14,21 @@ class EmployeeProfileResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $personal_information = $this->peronsalInformation;
-        $nameExtension = $personal_information->name_extension === NULL?'':' '.$personal_information->name_extion.' ';
-        $nameTitle = $personal_information->name_title===NULL?'': ' '.$personal_information->name_title;
+        $personal_information = $this->personalInformation;
+        $nameExtension = $personal_information === null?'':' '.$personal_information->name_extension.' ';
+        $nameTitle = $personal_information===null?'': ' '.$personal_information->name_title;
 
         $name = $personal_information->first_name.' '.$personal_information->last_name.$nameExtension.$nameTitle;
-        $department = $this->department->name;
-        $jobPosition = $this->jobPosition->name;
-        $jobStation = $this->jobStation->name;
+        $department = $this->department===null?"NONE":$this->department->name;
+        $job_position = $this->jobPosition===null?"NONE":$this->jobPosition->name;
+        $job_station = $this->station===null?"NONE":$this->station->name;
 
         return [
             'employee_id' => $this->employee_id,
             'name' => $name,
             'department' => $department,
-            'job_position' => $jobPosition,
-            'job_station' => $jobStation
+            'job_position' => $job_position,
+            'job_station' => $job_station
         ];
     }
 }

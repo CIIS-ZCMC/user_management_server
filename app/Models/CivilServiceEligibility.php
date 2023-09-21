@@ -14,17 +14,19 @@ class CivilServiceEligibility extends Model
     public $incrementing = false;
 
     public $fillable = [
+        'uuid',
         'career_service',
         'rating',
         'date_of_examination',
         'place_of_examination',
-        'license'
+        'license',
+        'personal_information_id'
     ];
 
     public $timestamps = TRUE;
 
     public function personalInformation()
     {
-        return $this->belongsTo(PersonalInformation::class, 'uuid');
+        return $this->belongsTo(PersonalInformation::class, 'personal_information_id', 'uuid');
     }
 }

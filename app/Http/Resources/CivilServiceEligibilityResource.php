@@ -1,0 +1,25 @@
+<?php
+
+namespace App\Http\Resources;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+class CivilServiceEligibilityResource extends JsonResource
+{
+    /**
+     * Transform the resource into an array.
+     *
+     * @return array<string, mixed>
+     */
+    public function toArray(Request $request): array
+    {
+        return [
+            'career_service' => $this->career_service,
+            'rating' => $this->rating,
+            'date_of_examination' => $this->date_of_examination,
+            'place_of_examination' => $this->place_of_examination,
+            'license' => $this->license
+        ];
+    }
+}

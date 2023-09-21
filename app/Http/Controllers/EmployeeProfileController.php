@@ -141,12 +141,17 @@ class EmployeeProfileController extends Controller
         }
     }
     
-    public function store(EmployeeProfileRequest $request)
+    public function store(Request $request)
     {
         try{
             $cleanData = [];
 
+            $cleanData['uuid'] = Str::uuid();
             foreach ($request->all() as $key => $value) {
+                if($key === 'profile_image' && $value === null){
+                    $cleanData[$key] = $value;
+                    continue;
+                }
                 if($key === 'profile_image')
                 {
                     $cleanData[$key] = $this->check_save_file($request);
@@ -156,9 +161,9 @@ class EmployeeProfileController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $employee_profile = EmployeeProfile::create([$cleanData]);
+            $employee_profile = EmployeeProfile::create($cleanData);
 
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['data' => $employee_profile], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -175,27 +180,36 @@ class EmployeeProfileController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            return response()->json(['data' => $employee_profile], Response::HTTP_OK);
+            return response()->json(['data' => new EmployeeProfileResource($employee_profile)], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function update($id, EmployeeProfileRequest $request)
+    public function update($id, Request $request)
     {
         try{
-            $employee_profile -> EmployeeProfile::find($id);
+            $employee_profile = EmployeeProfile::find($id);
+
+            if(!$employee_profile)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
 
             $cleanData = [];
 
-            foreach ($request->all() as $key => $value) { 
+            foreach ($request->all() as $key => $value) {   
+                if($key === 'profile_image' && $value === null){
+                    $cleanData[$key] = $value;
+                    continue;
+                }
                 if($key === 'profile_image')
                 {   continue;   }
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $employee_profile -> update([$cleanData]);
+            $employee_profile->update($cleanData);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -211,7 +225,7 @@ class EmployeeProfileController extends Controller
 
             $file_value = $this->check_save_file($request->file('profile_image'));
 
-            $employee_profile -> update([$file_value]);
+            $employee_profile->update($file_value);
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -231,7 +245,7 @@ class EmployeeProfileController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $employee_profile -> delete();
+            $employee_profile->delete();
             
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){

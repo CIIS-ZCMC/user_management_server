@@ -11,7 +11,7 @@ class CivilServiceEligibilityRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,10 +23,11 @@ class CivilServiceEligibilityRequest extends FormRequest
     {
         return [
             'carrer_service' => 'required|string|max:255',
-            'rating' => 'required|double',
-            'date_of_examination' => 'required|date',
+            'rating' => 'nullable|float',
+            'date_of_examination' => 'required|date:Y-m-d',
             'place_of_examination' => 'required|string|max:255',
             'license' => 'required|string|max:255',
+            'personal_information_id' => 'required|string|size:36'
         ];
     }
 }

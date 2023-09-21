@@ -55,73 +55,55 @@ Route::middleware('auth.cookie')->group(function(){
         /**
          * Employee Module
          */
-        Route::middleware('auth.permission:admin view')->group(function(){
+
+        Route::middleware('auth.permission:user view')->group(function(){
             Route::get('employee-profiles', 'EmployeeProfileController@index');
         });
 
-        Route::middleware('auth.permission:admin create')->group(function(){
+        Route::middleware('auth.permission:user create')->group(function(){
             Route::post('employee-profile', 'EmployeeProfileController@store');
         });
 
-        Route::middleware('auth.permission:admin view')->group(function(){
+        Route::middleware('auth.permission:user view')->group(function(){
             Route::get('employee-profile/{id}', 'EmployeeProfileController@show');
         });
 
-        Route::middleware('auth.permission:admin update')->group(function(){
+        Route::middleware('auth.permission:user put')->group(function(){
             Route::put('employee-profile/{id}', 'EmployeeProfileController@update');
         });
-
-        Route::middleware('auth.permission:admin update')->group(function(){
+        
+        Route::middleware('auth.permission:user put')->group(function(){
             Route::put('employee-profile-image/{id}', 'EmployeeProfileController@updateEmployeeProfile');
         });
 
-        Route::middleware('auth.permission:admin delete')->group(function(){
+        Route::middleware('auth.permission:user delete')->group(function(){
             Route::delete('employee-profile/{id}', 'EmployeeProfileController@destroy');
         });
 
         /**
          * CivilServiceEligibility Module
          */
-        Route::middleware('auth.permission:admin view')->group(function(){
+        Route::middleware('auth.permission:user view')->group(function(){
             Route::get('civil-service-eligiblities', 'CivilServiceEligibilityController@index');
         });
 
-        Route::middleware('auth.permission:admin create')->group(function(){
+        Route::middleware('auth.permission:user view')->group(function(){
+            Route::get('civil-service-eligiblity-employee/{id}', 'CivilServiceEligibilityController@employeeCivilServiceElibilities');
+        });
+
+        Route::middleware('auth.permission:user create')->group(function(){
             Route::post('civil-service-eligiblity', 'CivilServiceEligibilityController@store');
         });
 
-        Route::middleware('auth.permission:admin view')->group(function(){
+        Route::middleware('auth.permission:user view')->group(function(){
             Route::get('civil-service-eligiblity/{id}', 'CivilServiceEligibilityController@show');
         });
 
-        Route::middleware('auth.permission:admin update')->group(function(){
+        Route::middleware('auth.permission:user put')->group(function(){
             Route::put('civil-service-eligiblity/{id}', 'CivilServiceEligibilityController@update');
         });
 
-        Route::middleware('auth.permission:admin delete')->group(function(){
-            Route::delete('civil-service-eligiblity/{id}', 'CivilServiceEligibilityController@destroy');
-        });
-
-        /**
-         * Civil Service Eligibility Module
-         */
-        Route::middleware('auth.permission:admin view')->group(function(){
-            Route::get('civil-service-eligiblities', 'CivilServiceEligibilityController@index');
-        });
-
-        Route::middleware('auth.permission:admin create')->group(function(){
-            Route::post('civil-service-eligiblity', 'CivilServiceEligibilityController@store');
-        });
-
-        Route::middleware('auth.permission:admin view')->group(function(){
-            Route::get('civil-service-eligiblity/{id}', 'CivilServiceEligibilityController@show');
-        });
-
-        Route::middleware('auth.permission:admin update')->group(function(){
-            Route::put('civil-service-eligiblity/{id}', 'CivilServiceEligibilityController@update');
-        });
-
-        Route::middleware('auth.permission:admin delete')->group(function(){
+        Route::middleware('auth.permission:user delete')->group(function(){
             Route::delete('civil-service-eligiblity/{id}', 'CivilServiceEligibilityController@destroy');
         });
 
@@ -244,23 +226,27 @@ Route::middleware('auth.cookie')->group(function(){
         /**
          * LegalInformation Module
          */
-        Route::middleware('auth.permission:admin view')->group(function(){
+        Route::middleware('auth.permission:user view')->group(function(){
             Route::get('legal_informations', 'LegalInformationController@index');
         });
+        
+        Route::middleware('auth.permission:user view')->group(function(){
+            Route::get('legal_information-employee/{id}', 'LegalInformationController@employeeLegalInformation');
+        });
 
-        Route::middleware('auth.permission:admin create')->group(function(){
+        Route::middleware('auth.permission:user create')->group(function(){
             Route::post('legal_information', 'LegalInformationController@store');
         });
 
-        Route::middleware('auth.permission:admin view')->group(function(){
+        Route::middleware('auth.permission:user view')->group(function(){
             Route::get('legal_information/{id}', 'LegalInformationController@show');
         });
 
-        Route::middleware('auth.permission:admin update')->group(function(){
+        Route::middleware('auth.permission:user put')->group(function(){
             Route::put('legal_information/{id}', 'LegalInformationController@update');
         });
 
-        Route::middleware('auth.permission:admin delete')->group(function(){
+        Route::middleware('auth.permission:user delete')->group(function(){
             Route::delete('legal_information/{id}', 'LegalInformationController@destroy');
         });
 
@@ -317,23 +303,27 @@ Route::middleware('auth.cookie')->group(function(){
         /**
          * PasswordTrail Module
          */
-        Route::middleware('auth.permission:admin view')->group(function(){
+        Route::middleware('auth.permission:user view')->group(function(){
             Route::get('password_trails', 'PasswordTrailController@index');
         });
+        
+        Route::middleware('auth.permission:user view')->group(function(){
+            Route::get('password_trail-employee/{id}', 'PasswordTrailController@employeePasswordTrail');
+        });
 
-        Route::middleware('auth.permission:admin create')->group(function(){
+        Route::middleware('auth.permission:user create')->group(function(){
             Route::post('password_trail', 'PasswordTrailController@store');
         });
 
-        Route::middleware('auth.permission:admin view')->group(function(){
+        Route::middleware('auth.permission:user view')->group(function(){
             Route::get('password_trail/{id}', 'PasswordTrailController@show');
         });
 
-        Route::middleware('auth.permission:admin update')->group(function(){
+        Route::middleware('auth.permission:user put')->group(function(){
             Route::put('password_trail/{id}', 'PasswordTrailController@update');
         });
 
-        Route::middleware('auth.permission:admin delete')->group(function(){
+        Route::middleware('auth.permission:user delete')->group(function(){
             Route::delete('password_trail/{id}', 'PasswordTrailController@destroy');
         });
 
@@ -578,8 +568,37 @@ Route::middleware('auth.cookie')->group(function(){
         Route::middleware('auth.permission:user delete')->group(function(){
             Route::delete('system/{id}', 'SystemController@destroy');
         });
+        
 
+        /**
+         * System Module
+         */
+        Route::middleware('auth.permission:user view')->group(function(){
+            Route::get('salary-grades', 'SalaryGradeController@index');
+        });
 
+        Route::middleware('auth.permission:user create')->group(function(){
+            Route::post('salary-grade', 'SalaryGradeController@store');
+        });
+
+        Route::middleware('auth.permission:user view')->group(function(){
+            Route::get('salary-grade/{id}', 'SalaryGradeController@show');
+        });
+
+        Route::middleware('auth.permission:user put')->group(function(){
+            Route::put('salary-grade/{id}', 'SalaryGradeController@update');
+        });
+
+        Route::middleware('auth.permission:user delete')->group(function(){
+            Route::delete('salary-grade/{id}', 'SalaryGradeController@destroy');
+        });
+
+        /**
+         * Login Trail Module
+         */
+        Route::middleware('auth.permission:user view')->group(function(){
+            Route::get('login-trail/{id}', 'LoginTrailController@show');
+        });
 
         /**
          * Module without authorization needed

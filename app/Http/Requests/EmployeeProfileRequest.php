@@ -24,14 +24,14 @@ class EmployeeProfileRequest extends FormRequest
         return [
             'emplyee_id' => 'required|integer',
             'profile_url' => 'nullable|string|max:255',
-            'date_hired' => 'required|date',
+            'date_hired' => 'required|date:Y-m-d',
             'job_type' => 'required|string|max:255',
             'password' => 'required|string|max:255',
-            'password_created_date' => 'required|date',
-            'password_expiration_date' => 'required|date',
-            'department_id' => 'required|integer',
-            'employment_position_id' => 'required|integer',
-            'personal_information_id' => 'required|integer',
+            'password_created_date' => 'required|date:Y-m-d',
+            'password_expiration_date' => 'required|date:Y-m-d',
+            'department_id' => 'required|string|size:36',
+            'employment_position_id' => 'required|string|size:36',
+            'personal_information_id' => 'required|string|size:36',
         ];
     }
 }

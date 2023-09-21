@@ -11,7 +11,7 @@ class PasswordTrailRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,9 +23,9 @@ class PasswordTrailRequest extends FormRequest
     {
         return [
             'old_password' => 'required|string|max:255',
-            'created_at' => 'required|date',
-            'expired_at' => 'required|date',
-            'employee_profile_id' => 'required|integer',
+            'password_created_at' => 'required|date:Y-m-d',
+            'expired_at' => 'required|date:Y-m-d',
+            'employee_profile_id' => 'required|string|size:36',
         ];
     }
 }

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use App\Http\Requests\LegalInformationQuestionRequest;
+use App\Http\Resources\LegalInformationQuestionResource;
 use App\Models\LegalInformationQuestion;
 
 class LegalInformationQuestionController extends Controller
@@ -22,7 +23,7 @@ class LegalInformationQuestionController extends Controller
                 return LegalInformationQuestion::all();
             });
 
-            return response()->json(['data' => $legal_information_questions], Response::HTTP_OK);
+            return response()->json(['data' => LegalInformationQuestionResource::collection($legal_information_questions)], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -35,17 +36,18 @@ class LegalInformationQuestionController extends Controller
             $cleanData = [];
 
             $cleanData['uuid'] = Str::uuid();
+
             foreach ($request->all() as $key => $value) {
-                if($key === 'is_sub_question'){
+                if($key === 'is_sub_question' || $key === 'legal_iq_id'){
                     $cleanData[$key] = $value;
                     continue;
                 }
                 $cleanData[$key] = strip_tags($value);
-            }
+            }   
 
             $legal_information_question = LegalInformationQuestion::create($cleanData);
 
-            return response()->json(['data' => LegalInformationQuestionResource::collection($legal_information_question)], Response::HTTP_OK);
+            return response()->json(['data' => $legal_information_question], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -82,7 +84,7 @@ class LegalInformationQuestionController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if($key === 'is_sub_question'){
+                if($key === 'is_sub_question' || $key === 'legal_iq_id'){
                     $cleanData[$key] = $value;
                     continue;
                 }

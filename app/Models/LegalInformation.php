@@ -14,7 +14,8 @@ class LegalInformation extends Model
     public $incrementing = false;
 
     public $fillable = [
-        'employee_id',
+        'uuid',
+        'employee_profile_id',
         'details',
         'answer',
         'legal_iq_id'
@@ -25,5 +26,10 @@ class LegalInformation extends Model
     public function legalInformationQuestion()
     {
         return $this->belongsTo(LegalInformationQuestion::class, 'uuid', 'legal_iq_id');
+    }
+
+    public function employee()
+    {
+        return $this->belongsTo(EmployeeProfile::class, 'uuid', 'employee_profile_id');
     }
 }

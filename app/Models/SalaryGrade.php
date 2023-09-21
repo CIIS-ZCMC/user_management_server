@@ -5,23 +5,26 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class EmploymentPosition extends Model
+class SalaryGrade extends Model
 {
     use HasFactory;
 
-    protected $table = 'employment_positions';
+    protected $table = 'salary_grades';
     protected $primaryKey = 'uuid';
     public $incrementing = false;
 
     public $fillable = [
-        'name',
-        'total_employee'
+        'uuid',
+        'salary_grade_number',
+        'step',
+        'amount',
+        'effective_at'
     ];
 
     public $timestamps = TRUE;
 
-    public function systemRoles()
+    public function jobPositions()
     {
-        return $this->hasMany(PositionSystemRole::class, 'position_system_role_id', 'uuid');
+        return $this->hasMany(JobPosition::class, 'uuid', 'salary_grade_id');
     }
 }
