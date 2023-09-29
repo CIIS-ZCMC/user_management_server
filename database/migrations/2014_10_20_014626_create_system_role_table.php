@@ -12,11 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('system_roles', function (Blueprint $table) {
-            $table->uuid()->primary();
+            $table->id();
             $table->string('name');
             $table->text('description')->nullable();
-            $table->uuid('system_id');
-            $table->foreign('system_id')->references('uuid')->on('systems');
+            $table->unsignedBigInteger('system_id');
+            $table->foreign('system_id')->references('id')->on('systems');
             $table->softDeletes();
             $table->timestamps();
         });
@@ -30,3 +30,4 @@ return new class extends Migration
         Schema::dropIfExists('system_roles');
     }
 };
+  

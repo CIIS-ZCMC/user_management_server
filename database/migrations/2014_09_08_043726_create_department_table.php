@@ -12,11 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('departments', function (Blueprint $table) {
-            $table->uuid()->primary();
+            $table->id();
             $table->string('name');
             $table->string('code')->nullable();
-            $table->uuid('division_id')->nullable();
-            $table->foreign('division_id')->references('uuid')->on('divisions');
+            $table->unsignedBigInteger('division_id')->nullable();
+            $table->foreign('division_id')->references('id')->on('divisions');
             $table->timestamps();
         });
     }

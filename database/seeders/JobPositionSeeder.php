@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
+use App\Models\Department;
 use App\Models\JobPosition;
 use App\Models\SalaryGrade;
 
@@ -15,25 +16,19 @@ class JobPositionSeeder extends Seeder
      */
     public function run(): void
     {
-        JobPosition::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Accountant I',
-            'code' => 'ACC I',
-            'salary_grade_id' => null
-        ]);
-        
-        JobPosition::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Accountant II',
-            'code' => 'ACC II',
-            'salary_grade_id' => null
-        ]);
         
         JobPosition::create([
             'uuid' => Str::uuid(),
             'name' => 'Accountant III',
-            'code' => 'ACC III',
+            'code' => 'ACC III', 
             'salary_grade_id' => SalaryGrade::where('salary_grade_number', 19)->first()->uuid
+        ]);
+        
+        JobPosition::create([
+            'uuid' => Str::uuid(),
+            'name' => 'Accountant IV',
+            'code' => 'ACC IV',
+            'salary_grade_id' => SalaryGrade::where('salary_grade_number', 22)->first()->uuid
         ]);
         
         JobPosition::create([
@@ -192,6 +187,13 @@ class JobPositionSeeder extends Seeder
         
         JobPosition::create([
             'uuid' => Str::uuid(),
+            'name' => 'Computer Maintenance Technologist III',
+            'code' => 'CMT I',
+            'salary_grade_id' => SalaryGrade::where('salary_grade_number', 17)->first()->uuid
+        ]);
+        
+        JobPosition::create([
+            'uuid' => Str::uuid(),
             'name' => 'Computer Maintenance Technologist II',
             'code' => 'CMT II',
             'salary_grade_id' => SalaryGrade::where('salary_grade_number', 15)->first()->uuid
@@ -212,6 +214,20 @@ class JobPositionSeeder extends Seeder
         
         JobPosition::create([
             'uuid' => Str::uuid(),
+            'name' => 'Chemist II',
+            'code' => 'Chemist II',
+            'salary_grade_id' => SalaryGrade::where('salary_grade_number', 15)->first()->uuid
+        ]);
+        
+        JobPosition::create([
+            'uuid' => Str::uuid(),
+            'name' => 'Chemist III',
+            'code' => 'Chemist III',
+            'salary_grade_id' => SalaryGrade::where('salary_grade_number', 18)->first()->uuid
+        ]);
+        
+        JobPosition::create([
+            'uuid' => Str::uuid(),
             'name' => 'Dentist I',
             'code' => 'Dentist I',
             'salary_grade_id' => null
@@ -221,7 +237,7 @@ class JobPositionSeeder extends Seeder
             'uuid' => Str::uuid(),
             'name' => 'Dentist II',
             'code' => 'Dentist II',
-            'salary_grade_id' => SalaryGrade::where('salary_grade_number', 17)->first()->uuid
+            'salary_grade_id' => SalaryGrade::where('salary_grade_number', 16)->first()->uuid
         ]);
         
         JobPosition::create([
@@ -229,6 +245,13 @@ class JobPositionSeeder extends Seeder
             'name' => 'Dentist III',
             'code' => 'Dentist III',
             'salary_grade_id' => SalaryGrade::where('salary_grade_number', 20)->first()->uuid
+        ]);
+        
+        JobPosition::create([
+            'uuid' => Str::uuid(),
+            'name' => 'Dentist V',
+            'code' => 'Dentist V',
+            'salary_grade_id' => SalaryGrade::where('salary_grade_number', 24)->first()->uuid
         ]);
         
         JobPosition::create([
@@ -254,16 +277,44 @@ class JobPositionSeeder extends Seeder
         
         JobPosition::create([
             'uuid' => Str::uuid(),
-            'name' => 'Financial & Management Officer I',
+            'name' => 'Engineer IV',
+            'code' => 'ENGR IV',
+            'salary_grade_id' => SalaryGrade::where('salary_grade_number', 22)->first()->uuid
+        ]);
+        
+        JobPosition::create([
+            'uuid' => Str::uuid(),
+            'name' => 'Financial Management Officer I',
             'code' => 'FINMO I',
             'salary_grade_id' => null
         ]);
         
         JobPosition::create([
             'uuid' => Str::uuid(),
-            'name' => 'Financial & Management Officer II',
+            'name' => 'Financial Management Officer II',
             'code' => 'FINMO II',
-            'salary_grade_id' => null
+            'salary_grade_id' => SalaryGrade::where('salary_grade_number', 24)->first()->uuid
+        ]);
+        
+        JobPosition::create([
+            'uuid' => Str::uuid(),
+            'name' => 'Health Education and Promotion Officer III',
+            'code' => 'HEPO III',
+            'salary_grade_id' => SalaryGrade::where('salary_grade_number', 18)->first()->uuid
+        ]);
+        
+        JobPosition::create([
+            'uuid' => Str::uuid(),
+            'name' => 'Health Physicist III',
+            'code' => 'HP III',
+            'salary_grade_id' => SalaryGrade::where('salary_grade_number', 22)->first()->uuid
+        ]);
+        
+        JobPosition::create([
+            'uuid' => Str::uuid(),
+            'name' => 'Hospital Housekeeper',
+            'code' => 'HHK',
+            'salary_grade_id' => SalaryGrade::where('salary_grade_number', 8)->first()->uuid
         ]);
         
         JobPosition::create([
@@ -473,7 +524,7 @@ class JobPositionSeeder extends Seeder
             'uuid' => Str::uuid(),
             'name' => 'Nurse II',
             'code' => 'N-II',
-            'salary_grade_id' => SalaryGrade::where('salary_grade_number', 16)->first()->uuid
+            'salary_grade_id' => SalaryGrade::where('salary_grade_number', 15)->first()->uuid
         ]);
         
         JobPosition::create([
@@ -506,9 +557,9 @@ class JobPositionSeeder extends Seeder
         
         JobPosition::create([
             'uuid' => Str::uuid(),
-            'name' => 'OIC-Nurse VII',
+            'name' => 'Nurse VII',
             'code' => 'N-VII',
-            'salary_grade_id' => null
+            'salary_grade_id' => SalaryGrade::where('salary_grade_number', 24)->first()->uuid
         ]);
         
         JobPosition::create([
@@ -523,13 +574,6 @@ class JobPositionSeeder extends Seeder
             'name' => 'Nursing Attendant II',
             'code' => 'NA II',
             'salary_grade_id' => SalaryGrade::where('salary_grade_number', 6)->first()->uuid
-        ]);
-        
-        JobPosition::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Nutritionist Dietitian I',
-            'code' => 'ND I',
-            'salary_grade_id' => SalaryGrade::where('salary_grade_number', 22)->first()->uuid
         ]);
         
         JobPosition::create([
@@ -597,6 +641,41 @@ class JobPositionSeeder extends Seeder
         
         JobPosition::create([
             'uuid' => Str::uuid(),
+            'name' => 'Physical Theraphy Technician I',
+            'code' => 'PTT I',
+            'salary_grade_id' => SalaryGrade::where('salary_grade_number', 6)->first()->uuid
+        ]);
+        
+        JobPosition::create([
+            'uuid' => Str::uuid(),
+            'name' => 'Physical Therapist I',
+            'code' => 'PT I',
+            'salary_grade_id' => SalaryGrade::where('salary_grade_number', 11)->first()->uuid
+        ]);
+        
+        JobPosition::create([
+            'uuid' => Str::uuid(),
+            'name' => 'Physical Therapist II',
+            'code' => 'PT I',
+            'salary_grade_id' => SalaryGrade::where('salary_grade_number', 15)->first()->uuid
+        ]);
+        
+        JobPosition::create([
+            'uuid' => Str::uuid(),
+            'name' => 'Physical Therapist III',
+            'code' => 'PT I',
+            'salary_grade_id' => SalaryGrade::where('salary_grade_number', 18)->first()->uuid
+        ]);
+        
+        JobPosition::create([
+            'uuid' => Str::uuid(),
+            'name' => 'Psychologist II',
+            'code' => 'PT I',
+            'salary_grade_id' => SalaryGrade::where('salary_grade_number', 15)->first()->uuid
+        ]);
+        
+        JobPosition::create([
+            'uuid' => Str::uuid(),
             'name' => 'Radiologic Technologist I',
             'code' => 'RT I',
             'salary_grade_id' => SalaryGrade::where('salary_grade_number', 11)->first()->uuid
@@ -606,13 +685,20 @@ class JobPositionSeeder extends Seeder
             'uuid' => Str::uuid(),
             'name' => 'Radiologic Technologist II',
             'code' => 'RT II',
-            'salary_grade_id' => SalaryGrade::where('salary_grade_number', 15)->first()->uuid
+            'salary_grade_id' => SalaryGrade::where('salary_grade_number', 13)->first()->uuid
         ]);
         
         JobPosition::create([
             'uuid' => Str::uuid(),
             'name' => 'Radiologic Technologist III',
             'code' => 'RT III',
+            'salary_grade_id' => SalaryGrade::where('salary_grade_number', 15)->first()->uuid
+        ]);
+        
+        JobPosition::create([
+            'uuid' => Str::uuid(),
+            'name' => 'Radiologic Technologist IV',
+            'code' => 'RT IV',
             'salary_grade_id' => SalaryGrade::where('salary_grade_number', 18)->first()->uuid
         ]);
         
@@ -627,7 +713,7 @@ class JobPositionSeeder extends Seeder
             'uuid' => Str::uuid(),
             'name' => 'Social Welfare Assistant I',
             'code' => 'SWAS',
-            'salary_grade_id' => null
+            'salary_grade_id' => SalaryGrade::where('salary_grade_number', 8)->first()->uuid
         ]);
         
         JobPosition::create([
@@ -646,13 +732,6 @@ class JobPositionSeeder extends Seeder
         
         JobPosition::create([
             'uuid' => Str::uuid(),
-            'name' => 'Social Welfare Officer III',
-            'code' => 'SWO III',
-            'salary_grade_id' => SalaryGrade::where('salary_grade_number', 18)->first()->uuid
-        ]);
-        
-        JobPosition::create([
-            'uuid' => Str::uuid(),
             'name' => 'Social Welfare Officer IV',
             'code' => 'SWO IV',
             'salary_grade_id' => SalaryGrade::where('salary_grade_number', 22)->first()->uuid
@@ -660,8 +739,36 @@ class JobPositionSeeder extends Seeder
         
         JobPosition::create([
             'uuid' => Str::uuid(),
+            'name' => 'Statistician II',
+            'code' => 'SC II',
+            'salary_grade_id' => SalaryGrade::where('salary_grade_number', 15)->first()->uuid
+        ]);
+        
+        JobPosition::create([
+            'uuid' => Str::uuid(),
+            'name' => 'Statistician III',
+            'code' => 'SC III',
+            'salary_grade_id' => SalaryGrade::where('salary_grade_number', 18)->first()->uuid
+        ]);
+        
+        JobPosition::create([
+            'uuid' => Str::uuid(),
             'name' => 'Supervising Administrative Officer',
             'code' => 'SAO',
+            'salary_grade_id' => SalaryGrade::where('salary_grade_number', 22)->first()->uuid
+        ]);
+        
+        JobPosition::create([
+            'uuid' => Str::uuid(),
+            'name' => 'Training Assistant',
+            'code' => 'TA',
+            'salary_grade_id' => SalaryGrade::where('salary_grade_number', 8)->first()->uuid
+        ]);
+        
+        JobPosition::create([
+            'uuid' => Str::uuid(),
+            'name' => 'Training Specialist IV',
+            'code' => 'TS IV',
             'salary_grade_id' => SalaryGrade::where('salary_grade_number', 22)->first()->uuid
         ]);
         
@@ -702,6 +809,13 @@ class JobPositionSeeder extends Seeder
         
         JobPosition::create([
             'uuid' => Str::uuid(),
+            'name' => 'Medical Equipment Technician IV',
+            'code' => 'MEQT IV',
+            'salary_grade_id' => SalaryGrade::where('salary_grade_number', 13)->first()->uuid
+        ]);
+        
+        JobPosition::create([
+            'uuid' => Str::uuid(),
             'name' => 'Construction Maintenance Foreman',
             'code' => 'CMF',
             'salary_grade_id' => null
@@ -725,13 +839,13 @@ class JobPositionSeeder extends Seeder
             'uuid' => Str::uuid(),
             'name' => 'Respiratory Therapist I',
             'code' => 'RSTH1',
-            'salary_grade_id' => SalaryGrade::where('salary_grade_number', 10)->first()->uuid
+            'salary_grade_id' => SalaryGrade::where('salary_grade_number', 11)->first()->uuid
         ]);
         
         JobPosition::create([
             'uuid' => Str::uuid(),
-            'name' => 'Respiratory Therapist II',
-            'code' => 'RSTH2',
+            'name' => 'Respiratory Therapist III',
+            'code' => 'RSTH3',
             'salary_grade_id' => SalaryGrade::where('salary_grade_number', 14)->first()->uuid
         ]);
         

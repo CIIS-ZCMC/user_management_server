@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('salary_grades', function (Blueprint $table) {
-            $table->uuid()->primary();
+            $table->id();
             $table->integer('salary_grade_number');
             $table->integer('step');
             $table->double('amount');

@@ -12,11 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('contacts', function (Blueprint $table) {
-            $table->uuid()->primary();
+            $table->id();
             $table->string('phone_number')->nullable();
             $table->string('email');
-            $table->uuid('personal_information_id');
-            $table->foreign('personal_information_id')->references('uuid')->on('personal_informations');
+            $table->unsignedBigInteger('personal_information_id');
+            $table->foreign('personal_information_id')->references('id')->on('personal_informations');
             $table->timestamps();
         });
     }

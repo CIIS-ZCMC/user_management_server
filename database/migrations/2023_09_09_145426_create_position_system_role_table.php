@@ -12,11 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('position_system_roles', function (Blueprint $table) {
-            $table->uuid()->primary();
-            $table->uuid('job_position_id');
-            $table->foreign('job_position_id')->references('uuid')->on('job_positions');
-            $table->uuid('system_role_id');
-            $table->foreign('system_role_id')->references('uuid')->on('system_roles');
+            $table->id();
+            $table->unsignedBigInteger('job_position_id');
+            $table->foreign('job_position_id')->references('id')->on('job_positions');
+            $table->unsignedBigInteger('system_role_id');
+            $table->foreign('system_role_id')->references('id')->on('system_roles');
             $table->datetime('in_active')->nullable();
             $table->timestamps();
         });

@@ -12,15 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('legal_information_questions', function (Blueprint $table) {
-            $table->uuid()->primary();
+            $table->id();
             $table->text('content_question');
             $table->boolean('is_sub_question')->default(FALSE);
-            $table->uuid('legal_iq_id')->nullable();
+            $table->unsignedBigInteger('legal_iq_id')->nullable();
             $table->timestamps();
         });
         
         Schema::table('legal_information_questions', function (Blueprint $table) {
-            $table->foreign('legal_iq_id')->references('uuid')->on('legal_information_questions');
+            $table->foreign('legal_iq_id')->references('id')->on('legal_information_questions');
         });
     }
 

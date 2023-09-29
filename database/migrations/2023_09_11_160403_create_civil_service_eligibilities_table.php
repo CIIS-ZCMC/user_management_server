@@ -12,14 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('civil_service_eligibilities', function (Blueprint $table) {
-            $table->uuid()->primary();
+            $table->id();
             $table->string('career_service');
             $table->string('rating');
             $table->date('date_of_examination');
             $table->string('place_of_examination');
             $table->string('license')->nullable();
-            $table->uuid('personal_information_id');
-            $table->foreign('personal_information_id')->references('uuid')->on('personal_informations');
+            $table->unsignedBigInteger('personal_information_id');
+            $table->foreign('personal_information_id')->references('id')->on('personal_informations');
             $table->timestamps();
         });
     }

@@ -12,11 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('access_tokens', function (Blueprint $table) {
-            $table->uuid()->primary();
+            $table->id();
             $table->text('token');
             $table->text('public_key');
-            $table->uuid('employee_profile_id');
-            $table->foreign('employee_profile_id')->references('uuid')->on('employee_profiles');
+            $table->unsignedBigInteger('employee_profile_id');
+            $table->foreign('employee_profile_id')->references('id')->on('employee_profiles');
             $table->datetime('token_exp');
             $table->timestamps();
         });

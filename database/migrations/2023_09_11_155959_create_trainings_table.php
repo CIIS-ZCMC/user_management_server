@@ -12,13 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('trainings', function (Blueprint $table) {
-            $table->uuid()->primary();
+            $table->id();
             $table->date('inclusive_date');
             $table->boolean('is_lnd')->default(FALSE);
             $table->string('conducted_by')->nullable();
             $table->string('total_hours')->nullable();
-            $table->uuid('personal_information_id');
-            $table->foreign('personal_information_id')->references('uuid')->on('personal_informations');
+            $table->unsignedBigInteger('personal_information_id');
+            $table->foreign('personal_information_id')->references('id')->on('personal_informations');
             $table->timestamps();
         });
     }

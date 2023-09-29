@@ -12,13 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('legal_informations', function (Blueprint $table) {
-            $table->uuid()->primary();
-            $table->uuid('employee_profile_id');
-            $table->foreign('employee_profile_id')->references('uuid')->on('employee_profiles');         
+            $table->id();
+            $table->unsignedBigInteger('employee_profile_id');
+            $table->foreign('employee_profile_id')->references('id')->on('employee_profiles');         
             $table->text('details')->nullable();
             $table->boolean('answer')->default(FALSE);
-            $table->uuid('legal_iq_id');
-            $table->foreign('legal_iq_id')->references('uuid')->on('legal_information_questions');
+            $table->unsignedBigInteger('legal_iq_id');
+            $table->foreign('legal_iq_id')->references('id')->on('legal_information_questions');
             $table->timestamps();
         });
     }

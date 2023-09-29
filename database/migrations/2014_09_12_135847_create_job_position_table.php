@@ -12,11 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('job_positions', function (Blueprint $table) {
-            $table->uuid()->primary();
+            $table->id();
             $table->string('name');
             $table->string('code')->nullable();
-            $table->uuid('salary_grade_id')->nullable();
-            $table->foreign('salary_grade_id')->references('uuid')->on('salary_grades');
+            $table->unsignedBigInteger('salary_grade_id')->nullable();
+            $table->foreign('salary_grade_id')->references('id')->on('salary_grades');
             $table->timestamps();
         });
     }

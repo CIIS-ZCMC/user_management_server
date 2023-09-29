@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
+use App\Models\Department;
 use App\Models\Station;
 
 class StationSeeder extends Seeder
@@ -14,628 +15,601 @@ class StationSeeder extends Seeder
      */
     public function run(): void
     {
+
+        /**
+         * Hospital Operations and Patient Support Service
+         */
+
+        $hopps = Department::where('code', 'HOPPS')->first();
+
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Human Resource Management',
-            'code' => 'HRM'
+            'name' => 'Engineering and Facilities Management Unit',
+            'code' => 'EFM',
+            'department_id' => $hopps -> uuid
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Procurement',
-            'code' => 'BAC'
+            'name' => 'Housekeeping-Laundry',
+            'code' => 'HL',
+            'department_id' => $hopps -> uuid
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Material Management',
-            'code' => 'Supply'
+            'name' => 'Human Resource Management Unit',
+            'code' => 'HR',
+            'department_id' => $hopps -> uuid
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Security',
-            'code' => 'Sec'
+            'name' => 'Materials Management Section',
+            'code' => 'MMS',
+            'department_id' => $hopps -> uuid
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Engineering & Facilities Management',
-            'code' => 'EFM'
+            'name' => 'Office of the Administrative Officer',
+            'code' => 'AO',
+            'department_id' => $hopps -> uuid
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Housekeeping',
-            'code' => 'Linen and Laundry'
+            'name' => 'Procurement Unit',
+            'code' => 'PU',
+            'department_id' => $hopps -> uuid
+        ]);
+
+        /** 
+         * HOPPS 
+         */
+
+        /**
+         * Office of the Medical Center Chief
+         */
+
+        $ommc = Department::where('code', 'OMCC')->first();
+        
+        Station::create([
+            'uuid' => Str::uuid(),
+            'name' => 'Office of the Medical Center Chief',
+            'code' => 'OMCC',
+            'department_id' => $ommc -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'PACCU',
-            'code' => 'PACCU'
+            'name' => 'Professional Education Training and Research Office',
+            'code' => 'PETRO',
+            'department_id' => $ommc -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Integrated Hospital Operation & Management Program',
-            'code' => 'IHOMP'
+            'name' => 'Office of Instutitional Strategy and Excellence',
+            'code' => 'OISE',
+            'department_id' => $ommc -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Training Office/Library',
-            'code' => 'PET-RO'
+            'name' => 'Innovation and Information Systems Unit',
+            'code' => 'IISU',
+            'department_id' => $ommc -> id
+        ]);
+
+        /** 
+         * OMMC END 
+         */
+
+        /**
+         * Medical Services/Arcillary
+         */
+
+        $ms = Department::where('code', 'MS')->first();
+        
+        Station::create([
+            'uuid' => Str::uuid(),
+            'name' => 'Clinical Chemistry Unit',
+            'code' => 'CCU',
+            'department_id' => $ms -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Internal Control',
-            'code' => 'IC'
+            'name' => 'Clinical Laboratory Unit',
+            'code' => 'CLU',
+            'department_id' => $ms -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Health Emergency Management Staff',
-            'code' => 'HEMS'
+            'name' => 'Clinical Unit',
+            'code' => 'CU',
+            'department_id' => $ms -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Budget',
-            'code' => 'B'
+            'name' => 'Dental Unit',
+            'code' => 'DU',
+            'department_id' => $ms -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Accounting',
-            'code' => 'Acc'
+            'name' => 'Dermatology Unit',
+            'code' => 'D',
+            'department_id' => $ms -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Billing and Claims',
-            'code' => 'BC'
+            'name' => 'DRRM - Health Unit',
+            'code' => 'DRRM-H',
+            'department_id' => $ms -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Cash Operations',
-            'code' => 'CO'
+            'name' => 'Emergency Medicine Unit',
+            'code' => 'EMU',
+            'department_id' => $ms -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Outpatient',
-            'code' => 'OPD'
+            'name' => 'Ears Nose Throat Unit',
+            'code' => 'ENT',
+            'department_id' => $ms -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Emergency Room',
-            'code' => 'ER'
+            'name' => 'Eye Center Unit',
+            'code' => 'EC',
+            'department_id' => $ms -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Laboratory',
-            'code' => 'Lab'
+            'name' => 'Health Information Management Unit',
+            'code' => 'HIMU',
+            'department_id' => $ms -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Blood bank',
-            'code' => 'BB'
+            'name' => 'Internal Medicine Unit',
+            'code' => 'IMU',
+            'department_id' => $ms -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Nutrition & Dietetics',
-            'code' => 'Dietary'
+            'name' => 'Medical Social Work Unit',
+            'code' => 'MSWU',
+            'department_id' => $ms -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Pharmacy',
-            'code' => 'Pharma'
+            'name' => 'Nutrition and Dietetics Unit',
+            'code' => 'NDU',
+            'department_id' => $ms -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Medical Social Services',
-            'code' => 'MSS'
+            'name' => 'Office of the Medical Professional Staff',
+            'code' => 'OMPS',
+            'department_id' => $ms -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Ears Nose Throat',
-            'code' => 'ENT'
+            'name' => 'Outpatient Unit',
+            'code' => 'OU',
+            'department_id' => $ms -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Tzuchi Rehab',
-            'code' => 'TR'
+            'name' => 'Pathology Unit',
+            'code' => 'PU',
+            'department_id' => $ms -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Claims Medical Unit',
-            'code' => 'CMU'
+            'name' => 'Pathology/Clinical Laboratory Unit',
+            'code' => 'PCLU',
+            'department_id' => $ms -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Medial & Arcillas Staffs',
-            'code' => 'MAS'
+            'name' => 'Pediatrics Unit',
+            'code' => 'PU',
+            'department_id' => $ms -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Planning',
-            'code' => 'PL'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Medical Center Chief Staffs',
-            'code' => 'MCCS'
+            'name' => 'Pharmacy Unit',
+            'code' => 'Pharma-U',
+            'department_id' => $ms -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
             'name' => 'Public Health Unit',
-            'code' => 'PHU'
+            'code' => 'PHU',
+            'department_id' => $ms -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Nursing Service Office',
-            'code' => 'NSO'
+            'name' => 'Radiology Unit',
+            'code' => 'RU',
+            'department_id' => $ms -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Communicate Ward',
-            'code' => 'CW'
+            'name' => 'Rehabilitation Medicine Department',
+            'code' => 'Rehab-MD',
+            'department_id' => $ms -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Infectious Ward',
-            'code' => 'IW'
+            'name' => 'Surgery Unit',
+            'code' => 'SU',
+            'department_id' => $ms -> id
+        ]);
+
+        /**
+         * END Medical Service
+         */
+
+        /**
+         *  Finance Service
+         */
+
+        $fs = Department::where('code', 'FS')->first();
+        
+        Station::create([
+            'uuid' => Str::uuid(),
+            'name' => 'Accounting Unit',
+            'code' => 'AU',
+            'department_id' => $fs -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Women And Children Protection Unit',
-            'code' => 'WCPU'
+            'name' => 'Billing and Claims Unit',
+            'code' => 'BCU',
+            'department_id' => $fs -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Finance Service Staff',
-            'code' => 'FSS'
+            'name' => 'Budget Unit',
+            'code' => 'BU',
+            'department_id' => $fs -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Document Controller',
-            'code' => 'DC'
+            'name' => 'Cash Operations Unit',
+            'code' => 'COU',
+            'department_id' => $fs -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Ob-Gyne Ward',
-            'code' => 'OB-W'
+            'name' => 'Office of the Finance Officer',
+            'code' => 'OFO',
+            'department_id' => $fs -> id
         ]);
+        
+        /**
+         * End Finance Service
+         */
+
+        /**
+         * Nursing Service
+         */
+
+        $ns = Department::where('code', 'NS')->first();
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Emergency Room - Nurses',
-            'code' => 'ER-N'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Orthopedic Ward',
-            'code' => 'OW'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Surgical Ward',
-            'code' => 'SW'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Surgical ICU',
-            'code' => 'SICU'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Medical Ward',
-            'code' => 'MW'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Medical ICU',
-            'code' => 'MICU'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Pediatric Ward',
-            'code' => 'PW'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Pediatric ICU',
-            'code' => 'PICU'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Psychiatric Ward',
-            'code' => 'PsW'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Operating Room-Nurses',
-            'code' => 'OR-N'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'OB-Operating Room',
-            'code' => 'OB-OR'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'PACU-Nurses',
-            'code' => 'PACU'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Delivery Room',
-            'code' => 'DR'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Neonatal ICU',
-            'code' => 'NICU'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Hemodialysis Unit',
-            'code' => 'HEMO'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Family Planning',
-            'code' => 'FP'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Radiology',
-            'code' => 'Rad'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Dental',
-            'code' => 'D'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Health Information Management',
-            'code' => 'HIM'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Admitting/Information',
-            'code' => 'AI'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Anesthesia',
-            'code' => 'An'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Eye Center',
-            'code' => 'EC'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Family Medicine',
-            'code' => 'FAMED'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Internal Medicine',
-            'code' => 'IM'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'OB-Gyne',
-            'code' => 'OB'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Orthopedics',
-            'code' => 'Ortho'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Pediatrics',
-            'code' => 'Pedia'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Surgery',
-            'code' => 'S'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Psychiatry',
-            'code' => 'Psych'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Pulmonary',
-            'code' => 'Pulmo'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'HOPSS Staffs',
-            'code' => 'HS'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Oncology',
-            'code' => 'Onco'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Rehabilitation Medicine',
-            'code' => 'Rehab'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Pulmo Special Dept',
-            'code' => 'PSD'
-        ]);
-        
-        Station::create([
-            'uuid' => Str::uuid(),
-            'name' => 'Birthing Clinic',
-            'code' => 'BC'
+            'name' => 'Animal Bite',
+            'code' => 'AB',
+            'department_id' => $ns -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
             'name' => 'Central Supply and Sterilization Unit',
-            'code' => 'CSS'
+            'code' => 'CSSU',
+            'department_id' => $ns -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Eye Center Ward',
-            'code' => 'ECW'
+            'name' => 'Clinical Nursing Unit (Wards)',
+            'code' => 'CNU',
+            'department_id' => $ns -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Oncology Ward',
-            'code' => 'OW'
+            'name' => 'Delivery Room / Labor Room Unit',
+            'code' => 'DRLRU',
+            'department_id' => $ns -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Human Milk Bank',
-            'code' => 'HMB'
+            'name' => 'Emergency Room',
+            'code' => 'ER',
+            'department_id' => $ns -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'ZCMC Treatment Hub',
-            'code' => 'ZTH'
+            'name' => 'Family Medicine (OPD)',
+            'code' => 'FM',
+            'department_id' => $ns -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Infection Control',
-            'code' => 'ICC'
+            'name' => 'Family Planning Unit',
+            'code' => 'FPU',
+            'department_id' => $ns -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Burn Unit Nurses',
-            'code' => 'BURN'
+            'name' => 'Intencive Care Unit - Maternal',
+            'code' => 'ICU-M',
+            'department_id' => $ns -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'PMDT',
-            'code' => 'TBDOT'
+            'name' => 'Intencive Care Unit - Medical',
+            'code' => 'ICU-Med',
+            'department_id' => $ns -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'ER Encoder',
-            'code' => 'ERCODER'
+            'name' => 'Intencive Care Unit - neonatal',
+            'code' => 'ICU-N',
+            'department_id' => $ns -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Nursing Service Office 2',
-            'code' => 'NSO2'
+            'name' => 'Intencive Care Unit - OB',
+            'code' => 'ICU-OB',
+            'department_id' => $ns -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'HOPSS Division Head',
-            'code' => 'HDH'
+            'name' => 'Intencive Care Unit - Pedia',
+            'code' => 'ICU-Pedia',
+            'department_id' => $ns -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'HOPSS SECRETARIES',
-            'code' => 'HS'
+            'name' => 'Intencive Care Unit - Surgical',
+            'code' => 'ICU-Surgical',
+            'department_id' => $ns -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'OMCC-Division Heads',
-            'code' => 'MCC-DH'
+            'name' => 'Internnal Medicine',
+            'code' => 'IM',
+            'department_id' => $ns -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'OB COMPLEX',
-            'code' => 'OB-C'
+            'name' => 'Milk Bank (OPD)',
+            'code' => 'MB',
+            'department_id' => $ns -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Medical & Arcilliary Supervisors',
-            'code' => 'MAS'
+            'name' => 'Obstetrics',
+            'code' => 'OB',
+            'department_id' => $ns -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Medical Center Chief-Secretary',
-            'code' => 'MCC-SEC'
+            'name' => 'Obstetrics and Gynecology Complex Unit ',
+            'code' => 'OBGYN',
+            'department_id' => $ns -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Medical Office IV-Service',
-            'code' => 'MO-IVs'
+            'name' => 'Office of the Chief Nurse',
+            'code' => 'OCN',
+            'department_id' => $ns -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Rehabilitation Medicine Staffs',
-            'code' => 'RH Staff'
+            'name' => 'Operating Room - Eye Center',
+            'code' => 'OR-Eye',
+            'department_id' => $ns -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Outpatient Supervisor',
-            'code' => 'OS'
+            'name' => 'Operating Room - Main',
+            'code' => 'OR-Main',
+            'department_id' => $ns -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Hemodialysis Unit 2',
-            'code' => 'HU2'
+            'name' => 'Operating Room - OB',
+            'code' => 'OR-OB',
+            'department_id' => $ns -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Human Milk Bank 2',
-            'code' => 'HMB2'
+            'name' => 'Out-patient Department',
+            'code' => 'Out-PD',
+            'department_id' => $ns -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Emergency Room - Nurses 2',
-            'code' => 'ER-N2'
+            'name' => 'Pathology Unit (laboratory)',
+            'code' => 'PUL',
+            'department_id' => $ns -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Nuclear Medicine',
-            'code' => 'NUC'
+            'name' => 'Pediatric',
+            'code' => 'Pedia',
+            'department_id' => $ns -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Emergency Room-Supervisor',
-            'code' => 'ER-S'
+            'name' => 'Post Anesthesia Care Unit ',
+            'code' => 'PACU',
+            'department_id' => $ns -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Office of the Strategy Management',
-            'code' => 'OSM'
+            'name' => 'Pulmonary-Respiratory Unit ',
+            'code' => 'PRU',
+            'department_id' => $ns -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => 'Occupational Safety and Health Unit',
-            'code' => 'OSHU'
+            'name' => 'Special Care Area',
+            'code' => 'SCA',
+            'department_id' => $ns -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => "MMS-Support (JO's)",
-            'code' => 'MMS-S'
+            'name' => 'Surgery (OPD)',
+            'code' => 'S-OPD',
+            'department_id' => $ns -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => "Cancer Center-Nurses",
-            'code' => 'CN'
+            'name' => 'Tuberculosis-Dots (OPD)',
+            'code' => 'TB-DOTS',
+            'department_id' => $ns -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => "Data Protection Unit",
-            'code' => 'DPU'
+            'name' => 'Trauma and Critical Care Center (Emergency Medicine Unit)',
+            'code' => 'TCCC',
+            'department_id' => $ns -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => "Finance Heads",
-            'code' => 'FH'
+            'name' => 'Ward - Communicable Diseases (6)',
+            'code' => 'W-CC',
+            'department_id' => $ns -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => "Occupational Safety and Health",
-            'code' => 'OSH'
+            'name' => 'Ward - Ears Nose Throat (2)',
+            'code' => 'W-ENT',
+            'department_id' => $ns -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => "ISO-Modular/Covid Facility",
-            'code' => 'ISO-Nurses'
+            'name' => 'Ward - Infectious Diseases (7)',
+            'code' => 'W-ID',
+            'department_id' => $ns -> id
         ]);
         
         Station::create([
             'uuid' => Str::uuid(),
-            'name' => "Outpatient Doctors",
-            'code' => 'OPD-D'
+            'name' => 'Ward - Medical (5)',
+            'code' => 'W-M',
+            'department_id' => $ns -> id
         ]);
+        
+        Station::create([
+            'uuid' => Str::uuid(),
+            'name' => 'Ward - OB (1)',
+            'code' => 'W-OB',
+            'department_id' => $ns -> id
+        ]);
+        
+        Station::create([
+            'uuid' => Str::uuid(),
+            'name' => 'Ward - Optha',
+            'code' => 'W-O',
+            'department_id' => $ns -> id
+        ]);
+        
+        Station::create([
+            'uuid' => Str::uuid(),
+            'name' => 'Ward - Orthopedic (2)',
+            'code' => 'W-Ortho',
+            'department_id' => $ns -> id
+        ]);
+        
+        Station::create([
+            'uuid' => Str::uuid(),
+            'name' => 'Ward - Pediatric (8)',
+            'code' => 'W-Pedia',
+            'department_id' => $ns -> id
+        ]);
+        
+        Station::create([
+            'uuid' => Str::uuid(),
+            'name' => 'Ward - Psych (9)',
+            'code' => 'W-Psych',
+            'department_id' => $ns -> id
+        ]);
+        
+        Station::create([
+            'uuid' => Str::uuid(),
+            'name' => 'Ward - Surgical (4)',
+            'code' => 'W-Surgical',
+            'department_id' => $ns -> id
+        ]);
+        
+        /**
+         * End Nursing Service
+         */
     }
 }

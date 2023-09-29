@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('identification_numbers', function (Blueprint $table) {
-            $table->uuid()->primary();
+            $table->id();
             $table->string('gsis_id_no')->nullable();
             $table->string('pag_ibig_id_no')->nullable();
             $table->string('philhealth_id_no')->nullable();
@@ -21,8 +21,8 @@ return new class extends Migration
             $table->string('tin_id_no')->nullable();
             $table->string('rdo_no')->nullable();
             $table->string('bank_account_no')->nullable();
-            $table->uuid('personal_information_id');
-            $table->foreign('personal_information_id')->references('uuid')->on('personal_informations');
+            $table->unsignedBigInteger('personal_information_id');
+            $table->foreign('personal_information_id')->references('id')->on('personal_informations');
             $table->timestamps();
         });
     }
