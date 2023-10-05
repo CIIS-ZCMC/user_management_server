@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 
 use App\Models\SystemRolePermission;
 use App\Models\SystemRole;
+use App\Models\Permission;
 
 class SystemRolePermisionSeeder extends Seeder
 {
@@ -18,113 +19,102 @@ class SystemRolePermisionSeeder extends Seeder
     public function run(): void
     {
         $system_role = SystemRole::where('name', 'Super Admin')->first();
+        $create_user = Permission::where('code', 'CU1')->first();
+        $view_user = Permission::where('code', 'VU1')->first();
+        $update_user = Permission::where('code', 'UU1')->first();
+        $delete_user = Permission::where('code', 'DU1')->first();
 
         SystemRolePermission::create([
-            'uuid' => Str::uuid(),
-            'action' => 'create',
             'module' => 'user',
             'active' => TRUE,
-            'system_role_id' => $system_role -> uuid
-        ]);
-        
-        SystemRolePermission::create([
-            'uuid' => Str::uuid(),
-            'action' => 'view',
-            'module' => 'user',
-            'active' => TRUE,
-            'system_role_id' => $system_role -> uuid
+            'system_role_id' => $system_role -> id,
+            'permission_id' => $create_user -> id
         ]);
 
         SystemRolePermission::create([
-            'uuid' => Str::uuid(),
-            'action' => 'put',
             'module' => 'user',
             'active' => TRUE,
-            'system_role_id' => $system_role -> uuid
-        ]);
-        
-        SystemRolePermission::create([
-            'uuid' => Str::uuid(),
-            'action' => 'delete',
-            'module' => 'user',
-            'active' => TRUE,
-            'system_role_id' => $system_role -> uuid
-        ]);
-        
-        SystemRolePermission::create([
-            'uuid' => Str::uuid(),
-            'action' => 'create',
-            'module' => 'employee',
-            'active' => TRUE,
-            'system_role_id' => $system_role -> uuid
-        ]);
-        
-        SystemRolePermission::create([
-            'uuid' => Str::uuid(),
-            'action' => 'view',
-            'module' => 'employee',
-            'active' => TRUE,
-            'system_role_id' => $system_role -> uuid
+            'system_role_id' => $system_role -> id,
+            'permission_id' => $view_user -> id
         ]);
 
         SystemRolePermission::create([
-            'uuid' => Str::uuid(),
-            'action' => 'put',
-            'module' => 'employee',
+            'module' => 'user',
             'active' => TRUE,
-            'system_role_id' => $system_role -> uuid
+            'system_role_id' => $system_role -> id,
+            'permission_id' => $update_user -> id
         ]);
         
         SystemRolePermission::create([
-            'uuid' => Str::uuid(),
-            'action' => 'delete',
-            'module' => 'employee',
+            'module' => 'user',
             'active' => TRUE,
-            'system_role_id' => $system_role -> uuid
+            'system_role_id' => $system_role -> id,
+            'permission_id' => $delete_user -> id
         ]);
         
-        $system_role = SystemRole::where('name', 'Admin')->first();
+        SystemRolePermission::create([
+            'module' => 'employee',
+            'active' => TRUE,
+            'system_role_id' => $system_role -> id,
+            'permission_id' => $create_user -> id
+        ]);
+        
+        SystemRolePermission::create([
+            'module' => 'employee',
+            'active' => TRUE,
+            'system_role_id' => $system_role -> id,
+            'permission_id' => $view_user -> id
+        ]);
 
         SystemRolePermission::create([
-            'uuid' => Str::uuid(),
-            'action' => 'create',
-            'module' => 'user',
+            'module' => 'employee',
             'active' => TRUE,
-            'system_role_id' => $system_role -> uuid
+            'system_role_id' => $system_role -> id,
+            'permission_id' => $update_user -> id
         ]);
         
         SystemRolePermission::create([
-            'uuid' => Str::uuid(),
-            'action' => 'view',
+            'module' => 'employee',
+            'active' => TRUE,
+            'system_role_id' => $system_role -> id,
+            'permission_id' => $delete_user -> id
+        ]);
+
+        SystemRolePermission::create([
             'module' => 'user',
             'active' => TRUE,
-            'system_role_id' => $system_role -> uuid
+            'system_role_id' => $system_role -> id,
+            'permission_id' => $create_user -> id
         ]);
         
         SystemRolePermission::create([
-            'uuid' => Str::uuid(),
-            'action' => 'put',
             'module' => 'user',
             'active' => TRUE,
-            'system_role_id' => $system_role -> uuid
+            'system_role_id' => $system_role -> id,
+            'permission_id' => $view_user -> id
         ]);
         
         SystemRolePermission::create([
-            'uuid' => Str::uuid(),
-            'action' => 'delete',
             'module' => 'user',
             'active' => TRUE,
-            'system_role_id' => $system_role -> uuid
+            'system_role_id' => $system_role -> id,
+            'permission_id' => $update_user -> id
+        ]);
+        
+        SystemRolePermission::create([
+            'module' => 'user',
+            'active' => TRUE,
+            'system_role_id' => $system_role -> id,
+            'permission_id' => $delete_user -> id
         ]);
         
         $system_role = SystemRole::where('name', 'Staff')->first();
 
         SystemRolePermission::create([
-            'uuid' => Str::uuid(),
-            'action' => 'view',
             'module' => 'user',
             'active' => TRUE,
-            'system_role_id' => $system_role -> uuid
+            'system_role_id' => $system_role -> id,
+            'permission_id' => $view_user -> id
         ]);
     }
 }

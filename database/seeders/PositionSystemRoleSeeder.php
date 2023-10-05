@@ -20,15 +20,13 @@ class PositionSystemRoleSeeder extends Seeder
         $system_role =  SystemRole::where('name', 'Super Admin')->first();
 
         PositionSystemRole::create([
-            'uuid' => Str::uuid(),
-            'job_position_id' => JobPosition::where('code', 'SA I')->first()->uuid,
-            'system_role_id' => $system_role -> uuid,
+            'job_position_id' => JobPosition::where('code', 'SA I')->first()->id,
+            'system_role_id' => $system_role -> id,
         ]);
         
         PositionSystemRole::create([
-            'uuid' => Str::uuid(),
-            'job_position_id' => JobPosition::where('code', 'CP III')->first()->uuid,
-            'system_role_id' => $system_role -> uuid,
+            'job_position_id' => JobPosition::where('code', 'CP III')->first()->id,
+            'system_role_id' => $system_role -> id,
         ]);
     }
 }

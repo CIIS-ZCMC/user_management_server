@@ -15,25 +15,21 @@ class DivisionSeeder extends Seeder
     public function run(): void
     {
         Division::create([
-            'uuid' => Str::uuid(),
             'code' => '001',
             'name' => 'Finance Division'
         ]);
         
         Division::create([
-            'uuid' => Str::uuid(),
             'code' => '002',
             'name' => 'Medical Division'
         ]);
         
         Division::create([
-            'uuid' => Str::uuid(),
             'code' => '003',
             'name' => 'Nursing Division'
         ]);
         
         Division::create([
-            'uuid' => Str::uuid(),
             'code' => '004',
             'name' => 'HOPSS'
         ]);

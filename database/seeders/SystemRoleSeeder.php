@@ -22,24 +22,21 @@ class SystemRoleSeeder extends Seeder
         Log::channel('custom-error')->error($system);
 
         SystemRole::create([
-            'uuid' => Str::uuid(),
             'name' => 'Super Admin',
             'description' => 'Super Admin has access rights for the UMIS entirely.',
-            'system_id' => $system -> uuid
+            'system_id' => $system -> id
         ]);
         
         SystemRole::create([
-            'uuid' => Str::uuid(),
             'name' => 'Admin',
             'description' => 'Admin has limit rights in creating Admin user and transferring admin righs to other user, it will also be limited to some major module.',
-            'system_id' => $system -> uuid
+            'system_id' => $system -> id
         ]);
         
         SystemRole::create([
-            'uuid' => Str::uuid(),
             'name' => 'Staff',
             'description' => 'Staff will have rights in UMIS as viewer base on list of system allowed for it to access.',
-            'system_id' => $system -> uuid
+            'system_id' => $system -> id
         ]);
     }
 }

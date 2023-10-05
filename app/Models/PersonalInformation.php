@@ -10,12 +10,9 @@ class PersonalInformation extends Model
     use HasFactory;
 
     protected $table = 'personal_informations';
-
-    protected $primaryKey = 'uuid';
     public $incrementing = false;
     
     public $fillable = [
-        'uuid',
         'first_name',
         'middle_name',
         'last_name',

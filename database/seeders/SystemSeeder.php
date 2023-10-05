@@ -18,7 +18,6 @@ class SystemSeeder extends Seeder
     public function run(): void
     {
         System::create([
-            'uuid' => Str::uuid(),
             'name' => 'User Management Information System',
             'code' => env('SYSTEM_ABBREVIATION'),
             'domain' => Crypt::encrypt(env('SESSION_DOMAIN'))

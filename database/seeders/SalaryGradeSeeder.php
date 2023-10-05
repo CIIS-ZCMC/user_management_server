@@ -16,7 +16,6 @@ class SalaryGradeSeeder extends Seeder
     public function run(): void
     {
         SalaryGrade::create([
-            'uuid' => Str::uuid(),
             'salary_grade_number' => 1,
             'step' => 1,
             'amount' => 13000,
@@ -24,7 +23,6 @@ class SalaryGradeSeeder extends Seeder
         ]);
         
         SalaryGrade::create([
-            'uuid' => Str::uuid(),
             'salary_grade_number' => 2,
             'step' => 1,
             'amount' => 13819,
@@ -32,7 +30,6 @@ class SalaryGradeSeeder extends Seeder
         ]);
         
         SalaryGrade::create([
-            'uuid' => Str::uuid(),
             'salary_grade_number' => 3,
             'step' => 1,
             'amount' => 14678,
@@ -40,7 +37,6 @@ class SalaryGradeSeeder extends Seeder
         ]);
         
         SalaryGrade::create([
-            'uuid' => Str::uuid(),
             'salary_grade_number' => 4,
             'step' => 1,
             'amount' => 15586,
@@ -48,7 +44,6 @@ class SalaryGradeSeeder extends Seeder
         ]);
         
         SalaryGrade::create([
-            'uuid' => Str::uuid(),
             'salary_grade_number' => 5,
             'step' => 1,
             'amount' => 16543,
@@ -56,7 +51,6 @@ class SalaryGradeSeeder extends Seeder
         ]);
         
         SalaryGrade::create([
-            'uuid' => Str::uuid(),
             'salary_grade_number' => 6,
             'step' => 1,
             'amount' => 17553,
@@ -64,7 +58,6 @@ class SalaryGradeSeeder extends Seeder
         ]);
         
         SalaryGrade::create([
-            'uuid' => Str::uuid(),
             'salary_grade_number' => 7,
             'step' => 1,
             'amount' => 18620,
@@ -72,7 +65,6 @@ class SalaryGradeSeeder extends Seeder
         ]);
         
         SalaryGrade::create([
-            'uuid' => Str::uuid(),
             'salary_grade_number' => 8,
             'step' => 1,
             'amount' => 19744,
@@ -80,7 +72,6 @@ class SalaryGradeSeeder extends Seeder
         ]);
         
         SalaryGrade::create([
-            'uuid' => Str::uuid(),
             'salary_grade_number' => 9,
             'step' => 1,
             'amount' => 21129,
@@ -88,7 +79,6 @@ class SalaryGradeSeeder extends Seeder
         ]);
         
         SalaryGrade::create([
-            'uuid' => Str::uuid(),
             'salary_grade_number' => 10,
             'step' => 1,
             'amount' => 23176,
@@ -96,7 +86,6 @@ class SalaryGradeSeeder extends Seeder
         ]);
         
         SalaryGrade::create([
-            'uuid' => Str::uuid(),
             'salary_grade_number' => 11,
             'step' => 1,
             'amount' => 27000,
@@ -104,7 +93,6 @@ class SalaryGradeSeeder extends Seeder
         ]);
         
         SalaryGrade::create([
-            'uuid' => Str::uuid(),
             'salary_grade_number' => 12,
             'step' => 1,
             'amount' => 29165,
@@ -112,7 +100,6 @@ class SalaryGradeSeeder extends Seeder
         ]);
         
         SalaryGrade::create([
-            'uuid' => Str::uuid(),
             'salary_grade_number' => 13,
             'step' => 1,
             'amount' => 31320,
@@ -120,7 +107,6 @@ class SalaryGradeSeeder extends Seeder
         ]);
         
         SalaryGrade::create([
-            'uuid' => Str::uuid(),
             'salary_grade_number' => 14,
             'step' => 1,
             'amount' => 33843,
@@ -128,7 +114,6 @@ class SalaryGradeSeeder extends Seeder
         ]);
         
         SalaryGrade::create([
-            'uuid' => Str::uuid(),
             'salary_grade_number' => 15,
             'step' => 1,
             'amount' => 36619,
@@ -136,7 +121,6 @@ class SalaryGradeSeeder extends Seeder
         ]);
         
         SalaryGrade::create([
-            'uuid' => Str::uuid(),
             'salary_grade_number' => 16,
             'step' => 1,
             'amount' => 39672,
@@ -144,7 +128,6 @@ class SalaryGradeSeeder extends Seeder
         ]);
         
         SalaryGrade::create([
-            'uuid' => Str::uuid(),
             'salary_grade_number' => 17,
             'step' => 1,
             'amount' => 43030,
@@ -152,7 +135,6 @@ class SalaryGradeSeeder extends Seeder
         ]);
         
         SalaryGrade::create([
-            'uuid' => Str::uuid(),
             'salary_grade_number' => 18,
             'step' => 1,
             'amount' => 46725,
@@ -160,7 +142,6 @@ class SalaryGradeSeeder extends Seeder
         ]);
         
         SalaryGrade::create([
-            'uuid' => Str::uuid(),
             'salary_grade_number' => 19,
             'step' => 1,
             'amount' => 51357,
@@ -168,7 +149,6 @@ class SalaryGradeSeeder extends Seeder
         ]);
         
         SalaryGrade::create([
-            'uuid' => Str::uuid(),
             'salary_grade_number' => 20,
             'step' => 1,
             'amount' => 57347,
@@ -176,7 +156,6 @@ class SalaryGradeSeeder extends Seeder
         ]);
         
         SalaryGrade::create([
-            'uuid' => Str::uuid(),
             'salary_grade_number' => 21,
             'step' => 1,
             'amount' => 63997,
@@ -184,7 +163,6 @@ class SalaryGradeSeeder extends Seeder
         ]);
         
         SalaryGrade::create([
-            'uuid' => Str::uuid(),
             'salary_grade_number' => 22,
             'step' => 1,
             'amount' => 71511,
@@ -192,7 +170,6 @@ class SalaryGradeSeeder extends Seeder
         ]);
         
         SalaryGrade::create([
-            'uuid' => Str::uuid(),
             'salary_grade_number' => 23,
             'step' => 1,
             'amount' => 80003,
@@ -200,7 +177,6 @@ class SalaryGradeSeeder extends Seeder
         ]);
         
         SalaryGrade::create([
-            'uuid' => Str::uuid(),
             'salary_grade_number' => 24,
             'step' => 1,
             'amount' => 90078,
@@ -208,7 +184,6 @@ class SalaryGradeSeeder extends Seeder
         ]);
         
         SalaryGrade::create([
-            'uuid' => Str::uuid(),
             'salary_grade_number' => 25,
             'step' => 1,
             'amount' => 102690,
@@ -216,7 +191,6 @@ class SalaryGradeSeeder extends Seeder
         ]);
         
         SalaryGrade::create([
-            'uuid' => Str::uuid(),
             'salary_grade_number' => 26,
             'step' => 1,
             'amount' => 116040,
@@ -224,7 +198,6 @@ class SalaryGradeSeeder extends Seeder
         ]);
         
         SalaryGrade::create([
-            'uuid' => Str::uuid(),
             'salary_grade_number' => 27,
             'step' => 1,
             'amount' => 131124,
@@ -232,7 +205,6 @@ class SalaryGradeSeeder extends Seeder
         ]);
         
         SalaryGrade::create([
-            'uuid' => Str::uuid(),
             'salary_grade_number' => 28,
             'step' => 1,
             'amount' => 148171,
@@ -240,7 +212,6 @@ class SalaryGradeSeeder extends Seeder
         ]);
         
         SalaryGrade::create([
-            'uuid' => Str::uuid(),
             'salary_grade_number' => 29,
             'step' => 1,
             'amount' => 167432,
@@ -248,7 +219,6 @@ class SalaryGradeSeeder extends Seeder
         ]);
         
         SalaryGrade::create([
-            'uuid' => Str::uuid(),
             'salary_grade_number' => 30,
             'step' => 1,
             'amount' => 189199,
@@ -256,7 +226,6 @@ class SalaryGradeSeeder extends Seeder
         ]);
         
         SalaryGrade::create([
-            'uuid' => Str::uuid(),
             'salary_grade_number' => 31,
             'step' => 1,
             'amount' => 278434,
@@ -264,7 +233,6 @@ class SalaryGradeSeeder extends Seeder
         ]);
         
         SalaryGrade::create([
-            'uuid' => Str::uuid(),
             'salary_grade_number' => 32,
             'step' => 1,
             'amount' => 331954,
@@ -272,7 +240,6 @@ class SalaryGradeSeeder extends Seeder
         ]);
         
         SalaryGrade::create([
-            'uuid' => Str::uuid(),
             'salary_grade_number' => 33,
             'step' => 1,
             'amount' => 419144,

@@ -26,7 +26,6 @@ class UserSeeder extends Seeder
     {
 
         $personalInformation = PersonalInformation::create([
-            'uuid' => Str::uuid(),
             'first_name' => "Tristan jay",
             'middle_name' => 'L',
             'last_name' => 'Amit',
@@ -48,14 +47,13 @@ class UserSeeder extends Seeder
         $fortyDaysExpiration = $fortyDaysFromNow->toDateTimeString();
 
         $employeProfile = EmployeeProfile::create([
-            'uuid' => Str::uuid(),
             'employee_id' => 2023091330,
             'date_hired' => '2023-09-13',
             'job_type' => 'Job Order',
-            'department_id' => Department::where('code', 'OMCC')->first()-> uuid,
-            'job_position_id' => JobPosition::where('code', 'CP III')->first()-> uuid,
-            'station_id' => Station::where('code', 'Supply')->first()-> uuid,
-            'personal_information_id' => $personalInformation -> uuid,
+            'department_id' => Department::where('code', 'OMCC')->first()->id,
+            'job_position_id' => JobPosition::where('code', 'CP III')->first()->id,
+            'station_id' => Station::where('code', 'MMS')->first()-> id,
+            'personal_information_id' => $personalInformation->id,
             'password_encrypted' => $encryptedPassword,
             'password_created_date' => now(),
             'password_expiration_date' => $fortyDaysExpiration,
