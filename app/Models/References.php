@@ -10,11 +10,8 @@ class References extends Model
     use HasFactory;
 
     protected $table = 'references';
-    protected $primaryKey = 'uuid';
-    public $incrementing = false;
 
     public $fillable = [
-        'uuid',
         'name',
         'address',
         'contact_no',
@@ -25,6 +22,6 @@ class References extends Model
 
     public function personalInformation()
     {
-        return $this->belongsTo(PersonalInformation::class, 'uuid', 'personal_information_id');
+        return $this->belongsTo(PersonalInformation::class);
     }
 }

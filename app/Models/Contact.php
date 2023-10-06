@@ -10,11 +10,8 @@ class Contact extends Model
     use HasFactory;
 
     protected $table = 'contacts';
-    protected $primaryKey = 'uuid';
-    public $incrementing = false;
 
     public $fillable = [
-        'uuid',
         'phone_number',
         'email',
         'personal_information_id'
@@ -24,6 +21,6 @@ class Contact extends Model
 
     public function personalInformation()
     {
-        return $this->belongsTo(PersonalInformation::class, 'uuid', 'personal_information_id');
+        return $this->belongsTo(PersonalInformation::class);
     }
 }

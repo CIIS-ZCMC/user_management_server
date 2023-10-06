@@ -10,11 +10,8 @@ class CivilServiceEligibility extends Model
     use HasFactory;
 
     protected $table = 'civil_service_eligibilities';
-    protected $primaryKey = 'uuid';
-    public $incrementing = false;
 
     public $fillable = [
-        'uuid',
         'career_service',
         'rating',
         'date_of_examination',
@@ -27,6 +24,6 @@ class CivilServiceEligibility extends Model
 
     public function personalInformation()
     {
-        return $this->belongsTo(PersonalInformation::class, 'personal_information_id', 'uuid');
+        return $this->belongsTo(PersonalInformation::class);
     }
 }

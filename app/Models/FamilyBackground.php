@@ -10,11 +10,8 @@ class FamilyBackground extends Model
     use HasFactory;
 
     protected $table = 'family_backgrounds';
-    protected $primaryKey = 'uuid';
-    public $incrementing = false;
 
     public $fillable = [
-        'uuid',
         'spouse',
         'address',
         'zip_code',
@@ -40,7 +37,7 @@ class FamilyBackground extends Model
     
     public function personalInformation()
     {
-        return $this->belongsTo(PersonalInformation::class, 'uuid');
+        return $this->belongsTo(PersonalInformation::class);
     }
 
     public function fatherName()

@@ -10,11 +10,8 @@ class LegalInformation extends Model
     use HasFactory;
 
     protected $table = 'legal_informations';
-    protected $primaryKey = 'uuid';
-    public $incrementing = false;
 
     public $fillable = [
-        'uuid',
         'employee_profile_id',
         'details',
         'answer',
@@ -25,11 +22,11 @@ class LegalInformation extends Model
 
     public function legalInformationQuestion()
     {
-        return $this->belongsTo(LegalInformationQuestion::class, 'uuid', 'legal_iq_id');
+        return $this->belongsTo(LegalInformationQuestion::class);
     }
 
     public function employee()
     {
-        return $this->belongsTo(EmployeeProfile::class, 'uuid', 'employee_profile_id');
+        return $this->belongsTo(EmployeeProfile::class);
     }
 }

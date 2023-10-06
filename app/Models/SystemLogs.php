@@ -5,22 +5,23 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class LoginTrail extends Model
+class SystemLogs extends Model
 {
     use HasFactory;
 
-    protected $table = 'login_trails';
+    protected $table = 'system_logs';
 
-    public $fillable = [
-        'signin_datetime',
-        'ip_address',
-        'employee_profile_id'
+    protected $fillable = [
+        "action",
+        "module",
+        "status",
+        "remarks",
+        "employee_profile_id"
     ];
-
+    
     public $timestamps = TRUE;
 
-    public function employeeProfile()
-    {
+    public function employee(){
         return $this->belongsTo(EmployeeProfile::class);
     }
 }

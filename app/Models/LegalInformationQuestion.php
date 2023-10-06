@@ -10,11 +10,8 @@ class LegalInformationQuestion extends Model
     use HasFactory;
 
     protected $table = 'legal_information_questions';
-    protected $primaryKey = 'uuid';
-    public $incrementing = false;
 
     public $fillable = [
-        'uuid',
         'content_question',
         'is_sub_question',
         'legal_iq_id'
@@ -24,12 +21,12 @@ class LegalInformationQuestion extends Model
 
     public function legalInformation()
     {
-        return $this->hasMany(LegalInformation::class, 'legal_iq_id', 'uuid');
+        return $this->hasMany(LegalInformation::class);
     }
     
 
     public function legalIQ()
     {
-        return $this->hasMany(LegalInformationQuestion::class, 'uuid', 'legal_iq_id');
+        return $this->hasMany(LegalInformationQuestion::class);
     }
 }

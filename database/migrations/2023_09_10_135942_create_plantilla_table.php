@@ -25,7 +25,7 @@ return new class extends Migration
 
     /**
      * Reverse the migrations.
-s     */
+     */
     public function down(): void
     {
         Schema::dropIfExists('plantillas');

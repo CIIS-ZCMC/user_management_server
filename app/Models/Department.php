@@ -10,11 +10,8 @@ class Department extends Model
     use HasFactory;
 
     protected $table = 'departments';
-    protected $primaryKey = 'uuid';
-    public $incrementing = false;
 
     public $fillable = [
-        'uuid',
         'name',
         'code',
         'division_id'
@@ -24,11 +21,11 @@ class Department extends Model
 
     public function employeeProfile()
     {
-        return $this->hasMany(EmployeeProfile::class, 'department_id', 'uuid');
+        return $this->hasMany(EmployeeProfile::class);
     }
 
     public function division()
     {
-        return $this->belongsTo(Division::class, 'division_id', 'uuid');
+        return $this->belongsTo(Division::class);
     }
 }

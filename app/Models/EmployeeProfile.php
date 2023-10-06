@@ -16,11 +16,8 @@ class EmployeeProfile extends Authenticatable
     use HasFactory;
 
     protected $table = 'employee_profiles';
-    protected $primaryKey = 'uuid';
-    public $incrementing = false;
 
     public $fillable = [
-        'uuid',
         'employee_id',
         'employee_verified_at',
         'profile_url',
@@ -66,22 +63,22 @@ class EmployeeProfile extends Authenticatable
 
     public function personalInformation()
     {
-        return $this->belongsTo(PersonalInformation::class, 'personal_information_id', 'uuid');
+        return $this->belongsTo(PersonalInformation::class);
     }
 
     public function station()
     {
-        return $this->belongsTo(Station::class, 'station_id', 'uuid');
+        return $this->belongsTo(Station::class);
     }
 
     public function position()
     {
-        return $this->belongsTo(JobPosition::class, 'job_position_id', 'uuid');
+        return $this->belongsTo(JobPosition::class);
     }
 
     public function department()
     {
-        return $this->belongsTo(Department::class, 'department_id', 'uuid');
+        return $this->belongsTo(Department::class);
     }
 
     public function createToken()
@@ -95,7 +92,6 @@ class EmployeeProfile extends Authenticatable
         $token_exp = Carbon::now()->addHour();
 
         $accessToken = AccessToken::create([
-            'uuid' => Str::uuid(),
             'employee_profile_id' => $this->uuid,
             'public_key' => 'NONE',
             'token' => $token,
@@ -109,12 +105,12 @@ class EmployeeProfile extends Authenticatable
 
     public function accessToken()
     {
-        return $this->hasMany(AccessToken::class, 'uuid', 'employee_profile_id');
+        return $this->hasMany(AccessToken::class);
     }
 
     public function loginTrails()
     {
-        return $this->hasMany(LoginTrails::class, 'uuid', 'employee_profile_id');
+        return $this->hasMany(LoginTrails::class);
     }
 
     public function isAprroved()

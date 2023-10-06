@@ -10,7 +10,6 @@ class Permission extends Model
     use HasFactory;
 
     protected $table = 'permissions';
-    public $incrementing = false;
 
     public $fillable = [
         'name',
@@ -20,4 +19,7 @@ class Permission extends Model
         'deactivated'
     ];
 
+    public function systemRoles(){
+        return $this->hasMany(SystemRolePermission::class);
+    }
 }

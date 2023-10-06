@@ -42,6 +42,8 @@ class Authorization
         if(!$hasPermission){
             return response()->json(['message'=>'Un-Authorized.'], 401);
         }
+
+        $request->merge(['permission' => $routePermission]);
         
         return $next($request);
     }

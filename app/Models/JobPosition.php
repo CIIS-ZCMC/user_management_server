@@ -10,11 +10,8 @@ class JobPosition extends Model
     use HasFactory;
 
     protected $table = 'job_positions';
-    protected $primaryKey = 'uuid';
-    public $incrementing = false;
 
     public $fillable = [
-        'uuid',
         'name',
         'code',
         'salary_grade'
@@ -24,6 +21,6 @@ class JobPosition extends Model
 
     public function plantilla()
     {
-        return $this->belongsTo(Plantilla::class, "uuid", 'job_position_id');
+        return $this->belongsTo(Plantilla::class);
     }
 }

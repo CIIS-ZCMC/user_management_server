@@ -10,11 +10,8 @@ class SalaryGrade extends Model
     use HasFactory;
 
     protected $table = 'salary_grades';
-    protected $primaryKey = 'uuid';
-    public $incrementing = false;
 
     public $fillable = [
-        'uuid',
         'salary_grade_number',
         'step',
         'amount',
@@ -25,6 +22,6 @@ class SalaryGrade extends Model
 
     public function jobPositions()
     {
-        return $this->hasMany(JobPosition::class, 'uuid', 'salary_grade_id');
+        return $this->hasMany(JobPosition::class);
     }
 }

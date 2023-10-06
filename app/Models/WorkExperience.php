@@ -10,11 +10,8 @@ class WorkExperience extends Model
     use HasFactory;
 
     protected $table = 'work_experiences';
-    protected $primaryKey = 'uuid';
-    public $incrementing = false;
 
     public $fillable = [
-        'uuid',
         'date_from',
         'date_to',
         'position_title',
@@ -31,6 +28,6 @@ class WorkExperience extends Model
 
     public function personalInformation()
     {
-        return $this->belongsTo(PersonalInformation::class, 'uuid', 'personal_information_id');
+        return $this->belongsTo(PersonalInformation::class);
     }
 }

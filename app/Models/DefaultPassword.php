@@ -5,23 +5,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class AccessToken extends Model
+class DefaultPassword extends Model
 {
     use HasFactory;
 
-    protected $table = 'access_tokens';
+    protected $table = 'default_passwords';
 
     public $fillable = [
+        'password',
         'employee_profile_id',
-        'public_key',
-        'token',
-        'token_exp'
+        'status',
+        'effective_at',
+        'end_at'
     ];
 
     public $timestamps = TRUE;
-
-    public function employeeProfile()
-    {
-        return $this->belongsTo(employeeProfile::class);
-    }
 }

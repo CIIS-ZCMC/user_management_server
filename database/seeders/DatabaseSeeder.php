@@ -23,5 +23,6 @@ class DatabaseSeeder extends Seeder
         $this->call([SystemRolePermisionSeeder::class]);
         $this->call([PositionSystemRoleSeeder::class]);
         $this->call([UserSeeder::class]);
+        $this->call([DefaultPasswordSeeder::class]);
     }
 }

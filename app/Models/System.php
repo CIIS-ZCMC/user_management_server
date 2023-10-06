@@ -12,9 +12,6 @@ class System extends Model
 
     protected $table = 'systems';
 
-    protected $primaryKey = 'uuid';
-    public $incrementing = false;
-
     protected $fillable = [
         "uuid",
         "name",
@@ -31,6 +28,6 @@ class System extends Model
 
     public function systemRoles()
     {
-        return $this->hasMany(SystemRole::class, 'system_id', 'uuid');
+        return $this->hasMany(SystemRole::class);
     }
 }

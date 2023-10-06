@@ -10,8 +10,6 @@ class IssuanceInformation extends Model
     use HasFactory;
 
     protected $table = 'issuance_informations';
-    protected $primaryKey = 'uuid';
-    public $incrementing = false;
 
     public $fillable = [
         'license_no',
@@ -25,6 +23,6 @@ class IssuanceInformation extends Model
     
     public function personalInformation()
     {
-        return $this->belongsTo(PersonalInformation::class, 'uuid');
+        return $this->belongsTo(PersonalInformation::class);
     }
 }

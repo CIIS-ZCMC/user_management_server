@@ -53,7 +53,7 @@ class UserSeeder extends Seeder
             'department_id' => Department::where('code', 'OMCC')->first()->id,
             'job_position_id' => JobPosition::where('code', 'CP III')->first()->id,
             'station_id' => Station::where('code', 'MMS')->first()-> id,
-            'personal_information_id' => $personalInformation->id,
+            'personal_information_id' => 1,
             'password_encrypted' => $encryptedPassword,
             'password_created_date' => now(),
             'password_expiration_date' => $fortyDaysExpiration,

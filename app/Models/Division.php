@@ -10,11 +10,8 @@ class Division extends Model
     use HasFactory;
 
     protected $table = 'divisions';
-    protected $primaryKey = 'uuid';
-    public $incrementing = false;
 
     public $fillable = [
-        'uuid',
         'code',
         'name'
     ];
@@ -23,6 +20,6 @@ class Division extends Model
 
     public function departments()
     {
-        return $this->hasMany(Department::class, 'uuid', 'division_id');
+        return $this->hasMany(Department::class);
     }
 }

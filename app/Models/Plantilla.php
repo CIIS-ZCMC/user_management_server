@@ -10,11 +10,8 @@ class Plantilla extends Model
     use HasFactory;
 
     protected $table = 'plantillas';
-    protected $primaryKey = 'uuid';
-    public $incrementing = false;
 
     public $fillable = [
-        'uuid',
         'plantilla_no',
         'tranche',
         'date',
@@ -26,11 +23,11 @@ class Plantilla extends Model
 
     public function employees()
     {
-        return $this->hasMany(EmployeeProfile::class, 'plantilla_id', 'uuid');
+        return $this->hasMany(EmployeeProfile::class);
     }
 
     public function jobPosition()
     {
-        return $this->belongsTo(JobPosition::class, 'job_position_id', 'uuid');
+        return $this->belongsTo(JobPosition::class);
     }
 }

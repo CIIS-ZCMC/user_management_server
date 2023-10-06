@@ -10,8 +10,6 @@ class PositionSystemRole extends Model
     use HasFactory;
 
     protected $table = 'position_system_roles';
-    protected $primaryKey = 'uuid';
-    public $incrementing = false;
 
     public $fillable = [
         'job_position_id',
@@ -22,16 +20,16 @@ class PositionSystemRole extends Model
 
     public function position()
     {
-        return $this->belongsTo(JobPosition::class, 'uuid');
+        return $this->belongsTo(JobPosition::class);
     }
 
     public function systemRoles()
     {
-        return $this->belongsTo(SystemRole::class, 'uuid');
+        return $this->belongsTo(SystemRole::class);
     }
 
     public function systems()
     {
-        return $this->hasManyThrough(System::class, SystemRole::class, 'uuid', 'uuid');
+        return $this->hasManyThrough(System::class, SystemRole::class, 'id', 'id');
     }
 }

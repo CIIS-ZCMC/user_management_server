@@ -11,8 +11,6 @@ class SystemRole extends Model
     use HasFactory;
 
     protected $table = 'system_roles';
-    protected $primaryKey = 'uuid';
-    public $incrementing = false;
 
     protected $fillable = [
         "name",
@@ -25,12 +23,12 @@ class SystemRole extends Model
 
     public function system()
     {
-        return $this->belongsTo(System::class, 'uuid');
+        return $this->belongsTo(System::class);
     }
 
     public function permissions()
     {
-        return $this->hasMany(SystemRolePermission::class, 'system_role_id', 'uuid');
+        return $this->hasMany(SystemRolePermission::class, 'system_role_id');
     }
 
     public function hasPermission($routePermission)

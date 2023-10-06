@@ -10,11 +10,8 @@ class Address extends Model
     use HasFactory;
 
     protected $table = 'addresses';
-    protected $primaryKey = 'uuid';
-    public $incrementing = false;
 
     public $fillable = [
-        'uuid',
         'street',
         'barangay',
         'city',
@@ -30,6 +27,6 @@ class Address extends Model
 
     public function personalInformation()
     {
-        return $this->belongsTo(PersonalInformation::class, 'personal_information_id', 'uuid');
+        return $this->belongsTo(PersonalInformation::class);
     }
 }

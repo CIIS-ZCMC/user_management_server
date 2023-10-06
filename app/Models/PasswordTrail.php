@@ -10,10 +10,8 @@ class PasswordTrail extends Model
     use HasFactory;
 
     protected $table = 'password_trails';
-    public $incrementing = false;
 
     public $fillable = [
-        'uuid',
         'old_password',
         'password_created_at',
         'expired_at',
@@ -24,6 +22,6 @@ class PasswordTrail extends Model
 
     public function personalInformation()
     {
-        return $this->belongsTo(EmployeeProfile::class, 'uuid');
+        return $this->belongsTo(EmployeeProfile::class);
     }
 }

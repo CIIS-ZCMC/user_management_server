@@ -62,6 +62,7 @@ Route::middleware('auth.cookie')->group(function(){
 
         Route::middleware('auth.permission:user create')->group(function(){
             Route::post('employee-profile', 'EmployeeProfileController@store');
+            Route::post('employee-account/{id}', 'EmployeeProfileController@createEmployeeAccount');
         });
 
         Route::middleware('auth.permission:user view')->group(function(){
@@ -598,6 +599,42 @@ Route::middleware('auth.cookie')->group(function(){
          */
         Route::middleware('auth.permission:user view')->group(function(){
             Route::get('login-trail/{id}', 'LoginTrailController@show');
+        });
+
+        /**
+         * System Logs Module
+         */
+
+        Route::middleware('auth.permission:user view')->group(function(){
+            Route::get('system_logs', 'SystemLogsController@index');
+            Route::get('system_log/{id}', 'SystemLogsController@show');
+        });
+
+        Route::middleware('auth.permission:user delete')->group(function(){
+            Route::get('system_log/{id}', 'SystemLogsController@show');
+        });
+
+        /**
+         * Default Password Module
+         */
+        Route::middleware('auth.permission:setting view')->group(function(){
+            Route::get('default-passwords', 'DefaultPasswordController@index');
+        });
+
+        Route::middleware('auth.permission:setting create')->group(function(){
+            Route::post('default-password', 'DefaultPasswordController@store');
+        });
+
+        Route::middleware('auth.permission:setting view')->group(function(){
+            Route::get('default-password/{id}', 'DefaultPasswordController@show');
+        });
+
+        Route::middleware('auth.permission:setting put')->group(function(){
+            Route::put('default-password/{id}', 'DefaultPasswordController@update');
+        });
+
+        Route::middleware('auth.permission:setting delete')->group(function(){
+            Route::delete('default-password/{id}', 'DefaultPasswordController@destroy');
         });
 
         /**

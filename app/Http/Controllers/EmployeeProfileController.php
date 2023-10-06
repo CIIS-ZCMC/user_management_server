@@ -15,6 +15,7 @@ use App\Http\Requests\SignInRequest;
 use App\Http\Requests\EmployeeProfileRequest;
 use App\Http\Resources\EmployeeProfileResource;
 use App\Http\Resources\SignInResource;
+use App\Models\DefaultPassword;
 use App\Models\EmployeeProfile;
 use App\Models\LoginTrail;
 
@@ -134,6 +135,8 @@ class EmployeeProfileController extends Controller
                 return EmployeeProfile::all();
             });
 
+            $this->registerSystemLogs($request, null, true, 'Success in fetching all employee profiles.');
+
             return response()->json(['data' => EmployeeProfileResource::collection($employee_profiles)], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('index', $th->getMessage());
@@ -162,6 +165,8 @@ class EmployeeProfileController extends Controller
             }
 
             $employee_profile = EmployeeProfile::create($cleanData);
+            
+            $this->registerSystemLogs($request, $employee_profile->id, true, 'Success in creating an employee profiles.');
 
             return response()->json(['data' => $employee_profile], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -169,16 +174,45 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    public function createEmployeeAccount($id, Request $request)
+    {
+        try{
+            $employee_profile = EmployeeProfile::find($id);
+
+            if(!$employee_profile)
+            {
+                $this->registerSystemLogs($request, $id, false, 'Failed to find an employee profile.');
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+            
+            $defaultPassword = DefaultPassword::find('status', TRUE)->first();
+            $hashPassword = Hash::make($defaultPassword['password'].env('SALT_VALUE'));
+            $encryptedPassword = Crypt::encryptString($hashPassword);
+
+            $employee_profile -> employee_id = $request->employee_id;
+            $employee_profile -> password_encrypted = $encryptedPassword;
+            $employee_profile -> save();
+
+            return response()->json(['data' => 'Account created successfully.'], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->errorLog('createEmployeeAccount', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
     
     public function show($id, Request $request)
     {
         try{
-            $employee_profile = EmployeeProfile::findOrFail($id);
+            $employee_profile = EmployeeProfile::find($id);
 
             if(!$employee_profile)
             {
+                $this->registerSystemLogs($request, $id, false, 'Failed to find an employee profile.');
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
+
+            $this->registerSystemLogs($request, $employee_profile->id, true, 'Success in fetching an employee profiles.');
 
             return response()->json(['data' => new EmployeeProfileResource($employee_profile)], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -194,6 +228,7 @@ class EmployeeProfileController extends Controller
 
             if(!$employee_profile)
             {
+                $this->registerSystemLogs($request, $id, false, 'Failed to find an employee profile.');
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
@@ -211,6 +246,8 @@ class EmployeeProfileController extends Controller
 
             $employee_profile->update($cleanData);
 
+            $this->registerSystemLogs($request, $employee_profile->id, true, 'Success in updating an employee profile.');
+
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('update', $th->getMessage());
@@ -227,6 +264,8 @@ class EmployeeProfileController extends Controller
 
             $employee_profile->update($file_value);
 
+            $this->registerSystemLogs($request, $employee_profile->id, true, 'Success in changing profile picture of an employee profile.');
+
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->errorLog('update', $th->getMessage());
@@ -242,10 +281,13 @@ class EmployeeProfileController extends Controller
 
             if(!$employee_profile)
             {
+                $this->registerSystemLogs($request, $id, false, 'Failed to find an employee profile.');
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
             $employee_profile->delete();
+
+            $this->registerSystemLogs($request, $employee_profile->id, true, 'Success in deleting an employee profile.');
             
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -296,5 +338,23 @@ class EmployeeProfileController extends Controller
     protected function errorLog($module, $errorMessage)
     {
         Log::channel('custom-error')->error('Employee Profile Controller ['.$module.']: message: '.$errorMessage);
+    }
+
+    protected function registerSystemLogs($request, $moduleID, $status, $remarks)
+    {
+        $ip = $request->ip();
+        $user = $request->user;
+        $permission = $request->permission;
+        list($action, $module) = explode(' ', $permission);
+
+        SystemLogs::create([
+            'employee_profile_id' => $user->id,
+            'module_id' => $moduleID,
+            'action' => $action,
+            'module' => $module,
+            'status' => $status,
+            'remarks' => $remarks,
+            'ip_address' => $ip
+        ]);
     }
 }

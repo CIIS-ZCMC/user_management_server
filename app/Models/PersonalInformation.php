@@ -10,7 +10,6 @@ class PersonalInformation extends Model
     use HasFactory;
 
     protected $table = 'personal_informations';
-    public $incrementing = false;
     
     public $fillable = [
         'first_name',
@@ -44,51 +43,51 @@ class PersonalInformation extends Model
 
     public function contact()
     {
-        return $this->hasOne(Contact::class, 'personal_information_id');
+        return $this->hasOne(Contact::class);
     }
 
     public function familyBackground()
     {
-        return $this->hasOne(FamilyBackground::class, 'personal_information_id');
+        return $this->hasOne(FamilyBackground::class);
     }
 
     public function identificationNumber()
     {
-        return $this->hasOne(IdentificationNumber::class, 'personal_information_id');
+        return $this->hasOne(IdentificationNumber::class);
     }
 
     public function workExperience()
     {
-        return $this->hasMany(WorkExperiences::class, 'personal_information_id');
+        return $this->hasMany(WorkExperiences::class);
     }
 
     public function training()
     {
-        return $this->hasMany(Training::class, 'personal_information_id');
+        return $this->hasMany(Training::class);
     }
 
     public function otherInformation()
     {
-        return $this->hasMany(OtherInformation::class, 'personal_information_id');
+        return $this->hasMany(OtherInformation::class);
     }
 
     public function civilServiceEligibility()
     {
-        return $this->hasMany(CivilServiceEligibility::class, 'personal_information_id');
+        return $this->hasMany(CivilServiceEligibility::class);
     }
 
     public function references()
     {
-        return $this->hasMany(References::class, 'personal_information_id');
+        return $this->hasMany(References::class);
     }
 
     public function employeeProfile()
     {
-        return $this->hasOne(EmployeeProfile::class, 'personal_information_id');
+        return $this->hasOne(EmployeeProfile::class);
     }
 
     public function passwordTrail()
     {
-        return $this->hasMany(PasswordTrail::class, 'personal_information_id');
+        return $this->hasMany(PasswordTrail::class);
     }
 }
