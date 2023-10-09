@@ -638,6 +638,29 @@ Route::middleware('auth.cookie')->group(function(){
         });
 
         /**
+         * Default Special Access Role Module
+         */
+        Route::middleware('auth.permission:special_role view')->group(function(){
+            Route::get('special_access_roles', 'SpecialAccessRoleController@index');
+        });
+
+        Route::middleware('auth.permission:special_role create')->group(function(){
+            Route::post('special_access_role', 'SpecialAccessRoleController@store');
+        });
+
+        Route::middleware('auth.permission:special_role view')->group(function(){
+            Route::get('special_access_role/{id}', 'SpecialAccessRoleController@show');
+        });
+
+        Route::middleware('auth.permission:special_role put')->group(function(){
+            Route::put('special_access_role/{id}', 'SpecialAccessRoleController@update');
+        });
+
+        Route::middleware('auth.permission:special_role delete')->group(function(){
+            Route::delete('special_access_role/{id}', 'SpecialAccessRoleController@destroy');
+        });
+
+        /**
          * Module without authorization needed
          */
         Route::delete('signout', 'UserController@signOut');

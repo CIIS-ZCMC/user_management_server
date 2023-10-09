@@ -7,13 +7,25 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Str;
+use App\Services\RequestLogger;
 use App\Http\Requests\OtherInformationRequest;
 use App\Http\Resources\OtherInformationResource;
 use App\Models\OtherInformation;
+use App\Models\SystemLogs;
 
 class OtherInformationController extends Controller
 {
+    private $CONTROLLER_NAME = 'Other Information';
+    private $PLURAL_MODULE_NAME = 'other informations';
+    private $SINGULAR_MODULE_NAME = 'other information';
+
+    protected $requestLogger;
+
+    public function __construct(RequestLogger $requestLogger)
+    {
+        $this->requestLogger = $requestLogger;
+    }
+
     public function index(Request $request)
     {
         try{
@@ -23,9 +35,11 @@ class OtherInformationController extends Controller
                 return OtherInformation::all();
             });
 
+            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+
             return response()->json(['data' => OtherInformationResource::collection($other_informations)], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->errorLog('index', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -40,9 +54,11 @@ class OtherInformationController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
+            $this->registerSystemLogs($request, $id, true, 'Success in fetching employee '.$this->SINGULAR_MODULE_NAME.'.');
+
             return response()->json(['data' => OtherInformationResource::collection($other_information)], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->errorLog('show', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -52,7 +68,6 @@ class OtherInformationController extends Controller
         try{
             $cleanData = [];
 
-            $cleanData['uuid'] = Str::uuid();
             foreach ($request->all() as $key => $value) {
                 if($value === null){
                     $cleanData[$key] = $value;
@@ -63,9 +78,11 @@ class OtherInformationController extends Controller
 
             $other_information = OtherInformation::create($cleanData);
 
+            $this->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->errorLog('store', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -80,9 +97,11 @@ class OtherInformationController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
+            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
+
             return response()->json(['data' => new OtherInformationResource($other_information)], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->errorLog('show', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -105,9 +124,11 @@ class OtherInformationController extends Controller
 
             $other_information -> update($cleanData);
 
+            $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->errorLog('update', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -123,21 +144,31 @@ class OtherInformationController extends Controller
             }
 
             $other_information -> delete();
+
+            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->errorLog('destroy', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
-    protected function infoLog($module, $message)
+    protected function registerSystemLogs($request, $moduleID, $status, $remarks)
     {
-        Log::channel('custom-info')->info('Other Information Controller ['.$module.']: message: '.$errorMessage);
-    }
+        $ip = $request->ip();
+        $user = $request->user;
+        $permission = $request->permission;
+        list($action, $module) = explode(' ', $permission);
 
-    protected function errorLog($module, $errorMessage)
-    {
-        Log::channel('custom-error')->error('Other Information Controller ['.$module.']: message: '.$errorMessage);
+        SystemLogs::create([
+            'employee_profile_id' => $user->id,
+            'module_id' => $moduleID,
+            'action' => $action,
+            'module' => $module,
+            'status' => $status,
+            'remarks' => $remarks,
+            'ip_address' => $ip
+        ]);
     }
 }

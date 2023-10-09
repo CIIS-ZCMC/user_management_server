@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use App\Services\RequestLogger;
 use App\Http\Requests\SignInRequest;
 use App\Http\Requests\EmployeeProfileRequest;
 use App\Http\Resources\EmployeeProfileResource;
@@ -18,9 +18,21 @@ use App\Http\Resources\SignInResource;
 use App\Models\DefaultPassword;
 use App\Models\EmployeeProfile;
 use App\Models\LoginTrail;
+use App\Models\SystemLogs;
 
 class EmployeeProfileController extends Controller
 {
+    private $CONTROLLER_NAME = 'Employee Profile';
+    private $PLURAL_MODULE_NAME = 'employee profiles';
+    private $SINGULAR_MODULE_NAME = 'employee profile';
+
+    protected $requestLogger;
+
+    public function __construct(RequestLogger $requestLogger)
+    {
+        $this->requestLogger = $requestLogger;
+    }
+
     public function signIn(SignInRequest $request)
     {
         try {
@@ -69,17 +81,16 @@ class EmployeeProfileController extends Controller
             ];
 
             LoginTrail::create([
-                'uuid' => Str::uuid(),
                 'signin_datetime' => now(),
                 'ip_address' => $request->ip(),
-                'employee_profile_id' => $user['uuid']
+                'employee_profile_id' => $user['id']
             ]);
 
             return response()
                 ->json(['data' =>  $dataToEncrypt], Response::HTTP_OK)
                 ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), true);
         } catch (\Throwable $th) {
-            $this->errorLog('authenticate', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'authenticate', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -103,7 +114,7 @@ class EmployeeProfileController extends Controller
 
             return response()->json(['data' => $dataToEncrypt], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->errorLog('isAuthenticated', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'isAuthenticated', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -121,7 +132,7 @@ class EmployeeProfileController extends Controller
 
             return response()->json(['data' => '/'], Response::HTTP_OK)->cookie(env('COOKIE_NAME'), '', -1);;
         }catch(\Throwable $th){
-            $this->errorLog('logout', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'logout', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -135,11 +146,11 @@ class EmployeeProfileController extends Controller
                 return EmployeeProfile::all();
             });
 
-            $this->registerSystemLogs($request, null, true, 'Success in fetching all employee profiles.');
+            $this->registerSystemLogs($request, null, true, 'Success in fetching a '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json(['data' => EmployeeProfileResource::collection($employee_profiles)], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->errorLog('index', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -149,7 +160,6 @@ class EmployeeProfileController extends Controller
         try{
             $cleanData = [];
 
-            $cleanData['uuid'] = Str::uuid();
             foreach ($request->all() as $key => $value) {
                 if($key === 'profile_image' && $value === null){
                     $cleanData[$key] = $value;
@@ -166,11 +176,11 @@ class EmployeeProfileController extends Controller
 
             $employee_profile = EmployeeProfile::create($cleanData);
             
-            $this->registerSystemLogs($request, $employee_profile->id, true, 'Success in creating an employee profiles.');
+            $this->registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' => $employee_profile], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->errorLog('store', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -194,9 +204,11 @@ class EmployeeProfileController extends Controller
             $employee_profile -> password_encrypted = $encryptedPassword;
             $employee_profile -> save();
 
+            $this->registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a '.$this->SINGULAR_MODULE_NAME.' account.');
+
             return response()->json(['data' => 'Account created successfully.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->errorLog('createEmployeeAccount', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'createEmployeeAccount', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -212,11 +224,11 @@ class EmployeeProfileController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->registerSystemLogs($request, $employee_profile->id, true, 'Success in fetching an employee profiles.');
+            $this->registerSystemLogs($request, $id, true, 'Success in fetching a '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' => new EmployeeProfileResource($employee_profile)], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->errorLog('show', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -246,11 +258,11 @@ class EmployeeProfileController extends Controller
 
             $employee_profile->update($cleanData);
 
-            $this->registerSystemLogs($request, $employee_profile->id, true, 'Success in updating an employee profile.');
+            $this->registerSystemLogs($request, $id, true, 'Success in updating a '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->errorLog('update', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -268,7 +280,7 @@ class EmployeeProfileController extends Controller
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->errorLog('update', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -281,17 +293,17 @@ class EmployeeProfileController extends Controller
 
             if(!$employee_profile)
             {
-                $this->registerSystemLogs($request, $id, false, 'Failed to find an employee profile.');
+                $this->registerSystemLogs($request, $id, false, 'Failed to find a '.$this->SINGULAR_MODULE_NAME.'.');
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
             $employee_profile->delete();
 
-            $this->registerSystemLogs($request, $employee_profile->id, true, 'Success in deleting an employee profile.');
+            $this->registerSystemLogs($request, $employee_profile->id, true, 'Success in deleting a '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->errorLog('destroy', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -329,17 +341,7 @@ class EmployeeProfileController extends Controller
         
         return $fileName;
     }
-
-    protected function infoLog($module, $message)
-    {
-        Log::channel('custom-info')->info('Employee Profile Controller ['.$module.']: message: '.$errorMessage);
-    }
-
-    protected function errorLog($module, $errorMessage)
-    {
-        Log::channel('custom-error')->error('Employee Profile Controller ['.$module.']: message: '.$errorMessage);
-    }
-
+    
     protected function registerSystemLogs($request, $moduleID, $status, $remarks)
     {
         $ip = $request->ip();

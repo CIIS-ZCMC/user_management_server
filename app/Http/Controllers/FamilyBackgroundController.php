@@ -7,13 +7,25 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Str;
+use App\Services\RequestLogger;
 use App\Http\Requests\FamilyBackgroundRequest;
 use App\Http\Resources\FamilyBackgroundResource;
 use App\Models\FamilyBackground;
+use App\Models\SystemLogs;
 
 class FamilyBackgroundController extends Controller
 {
+    private $CONTROLLER_NAME = 'Legal Information Question Controller';
+    private $PLURAL_MODULE_NAME = 'family backgrounds';
+    private $SINGULAR_MODULE_NAME = 'family background';
+
+    protected $requestLogger;
+
+    public function __construct(RequestLogger $requestLogger)
+    {
+        $this->requestLogger = $requestLogger;
+    }
+
     public function index(Request $request)
     {
         try{
@@ -23,9 +35,11 @@ class FamilyBackgroundController extends Controller
                 return FamilyBackground::all();
             });
 
+            $this->registerSystemLogs($request, null , true, 'Success in fetching '.$PLURAL_MODULE_NAME.'.');
+
             return response()->json(['data' => FamilyBackgroundResource::collection($family_backgrounds)], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->errorLog('index', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -40,9 +54,11 @@ class FamilyBackgroundController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
+            $this->registerSystemLogs($request, $id , true, 'Success in fetching employee '.$SINGULAR_MODULE_NAME.'.');
+
             return response()->json(['data' => new FamilyBackgroundResource($family_background)], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->errorLog('index', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -52,7 +68,6 @@ class FamilyBackgroundController extends Controller
         try{
             $cleanData = [];
 
-            $cleanData['uuid'] = Str::uuid();
             foreach ($request->all() as $key => $value) {
                 if($value === null){
                     $cleanData[$key] = $value;
@@ -66,10 +81,12 @@ class FamilyBackgroundController extends Controller
             }
 
             $family_background = FamilyBackground::create($cleanData);
+            
+            $this->registerSystemLogs($request, $family_background['id'], true, 'Success in creating '.$SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->errorLog('index', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -84,9 +101,11 @@ class FamilyBackgroundController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
+            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$SINGULAR_MODULE_NAME.'.');
+
             return response()->json(['data' => new FamilyBackgroundResource($family_background)], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->errorLog('index', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -112,9 +131,11 @@ class FamilyBackgroundController extends Controller
 
             $family_background -> update($cleanData);
 
+            $this->registerSystemLogs($request, $id, true, 'Success in updating '.$SINGULAR_MODULE_NAME.'.');
+
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->errorLog('index', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -131,9 +152,11 @@ class FamilyBackgroundController extends Controller
 
             $family_background -> delete();
             
+            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$SINGULAR_MODULE_NAME.'.');
+            
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->errorLog('index', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -149,10 +172,12 @@ class FamilyBackgroundController extends Controller
             }
 
             $family_background -> delete();
+
+            $this->registerSystemLogs($request, $id, true, 'Success in deleting employee '.$SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->errorLog('index', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -170,5 +195,23 @@ class FamilyBackgroundController extends Controller
     protected function errorLog($module, $errorMessage)
     {
         Log::channel('custom-error')->error('Family Background Controller ['.$module.']: message: '.$errorMessage);
+    }
+
+    protected function registerSystemLogs($request, $moduleID, $status, $remarks)
+    {
+        $ip = $request->ip();
+        $user = $request->user;
+        $permission = $request->permission;
+        list($action, $module) = explode(' ', $permission);
+
+        SystemLogs::create([
+            'employee_profile_id' => $user->id,
+            'module_id' => $moduleID,
+            'action' => $action,
+            'module' => $module,
+            'status' => $status,
+            'remarks' => $remarks,
+            'ip_address' => $ip
+        ]);
     }
 }

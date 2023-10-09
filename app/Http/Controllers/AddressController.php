@@ -8,12 +8,25 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use App\Services\RequestLogger;
 use App\Http\Requests\AddressRequest;
 use App\Http\Resources\AddressResource;
 use App\Models\Address;
+use App\Models\SystemLogs;
 
 class AddressController extends Controller
 {
+    private $CONTROLLER_NAME = 'Address';
+    private $PLURAL_MODULE_NAME = 'addresses';
+    private $SINGULAR_MODULE_NAME = 'address';
+
+    protected $requestLogger;
+
+    public function __construct(RequestLogger $requestLogger)
+    {
+        $this->requestLogger = $requestLogger;
+    }
+
     public function index(Request $request)
     {
         try{
@@ -23,9 +36,11 @@ class AddressController extends Controller
                 return Address::all();
             });
 
+            $this->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+
             return response()->json(['data' => AddressResource::collection($addresses)], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->errorLog('index', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -35,9 +50,11 @@ class AddressController extends Controller
         try{
             $addresses = Address::where('personal_information_id', $id)->get();
 
+            $this->registerSystemLogs($request, $addresses['id'], true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+
             return response()->json(['data' => AddressResource::collection($addresses)], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->errorLog('employeeAddress', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -46,8 +63,6 @@ class AddressController extends Controller
     {
         try{
             $cleanData = [];
-            
-            $cleanData['uuid'] = Str::uuid();
 
             foreach ($request->all() as $key => $value) {
                 if (is_bool($value) || $value === null) {
@@ -59,9 +74,11 @@ class AddressController extends Controller
 
             $address = Address::create($cleanData);
 
+            $this->registerSystemLogs($request, $address['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->errorLog('index', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -76,9 +93,11 @@ class AddressController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
+            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
+
             return response()->json(['data' => $address], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->errorLog('index', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -105,9 +124,11 @@ class AddressController extends Controller
 
             $address->update($cleanData);
 
+            $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->errorLog('index', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -124,20 +145,30 @@ class AddressController extends Controller
 
             $address->delete();
             
+            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->errorLog('index', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
-    protected function infoLog($module, $message)
+    protected function registerSystemLogs($request, $moduleID, $status, $remarks)
     {
-        Log::channel('custom-info')->info('Address Controller ['.$module.']: message: '.$errorMessage);
-    }
+        $ip = $request->ip();
+        $user = $request->user;
+        $permission = $request->permission;
+        list($action, $module) = explode(' ', $permission);
 
-    protected function errorLog($module, $errorMessage)
-    {
-        Log::channel('custom-error')->error('Address Controller ['.$module.']: message: '.$errorMessage);
+        SystemLogs::create([
+            'employee_profile_id' => $user->id,
+            'module_id' => $moduleID,
+            'action' => $action,
+            'module' => $module,
+            'status' => $status,
+            'remarks' => $remarks,
+            'ip_address' => $ip
+        ]);
     }
 }

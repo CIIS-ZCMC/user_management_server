@@ -7,13 +7,25 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Str;
+use App\Services\RequestLogger;
 use App\Http\Requests\StationRequest;
 use App\Http\Resources\StationResource;
 use App\Models\Station;
+use App\Models\SystemLogs;
 
 class StationController extends Controller
 {
+    private $CONTROLLER_NAME = 'Station';
+    private $PLURAL_MODULE_NAME = 'stations';
+    private $SINGULAR_MODULE_NAME = 'station';
+
+    protected $requestLogger;
+
+    public function __construct(RequestLogger $requestLogger)
+    {
+        $this->requestLogger = $requestLogger;
+    }
+    
     public function index(Request $request)
     {
         try{
@@ -23,9 +35,11 @@ class StationController extends Controller
                 return Station::all();
             });
 
+            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            
             return response()->json(['data' => StationResource::collection($stations)], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->errorLog('index', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], 500);
         }
     }
@@ -35,16 +49,17 @@ class StationController extends Controller
         try{
             $cleanData = [];
 
-            $cleanData['uuid'] = Str::uuid();
             foreach ($request->all() as $key => $value) {
                 $cleanData[$key] = strip_tags($value);
             }
 
             $station = Station::create($cleanData);
 
+            $this->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->errorLog('store', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], 500);
         }
     }
@@ -59,9 +74,11 @@ class StationController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
+            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
+            
             return response()->json(['data' => new StationResource($station)], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->errorLog('show', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], 500);
         }
     }
@@ -79,9 +96,11 @@ class StationController extends Controller
 
             $station -> update($cleanData);
 
+            $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->errorLog('update', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], 500);
         }
     }
@@ -97,21 +116,31 @@ class StationController extends Controller
             }
 
             $station -> delete();
+
+            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->errorLog('destroy', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], 500);
         }
     }
 
-    protected function infoLog($module, $message)
+    protected function registerSystemLogs($request, $moduleID, $status, $remarks)
     {
-        Log::channel('custom-info')->info('Station Controller ['.$module.']: message: '.$errorMessage);
-    }
+        $ip = $request->ip();
+        $user = $request->user;
+        $permission = $request->permission;
+        list($action, $module) = explode(' ', $permission);
 
-    protected function errorLog($module, $errorMessage)
-    {
-        Log::channel('custom-error')->error('Station Controller ['.$module.']: message: '.$errorMessage);
+        SystemLogs::create([
+            'employee_profile_id' => $user->id,
+            'module_id' => $moduleID,
+            'action' => $action,
+            'module' => $module,
+            'status' => $status,
+            'remarks' => $remarks,
+            'ip_address' => $ip
+        ]);
     }
 }

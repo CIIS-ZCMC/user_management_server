@@ -65,11 +65,16 @@ use App\Observers\SystemObserver;
 use App\Models\SystemRole;
 use App\Observers\SystemRoleObserver;
 
+use App\Models\SpecialAccessRole;
+use App\Observers\SpecialAccessRoleObserver;
+
 use App\Models\Training;
 use App\Observers\TrainingObserver;
 
 use App\Models\WorkExperience;
 use App\Observers\WorkExperienceObserver;
+
+use App\Services\RequestLogger;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -86,6 +91,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->app->singleton(RequestLogger::class, function ($app) {
+            return new RequestLogger();
+        });
+
         Schema::defaultStringLength(191);
         Address::observe(AddressObserver::class);
         CivilServiceEligibility::observe(CivilServiceEligibilityObserver::class);
@@ -107,6 +116,7 @@ class AppServiceProvider extends ServiceProvider
         Station::observe(StationObserver::class);
         System::observe(SystemObserver::class);
         SystemRole::observe(SystemRoleObserver::class);
+        SpecialAccessRole::observe(SpecialAccessRoleObserver::class);
         Training::observe(TrainingObserver::class);
         WorkExperience::observe(WorkExperienceObserver::class);
     }

@@ -108,6 +108,10 @@ class EmployeeProfile extends Authenticatable
         return $this->hasMany(AccessToken::class);
     }
 
+    public function specialAccessRole(){
+        return $this->hasMany(SpecialAccessRole::class);
+    }
+
     public function loginTrails()
     {
         return $this->hasMany(LoginTrails::class);

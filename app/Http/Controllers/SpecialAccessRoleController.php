@@ -5,17 +5,18 @@ namespace App\Http\Controllers;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use App\Services\RequestLogger;
-use App\Http\Requests\IssuanceInformationRequest;
-use App\Models\IssuanceInformation;
+use App\Http\Resources\SpecialAccessRoleResource;
+use App\Models\SpecialAccessRole;
 use App\Models\SystemLogs;
 
-class IssuanceInformationController extends Controller
+class SpecialAccessRoleController extends Controller
 {
-    private $CONTROLLER_NAME = 'Issuance Information';
-    private $PLURAL_MODULE_NAME = 'issuance informations';
-    private $SINGULAR_MODULE_NAME = 'issuance information';
+    private $CONTROLLER_NAME = 'Special Access Role';
+    private $PLURAL_MODULE_NAME = 'special access roles';
+    private $SINGULAR_MODULE_NAME = 'special access role';
 
     protected $requestLogger;
 
@@ -29,99 +30,93 @@ class IssuanceInformationController extends Controller
         try{
             $cacheExpiration = Carbon::now()->addDay();
 
-            $issuance_informations = Cache::remember('issuance_informations', $cacheExpiration, function(){
-                return IssuanceInformation::all();
+            $special_access_roles = Cache::remember('special_access_roles', $cacheExpiration, function(){
+                return SpecialAccessRole::all();
             });
-            
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => $issuance_informations], Response::HTTP_OK);
+            $this->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+
+            return response() -> json(['data' => SpecialAccessRoleResource::collection($special_access_roles)], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function store(IssuanceInformationRequest $request)
+    public function store(SpecialAccessRoleRequest $request)
     {
         try{
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                $cleanData[$key] = strip_tags($value);
+                $cleanData[$key] = strip_tags($value); 
             }
 
-            $issuance_information = IssuanceInformation::create($cleanData);
+            $special_access_role = SpecialAccessRole::create($cleanData);
+            
+            $this->registerSystemLogs($request, $special_access_role['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            $this->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
-           
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response() -> json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function show($id, Request $request)
     {
         try{
-            $issuance_information = IssuanceInformation::findOrFail($id);
-
-            if(!$issuance_information)
-            {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }
+            $special_access_role = SpecialAccessRole::find($id);
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => $issuance_information], Response::HTTP_OK);
+            return response() -> json(['data' => new SpecialAccessRoleResource($special_access_role)], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
-    public function update($id, IssuanceInformationRequest $request)
+    public function update($id, SpecialAccessRoleRequest $request)
     {
         try{
-            $issuance_information = IssuanceInformation::find($id);
-
+            $data = SpecialAccessRole::find($id);
+            
+            if (!$data) {
+                return response()->json(['message' => 'No record found.'], 404);
+            }
+            
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                $cleanData[$key] = strip_tags($value);
+                $cleanData[$key] = strip_tags($value); 
             }
 
-            $issuance_information -> update($cleanData); 
+            $data->update($cleanData);
 
             $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
-           
-
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response() -> json(['data' => "Success"], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
     public function destroy($id, Request $request)
     {
         try{
-            $issuance_information = IssuanceInformation::findOrFail($id);
+            $special_access_role = SpecialAccessRole::findOrFail($id);
 
-            if(!$issuance_information)
-            {
+            if(!$special_access_role){
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $issuance_information -> delete();
+            $special_access_role -> delete();
 
             $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-           
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+
+            return response() -> json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
