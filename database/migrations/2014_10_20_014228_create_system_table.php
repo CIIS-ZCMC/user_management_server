@@ -16,6 +16,8 @@ return new class extends Migration
             $table->string('name');
             $table->string('code');
             $table->string('domain', 360);
+            $table->text('api_key')->nullable();
+            $table->datetime('key_deactivated_at')->nullable();
             $table->boolean('server-maintainance')->default(FALSE);
             $table->boolean('server-down')->default(FALSE);
             $table->boolean('server-active')->default(TRUE);

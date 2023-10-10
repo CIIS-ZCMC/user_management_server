@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use App\Models\SystemRole;
 
 class System extends Model
@@ -13,10 +15,11 @@ class System extends Model
     protected $table = 'systems';
 
     protected $fillable = [
-        "uuid",
         "name",
         "domain",
         "code",
+        "api_key",
+        "key_deactivated_at",
         "server-maintainance",
         "server-down",
         "server-active",
@@ -29,5 +32,14 @@ class System extends Model
     public function systemRoles()
     {
         return $this->hasMany(SystemRole::class);
+    }  
+
+    public function generateApiKey()
+    {
+        $apiKey = Hash::make(Str::random(32));
+
+        $this->api_key = $apiKey;
+
+        return $apiKey;
     }
 }

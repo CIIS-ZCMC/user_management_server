@@ -14,24 +14,30 @@ class DivisionSeeder extends Seeder
      */
     public function run(): void
     {
+        
         Division::create([
-            'code' => '001',
-            'name' => 'Finance Division'
+            'name' => 'Office of Medical Center Chief',
+            'code' => 'OMCC'
         ]);
         
         Division::create([
-            'code' => '002',
-            'name' => 'Medical Division'
+            'name' => 'Medical Services/Arcillary',
+            'code' => 'MS'
         ]);
         
         Division::create([
-            'code' => '003',
-            'name' => 'Nursing Division'
+            'name' => 'Hospital Operations & Patient Support Services',
+            'code' => 'HOPPS'
         ]);
         
         Division::create([
-            'code' => '004',
-            'name' => 'HOPSS'
+            'name' => 'Nursing Services',
+            'code' => 'NS'
+        ]);
+        
+        Division::create([
+            'name' => 'Finance Services',
+            'code' => 'FS'
         ]);
     }
 }

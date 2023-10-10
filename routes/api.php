@@ -595,13 +595,6 @@ Route::middleware('auth.cookie')->group(function(){
         });
 
         /**
-         * Login Trail Module
-         */
-        Route::middleware('auth.permission:user view')->group(function(){
-            Route::get('login-trail/{id}', 'LoginTrailController@show');
-        });
-
-        /**
          * System Logs Module
          */
 
@@ -658,6 +651,13 @@ Route::middleware('auth.cookie')->group(function(){
 
         Route::middleware('auth.permission:special_role delete')->group(function(){
             Route::delete('special_access_role/{id}', 'SpecialAccessRoleController@destroy');
+        });
+
+        /**
+         * Login Trail Module
+         */
+        Route::middleware('auth.permission:user view')->group(function(){
+            Route::get('login-trail/{id}', 'LoginTrailController@show');
         });
 
         /**
