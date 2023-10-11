@@ -5,20 +5,19 @@ namespace App\Http\Controllers;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use App\Services\RequestLogger;
-use App\Http\Requests\JobPositionRequest;
-use App\Http\Resources\JobPositionResource;
-use App\Models\JobPosition;
+use App\Http\Resources\ModulePermissionResource;
+use App\Http\Requests\ModulePermissionRequest;
+use App\Models\ModulePermission;
 use App\Models\SystemLogs;
 
-class JobPositionController extends Controller
+class ModulePermissionController extends Controller
 {
-    private $CONTROLLER_NAME = 'Job Position';
-    private $PLURAL_MODULE_NAME = 'job positions';
-    private $SINGULAR_MODULE_NAME = 'job position';
+    private $CONTROLLER_NAME = 'Module Permission';
+    private $PLURAL_MODULE_NAME = 'module_permissions';
+    private $SINGULAR_MODULE_NAME = 'module_permission';
 
     protected $requestLogger;
 
@@ -32,33 +31,37 @@ class JobPositionController extends Controller
         try{
             $cacheExpiration = Carbon::now()->addDay();
 
-            $job_positions = Cache::remember('job_positions', $cacheExpiration, function(){
-                return JobPosition::all();
+            $module_permissions = Cache::remember('module_permissions', $cacheExpiration, function(){
+                return ModulePermission::all();
             });
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            $this->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => JobPositionResource::collection($job_positions)], Response::HTTP_OK);
+            return response()->json(['data' => ModulePermissionResource::collection($module_permissions)], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function store(JobPositionRequest $request)
+    public function store(Request $request)
     {
         try{
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                $cleanData[$key] = strip_tags($value);
+                if (is_bool($value) || $value === null) {
+                    $cleanData[$key] = $value;
+                } else {
+                    $cleanData[$key] = strip_tags($value);
+                }
             }
 
-            $job_position = JobPosition::create($cleanData);
+            $module_permission = ModulePermission::create($cleanData);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->registerSystemLogs($request, $module_permission['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => $job_position->uuid], Response::HTTP_OK);
+            return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -68,34 +71,43 @@ class JobPositionController extends Controller
     public function show($id, Request $request)
     {
         try{
-            $job_position = JobPosition::find($id);
+            $module_permission = ModulePermission::findOrFail($id);
 
-            if(!$job_position)
+            if(!$module_permission)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => new JobPositionResource($job_position)], Response::HTTP_OK);
+            return response()->json(['data' => $module_permission], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function update($id, JobPositionRequest $request)
+    public function update($id, ModulePermissionRequest $request)
     {
         try{
-            $job_position = JobPosition::find($id);
+            $module_permission = ModulePermission::find($id);
+
+            if(!$module_permission)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
 
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                $cleanData[$key] = strip_tags($value);
+                if (is_bool($value) || $value === null) {
+                    $cleanData[$key] = $value;
+                } else {
+                    $cleanData[$key] = strip_tags($value);
+                }
             }
 
-            $job_position -> update($cleanData);
+            $module_permission->update($cleanData);
 
             $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
@@ -109,15 +121,15 @@ class JobPositionController extends Controller
     public function destroy($id, Request $request)
     {
         try{
-            $job_position = JobPosition::findOrFail($id);
+            $module_permission = ModulePermission::findOrFail($id);
 
-            if(!$job_position)
+            if(!$module_permission)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $job_position -> delete();
-
+            $module_permission->delete();
+            
             $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
@@ -141,7 +153,7 @@ class JobPositionController extends Controller
             'module' => $module,
             'status' => $status,
             'remarks' => $remarks,
-            'ip_address' => $ip
+            'ip_module_permission' => $ip
         ]);
     }
 }

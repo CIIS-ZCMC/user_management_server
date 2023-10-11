@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class JobPositionRequest extends FormRequest
+class ModulePermissionRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,8 +23,9 @@ class JobPositionRequest extends FormRequest
     {
         return [
             'code' => 'required|string|max:255',
-            'name' => 'required|string|max:255',
-            'salary_grade' => 'required|integer'
+            'description' => 'required|text',
+            'permission_id' => 'required|integer',
+            'system_module_id' => 'required|integer',
         ];
     }
 }

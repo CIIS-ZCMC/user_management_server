@@ -26,8 +26,8 @@ class Plantilla extends Model
         return $this->hasMany(EmployeeProfile::class);
     }
 
-    public function jobPosition()
+    public function designation()
     {
-        return $this->belongsTo(JobPosition::class);
+        return $this->belongsTo(Designation::class);
     }
 }

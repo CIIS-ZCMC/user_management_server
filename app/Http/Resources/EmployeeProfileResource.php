@@ -20,14 +20,14 @@ class EmployeeProfileResource extends JsonResource
 
         $name = $personal_information->first_name.' '.$personal_information->last_name.$nameExtension.$nameTitle;
         $department = $this->department===null?"NONE":$this->department->name;
-        $job_position = $this->jobPosition===null?"NONE":$this->jobPosition->name;
+        $designation = $this->designation===null?"NONE":$this->designation->name;
         $job_station = $this->station===null?"NONE":$this->station->name;
 
         return [
             'employee_id' => $this->employee_id,
             'name' => $name,
             'department' => $department,
-            'job_position' => $job_position,
+            'designation' => $designation,
             'job_station' => $job_station
         ];
     }

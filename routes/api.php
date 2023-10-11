@@ -479,26 +479,26 @@ Route::middleware('auth.cookie')->group(function(){
         });
 
         /**
-         * JobPosition Module
+         * Designation Module
          */
         Route::middleware('auth.permission:user view')->group(function(){
-            Route::get('job_positions', 'JobPositionController@index');
+            Route::get('job_positions', 'DesignationController@index');
         });
 
         Route::middleware('auth.permission:user create')->group(function(){
-            Route::post('job_position', 'JobPositionController@store');
+            Route::post('job_position', 'DesignationController@store');
         });
 
         Route::middleware('auth.permission:user view')->group(function(){
-            Route::get('job_position/{id}', 'JobPositionController@show');
+            Route::get('job_position/{id}', 'DesignationController@show');
         });
 
         Route::middleware('auth.permission:user put')->group(function(){
-            Route::put('job_position/{id}', 'JobPositionController@update');
+            Route::put('job_position/{id}', 'DesignationController@update');
         });
 
         Route::middleware('auth.permission:user delete')->group(function(){
-            Route::delete('job_position/{id}', 'JobPositionController@destroy');
+            Route::delete('job_position/{id}', 'DesignationController@destroy');
         });
 
         /**
@@ -651,6 +651,77 @@ Route::middleware('auth.cookie')->group(function(){
 
         Route::middleware('auth.permission:special_role delete')->group(function(){
             Route::delete('special_access_role/{id}', 'SpecialAccessRoleController@destroy');
+        });
+        
+
+        /**
+         * Default System Module
+         */
+        Route::middleware('auth.permission:special_role view')->group(function(){
+            Route::get('system_modules', 'SystemModuleController@index');
+        });
+
+        Route::middleware('auth.permission:special_role create')->group(function(){
+            Route::post('system_module', 'SystemModuleController@store');
+        });
+
+        Route::middleware('auth.permission:special_role view')->group(function(){
+            Route::get('system_module/{id}', 'SystemModuleController@show');
+        });
+
+        Route::middleware('auth.permission:special_role put')->group(function(){
+            Route::put('system_module/{id}', 'SystemModuleController@update');
+        });
+
+        Route::middleware('auth.permission:special_role delete')->group(function(){
+            Route::delete('system_module/{id}', 'SystemModuleController@destroy');
+        });
+        
+
+        /**
+         * Default Module Permission
+         */
+        Route::middleware('auth.permission:special_role view')->group(function(){
+            Route::get('module_permissions', 'ModulePermissionController@index');
+        });
+
+        Route::middleware('auth.permission:special_role create')->group(function(){
+            Route::post('module_permission', 'ModulePermissionController@store');
+        });
+
+        Route::middleware('auth.permission:special_role view')->group(function(){
+            Route::get('module_permission/{id}', 'ModulePermissionController@show');
+        });
+
+        Route::middleware('auth.permission:special_role put')->group(function(){
+            Route::put('module_permission/{id}', 'ModulePermissionController@update');
+        });
+
+        Route::middleware('auth.permission:special_role delete')->group(function(){
+            Route::delete('module_permission/{id}', 'ModulePermissionController@destroy');
+        });
+
+        /**
+         * Default Role Module Permission
+         */
+        Route::middleware('auth.permission:special_role view')->group(function(){
+            Route::get('role_module_permissions', 'RoleModulePermissionController@index');
+        });
+
+        Route::middleware('auth.permission:special_role create')->group(function(){
+            Route::post('role_module_permission', 'RoleModulePermissionController@store');
+        });
+
+        Route::middleware('auth.permission:special_role view')->group(function(){
+            Route::get('role_module_permission/{id}', 'RoleModulePermissionController@show');
+        });
+
+        Route::middleware('auth.permission:special_role put')->group(function(){
+            Route::put('role_module_permission/{id}', 'RoleModulePermissionController@update');
+        });
+
+        Route::middleware('auth.permission:special_role delete')->group(function(){
+            Route::delete('role_module_permission/{id}', 'RoleModulePermissionController@destroy');
         });
 
         /**

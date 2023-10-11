@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('position_system_roles', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('job_position_id');
-            $table->foreign('job_position_id')->references('id')->on('job_positions');
+            $table->unsignedBigInteger('designation_id');
+            $table->foreign('designation_id')->references('id')->on('designations');
             $table->unsignedBigInteger('system_role_id');
             $table->foreign('system_role_id')->references('id')->on('system_roles');
             $table->datetime('in_active')->nullable();

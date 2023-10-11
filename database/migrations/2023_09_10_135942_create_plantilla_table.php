@@ -17,8 +17,8 @@ return new class extends Migration
             $table->string('tranche')->nullable();
             $table->date('date')->default(now());
             $table->string('category')->nullable();
-            $table->unsignedBigInteger('job_position_id');
-            $table->foreign('job_position_id')->references('id')->on('job_positions');
+            $table->unsignedBigInteger('designation_id');
+            $table->foreign('designation_id')->references('id')->on('designations');
             $table->timestamps();
         });
     }

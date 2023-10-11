@@ -26,8 +26,8 @@ use App\Observers\EmployeeProfileObserver;
 use App\Models\FamilyBackground;
 use App\Observers\FamilyBackgroundObserver;
 
-use App\Models\JobPosition;
-use App\Observers\JobPositionObserver;
+use App\Models\Designation;
+use App\Observers\DesignationObserver;
 
 use App\Models\IdentificationNumber;
 use App\Observers\IdentificationNumberObserver;
@@ -103,7 +103,7 @@ class AppServiceProvider extends ServiceProvider
         Division::observe(DivisionObserver::class);
         EmployeeProfile::observe(EmployeeProfileObserver::class);
         FamilyBackground::observe(FamilyBackgroundObserver::class);
-        JobPosition::observe(JobPositionObserver::class);
+        Designation::observe(DesignationObserver::class);
         IdentificationNumber::observe(IdentificationNumberObserver::class);
         LegalInformation::observe(LegalInformationObserver::class);
         LegalInformationQuestion::observe(LegalInformationQuestionObserver::class);

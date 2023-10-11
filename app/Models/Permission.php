@@ -13,13 +13,15 @@ class Permission extends Model
 
     public $fillable = [
         'name',
-        'description',
-        'code',
         'action',
         'deactivated'
     ];
 
     public function systemRoles(){
         return $this->hasMany(SystemRolePermission::class);
+    }
+    
+    public function module(){
+        return $this->belongsToMany(Module::class);
     }
 }

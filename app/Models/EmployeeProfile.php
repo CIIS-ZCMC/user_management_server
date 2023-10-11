@@ -71,9 +71,9 @@ class EmployeeProfile extends Authenticatable
         return $this->belongsTo(Station::class);
     }
 
-    public function position()
+    public function designation()
     {
-        return $this->belongsTo(JobPosition::class);
+        return $this->belongsTo(Designation::class);
     }
 
     public function department()

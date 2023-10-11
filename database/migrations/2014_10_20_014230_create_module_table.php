@@ -14,6 +14,8 @@ return new class extends Migration
         Schema::create('system_modules', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('description');
+            $table->boolean('deactivated')->default(FALSE);
             $table->unsignedBigInteger('system_id');
             $table->foreign('system_id')->references('id')->on('systems');
             $table->timestamps();

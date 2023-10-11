@@ -22,8 +22,8 @@ return new class extends Migration
             $table->foreign('department_id')->references('id')->on('departments');
             $table->unsignedBigInteger('station_id')->nullable();
             $table->foreign('station_id')->references('id')->on('stations');
-            $table->unsignedBigInteger('job_position_id')->nullable();
-            $table->foreign('job_position_id')->references('id')->on('job_positions');
+            $table->unsignedBigInteger('designation_id')->nullable();
+            $table->foreign('designation_id')->references('id')->on('designations');
             $table->unsignedBigInteger('plantilla_id')->nullable();
             $table->foreign('plantilla_id')->references('id')->on('plantillas');
             $table->unsignedBigInteger('personal_information_id');
