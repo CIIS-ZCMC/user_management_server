@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('plantilla_no');
             $table->string('tranche')->nullable();
-            $table->date('date')->default(now());
+            $table->date('effective_at')->default(now());
             $table->string('category')->nullable();
             $table->unsignedBigInteger('designation_id');
             $table->foreign('designation_id')->references('id')->on('designations');

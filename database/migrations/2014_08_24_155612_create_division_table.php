@@ -11,15 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('system_roles', function (Blueprint $table) {
+        Schema::create('divisions', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->text('description')->nullable();
-            $table->unsignedBigInteger('system_id');
-            $table->foreign('system_id')->references('id')->on('systems');
-            $table->unsignedBigInteger('system_id');
-            $table->foreign('system_id')->references('id')->on('systems');
-            $table->softDeletes();
+            $table->string('code')->nullable();
+            $table->string('attachment_url')->nullable();
             $table->timestamps();
         });
     }
@@ -29,7 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('system_roles');
+        Schema::dropIfExists('divisions');
     }
 };
-  

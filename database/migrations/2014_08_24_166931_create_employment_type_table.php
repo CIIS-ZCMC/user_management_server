@@ -11,12 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('stations', function (Blueprint $table) {
+        Schema::create('employment_types', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('code')->nullable();
-            $table->unsignedBigInteger('department_id')->nullable();
-            $table->foreign('department_id')->references('id')->on('departments');
             $table->timestamps();
         });
     }
@@ -26,6 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('stations');
+        Schema::dropIfExists('employment_types');
     }
 };

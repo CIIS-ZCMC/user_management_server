@@ -270,7 +270,7 @@ Route::middleware('auth.cookie')->group(function(){
             Route::put('legal_information_question/{id}', 'LegalInformationQuestionController@update');
         });
 
-        Route::middleware('auth.permission:user delete')->group(function(){
+        Route::middleware('auth.permission:record delete')->group(function(){
             Route::delete('legal_information_question/{id}', 'LegalInformationQuestionController@destroy');
         });
 

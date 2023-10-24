@@ -11,13 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('permissions', function (Blueprint $table) {
+        Schema::create('default_passwords', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->text('description');
-            $table->string('code');
-            $table->string('action');
-            $table->boolean('deactivated')->default(FALSE);
+            $table->string('password');
+            $table->boolean('status')->default(FALSE);
+            $table->datetime('effective_at')->default(now());
+            $table->datetime('end_at')->default(now());
             $table->timestamps();
         });
     }
@@ -27,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('permissions');
+        Schema::dropIfExists('default_passwords');
     }
 };

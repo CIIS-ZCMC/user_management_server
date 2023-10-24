@@ -17,8 +17,8 @@ return new class extends Migration
             $table->date('date_to');
             $table->string('position_title');
             $table->string('appointment_status');
-            $table->string('salary');
-            $table->string('salary_grade_and_step');
+            $table->string('salary')->nullable();
+            // $table->string('salary_grade_and_step');
             $table->string('company');
             $table->string('government_office');
             $table->boolean('is_voluntary_work')->default(TRUE);

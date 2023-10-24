@@ -25,7 +25,7 @@ return new class extends Migration
             $table->string('civil_status');
             $table->date('date_of_marriage')->nullable();
             $table->string('citizenship');
-            $table->integer('height');
+            $table->integer('height'); //cm
             $table->integer('weight');
             $table->string('agency_employee_no')->nullable();
             $table->timestamps();
