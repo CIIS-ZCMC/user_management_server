@@ -11,16 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('system_logs', function (Blueprint $table) {
+        Schema::create('officer_in_charge_trails', function (Blueprint $table) {
             $table->id();
-            $table->string('action');
-            $table->string('module');
-            $table->boolean('status')->default(false);
-            $table->string('ip_address');
-            $table->string('remarks')->nullable();
-            $table->unsignedBigInteger('module_id')->nullable();
             $table->unsignedBigInteger('employee_profile_id');
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles');
+            $table->unsignedBigInteger('sector_id');
+            $table->string('sector_code');
+            $table->string('attachment_url');
+            $table->datetime('start_at');
+            $table->datetime('end_at');
             $table->timestamps();
         });
     }
@@ -30,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('system_logs');
+        Schema::dropIfExists('officer_in_charge_trails');
     }
 };

@@ -15,9 +15,19 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('code')->nullable();
-            $table->string('attachment_url')->nullable();
+            $table->string('unit_attachment_url')->nullable();
+            $table->string('head_attachment_url')->nullable();
+            $table->string('job_specification');
+            $table->datetime('effective_at');
+            $table->string('oic_attachment_url')->nullable();
+            $table->datetime('oic_effective_at');
+            $table->datetime('oic_end_at');
             $table->unsignedBigInteger('section_id');
             $table->foreign('section_id')->references('id')->on('sections');
+            $table->unsignedBigInteger('head_employee_profile_id')->nullable();
+            $table->foreign('head_employee_profile_id')->references('id')->on('employee_profiles');
+            $table->unsignedBigInteger('oic_employee_profile_id')->nullable();
+            $table->foreign('oic_employee_profile_id')->references('id')->on('employee_profiles');
             $table->timestamps();
         });
     }

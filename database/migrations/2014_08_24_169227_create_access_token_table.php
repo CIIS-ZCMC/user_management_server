@@ -11,11 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('divisions', function (Blueprint $table) {
+        Schema::create('access_tokens', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('code')->nullable();
-            $table->string('attachment_url')->nullable();
+            $table->text('token');
+            $table->text('public_key');
+            $table->datetime('token_exp');
+            $table->unsignedBigInteger('employee_profile_id');
+            $table->foreign('employee_profile_id')->references('id')->on('employee_profiles');
             $table->timestamps();
         });
     }
@@ -25,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('divisions');
+        Schema::dropIfExists('access_tokens');
     }
 };

@@ -11,14 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('default_passwords', function (Blueprint $table) {
+        Schema::create('issuance_informations', function (Blueprint $table) {
             $table->id();
-            $table->string('password');
+            $table->string('license_no')->nullable();
+            $table->string('govt_issued_id')->nullable();
+            $table->datetime('ctc_issued_date')->nullable();
+            $table->string('ctc_issued_at')->nullable();
+            $table->string('person_administrative_oath')->nullable();
             $table->unsignedBigInteger('employee_profile_id');
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles');
-            $table->boolean('status')->default(TRUE);
-            $table->date('effective_at')->default(now());
-            $table->date('end_at')->nullable();
             $table->timestamps();
         });
     }
@@ -28,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('default_passwords');
+        Schema::dropIfExists('issuance_informations');
     }
 };

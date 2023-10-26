@@ -16,7 +16,7 @@ return new class extends Migration
             $table->integer('salary_grade_number');
             $table->integer('step');
             $table->double('amount');
-            $table->date('effective_at');
+            $table->datetime('effective_at');
             $table->timestamps();
         });
     }

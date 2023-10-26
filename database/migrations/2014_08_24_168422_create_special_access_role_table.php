@@ -11,12 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('login_trails', function (Blueprint $table) {
+        Schema::create('special_access_roles', function (Blueprint $table) {
             $table->id();
-            $table->datetime('signin_datetime');
-            $table->string('ip_address');
+            $table->unsignedBigInteger('system_role_id');
+            $table->foreign('system_role_id')->references('id')->on('system_roles');
             $table->unsignedBigInteger('employee_profile_id');
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles');
+            $table->datetime('effective_at')->default(now());
             $table->timestamps();
         });
     }
@@ -26,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('login_trails');
+        Schema::dropIfExists('special_access_roles');
     }
 };

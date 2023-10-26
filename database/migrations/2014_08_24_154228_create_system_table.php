@@ -18,12 +18,9 @@ return new class extends Migration
             $table->string('domain', 360);
             $table->text('api_key')->nullable();
             $table->datetime('key_deactivated_at')->nullable();
-            $table->boolean('server_mentainance')->default(FALSE);
-            $table->boolean('server_down')->default(FALSE);
-            $table->boolean('server_active')->default(TRUE);
-            $table->datetime('created_at')->default(now());
-            $table->datetime('updated_at')->default(now());
+            $table->integer('status')->default(FALSE);
             $table->softDeletes();
+            $table->timestamps();
         });
     }
 

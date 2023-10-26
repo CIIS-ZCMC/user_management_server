@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('access_tokens', function (Blueprint $table) {
+        Schema::create('system_logs', function (Blueprint $table) {
             $table->id();
-            $table->text('token');
-            $table->text('public_key');
+            $table->unsignedBigInteger('module_id')->nullable();
+            $table->string('action');
+            $table->boolean('status')->default(false);
+            $table->string('ip_address');
+            $table->string('remarks')->nullable();
             $table->unsignedBigInteger('employee_profile_id');
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles');
-            $table->datetime('token_exp');
             $table->timestamps();
         });
     }
@@ -27,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('access_tokens');
+        Schema::dropIfExists('system_logs');
     }
 };

@@ -11,12 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('issuance_informations', function (Blueprint $table) {
+        Schema::create('login_trails', function (Blueprint $table) {
             $table->id();
-            $table->string('license_no')->nullable();
-            $table->string('govt_issued_id')->nullable();
-            $table->datetime('ctc_issued_date')->nullable();
-            $table->string('ctc_issued_at')->nullable();
+            $table->datetime('signin_at');
+            $table->string('ip_address');
             $table->unsignedBigInteger('employee_profile_id');
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles');
             $table->timestamps();
@@ -28,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('issuance_informations');
+        Schema::dropIfExists('login_trails');
     }
 };
