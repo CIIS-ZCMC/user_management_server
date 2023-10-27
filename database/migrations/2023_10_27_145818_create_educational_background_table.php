@@ -11,13 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('other_informations', function (Blueprint $table) {
+        Schema::create('educational_backgrounds', function (Blueprint $table) {
             $table->id();
-            $table->string('hobbies');
-            $table->string('recognition')->nullable();
-            $table->string('organization')->nullable();
             $table->unsignedBigInteger('personal_information_id');
             $table->foreign('personal_information_id')->references('id')->on('personal_informations');
+            $table->string('level');
+            $table->string('name');
+            $table->string('degree_course');
+            $table->date('year_graduated');
+            $table->string('highest_grade');
+            $table->date('inclusive_from');
+            $table->date('inclusive_to');
+            $table->string('academic_honors');
             $table->timestamps();
         });
     }
@@ -27,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('other_informations');
+        Schema::dropIfExists('educational_backgrounds');
     }
 };

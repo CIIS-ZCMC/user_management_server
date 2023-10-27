@@ -14,20 +14,25 @@ class Plantilla extends Model
     public $fillable = [
         'plantilla_no',
         'tranche',
-        'date',
         'category',
-        'job_position_id'
+        'effective_at',
+        'designation_id'
     ];
 
     public $timestamps = TRUE;
 
-    public function employees()
-    {
-        return $this->hasMany(EmployeeProfile::class);
-    }
-
     public function designation()
     {
         return $this->belongsTo(Designation::class);
+    }
+    
+    public function assignedAreas()
+    {
+        return $this->hasMany(AssignedArea::class);
+    }
+    
+    public function assignedAreaTrails()
+    {
+        return $this->hasMany(AssignedAreaTrail::class);
     }
 }

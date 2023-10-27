@@ -18,25 +18,21 @@ class EmployeeProfile extends Authenticatable
     protected $table = 'employee_profiles';
 
     public $fillable = [
-        'employee_id',
+        'personal_information_id',
         'employee_verified_at',
+        'employee_id',
         'profile_url',
         'date_hired',
-        'job_type',
-        'department_id',
-        'station_id',
-        'job_position_id',
-        'job_position_id',
-        'plantilla_id',
-        'personal_information_id',
         'password_encrypted',
-        'password_created_date',
-        'password_expiration_date',
+        'password_created_at',
+        'password_expiration_at',
+        'biometric_id',
         'otp',
-        'otp_expiration_date',
-        'station_id',
-        'approved',
-        'deactivated',
+        'otp_expiration',
+        'deactivated_at',
+        'agency_employee_no',
+        'allow_time_adjustment',
+        'employee_type_id'
     ];
 
     public $timestamps = TRUE;
@@ -66,21 +62,40 @@ class EmployeeProfile extends Authenticatable
         return $this->belongsTo(PersonalInformation::class);
     }
 
-    public function station()
+    public function assignedArea()
     {
-        return $this->belongsTo(Station::class);
+        return $this->belongsTo(AssignedArea::class);
     }
 
-    public function designation()
+    public function assignedAreaTrail()
     {
-        return $this->belongsTo(Designation::class);
+        return $this->belongsTo(AssignedAreaTrail::class);
     }
 
-    public function department()
+    public function accessToken()
     {
-        return $this->belongsTo(Department::class);
+        return $this->hasMany(AccessToken::class);
     }
 
+    public function specialAccessRole(){
+        return $this->hasMany(SpecialAccessRole::class);
+    }
+
+    public function loginTrails()
+    {
+        return $this->hasMany(LoginTrails::class);
+    }
+
+    public function isDeactivated()
+    {
+        return $this->deactivated_at === null;
+    }
+
+    public function isEmailVerified()
+    {
+        return $this->email_verified_at === null;
+    }
+    
     public function createToken()
     {
         Log::channel('custom-info')->info('PASSED');
@@ -101,34 +116,5 @@ class EmployeeProfile extends Authenticatable
         $encryptedToken = openssl_encrypt($token, env("ENCRYPT_DECRYPT_ALGORITHM"), env("APP_KEY"), 0, substr(md5(env("APP_KEY")), 0, 16));
 
         return $encryptedToken;
-    }
-
-    public function accessToken()
-    {
-        return $this->hasMany(AccessToken::class);
-    }
-
-    public function specialAccessRole(){
-        return $this->hasMany(SpecialAccessRole::class);
-    }
-
-    public function loginTrails()
-    {
-        return $this->hasMany(LoginTrails::class);
-    }
-
-    public function isAprroved()
-    {
-        return $this->approved !== null;
-    }
-
-    public function isDeactivated()
-    {
-        return $this->deactivated === null;
-    }
-
-    public function isEmailVerified()
-    {
-        return $this->email_verified_at === null;
     }
 }

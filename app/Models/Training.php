@@ -12,8 +12,10 @@ class Training extends Model
     protected $table = 'trainings';
 
     public $fillable = [
+        'title',
         'inclusive_date',
-        'is_lnd',
+        'hours',
+        'type_of_ld',
         'conducted_by',
         'total_hours',
         'personal_information_id'

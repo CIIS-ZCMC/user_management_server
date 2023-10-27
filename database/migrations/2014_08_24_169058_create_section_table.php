@@ -18,12 +18,10 @@ return new class extends Migration
             $table->string('section_attachment_url')->nullable();
             $table->string('job_specification');
             $table->string('supervisor_attachment_url')->nullable();
-            $table->datetime('effective_at');
+            $table->datetime('supervisor_effective_at');
             $table->string('oic_attachment_url')->nullable();
             $table->datetime('oic_effective_at');
             $table->datetime('oic_end_at');
-            $table->unsignedBigInteger('department_id')->nullable();
-            $table->foreign('department_id')->references('id')->on('departments');
             $table->unsignedBigInteger('division_id')->nullable();
             $table->foreign('division_id')->references('id')->on('divisions');
             $table->unsignedBigInteger('department_id')->nullable();

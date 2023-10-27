@@ -16,12 +16,8 @@ class Permission extends Model
         'action',
         'deactivated'
     ];
-
-    public function systemRoles(){
-        return $this->hasMany(SystemRolePermission::class);
-    }
     
-    public function module(){
-        return $this->belongsToMany(Module::class);
+    public function modulePermission(){
+        return $this->hasMany(ModulePermission::class);
     }
 }

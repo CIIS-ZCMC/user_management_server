@@ -12,20 +12,25 @@ class ModulePermission extends Model
     protected $table = 'module_permissions';
 
     public $fillable = [
-        'name',
-        'system_id',
+        'system_module_id',
+        'permission_id',
         'code',
         'description',
         'deactivated'
     ];
 
-    public function modules()
+    public function systemModules()
     {
-        return $this->belongsToMany(Module::class);
+        return $this->belongsTo(SystemModule::class);
     }
     
     public function permissions()
     {
-        return $this->belongsToMany(Permission::class);
+        return $this->belongsTo(Permission::class);
+    }
+
+    public function roleModulePermission()
+    {
+        return $this->hasMany(RoleModulePermission::class);
     }
 }

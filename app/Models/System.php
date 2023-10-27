@@ -16,15 +16,14 @@ class System extends Model
 
     protected $fillable = [
         "name",
-        "domain",
         "code",
+        "domain",
         "api_key",
         "key_deactivated_at",
-        "server-maintainance",
-        "server-down",
-        "server-active",
+        "status",
         "created_at",
-        "updated_at"
+        "updated_at",
+        "deleted_at"
     ];
     
     public $timestamps = TRUE;

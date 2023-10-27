@@ -20,8 +20,8 @@ class SalaryGrade extends Model
 
     public $timestamps = TRUE;
 
-    public function jobPositions()
+    public function designation()
     {
-        return $this->hasMany(JobPosition::class);
+        return $this->hasMany(Designation::class);
     }
 }

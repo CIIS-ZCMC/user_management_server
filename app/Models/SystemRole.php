@@ -14,8 +14,8 @@ class SystemRole extends Model
 
     protected $fillable = [
         "name",
-        "description",
-        "updated_at",
+        "code",
+        "effective_at",
         "system_id"
     ];
 
@@ -26,17 +26,18 @@ class SystemRole extends Model
         return $this->belongsTo(System::class);
     }
 
-    public function permissions()
+    public function roleModulePermission()
     {
-        return $this->hasMany(SystemRolePermission::class, 'system_role_id');
+        return $this->hasMany(RoleModulePermission::class);
     }
 
-    public function hasPermission($routePermission)
-    {
-        list($module, $action) = explode(' ', $routePermission);
-        $permission = SystemRolePermission::where('system_role_id',  $this->uuid)->where('action', $action)->where('module', $module)->first();
 
-        return $permission;
-    }
+    // public function hasPermission($routePermission)
+    // {
+    //     list($module, $action) = explode(' ', $routePermission);
+    //     $permission = SystemRolePermission::where('system_role_id',  $this->uuid)->where('action', $action)->where('module', $module)->first();
+
+    //     return $permission;
+    // }
 }
     

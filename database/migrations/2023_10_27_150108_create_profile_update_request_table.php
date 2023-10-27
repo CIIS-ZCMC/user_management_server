@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('head_supervisor_trails', function (Blueprint $table) {
+        Schema::create('profile_update_requests', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('employee_profile_id');
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles');
-            $table->unsignedBigInteger('sector_id');
-            $table->string('sector_code');
+            $table->unsignedBigInteger('approved_by');
+            $table->foreign('approved_by')->references('id')->on('employee_profiles');
             $table->string('attachment_url');
-            $table->datetime('start_at');
-            $table->datetime('end_at');
+            $table->string('target_data');
+            $table->string('new_data');
+            $table->datetime('request_at');
+            $table->datetime('approved_at');
             $table->timestamps();
         });
     }
@@ -29,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('head_supervisor_trails');
+        Schema::dropIfExists('profile_update_requests');
     }
 };

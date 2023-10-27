@@ -11,17 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('work_experiences', function (Blueprint $table) {
+        Schema::create('trainings', function (Blueprint $table) {
             $table->id();
-            $table->date('date_from');
-            $table->date('date_to');
-            $table->string('position_title');
-            $table->string('appointment_status');
-            $table->string('salary')->nullable();
-            // $table->string('salary_grade_and_step');
-            $table->string('company');
-            $table->string('government_office');
-            $table->boolean('is_voluntary_work')->default(TRUE);
+            $table->string('title')->nullable();
+            $table->date('inclusive_date');
+            $table->string('hours')->nullable();
+            $table->boolean('type_of_ld')->default(FALSE);
+            $table->string('conducted_by')->nullable();
             $table->unsignedBigInteger('personal_information_id');
             $table->foreign('personal_information_id')->references('id')->on('personal_informations');
             $table->timestamps();
@@ -33,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('work_experiences');
+        Schema::dropIfExists('trainings');
     }
 };

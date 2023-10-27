@@ -13,9 +13,11 @@ class SystemModule extends Model
 
     public $fillable = [
         'name',
-        'system_id',
         'description',
-        'deactivated'
+        'deactivated',
+        'system_id',
+        'created_at',
+        'updated_at'
     ];
 
     public $timestamps = TRUE;
@@ -24,7 +26,7 @@ class SystemModule extends Model
         return $this->belongsTo(System::class);
     }
 
-    public function permissions(){
-        return $this->belongsToMany(Permission::class);
+    public function modulePermissions(){
+        return $this->hasMany(ModulePermission::class);
     }
 }

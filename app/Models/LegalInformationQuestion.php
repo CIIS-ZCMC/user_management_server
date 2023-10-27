@@ -12,6 +12,7 @@ class LegalInformationQuestion extends Model
     protected $table = 'legal_information_questions';
 
     public $fillable = [
+        'order_by',
         'content_question',
         'is_sub_question',
         'legal_iq_id'

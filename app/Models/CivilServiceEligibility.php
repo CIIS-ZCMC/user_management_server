@@ -16,7 +16,8 @@ class CivilServiceEligibility extends Model
         'rating',
         'date_of_examination',
         'place_of_examination',
-        'license',
+        'license_number',
+        'license_release_at',
         'personal_information_id'
     ];
 

@@ -25,9 +25,10 @@ return new class extends Migration
             $table->string('civil_status');
             $table->date('date_of_marriage')->nullable();
             $table->string('citizenship');
+            $table->string('country')->default('Philippines');
             $table->integer('height'); //cm
             $table->integer('weight');
-            $table->string('agency_employee_no')->nullable();
+            $table->string('blood_type');
             $table->timestamps();
         });
     }

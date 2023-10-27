@@ -19,11 +19,13 @@ class SpecialAccessRole extends Model
 
     public $timestamps = TRUE;
 
-    public function employees(){
+    public function employees()
+    {
         return $this->belongsTo(EmployeeProfile::class);
     }
 
-    public function systemRole(){
+    public function systemRole()
+    {
         return $this->belongsTo(SystemRole::class);
     }
 }

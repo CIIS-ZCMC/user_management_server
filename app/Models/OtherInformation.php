@@ -12,7 +12,8 @@ class OtherInformation extends Model
     protected $table = 'other_informations';
     
     public $fillable =  [
-        'hobbies',
+        'title',
+        'skills_hobbies',
         'recognition',
         'organization',
         'personal_information_id'

@@ -18,12 +18,14 @@ return new class extends Migration
             $table->string('profile_url')->nullable();
             $table->date('date_hired')->nullable();
             $table->text('password_encrypted')->nullable();
-            $table->datetime('password_created_date');
-            $table->datetime('password_expiration_date');
+            $table->datetime('password_created_at');
+            $table->datetime('password_expiration_at');
             $table->integer('biometric_id')->nullable();
             $table->integer('otp')->nullable();
             $table->datetime('otp_expiration')->nullable();
             $table->datetime('deactivated_at')->nullable();
+            $table->string('agency_employee_no')->nullable();
+            $table->boolean('allow_time_adjustment')->default(FALSE);
             $table->unsignedBigInteger('employment_type_id');
             $table->foreign('employment_type_id')->references('id')->on('employment_types');
             $table->unsignedBigInteger('personal_information_id');

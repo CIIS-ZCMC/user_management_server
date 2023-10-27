@@ -14,10 +14,16 @@ class Designation extends Model
     public $fillable = [
         'name',
         'code',
-        'salary_grade'
+        'effective_at',
+        'salary_grade_id'
     ];
 
     public $timestamps = TRUE;
+
+    public function salaryGrade()
+    {
+        return $this->belongsTo(SalaryGrade::class);
+    }
 
     public function plantilla()
     {

@@ -12,24 +12,19 @@ class PositionSystemRole extends Model
     protected $table = 'position_system_roles';
 
     public $fillable = [
-        'job_position_id',
+        'designation_id',
         'system_role_id'
     ];
 
     public $timestamps = TRUE;
 
-    public function position()
+    public function designation()
     {
-        return $this->belongsTo(JobPosition::class);
+        return $this->belongsTo(Designation::class);
     }
 
     public function systemRoles()
     {
         return $this->belongsTo(SystemRole::class);
-    }
-
-    public function systems()
-    {
-        return $this->hasManyThrough(System::class, SystemRole::class, 'id', 'id');
     }
 }

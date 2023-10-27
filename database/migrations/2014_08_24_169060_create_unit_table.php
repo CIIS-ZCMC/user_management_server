@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('unit_attachment_url')->nullable();
             $table->string('head_attachment_url')->nullable();
             $table->string('job_specification');
-            $table->datetime('effective_at');
+            $table->datetime('head_effective_at');
             $table->string('oic_attachment_url')->nullable();
             $table->datetime('oic_effective_at');
             $table->datetime('oic_end_at');

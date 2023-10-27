@@ -11,12 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('trainings', function (Blueprint $table) {
+        Schema::create('civil_service_eligibilities', function (Blueprint $table) {
             $table->id();
-            $table->date('inclusive_date');
-            $table->boolean('is_lnd')->default(FALSE);
-            $table->string('conducted_by')->nullable();
-            $table->string('total_hours')->nullable();
+            $table->string('career_service');
+            $table->string('rating');
+            $table->date('date_of_examination');
+            $table->string('place_of_examination');
+            $table->string('license_number')->nullable();
+            $table->date('license_release_at')->nullable();
             $table->unsignedBigInteger('personal_information_id');
             $table->foreign('personal_information_id')->references('id')->on('personal_informations');
             $table->timestamps();
@@ -28,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('trainings');
+        Schema::dropIfExists('civil_service_eligibilities');
     }
 };

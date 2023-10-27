@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('legal_information_questions', function (Blueprint $table) {
             $table->id();
+            $table->integer('order_by');
             $table->text('content_question');
             $table->boolean('is_sub_question')->default(FALSE);
             $table->unsignedBigInteger('legal_iq_id')->nullable();

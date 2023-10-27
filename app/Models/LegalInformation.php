@@ -12,10 +12,10 @@ class LegalInformation extends Model
     protected $table = 'legal_informations';
 
     public $fillable = [
-        'employee_profile_id',
-        'details',
+        'legal_iq_id',
+        'personal_information_id',
         'answer',
-        'legal_iq_id'
+        'details'
     ];
 
     public $timestamps = TRUE;
@@ -25,8 +25,8 @@ class LegalInformation extends Model
         return $this->belongsTo(LegalInformationQuestion::class);
     }
 
-    public function employee()
+    public function personalInformation()
     {
-        return $this->belongsTo(EmployeeProfile::class);
+        return $this->belongsTo(PersonalInformation::class);
     }
 }
