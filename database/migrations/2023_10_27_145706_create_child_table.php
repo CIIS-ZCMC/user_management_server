@@ -17,8 +17,8 @@ return new class extends Migration
             $table->foreign('personal_information_id')->references('id')->on('personal_informations');
             $table->string('last_name');
             $table->string('first_name');
-            $table->string('middle_name');
-            $table->string('gender_name');
+            $table->string('middle_name')->nullable();
+            $table->string('gender');
             $table->date('birthdate');
             $table->timestamps();
         });

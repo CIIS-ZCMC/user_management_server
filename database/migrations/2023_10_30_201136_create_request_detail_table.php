@@ -11,14 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('system_modules', function (Blueprint $table) {
+        Schema::create('request_details', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('code');
-            $table->string('description');
-            $table->boolean('deactivated')->default(FALSE);
-            $table->unsignedBigInteger('system_id');
-            $table->foreign('system_id')->references('id')->on('systems');
+            $table->unsignedBigInteger('profile_update_request_id');
+            $table->foreign('profile_update_request_id')->references('id')->on('profile_update_requests');
+            $table->string('attachment_url');
+            $table->string('target_data');
+            $table->string('new_data');
             $table->timestamps();
         });
     }
@@ -28,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('system_modules');
+        Schema::dropIfExists('request_details');
     }
 };

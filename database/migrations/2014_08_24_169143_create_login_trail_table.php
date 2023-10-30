@@ -15,6 +15,9 @@ return new class extends Migration
             $table->id();
             $table->datetime('signin_at');
             $table->string('ip_address');
+            $table->string('device');
+            $table->string('platform');
+            $table->string('browser');
             $table->unsignedBigInteger('employee_profile_id');
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles');
             $table->timestamps();

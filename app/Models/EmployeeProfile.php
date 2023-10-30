@@ -117,4 +117,12 @@ class EmployeeProfile extends Authenticatable
 
         return $encryptedToken;
     }
+
+    public function name()
+    {
+        $personal_information = $this->personalInformation;
+        $fullName = $personal_information['first_name'].' '.$personal_information['last_name'];
+
+        return $fullName;
+    }
 }

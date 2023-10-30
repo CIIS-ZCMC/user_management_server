@@ -5,6 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+use App\Http\Resources\HeadDepartmentResource;
+use App\Http\Resources\OICDepartmentResouce;
+
 class Department extends Model
 {
     use HasFactory;
@@ -60,5 +63,19 @@ class Department extends Model
     public function oic()
     {
         return $this->belongsTo(EmployeeProfile::class, 'id', 'oic_employee_profile_id');
+    }
+
+    public function headTrails()
+    {
+        $head_trails = HeadToSupervisorTrail::where('sector_code', $this->code)->get();
+
+        return HeadDepartmentResource::collection($head_trails);
+    }
+
+    public function oicTrails()
+    {
+        $oic_trails = OfficerInChargeTrail::where('sector_code', $this->code)->get();
+
+        return OICDepartmentResource::collection($oic_trails);
     }
 }

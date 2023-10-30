@@ -16,10 +16,11 @@ return new class extends Migration
             $table->unsignedBigInteger('employee_profile_id');
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles');
             $table->unsignedBigInteger('sector_id');
+            $table->string('position_title');
             $table->string('sector_code');
             $table->string('attachment_url');
-            $table->datetime('start_at');
-            $table->datetime('end_at');
+            $table->datetime('started_at');
+            $table->datetime('ended_at');
             $table->timestamps();
         });
     }

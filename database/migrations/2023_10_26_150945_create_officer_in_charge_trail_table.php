@@ -18,8 +18,8 @@ return new class extends Migration
             $table->unsignedBigInteger('sector_id');
             $table->string('sector_code');
             $table->string('attachment_url');
-            $table->datetime('start_at');
-            $table->datetime('end_at');
+            $table->datetime('started_at');
+            $table->datetime('ended_at');
             $table->timestamps();
         });
     }

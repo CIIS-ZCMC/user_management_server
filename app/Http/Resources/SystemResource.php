@@ -15,17 +15,17 @@ class SystemResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $domain = Crypt::decrypt($this->domain);
-        $under_maintainance = $this->server_maintainance;
+        $api_key = $this->api_key === null? 'NONE': Crypt::decrypt($this->api_key);
+        $status = ($this->status === 0? 'Server Not Running':$this->status === 1)? "Server is Active": "Server Maintainance";
+        $key_status = $this->key_deactivated_at;
 
         return [
-            'uuid' => $this->uuid,
             'name' => $this->name,
             'code' => $this->code,
-            'domain' => $domain,
-            'under_maintainance' => $under_maintainance,
-            'server_down' => $this->server_down,
-            'server_active' => $this->server_active
+            'domain' => $this->domain,
+            'api_key' => $under_maintainance,
+            'key_status' => $key_status,
+            'status' => $status
         ];
     }
 }

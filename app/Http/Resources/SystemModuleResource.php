@@ -18,6 +18,7 @@ class SystemModuleResource extends JsonResource
 
         return [
             'name' => $this->name,
+            'code' => $this->code,
             'system' => $system,
             'description' => $this->description,
             'created_at' => $this->created_at

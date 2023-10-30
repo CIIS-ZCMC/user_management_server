@@ -3,20 +3,20 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
+use Illuminate\Http\Resource;
 use Illuminate\Support\Facades\Log;
 use App\Services\RequestLogger;
-use App\Models\DefaultPassword;
-use App\Models\SystemLogs;
 
-use App\Http\Resources\DefaultPasswordResource;
-use App\Http\Requests\DefaultPasswordRequest;
+use App\Models\Permission;
+use App\Http\Requests\PermissionRequest;
+use App\Http\Resources\PermissionSource;
 
-class DefaultPasswordController extends Controller
+
+class PermissionController extends Controller
 {
-    private $CONTROLLER_NAME = 'Default Password';
-    private $PLURAL_MODULE_NAME = 'default password records';
-    private $SINGULAR_MODULE_NAME = 'default password record';
+    private $CONTROLLER_NAME = 'Permission Module';
+    private $PLURAL_MODULE_NAME = 'permission modules';
+    private $SINGULAR_MODULE_NAME = 'permission module';
 
     protected $requestLogger;
 
@@ -24,33 +24,39 @@ class DefaultPasswordController extends Controller
     {
         $this->requestLogger = $requestLogger;
     }
-    
+
     public function index(Request $request)
     {
         try{
-            $defaultPasswords = DefaultPassword::all();
+            $cacheExpiration = Carbon::now()->addDay();
+
+            $permissions = Permission::all();
 
             $this->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => DefaultPasswordResource::collection($defaultPasswords)], Response::HTTP_OK);
+            return response()->json(['data' => PermissionResource::collection($permissions)], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function store(DefaultPasswordRequest $request)
+    public function store(PermissionRequest $request)
     {
-        try{ 
+        try{
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                $cleanData[$key] = strip_tags($value);
+                if (is_bool($value) || $value === null) {
+                    $cleanData[$key] = $value;
+                } else {
+                    $cleanData[$key] = strip_tags($value);
+                }
             }
 
-            $defaultPassword = DefaultPassword::create($cleanData);
+            $permission = Permission::create($cleanData);
 
-            $this->registerSystemLogs($request, $defaultPassword['id'], true, 'Success creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->registerSystemLogs($request, $permission['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -61,48 +67,50 @@ class DefaultPasswordController extends Controller
     
     public function show($id, Request $request)
     {
-        try{  
-            $defaultPassword = DefaultPassword::find($id);
+        try{
+            $permission = Permission::findOrFail($id);
 
-            if(!$defaultPassword)
+            if(!$permission)
             {
-                $this->registerSystemLogs($request, $id, false, 'Failed to find a '.$this->SINGULAR_MODULE_NAME.'.');
-                return response()->json(['message' => "No record found"], Response::HTTP_NOT_FOUND);
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => new DefaultPasswordResource($defaultPassword)], Response::HTTP_OK);
+            return response()->json(['data' => $permission], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function update($id, DefaultPasswordRequest $request)
+    public function update($id, PermissionRequest $request)
     {
-        try{ 
-            $defaultPassword = DefaultPassword::find($id);
+        try{
+            $permission = Permission::find($id);
 
-            if(!$defaultPassword)
+            if(!$permission)
             {
-                $this->registerSystemLogs($request, $id, false, 'Failed to find a '.$this->SINGULAR_MODULE_NAME.'.');
-                return response()->json(['message' => "No record found"], Response::HTTP_NOT_FOUND);
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                $cleanData[$key] = strip_tags($value);
+                if (is_bool($value) || $value === null) {
+                    $cleanData[$key] = $value;
+                } else {
+                    $cleanData[$key] = strip_tags($value);
+                }
             }
 
-            $defaultPassword -> update($cleanData);
+            $permission->update($cleanData);
 
             $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -110,21 +118,20 @@ class DefaultPasswordController extends Controller
     public function destroy($id, Request $request)
     {
         try{
-            $defaultPassword = DefaultPassword::findOrFails($id)->first();
+            $permission = Permission::findOrFail($id);
 
-            if(!$defaultPassword)
+            if(!$permission)
             {
-                $this->registerSystemLogs($request, $id, false, 'Failed to find a '.$this->SINGULAR_MODULE_NAME.'.');
-                return response()->json(['message' => "No record found"], Response::HTTP_NOT_FOUND);
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $defaultPassword -> delete();
-
-            $this->registerSystemLogs($request, $id, true, 'Success in deleting a '.$this->SINGULAR_MODULE_NAME.'.');
-
+            $permission->delete();
+            
+            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -143,7 +150,7 @@ class DefaultPasswordController extends Controller
             'module' => $module,
             'status' => $status,
             'remarks' => $remarks,
-            'ip_address' => $ip
+            'ip_permission' => $ip
         ]);
     }
 }

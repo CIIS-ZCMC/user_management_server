@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('password');
             $table->boolean('status')->default(FALSE);
             $table->datetime('effective_at')->default(now());
-            $table->datetime('end_at')->default(now());
+            $table->datetime('end_at')->nullable();
             $table->timestamps();
         });
     }

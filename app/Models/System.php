@@ -28,17 +28,13 @@ class System extends Model
     
     public $timestamps = TRUE;
 
+    public function modules()
+    {
+        return $this->hasMany(SystemModule::class);
+    }
+
     public function systemRoles()
     {
         return $this->hasMany(SystemRole::class);
-    }  
-
-    public function generateApiKey()
-    {
-        $apiKey = Hash::make(Str::random(32));
-
-        $this->api_key = $apiKey;
-
-        return $apiKey;
     }
 }

@@ -15,11 +15,10 @@ class ModulePermission extends Model
         'system_module_id',
         'permission_id',
         'code',
-        'description',
         'deactivated'
     ];
 
-    public function systemModules()
+    public function module()
     {
         return $this->belongsTo(SystemModule::class);
     }

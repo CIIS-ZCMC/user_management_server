@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('domain', 360);
             $table->text('api_key')->nullable();
             $table->datetime('key_deactivated_at')->nullable();
-            $table->integer('status')->default(FALSE);
+            $table->integer('status')->default(0);
             $table->softDeletes();
             $table->timestamps();
         });

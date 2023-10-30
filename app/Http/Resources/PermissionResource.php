@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class StationResource extends JsonResource
+class PermissionResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -14,12 +14,12 @@ class StationResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $department = $this->department_id === null?"NONE":$this->department->name;
+        $status = $this->deactived?'DEACTIVED':'ACTIVE';
 
         return [
             'name' => $this->name,
-            'code' => $this->code,
-            'department' => $department
+            'action' => $this->action,
+            'status' => $status
         ];
     }
 }

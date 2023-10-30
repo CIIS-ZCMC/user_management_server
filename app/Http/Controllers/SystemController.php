@@ -2,12 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Services\RequestLogger;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use App\Http\Requests\SystemRequest;
 use App\Http\Resources\SystemResource;
@@ -30,11 +28,7 @@ class SystemController extends Controller
     public function index(Request $request)
     {
         try{
-            $cacheExpiration = Carbon::now()->addDay();
-
-            $systems = Cache::remember('systems', $cacheExpiration, function(){
-                return System::all();
-            });
+            $systems = System::all();
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
             
@@ -51,11 +45,6 @@ class SystemController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if($key === 'domain')
-                {
-                    $cleanData[$key] = Crypt::encrypt($value);
-                    continue;
-                }
                 $cleanData[$key] = strip_tags($value); 
             }
 
@@ -66,6 +55,74 @@ class SystemController extends Controller
             return response() -> json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * GENERATE API KEY
+     * this end point expect for an System ID
+     * The ID will be validated if it is has a record in the system record
+     * if TRUE then the system will generate a API Key that will be encrypted before storing in the System Details Record.
+     */
+    public function generateAPIKey($id, Request $request)
+    {
+        try{
+            $system = System::find($id);
+
+            if(!$system){
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $apiKey = base64_encode(random_bytes(32));
+
+            $encrypted_api_key = Crypt::encrypt($apiKey);
+
+            $system -> api_key = $encrypted_api_key;
+            $system -> updated_at = now();
+            $system -> save();
+
+            $this->registerSystemLogs($request, $id, true, 'Success in generating API Key '.$this->SINGULAR_MODULE_NAME.'.');
+            
+            return response() -> json(['data' => 'Success'], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'generateKey', $th->getMessage());
+            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * This End Point expect an System ID and The status value in which expect as integer between 0 - 2
+     * Validating the status value will trigger first then
+     * finding a system record according to the ID given and if found
+     * the system status will be updated.
+     */
+    public function updateSystemStatus($id, Request $request)
+    {
+        try{
+            $status = $request->input('status');
+
+            if(!is_int($status) || $status < 0 || $status > 2)
+            {
+                return response()->json(['message' => 'Invalid Data.'], Response::HTTP_INVALID_REQUEST);
+            }
+
+            $system = System::find($id);
+
+            if(!$system){
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $system->update([
+                'status' => $status,
+                'updated_at' => now()
+            ]);
+
+            $this->registerSystemLogs($request, $id, true, 'Success in Updating System Status'.$this->SINGULAR_MODULE_NAME.'.');
+            
+            return response() -> json(['data' => 'Success'], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'activateSystem', $th->getMessage());
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

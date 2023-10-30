@@ -17,27 +17,32 @@ class DivisionSeeder extends Seeder
         
         Division::create([
             'name' => 'Office of Medical Center Chief',
-            'code' => 'OMCC'
+            'code' => 'OMCC',
+            'job_specification' => 'MCC II' //Medical Center Chief
         ]);
         
         Division::create([
-            'name' => 'Medical Services/Arcillary',
-            'code' => 'MS'
+            'name' => 'Medical Service',
+            'code' => 'MS',
+            'job_specification' => 'CMPS II' //Chief Medical Professional Staff II
         ]);
         
         Division::create([
             'name' => 'Hospital Operations & Patient Support Services',
-            'code' => 'HOPPS'
+            'code' => 'HOPPS',
+            'job_specification' => 'CAO' // Chief Administrative Officer
         ]);
         
         Division::create([
-            'name' => 'Nursing Services',
-            'code' => 'NS'
+            'name' => 'Nursing Service',
+            'code' => 'NS',
+            'job_specification' => 'N-VII' // Nurse VII or Nurse Manager
         ]);
         
         Division::create([
-            'name' => 'Finance Services',
-            'code' => 'FS'
+            'name' => 'Finance Service',
+            'code' => 'FS',
+            'job_specification' => 'FINMO II' // Financial Management Officer II
         ]);
     }
 }

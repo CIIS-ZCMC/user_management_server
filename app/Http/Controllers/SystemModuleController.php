@@ -2,21 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use App\Services\RequestLogger;
 use App\Http\Resources\SystemModuleResource;
 use App\Http\Requests\SystemModuleRequest;
 use App\Models\SystemModule;
+use App\Models\SystemLogs;
 
 class SystemModuleController extends Controller
 {
     private $CONTROLLER_NAME = 'System Module';
-    private $PLURAL_MODULE_NAME = 'system_modules';
-    private $SINGULAR_MODULE_NAME = 'system_module';
+    private $PLURAL_MODULE_NAME = 'system modules';
+    private $SINGULAR_MODULE_NAME = 'system module';
 
     protected $requestLogger;
 
@@ -28,11 +27,7 @@ class SystemModuleController extends Controller
     public function index(Request $request)
     {
         try{
-            $cacheExpiration = Carbon::now()->addDay();
-
-            $system_modules = Cache::remember('system_modules', $cacheExpiration, function(){
-                return SystemModule::all();
-            });
+            $system_modules = SystemModule::all();
 
             $this->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
@@ -43,7 +38,7 @@ class SystemModuleController extends Controller
         }
     }
     
-    public function store(Request $request)
+    public function store(SystemModuleRequest $request)
     {
         try{
             $cleanData = [];
@@ -62,7 +57,78 @@ class SystemModuleController extends Controller
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * This request expect an array of Permission ID
+     * In Which it will Iterate Each ID and Validate if Module Permission already exist
+     * base on Module ID and Permission ID
+     * if already exist it will considered as failed registration with remarks of already registered
+     * if encountered an error it is also a failed registration but logging the error in error logs for
+     * debugging later on with also remarks of Something went wrong for client side.
+     * if it doesn't exist retrieving the system_module and permission
+     * will trigger and validating of there is an record with its ID given 
+     * if has record then will register new Module Permission with code of combination of System Module code and Permission code
+     * in which it is applied in the API END point for authorization purposes.
+     */
+    public function addPermission($id, Request $request)
+    {
+        try{
+            $permissions = $request->input('permissions');
+            
+            $failed = [];
+
+            foreach ($permissions as $key => $value) {
+                $module_permission = ModulePermission::where('system_module_id',$id)->where('permission_id', $value)->first();
+
+                try{
+                    if(!$module_permission){
+                        $system_module = SystemModule::find($id);
+                        $permission = Permission::find($value);
+    
+                        $code = $system_module['code'].' '.$permission['action'];
+    
+                        ModulePermission::create([
+                            'system_module_id' => $system_module['id'],
+                            'permission_id' => $permission['id'],
+                            'code' => $code
+                        ]);
+                    }
+
+                    $fail_registration = [
+                        'permission_id' => $value,
+                        'remarks' => 'Already Exist.'
+                    ];
+
+                    $failed[] = $fail_registration;
+                }catch(\Thorwable $th){
+                    $this->requestLogger->errorLog($this->CONTROLLER_NAME,'addPermission', $th->getMessage());
+
+                    $fail_registration = [
+                        'permission_id' => $value,
+                        'remarks' => 'Something went wrong.'
+                    ];
+
+                    $failed[] = $fail_registration;
+                }
+            }
+
+            if(count($failed) > 0)
+            {
+                $this->registerSystemLogs($request, $id, true, 'Success in creating module permission but some failed '.$this->SINGULAR_MODULE_NAME.'.');
+
+                return response()->json(['data' => $failed, 'message' => "Some permission did not register."], Response::HTTP_OK);
+            }
+
+
+            $this->registerSystemLogs($request, $id, true, 'Success in creating module permission '.$this->SINGULAR_MODULE_NAME.'.');
+
+            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'addPermission', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

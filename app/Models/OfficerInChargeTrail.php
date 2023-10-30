@@ -5,23 +5,23 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class IssuanceInformation extends Model
+class OfficerInChargeTrail extends Model
 {
     use HasFactory;
 
-    protected $table = 'issuance_informations';
+    protected $table = 'officer_in_charge_trails';
 
     public $fillable = [
-        'license_no',
-        'govt_issued_id',
-        'ctct_issued_date',
-        'ctc_issued_at',
-        'person_administrative_oath',
-        'employee_profile_id'
+        'employee_profile_id',
+        'sector_id',
+        'sector_code',
+        'attachment_url',
+        'started_at',
+        'ended_at'
     ];
 
     public $timestamps = TRUE;
-    
+
     public function employeeProfile()
     {
         return $this->belongsTo(EmployeeProfile::class);

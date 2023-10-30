@@ -1,0 +1,29 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Child extends Model
+{
+    use HasFactory;
+
+    protected $table = 'childs';
+
+    public $fillable = [
+        'personal_information_id',
+        'last_name',
+        'first_name',
+        'middle_name',
+        'gender',
+        'birthdate'
+    ];
+
+    public $timestamps = TRUE;
+
+    public function personalInformation()
+    {
+        return $this->belongsTo(PersonalInformation::class);
+    }
+}

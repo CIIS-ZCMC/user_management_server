@@ -5,6 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+use App\Http\Resources\ChiefDivisionTrailResource;
+use App\Http\Resources\OICDivisionTrailResource;
+
 class Division extends Model
 {
     use HasFactory;
@@ -45,5 +48,19 @@ class Division extends Model
     public function oic()
     {
         return $this->belongsTo(EmployeeProfile::class, 'id', 'oic_employee_profile_id');
+    }
+
+    public function chiefTrails()
+    {
+        $chief_trails = HeadToSupervisorTrail::where('sector_code', $this->code)->get();
+
+        return ChiefDivisionTrailResource::collection($chief_trails);
+    }
+
+    public function oicTrails()
+    {
+        $oic_trails = OfficerInChargeTrail::where('sector_code', $this->code)->get();
+
+        return OICDivisionTrailResource::collection($oic_trails);
     }
 }

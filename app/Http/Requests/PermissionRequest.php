@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class SystemRequest extends FormRequest
+class PermissionRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,8 +23,7 @@ class SystemRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
-            'domain' => 'required|string|max:255',
-            'code' => "required|string|max:255"
+            'action' => 'required|string|max:255'
         ];
     }
 }

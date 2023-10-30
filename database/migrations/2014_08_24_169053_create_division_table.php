@@ -18,10 +18,10 @@ return new class extends Migration
             $table->string('division_attachment_url')->nullable();
             $table->string('job_specification');
             $table->string('chief_attachment_url')->nullable();
-            $table->datetime('chief_effective_at');
+            $table->datetime('chief_effective_at')->nullable();
             $table->string('oic_attachment_url')->nullable();
-            $table->datetime('oic_effective_at');
-            $table->datetime('oic_end_at');
+            $table->datetime('oic_effective_at')->nullable();
+            $table->datetime('oic_end_at')->nullable();
             $table->unsignedBigInteger('chief_employee_profile_id')->nullable();
             $table->foreign('chief_employee_profile_id')->references('id')->on('employee_profiles');
             $table->unsignedBigInteger('oic_employee_profile_id')->nullable();

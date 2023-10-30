@@ -23,8 +23,8 @@ class SystemModuleRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
-            'description' => 'required|text',
-            'deactivated' => 'required|boolean',
+            'code' => 'required|string|max:255',
+            'description' => 'required|string',
             'system_id' => 'required|integer'
         ];
     }

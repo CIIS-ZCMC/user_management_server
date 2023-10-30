@@ -12,8 +12,11 @@ class LoginTrail extends Model
     protected $table = 'login_trails';
 
     public $fillable = [
-        'signin_datetime',
+        'signin_at',
         'ip_address',
+        'device',
+        'platform',
+        'browser',
         'employee_profile_id'
     ];
 

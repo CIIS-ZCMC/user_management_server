@@ -5,6 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+use App\Http\Resources\SupervisorSectionResource;
+use App\Http\Resources\OICSectionResource;
+
 class Section extends Model
 {
     use HasFactory;
@@ -52,5 +55,19 @@ class Section extends Model
     public function oic()
     {
         return $this->belongsTo(EmployeeProfile::class, 'id', 'oic_employee_profile_id');
+    }
+
+    public function supervisorTrails()
+    {
+        $supervisor_trails = HeadToSupervisorTrail::where('sector_code', $this->code)->get();
+
+        return SupervisorSectionResource::collection($supervisor_trails);
+    }
+
+    public function oicTrails()
+    {
+        $oic_trails = OfficerInChargeTrail::where('sector_code', $this->code)->get();
+
+        return OICSectionResource::collection($oic_trails);
     }
 }

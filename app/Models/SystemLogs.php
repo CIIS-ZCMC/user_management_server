@@ -13,15 +13,17 @@ class SystemLogs extends Model
 
     protected $fillable = [
         "action",
-        "module",
+        "module_id",
         "status",
         "remarks",
+        "ip_address",
         "employee_profile_id"
     ];
     
     public $timestamps = TRUE;
 
-    public function employee(){
+    public function employeeProfile()
+    {
         return $this->belongsTo(EmployeeProfile::class);
     }
 }

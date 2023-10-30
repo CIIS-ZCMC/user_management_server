@@ -13,7 +13,6 @@ class DefaultPassword extends Model
 
     public $fillable = [
         'password',
-        'employee_profile_id',
         'status',
         'effective_at',
         'end_at'

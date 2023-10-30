@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use App\Services\RequestLogger;
 use App\Http\Resources\ModulePermissionResource;
-use App\Http\Requests\ModulePermissionRequest;
 use App\Models\ModulePermission;
 use App\Models\SystemLogs;
 
@@ -43,25 +42,27 @@ class ModulePermissionController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
-    public function store(Request $request)
+
+    /**
+     * This End Point expect an System ID
+     * it will validate of System ID is associated with any system record.
+     * If True then it will retrieve all module permission.
+     */
+    public function systemModulePermission($id, Request $request)
     {
         try{
-            $cleanData = [];
+            $system = System::find($id);
 
-            foreach ($request->all() as $key => $value) {
-                if (is_bool($value) || $value === null) {
-                    $cleanData[$key] = $value;
-                } else {
-                    $cleanData[$key] = strip_tags($value);
-                }
+            if(!$system)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $module_permission = ModulePermission::create($cleanData);
+            $module_permissions = $system->modules()->with('module_permissions')->get()->pluck('module_permissions')->flatten();
 
-            $this->registerSystemLogs($request, $module_permission['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->registerSystemLogs($request, null, true, 'Success in retrieving system permissions '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['data' => ModulePermissionResource::collection($module_permissions)], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -71,7 +72,7 @@ class ModulePermissionController extends Controller
     public function show($id, Request $request)
     {
         try{
-            $module_permission = ModulePermission::findOrFail($id);
+            $module_permission = ModulePermission::find($id);
 
             if(!$module_permission)
             {
@@ -81,37 +82,6 @@ class ModulePermissionController extends Controller
             $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' => $module_permission], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-    
-    public function update($id, ModulePermissionRequest $request)
-    {
-        try{
-            $module_permission = ModulePermission::find($id);
-
-            if(!$module_permission)
-            {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }
-
-            $cleanData = [];
-
-            foreach ($request->all() as $key => $value) {
-                if (is_bool($value) || $value === null) {
-                    $cleanData[$key] = $value;
-                } else {
-                    $cleanData[$key] = strip_tags($value);
-                }
-            }
-
-            $module_permission->update($cleanData);
-
-            $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
-
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -153,7 +123,7 @@ class ModulePermissionController extends Controller
             'module' => $module,
             'status' => $status,
             'remarks' => $remarks,
-            'ip_module_permission' => $ip
+            'ip_address' => $ip
         ]);
     }
 }
