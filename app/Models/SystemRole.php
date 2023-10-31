@@ -28,16 +28,12 @@ class SystemRole extends Model
 
     public function roleModulePermission()
     {
-        return $this->hasMany(RoleModulePermission::class);
+        return $this->hasManyThrough(RoleModulePermission::class, ModulePermission::class);
     }
 
-
-    // public function hasPermission($routePermission)
-    // {
-    //     list($module, $action) = explode(' ', $routePermission);
-    //     $permission = SystemRolePermission::where('system_role_id',  $this->uuid)->where('action', $action)->where('module', $module)->first();
-
-    //     return $permission;
-    // }
+    public function positionSystemRole()
+    {
+        return $this->hasManyThrough(PositionSystemRole::class, Designation::class);
+    }
 }
     

@@ -16,7 +16,8 @@ class SystemRoleResource extends JsonResource
     {
         return [
             'name' => $this->name,
-            'description' => $this->description
+            'code' => $this->code,
+            'effective_at' => $this->effective_at
         ];
     }
 }

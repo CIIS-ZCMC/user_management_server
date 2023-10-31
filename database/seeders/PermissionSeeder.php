@@ -18,16 +18,16 @@ class PermissionSeeder extends Seeder
         Permission::create([
             'name' => 'Creation',
             'description' => 'registration of datas',
-            'code' => 'CU1',
-            'action' => 'create',            
+            'code' => 'WU1',
+            'action' => 'write',            
         ]);
         
         //id 2
         Permission::create([
             'name' => 'Viewing',
             'description' => 'read of datas',
-            'code' => 'VU1',
-            'action' => 'view',            
+            'code' => 'RU1',
+            'action' => 'read',            
         ]);
         
         //id 3
@@ -52,6 +52,14 @@ class PermissionSeeder extends Seeder
             'description' => 'approving account',
             'code' => 'AU1',
             'action' => 'approve',    
+        ]);
+        
+        //id 6
+        Permission::create([
+            'name' => 'Request',
+            'description' => 'Rights for request',
+            'code' => 'RU2',
+            'action' => 'request',    
         ]);
     }
 }
