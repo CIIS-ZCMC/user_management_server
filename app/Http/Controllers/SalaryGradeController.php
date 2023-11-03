@@ -31,9 +31,7 @@ class SalaryGradeController extends Controller
         try{
             $cacheExpiration = Carbon::now()->addDay();
 
-            $salary_grades = Cache::remember('salary_grades', $cacheExpiration, function(){
-                return SalaryGrade::all();
-            });
+            $salary_grades = SalaryGrade::all();
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 

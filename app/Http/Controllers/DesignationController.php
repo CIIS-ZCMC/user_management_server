@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Cache;
 use App\Services\RequestLogger;
 use App\Http\Requests\DesignationRequest;
 use App\Http\Resources\DesignationResource;
+use App\Http\Resources\DesignationTotalEmployeeResource;
+use App\Http\Resources\DesignationTotalPlantillaResource;
+use App\Http\Resources\DesignationEmployeesResource;
 use App\Models\Designation;
 use App\Models\SystemLogs;
 
@@ -32,15 +35,57 @@ class DesignationController extends Controller
         try{
             $cacheExpiration = Carbon::now()->addDay();
 
-            $job_positions = Cache::remember('designations', $cacheExpiration, function(){
+            $designations = Cache::remember('designations', $cacheExpiration, function(){
                 return Designation::all();
             });
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => DesignationResource::collection($job_positions)], Response::HTTP_OK);
+            return response()->json(['data' => DesignationResource::collection($designations)], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function totalEmployeePerDesignation(Request $request)
+    {
+        try{
+            $total_employee_per_designation = Designation::withCount('assigned_areas')->get();
+
+            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+
+            return response()->json(['data' => DesignationTotalEmployeeResource::collection($total_employee_per_designation)], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'totalEmployeePerDesignation', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function totalPlantillaPerDesignation(Request $request)
+    {
+        try{
+            $total_plantilla_per_designation = Designation::withCount('plantillas')->get();
+
+            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+
+            return response()->json(['data' => DesignationTotalPlantillaResource::collection($total_plantilla_per_designation)], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'totalEmployeePerDesignation', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function employeesOfSector($id, Request $request)
+    {
+        try{
+            $sector_employees = Designation::with('assigned_areas')->findOrFail($designationId);;
+
+            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+
+            return response()->json(['data' => DesignationEmployeesResource::collection($sector_employees)], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'employeesOfSector', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -54,11 +99,11 @@ class DesignationController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $job_position = Designation::create($cleanData);
+            $designation = Designation::create($cleanData);
 
             $this->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => $job_position->uuid], Response::HTTP_OK);
+            return response()->json(['data' => $designation], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -68,9 +113,9 @@ class DesignationController extends Controller
     public function show($id, Request $request)
     {
         try{
-            $job_position = Designation::find($id);
+            $designation = Designation::find($id);
 
-            if(!$job_position)
+            if(!$designation)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
@@ -87,7 +132,7 @@ class DesignationController extends Controller
     public function update($id, DesignationRequest $request)
     {
         try{
-            $job_position = Designation::find($id);
+            $designation = Designation::find($id);
 
             $cleanData = [];
 
@@ -95,7 +140,7 @@ class DesignationController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $job_position -> update($cleanData);
+            $designation -> update($cleanData);
 
             $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
@@ -109,14 +154,14 @@ class DesignationController extends Controller
     public function destroy($id, Request $request)
     {
         try{
-            $job_position = Designation::findOrFail($id);
+            $designation = Designation::findOrFail($id);
 
-            if(!$job_position)
+            if(!$designation)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $job_position -> delete();
+            $designation -> delete();
 
             $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             

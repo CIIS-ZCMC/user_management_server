@@ -24,7 +24,7 @@ class DesignationRequest extends FormRequest
         return [
             'code' => 'required|string|max:255',
             'name' => 'required|string|max:255',
-            'salary_grade' => 'required|integer'
+            'salary_grade' => 'required|string|size:36'
         ];
     }
 }

@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class DesignationResource extends JsonResource
+class DesignationTotalEmployeeResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -14,15 +14,11 @@ class DesignationResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $salary_grade = $this->salaryGrade;
-        $salary_grade_number = $salary_grade['salary_grade_number'];
-        $salary_grade_amount = $salary_grade['amount'];
-
         return [
+            'id' => $this->id,
             'name' => $this->name,
             'code' => $this->code,
-            'salary_grade_number' => $this->salary_grade_number,
-            'salary_grade_amount' => $this->salary_grade_amount
+            'assigned_areas_count' => $this->assigned_areas_count,
         ];
     }
 }
