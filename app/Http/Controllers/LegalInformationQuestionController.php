@@ -50,7 +50,7 @@ class LegalInformationQuestionController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if($key === 'is_sub_question' || $key === 'legal_iq_id'){
+                if($key === 'has_sub_question' || $key === 'legal_iq_id'){
                     $cleanData[$key] = $value;
                     continue;
                 }
@@ -100,7 +100,7 @@ class LegalInformationQuestionController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if($key === 'is_sub_question' || $key === 'legal_iq_id'){
+                if($key === 'has_sub_question' || $key === 'legal_iq_id'){
                     $cleanData[$key] = $value;
                     continue;
                 }

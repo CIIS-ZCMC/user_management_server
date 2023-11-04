@@ -21,11 +21,11 @@ class PlantillaRequest extends FormRequest
      */
     public function rules(): array
     {
-        if($this->job_position_id === null){
+        if($this->designation_id === null){
             return [
                 'planttila_no' => 'required|string|max:255',
                 'tranche' => 'nullable|string|max:255',
-                'date' => 'required|date:Y-m-d',
+                'effective_at' => 'required|date:Y-m-d',
                 'category' => 'nullable|integer',
             ];
         }
@@ -33,9 +33,9 @@ class PlantillaRequest extends FormRequest
         return [
             'planttila_no' => 'required|string|max:255',
             'tranche' => 'nullable|string|max:255',
-            'date' => 'required|date:Y-m-d',
+            'effective_at' => 'required|date:Y-m-d',
             'category' => 'nullable|integer',
-            'job_position_id' => 'required|integer',
+            'designation_id' => 'required|integer',
         ];
     }
 }

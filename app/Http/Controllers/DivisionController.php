@@ -42,6 +42,57 @@ class DivisionController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    /**
+     * Assign Chief or Head
+     * This must be in division/department/section/unit
+     */
+    public function asssignedDesignationApprovingPersonnel($id, Request $request)
+    {
+        try{
+            $employee_profile = EmployeeProfile::find($id);
+
+            if(!$employee_profile)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $assigned_area = $employee_profile -> assignedArea;
+
+            $designation = Designation::find($id);
+
+            if(!$designation)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }   
+
+            $assigned_area_designation = $assigned_area -> designation;
+
+            if(!$assigned_area_designation['code'].include($designation['code']))
+            {
+                return response()->json(['message' => 'Invalid job specification.'], Response::HTTP_BAD_REQUEST);
+            }
+
+            $designation -> 
+
+            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+
+            return response()->json(['data' => DesignationEmployeesResource::collection($sector_employees)], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'employeesOfSector', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Assign Training Officer
+     * This must be in division/department/section/unit
+     */
+
+    /**
+     * Assign OIC
+     * This must be in division/department/section/unit
+     */
     
     public function store(DivisionRequest $request)
     {

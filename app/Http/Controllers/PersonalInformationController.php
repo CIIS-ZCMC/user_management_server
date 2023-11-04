@@ -6,9 +6,9 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
 use App\Services\RequestLogger;
 use App\Http\Requests\PersonalInformationRequest;
+use App\Http\Resources\PersonalInformationResource;
 use App\Models\PersonalInformation;
 use App\Models\SystemLogs;
 
@@ -25,18 +25,16 @@ class PersonalInformationController extends Controller
         $this->requestLogger = $requestLogger;
     }
     
-    public function index(Request $request)
+    public function index(PersonalInformationRequest $request)
     {
         try{
             $cacheExpiration = Carbon::now()->addDay();
 
-            $personal_informations = Cache::remember('personal_informations', $cacheExpiration, function(){
-                return PersonalInformation::all();
-            });
+            $personal_informations = PersonalInformation::all();
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
             
-            return response()->json(['data' => $personal_informations], Response::HTTP_OK);
+            return response()->json(['data' => PersonalInformationResource::collection($personal_informations)], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -75,14 +73,14 @@ class PersonalInformationController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => $personal_information], Response::HTTP_OK);
+            return response()->json(['data' => new PersonalInformationResource($personal_information)], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function update($id, Request $request)
+    public function update($id, PersonalInformationRequest $request)
     {
         try{
             $personal_information = PersonalInformation::find($id);
@@ -97,7 +95,7 @@ class PersonalInformationController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['data' => new PersonalInformationResource($personal_information),'message' => 'Employee PDS updated.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

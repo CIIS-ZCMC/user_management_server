@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->integer('order_by');
             $table->text('content_question');
-            $table->boolean('is_sub_question')->default(FALSE);
+            $table->boolean('has_sub_question')->default(FALSE);
             $table->unsignedBigInteger('legal_iq_id')->nullable();
             $table->timestamps();
         });

@@ -16,9 +16,22 @@ class LegalInformationQuestionResource extends JsonResource
     {
         $legal_iq_id = $this->legal_iq_id === null?"NONE":$this->legalIQ;
 
+        if($this->has_sub_question)
+        {
+            $sub_question = LegalInformationQuestionResourec::collection($this->subQuestions);
+
+            return [
+                'content_question' => $this->content_question,
+                'sub_question' => $sub_question,
+                'legal_iq_id' => $legal_iq_id
+            ];
+        }
+
+        $sub_question = null;
+
         return [
             'content_question' => $this->content_question,
-            'is_sub_question' => $this->is_sub_question?true:false,
+            'has_sub_question' => $sub_question,
             'legal_iq_id' => $legal_iq_id
         ];
     }

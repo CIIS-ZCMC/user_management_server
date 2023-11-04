@@ -23,7 +23,7 @@ class LegalInformationQuestionRequest extends FormRequest
     {
         return [
             'content_question' => 'required|string|max:255',
-            'is_sub_question' => 'required|boolean',
+            'has_sub_question' => 'required|boolean',
             'legal_iq_id' => 'nullable|string|size:36',
         ];
     }

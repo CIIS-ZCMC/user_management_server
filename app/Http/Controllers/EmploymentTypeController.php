@@ -6,18 +6,15 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
 use App\Services\RequestLogger;
-use App\Http\Requests\PlantillaRequest;
-use App\Http\Resources\PlantillaResource;
-use App\Models\Plantilla;
-use App\Models\SystemLogs;
+use App\Http\Resources\EmploymentTypeResource;
+use App\Model\EmploymentType;
 
-class PlantillaController extends Controller
-{
-    private $CONTROLLER_NAME = 'Plantilla';
-    private $PLURAL_MODULE_NAME = 'plantillas';
-    private $SINGULAR_MODULE_NAME = 'plantilla';
+class EmploymentTypeController extends Controller
+{  
+    private $CONTROLLER_NAME = 'Employment Type';
+    private $PLURAL_MODULE_NAME = 'employment_types';
+    private $SINGULAR_MODULE_NAME = 'employment_type';
 
     protected $requestLogger;
 
@@ -31,36 +28,26 @@ class PlantillaController extends Controller
         try{
             $cacheExpiration = Carbon::now()->addDay();
 
-            $plantillas = Cache::remember('plantillas', $cacheExpiration, function(){
-                return Plantilla::all();
+            $employment_types = Cache::remember('employment_types', $cacheExpiration, function(){
+                return EmploymentType::all();
             });
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
             
-            return response()->json(['data' => PlantillaResource::collection($plantillas)], Response::HTTP_OK);
+            return response()->json(['data' => EmploymentTypeResource::collection($employment_types)], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
-    public function employeesOfSector($id, Request $request)
-    {
-        try{
-            $sector_employees = Plantilla::with('assigned_areas')->findOrFail($designationId);;
-
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
-
-            return response()->json(['data' => DesignationEmployeesResource::collection($sector_employees)], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'employeesOfSector', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
     
-    public function store(PlantillaRequest $request)
+    public function store(Request $request)
     {
         try{
+            $validatedData = $request->validate([
+                'name' => 'required|string'
+            ]);
+
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
@@ -71,7 +58,7 @@ class PlantillaController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $plantilla = Plantilla::create($cleanData);
+            $employment_type = EmploymentType::create($cleanData);
 
             $this->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
@@ -85,16 +72,16 @@ class PlantillaController extends Controller
     public function show($id, Request $request)
     {
         try{
-            $plantilla = Plantilla::find($id);
+            $employment_type = EmploymentType::find($id);
 
-            if(!$plantilla)
+            if(!$employment_type)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => new PlantillaResource($plantilla)], Response::HTTP_OK);
+            return response()->json(['data' => new EmploymentTypeResource($employment_type)], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -104,7 +91,11 @@ class PlantillaController extends Controller
     public function update($id, Request $request)
     {
         try{
-            $plantilla = Plantilla::find($id);
+            $validatedData = $request->validate([
+                'name' => 'required|string'
+            ]);
+
+            $employment_type = EmploymentType::find($id);
 
             $cleanData = [];
 
@@ -112,7 +103,7 @@ class PlantillaController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $plantilla -> update($cleanData);
+            $employment_type -> update($cleanData);
 
             $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
             
@@ -126,14 +117,14 @@ class PlantillaController extends Controller
     public function destroy($id, Request $request)
     {
         try{
-            $plantilla = Plantilla::findOrFail($id);
+            $employment_type = EmploymentType::findOrFail($id);
 
-            if(!$plantilla)
+            if(!$employment_type)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $plantilla -> delete();
+            $employment_type -> delete();
 
             $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
