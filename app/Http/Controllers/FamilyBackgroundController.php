@@ -6,11 +6,11 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
 use App\Services\RequestLogger;
 use App\Http\Requests\FamilyBackgroundRequest;
 use App\Http\Resources\FamilyBackgroundResource;
 use App\Models\FamilyBackground;
+use App\Models\EmployeeProfile;
 use App\Models\SystemLogs;
 
 class FamilyBackgroundController extends Controller
@@ -25,26 +25,37 @@ class FamilyBackgroundController extends Controller
     {
         $this->requestLogger = $requestLogger;
     }
-
-    public function index(Request $request)
+    
+    public function findByEmployeeID($id, Request $request)
     {
         try{
-            $cacheExpiration = Carbon::now()->addDay();
+            $employee = EmployeeProfile::find($id);
 
-            $family_backgrounds = Cache::remember('family_backgrounds', $cacheExpiration, function(){
-                return FamilyBackground::all();
-            });
+            if(!$employee)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
 
-            $this->registerSystemLogs($request, null , true, 'Success in fetching '.$PLURAL_MODULE_NAME.'.');
+            $personal_information = $employee->personalInformation;
 
-            return response()->json(['data' => FamilyBackgroundResource::collection($family_backgrounds)], Response::HTTP_OK);
+
+            $family_background = FamilyBackground::where('personal_information_id',$personal_information['id'])->first();
+
+            if(!$family_background)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $this->registerSystemLogs($request, $id , true, 'Success in fetching employee '.$SINGULAR_MODULE_NAME.'.');
+
+            return response()->json(['data' => new FamilyBackgroundResource($family_background)], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'familyBackGroundEmployee', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function familyBackGroundEmployee($id, Request $request)
+    public function findByPersonalInformationID($id, Request $request)
     {
         try{
             $family_background = FamilyBackground::where('personal_information_id',$id)->first();
@@ -58,7 +69,7 @@ class FamilyBackgroundController extends Controller
 
             return response()->json(['data' => new FamilyBackgroundResource($family_background)], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'familyBackGroundPersonalInformation', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -86,7 +97,7 @@ class FamilyBackgroundController extends Controller
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -105,7 +116,7 @@ class FamilyBackgroundController extends Controller
 
             return response()->json(['data' => new FamilyBackgroundResource($family_background)], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -135,7 +146,7 @@ class FamilyBackgroundController extends Controller
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -156,12 +167,12 @@ class FamilyBackgroundController extends Controller
             
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function destroyEmployee($id, Request $request)
+    public function destroyByPersonalInformationID($id, Request $request)
     {
         try{
             $family_background = FamilyBackground::where('personal_information_id',$id)->first();
@@ -177,7 +188,31 @@ class FamilyBackgroundController extends Controller
             
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroyPersonalInformation', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function destroyByEmployeeID($id, Request $request)
+    {
+        try{
+            $employee = EmployeeProfile::find($id);
+
+            if(!$employee)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $personal_information = $employee->personalInformation;
+
+            $family_background = $personal_information->familyBackground;
+            $family_background -> delete();
+
+            $this->registerSystemLogs($request, $id, true, 'Success in deleting employee '.$SINGULAR_MODULE_NAME.'.');
+            
+            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroyEmployee', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('access_tokens', function (Blueprint $table) {
             $table->id();
             $table->text('token');
-            $table->text('public_key');
             $table->datetime('token_exp');
             $table->unsignedBigInteger('employee_profile_id');
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles');

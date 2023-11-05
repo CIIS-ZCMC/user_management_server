@@ -21,20 +21,6 @@ class IdentificationNumberRequest extends FormRequest
      */
     public function rules(): array
     {
-
-        if($this->personal_information_id === null){
-            return [
-                'gsis_id_no' => 'nullable|string|max:255',
-                'pag_ibig_id_no' => 'nullable|string|max:255',
-                'philhealth_id_no' => 'nullable|string|max:255',
-                'sss_id_no' => 'nullable|string|max:255',
-                'prc_id_no' => 'nullable|string|max:255',
-                'tin_id_no' => 'nullable|string|max:255',
-                'rdo_no' => 'nullable|string|max:255',
-                'bank_account_no' => 'nullable|string|max:255'
-            ];
-        }
-
         return [
             'gsis_id_no' => 'nullable|string|max:255',
             'pag_ibig_id_no' => 'nullable|string|max:255',

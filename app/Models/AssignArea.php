@@ -57,4 +57,36 @@ class AssignArea extends Model
     {
         return $this->belongsTo(Plantilla::class);
     }
+
+    public function findDetails()
+    {
+        if($this->division_id !== null)
+        {
+            return [
+                'name' => $this->division,
+                'sector' => 'Division'
+            ];
+        }
+
+        if($this->department_id !== null)
+        {
+            return [
+                'name' => $this->department,
+                'sector' => 'Department'
+            ];
+        }
+
+        if($this->section_id !== null)
+        {
+            return [
+                'name' => $this->section,
+                'sector' => 'Section'
+            ];
+        }
+
+        return [
+            'name' => $this->unit,
+            'sector' => 'Unit'
+        ]; 
+    }
 }

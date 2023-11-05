@@ -6,11 +6,11 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
 use App\Services\RequestLogger;
 use App\Http\Requests\ContactRequest;
 use App\Http\Resources\ContactResource;
 use App\Models\Contact;
+use App\Models\EmployeeProfile;
 use App\Models\SystemLogs;
 
 class ContactController extends Controller
@@ -25,35 +25,41 @@ class ContactController extends Controller
     {
         $this->requestLogger = $requestLogger;
     }
-
-    public function index(Request $request)
-    {
-        try{
-            $cacheExpiration = Carbon::now()->addDay();
-
-            $contacts = Cache::remember('contacts', $cacheExpiration, function(){
-                return Contact::all();
-            });
-
-            $this->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
-
-            return response()->json(['data' => ContactResource::collection($contacts)], Response::HTTP_OK);
-        }catch(\Throwable $th){
-           $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
     
-    public function employeeContact($id, Request $request)
+    public function findByPersonalInformationID($id, Request $request)
     {
         try{
             $contact = Contact::where('personal_information_id', $id)->first();
+
+            if(!$contact)
+            {
+                return response()->json(['message' => "No record found"], Response::HTTP_NOT_FOUND);
+            }
 
             $this->registerSystemLogs($request, $contact['id'], true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' => new ContactResource($contact)], Response::HTTP_OK);
         }catch(\Throwable $th){
-           $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+           $this->requestLogger->errorLog($this->CONTROLLER_NAME,'employeeContact', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function findByEmployeeID($id, Request $request)
+    {
+        try{
+            $contact = EmployeeProfile::find($id);
+
+            if(!$contact)
+            {
+                return response()->json(['message' => "No record found"], Response::HTTP_NOT_FOUND);
+            }
+
+            $this->registerSystemLogs($request, $contact['id'], true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
+
+            return response()->json(['data' => new ContactResource($contact)], Response::HTTP_OK);
+        }catch(\Throwable $th){
+           $this->requestLogger->errorLog($this->CONTROLLER_NAME,'employeeContact', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -127,6 +133,27 @@ class ContactController extends Controller
     public function destroy($id, Request $request)
     {
         try{
+            $contact = Contact::findOrFail($id);
+
+            if(!$contact)
+            {
+                return response()->json(['message' => "No record found"], Response::HTTP_NOT_FOUND);
+            }
+
+            $contact -> delete();
+
+            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+
+            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+        }catch(\Throwable $th){
+           $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function destroyByPersonalInformation($id, Request $request)
+    {
+        try{
             $contact = Contact::where("personal_information_id", $id)->first();
 
             if(!$contact)
@@ -134,6 +161,30 @@ class ContactController extends Controller
                 return response()->json(['message' => "No record found"], Response::HTTP_NOT_FOUND);
             }
 
+            $contact -> delete();
+
+            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+
+            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+        }catch(\Throwable $th){
+           $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function destroyByEmployeeID($id, Request $request)
+    {
+        try{
+            $employee = EmployeeProfile::find($id);
+
+            if(!$employee)
+            {
+                return response()->json(['message' => "No record found"], Response::HTTP_NOT_FOUND);
+            }
+
+            $personal_information = $employee->personalInformation;
+            
+            $contact = $personal_information->contact;
             $contact -> delete();
 
             $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');

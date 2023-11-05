@@ -6,10 +6,10 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
 use App\Http\Requests\ReferencesRequest;
 use App\Http\Resources\ReferencesResource;
 use App\Models\References;
+use App\Models\EmployeeProfile;
 use App\Models\SystemLogs;
 
 class ReferencesController extends Controller
@@ -24,26 +24,8 @@ class ReferencesController extends Controller
     {
         $this->requestLogger = $requestLogger;
     }
-
-    public function index(Request $request)
-    {
-        try{
-            $cacheExpiration = Carbon::now()->addDay();
-
-            $references = Cache::remember('references', $cacheExpiration, function(){
-                return References::all();
-            });
-
-            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->PLURAL_MODULE_NAME.'.');
-            
-            return response()->json(['data' => ReferencesResource::collection($references)], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
     
-    public function employeeReferrence($id, Request $request)
+    public function findByPersonalInformationID($id, Request $request)
     {
         try{
             $references = References::where('personal_information_id', $id)->get();
@@ -56,7 +38,29 @@ class ReferencesController extends Controller
             
             return response()->json(['data' => ReferencesResource::collection($references)], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByPersonalInformationID', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function findByEmployeeID($id, Request $request)
+    {
+        try{
+            $employee_profile = EmployeeProfile::find($id);
+
+            if(!$employee_profile)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $personal_information = $employee_profile->personalInformation;
+            $references = $employee_profile->references;
+
+            $this->registerSystemLogs($request, $id, true, 'Success in fetching employee '.$this->SINGULAR_MODULE_NAME.'.');
+            
+            return response()->json(['data' => ReferencesResource::collection($references)], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -70,11 +74,11 @@ class ReferencesController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $references = References::create($cleanData);
+            $reference = References::create($cleanData);
             
             $this->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['data' => new ReferenceResource($reference),'message' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -105,6 +109,11 @@ class ReferencesController extends Controller
         try{
             $reference = References::find($id);
 
+            if(!$reference)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
@@ -115,7 +124,7 @@ class ReferencesController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['data' => new ReferenceResource($reference),'message' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -125,20 +134,71 @@ class ReferencesController extends Controller
     public function destroy($id, Request $request)
     {
         try{
-            $references = References::findOrFail($id);
+            $reference = References::findOrFail($id);
 
             if(!$references)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $references -> delete();
+            $reference -> delete();
             
             $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function destroyByPersonaslInformationID($id, Request $request)
+    {
+        try{
+            $references = References::where('personal_information_id', $id)->get();
+
+            if(!$references)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            foreach($references as $key => $value)
+            {
+                $value -> delete();
+            }
+
+            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            
+            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroyByPersonaslInformationID', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function destroyByEmployeeID($id, Request $request)
+    {
+        try{
+            $employee_profile = EmployeeProfile::find($id);
+
+            if($employee_profile)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+            
+            $personal_information = $employee_profile -> personalInformation;
+            $references = $personal_information -> references;
+
+            foreach($references as $key => $value)
+            {
+                $value -> delete();
+            }
+
+            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            
+            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroyByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

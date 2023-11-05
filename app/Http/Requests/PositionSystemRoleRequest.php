@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class CivilServiceEligibilityRequest extends FormRequest
+class PositionSystemRoleRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,13 +22,8 @@ class CivilServiceEligibilityRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'carrer_service' => 'required|string|max:255',
-            'rating' => 'nullable|float',
-            'date_of_examination' => 'required|date:Y-m-d',
-            'place_of_examination' => 'required|string|max:255',
-            'license_number' => 'nullable|string|max:255',
-            'license_release_at' => 'nullable|date:Y-m-d',
-            'personal_information_id' => 'required|string|size:36'
+            'designation_id' => 'required|string|size:36',
+            'system_role_id' => 'required|string|size:36',
         ];
     }
 }

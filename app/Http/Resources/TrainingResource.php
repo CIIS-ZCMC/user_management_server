@@ -18,10 +18,11 @@ class TrainingResource extends JsonResource
         $total_hours = $this->total_hours === null? 'NONE': $this->total_hours;
 
         return [
+            'title' => $this->title,
             'inclusive_date' => $this->inclusive_date,
-            'is_lnd' => $this->is_lnd?true:false,
+            'hours' => $hours,
+            'type_of_ld' => $this->type_of_ld,
             'conducted_by' => $conducted_by,
-            'total_hours' => $total_hours
         ];
     }
 }

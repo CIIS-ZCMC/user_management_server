@@ -17,6 +17,7 @@ class LoginTrail extends Model
         'device',
         'platform',
         'browser',
+        'browser_version',
         'employee_profile_id'
     ];
 

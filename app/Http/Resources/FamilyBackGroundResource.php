@@ -24,6 +24,9 @@ class FamilyBackGroundResource extends JsonResource
         $telephone_no = $this->telephone_no===null?'NONE':$this->telephone_no;
         $tin_no = $this->tin_no===null?'NONE':$this->decryptData('tin_no');
         $rdo_no = $this->rdo_no===null?'NONE':$this->decryptData('rdo_no');
+        $personal_information = $this->personalInformation;
+        $employee = $personal_information->employeeProfile;
+        $employee_id = $employee['employee_id'];
 
         return [
             'spouse' => $spouse,
@@ -38,6 +41,7 @@ class FamilyBackGroundResource extends JsonResource
             'rdo_no' => $rdo_no,
             'father_name' => $this->fatherName(),
             'mother_name' => $this->motherName(),
+            'employee_id'=> $employee_id
         ];
     }
 }

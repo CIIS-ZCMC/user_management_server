@@ -6,11 +6,11 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
 use App\Services\RequestLogger;
 use App\Http\Requests\OtherInformationRequest;
 use App\Http\Resources\OtherInformationResource;
 use App\Models\OtherInformation;
+use App\Models\EmployeeProfile;
 use App\Models\SystemLogs;
 
 class OtherInformationController extends Controller
@@ -26,25 +26,7 @@ class OtherInformationController extends Controller
         $this->requestLogger = $requestLogger;
     }
 
-    public function index(Request $request)
-    {
-        try{
-            $cacheExpiration = Carbon::now()->addDay();
-
-            $other_informations = Cache::remember('other_informations', $cacheExpiration, function(){
-                return OtherInformation::all();
-            });
-
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
-
-            return response()->json(['data' => OtherInformationResource::collection($other_informations)], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    public function employeeOtherInformation($id, Request $request)
+    public function findByPersonalInformationID($id, Request $request)
     {
         try{
             $other_information = OtherInformation::where('personal_information_id',$id)->get();
@@ -58,21 +40,39 @@ class OtherInformationController extends Controller
 
             return response()->json(['data' => OtherInformationResource::collection($other_information)], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByPersonalInformation', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function findByEmployeeID($id, Request $request)
+    {
+        try{
+            $employee_profile = EmployeeProfile::find($id);
+
+            if(!$employee_profile)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $personal_information = $employee_profile->personalInformation;
+            $other_information = $personal_information;
+
+            $this->registerSystemLogs($request, $id, true, 'Success in fetching employee '.$this->SINGULAR_MODULE_NAME.'.');
+
+            return response()->json(['data' => OtherInformationResource::collection($other_information)], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function store(Request $request)
+    public function store(OtherInfomrationRequest $request)
     {
         try{
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if($value === null){
-                    $cleanData[$key] = $value;
-                    continue;
-                }
                 $cleanData[$key] = strip_tags($value);
             }
 
@@ -80,7 +80,7 @@ class OtherInformationController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['data' => new OthereInformationResource($other_information),'message' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -106,7 +106,7 @@ class OtherInformationController extends Controller
         }
     }
     
-    public function update($id, Request $request)
+    public function update($id, OtherInfomrationRequest $request)
     {
         try{
             $other_information = OtherInformation::find($id);
@@ -126,7 +126,7 @@ class OtherInformationController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['data' => new OthereInformationResource($other_information),'message' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -150,6 +150,50 @@ class OtherInformationController extends Controller
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function destroyByPersonalInformationID($id, Request $request)
+    {
+        try{
+            $other_information = OtherInformation::where('personal_information_id', $id)->get();
+
+            if(!$other_information)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $other_information -> delete();
+
+            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            
+            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroyByPersonalInformationID', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function destroyByEmployeeID($id, Request $request)
+    {
+        try{
+            $employee_profile = EmployeeProfile::find($id);
+
+            if(!$employee_profile)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $personal_information = $employee_profile->personalInformationl;
+            $other_information = $personal_information->otherInformation;
+            $other_information -> delete();
+
+            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            
+            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroyByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

@@ -21,14 +21,6 @@ class ReferencesRequest extends FormRequest
      */
     public function rules(): array
     {
-        if($this->personal_information_id === null){
-            return [
-                'name' => 'required|string|max:255',
-                'address' => 'required|string|max:255',
-                'contact_no' => 'required|string|max:255'
-            ];
-        }
-
         return [
             'name' => 'required|string|max:255',
             'address' => 'required|string|max:255',

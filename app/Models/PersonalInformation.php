@@ -57,7 +57,7 @@ class PersonalInformation extends Model
         return $this->hasMany(Child::class);
     }
 
-    public function address()
+    public function addresses()
     {
         return $this->hasMany(Address::class);
     }

@@ -21,20 +21,12 @@ class OtherInformationRequest extends FormRequest
      */
     public function rules(): array
     {
-        if($this->personal_information_id === null)
-        {
-            return [
-                'hobbies' => 'required|string|max:255',
-                'recognition' => 'nullable|string|max:255',
-                'organization' => 'nullable|string|max:255',
-            ];
-        }
-        
         return [
             'hobbies' => 'required|string|max:255',
-            'recognition' => 'nullable|string|max:255',
-            'organization' => 'nullable|string|max:255',
-            'personal_information_id' => 'required|string|size:36',
+            'skills_hobbies' => 'required|booelan',
+            'recognition' => 'required|booelan',
+            'organization' => 'required|booelan',
+            'personal_information_id' => 'required|string|size:36'
         ];
     }
 }
