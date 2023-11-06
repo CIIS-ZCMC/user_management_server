@@ -11,7 +11,7 @@ class EmployeeProfileRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -25,12 +25,9 @@ class EmployeeProfileRequest extends FormRequest
             'emplyee_id' => 'required|integer',
             'profile_url' => 'nullable|string|max:255',
             'date_hired' => 'required|date:Y-m-d',
-            'job_type' => 'required|string|max:255',
             'password' => 'required|string|max:255',
-            'password_created_date' => 'required|date:Y-m-d',
-            'password_expiration_date' => 'required|date:Y-m-d',
-            'department_id' => 'required|string|size:36',
-            'employment_position_id' => 'required|string|size:36',
+            'agency_employee_no' => 'required|string|max:255',
+            'employment_type_id' => 'required|string|size:36',
             'personal_information_id' => 'required|string|size:36',
         ];
     }

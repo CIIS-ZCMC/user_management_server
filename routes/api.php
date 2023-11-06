@@ -15,10 +15,23 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::namespace('App\Http\Controllers')->group(function () {
-    Route::post('signin', 'EmployeeProfileController@signIn');
-    Route::post('send-otp', 'EmployeeProfileController@sendOTPEmail');
-    Route::post('validate-otp', 'EmployeeProfileController@validateOTP');
-    Route::post('reset-password', 'EmployeeProfileController@resetPassword');
+    
+    Route::middleware('csp.token')->group(function(){
+        Route::post('signin', 'EmployeeProfileController@signIn');
+    });
+    
+    Route::middleware('csp.token')->group(function(){
+        Route::post('send-otp', 'EmployeeProfileController@sendOTPEmail');
+    });
+    
+    Route::middleware('csp.token')->group(function(){
+        Route::post('validate-otp', 'EmployeeProfileController@validateOTP');
+    });
+    
+    Route::middleware('csp.token')->group(function(){
+        Route::post('reset-password', 'EmployeeProfileController@resetPassword');
+    });
+
 });
 
 Route::middleware('auth.cookie')->group(function(){
@@ -28,7 +41,7 @@ Route::middleware('auth.cookie')->group(function(){
         /**
          * Address Module
          */
-        Route::middleware('auth.permission:user view')->group(function(){
+        Route::middleware(['auth.permission:user view', 'csp.token'])->group(function(){
             Route::get('addresses', 'AddressController@index');
         });
 

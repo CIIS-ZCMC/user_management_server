@@ -145,7 +145,7 @@ class EmployeeProfileController extends Controller
                 ->json([$data, 'message' => "Success login."], Response::HTTP_OK)
                 ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), true);
         } catch (\Throwable $th) {
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'authenticate', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'signIn', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -351,31 +351,52 @@ class EmployeeProfileController extends Controller
                 ->json([$data, 'message' => "Success signout to other device you are now login."], Response::HTTP_OK)
                 ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), true);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'isAuthenticated', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'signOutFromOtherDevice', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function isAuthenticated(Request $request)
+    public function revalidateAccessToken(Request $request)
     {
         try{
             $user = $request->user;
 
             $personal_information = $user->personalInformation;
-
             $name = $personal_information->employeeName();
-            $position = $user->position->name;
-            $department = $user->department->name;
 
-            $dataToEncrypt = [
+            $assigned_area = $employee_profile->assignedArea;
+            $plantilla = null;
+            $designation = null;
+
+            if($assigned_area['plantilla_id'] === null)
+            {
+                $designation = $assigned_area->designation;
+            }else{
+                //Employment is plantilla retrieve the plantilla and its designation.
+                $plantilla = $assigned_area->plantilla;
+                $designation = $plantilla->designation;
+            }
+
+            $special_access_roles = $employee->specialAccessRole;
+            
+            //Retrieve Sidebar Details for the employee base on designation.
+            $side_bar_details = $this->buildSidebarDetails($designation, $special_access_roles);  
+
+            $area_assigned = $employee_profile->assignArea->findDetails; 
+
+            $data = [
+                'employee_id' => $employee_profile['employee_id'],
                 'name' => $name,
-                'department' => $department,
-                'position' => $position
+                'designation'=> $designation['name'],
+                'area_assigned' => $area_assigned['name'],
+                'area_sector' => $area_assigned['sector'],
+                'side_bar_details' => $side_bar_details
             ];
 
-            return response()->json(['data' => $dataToEncrypt], Response::HTTP_OK);
+            return response()
+                ->json([$data, 'message' => "Success login."], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'isAuthenticated', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'revalidateAccessToken', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -391,9 +412,9 @@ class EmployeeProfileController extends Controller
                 $token->delete();
             }
 
-            return response()->json(['data' => '/'], Response::HTTP_OK)->cookie(env('COOKIE_NAME'), '', -1);;
+            return response()->json(['message' => 'User signout.'], Response::HTTP_OK)->cookie(env('COOKIE_NAME'), '', -1);;
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'logout', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'signOut', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -409,24 +430,24 @@ class EmployeeProfileController extends Controller
 
             $this->registerSystemLogs($request, null, true, 'Success in fetching a '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => EmployeeProfileResource::collection($employee_profiles)], Response::HTTP_OK);
+            return response()->json(['data' => EmployeeProfileResource::collection($employee_profiles), 'message' => 'list of employees retrieved.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function store(Request $request)
+    public function store(EmployeeProfileRequest $request)
     {
         try{
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if($key === 'profile_image' && $value === null){
+                if($key === 'profile_url' && $value === null){
                     $cleanData[$key] = $value;
                     continue;
                 }
-                if($key === 'profile_image')
+                if($key === 'profile_url')
                 {
                     $cleanData[$key] = $this->check_save_file($request);
                     continue;
@@ -434,12 +455,20 @@ class EmployeeProfileController extends Controller
 
                 $cleanData[$key] = strip_tags($value);
             }
+            
+            /**
+             * Retrieve total registered employee to use for biometric ID  since biometric id is base on employee count.
+             */
+            $total_employee = EmployeeProfile::all()->count();
+            $biomentric_id = $total_employee++;
+
+            $cleanData['biometric_id'] = $biomentric_id;
 
             $employee_profile = EmployeeProfile::create($cleanData);
             
             $this->registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => $employee_profile], Response::HTTP_OK);
+            return response()->json(['data' => new EmployeeProfileResource($employee_profile), 'message' => 'Newly employee registered.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -453,21 +482,63 @@ class EmployeeProfileController extends Controller
 
             if(!$employee_profile)
             {
-                $this->registerSystemLogs($request, $id, false, 'Failed to find an employee profile.');
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
             
-            $defaultPassword = DefaultPassword::find('status', TRUE)->first();
-            $hashPassword = Hash::make($defaultPassword['password'].env('SALT_VALUE'));
-            $encryptedPassword = Crypt::encryptString($hashPassword);
+            $dateFromRequest = $employee_profile['date_hired']; 
+            $dateToRetrieve = Carbon::createFromFormat('Y-m-d', $dateFromRequest);
+            $list_of_employee_by_date_hired = EmployeeProfile::whereDate('date_hired', $dateToRetrieve)->orderBy('created_at', 'desc')->get();
 
-            $employee_profile -> employee_id = $request->employee_id;
-            $employee_profile -> password_encrypted = $encryptedPassword;
-            $employee_profile -> save();
+            /**
+             * Convert date hired to a string format to use in Employee ID
+             */
+            $carbonDate = Carbon::createFromFormat('Y-m-d', $dateFromRequest);
+            $date_hired_in_string = $carbonDate->format('Ymd');
+
+
+            /**
+             * Retrieve employee ID the last registered employee base on date
+             * get the excess data it has, example if employee ID is 2023061152 the excess data is 52
+             * then increment it with 1 to use to new employee as part of employee ID
+             */
+            $last_employee_id_registered_by_date = (int)substr($list_of_employee_by_date_hired, 8);
+            $employee_id = $date_hired_in_string.$last_employee_id_registered_by_date++;
+
+            /**
+             * Generating default password for employee acount
+             * Retrieve Default password assigned in the system
+             * has the password with salt then encrypt the password
+             */
+            $currentDate = Carbon::now();
+            $default_password = DefaultPassword::whereDate('effective_at', '<=', $currentDate)
+            ->whereDate('end_at', '>=', $currentDate)
+            ->whereDate('status', 1)
+            ->get();
+            
+            $hashPassword = Hash::make($default_password['password'].env('SALT_VALUE'));
+            $password_encrypted = Crypt::encryptString($hashPassword);
+
+            $password_created_at = Carbon::now();
+            $password_expiration_at = Carbon::now()->addDays(60);
+            
+            $cleanData = [];
+            $cleanData['employee_id'] = $employee_id;
+            $cleanData['password_created_at'] = $password_created_at;
+            $cleanData['password_encrypted'] = $password_encrypted;
+            $cleanData['password_expiration_at'] = $password_expiration_at;
+
+            $employee_profile->update($cleanData);
+
+            /**
+             * Trigger Email send here
+             * Subject Your Employee Account
+             * Employee IO and Default Password.
+             * Additional content advice employee to register biometrics in IHOMP
+             */
 
             $this->registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a '.$this->SINGULAR_MODULE_NAME.' account.');
 
-            return response()->json(['data' => 'Account created successfully.'], Response::HTTP_OK);
+            return response()->json(['message' => 'Employee account created.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'createEmployeeAccount', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -481,27 +552,60 @@ class EmployeeProfileController extends Controller
 
             if(!$employee_profile)
             {
-                $this->registerSystemLogs($request, $id, false, 'Failed to find an employee profile.');
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching a '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => new EmployeeProfileResource($employee_profile)], Response::HTTP_OK);
+            return response()->json(['data' => new EmployeeProfileResource($employee_profile), 'message' => 'Employee details found.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
+    
+    public function findByEmployeeID(Request $request)
+    {
+        try{
+            $employee_id = $request->input('employee_id');
+            $employee_profile = EmployeeProfile::where('employee_id', $id)->first();
+
+            if(!$employee_profile)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $this->registerSystemLogs($request, $id, true, 'Success in fetching a '.$this->SINGULAR_MODULE_NAME.'.');
+
+            return response()->json(['data' => new EmployeeProfileResource($employee_profile), 'message' => 'Employee details found.'], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByEmployeeID', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    
+    /**
+     * Update needed as this will require approval of HR to update account
+     * data to update of employee and attachment getting from Profile Update Request Table
+     */
     public function update($id, Request $request)
     {
         try{
+            $user = $request->user;
+            $cleanData['password'] = strip_tags($request->input('password'));
+
+            $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
+
+            if (!Hash::check($cleanData['password'].env("SALT_VALUE"), $decryptedPassword)) {
+                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $employee_profile = EmployeeProfile::find($id);
 
             if(!$employee_profile)
             {
-                $this->registerSystemLogs($request, $id, false, 'Failed to find an employee profile.');
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
@@ -531,11 +635,25 @@ class EmployeeProfileController extends Controller
     public function updateEmployeeProfile($id, EmployeeProfileRequest $request)
     {
         try{
+            $user = $request->user;
+            $cleanData['password'] = strip_tags($request->input('password'));
+
+            $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
+
+            if (!Hash::check($cleanData['password'].env("SALT_VALUE"), $decryptedPassword)) {
+                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $employee_profile = EmployeeProfile::find($id);
+
+            if(!$employee_profile)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
 
             $file_value = $this->check_save_file($request->file('profile_image'));
 
-            $employee_profile->update($file_value);
+            $employee_profile->update(['profile_url' => $file_value]);
 
             $this->registerSystemLogs($request, $employee_profile->id, true, 'Success in changing profile picture of an employee profile.');
 
@@ -550,11 +668,19 @@ class EmployeeProfileController extends Controller
     public function destroy($id, Request $request)
     {
         try{
+            $user = $request->user;
+            $cleanData['password'] = strip_tags($request->input('password'));
+
+            $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
+
+            if (!Hash::check($cleanData['password'].env("SALT_VALUE"), $decryptedPassword)) {
+                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $employee_profile = EmployeeProfile::findOrFail($id);
 
             if(!$employee_profile)
             {
-                $this->registerSystemLogs($request, $id, false, 'Failed to find a '.$this->SINGULAR_MODULE_NAME.'.');
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 

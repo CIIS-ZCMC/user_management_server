@@ -19,16 +19,30 @@ class EmployeeProfileResource extends JsonResource
         $nameTitle = $personal_information===null?'': ' '.$personal_information->name_title;
 
         $name = $personal_information->first_name.' '.$personal_information->last_name.$nameExtension.$nameTitle;
-        $department = $this->department===null?"NONE":$this->department->name;
-        $designation = $this->designation===null?"NONE":$this->designation->name;
-        $job_station = $this->station===null?"NONE":$this->station->name;
+        $assigned_area = $this->assignedArea;
+        $area_details = $assigned_area->findDetails();
+        $area_code = $area_details['code'];
+        $area_name = $area_details['name'];
+        $is_regular_employee = $assigned_area->plantilla_id === null? false: true;
+        $designation = $assigned_area->plantilla_id===null?$assigned_area->designation:$assigned_area->plantilla->designation;
+        $designation = $designation->name;
+
+        $employment_type = $this->employmentType;
+        $employment_status = $employment_type->name;
+
+        $account_status = $this->deactivated_at === null? 'Active':$this->deactivated_at;
 
         return [
             'employee_id' => $this->employee_id,
             'name' => $name,
-            'department' => $department,
+            'profile_url' => $profile_url,
+            'area_code' => $area_code,
+            'area_name' => $area_name,
+            'is_regular_employee' => $is_regular_employee,
             'designation' => $designation,
-            'job_station' => $job_station
+            'date_hired' => $this->date_hired,
+            'employment_status' => $employment_status,
+            'account_status' => $account_status
         ];
     }
 }
