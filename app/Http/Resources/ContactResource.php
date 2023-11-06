@@ -15,11 +15,11 @@ class ContactResource extends JsonResource
     public function toArray(Request $request): array
     {
         $phone_number = $this->phone_number === null? 'NONE':$this->phone_number;
-        $email = $this->email === null?'NONE':$this->email;
+        $email_address = $this->email_address === null?'NONE':$this->email_address;
 
         return [
             'phone_number' => $phone_number,
-            'email' => $email
+            'email_address' => $email_address
         ];
     }
 }

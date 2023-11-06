@@ -16,7 +16,6 @@ return new class extends Migration
             $table->string('name');
             $table->string('code');
             $table->string('description');
-            $table->boolean('deactivated')->default(FALSE);
             $table->unsignedBigInteger('system_id');
             $table->foreign('system_id')->references('id')->on('systems');
             $table->timestamps();

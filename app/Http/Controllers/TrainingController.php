@@ -6,7 +6,6 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
 use App\Services\RequestLogger;
 use App\Http\Requests\TrainingRequest;
 use App\Http\Resources\TrainingResource;
@@ -26,45 +25,54 @@ class TrainingController extends Controller
         $this->requestLogger = $requestLogger;
     }
     
-    public function index(Request $request)
-    {
-        try{
-            $cacheExpiration = Carbon::now()->addDay();
-
-            $trainings = Cache::remember('trainings', $cacheExpiration, function(){
-                return Training::all();
-            });
-
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
-            
-            return response()->json(['data' => TrainingResource::collection($trainings)], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-    
-    public function employeeTrainings($id, Request $request)
+    public function findByPersonalInformationID($id, Request $request)
     {
         try{
             $training = Training::where('personal_information_id',$id)->get();
+
+            if(!$training)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching employee '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['data' => TrainingResource::collection($training)], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByPersonalInformationID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function store(Request $request)
+    public function findByEmployeeID($id, Request $request)
+    {
+        try{
+            $employee_profile = EmployeeProfile::find($id);
+
+            if(!$employee_profile)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $personal_information = $employee_profile->personalInformation;
+            $training = $personal_information->training;
+
+            $this->registerSystemLogs($request, $id, true, 'Success in fetching employee '.$this->SINGULAR_MODULE_NAME.'.');
+            
+            return response()->json(['data' => TrainingResource::collection($training)], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByEmployeeID', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function store(TrainingRequest $request)
     {
         try{
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if($key === 'is_lnd'){
+                if($value === null || $key === 'type_is_lnd'){
                     $cleanData[$key] = $value;
                     continue;
                 }
@@ -109,6 +117,10 @@ class TrainingController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
+                if($value === null || $key === 'type_is_lnd'){
+                    $cleanData[$key] = $value;
+                    continue;
+                }
                 $cleanData[$key] = strip_tags($value);
             }
 
@@ -137,9 +149,60 @@ class TrainingController extends Controller
             
             $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['message' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function destroyByPersonalInformationID($id, Request $request)
+    {
+        try{
+            $training = Training::where('personal_information_id', $id)->get();
+
+            if(!$training || count($training))
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            foreach($training as $key => $value)
+            {
+                $value -> delete();
+            }
+            
+            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            
+            return response()->json(['message' => 'Success'], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroyByPersonalInformationID', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function destroyByEmployeeID($id, Request $request)
+    {
+        try{
+            $employee_profile = EmployeeProfile::find($id);
+
+            if(!$employee_profile)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $personal_information = $employee_profile->personalInformation;
+            $training = $personal_information->training;
+
+            foreach($training as $key => $value)
+            {
+                $value -> delete();
+            }
+            
+            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            
+            return response()->json(['message' => 'Success'], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroyByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

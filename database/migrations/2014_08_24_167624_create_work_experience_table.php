@@ -21,7 +21,6 @@ return new class extends Migration
             $table->string('salary_grade_and_step')->nullable();
             $table->string('company');
             $table->string('government_office');
-            $table->boolean('is_voluntary_work')->default(TRUE);
             $table->unsignedBigInteger('personal_information_id');
             $table->foreign('personal_information_id')->references('id')->on('personal_informations');
             $table->timestamps();

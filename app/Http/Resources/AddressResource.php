@@ -14,13 +14,10 @@ class AddressResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $personal_information = $this->personalInformation;
-        $person = $personal_information['first_name'].' '.$personal_information['last_name'];
         $is_residential = $this->is_residential? "Residential": "Permanent";
         $telephone_no = $this->telephone_no===null?'NONE': $this->telephone_no;
-
+        
         return [
-            'uuid' => $this->uuid,
             'street' => $this->street,
             'barangay' => $this->barangay,
             'city' => $this->city,
@@ -28,8 +25,7 @@ class AddressResource extends JsonResource
             'zip_code' => $this->zip_code,
             'country' => $this->country,
             'is_residential' => $is_residential,
-            'telephone_no' => $telephone_no,
-            'person' => $person
+            'telephone_no' => $telephone_no
         ];
     }
 }

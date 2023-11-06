@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('device');
             $table->string('platform');
             $table->string('browser');
+            $table->string('browser_version');
             $table->unsignedBigInteger('employee_profile_id');
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles');
             $table->timestamps();

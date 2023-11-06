@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('other_informations', function (Blueprint $table) {
             $table->id();
             $table->string('title');
-            $table->boolean('skills_hobbies')->nullable();
-            $table->boolean('recognition')->nullable();
-            $table->boolean('organization')->nullable();
+            $table->boolean('skills_hobbies')->default(FALSE);
+            $table->boolean('recognition')->default(FALSE);
+            $table->boolean('organization')->default(FALSE);
             $table->unsignedBigInteger('personal_information_id');
             $table->foreign('personal_information_id')->references('id')->on('personal_informations');
             $table->timestamps();

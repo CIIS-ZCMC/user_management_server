@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Carbon\Carbon;
+use Jenseggers\Agent\Agent;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
@@ -33,6 +34,16 @@ class EmployeeProfileController extends Controller
         $this->requestLogger = $requestLogger;
     }
 
+    /**
+     * Validate if Employee ID is legitimate
+     * Validate if Account is Deactivated
+     * Decrypt Password from Database
+     * Validate Password Legitemacy
+     * Create Access Token
+     * Retrieve Personal Information
+     * Job Details (Plantilla or Not)
+     * 
+     */
     public function signIn(SignInRequest $request)
     {
         try {
@@ -40,57 +51,307 @@ class EmployeeProfileController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if($key === 'public_key'){
-                    break;
-                }
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $user = EmployeeProfile::where('employee_id', $cleanData['employee_id'])->first();
+            $employee_profile = EmployeeProfile::where('employee_id', $cleanData['employee_id'])->first();
 
-            if (!$user) {
+            if (!$employee_profile) {
                 return response()->json(['message' => "Employee id or password incorrect."], Response::HTTP_UNAUTHORIZED);
             }            
 
-            $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
+            if(!$employee_profile->isDeactivated()){
+                return response()->json(['message' => "Account is deactivated."], Response::HTTP_FORBIDDEN);
+            }
+
+            $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
 
             if (!Hash::check($cleanData['password'].env("SALT_VALUE"), $decryptedPassword)) {
                 return response()->json(['message' => "Employee id or password incorrect."], Response::HTTP_UNAUTHORIZED);
             }
+
+            $agent = new Agent();
+            $device = [
+                'is_desktop' => $agent->isDesktop(),
+                'is_mobile' => $agent->isMobile(),
+                'platform' => $agent->platform(),
+                'browser' => $agent->browser(),
+                'version' => $agent->version($agent->browser())
+            ];
             
-            if(!$user->isDeactivated()){
-                return response()->json(['message' => "Account is deactivated."], Response::HTTP_FORBIDDEN);
+            $access_token = $employee_profile->accessToken;
+
+            if(!$access_token)
+            {
+                $ip = $request->ip();
+                $created_at = Carbon::parse($access_token['created_at']);
+                $current_time = Carbon::now();
+
+                $difference_in_minutes = $currentTime->diffInMinutes($created_at);
+                
+                $login_trail = LoginTrail::where('employee_profile_id', $employee_profile['id'])->first();
+
+                if($difference_in_minutes < 5 && $login_trail['ip_address'] != $ip)
+                {
+                    return response()->json(['data' => $employee_profile['id'],'message' => "You are currently login to different Device."], Response::HTTP_OK);
+                }
             }
 
-            if (!$user->isAprroved()) {
-                return response()->json(['message' => "Your account is not approved yet."], Response::HTTP_UNAUTHORIZED);
-            }
+            $token = $employee_profile->createToken();
 
-            $token = $user->createToken();
-
-            $personal_information = $user->personalInformation;
-
+            $personal_information = $employee_profile->personalInformation;
             $name = $personal_information->employeeName();
-            $position = $user->position->name;
-            $department = $user->department->name;
 
-            $dataToEncrypt = [
+            $assigned_area = $employee_profile->assignedArea;
+            $plantilla = null;
+            $designation = null;
+
+            if($assigned_area['plantilla_id'] === null)
+            {
+                $designation = $assigned_area->designation;
+            }else{
+                //Employment is plantilla retrieve the plantilla and its designation.
+                $plantilla = $assigned_area->plantilla;
+                $designation = $plantilla->designation;
+            }
+
+            $special_access_roles = $employee->specialAccessRole;
+            
+            //Retrieve Sidebar Details for the employee base on designation.
+            $side_bar_details = $this->buildSidebarDetails($designation, $special_access_roles);  
+
+            $area_assigned = $employee_profile->assignArea->findDetails; 
+
+            $data = [
+                'employee_id' => $employee_profile['employee_id'],
                 'name' => $name,
-                'department' => $department,
-                'position' => $position
+                'designation'=> $designation['name'],
+                'area_assigned' => $area_assigned['name'],
+                'area_sector' => $area_assigned['sector'],
+                'side_bar_details' => $side_bar_details
             ];
 
             LoginTrail::create([
-                'signin_datetime' => now(),
+                'signin_at' => now(),
                 'ip_address' => $request->ip(),
+                'device' => ($device['isDesktop'] ? 'Desktop': $device['isMobile']) ?'Mobile':'Unknown', 
+                'platform' => $device['platform'],
+                'browser' => $device['browser'],
+                'browser_version' => $device['version'],
                 'employee_profile_id' => $user['id']
             ]);
 
             return response()
-                ->json(['data' =>  $dataToEncrypt], Response::HTTP_OK)
+                ->json([$data, 'message' => "Success login."], Response::HTTP_OK)
                 ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), true);
         } catch (\Throwable $th) {
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'authenticate', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private function buildSidebarDetails($designation, $special_access_roles)
+    {
+        $sidebar_cache = Cache::get($designation['name']);
+
+        if($sidebar_cache === null)
+        {
+            $designation_permissions = PositionSystemRole::with([
+                'system_roles' => function ($query) {
+                    $query->with([
+                        'role_module_permissions' => function ($query) {
+                            $query->with(['systemModule', 'permission']);
+                        },
+                        'system' // Assuming there's a relationship between SystemRole and System
+                    ]);
+                }
+            ])->find($designation['id']);
+
+            $side_bar_details['designation_id'] = $designation_permissions['id'];
+            $side_bar_details['designation_name'] = $designation_permissions['name'];
+            $side_bar_details['system'] = [];
+            
+            /**
+             * Convert to meet sidebar data format.
+             * Iterate to every system roles.
+             */
+            foreach($designation_permissions['system_roles'] as $key => $system_role)
+            {
+                $system_exist = false;
+
+                /**
+                 * If side bar details system array is empty
+                 */
+                if (empty($side_bar_details['system'])) {
+                    $side_bar_details['system'][] = $this->buildSystemDetails($system_role);
+                    continue;
+                }
+
+                foreach($side_bar_details['system'] as $key => $system)
+                {
+                    if($system['id'] === $system_role->system['id'])
+                    {
+                        $system_exist = true;
+                        $system[] = $this->buildRoleDetails($system_role);
+                        break;
+                    }
+                }
+
+                if(!$system_exist){
+                    $side_bar_details->system[] = $this->buildSystemDetails();
+                }
+            }
+            
+            $cacheExpiration = Carbon::now()->addYear();
+            Cache::put($designation_permissions['name'], $side_bar_details, $cacheExpiration);
+        }else{
+            $side_bar_details = $sidebar_cache;
+        }
+        
+        /**
+         * For Empoyee with Special Access Roles
+         * Validate if employee has Special Access Roles
+         * Update Sidebar Details.
+         */
+        if(!empty($special_access_roles))
+        {
+            $special_access_permissions = SpecialAccessRole::with([
+                'system_roles' => function ($query) {
+                    $query->with([
+                        'role_module_permissions' => function ($query) {
+                            $query->with(['systemModule', 'permission']);
+                        },
+                        'system' // Assuming there's a relationship between SystemRole and System
+                    ]);
+                }
+            ])->find($employee_profile['id']);
+
+            foreach($special_access_permissions['system_roles'] as $key => $system_role)
+            {
+                $system_exist = false;
+
+                foreach($side_bar_details['system'] as $key => $system)
+                {
+                    if($system['id'] === $system_role->system['id'])
+                    {
+                        $system_exist = true;
+                        $system[] = $this->buildRoleDetails($system_role);
+                        break;
+                    }
+                }
+
+                if(!$system_exist){
+                    $side_bar_details->system[] = $this->buildSystemDetails();
+                }
+            }
+        }
+
+        return $side_bar_details;
+    }
+
+    private function buildSystemDetails($system_role) {
+        return [
+            'id' => $system_role->system['id'],
+            'name' => $system_role->system['name'],
+            'roles' => [$this->buildRoleDetails($system_role)],
+        ];
+    }
+    
+    private function buildRoleDetails($system_role) {
+        $modules = [];
+    
+        foreach ($system_role['role_module_permissions'] as $role_module_permission) {
+            $module_name = $role_module_permission->system_module->name;
+            $permission_action = $role_module_permission->permission->action;
+    
+            if (!isset($modules[$module_name])) {
+                $modules[$module_name] = ['name' => $module_name, 'permissions' => []];
+            }
+    
+            if (!in_array($permission_action, $modules[$module_name]['permissions'])) {
+                $modules[$module_name]['permissions'][] = $permission_action;
+            }
+        }
+    
+        return [
+            'id' => $system_role->id,
+            'name' => $system_role->name,
+            'modules' => array_values($modules), // Resetting array keys
+        ];
+    }
+    
+    //**Require employee id */
+    public function signOutFromOtherDevice($id, Request $request)
+    {
+        try{
+            $employee_profile = EmployeeProfile::find($id);
+
+            if(!$employee_profile)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $access_token = $employee_profile->accessToken;
+            $access_token->delete();
+
+            $agent = new Agent();
+            $device = [
+                'is_desktop' => $agent->isDesktop(),
+                'is_mobile' => $agent->isMobile(),
+                'platform' => $agent->platform(),
+                'browser' => $agent->browser(),
+                'version' => $agent->version($agent->browser())
+            ];
+
+            $token = $employee_profile->createToken();
+
+            $personal_information = $employee_profile->personalInformation;
+            $name = $personal_information->employeeName();
+
+            $assigned_area = $employee_profile->assignedArea;
+            $plantilla = null;
+            $designation = null;
+
+            if($assigned_area['plantilla_id'] === null)
+            {
+                $designation = $assigned_area->designation;
+            }else{
+                //Employment is plantilla retrieve the plantilla and its designation.
+                $plantilla = $assigned_area->plantilla;
+                $designation = $plantilla->designation;
+            }
+
+            $special_access_roles = $employee->specialAccessRole;
+            
+            //Retrieve Sidebar Details for the employee base on designation.
+            $side_bar_details = $this->buildSidebarDetails($designation, $special_access_roles);  
+
+            $area_assigned = $employee_profile->assignArea->findDetails; 
+
+            $data = [
+                'employee_id' => $employee_profile['employee_id'],
+                'name' => $name,
+                'designation'=> $designation['name'],
+                'area_assigned' => $area_assigned['name'],
+                'area_sector' => $area_assigned['sector'],
+                'side_bar_details' => $side_bar_details
+            ];
+
+            LoginTrail::create([
+                'signin_at' => now(),
+                'ip_address' => $request->ip(),
+                'device' => ($device['isDesktop'] ? 'Desktop': $device['isMobile']) ?'Mobile':'Unknown', 
+                'platform' => $device['platform'],
+                'browser' => $device['browser'],
+                'browser_version' => $device['version'],
+                'employee_profile_id' => $user['id']
+            ]);
+
+            return response()
+                ->json([$data, 'message' => "Success signout to other device you are now login."], Response::HTTP_OK)
+                ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), true);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'isAuthenticated', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

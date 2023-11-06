@@ -13,7 +13,8 @@ class PositionSystemRole extends Model
 
     public $fillable = [
         'designation_id',
-        'system_role_id'
+        'system_role_id',
+        'deactivated_at'
     ];
 
     public $timestamps = TRUE;
@@ -23,7 +24,7 @@ class PositionSystemRole extends Model
         return $this->belongsTo(Designation::class);
     }
 
-    public function systemRoles()
+    public function systemRole()
     {
         return $this->belongsTo(SystemRole::class);
     }

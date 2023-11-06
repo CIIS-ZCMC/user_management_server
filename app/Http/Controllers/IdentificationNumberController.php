@@ -6,11 +6,11 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
 use App\Services\RequestLogger;
 use App\Http\Requests\IdentificationNumberRequest;
 use App\Http\Resources\IdentificationNumberResource;
 use App\Models\IdentificationNumber;
+use App\Models\EmployeeProfile;
 use App\Models\SystemLogs;
 
 class IdentificationNumberController extends Controller
@@ -26,25 +26,7 @@ class IdentificationNumberController extends Controller
         $this->requestLogger = $requestLogger;
     }
     
-    public function index(Request $request)
-    {
-        try{
-            $cacheExpiration = Carbon::now()->addDay();
-
-            $identifations = Cache::remember('identifications', $cacheExpiration, function(){
-                return IdentificationNumber::all();
-            });
-
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
-
-            return response()->json(['data' => IdentificationNumberResource::collection($identifations)], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-    
-    public function identificationEmployee($id, Request $request)
+    public function findByPersonalInformationID($id, Request $request)
     {
         try{
             $identification = IdentificationNumber::where('personal_information_id',$id)->first();
@@ -53,6 +35,28 @@ class IdentificationNumberController extends Controller
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
+
+            $this->registerSystemLogs($request, $id, true, 'Success in fetching employee '.$this->SINGULAR_MODULE_NAME.'.');
+
+            return response()->json(['data' => new IdentificationNumberResource($identification)], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function findByEmployeeID($id, Request $request)
+    {
+        try{
+            $employee_profile = EmployeeProfile::find($id);
+
+            if(!$employee_profile)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $personal_information = $employee_profile->personalInformation;
+            $identification = $personal_information->identification;
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching employee '.$this->SINGULAR_MODULE_NAME.'.');
 
@@ -80,7 +84,7 @@ class IdentificationNumberController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['data' => new IdentificationNumberResource($identification) ,"message" => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -125,34 +129,7 @@ class IdentificationNumberController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-    
-    
-    public function updateEmployee($id, IdentificationNumberRequest $request)
-    {
-        try{
-            $identification = IdentificationNumber::where('personal_information_id',$id)->first();
-
-            $cleanData = [];
-            
-            foreach ($request->all() as $key => $value) {
-                if($value === null || $key === 'personal_information_id'){ 
-                    $cleanData[$key] = $value;
-                    continue;
-                }
-                $cleanData[$key] =  $this->encryptData(strip_tags($value));
-            }
-
-            $identification -> update($cleanData);
-
-            $this->registerSystemLogs($request, $id, true, 'Success in updating employee '.$this->SINGULAR_MODULE_NAME.'.');
-
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['data' => new IdentificationNumberResource($identification), "message" => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -180,7 +157,7 @@ class IdentificationNumberController extends Controller
         }
     }
     
-    public function destroyEmployee($id, Request $request)
+    public function destroyByPersonalInformation($id, Request $request)
     {
         try{
             $identification = IdentificationNumber::where('personal_information_id', $id)->first();
@@ -191,9 +168,32 @@ class IdentificationNumberController extends Controller
             }
 
             $identification -> delete();
-
-            $this->registerSystemLogs($request, $id, true, 'Success in deleting employee '.$this->SINGULAR_MODULE_NAME.'.');
             
+            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+
+            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function destroyByEmployeeID($id, Request $request)
+    {
+        try{
+            $employee_profile = EmployeeProfile::find($id);
+
+            if(!$employee_profile)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $personal_information = $employee_profile->personalInformation;
+            $identification = $personal_information->identification;
+            $identification -> delete();
+            
+            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());

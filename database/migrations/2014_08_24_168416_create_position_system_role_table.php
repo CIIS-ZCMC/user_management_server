@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreign('designation_id')->references('id')->on('designations');
             $table->unsignedBigInteger('system_role_id');
             $table->foreign('system_role_id')->references('id')->on('system_roles');
-            $table->datetime('in_active')->nullable();
+            $table->datetime('deactivated_at')->nullable();
             $table->timestamps();
         });
     }

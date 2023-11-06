@@ -13,11 +13,9 @@ class SystemModule extends Model
 
     public $fillable = [
         'name',
+        'code',
         'description',
-        'deactivated',
-        'system_id',
-        'created_at',
-        'updated_at'
+        'system_id'
     ];
 
     public $timestamps = TRUE;

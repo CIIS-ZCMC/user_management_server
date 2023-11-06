@@ -29,4 +29,9 @@ class Designation extends Model
     {
         return $this->belongsTo(Plantilla::class);
     }
+
+    public function positionSystemRoles()
+    {
+        return $this->hasMany(PositionSystemRoles::class);
+    }
 }
