@@ -30,9 +30,7 @@ class SpecialAccessRoleController extends Controller
         try{
             $cacheExpiration = Carbon::now()->addDay();
 
-            $special_access_roles = Cache::remember('special_access_roles', $cacheExpiration, function(){
-                return SpecialAccessRole::all();
-            });
+            $special_access_roles = SpecialAccessRole::all();
 
             $this->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
@@ -52,11 +50,25 @@ class SpecialAccessRoleController extends Controller
                 $cleanData[$key] = strip_tags($value); 
             }
 
+            $employee_profile = EmployeeProfile::find($cleanData['employee_profile_id']);
+            
+            if (!$employee_profile) 
+            {
+                return response()->json(['message' => 'No record found for Employe.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $system_role = SystemRole::find($cleanData['system_role_id']);
+
+            if (!$system_role) 
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
             $special_access_role = SpecialAccessRole::create($cleanData);
             
             $this->registerSystemLogs($request, $special_access_role['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response() -> json(['data' => 'Success'], Response::HTTP_OK);
+            return response() -> json(['data' => new SpecialAccessRoleResource($special_access_role),'message' => 'New special role added.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -68,44 +80,27 @@ class SpecialAccessRoleController extends Controller
         try{
             $special_access_role = SpecialAccessRole::find($id);
 
+            if (!$special_access_role) 
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
             $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response() -> json(['data' => new SpecialAccessRoleResource($special_access_role)], Response::HTTP_OK);
+            return response() -> json(['data' => new SpecialAccessRoleResource($special_access_role), 'message' => 'Special access role details found.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    public function update($id, SpecialAccessRoleRequest $request)
-    {
-        try{
-            $data = SpecialAccessRole::find($id);
-            
-            if (!$data) {
-                return response()->json(['message' => 'No record found.'], 404);
-            }
-            
-            $cleanData = [];
 
-            foreach ($request->all() as $key => $value) {
-                $cleanData[$key] = strip_tags($value); 
-            }
-
-            $data->update($cleanData);
-
-            $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
-            return response() -> json(['data' => "Success"], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
-            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
     public function destroy($id, Request $request)
     {
         try{
             $special_access_role = SpecialAccessRole::findOrFail($id);
 
-            if(!$special_access_role){
+            if(!$special_access_role)
+            {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
@@ -113,7 +108,7 @@ class SpecialAccessRoleController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response() -> json(['data' => 'Success'], Response::HTTP_OK);
+            return response() -> json(['message' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

@@ -6,18 +6,17 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
 use App\Services\RequestLogger;
-use App\Http\Requests\PasswordTrailRequest;
-use App\Http\Resources\PasswordTrailResource;
-use App\Models\PasswordTrail;
+use App\Http\Requests\AssignAreaRequest;
+use App\Http\Resources\AssignAreaResource;
+use App\Models\AssignedArea;
 use App\Models\SystemLogs;
 
-class PasswordTrailController extends Controller
-{
-    private $CONTROLLER_NAME = 'Password Trail';
-    private $PLURAL_MODULE_NAME = 'password trails';
-    private $SINGULAR_MODULE_NAME = 'password trail';
+class AssignAreaTableController extends Controller
+{ 
+    private $CONTROLLER_NAME = 'AssignedArea Module';
+    private $PLURAL_MODULE_NAME = 'assigned_area modules';
+    private $SINGULAR_MODULE_NAME = 'assigned_area module';
 
     protected $requestLogger;
 
@@ -31,47 +30,62 @@ class PasswordTrailController extends Controller
         try{
             $cacheExpiration = Carbon::now()->addDay();
 
-            $password_trails = Cache::remember('password_trails', $cacheExpiration, function(){
-                return PasswordTrail::all();
-            });
+            $assigned_areas = AssignedArea::all();
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            $this->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => PasswordTrailResource::collection($password_trails)], Response::HTTP_OK);
+            return response()->json(['data' => AssignAreaResource::collection($assigned_areas), 'message' => 'Record of employee assigned area retrieved.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
-    public function employeePasswordTrail($id, Request $request)
+    public function findByEmployeeID(Request $request)
     {
         try{
-            $password_trails = PasswordTrail::where('employee_profile_id', $id)->get();
+            $employe_profile = EmployeeProfile::where('employee_id')->first();
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching employee '.$this->SINGULAR_MODULE_NAME.'.');
+            if(!$employe_profile)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
 
-            return response()->json(['data' => PasswordTrailResource::collection($password_trails)], Response::HTTP_OK);
+
+            $assigned_area = AssignedArea::where('employee_profile_id',$employe_profile['id'])->first();
+
+            if(!$assigned_area)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
+
+            return response()->json(['data' => new AssignAreaResource($assigned_area), 'message' => 'Employee assigned area found.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function store(Request $request)
+    public function store(AssignedAreaRequest $request)
     {
         try{
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
+                if ($value === null) {
+                    $cleanData[$key] = $value;
+                    continue;
+                } 
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $password_trail = PasswordTrail::create($cleanData);
+            $assigned_area = AssignedArea::create($cleanData);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->registerSystemLogs($request, $assigned_area['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['data' =>  new AssignAreaResource($assigned_area),'message' => 'New employee assign area registered.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -81,28 +95,28 @@ class PasswordTrailController extends Controller
     public function show($id, Request $request)
     {
         try{
-            $password_trail = PasswordTrail::find($id);
+            $assigned_area = AssignedArea::findOrFail($id);
 
-            if(!$password_trail)
+            if(!$assigned_area)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => $password_trail], Response::HTTP_OK);
+            return response()->json(['data' => new AssignAreaResource($assigned_area), 'message' => 'Assigned area record found.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function update($id, PasswordTrailRequest $request)
+    public function update($id, AssignedAreaRequest $request)
     {
         try{
-            $password_trail = PasswordTrail::find($id);
+            $assigned_area = AssignedArea::find($id);
 
-            if(!$password_trail)
+            if(!$assigned_area)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
@@ -110,14 +124,18 @@ class PasswordTrailController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
+                if ($value === null) {
+                    $cleanData[$key] = $value;
+                    continue;
+                } 
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $password_trail -> update($cleanData);
+            $assigned_area->update($cleanData);
 
             $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['data' =>  new AssignAreaResource($assigned_area),'message' => 'New employee assign area registered.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -127,18 +145,18 @@ class PasswordTrailController extends Controller
     public function destroy($id, Request $request)
     {
         try{
-            $password_trail = PasswordTrail::findOrFail($id);
+            $assigned_area = AssignedArea::findOrFail($id);
 
-            if(!$password_trail)
+            if(!$assigned_area)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $password_trail -> delete();
-
+            $assigned_area->delete();
+            
             $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['data' => 'Assigned area record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -149,8 +167,8 @@ class PasswordTrailController extends Controller
     {
         $ip = $request->ip();
         $user = $request->user;
-        $permission = $request->permission;
-        list($action, $module) = explode(' ', $permission);
+        $assigned_area = $request->assigned_area;
+        list($action, $module) = explode(' ', $assigned_area);
 
         SystemLogs::create([
             'employee_profile_id' => $user->id,
@@ -159,7 +177,7 @@ class PasswordTrailController extends Controller
             'module' => $module,
             'status' => $status,
             'remarks' => $remarks,
-            'ip_address' => $ip
+            'ip_assigned_area' => $ip
         ]);
     }
 }

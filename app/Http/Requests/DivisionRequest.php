@@ -23,7 +23,9 @@ class DivisionRequest extends FormRequest
     {
         return [
             'code' => 'required|string|max:255',
-            'name' => 'required|string|max:255'
+            'name' => 'required|string|max:255',
+            'division' => 'nullable|text',
+            'job_specification' => 'required|string|max:255'
         ];
     }
 }

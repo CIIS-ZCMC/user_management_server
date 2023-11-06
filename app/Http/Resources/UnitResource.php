@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class DivisionResource extends JsonResource
+class UnitResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -14,18 +14,18 @@ class DivisionResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        if($this->chief_employee_profile_id !== null)
+        if($this->head_employee_profile_id !== null)
         {
             $name = $this->name;
             $code = $this->code;
-            $designation = $this->chiefRequirement;
+            $designation = $this->headJobSpecification;
             $job_specification = $designation['name'];
-            $chief_status = $this->chief_status? 'On Site':'On Leave';
-            $approving_officer = $this->chief_status? 'Chief':'OIC';
+            $head_status = $this->head_status? 'On Site':'On Leave';
+            $approving_officer = $this->head_status? 'Head':'OIC';
 
-            $chief = $this->chief;
-            $chief_personal_information = $chief->personalInformation;
-            $chief = $chief_personal_information->name;
+            $head = $this->head;
+            $head_personal_information = $head->personalInformation;
+            $head = $head_personal_information->name;
 
             $officer_in_charge = 'NONE';
 
@@ -40,23 +40,23 @@ class DivisionResource extends JsonResource
                 'name' => $name,
                 'code' => $code,
                 'job_specification' => $job_specification,
-                'chief' => $chief,
-                'chief_status' => $chief_status,
+                'head' => $head,
+                'head_status' => $head_status,
                 'approving_officer' => $approving_officer,
                 'officer_in_charge' => $officer_in_charge
             ];
         }
 
-        $chief_designation = $this->chiefRequirement;
-        $job_specification = $chief_designation['name'];
+        $head_designation = $this->headRequirement;
+        $job_specification = $head_designation['name'];
 
 
         return [
             'code' => $this->code,
             'name' => $this->name,
             'job_specification' => $job_specification,
-            'chief' => 'NONE',
-            'chief_status' => 'No Chief',
+            'head' => 'NONE',
+            'head_status' => 'No Chief',
             'approving_officer' => 'NONE',
             'officer_in_charge' => 'NONE'
         ];

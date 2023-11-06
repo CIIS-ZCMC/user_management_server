@@ -4,14 +4,14 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class PasswordTrailRequest extends FormRequest
+class DepartmentAssignOICRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return true;
+        return false;
     }
 
     /**
@@ -22,10 +22,11 @@ class PasswordTrailRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'old_password' => 'required|string|max:255',
-            'password_created_at' => 'required|date:Y-m-d',
-            'expired_at' => 'required|date:Y-m-d',
-            'employee_profile_id' => 'required|string|size:36',
+            'employee_id' => 'required|string|max:255',
+            'attachment' => 'nullable|text',
+            'password' => 'required|string|max:255',
+            'effective_at' => 'required|date:Y-m-d',
+            'end_at' => 'required|date:Y-m-d'
         ];
     }
 }

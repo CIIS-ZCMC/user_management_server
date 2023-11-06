@@ -17,7 +17,6 @@ class LegalInformationResource extends JsonResource
         $legal_iq_id = $this->legal_iq_id===null?'NONE':$this->legalInformationQuestion;
 
         return [
-            'uuid' => $this->uuid,
             'employee_profile_id' => $this->employee_profile_id,
             'details' => $this->details,
             'answer' => $this->answer?true:false,

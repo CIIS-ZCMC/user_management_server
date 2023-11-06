@@ -19,8 +19,9 @@ class SystemLogsResource extends JsonResource
 
         return [
             'action' => $this->action,
-            'module' => $this->module,
+            'module_id' => $this->module_id,
             'status' => $status,
+            'ip_address' => $this->ip_address,
             'remarks' => $this->remarks,
             'employee_id' => $employee_id
         ];

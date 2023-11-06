@@ -41,7 +41,7 @@ class Unit extends Model
         return $this->belongsTo(EmployeeProfile::class, 'id', 'oic_employee_profile_id');
     }
 
-    public function jobSpecification()
+    public function headJobSpecification()
     {
         return Designation::where('code', $this->job_specification)->first();
     }

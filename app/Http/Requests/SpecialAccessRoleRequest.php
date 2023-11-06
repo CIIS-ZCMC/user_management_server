@@ -22,8 +22,8 @@ class SpecialAccessRoleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'employee_profile_id' => 'required|integer',
-            'system_role_id' => 'required|integer'
+            'employee_profile_id' => 'required|string|size:35',
+            'system_role_id' => 'required|string|size:35'
         ];
     }
 }

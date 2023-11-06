@@ -8,6 +8,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use App\Services\RequestLogger;
 use App\Http\Requests\IssuanceInformationRequest;
+use App\Http\Resources\IssuanceInformationResource;
 use App\Models\IssuanceInformation;
 use App\Models\SystemLogs;
 
@@ -23,24 +24,6 @@ class IssuanceInformationController extends Controller
     {
         $this->requestLogger = $requestLogger;
     }
-
-    public function index(Request $request)
-    {
-        try{
-            $cacheExpiration = Carbon::now()->addDay();
-
-            $issuance_informations = Cache::remember('issuance_informations', $cacheExpiration, function(){
-                return IssuanceInformation::all();
-            });
-            
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
-
-            return response()->json(['data' => $issuance_informations], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
     
     public function store(IssuanceInformationRequest $request)
     {
@@ -48,6 +31,11 @@ class IssuanceInformationController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
+                if($value === null)
+                {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
                 $cleanData[$key] = strip_tags($value);
             }
 
@@ -55,7 +43,7 @@ class IssuanceInformationController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
            
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['data' => new IssuanceInformationResource($issuance_information) ,'message' => 'Newly added employee issuance information.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -74,7 +62,7 @@ class IssuanceInformationController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => $issuance_information], Response::HTTP_OK);
+            return response()->json(['data' => new IssuanceInformation($issuance_information), 'message' => 'Employee issuance information found.' ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -86,9 +74,20 @@ class IssuanceInformationController extends Controller
         try{
             $issuance_information = IssuanceInformation::find($id);
 
+            if(!$issuance_information)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
+                if($value === null)
+                {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
                 $cleanData[$key] = strip_tags($value);
             }
 
@@ -97,7 +96,7 @@ class IssuanceInformationController extends Controller
             $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
            
 
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['data' => new IssuanceInformationResource($issuance_information) ,'message' => 'Updated employee issuance information.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -118,7 +117,7 @@ class IssuanceInformationController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
            
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['message' => 'employee issuance information deleted'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

@@ -28,7 +28,7 @@ class SystemLogsController extends Controller
         try{
             $stations = SystemLogs::all();
 
-            return response()->json(['data' => SystemLogsResource::collection($stations)], Response::HTTP_OK);
+            return response()->json(['data' => SystemLogsResource::collection($stations), 'message' => 'System logs retrieved.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], 500);
@@ -57,6 +57,15 @@ class SystemLogsController extends Controller
     public function destroy($id, Request $request)
     {
         try{
+            $user = $request->user;
+            $cleanData['password'] = strip_tags($request->input('password'));
+
+            $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
+
+            if (!Hash::check($cleanData['password'].env("SALT_VALUE"), $decryptedPassword)) {
+                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
+            }
+            
             $station = SystemLogs::findOrFail($id);
 
             if(!$station)

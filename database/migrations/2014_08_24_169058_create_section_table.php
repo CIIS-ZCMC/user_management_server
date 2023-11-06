@@ -14,11 +14,12 @@ return new class extends Migration
         Schema::create('sections', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('code')->nullable();
+            $table->string('code');
             $table->string('section_attachment_url')->nullable();
             $table->string('job_specification');
             $table->string('supervisor_attachment_url')->nullable();
             $table->datetime('supervisor_effective_at');
+            $table->boolean('supervisor_status')->default(FALSE);
             $table->string('oic_attachment_url')->nullable();
             $table->datetime('oic_effective_at');
             $table->datetime('oic_end_at');

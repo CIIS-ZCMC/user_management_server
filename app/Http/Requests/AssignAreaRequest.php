@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class IssuanceInformationRequest extends FormRequest
+class AssignAreaRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,12 +22,13 @@ class IssuanceInformationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'license_no' => 'nullable|string|max:255',
-            'govt_issued_id' => 'nullable|integer',
-            'ctct_issued_date' => 'nullable|date:Y-m-d',
-            'ctc_issued_at' => 'nullable|string|max:255',
-            'person_administrative_oath' => 'nullable|string|max:255',
-            'employee_profile_id' => 'required|integer',
+            'employee_profile_id' => 'required|string|size:36',
+            'division_id' => 'nullable|string|size:36',
+            'department_id' => 'nullable|string|size:36',
+            'section_id' => 'nullable|string|size:36',
+            'unit_id' => 'nullable|string|size:36',
+            'designation_id' => 'nullable|string|size:36',
+            'plantilla_id' => 'nullable|string|size:36',
         ];
     }
 }

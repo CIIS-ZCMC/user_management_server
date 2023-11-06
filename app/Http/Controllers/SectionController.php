@@ -8,20 +8,19 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
-use App\Http\Requests\DepartmentRequest;
-use App\Http\Requests\DepartmentAssignHeadRequest;
-use App\Http\Requests\DepartmentAssignTrainingOfficerRequest;
-use App\Http\Requests\DepartmentAssignOICRequest;
-use App\Http\Resources\DepartmentResource;
-use App\Models\Department;
+use App\Http\Requests\SectionRequest;
+use App\Http\Requests\SectionAssignSupervisorRequest;
+use App\Http\Requests\SectionAssignOICRequest;
+use App\Http\Resources\SectionResource;
+use App\Models\Section;
 use App\Models\EmployeeProfile;
 use App\Models\SystemLogs;
 
-class DepartmentController extends Controller
-{
-    private $CONTROLLER_NAME = 'Department';
-    private $PLURAL_MODULE_NAME = 'departments';
-    private $SINGULAR_MODULE_NAME = 'department';
+class SectionController extends Controller
+{    
+    private $CONTROLLER_NAME = 'Section';
+    private $PLURAL_MODULE_NAME = 'sections';
+    private $SINGULAR_MODULE_NAME = 'section';
 
     protected $requestLogger;
 
@@ -35,13 +34,13 @@ class DepartmentController extends Controller
         try{
             $cacheExpiration = Carbon::now()->addDay();
 
-            $departments = Cache::remember('departments', $cacheExpiration, function(){
-                return Department::all();
+            $sections = Cache::remember('sections', $cacheExpiration, function(){
+                return Section::all();
             });
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => DepartmentResource::collection($departments)], Response::HTTP_OK);
+            return response()->json(['data' => SectionResource::collection($sections)], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -49,15 +48,15 @@ class DepartmentController extends Controller
     }
     
     /**
-     * Assign Head
-     * This must be in department/department/section/unit
+     * Assign Supervisor
+     * This must be in section
      */
-    public function assignHeadByEmployeeID($id, DepartmentAssignHeadRequest $request)
+    public function assignSupervisorByEmployeeID($id, SectionAssignChiefRequest $request)
     {
         try{
-            $department = Department::find($id);
+            $section = Section::find($id);
 
-            if(!$department)
+            if(!$section)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }  
@@ -71,7 +70,7 @@ class DepartmentController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             } 
 
-            if(!$employee_designation['code'].include($department['head_job_specification']))
+            if(!$employee_designation['code'].include($section['job_specification']))
             {
                 return response()->json(['message' => 'Invalid job specification.'], Response::HTTP_BAD_REQUEST);
             }
@@ -81,73 +80,28 @@ class DepartmentController extends Controller
             $cleanData['supervisor_attachment_url'] = $request->input('attachment')===null?'NONE': $this->check_save_file($request->input('attachment'));
             $cleanData['supervisor_effective_at'] = Carbon::now();
 
-            $department->update($cleanData);
+            $section->update($cleanData);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in assigning head'.$this->PLURAL_MODULE_NAME.'.');
+            $this->registerSystemLogs($request, $id, true, 'Success in assigning supervisor '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => new DepartmentResource($department), 'message' => 'New department head assigned.'], Response::HTTP_OK);
+            return response()->json(['data' => new SectionResource($section)], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'assignHeadByEmployeeID', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-    
-    
-    /**
-     * Assign Training officer
-     * This must be in department
-     */
-    public function assignTrainingOfficerByEmployeeID($id, DepartmentAssignHeadRequest $request)
-    {
-        try{
-            $department = Department::find($id);
-
-            if(!$department)
-            {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }  
-
-            $employee_profile = EmployeeProfile::where('employee_id', $request['employee_id'])->first();
-            $assigned_area = $employee_profile->assignedArea;
-            $employee_designation = $assigned_area->plantilla_id === null?$assigned_area->designation:$assigned_area->plantilla->designation;
-
-            if(!$employee_profile)
-            {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            } 
-
-            if(!$employee_designation['code'].include($department['training_officer_job_specification']))
-            {
-                return response()->json(['message' => 'Invalid job specification.'], Response::HTTP_BAD_REQUEST);
-            }
-
-            $cleanData = [];
-            $cleanData['training_officer_employee_profile_id'] = $employee_profile->id;
-            $cleanData['training_officer_attachment_url'] = $request->input('attachment')===null?'NONE': $this->check_save_file($request->input('attachment'));
-            $cleanData['training_officer_effective_at'] = Carbon::now();
-
-            $department->update($cleanData);
-
-            $this->registerSystemLogs($request, $id, true, 'Success in assigning head'.$this->PLURAL_MODULE_NAME.'.');
-
-            return response()->json(['data' => new DepartmentResource($department), 'message' => 'New traning officer assigned.'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'assignHeadByEmployeeID', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'assignSupervisorByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
     /**
      * Assign Officer in charge
-     * This must be in department/department/section/unit
-     * Validate first for rights to assigned OIC by password of chief/head/supervisor
+     * This must be in section/department/section/unit
+     * Validate first for rights to assigned OIC by password of supervisor/head/supervisor
      */
-    public function assignOICByEmployeeID($id, DepartmentAssignOICRequest $request)
+    public function assignOICByEmployeeID($id, SectionAssignOICRequest $request)
     {
         try{
-            $department = Department::find($id);
+            $section = Section::find($id);
 
-            if(!$department)
+            if(!$section)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }  
@@ -174,18 +128,18 @@ class DepartmentController extends Controller
             $cleanData['oic_effective_at'] = strip_tags($request->input('effective_at'));
             $cleanData['oic_end_at'] = strip_tags($request->input('end_at'));
 
-            $department->update($cleanData);
+            $section->update($cleanData);
 
             $this->registerSystemLogs($request, $id, true, 'Success in assigning officer in charge '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => new DepartmentResource($department), 'New officer incharge assigned.'], Response::HTTP_OK);
+            return response()->json(['data' => new SectionResource($section)], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'assignOICByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function store(DepartmentRequest $request)
+    public function store(SectionRequest $request)
     {
         try{
             $cleanData = [];
@@ -193,17 +147,17 @@ class DepartmentController extends Controller
             foreach ($request->all() as $key => $value) {
                 if($value === null && $key === 'attachment')
                 {
-                    $cleanData['department_attachment_url'] = $value;
+                    $cleanData['section_attachment_url'] = $value;
                     continue;
                 }
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $department = Department::create($cleanData);
+            $section = Section::create($cleanData);
 
             $this->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' =>  new DepartmentResource($department),'message' => 'Newly added department.'], Response::HTTP_OK);
+            return response()->json(['data' =>  new SectionResource($section),'message' => 'Newly added section.'], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -213,28 +167,28 @@ class DepartmentController extends Controller
     public function show($id, Request $request)
     {
         try{
-            $department = Department::find($id);
+            $section = Section::find($id);
 
-            if(!$department)
+            if(!$section)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => new DepartmentResource($department), 'message' => 'Department record found.'], Response::HTTP_OK);
+            return response()->json(['data' => new SectionResource($section), 'message' => 'Section record found.'], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function update($id, DepartmentRequest $request)
+    public function update($id, SectionRequest $request)
     {
         try{
-            $department = Department::find($id);
+            $section = Section::find($id);
 
-            if(!$department)
+            if(!$section)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
@@ -244,17 +198,17 @@ class DepartmentController extends Controller
             foreach ($request->all() as $key => $value) {
                 if($value === null && $key === 'attachment')
                 {
-                    $cleanData['department_attachment_url'] = $value;
+                    $cleanData['section_attachment_url'] = $value;
                     continue;
                 }
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $department -> update($cleanData);
+            $section -> update($cleanData);
 
             $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' =>  new DepartmentResource($department),'message' => 'Update department details.'], Response::HTTP_OK);
+            return response()->json(['data' =>  new SectionResource($section),'message' => 'Updated section details.'], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -264,18 +218,18 @@ class DepartmentController extends Controller
     public function destroy($id, Request $request)
     {
         try{
-            $department = Department::findOrFail($id);
+            $section = Section::findOrFail($id);
 
-            if(!$department)
+            if(!$section)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $department -> delete();
+            $section -> delete();
 
             $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['message' => 'Department record deleted.'], Response::HTTP_OK);
+            return response()->json(['message' => 'Section record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
