@@ -59,15 +59,11 @@ class Section extends Model
 
     public function supervisorTrails()
     {
-        $supervisor_trails = HeadToSupervisorTrail::where('sector_code', $this->code)->get();
-
-        return SupervisorSectionResource::collection($supervisor_trails);
+        return $this->hasMany(HeadToSupervisorTrail::class);
     }
 
     public function oicTrails()
     {
-        $oic_trails = OfficerInChargeTrail::where('sector_code', $this->code)->get();
-
-        return OICSectionResource::collection($oic_trails);
+        return $this->hasMany(OfficerInChargeTrail::class);
     }
 }

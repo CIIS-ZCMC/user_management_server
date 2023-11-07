@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('in_active_employees', function (Blueprint $table) {
             $table->id();
-            $table->string('employee_id')->nullable();
-            $table->string('profile_url')->nullable();
-            $table->date('date_hired')->nullable();
-            $table->integer('biometric_id')->nullable();
+            $table->string('employee_id');
+            $table->string('profile_url');
+            $table->date('date_hired');
+            $table->integer('biometric_id');
             $table->datetime('employment_end_at')->default(now());
             $table->unsignedBigInteger('employment_type_id');
             $table->foreign('employment_type_id')->references('id')->on('employment_types');

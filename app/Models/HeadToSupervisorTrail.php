@@ -13,7 +13,10 @@ class HeadToSupervisorTrail extends Model
 
     public $fillable = [
         'employee_profile_id',
-        'sector_id',
+        'division_id',
+        'department_id',
+        'section_id',
+        'unit_id',
         'position_title',
         'sector_code',
         'attachment_url',
@@ -41,5 +44,25 @@ class HeadToSupervisorTrail extends Model
         }
 
         return Unit::where('code', $this->sector_code)->first();
+    }
+
+    public function division()
+    {
+        return $this->belongsTo(Division::class);
+    }
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function section()
+    {
+        return $this->belongsTo(Section::class);
+    }
+
+    public function unit()
+    {
+        return $this->belongsTo(Unit::class);
     }
 }

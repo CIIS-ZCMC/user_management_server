@@ -52,15 +52,11 @@ class Division extends Model
 
     public function chiefTrails()
     {
-        $chief_trails = HeadToSupervisorTrail::where('sector_code', $this->code)->get();
-
-        return ChiefDivisionTrailResource::collection($chief_trails);
+        return $this->hasMany(HeadToSupervisorTrail::class);
     }
 
     public function oicTrails()
     {
-        $oic_trails = OfficerInChargeTrail::where('sector_code', $this->code)->get();
-
-        return OICDivisionTrailResource::collection($oic_trails);
+        return $this->hasMany(OfficerInChargeTrail::class);
     }
 }

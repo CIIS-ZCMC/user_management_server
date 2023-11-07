@@ -13,8 +13,10 @@ class OfficerInChargeTrail extends Model
 
     public $fillable = [
         'employee_profile_id',
-        'sector_id',
-        'sector_code',
+        'division_id',
+        'department_id',
+        'section_id',
+        'unit_id',
         'attachment_url',
         'started_at',
         'ended_at'
@@ -25,5 +27,25 @@ class OfficerInChargeTrail extends Model
     public function employeeProfile()
     {
         return $this->belongsTo(EmployeeProfile::class);
+    }
+
+    public function division()
+    {
+        return $this->belongsTo(Division::class);
+    }
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function section()
+    {
+        return $this->belongsTo(Section::class);
+    }
+
+    public function unit()
+    {
+        return $this->belongsTo(Unit::class);
     }
 }

@@ -15,9 +15,20 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('employee_profile_id');
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles');
-            $table->unsignedBigInteger('sector_id');
             $table->string('position_title');
-            $table->string('sector_code');
+            
+            $table->unsignedBigInteger('division_id')->nullable();
+            $table->foreign('division_id')->references('id')->on('divisions');
+            
+            $table->unsignedBigInteger('department_id')->nullable();
+            $table->foreign('department_id')->references('id')->on('departments');
+            
+            $table->unsignedBigInteger('section_id')->nullable();
+            $table->foreign('section_id')->references('id')->on('sections');
+            
+            $table->unsignedBigInteger('unit_id')->nullable();
+            $table->foreign('unit_id')->references('id')->on('units');
+
             $table->string('attachment_url');
             $table->datetime('started_at');
             $table->datetime('ended_at');

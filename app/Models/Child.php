@@ -26,4 +26,9 @@ class Child extends Model
     {
         return $this->belongsTo(PersonalInformation::class);
     }
+
+    public function name()
+    {
+        return $this->middle_name === null?$this->first_name.' '.$this->last_name:$this->first_name.' '.$this->middle_name.' '.$this->last_name;
+    }
 }

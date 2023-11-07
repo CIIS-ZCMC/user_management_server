@@ -67,15 +67,11 @@ class Department extends Model
 
     public function headTrails()
     {
-        $head_trails = HeadToSupervisorTrail::where('sector_code', $this->code)->get();
-
-        return HeadDepartmentResource::collection($head_trails);
+        return $this->hasMany(HeadToSupervisorTrail::class);
     }
 
     public function oicTrails()
     {
-        $oic_trails = OfficerInChargeTrail::where('sector_code', $this->code)->get();
-
-        return OICDepartmentResource::collection($oic_trails);
+        return $this->hasMany(OfficerInChargeTrail::class);
     }
 }
