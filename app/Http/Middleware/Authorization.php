@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\DB;
 
+use App\Models\JobPosition;
+use App\Models\System;
 use App\Models\SystemRole;
 use App\Models\PositionSystemRole;
 
@@ -20,29 +22,29 @@ class Authorization
     public function handle(Request $request, Closure $next, $routePermission): Response
     {   
         $user = $request->user;
-        $employee_profile = $user->employmentProfile;
-        $employment_position = $employee_profile->employmentPosition;
+    
+        $jobPosition = JobPosition::where('uuid', $user->job_position_id)->first();
 
-        $positionSystemRoleData = DB::table('position_system_roles as psr')
-            ->select('psr.id')
-            ->join('system_roles as sr', 'sr.id', 'psr.system_roles_id')
-            ->join('systems as s', 's.id', 'sr.system_id')
-            ->where('psr.employment_position_id', $employment_position->id)
-            ->where('s.abbreviation', env('SYSTEM_ABBREVIATION'))
-            ->first();
+        list($action, $module) = explode(' ', $routePermission);
 
-        if($positionSystemRoleData === NULL){
+        $system = System::where('code', env('SYSTEM_ABBREVIATION'))->first();
+        $systemRoles = $system->systemRoles;
+        $hasPermission = null;
+
+        foreach ($systemRoles as $systemRole) {
+            $positionSystemRole = PositionSystemRole::where('system_role_id', $systemRole->uuid)->where('job_position_id', $user->job_position_id)->first();
+            if(!$positionSystemRole){
+                continue;
+            }
+            $hasPermission = $systemRole->hasPermission($routePermission);
+        }
+        
+        if(!$hasPermission){
             return response()->json(['message'=>'Un-Authorized.'], 401);
         }
 
-        $position_system_role = PositionSystemRole::find($positionSystemRoleData->id);
-        $system_role = SystemRole::find($position_system_role->system_role_id);
-
-        if(!$system_role->hasPermission($routePermission))
-        {
-            return response()->json(['message' => 'Un-Available'],400);
-        }
-
+        $request->merge(['permission' => $routePermission]);
+        
         return $next($request);
     }
 }

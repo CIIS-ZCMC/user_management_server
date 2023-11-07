@@ -11,7 +11,7 @@ class SystemRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,7 +23,8 @@ class SystemRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
-            'domain' => 'required|string|max:255'
+            'domain' => 'required|string|max:255',
+            'code' => "required|string|max:255"
         ];
     }
 }

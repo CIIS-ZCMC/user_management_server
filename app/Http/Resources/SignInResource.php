@@ -14,8 +14,6 @@ class SignInResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        // return parent::toArray($request);
-
         $employee_profile = $this->employeeProfile;
 
         $name = $employee_profile->first_name.' '.$employee_profile->last_name;

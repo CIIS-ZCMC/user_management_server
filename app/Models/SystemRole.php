@@ -14,8 +14,8 @@ class SystemRole extends Model
 
     protected $fillable = [
         "name",
-        "description",
-        "updated_at",
+        "code",
+        "effective_at",
         "system_id"
     ];
 
@@ -26,18 +26,14 @@ class SystemRole extends Model
         return $this->belongsTo(System::class);
     }
 
-    public function permissions()
+    public function roleModulePermission()
     {
-        return $this->hasMany(SystemRolePermission::class);
+        return $this->hasManyThrough(RoleModulePermission::class, ModulePermission::class);
     }
 
-    public function hasPermission($routePermission)
+    public function positionSystemRole()
     {
-        $permissions = $this->permissions;
-
-        return $permissions->contains(function ($permission) {
-            return $permission->validate($routePermission);
-        });
+        return $this->hasManyThrough(PositionSystemRole::class, Designation::class);
     }
 }
     

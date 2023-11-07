@@ -22,7 +22,7 @@ class SignInRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'employee_id' => 'required|string|max:255',
+            'employee_id' => 'required|integer',
             'password' => 'required|string|max:255',
         ];
     }

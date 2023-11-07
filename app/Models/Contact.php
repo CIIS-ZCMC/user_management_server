@@ -12,17 +12,15 @@ class Contact extends Model
     protected $table = 'contacts';
 
     public $fillable = [
-        'email',
         'phone_number',
-        'tele_number',
-        'emergency_contact',
-        'employee_profile_id'
+        'email',
+        'personal_information_id'
     ];
 
     public $timestamps = TRUE;
 
-    public function employee()
+    public function personalInformation()
     {
-        return $this->belongsTo(EmployeeProfile::class);
+        return $this->belongsTo(PersonalInformation::class);
     }
 }

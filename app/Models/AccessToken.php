@@ -12,7 +12,7 @@ class AccessToken extends Model
     protected $table = 'access_tokens';
 
     public $fillable = [
-        'user_id',
+        'employee_profile_id',
         'public_key',
         'token',
         'token_exp'
@@ -20,8 +20,8 @@ class AccessToken extends Model
 
     public $timestamps = TRUE;
 
-    public function user()
+    public function employeeProfile()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(employeeProfile::class);
     }
 }

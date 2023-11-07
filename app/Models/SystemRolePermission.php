@@ -25,11 +25,20 @@ class SystemRolePermission extends Model
     {
         return $this->belongsTo(SystemRole::class);
     }
+
+    public function permissions(){
+        return $this->hasMany(Permission::class);
+    }
  
-    public function validate($permission)
+    public function validate($routePermission)
     {
-        list($action, $module) = explode(' ', $permission);
+        list($action, $module) = explode(' ', $routePermission);
 
         return $this->action === $action && $this->module===$module;
+    }
+
+    public function positionSystemRole()
+    {
+        return $this->hasMany(PositionSystemRole::class);
     }
 }

@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use App\Models\SystemRole;
 
 class System extends Model
@@ -14,18 +16,24 @@ class System extends Model
 
     protected $fillable = [
         "name",
+        "code",
         "domain",
-        "server-maintainance",
-        "server-down",
-        "server-active",
+        "api_key",
+        "key_deactivated_at",
+        "status",
         "created_at",
         "updated_at",
-        "deleted"
+        "deleted_at"
     ];
     
     public $timestamps = TRUE;
 
-    public function systemRole()
+    public function modules()
+    {
+        return $this->hasMany(SystemModule::class);
+    }
+
+    public function systemRoles()
     {
         return $this->hasMany(SystemRole::class);
     }

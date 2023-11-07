@@ -1,0 +1,28 @@
+<?php
+
+namespace App\Http\Resources;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+class ModulePermissionResource extends JsonResource
+{
+    /**
+     * Transform the resource into an array.
+     *
+     * @return array<string, mixed>
+     */
+    public function toArray(Request $request): array
+    {
+        $module_name = $this->module->name;
+        $permission_name = $this->permission->name;
+        $status = $this->deactivated?'DEACTIVATED':'ACTIVE';
+
+        return [
+            'module_name' => $module_name,
+            'permission_name' => $permission_name,
+            'code' => $this->code,
+            'status' => $status
+        ];
+    }
+}

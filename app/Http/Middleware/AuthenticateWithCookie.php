@@ -27,8 +27,9 @@ class AuthenticateWithCookie
         $cookieValue = $request->cookie(env('COOKIE_NAME'));
 
         if (!$cookieValue) {
-            return response()->json(['message' => 'Invalid request.'], Response::HTTP_UNAUTHORIZED);
+            return response()->json(['message' => 'Un-Authorized.'], Response::HTTP_UNAUTHORIZED);
         }
+
 
         $encryptedToken = json_decode($cookieValue);
         $decryptedToken = openssl_decrypt($encryptedToken->token, env("ENCRYPT_DECRYPT_ALGORITHM"), env("APP_KEY"), 0, substr(md5(env("APP_KEY")), 0, 16));
@@ -37,7 +38,7 @@ class AuthenticateWithCookie
 
         if(!$hasAccessToken)
         {
-            return response() -> json(['message' => 'Invalid request.'], Response::HTTP_UNAUTHORIZED);
+            return response() -> json(['message' => 'Un-Authorized.'], Response::HTTP_UNAUTHORIZED);
         }
 
         $tokenExpTime = Carbon::parse($hasAccessToken->token_exp);
@@ -48,8 +49,8 @@ class AuthenticateWithCookie
             return response()->json(['error' => 'Access token has expired'], Response::HTTP_UNAUTHORIZED);
         }
 
-        $user = $hasAccessToken -> user;
-        
+        $user = $hasAccessToken->employeeProfile;
+
         $request->merge(['user' => $user]);
  
         return $next($request);

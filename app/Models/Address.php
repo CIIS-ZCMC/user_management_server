@@ -18,13 +18,15 @@ class Address extends Model
         'province',
         'zip_code',
         'country',
-        'is_residential'
+        'is_residential',
+        'telephone_no',
+        'personal_information_id'
     ];
 
     public $timestamps = TRUE;
 
-    public function employee()
+    public function personalInformation()
     {
-        return $this->belongsTo(Address::class);
+        return $this->belongsTo(PersonalInformation::class);
     }
 }

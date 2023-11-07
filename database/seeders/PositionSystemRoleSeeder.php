@@ -4,9 +4,11 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
-use App\Models\EmploymentPosition;
+use App\Models\Designation;
 use App\Models\PositionSystemRole;
+use App\Models\SystemRole;
 
 class PositionSystemRoleSeeder extends Seeder
 {
@@ -15,14 +17,16 @@ class PositionSystemRoleSeeder extends Seeder
      */
     public function run(): void
     {
+        $system_role =  SystemRole::where('name', 'Super Admin')->first();
+
         PositionSystemRole::create([
-            'employment_position_id' => EmploymentPosition::where('abbreviation', 'SA1')->first()->id,
-            'system_role_id' => 10000,
+            'designation_id' => Designation::where('code', 'SA I')->first()->id,
+            'system_role_id' => $system_role -> id,
         ]);
         
         PositionSystemRole::create([
-            'employment_position_id' => EmploymentPosition::where('abbreviation', 'CP3')->first()->id,
-            'system_role_id' => 10000,
+            'designation_id' => Designation::where('code', 'CP III')->first()->id,
+            'system_role_id' => $system_role -> id,
         ]);
     }
 }
