@@ -39,7 +39,7 @@ class DesignationController extends Controller
                 return Designation::all();
             });
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            $this->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json(['data' => DesignationResource::collection($designations)], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -53,7 +53,7 @@ class DesignationController extends Controller
         try{
             $total_employee_per_designation = Designation::withCount('assigned_areas')->get();
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            $this->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json(['data' => DesignationTotalEmployeeResource::collection($total_employee_per_designation)], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -67,7 +67,7 @@ class DesignationController extends Controller
         try{
             $total_plantilla_per_designation = Designation::withCount('plantillas')->get();
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            $this->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json(['data' => DesignationTotalPlantillaResource::collection($total_plantilla_per_designation)], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -76,14 +76,14 @@ class DesignationController extends Controller
         }
     }
 
-    public function employeesOfSector($id, Request $request)
+    public function employeeListInDesignation($id, Request $request)
     {
         try{
-            $sector_employees = Designation::with('assigned_areas')->findOrFail($designationId);;
+            $employee_with_designation = Designation::with('assigned_areas')->findOrFail($id);;
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => DesignationEmployeesResource::collection($sector_employees)], Response::HTTP_OK);
+            return response()->json(['data' => DesignationEmployeesResource::collection($employee_with_designation)], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'employeesOfSector', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

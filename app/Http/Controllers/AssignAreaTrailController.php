@@ -11,7 +11,7 @@ use App\Http\Resources\AssignAreaResource;
 use App\Models\AssignedAreaTrail;
 use App\Models\SystemLogs;
 
-class AssignAreaTrailTable extends Controller
+class AssignAreaTrail extends Controller
 {
     private $CONTROLLER_NAME = 'AssignedArea Module';
     private $PLURAL_MODULE_NAME = 'assign_area_trail modules';

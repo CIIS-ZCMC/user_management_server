@@ -13,64 +13,64 @@ class EmploymentTypeSeeder extends Seeder
      */
     public function run(): void
     {
-        Employment::create([
+        EmploymentType::create([
             'name' => "Full-Time Employment"
         ]);
         
-        Employment::create([
+        EmploymentType::create([
             'name' => "Part-Time Employment"
         ]);
         
-        Employment::create([
+        EmploymentType::create([
             'name' => "Contractual Employment"
         ]);
         
-        Employment::create([
+        EmploymentType::create([
             'name' => "Temporary Employment"
         ]);
         
-        Employment::create([
+        EmploymentType::create([
             'name' => "Internship"
         ]);
         
-        Employment::create([
+        EmploymentType::create([
             'name' => "Apprenticeship"
         ]);
         
-        Employment::create([
+        EmploymentType::create([
             'name' => "Seasonal Employment"
         ]);
         
-        Employment::create([
+        EmploymentType::create([
             'name' => "Project-Based Employment"
         ]);
         
-        Employment::create([
+        EmploymentType::create([
             'name' => "Commission-Based Employment"
         ]);
         
-        Employment::create([
+        EmploymentType::create([
             'name' => "Volunteer Work"
         ]);
         
-        Employment::create([
+        EmploymentType::create([
             'name' => "Resigned"
         ]);
         
-        Employment::create([
+        EmploymentType::create([
             'name' => "Terminated "
         ]);
         
-        Employment::create([
+        EmploymentType::create([
             'name' => "Retired"
         ]);
         
         /**let go due to company restructuring or downsizing */
-        Employment::create([
+        EmploymentType::create([
             'name' => "Laid off"
         ]);
         
-        Employment::create([
+        EmploymentType::create([
             'name' => "Contract Ended"
         ]);
     }

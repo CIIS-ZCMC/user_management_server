@@ -12,7 +12,7 @@ use App\Http\Resources\AssignAreaResource;
 use App\Models\AssignedArea;
 use App\Models\SystemLogs;
 
-class AssignAreaTableController extends Controller
+class AssignAreaController extends Controller
 { 
     private $CONTROLLER_NAME = 'AssignedArea Module';
     private $PLURAL_MODULE_NAME = 'assigned_area modules';
@@ -41,10 +41,10 @@ class AssignAreaTableController extends Controller
         }
     }
 
-    public function findByEmployeeID(Request $request)
+    public function findByEmployeeID($id, Request $request)
     {
         try{
-            $employe_profile = EmployeeProfile::where('employee_id')->first();
+            $employe_profile = EmployeeProfile::where('employee_id', $id)->first();
 
             if(!$employe_profile)
             {

@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Log;
 
 use App\Models\System;
 use App\Models\SystemRole;
+use App\Models\ModulePermission;
+use App\Models\RoleModulePermission;
 
 class SystemRoleSeeder extends Seeder
 {
@@ -21,22 +23,20 @@ class SystemRoleSeeder extends Seeder
 
         Log::channel('custom-error')->error($system);
 
-        SystemRole::create([
+        $super_admin = SystemRole::create([
             'name' => 'Super Admin',
-            'description' => 'Super Admin has access rights for the UMIS entirely.',
+            'code' => 'Super_admin',
             'system_id' => $system -> id
         ]);
-        
-        SystemRole::create([
-            'name' => 'Admin',
-            'description' => 'Admin has limit rights in creating Admin user and transferring admin righs to other user, it will also be limited to some major module.',
-            'system_id' => $system -> id
-        ]);
-        
-        SystemRole::create([
-            'name' => 'Staff',
-            'description' => 'Staff will have rights in UMIS as viewer base on list of system allowed for it to access.',
-            'system_id' => $system -> id
-        ]);
+
+        $module_permissions = ModulePermission::all();
+
+        foreach($module_permissions as $key => $module_permission)
+        {
+            RoleModulePermission::create([
+                'system_role_id' => $super_admin['id'],
+                'module_permission_id' => $module_permission['id']
+            ]);
+        }
     }
 }

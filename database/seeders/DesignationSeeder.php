@@ -110,19 +110,19 @@ class DesignationSeeder extends Seeder
         Designation::create([
             'name' => 'Attorney I',
             'code' => 'ATTY I',
-            'salary_grade_id' => null
+            'salary_grade_id' => 1
         ]);
         
         Designation::create([
             'name' => 'Attorney II',
             'code' => 'ATTY II',
-            'salary_grade_id' => null
+            'salary_grade_id' => 1
         ]);
         
         Designation::create([
             'name' => 'Attorney III',
             'code' => 'ATTY III',
-            'salary_grade_id' => null
+            'salary_grade_id' => 1
         ]);
         
         Designation::create([
@@ -134,13 +134,13 @@ class DesignationSeeder extends Seeder
         Designation::create([
             'name' => 'Bacteriologist I',
             'code' => 'BACTE I',
-            'salary_grade_id' => null
+            'salary_grade_id' => 1
         ]);
         
         Designation::create([
             'name' => 'Bacteriologist II',
             'code' => 'BACTE II',
-            'salary_grade_id' => null
+            'salary_grade_id' => 1
         ]);
         
         Designation::create([
@@ -158,7 +158,7 @@ class DesignationSeeder extends Seeder
         Designation::create([
             'name' => 'Computer Maintenance Technologist I',
             'code' => 'CMT I',
-            'salary_grade_id' => null
+            'salary_grade_id' => 1
         ]);
         
         Designation::create([
@@ -175,7 +175,7 @@ class DesignationSeeder extends Seeder
         Designation::create([
             'name' => 'Cook I',
             'code' => 'Cook I',
-            'salary_grade_id' => null
+            'salary_grade_id' => 1
         ]);
         
         Designation::create([
@@ -199,7 +199,7 @@ class DesignationSeeder extends Seeder
         Designation::create([
             'name' => 'Dentist I',
             'code' => 'Dentist I',
-            'salary_grade_id' => null
+            'salary_grade_id' => 1
         ]);
         
         Designation::create([
@@ -223,7 +223,7 @@ class DesignationSeeder extends Seeder
         Designation::create([
             'name' => 'Engineer I',
             'code' => 'ENGR I',
-            'salary_grade_id' => null
+            'salary_grade_id' => 1
         ]);
         
         Designation::create([
@@ -247,7 +247,7 @@ class DesignationSeeder extends Seeder
         Designation::create([
             'name' => 'Financial Management Officer I',
             'code' => 'FINMO I',
-            'salary_grade_id' => null
+            'salary_grade_id' => 1
         ]);
         
         Designation::create([
@@ -277,7 +277,7 @@ class DesignationSeeder extends Seeder
         Designation::create([
             'name' => 'Food Service Supervisor I',
             'code' => 'FSS I',
-            'salary_grade_id' => null
+            'salary_grade_id' => 1
         ]);
         
         Designation::create([
@@ -301,7 +301,7 @@ class DesignationSeeder extends Seeder
         Designation::create([
             'name' => 'Medical Center Chief I',
             'code' => 'MCC I',
-            'salary_grade_id' => null
+            'salary_grade_id' => 1
         ]);
         
         Designation::create([
@@ -331,13 +331,13 @@ class DesignationSeeder extends Seeder
         Designation::create([
             'name' => 'Medical Officer I',
             'code' => 'MO I',
-            'salary_grade_id' => null
+            'salary_grade_id' => 1
         ]);
         
         Designation::create([
             'name' => 'Medical Officer II',
             'code' => 'MO II',
-            'salary_grade_id' => null
+            'salary_grade_id' => 1
         ]);
         
         Designation::create([
@@ -355,13 +355,13 @@ class DesignationSeeder extends Seeder
         Designation::create([
             'name' => 'Medical Specialist I',
             'code' => 'MS I',
-            'salary_grade_id' => null
+            'salary_grade_id' => 1
         ]);
         
         Designation::create([
             'name' => 'Medical Specialist I (PT)',
             'code' => 'MS I (PT)',
-            'salary_grade_id' => null
+            'salary_grade_id' => 1
         ]);
         
         Designation::create([
@@ -397,7 +397,7 @@ class DesignationSeeder extends Seeder
         Designation::create([
             'name' => 'Medical Specialist IV (PT)',
             'code' => 'MS IV (PT)',
-            'salary_grade_id' => null
+            'salary_grade_id' => 1
         ]);
         
         Designation::create([
@@ -667,13 +667,13 @@ class DesignationSeeder extends Seeder
         Designation::create([
             'name' => 'Warehouseman I',
             'code' => 'WH I',
-            'salary_grade_id' => null
+            'salary_grade_id' => 1
         ]);
         
         Designation::create([
             'name' => 'Warehouseman II',
             'code' => 'WH II',
-            'salary_grade_id' => null
+            'salary_grade_id' => 1
         ]);
         
         Designation::create([
@@ -685,7 +685,7 @@ class DesignationSeeder extends Seeder
         Designation::create([
             'name' => 'Physical Teraphy Technician I',
             'code' => 'PTT I',
-            'salary_grade_id' => null
+            'salary_grade_id' => 1
         ]);
         
         Designation::create([
@@ -703,13 +703,13 @@ class DesignationSeeder extends Seeder
         Designation::create([
             'name' => 'Construction Maintenance Foreman',
             'code' => 'CMF',
-            'salary_grade_id' => null
+            'salary_grade_id' => 1
         ]);
         
         Designation::create([
             'name' => 'Social Worker Assitant',
             'code' => 'SWA',
-            'salary_grade_id' => null
+            'salary_grade_id' => 1
         ]);
         
         Designation::create([
@@ -739,7 +739,7 @@ class DesignationSeeder extends Seeder
         Designation::create([
             'name' => 'Inf. Tech I',
             'code' => 'IT1',
-            'salary_grade_id' => null
+            'salary_grade_id' => 1
         ]);
         
         Designation::create([

@@ -5,6 +5,8 @@ namespace Database\Seeders;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
+use App\Models\SystemModule;
+
 class SystemModuleSeeder extends Seeder
 {
     /**

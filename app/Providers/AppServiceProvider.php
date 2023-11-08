@@ -5,8 +5,8 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
 
-use App\Models\PositionSystemRole;
-use App\Observers\PositionSystemRoleObserver;
+// use App\Models\PositionSystemRole;
+// use App\Observers\PositionSystemRoleObserver;
 
 
 use App\Services\RequestLogger;
@@ -31,6 +31,6 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Schema::defaultStringLength(191);
-        PositionSystemRole::observe(PositionSystemRoleObserver::class);
+        // PositionSystemRole::observe(PositionSystemRoleObserver::class);
     }
 }

@@ -6,9 +6,10 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
+use App\Models\Department;
 use App\Models\Division;
 
-class DivisionSeeder extends Seeder
+class DepartmentSeeder extends Seeder
 {
     /**
      * Run the database seeds.

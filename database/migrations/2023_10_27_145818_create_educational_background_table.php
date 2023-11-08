@@ -17,12 +17,12 @@ return new class extends Migration
             $table->foreign('personal_information_id')->references('id')->on('personal_informations');
             $table->string('level');
             $table->string('name');
-            $table->string('degree_course');
+            $table->string('degree_course')->nullable();
             $table->date('year_graduated');
-            $table->string('highest_grade');
-            $table->date('inclusive_from');
-            $table->date('inclusive_to');
-            $table->string('academic_honors');
+            $table->string('highest_grade')->nullable();
+            $table->date('inclusive_from')->nullable();
+            $table->date('inclusive_to')->nullable();
+            $table->string('academic_honors')->nullable();
             $table->timestamps();
         });
     }
