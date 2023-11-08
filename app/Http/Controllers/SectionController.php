@@ -40,7 +40,10 @@ class SectionController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => SectionResource::collection($sections)], Response::HTTP_OK);
+            return response()->json([
+                'data' => SectionResource::collection($sections),
+                'message' => 'Section list retrieved'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -84,7 +87,10 @@ class SectionController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in assigning supervisor '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => new SectionResource($section)], Response::HTTP_OK);
+            return response()->json([
+                'data' => new SectionResource($section),
+                'message' => 'Section supervisor registered.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'assignSupervisorByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -132,7 +138,10 @@ class SectionController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in assigning officer in charge '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => new SectionResource($section)], Response::HTTP_OK);
+            return response()->json([
+                'data' => new SectionResource($section),
+                'message' => 'Section officer incharge registered.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'assignOICByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -157,7 +166,10 @@ class SectionController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' =>  new SectionResource($section),'message' => 'Newly added section.'], Response::HTTP_OK);
+            return response()->json([
+                'data' =>  new SectionResource($section),
+                'message' => 'New section added.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -176,7 +188,10 @@ class SectionController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => new SectionResource($section), 'message' => 'Section record found.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new SectionResource($section), 'message' => 
+                'Section record found.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -208,7 +223,10 @@ class SectionController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' =>  new SectionResource($section),'message' => 'Updated section details.'], Response::HTTP_OK);
+            return response()->json([
+                'data' =>  new SectionResource($section),
+                'message' => 'Updated section details.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

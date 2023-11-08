@@ -396,7 +396,6 @@ Route::middleware('auth.cookie')->group(function(){
             Route::delete('educational-background-by-employee/{id}', 'EducationalBackgroundController@destroyByEmployeeID');
         });
         
-
         /**
          * Employee Profile Module
          */
@@ -425,19 +424,542 @@ Route::middleware('auth.cookie')->group(function(){
         });
         
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
-            Route::get('employee-profile/{id}', 'EmployeeProfileController@show');
+            Route::get('employee-profile/find-by-employee/{id}', 'EmployeeProfileController@findByEmployeeID');
         });
         
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
             Route::put('employee-profile/{id}', 'EmployeeProfileController@update');
         });
         
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
+            Route::put('employee-profile/{id}', 'EmployeeProfileController@updateEmployeeProfile');
+        });
+        
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
             Route::delete('employee-profile/{id}', 'EmployeeProfileController@destroy');
         });
+
+        /**
+         * Employment Type Module
+         */
+        
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function(){
+            Route::get('employment-type/{id}', 'EmploymentTypeController@index');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('employment-type', 'EmploymentTypeController@store');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('employment-type/{id}', 'EmploymentTypeController@show');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
+            Route::put('employment-type/{id}', 'EmploymentTypeController@update');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
+            Route::delete('employment-type/{id}', 'EmploymentTypeController@destroy');
+        });
+
+        /**
+         * Family Background Module
+         */
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('family-background/find-by-employee/{id}', 'FamilyBackgroundController@findByEmployeeID');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('family-background/find-by-personal-info/{id}', 'FamilyBackgroundController@findByPersonalInformationID');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('family-background', 'FamilyBackgroundController@store');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('family-background/{id}', 'FamilyBackgroundController@show');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
+            Route::put('family-background/{id}', 'FamilyBackgroundController@update');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
+            Route::delete('family-background/{id}', 'FamilyBackgroundController@destroy');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
+            Route::delete('family-background-by-personal-info/{id}', 'FamilyBackgroundController@destroyByPersonalInformationID');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
+            Route::delete('family-background-by-employee/{id}', 'FamilyBackgroundController@destroyByEmployeeID');
+        });
+        
+
+        /**
+         * HeadToSupervisorTrail Module
+         */
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function(){
+            Route::get('head-to-s-trail/{id}', 'HeadToSupervisorTrailController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('head-to-s-trail/find-by-employee/{id}', 'HeadToSupervisorTrailController@findByEmployeeID');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('head-to-s-trail/{id}', 'HeadToSupervisorTrailController@show');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
+            Route::put('head-to-s-trail/{id}', 'HeadToSupervisorTrailController@update');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
+            Route::delete('head-to-s-trail/{id}', 'HeadToSupervisorTrailController@destroy');
+        });
+
+        /**
+         * Identification Number Module
+         */
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('identification-number-by-personal-info/{id}', 'IdentificationNumberController@findByPersonalInformationID');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('identification-number-by-employee/{id}', 'IdentificationNumberController@findByEmployeeID');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('identification-number', 'IdentificationNumberController@store');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('identification-number/{id}', 'IdentificationNumberController@show');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
+            Route::put('identification-number/{id}', 'IdentificationNumberController@update');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
+            Route::delete('identification-number/{id}', 'IdentificationNumberController@destroy');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
+            Route::delete('identification-number-by-personal-info/{id}', 'IdentificationNumberController@destroyByPersonalInformationID');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
+            Route::delete('identification-number-by-employee/{id}', 'IdentificationNumberController@destroyByEmployeeID');
+        });
+
+        /**
+         * Issuance Information Module
+         */
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('issuance-information', 'IssuanceInformationController@store');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('issuance-information/{id}', 'IssuanceInformationController@show');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
+            Route::put('issuance-information/{id}', 'IssuanceInformationController@update');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
+            Route::delete('issuance-information/{id}', 'IssuanceInformationController@destroy');
+        });
+
+        /**
+         * Legal Information Module
+         */
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('legal-information/find-by-employee/{id}', 'LegalInformationController@findByEmployeeID');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('legal-information', 'LegalInformationController@store');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('legal-information/{id}', 'LegalInformationController@show');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
+            Route::put('legal-information/{id}', 'LegalInformationController@update');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
+            Route::delete('legal-information/{id}', 'LegalInformationController@destroy');
+        });
+
+        /**
+         * Legal Information Question Module
+         */
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function(){
+            Route::get('legal-information-question-all', 'LegalInformationQuestionController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('legal-information-question', 'LegalInformationQuestionController@store');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('legal-information-question/{id}', 'LegalInformationQuestionController@show');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
+            Route::put('legal-information-question/{id}', 'LegalInformationQuestionController@update');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
+            Route::delete('legal-information-question/{id}', 'LegalInformationQuestionController@destroy');
+        });
+
+        /**
+         * Login Trail Module
+         */
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('login-trail/{id}', 'LoginTrailController@show');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
+            Route::get('login-trail/find-by-employee/{id}', 'LoginTrailController@findByEmployeeID');
+        });
+
+        /**
+         * Module Permission Module
+         */
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function(){
+            Route::get('module-permission-all', 'ModulePermissionController@index');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('module-permission/find-by-system/{id}', 'ModulePermissionController@systemModulePermission');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('module-permission/{id}', 'ModulePermissionController@show');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
+            Route::delete('module-permission/{id}', 'ModulePermissionController@destroy');
+        });
+
+        /**
+         * Officer In Charge Trail Module
+         */
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function(){
+            Route::get('officer-incharge-trail-all', 'OfficerInChargeTrailController@index');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('officer-incharge-trail/find-by-employee/{id}', 'OfficerInChargeTrailController@findByEmployeeID');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('officer-incharge-trail/{id}', 'OfficerInChargeTrailController@show');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
+            Route::delete('officer-incharge-trail/{id}', 'OfficerInChargeTrailController@destroy');
+        });
+
+        /**
+         * Other Information Module
+         */
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('other-information/find-by-personal-info/{id}', 'OtherInformationController@findByPersonalInformationID');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('other-information/find-by-employee/{id}', 'OtherInformationController@findByEmployeeID');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('other-information', 'OtherInformationController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('other-information/{id}', 'OtherInformationController@show');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
+            Route::delete('other-information/{id}', 'OtherInformationController@destroy');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
+            Route::delete('other-information-personal-info/{id}', 'OtherInformationController@destroyByPersonalInformationID');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
+            Route::delete('other-information-employee/{id}', 'OtherInformationController@destroyByEmployeeID');
+        });
+
+        /**
+         * Permission Module
+         */
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function(){
+            Route::get('permission-all', 'PermissionController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('permission', 'PermissionController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('permission/{id}', 'PermissionController@show');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
+            Route::put('permission/{id}', 'PermissionController@update');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
+            Route::delete('permission/{id}', 'PermissionController@destroy');
+        });
+
+        /**
+         * Personal Information Module
+         */
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function(){
+            Route::get('personal-information-all', 'PersonalInformationController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('personal-information', 'PersonalInformationController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('personal-information/{id}', 'PersonalInformationController@show');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
+            Route::put('personal-information/{id}', 'PersonalInformationController@update');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
+            Route::delete('personal-information/{id}', 'PersonalInformationController@destroy');
+        });
+
+        /**
+         * Plantilla Module
+         */
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function(){
+            Route::get('plantilla-all', 'PlantillaController@index');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('plantilla/find-by-designation/{id}', 'PlantillaController@findByDesignationID');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('plantilla', 'PlantillaController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('plantilla/{id}', 'PlantillaController@show');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
+            Route::put('plantilla/{id}', 'PlantillaController@update');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
+            Route::delete('plantilla/{id}', 'PlantillaController@destroy');
+        });
+
+        /**
+         * Position System Role Module
+         */
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function(){
+            Route::get('position-system-role-all', 'PositionSystemRoleController@index');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('position-system-role/find-by-designation/{id}', 'PositionSystemRoleController@findDesignationAccessRights');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('position-system-role', 'PositionSystemRoleController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('position-system-role/{id}', 'PositionSystemRoleController@show');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
+            Route::put('position-system-role/{id}', 'PositionSystemRoleController@update');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
+            Route::delete('position-system-role/{id}', 'PositionSystemRoleController@destroy');
+        });
+
+        /**
+         * Profile Update Module
+         */
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('profile-update/find-by-personal-info/{id}', 'ProfileUpdateController@findByPersonalInformationID');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('profile-update/find-by-employee/{id}', 'ProfileUpdateController@findByEmployeeID');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('profile-update', 'ProfileUpdateController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('profile-update/{id}', 'ProfileUpdateController@show');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
+            Route::put('profile-update/{id}', 'ProfileUpdateController@update');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
+            Route::delete('profile-update/{id}', 'ProfileUpdateController@destroy');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
+            Route::delete('profile-update-personal-info/{id}', 'ProfileUpdateController@destroyByPersonalInformationID');
+        });
+
+        /**
+         * Reference Module
+         */
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('reference/find-by-personal-info/{id}', 'ReferencesController@findByPersonalInformationID');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('reference/find-by-employee/{id}', 'ReferencesController@findByEmployeeID');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('reference', 'ReferencesController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('reference/{id}', 'ReferencesController@show');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
+            Route::put('reference/{id}', 'ReferencesController@update');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
+            Route::delete('reference/{id}', 'ReferencesController@destroy');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
+            Route::delete('reference-personal-info/{id}', 'ReferencesController@destroyByPersonaslInformationID');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
+            Route::delete('reference-employee/{id}', 'ReferencesController@destroyByEmployeeID');
+        });
+
+        /**
+         * Salary Grade Module
+         */
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function(){
+            Route::get('salary-grade-all', 'SalaryGradeController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('salary-grade', 'SalaryGradeController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('salary-grade/{id}', 'SalaryGradeController@show');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
+            Route::put('salary-grade/{id}', 'SalaryGradeController@update');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
+            Route::delete('salary-grade/{id}', 'SalaryGradeController@destroy');
+        });
+
+        /**
+         * Section Module
+         */
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function(){
+            Route::get('salary-grade-all', 'SectionController@index');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('salary-grade/assign-supervisor/{id}', 'SectionController@assignSupervisorByEmployeeID');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('salary-grade/assign-oic/{id}', 'SectionController@assignOICByEmployeeID');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('salary-grade', 'SectionController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('salary-grade/{id}', 'SectionController@show');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
+            Route::put('salary-grade/{id}', 'SectionController@update');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
+            Route::delete('salary-grade/{id}', 'SectionController@destroy');
+        });
+
+        /**
+         * Special Access Role Module
+         */
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function(){
+            Route::get('special-access-role-all', 'SpecialAccessRoleController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('special-access-role', 'SpecialAccessRoleController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('special-access-role/{id}', 'SpecialAccessRoleController@show');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
+            Route::delete('special-access-role/{id}', 'SpecialAccessRoleController@destroy');
+        });
     });
 
+    /**
+     * Daily Time Record Management
+     */
     Route::namespace('App\Http\Controllers')->group(function(){
+        /** APPLY CODE HERE */
+    });
 
+    /**
+     * Leave and Overtime Management
+     */
+    Route::namespace('App\Http\Controllers')->group(function(){
+        /** APPLY CODE HERE */
+    });
+
+    /**
+     * Schedule Management
+     */
+    Route::namespace('App\Http\Controllers')->group(function(){
+        /** APPLY CODE HERE */
     });
 });

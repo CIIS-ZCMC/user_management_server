@@ -51,7 +51,7 @@ class PositionSystemRoleController extends Controller
      * Identify rights for every system it has access
      * This is not intended for client sidebar
      */
-    public function designationAccessRights($id, Request $request)
+    public function findDesignationAccessRights($id, Request $request)
     {
         try{
             $designation = Designation::find($id);

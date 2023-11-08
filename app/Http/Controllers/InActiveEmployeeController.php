@@ -40,10 +40,10 @@ class InActiveEmployeeController extends Controller
         }
     }
 
-    public function findByEmployeeID(Request $request)
+    public function findByEmployeeID($id, Request $request)
     {
         try{
-            $employe_profile = EmployeeProfile::where('employee_id')->first();
+            $employe_profile = EmployeeProfile::where('employee_id', $id)->first();
 
             if(!$employe_profile)
             {
@@ -66,10 +66,10 @@ class InActiveEmployeeController extends Controller
         }
     }
 
-    public function findByAssignedAreaEmployeeID(Request $request)
+    public function findByAssignedAreaEmployeeID($id, Request $request)
     {
         try{
-            $employe_profile = EmployeeProfile::where('employee_id')->first();
+            $employe_profile = EmployeeProfile::where('employee_id',$id)->first();
 
             if(!$employe_profile)
             {
