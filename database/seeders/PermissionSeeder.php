@@ -16,50 +16,44 @@ class PermissionSeeder extends Seeder
     {
         //id 1
         Permission::create([
-            'name' => 'Creation',
-            'description' => 'registration of datas',
-            'code' => 'WU1',
+            'name' => 'Write',
             'action' => 'write',            
         ]);
         
         //id 2
         Permission::create([
-            'name' => 'Viewing',
-            'description' => 'read of datas',
-            'code' => 'RU1',
-            'action' => 'read',            
+            'name' => 'Read',
+            'action' => 'view',            
+        ]);
+        
+        //id 2
+        Permission::create([
+            'name' => 'Read All',
+            'action' => 'view-all',            
         ]);
         
         //id 3
         Permission::create([
-            'name' => 'Updating',
-            'description' => 'apply change to datas',
-            'code' => 'UU1',
+            'name' => 'Edit',
             'action' => 'update',            
         ]);
         
         //id 4
         Permission::create([
-            'name' => 'Deletion',
-            'description' => 'delete of datas',
-            'code' => 'DU1',
+            'name' => 'Delete',
             'action' => 'delete',    
         ]);
         
         //id 5
         Permission::create([
-            'name' => 'Approving',
-            'description' => 'approving account',
-            'code' => 'AU1',
+            'name' => 'Approve',
             'action' => 'approve',    
         ]);
         
         //id 6
         Permission::create([
             'name' => 'Request',
-            'description' => 'Rights for request',
-            'code' => 'RU2',
-            'action' => 'request',    
+            'action' => 'request',
         ]);
     }
 }

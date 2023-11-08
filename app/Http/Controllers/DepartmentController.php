@@ -284,11 +284,11 @@ class DepartmentController extends Controller
 
     protected function check_save_file($request)
     {
-        $FILE_URL = 'employee/profiles';
+        $FILE_URL = 'department/file';
         $fileName = '';
 
-        if ($request->file('profile_image')->isValid()) {
-            $file = $request->file('profile_image');
+        if ($request->file('attachment')->isValid()) {
+            $file = $request->file('attachment');
             $filePath = $file->getRealPath();
 
             $finfo = new \finfo(FILEINFO_MIME);
@@ -307,7 +307,7 @@ class DepartmentController extends Controller
                 return response()->json(['message' => 'File contains potential malicious content'], 400);
             }
 
-            $file = $request->file('profile_image');
+            $file = $request->file('attachment');
             $fileName = Hash::make(time()) . '.' . $file->getClientOriginalExtension();
 
             $file->move(public_path($FILE_URL), $fileName);
