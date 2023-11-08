@@ -37,7 +37,10 @@ class TrainingController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching employee '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => TrainingResource::collection($training)], Response::HTTP_OK);
+            return response()->json([
+                'data' => new TrainingResource($training),
+                'message' => 'Employee Training record retrieved'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByPersonalInformationID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -59,7 +62,10 @@ class TrainingController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching employee '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => TrainingResource::collection($training)], Response::HTTP_OK);
+            return response()->json([
+                'data' => new TrainingResource($training),
+                'message' => 'Employee Training record retrieved'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -83,7 +89,10 @@ class TrainingController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new TrainingResource($training),
+                'message' => 'New training record retrived.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -102,7 +111,10 @@ class TrainingController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => new TrainingResource($training)], Response::HTTP_OK);
+            return response()->json([
+                'data' => new TrainingResource($training),
+                'message' => 'Training record retrived.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -128,7 +140,10 @@ class TrainingController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new TrainingResource($training),
+                'message' => 'Training record updated.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -149,7 +164,7 @@ class TrainingController extends Controller
             
             $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['message' => 'Success'], Response::HTTP_OK);
+            return response()->json(['message' => 'Training record deleted'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

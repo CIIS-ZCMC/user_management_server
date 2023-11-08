@@ -28,7 +28,10 @@ class SystemLogsController extends Controller
         try{
             $stations = SystemLogs::all();
 
-            return response()->json(['data' => SystemLogsResource::collection($stations), 'message' => 'System logs retrieved.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => SystemLogsResource::collection($stations), 
+                'message' => 'System logs retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], 500);
@@ -47,7 +50,10 @@ class SystemLogsController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => new SystemLogsResource($station)], Response::HTTP_OK);
+            return response()->json([
+                'data' => new SystemLogsResource($station),
+                'message' => 'System Log record retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], 500);
@@ -77,7 +83,7 @@ class SystemLogsController extends Controller
             
             $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['message' => 'System Log deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], 500);
