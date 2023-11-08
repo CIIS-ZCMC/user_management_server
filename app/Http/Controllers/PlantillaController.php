@@ -37,21 +37,27 @@ class PlantillaController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
             
-            return response()->json(['data' => PlantillaResource::collection($plantillas)], Response::HTTP_OK);
+            return response()->json([
+                'data' => PlantillaResource::collection($plantillas),
+                'message' => 'Plantilla list retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
-    public function employeesOfSector($id, Request $request)
+    public function findByDesignationID($id, Request $request)
     {
         try{
             $sector_employees = Plantilla::with('assigned_areas')->findOrFail($designationId);;
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => DesignationEmployeesResource::collection($sector_employees)], Response::HTTP_OK);
+            return response()->json([
+                'data' => DesignationEmployeesResource::collection($sector_employees),
+                'message' => 'Plantilla record retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'employeesOfSector', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -75,7 +81,10 @@ class PlantillaController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new PlantillaResource($plantilla),
+                'message' => 'New plantilla registered.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -94,7 +103,10 @@ class PlantillaController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => new PlantillaResource($plantilla)], Response::HTTP_OK);
+            return response()->json([
+                'data' => new PlantillaResource($plantilla),
+                'message' => 'Plantilla record retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -116,7 +128,9 @@ class PlantillaController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new PlantillaResource($plantilla),
+                'message' => 'Plantilla record retrieved.'], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -137,7 +151,7 @@ class PlantillaController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['message' => 'Plantilla record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

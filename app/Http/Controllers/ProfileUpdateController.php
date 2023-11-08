@@ -40,7 +40,10 @@ class ProfileUpdateController extends Controller
 
             $this->registerSystemLogs($request, $profile_update_requests['id'], true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => ProfileUpdateRequestResource::collection($profile_update_requests), 'message' => 'Employee profile update request record found.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => ProfileUpdateRequestResource::collection($profile_update_requests), 
+                'message' => 'Employee profile update request record found.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByPersonalInformationID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -62,7 +65,10 @@ class ProfileUpdateController extends Controller
 
             $this->registerSystemLogs($request, $profile_update_requests['id'], true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => ProfileUpdateRequestResource::collection($profile_update_requests), 'message' => 'Employee profile update request record found.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => ProfileUpdateRequestResource::collection($profile_update_requests), 
+                'message' => 'Employee profile update request record found.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -99,7 +105,10 @@ class ProfileUpdateController extends Controller
 
             $this->registerSystemLogs($request, $profile_update_request['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => new ProfileUpdateRequest($profile_update_request) ,'message' => 'New employee profile update request registered.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new ProfileUpdateRequest($profile_update_request),
+                'message' => 'New employee profile update request registered.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -118,7 +127,10 @@ class ProfileUpdateController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => new ProfileUpdateRequest($profile_update_request), 'message' => 'Profile update request record found.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new ProfileUpdateRequest($profile_update_request), 
+                'message' => 'Profile update request record found.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -162,7 +174,10 @@ class ProfileUpdateController extends Controller
              
             $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => new ProfileUpdateRequestResource($profile_update_request), 'message' => 'Employee profile update request data is updated.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new ProfileUpdateRequestResource($profile_update_request), 
+                'message' => 'Employee profile update request data is updated.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

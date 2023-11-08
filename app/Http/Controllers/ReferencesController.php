@@ -36,7 +36,10 @@ class ReferencesController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching employee '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => ReferencesResource::collection($references)], Response::HTTP_OK);
+            return response()->json([
+                'data' => ReferencesResource::collection($references),
+                'message' => 'Employee reference record retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByPersonalInformationID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -58,7 +61,10 @@ class ReferencesController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching employee '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => ReferencesResource::collection($references)], Response::HTTP_OK);
+            return response()->json([
+                'data' => ReferencesResource::collection($references),
+                'message' => 'Employee reference record retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -78,7 +84,10 @@ class ReferencesController extends Controller
             
             $this->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => new ReferenceResource($reference),'message' => 'Success'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new ReferenceResource($reference),
+                'message' => 'New reference registerd.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -97,7 +106,10 @@ class ReferencesController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => new ReferencesResource($reference)], Response::HTTP_OK);
+            return response()->json([
+                'data' => new ReferencesResource($reference),
+                'message' => 'Reference record retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -124,7 +136,10 @@ class ReferencesController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => new ReferenceResource($reference),'message' => 'Success'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new ReferenceResource($reference),
+                'message' => 'Reference record updated.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -145,7 +160,7 @@ class ReferencesController extends Controller
             
             $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['message' => 'Reference record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -169,7 +184,7 @@ class ReferencesController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['message' => 'Reference record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroyByPersonaslInformationID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -179,7 +194,7 @@ class ReferencesController extends Controller
     public function destroyByEmployeeID($id, Request $request)
     {
         try{
-            $employee_profile = EmployeeProfile::find($id);
+            $employee_profile = EmployeeProfile::where('employee_id', $id)->first();
 
             if($employee_profile)
             {
@@ -196,7 +211,7 @@ class ReferencesController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['message' => 'Reference record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroyByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

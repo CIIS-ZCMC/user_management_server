@@ -36,7 +36,10 @@ class ModulePermissionController extends Controller
 
             $this->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => ModulePermissionResource::collection($module_permissions)], Response::HTTP_OK);
+            return response()->json([
+                'data' => ModulePermissionResource::collection($module_permissions),
+                'message' => 'Module permission list retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -62,7 +65,10 @@ class ModulePermissionController extends Controller
 
             $this->registerSystemLogs($request, null, true, 'Success in retrieving system permissions '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => ModulePermissionResource::collection($module_permissions)], Response::HTTP_OK);
+            return response()->json([
+                'data' => ModulePermissionResource::collection($module_permissions),
+                'message' => 'System module permission retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -81,7 +87,7 @@ class ModulePermissionController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => $module_permission], Response::HTTP_OK);
+            return response()->json(['data' => new ModulePermissionResource($module_permission), 'message' => 'Module permission record found.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -102,7 +108,7 @@ class ModulePermissionController extends Controller
             
             $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['message' => 'Module permission record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
