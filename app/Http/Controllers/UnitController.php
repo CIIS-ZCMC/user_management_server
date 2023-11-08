@@ -40,7 +40,10 @@ class UnitController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => UnitResource::collection($units)], Response::HTTP_OK);
+            return response()->json([
+                'data' => UnitResource::collection($units),
+                'message' => 'Unit list retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -132,7 +135,10 @@ class UnitController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in assigning officer in charge '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => new UnitResource($unit)], Response::HTTP_OK);
+            return response()->json([
+                'data' => new UnitResource($unit),
+                'message' => 'Officer incharge assigned to unit'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'assignOICByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -157,7 +163,7 @@ class UnitController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' =>  new UnitResource($unit),'message' => 'Newly added unit.'], Response::HTTP_OK);
+            return response()->json(['data' =>  new UnitResource($unit),'message' => 'New unit added.'], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
