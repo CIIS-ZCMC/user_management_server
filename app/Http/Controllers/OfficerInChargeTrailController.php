@@ -48,7 +48,6 @@ class OfficerInChargeTrailController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-
             $officer_in_charge_trail = OfficerInChargeTrail::where('employee_profile_id',$employe_profile['id'])->first();
 
             if(!$officer_in_charge_trail)
