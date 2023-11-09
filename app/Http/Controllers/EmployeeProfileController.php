@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Carbon\Carbon;
-use Jenseggers\Agent\Agent;
+use Jenssegers\Agent\Agent;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
@@ -16,9 +16,12 @@ use App\Http\Requests\SignInRequest;
 use App\Http\Requests\EmployeeProfileRequest;
 use App\Http\Resources\EmployeeProfileResource;
 use App\Http\Resources\SignInResource;
+use App\Models\AssignArea;
 use App\Models\DefaultPassword;
 use App\Models\EmployeeProfile;
 use App\Models\LoginTrail;
+use App\Models\PositionSystemRole;
+use App\Models\SpecialAccessRole;
 use App\Models\SystemLogs;
 
 class EmployeeProfileController extends Controller
@@ -115,18 +118,18 @@ class EmployeeProfileController extends Controller
                 $designation = $plantilla->designation;
             }
 
-            $special_access_roles = $employee->specialAccessRole;
-            
-            //Retrieve Sidebar Details for the employee base on designation.
-            $side_bar_details = $this->buildSidebarDetails($designation, $special_access_roles);  
+            $special_access_roles = $employee_profile->specialAccessRole;
 
-            $area_assigned = $employee_profile->assignArea->findDetails; 
+            //Retrieve Sidebar Details for the employee base on designation.
+            $side_bar_details = $this->buildSidebarDetails($employee_profile, $designation, $special_access_roles);  
+
+            $area_assigned = $employee_profile->assignedArea->findDetails(); 
 
             $data = [
                 'employee_id' => $employee_profile['employee_id'],
                 'name' => $name,
                 'designation'=> $designation['name'],
-                'area_assigned' => $area_assigned['name'],
+                'area_assigned' => $area_assigned['details']->name,
                 'area_sector' => $area_assigned['sector'],
                 'side_bar_details' => $side_bar_details
             ];
@@ -134,11 +137,11 @@ class EmployeeProfileController extends Controller
             LoginTrail::create([
                 'signin_at' => now(),
                 'ip_address' => $request->ip(),
-                'device' => ($device['isDesktop'] ? 'Desktop': $device['isMobile']) ?'Mobile':'Unknown', 
-                'platform' => $device['platform'],
-                'browser' => $device['browser'],
-                'browser_version' => $device['version'],
-                'employee_profile_id' => $user['id']
+                'device' => ($device['is_desktop'] ? 'Desktop': $device['is_mobile']) ?'Mobile':'Unknown', 
+                'platform' => is_bool($device['platform'])?'Postman':$device['platform'],
+                'browser' => is_bool( $device['browser'])?'Postman':$device['browser'],
+                'browser_version' => is_bool($device['version'])?'Postman':$device['version'],
+                'employee_profile_id' => $employee_profile['id']
             ]);
 
             return response()
@@ -150,39 +153,55 @@ class EmployeeProfileController extends Controller
         }
     }
 
-    private function buildSidebarDetails($designation, $special_access_roles)
+    private function buildSidebarDetails($employee_profile, $designation, $special_access_roles)
     {
         $sidebar_cache = Cache::get($designation['name']);
 
         if($sidebar_cache === null)
-        {
-            $designation_permissions = PositionSystemRole::with([
-                'system_roles' => function ($query) {
+        {   
+            /**
+             * Relation of table
+             * position_sytem_role
+             * sytemRole
+             * system
+             * roleModulePermissions
+             * modulePermission
+             * systemModule
+             * permission
+             */
+            $position_system_roles = PositionSystemRole::with([
+                'systemRole' => function ($query) {
                     $query->with([
-                        'role_module_permissions' => function ($query) {
-                            $query->with(['systemModule', 'permission']);
+                        'system',
+                        'roleModulePermissions' => function($query){
+                            $query->with([
+                                'modulePermission' => function($query){
+                                    $query->with(['systemModule', 'permission']);
+                                }
+                            ]);
                         },
-                        'system' // Assuming there's a relationship between SystemRole and System
                     ]);
                 }
-            ])->find($designation['id']);
+            ])->where('designation_id',$designation['id'])->get();
 
-            $side_bar_details['designation_id'] = $designation_permissions['id'];
-            $side_bar_details['designation_name'] = $designation_permissions['name'];
+            $side_bar_details['designation_id'] = $designation['id'];
+            $side_bar_details['designation_name'] = $designation['name'];
             $side_bar_details['system'] = [];
             
             /**
              * Convert to meet sidebar data format.
              * Iterate to every system roles.
              */
-            foreach($designation_permissions['system_roles'] as $key => $system_role)
+
+            foreach($position_system_roles as $key => $position_system_role)
             {
                 $system_exist = false;
-
+                $system_role = $position_system_role['systemRole'];
+                
                 /**
                  * If side bar details system array is empty
                  */
-                if (empty($side_bar_details['system'])) {
+                if (!$side_bar_details['system']) {
                     $side_bar_details['system'][] = $this->buildSystemDetails($system_role);
                     continue;
                 }
@@ -198,16 +217,18 @@ class EmployeeProfileController extends Controller
                 }
 
                 if(!$system_exist){
-                    $side_bar_details->system[] = $this->buildSystemDetails();
+                    $side_bar_details->system[] = $this->buildSystemDetails($system_role);
                 }
             }
-            
+
             $cacheExpiration = Carbon::now()->addYear();
-            Cache::put($designation_permissions['name'], $side_bar_details, $cacheExpiration);
+            Cache::put($designation['name'], $side_bar_details, $cacheExpiration);
         }else{
             $side_bar_details = $sidebar_cache;
         }
         
+        // return $side_bar_details;
+
         /**
          * For Empoyee with Special Access Roles
          * Validate if employee has Special Access Roles
@@ -215,33 +236,38 @@ class EmployeeProfileController extends Controller
          */
         if(!empty($special_access_roles))
         {
+
             $special_access_permissions = SpecialAccessRole::with([
-                'system_roles' => function ($query) {
+                'systemRole' => function ($query) {
                     $query->with([
-                        'role_module_permissions' => function ($query) {
+                        'system',
+                        'roleModulePermissions' => function ($query) {
                             $query->with(['systemModule', 'permission']);
-                        },
-                        'system' // Assuming there's a relationship between SystemRole and System
+                        }
                     ]);
                 }
-            ])->find($employee_profile['id']);
-
-            foreach($special_access_permissions['system_roles'] as $key => $system_role)
+            ])->where('employee_profile_id', $employee_profile['id'])->get();
+        
+            if(count($special_access_permissions) > 0)
             {
-                $system_exist = false;
-
-                foreach($side_bar_details['system'] as $key => $system)
+                foreach($special_access_permissions['systemRole'] as $key => $special_access_permission)
                 {
-                    if($system['id'] === $system_role->system['id'])
-                    {
-                        $system_exist = true;
-                        $system[] = $this->buildRoleDetails($system_role);
-                        break;
-                    }
-                }
+                    $system_exist = false;
+                    $system_role = $special_access_permission['systemRole'];
 
-                if(!$system_exist){
-                    $side_bar_details->system[] = $this->buildSystemDetails();
+                    foreach($side_bar_details['system'] as $key => $system)
+                    {
+                        if($system['id'] === $system_role->system['id'])
+                        {
+                            $system_exist = true;
+                            $system[] = $this->buildRoleDetails($system_role);
+                            break;
+                        }
+                    }
+
+                    if(!$system_exist){
+                        $side_bar_details->system[] = $this->buildSystemDetails($system_role);
+                    }
                 }
             }
         }
@@ -259,10 +285,14 @@ class EmployeeProfileController extends Controller
     
     private function buildRoleDetails($system_role) {
         $modules = [];
+
+        $role_module_permissions = $system_role->roleModulePermissions;
+
+        // return $role_module_permissions;
     
-        foreach ($system_role['role_module_permissions'] as $role_module_permission) {
-            $module_name = $role_module_permission->system_module->name;
-            $permission_action = $role_module_permission->permission->action;
+        foreach ($role_module_permissions as $role_module_permission) {
+            $module_name = $role_module_permission->modulePermission->systemModule->name;
+            $permission_action = $role_module_permission->modulePermission->permission->action;
     
             if (!isset($modules[$module_name])) {
                 $modules[$module_name] = ['name' => $module_name, 'permissions' => []];
@@ -739,7 +769,6 @@ class EmployeeProfileController extends Controller
             'employee_profile_id' => $user->id,
             'module_id' => $moduleID,
             'action' => $action,
-            'module' => $module,
             'status' => $status,
             'remarks' => $remarks,
             'ip_address' => $ip

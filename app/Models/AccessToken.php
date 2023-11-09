@@ -13,7 +13,6 @@ class AccessToken extends Model
 
     public $fillable = [
         'employee_profile_id',
-        'public_key',
         'token',
         'token_exp'
     ];

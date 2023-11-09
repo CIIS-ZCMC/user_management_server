@@ -5,6 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+use App\Http\Resources\AssignAreaDivisionResource;
+use App\Http\Resources\AssignAreaDepartmentResource;
+use App\Http\Resources\AssignAreaSectionResource;
+use App\Http\Resources\AssignAreaUnitResource;
+
 class AssignArea extends Model
 {
     use HasFactory;
@@ -63,7 +68,7 @@ class AssignArea extends Model
         if($this->division_id !== null)
         {
             return [
-                'name' => $this->division,
+                'details' => new AssignAreaDivisionResource($this->division),
                 'sector' => 'Division'
             ];
         }
@@ -71,7 +76,7 @@ class AssignArea extends Model
         if($this->department_id !== null)
         {
             return [
-                'name' => $this->department,
+                'details' => new AssignAreaDepartmentResource($this->department),
                 'sector' => 'Department'
             ];
         }
@@ -79,13 +84,13 @@ class AssignArea extends Model
         if($this->section_id !== null)
         {
             return [
-                'name' => $this->section,
+                'details' => new AssignAreaSectionResource($this->section),
                 'sector' => 'Section'
             ];
         }
 
         return [
-            'name' => $this->unit,
+            'details' => new AssignAreaUnitResource($this->unit),
             'sector' => 'Unit'
         ]; 
     }
