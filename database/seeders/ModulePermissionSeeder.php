@@ -17,7 +17,7 @@ class ModulePermissionSeeder extends Seeder
     public function run(): void
     {
         $permission_write = Permission::where('action', 'write')->first();
-        $permission_read = Permission::where('action', 'read')->first();
+        $permission_read = Permission::where('action', 'view')->first();
         $permission_update = Permission::where('action', 'update')->first();
         $permission_delete = Permission::where('action', 'delete')->first();
         $permission_approve = Permission::where('action', 'approve')->first();

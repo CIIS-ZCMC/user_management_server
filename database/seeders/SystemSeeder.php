@@ -19,7 +19,7 @@ class SystemSeeder extends Seeder
     {
         System::create([
             'name' => 'User Management Information System',
-            'code' => env('SYSTEM_ABBREVIATION'),
+            'code' => env('SYSTEM_ABBREVATION'),
             'domain' => env('SESSION_DOMAIN'),
             'status' => 1
         ]);
