@@ -64,12 +64,12 @@ class EmployeeProfile extends Authenticatable
 
     public function assignedArea()
     {
-        return $this->belongsTo(AssignedArea::class);
+        return $this->hasOne(AssignArea::class);
     }
 
     public function assignedAreaTrail()
     {
-        return $this->belongsTo(AssignedAreaTrail::class);
+        return $this->belongsTo(AssignAreaTrail::class);
     }
 
     public function accessToken()
@@ -100,14 +100,14 @@ class EmployeeProfile extends Authenticatable
     {
         Log::channel('custom-info')->info('PASSED');
         // $publicKeyString
-        AccessToken::where('employee_profile_id', $this->uuid)->delete();
+        AccessToken::where('employee_profile_id', $this->id)->delete();
 
 
         $token  = hash('sha256', Str::random(40));
         $token_exp = Carbon::now()->addHour();
 
         $accessToken = AccessToken::create([
-            'employee_profile_id' => $this->uuid,
+            'employee_profile_id' => $this->id,
             'public_key' => 'NONE',
             'token' => $token,
             'token_exp' => $token_exp

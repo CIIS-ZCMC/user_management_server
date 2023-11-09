@@ -18,8 +18,8 @@ class DatabaseSeeder extends Seeder
         $this->call([SystemModuleSeeder::class]);
         $this->call([PermissionSeeder::class]);
         $this->call([ModulePermissionSeeder::class]);
-        $this->call([SystemRoleSeeder::class]);
         $this->call([SalaryGradeSeeder::class]);
+        $this->call([SystemRoleSeeder::class]);
         $this->call([DesignationSeeder::class]);
         $this->call([PositionSystemRoleSeeder::class]);
         $this->call([EmploymentTypeSeeder::class]);
