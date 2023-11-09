@@ -31,6 +31,11 @@ class SystemRole extends Model
         return $this->hasManyThrough(RoleModulePermission::class, ModulePermission::class);
     }
 
+    public function roleModulePermissions()
+    {
+        return $this->hasMany(RoleModulePermission::class);
+    }
+
     public function positionSystemRole()
     {
         return $this->hasManyThrough(PositionSystemRole::class, Designation::class);

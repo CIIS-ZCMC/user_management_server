@@ -32,6 +32,6 @@ class Designation extends Model
 
     public function positionSystemRoles()
     {
-        return $this->hasMany(PositionSystemRoles::class);
+        return $this->hasMany(PositionSystemRole::class);
     }
 }
