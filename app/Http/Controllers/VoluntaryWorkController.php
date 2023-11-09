@@ -39,7 +39,10 @@ class VoluntaryWorkController extends Controller
 
             $this->registerSystemLogs($request, $voluntary_works['id'], true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => VoluntaryWorkResource::collection($voluntary_works), 'message' => 'Employee voluntary work record found.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => VoluntaryWorkResource::collection($voluntary_works), 
+                'message' => 'Employee voluntary work record retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByPersonalInformationID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -61,7 +64,10 @@ class VoluntaryWorkController extends Controller
 
             $this->registerSystemLogs($request, $voluntary_works['id'], true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => VoluntaryWorkResource::collection($voluntary_works), 'message' => 'Employee voluntary work record found.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => VoluntaryWorkResource::collection($voluntary_works), 
+                'message' => 'Employee voluntary work record retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -85,7 +91,10 @@ class VoluntaryWorkController extends Controller
 
             $this->registerSystemLogs($request, $voluntary_work['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => new VoluntaryWork($voluntary_work) ,'message' => 'New employee voluntary work registered.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new VoluntaryWork($voluntary_work),
+                'message' => 'New employee voluntary work registered.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -104,7 +113,10 @@ class VoluntaryWorkController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => new VoluntaryWork($voluntary_work), 'message' => 'Voluntary work record found.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new VoluntaryWork($voluntary_work), 
+                'message' => 'Voluntary work record found.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -135,7 +147,10 @@ class VoluntaryWorkController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => new VoluntaryWorkResource($voluntary_work), 'message' => 'Employee voluntary work data is updated.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new VoluntaryWorkResource($voluntary_work), 
+                'message' => 'Employee voluntary work data is updated.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

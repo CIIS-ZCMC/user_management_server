@@ -32,7 +32,10 @@ class SystemController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
             
-            return response() -> json(['data' => SystemResource::collection($systems)], Response::HTTP_OK);
+            return response() -> json([
+                'data' => SystemResource::collection($systems),
+                'message' => 'System list retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -52,7 +55,10 @@ class SystemController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response() -> json(['data' => 'Success'], Response::HTTP_OK);
+            return response() -> json([
+                'data' => new SystemResource($system),
+                'message' => 'New system record added.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -84,7 +90,10 @@ class SystemController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in generating API Key '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response() -> json(['data' => 'Success'], Response::HTTP_OK);
+            return response() -> json([
+                'data' => new SystemResource($system),
+                'message' => 'System record updated.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'generateKey', $th->getMessage());
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -120,7 +129,10 @@ class SystemController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in Updating System Status'.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response() -> json(['data' => 'Success'], Response::HTTP_OK);
+            return response() -> json([
+                'data' => new SystemResource($system),
+                'message' => 'System record updated.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'activateSystem', $th->getMessage());
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -138,7 +150,10 @@ class SystemController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response() -> json(['data' => new SystemResource($system)], Response::HTTP_OK);
+            return response() -> json([
+                'data' => new SystemResource($system),
+                'message' => 'System record retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -147,9 +162,9 @@ class SystemController extends Controller
     public function update($id, SystemRequest $request)
     {
         try{
-            $data = System::find($id);
+            $system = System::find($id);
             
-            if (!$data) {
+            if (!$system) {
                 return response()->json(['message' => 'No record found.'], 404);
             }
             
@@ -164,16 +179,19 @@ class SystemController extends Controller
                 $cleanData[$key] = strip_tags($value); 
             }
 
-            $data -> update($cleanData);
+            $system -> update($cleanData);
 
             $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response() -> json(['data' => "Success"], Response::HTTP_OK);
+            return response() -> json([
+                'data' => new SystemResource($system),
+                "message" => 'System record updated.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
     public function destroy($id, Request $request)
     {
         try{
@@ -187,7 +205,7 @@ class SystemController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response() -> json(['data' => 'Success'], Response::HTTP_OK);
+            return response() -> json(['message' => 'System record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

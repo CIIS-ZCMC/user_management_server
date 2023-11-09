@@ -38,7 +38,10 @@ class SystemRoleController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
             
-            return response() -> json(['data' => SystemRoleResource::collection($systemRoles)], Response::HTTP_OK);
+            return response() -> json([
+                'data' => SystemRoleResource::collection($systemRoles),
+                'message' => 'System role list retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -58,7 +61,10 @@ class SystemRoleController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response() -> json(['data' => "Success"], Response::HTTP_OK);
+            return response() -> json([
+                'data' => new SystemRoleResource($systemRole),
+                "message" => 'New system role added'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -122,7 +128,7 @@ class SystemRoleController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response() -> json(['data' => "Success"], Response::HTTP_OK);
+            return response() -> json(["message" => 'New system permission in system role.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'addModulePermission', $th->getMessage());
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -134,7 +140,7 @@ class SystemRoleController extends Controller
      * First it will retrieve all Role Module Permission it has then retrieve al Module Permission or System Permission for each
      * Role Module Permission.
      */
-    public function systemRolePermissions($id, Request $request)
+    public function findSystemRolePermissions($id, Request $request)
     {
         try{
             $system_role = SystemRole::find($id);
@@ -145,7 +151,10 @@ class SystemRoleController extends Controller
 
             $module_permissions = $system_role->roleModulePermissions()->with('role_module_permissions')->get()->pluck('module_permissions')->flatten();
 
-            return response()->json(['data' => ModulePermissionResource::collection($module_permission)], Response::HTTP_OK);
+            return response()->json([
+                'data' => ModulePermissionResource::collection($module_permission),
+                'message' => 'System role record retrieved'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'systemRolePermission', $th->getMessage());
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -163,7 +172,10 @@ class SystemRoleController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response() -> json(['data' => $systemRole], Response::HTTP_OK);
+            return response() -> json([
+                'data' => new SystemRoleResource($systemRole),
+                'message' => 'System role record retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -184,7 +196,10 @@ class SystemRoleController extends Controller
             
             $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response() -> json(['data' => "Success"], Response::HTTP_OK);
+            return response() -> json([
+                'data' => new SystemRoleResource($systemRole),
+                "message" => 'System Role record updated'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -203,7 +218,7 @@ class SystemRoleController extends Controller
 
             $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response() -> json(['data' => 'Success'], Response::HTTP_OK);
+            return response() -> json(['message' => 'System role record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
