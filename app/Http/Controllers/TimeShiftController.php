@@ -88,7 +88,7 @@ class TimeShiftController extends Controller
                         $cleanData[$key] = $section_data;
                         continue;
                     }
-                    $cleanData[$key] = $value;
+                    $cleanData[$key] = strip_tags($value);
                 }
 
                 if ($cleanData['first_in'] != null && $cleanData['first_out'] != null && $cleanData['second_in'] == null && $cleanData['second_out'] == null){
