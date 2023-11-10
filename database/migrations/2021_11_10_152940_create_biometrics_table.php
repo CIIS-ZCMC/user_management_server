@@ -11,12 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('holidays', function (Blueprint $table) {
+        Schema::create('biometrics', function (Blueprint $table) {
             $table->id();
-            $table->string('description');
-            $table->string('month_day')->comment('10-31 for ex.holiday');
-            $table->integer('isspecial')->default(0);
-            $table->date('effectiveDate')->nullable();
+            $table->integer('biometric_id');
+            $table->string('name');
+            $table->integer('privilege')->default()->comment('1-superadmin');
+            $table->text('biometric')->nullable();
             $table->timestamps();
         });
     }
@@ -26,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('holidays');
+        Schema::dropIfExists('biometrics');
     }
 };
