@@ -1191,6 +1191,32 @@ Route::middleware('auth.cookie')->group(function(){
      * Schedule Management
      */
     Route::namespace('App\Http\Controllers')->group(function(){
-        /** APPLY CODE HERE */
+        /**
+         * Time Shift Module
+         */
+        Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function(){
+            Route::get('time-shift', 'TimeShiftController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM write'])->group(function(){
+            Route::post('time-shift', 'TimeShiftController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM view'])->group(function(){
+            Route::get('time-shift/{id}', 'TimeShiftController@show');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM update'])->group(function(){
+            Route::put('time-shift/{id}', 'TimeShiftController@update');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM delete'])->group(function(){
+            Route::delete('time-shift/{id}', 'TimeShiftController@destroy');
+        });
     });
+});
+
+Route::namespace('App\Http\Controllers')->group(function () {
+    Route::get('schedule', 'ScheduleController@index');
+    Route::post('schedule', 'ScheduleController@store');
 });
