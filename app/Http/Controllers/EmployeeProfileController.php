@@ -67,6 +67,21 @@ class EmployeeProfileController extends Controller
                 return response()->json(['message' => "Account is deactivated."], Response::HTTP_FORBIDDEN);
             }
 
+            /**
+             * Validate for 2FA
+             * if 2FA is activated send OTP to email to validate ownership
+             */
+
+            /**
+             * If account is login to other device
+             * notify user for that and allow user to choose to cancel or proceed to signout account to other device
+             * return employee profile id when user choose to proceed signout in other device
+             * for server to be able to determine which account it want to sign out.
+             * If account is singin with in the same machine like ip and device and platform continue
+             * signin without signout to current signined of account.
+             * Reuse the created token of first instance of signin to have single access token.
+             */
+
             $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
 
             if (!Hash::check($cleanData['password'].env("SALT_VALUE"), $decryptedPassword)) {
