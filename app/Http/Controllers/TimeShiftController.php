@@ -7,7 +7,7 @@ use App\Models\Section;
 use App\Http\Resources\TimeShiftResource;
 use App\Http\Resources\SectionResource;
 use App\Http\Requests\TimeShiftRequest;
-use App\Providers\RequestLogger;
+use App\Services\RequestLogger;
 use App\Helpers\Helpers;
 
 use Illuminate\Http\Response;
@@ -29,10 +29,10 @@ class TimeShiftController extends Controller
 
     protected $requestLogger;
 
-    // public function __construct(RequestLogger $requestLogger)
-    // {
-    //     $this->requestLogger = $requestLogger;
-    // }
+    public function __construct(RequestLogger $requestLogger)
+    {
+        $this->requestLogger = $requestLogger;
+    }
     
     /**
      * Display a listing of the resource.
@@ -58,14 +58,6 @@ class TimeShiftController extends Controller
     {
         try {
 
-            $validator = Validator::make($request->all(), [
-                'first_in'      => 'required|date_format:H:i',
-                'first_out'     => 'required|date_format:H:i|after:first_in',
-                'second_in'     => 'nullable|date_format:H:i|after:first_out',
-                'second_out'    => 'nullable|date_format:H:i|after:second_in',
-                'total_hours'   => 'required|min:8|max:24',
-            ]);
-
             $shift = TimeShift::where('first_in', $request->first_in)
                               ->where('first_out', $request->first_out)
                               ->where('second_in', $request->second_in)
@@ -73,7 +65,7 @@ class TimeShiftController extends Controller
                               ->first();
 
             $cleanData = [];
-
+            
             if ($shift) {
 
                 $data = $shift;
@@ -81,31 +73,50 @@ class TimeShiftController extends Controller
             } else {
 
                 foreach ($request->all() as $key => $value) {
-                    if($value === null){
+                    if(empty($value)){
                         $cleanData[$key] = $value;
                         continue;
                     }
-                    $cleanData[$key] = strip_tags($value);
+
+                    if(is_array($value))
+                    {
+                        $section_data = [];
+
+                        foreach ($request->all() as $key => $value) {
+                            $section_data[$key] = $value;
+                        }        
+                        $cleanData[$key] = $section_data;
+                        continue;
+                    }
+                    $cleanData[$key] = $value;
                 }
 
-                if ($cleanData->first_in != null && $cleanData->first_out != null && $cleanData->second_in == null && $cleanData->second_out == null){
-                    $first_in   = Carbon::parse($request->first_in);
-                    $first_out  = Carbon::parse($request->first_out);
+                if ($cleanData['first_in'] != null && $cleanData['first_out'] != null && $cleanData['second_in'] == null && $cleanData['second_out'] == null){
+                    $first_in   = Carbon::parse($cleanData['first_in']);
+                    $first_out  = Carbon::parse($cleanData['first_out']);
 
-                    $input['total_hours'] = $first_in->diffInHours($first_out);
+                    $cleanData['total_hours'] = $first_in->diffInHours($first_out);
 
-                } else if ($cleanData->first_in != null && $cleanData->first_out != null && $cleanData->second_in != null && $cleanData->second_out != null) {
-                    $first_in   = Carbon::parse($cleanData->first_in);
-                    $first_out  = Carbon::parse($cleanData->first_out);
+                } else if ($cleanData['first_in'] != null && $cleanData['first_out'] != null && $cleanData['second_in'] != null && $cleanData['second_out'] != null) {
+                    $first_in   = Carbon::parse($cleanData['first_in']);
+                    $first_out  = Carbon::parse($cleanData['first_out']);
 
-                    $second_in  = Carbon::parse($cleanData->second_in);
-                    $second_out = Carbon::parse($cleanData->second_out);
+                    $second_in  = Carbon::parse($cleanData['second_in']);
+                    $second_out = Carbon::parse($cleanData['second_out']);
 
                     $AM = $first_in->diffInHours($first_out);
                     $PM = $second_in->diffInHours($second_out);
 
                     $cleanData['total_hours'] = $AM + $PM;
                 }
+
+                $validator = Validator::make($cleanData, [
+                    'first_in'      => 'required|date_format:H:i',
+                    'first_out'     => 'required|date_format:H:i|after:first_in',
+                    'second_in'     => 'required|date_format:H:i|after:first_out',
+                    'second_out'    => 'nullable|date_format:H:i|after:second_in',
+                    'total_hours'   => 'required|min:8|max:24',
+                ]);
 
                 $data = TimeShift::create($cleanData);
             }
@@ -121,11 +132,11 @@ class TimeShiftController extends Controller
                         ['time_shift_id', '=', $data->id],
                     ])->first();
 
-                    if ($query === null) {
+                    if ($query) {
+                        $msg = 'time shift already exist';
+                    } else {    
                         $data->section()->attach($section);
                         $msg = 'New time shift registered.';
-                    } else {
-                        $msg = 'time shift already exist';
                     }
                 }
             }
@@ -135,7 +146,7 @@ class TimeShiftController extends Controller
 
         } catch (\Throwable $th) {
 
-            // $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -179,6 +190,10 @@ class TimeShiftController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
+                if (empty($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
                 $cleanData[$key] = strip_tags($value);
             }
 
@@ -189,7 +204,7 @@ class TimeShiftController extends Controller
 
         } catch (\Throwable $th) {
 
-            // $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
 
         }
