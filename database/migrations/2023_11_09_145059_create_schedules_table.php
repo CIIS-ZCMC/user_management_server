@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('month');
             $table->date('date_start');
             $table->date('date_end');
-            $table->boolean('is_week_end');
+            $table->boolean('is_weekend');
             $table->boolean('status')->default(true);
             $table->text('remarks')->nullable();
             $table->softDeletes();

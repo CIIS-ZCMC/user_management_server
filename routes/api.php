@@ -1215,3 +1215,8 @@ Route::middleware('auth.cookie')->group(function(){
         });
     });
 });
+
+Route::namespace('App\Http\Controllers')->group(function () {
+    Route::get('schedule', 'ScheduleController@index');
+    Route::post('schedule', 'ScheduleController@store');
+});
