@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Route;
 // Attach CSP in response
 // Route::middleware('csp.token')->group(function(){});
 
-Route::namespace('App\Http\Controllers')->group(function () {
+Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
     Route::post('sign-in', 'EmployeeProfileController@signIn');
     Route::post('send-otp', 'EmployeeProfileController@sendOTPEmail');
     Route::post('validate-otp', 'EmployeeProfileController@validateOTP');
@@ -28,7 +28,7 @@ Route::namespace('App\Http\Controllers')->group(function () {
 
 Route::middleware('auth.cookie')->group(function(){
     
-    Route::namespace('App\Http\Controllers')->group(function(){
+    Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function(){
         Route::post('authenticity-check', 'EmployeeProfileController@isAuthenticated');
         Route::delete('signout', 'EmployeeProfileController@signOut');
 
@@ -43,7 +43,7 @@ Route::middleware('auth.cookie')->group(function(){
     /**
      * User Management Information System
      */
-    Route::namespace('App\Http\Controllers')->group(function(){
+    Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function(){
         
         /**
          * Default Password Module
@@ -1176,14 +1176,14 @@ Route::middleware('auth.cookie')->group(function(){
     /**
      * Daily Time Record Management
      */
-    Route::namespace('App\Http\Controllers')->group(function(){
+    Route::namespace('App\Http\Controllers\DTR')->group(function(){
         /** APPLY CODE HERE */
     });
 
     /**
      * Leave and Overtime Management
      */
-    Route::namespace('App\Http\Controllers')->group(function(){
+    Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function(){
         Route::post('reset-password', 'UserController@resetPassword');
         Route::get('leave_types', 'LeaveTypeController@index');
         Route::get('leave_applications', 'LeaveApplicationController@index');
@@ -1204,7 +1204,7 @@ Route::middleware('auth.cookie')->group(function(){
     /**
      * Schedule Management
      */
-    Route::namespace('App\Http\Controllers')->group(function(){
+    Route::namespace('App\Http\Controllers\Schedule')->group(function(){
         /**
          * Time Shift Module
          */
