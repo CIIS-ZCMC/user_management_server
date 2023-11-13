@@ -125,4 +125,13 @@ class EmployeeProfile extends Authenticatable
 
         return $fullName;
     }
+
+    public function findDesignation()
+    {
+        $assign_area = $this->assignedArea; 
+
+        $designation = $assign_area->plantilla_id  === null?$assign_area->designation:$assign_area->plantilla->designation;
+        
+        return $designation;
+    }
 }
