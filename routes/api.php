@@ -1232,12 +1232,6 @@ Route::middleware('auth.cookie')->group(function(){
 
 
 Route::namespace('App\Http\Controllers')->group(function () {
-    Route::get('shift', 'TimeShiftController@index');
-    Route::post('shift', 'TimeShiftController@store');
-    Route::get('shift/{id}', 'TimeShiftController@show');
-    Route::put('shift/{id}', 'TimeShiftController@update');
-    Route::delete('shift/{id}', 'TimeShiftController@destroy');
-
     Route::get('schedule', 'ScheduleController@index');
     Route::post('schedule', 'ScheduleController@store');
 });

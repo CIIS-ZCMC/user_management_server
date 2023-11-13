@@ -154,7 +154,7 @@ class TimeShiftController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(TimeShiftRequest $request, $id)
+    public function show(Request $request, $id)
     {
         try {
             $data = new TimeShiftResource(TimeShift::findOrFail($id));

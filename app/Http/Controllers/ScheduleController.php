@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Schedule;
 use App\Models\EmployeeProfile;
+use App\Http\Resources\ScheduleResource;
 use App\Http\Requests\ScheduleRequest;
 use App\Services\RequestLogger;
 use App\Helpers\Helpers;
@@ -40,7 +41,16 @@ class ScheduleController extends Controller
      */
     public function index(Request $request)
     {
-        //
+        try {
+            
+            Helpers::registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            return response()->json(['data' => ScheduleResource::collection(Schedule::all())], Response::HTTP_OK);
+
+        } catch (\Throwable $th) {
+
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**
