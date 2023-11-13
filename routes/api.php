@@ -53,7 +53,7 @@ Route::middleware('auth.cookie')->group(function(){
         });
 
         Route::middleware(['auth.permission:UMIS-SM write'])->group(function(){
-            Route::post('default-password-all-employee/{id}', 'DefaultPasswordController@store');
+            Route::post('default-password', 'DefaultPasswordController@store');
         });
 
         Route::middleware(['auth.permission:UMIS-SM view'])->group(function(){
@@ -65,7 +65,7 @@ Route::middleware('auth.cookie')->group(function(){
         });
 
         Route::middleware(['auth.permission:UMIS-SM delete'])->group(function(){
-            Route::put('default-password/{id}', 'DefaultPasswordController@destroy');
+            Route::delete('default-password/{id}', 'DefaultPasswordController@destroy');
         });
 
         /**
@@ -149,11 +149,11 @@ Route::middleware('auth.cookie')->group(function(){
         });
 
         Route::middleware(['auth.permission:UMIS-SM write'])->group(function(){
-            Route::post('system-role', 'SystemRoleController@store');
+            Route::post('system-role/{id}', 'SystemRoleController@store');
         });
 
         Route::middleware(['auth.permission:UMIS-SM write'])->group(function(){
-            Route::post('system-role-add-permission/{id}', 'SystemRoleController@addrolePermission');
+            Route::post('system-role-add-permission/{id}', 'SystemRoleController@addRolePermission');
         });
 
         Route::middleware(['auth.permission:UMIS-SM view'])->group(function(){

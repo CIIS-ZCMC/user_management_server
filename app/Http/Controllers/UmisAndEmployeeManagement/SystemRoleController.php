@@ -13,8 +13,9 @@ use Illuminate\Support\Facades\Cache;
 use App\Http\Requests\SystemRoleRequest;
 use App\Http\Resources\SystemRoleResource;
 use App\Http\Resources\ModulePermissionResource;
+use App\Models\ModulePermission;
 use App\Models\SystemRole;
-use App\Models\SystemLogs;
+use App\Models\System;
 
 class SystemRoleController extends Controller
 {   
@@ -38,7 +39,7 @@ class SystemRoleController extends Controller
                 return SystemRole::all();
             });
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
             
             return response() -> json([
                 'data' => SystemRoleResource::collection($systemRoles),
@@ -50,10 +51,18 @@ class SystemRoleController extends Controller
         }
     }
     
-    public function store(SystemRoleRequest $request)
+    public function store($id, SystemRoleRequest $request)
     {
         try{  
+            $system = System::find($id);
+
+            if(!$system)
+            {
+                return response()->json(['message' => 'No record found for system id '.$id." ."], Response::HTTP_NOT_FOUND);
+            }
+
             $cleanData = [];
+            $cleanData['system_id'] = $system['id'];
 
             foreach ($request->all() as $key => $value) {
                 $cleanData[$key] = strip_tags($value); 
@@ -61,7 +70,7 @@ class SystemRoleController extends Controller
 
             $systemRole = SystemRole::create($cleanData);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response() -> json([
                 'data' => new SystemRoleResource($systemRole),
@@ -79,7 +88,7 @@ class SystemRoleController extends Controller
      * if some failed record id that failed and remarks as something went wrong and return the IDs that failed.
      * Validate if ID given is an integer type if not then considered as failed.
      */
-    public function addModulePermission($id, Request $request)
+    public function addRolePermission($id, Request $request)
     {
         try{
             $failed = [];
@@ -88,7 +97,7 @@ class SystemRoleController extends Controller
             $system_role = SystemRole::find($id);
 
             if(!$system_role){
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+                return response()->json(['message' => 'No record found for system role id '.$id.' .'], Response::HTTP_NOT_FOUND);
             }
 
             foreach ($module_permissions as $key => $value) {
@@ -104,16 +113,23 @@ class SystemRoleController extends Controller
                     continue;
                 }
 
-                /**Validate if int */
                 try{
                     if(!$module_permission){
                         RoleModulePermission::create([
                             'module_permission_id' => $value,
                             'system_role_id' => $id
                         ]);
+                        continue;
                     }
+
+                    $failed_request = [
+                        'module_permission_id' => $value,
+                        'remarks' => 'Already Exist.'
+                    ];
+
+                    $failed[] = $failed_request;
                 }catch(\Throwable $th){
-                    $this->registerSystemLogs($request, $id, true, 'Success in adding module permission but some failed '.$this->SINGULAR_MODULE_NAME.'.');
+                    $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in adding module permission but some failed '.$this->SINGULAR_MODULE_NAME.'.');
 
                     $failed_request = [
                         'module_permission_id' => $value,
@@ -128,7 +144,7 @@ class SystemRoleController extends Controller
                 return response()->json(['data' => $failed,'message' => 'Failed to registere some permission module.'], Response::HTTP_OK);
             }
 
-            $this->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response() -> json(["message" => 'New system permission in system role.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -172,7 +188,7 @@ class SystemRoleController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response() -> json([
                 'data' => new SystemRoleResource($systemRole),
@@ -196,7 +212,7 @@ class SystemRoleController extends Controller
 
             $systemRole -> update($cleanData);
             
-            $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response() -> json([
                 'data' => new SystemRoleResource($systemRole),
@@ -218,30 +234,12 @@ class SystemRoleController extends Controller
 
             $data -> delete();
 
-            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response() -> json(['message' => 'System role record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-    }
-
-    protected function registerSystemLogs($request, $moduleID, $status, $remarks)
-    {
-        $ip = $request->ip();
-        $user = $request->user;
-        $permission = $request->permission;
-        list($action, $module) = explode(' ', $permission);
-
-        SystemLogs::create([
-            'employee_profile_id' => $user->id,
-            'module_id' => $moduleID,
-            'action' => $action,
-            'module' => $module,
-            'status' => $status,
-            'remarks' => $remarks,
-            'ip_address' => $ip
-        ]);
     }
 }

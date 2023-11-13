@@ -23,8 +23,7 @@ class SystemRoleRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
-            'code' => 'required|string',
-            'system_id' => 'required|string|size:36'
+            'code' => 'required|string'
         ];
     }
 }
