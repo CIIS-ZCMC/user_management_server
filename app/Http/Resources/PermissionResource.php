@@ -14,7 +14,7 @@ class PermissionResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $status = $this->deactived?'DEACTIVED':'ACTIVE';
+        $status = $this->deactivated?'DEACTIVED':'ACTIVE';
 
         return [
             'name' => $this->name,
