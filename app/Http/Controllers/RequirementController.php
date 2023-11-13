@@ -119,55 +119,7 @@ class RequirementController extends Controller
         //
     }
 
-    public function deactivateLeaveType(Request $request,$leave_type_id)
-    {
-        try{
-            $user_id = Auth::user()->id;
-            $user = EmployeeProfile::where('id','=',$user_id)->first();
-            $user_password=$user->password;
-            $password=$request->password;
-            if($user_password==$password)
-            {
-                $deactivate_leave_type = ModelsLeaveType::findOrFail($leave_type_id);
-                $deactivate_leave_type->status="deactivated";
-                $deactivate_leave_type->reason=$request->reason;
-                $deactivate_leave_type->update();
-                $process_name="Deactivate";
-                $leave_type_logs = $this->storeLeaveTypeLog($leave_type_id,$process_name);
-                return response()->json(['data' => 'Success'], Response::HTTP_OK);
-            }
-           
-            
-        }catch(\Throwable $th){
-         
-            return response()->json(['message' => $th->getMessage()], 500);
-        }
-        
-    }
+   
 
-    public function reactivateLeaveType(Request $request,$leave_type_id)
-    {
-        try{
-            $user_id = Auth::user()->id;
-            $user = EmployeeProfile::where('id','=',$user_id)->first();
-            $user_password=$user->password;
-            $password=$request->password;
-            if($user_password==$password)
-            {
-                $deactivate_leave_type = LeaveType::findOrFail($leave_type_id);
-                $deactivate_leave_type->status="active";
-                $deactivate_leave_type->reason=$request->reason;
-                $deactivate_leave_type->update();
-                $process_name="Reactivate";
-                $leave_type_logs = $this->storeLeaveTypeLog($leave_type_id,$process_name);
-                return response()->json(['data' => 'Success'], Response::HTTP_OK);
-            }
-           
-            
-        }catch(\Throwable $th){
-         
-            return response()->json(['message' => $th->getMessage()], 500);
-        }
-        
-    }
+   
 }

@@ -125,4 +125,12 @@ class EmployeeProfile extends Authenticatable
 
         return $fullName;
     }
+
+    public function leaveCredits()
+    {
+        return $this->hasMany(EmployeeLeaveCredit::class);
+    }
+    public function leaveLogs() {
+        return $this->hasMany(LeaveTypeLog::class);
+    }
 }

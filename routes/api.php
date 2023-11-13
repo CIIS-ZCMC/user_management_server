@@ -1186,8 +1186,17 @@ Route::middleware('auth.cookie')->group(function(){
     Route::namespace('App\Http\Controllers')->group(function(){
         Route::post('reset-password', 'UserController@resetPassword');
         Route::get('leave_types', 'LeaveTypeController@index');
-        Route::get('leave_applications', 'LeaveApplicationController@index');
+        Route::post('store_leave_types', 'LeaveTypeController@store');
+        Route::post('update_leave_types/{id}', 'LeaveTypeController@update');
+        Route::get('deactivate_leave_type/{id}', 'LeaveTypeController@deactivateLeaveType');
+        Route::get('reactivate_leave_type/{id}', 'LeaveTypeController@reactivateLeaveType');
 
+        Route::get('requirements', 'RequirementController@index');
+        Route::post('store_requirements', 'RequirementController@store');
+        Route::post('update_requirements/{id}', 'RequirementController@update');
+
+
+        Route::get('leave_applications', 'LeaveApplicationController@index');
         Route::get('user_leave_applications', 'LeaveApplicationController@getUserLeaveApplication');
         Route::get('official_time_applications', 'OfficialTimeApplicationController@index');
         Route::get('official_business_applications', 'ObApplicationController@index');
@@ -1195,9 +1204,6 @@ Route::middleware('auth.cookie')->group(function(){
         Route::get('employee_leave_credit_logs', 'LeaveApplicationController@getEmployeeLeaveCreditLogs');
         Route::get('user_leave_credit_logs', 'LeaveApplicationController@getUserLeaveCreditsLogs');
         Route::get('days', 'LeaveCreditController@addMonthlyLeaveCredit');
-        
-    
-        
         Route::post('leave_type', 'LeaveTypeController@store');
     });
 

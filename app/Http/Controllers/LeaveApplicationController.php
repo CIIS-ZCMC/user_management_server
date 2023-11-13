@@ -86,7 +86,6 @@ class LeaveApplicationController extends Controller
         ->get()
         ->map(function ($employee) {
             $leaveCredits = $employee->leaveCredits->groupBy('leaveType.name');
-
             $result = [];
 
             foreach ($leaveCredits as $leave_type => $credits) {
