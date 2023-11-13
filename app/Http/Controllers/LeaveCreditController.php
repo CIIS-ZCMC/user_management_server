@@ -229,6 +229,8 @@ class LeaveCreditController extends Controller
             }
         }
 
+
+        return response()->json(['data' => $employee_leave_credits], Response::HTTP_OK);
     }
 
     Public function resetYearlyLeaveCredit(Request $request)
@@ -285,9 +287,10 @@ class LeaveCreditController extends Controller
                 }
                    
 
-                }
+                
             }
         }
+        return response()->json(['data' => $employee_leave_credits], Response::HTTP_OK);
 
     }
 
