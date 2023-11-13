@@ -56,9 +56,13 @@ class ScheduleController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(ScheduleRequest $request, $id)
     {
-        //
+        try {
+            
+        } catch (\Throwable $th) {
+            //throw $th;
+        }
     }
 
     /**
@@ -205,7 +209,22 @@ class ScheduleController extends Controller
      */
     public function show(Request $request, $id)
     {
-        //
+        try {
+            $data = new ScheduleResource(Schedule::findOrFail($id));
+
+            if(!$data)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            Helpers::registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
+            return response()->json(['data' => $data], Response::HTTP_OK);
+
+        } catch (\Throwable $th) {
+
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**
