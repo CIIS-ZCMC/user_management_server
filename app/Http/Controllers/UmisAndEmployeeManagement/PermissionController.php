@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
+use App\Http\Controllers\Controller;
+
 use Illuminate\Http\Request;
-use Illuminate\Http\Resource;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use App\Services\RequestLogger;
 
 use App\Models\Permission;
+use App\Models\SystemLogs;
 use App\Http\Requests\PermissionRequest;
-use App\Http\Resources\PermissionSource;
+use App\Http\Resources\PermissionResource;
 
 
 class PermissionController extends Controller
@@ -28,8 +31,6 @@ class PermissionController extends Controller
     public function index(Request $request)
     {
         try{
-            $cacheExpiration = Carbon::now()->addDay();
-
             $permissions = Permission::all();
 
             $this->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
@@ -50,11 +51,7 @@ class PermissionController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if (is_bool($value) || $value === null) {
-                    $cleanData[$key] = $value;
-                } else {
-                    $cleanData[$key] = strip_tags($value);
-                }
+                $cleanData[$key] = strip_tags($value);
             }
 
             $permission = Permission::create($cleanData);
@@ -105,16 +102,60 @@ class PermissionController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if (is_bool($value) || $value === null) {
-                    $cleanData[$key] = $value;
-                } else {
-                    $cleanData[$key] = strip_tags($value);
-                }
+                $cleanData[$key] = strip_tags($value);
             }
 
             $permission->update($cleanData);
 
             $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+
+            return response()->json([
+                'data' => new PermissionResource($permission),
+                'message' => 'Permission record updated.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function activate($id, Request $request)
+    {
+        try{
+            $permission = Permission::find($id);
+
+            if(!$permission)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $permission->update(['deactivated' => false]);
+
+            $this->registerSystemLogs($request, $id, true, 'Success in activate permission '.$this->SINGULAR_MODULE_NAME.'.');
+
+            return response()->json([
+                'data' => new PermissionResource($permission),
+                'message' => 'Permission record updated.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function deactivate($id, Request $request)
+    {
+        try{
+            $permission = Permission::find($id);
+
+            if(!$permission)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $permission->update(['deactivated' => true]);
+
+            $this->registerSystemLogs($request, $id, true, 'Success in deactivate permission '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => new PermissionResource($permission),
@@ -152,7 +193,7 @@ class PermissionController extends Controller
         $ip = $request->ip();
         $user = $request->user;
         $permission = $request->permission;
-        list($action, $module) = explode(' ', $permission);
+        list($module, $action) = explode(' ', $permission);
 
         SystemLogs::create([
             'employee_profile_id' => $user->id,
@@ -161,7 +202,7 @@ class PermissionController extends Controller
             'module' => $module,
             'status' => $status,
             'remarks' => $remarks,
-            'ip_permission' => $ip
+            'ip_address' => $ip
         ]);
     }
 }

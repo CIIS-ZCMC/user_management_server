@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
+use App\Http\Controllers\Controller;
+
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Services\RequestLogger;
@@ -30,7 +32,7 @@ class SystemController extends Controller
         try{
             $systems = System::all();
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            $this->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
             
             return response() -> json([
                 'data' => SystemResource::collection($systems),
@@ -48,12 +50,17 @@ class SystemController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
+                if($key === 'domain')
+                {
+                    $cleanData[$key] = Crypt::encrypt($value);
+                    continue;
+                }
                 $cleanData[$key] = strip_tags($value); 
             }
 
-            $data = System::create($cleanData);
+            $system = System::create($cleanData);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response() -> json([
                 'data' => new SystemResource($system),
@@ -159,13 +166,14 @@ class SystemController extends Controller
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
     public function update($id, SystemRequest $request)
     {
         try{
             $system = System::find($id);
             
             if (!$system) {
-                return response()->json(['message' => 'No record found.'], 404);
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
             
             $cleanData = [];
@@ -217,7 +225,7 @@ class SystemController extends Controller
         $ip = $request->ip();
         $user = $request->user;
         $permission = $request->permission;
-        list($action, $module) = explode(' ', $permission);
+        list($module, $action) = explode(' ', $permission);
 
         SystemLogs::create([
             'employee_profile_id' => $user->id,
