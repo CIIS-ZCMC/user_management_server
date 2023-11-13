@@ -154,7 +154,7 @@ class TimeShiftController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Request $request, $id)
+    public function show(TimeShiftRequest $request, $id)
     {
         try {
             $data = new TimeShiftResource(TimeShift::findOrFail($id));
@@ -169,7 +169,7 @@ class TimeShiftController extends Controller
 
         } catch (\Throwable $th) {
 
-            // $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -230,7 +230,7 @@ class TimeShiftController extends Controller
 
         } catch (\Throwable $th) {
 
-            // $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
 
         }

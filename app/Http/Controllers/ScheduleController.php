@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Schedule;
 use App\Models\EmployeeProfile;
 use App\Http\Requests\ScheduleRequest;
-use App\Providers\RequestLogger;
+use App\Services\RequestLogger;
 use App\Helpers\Helpers;
 
 use Illuminate\Http\Response;
@@ -14,13 +14,27 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+
 use Carbon\Carbon;
+use DateTime;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 class ScheduleController extends Controller
 {
+    private $CONTROLLER_NAME = 'Schedule';
+    private $PLURAL_MODULE_NAME = 'schedules';
+    private $SINGULAR_MODULE_NAME = 'schedule';
+
+    protected $requestLogger;
+
+    public function __construct(RequestLogger $requestLogger)
+    {
+        $this->requestLogger = $requestLogger;
+    }
+    
+
     /**
      * Display a listing of the resource.
      */
@@ -43,14 +57,46 @@ class ScheduleController extends Controller
     public function store(ScheduleRequest $request)
     {
         try {
-           
 
-            $date_start     = Carbon::parse($request['date_start']);    // Replace with your start date
-            $date_end       = Carbon::parse($request['date_end']);      // Replace with your end date
-            $selected_days  = $request['selected_days'];                // Replace with your selected days
+            $cleanData = [];
+
+            foreach ($request->all() as $key => $value) {
+                if (empty($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                if (is_array($value)) {
+                    $employee_data = [];
+
+                    foreach ($request->all() as $key => $value) {
+                        $employee_data[$key] = $value;
+                    }
+
+                    $cleanData[$key] = $employee_data;
+                    continue;
+                }
+
+                if (DateTime::createFromFormat('Y-m-d', $value)) {
+                    $cleanData[$key] = Carbon::parse($value);
+                    continue;
+                }
+
+                if (is_int($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                $cleanData[$key] = strip_tags($value);
+            }
+
+
+            $date_start     = Carbon::parse($cleanData['date_start']);    // Replace with your start date
+            $date_end       = Carbon::parse($cleanData['date_end']);      // Replace with your end date
+            $selected_days  = $cleanData['selected_days'];                // Replace with your selected days
             $selected_dates = [];                                       // Replace with your selected dates
 
-            switch ($request['schedule_type']) {
+            switch ($cleanData['schedule_type']) {
                 case 'dates_only':
                     $current_date = $date_start->copy();
 
@@ -62,7 +108,7 @@ class ScheduleController extends Controller
 
                 case 'days_only' :
                     $year   = Carbon::now()->year;          // Replace with your desired year
-                    $month  = $request['selected_month'];   // Replace with your desired month
+                    $month  = $cleanData['selected_month'];   // Replace with your desired month
 
                     $start_date = Carbon::create($year, $month, 1)->startOfMonth(); // Calculate the first day of the month
                     $end_date   = $start_date->copy()->endOfMonth();                // Calculate the last day of the month
@@ -91,33 +137,56 @@ class ScheduleController extends Controller
             }
             
             foreach ($selected_dates as $key => $date) {
+                $schedule = Schedule::where('time_shift_id',$cleanData['time_shift_id'])
+                                    ->where('month',        $cleanData['month'])
+                                    ->where('date_start',   $date)
+                                    ->where('date_end',     $date)
+                                    ->first();
 
-                $data = new Schedule;
+                if (!$schedule) {
+                    $data = new Schedule;
 
-                $data->time_shift_id    = $request['time_shift_id'];
-                $data->month            = $request['month'];
-                $data->date_start       = $date;
-                $data->date_end         = $date;
-                $data->is_weekend       = $request['is_weekend'];
-                $data->save();
+                    $data->time_shift_id    = $cleanData['time_shift_id'];
+                    $data->month            = $cleanData['month'];
+                    $data->date_start       = $date;
+                    $data->date_end         = $date;
+                    $data->is_weekend       = $cleanData['is_weekend'];
+                    $data->save();
+                } else {
 
+                    $data = $schedule;
+                }
+                
                 $employee = $request['employee'];
                 foreach ($employee as $key => $value) {
-                    $emp        = EmployeeProfile::select('id')->where('id', $value['employee_id'])->first();
-                    $emp_sched  = $data->employee()->attach($emp);
+                    $employee_id  = EmployeeProfile::select('id')->where('id', $value['employee_id'])->first();
+
+                    if ($employee != null) {
+
+                        $query = DB::table('employee_profile_schedule')->where([
+                            ['employee_profile_id', '=', $employee_id->id],
+                            ['schedule_id', '=', $data->id],
+                        ])->first();
+    
+                        if ($query) {
+                            $msg = 'employee schedule already exist';
+
+                        } else {
+
+                            $data->employee()->attach($employee);
+                            $msg = 'New employee schedule registered.';
+                        }
+                    }
                 }
             }
 
-            return response()->json([
-                'message' => 'Success',
-                'data' => $data
-            ], 200);
+            Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            return response()->json(['data' => $data ,'message' => $msg], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
-            return response()->json([
-                'message' => $th->getMessage()
-            ], 500);
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
