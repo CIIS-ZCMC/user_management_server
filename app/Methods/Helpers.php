@@ -7,6 +7,7 @@ use App\Models\daily_time_record_logs;
 use DateTime;
 use Illuminate\Support\Facades\DB;
 use App\Models\biometrics;
+use App\Models\EmployeeProfile;
 use App\Models\devices;
 
 class Helpers
@@ -37,9 +38,12 @@ class Helpers
 
     public function isEmployee($biometric_id)
     {
-        $validate = biometrics::where('biometric_id', $biometric_id)->get();
-        if (count($validate) >= 1) {
-            return true;
+        $biometric = biometrics::where('biometric_id', $biometric_id)->get();
+        if (count($biometric) >= 1) {
+            $isemployee = EmployeeProfile::where('biometric_id', $biometric_id)->get();
+            if (count($isemployee) >= 1) {
+                return true;
+            }
         }
         return false;
     }

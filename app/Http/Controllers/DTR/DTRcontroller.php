@@ -12,6 +12,8 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 use App\Http\Controllers\DTR\BioMSController;
 use App\Models\holiday_list;
+use App\Models\EmployeeProfile;
+use App\Models\biometrics;
 use App\Http\Controllers\Controller;
 
 class DTRcontroller extends Controller
@@ -58,14 +60,13 @@ class DTRcontroller extends Controller
                         });
 
 
+
                         // Add Validation here based on DT of user based on server Time and the Interval of pull
                         if (count($checkRecords) >= 1) {
 
                             foreach ($checkRecords as $key => $value) {
-
                                 $biometric_id =  $value['biometric_id'];
-
-                                if ($this->helper->isEmployee($biometric_id)) {
+                                if ($this->helper->isEmployee($biometric_id)) { // Validating if User is an employee with Biometric data and employee data
                                     $validate = daily_time_records::whereDate('created_at', $datenow)->where('biometric_id', $biometric_id)->get();
                                     $datenow = date('Y-m-d');
 
@@ -416,6 +417,7 @@ class DTRcontroller extends Controller
         }
         return false;
     }
+
     /* ----------------------------------------------------------------GENERATION OF DAILY TIME RECORDS----------------------------------------------------------------------------------------------------------------------------- */
     public function Generate_DTR(Request $request)
     {
@@ -424,7 +426,15 @@ class DTRcontroller extends Controller
             $monthof = $request->monthof;
             $yearof = $request->yearof;
             $view = $request->view;
-
+            $empname = '';
+            if ($this->helper->isEmployee($biometric_id)) {
+                $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
+                $empname = $employee->name();
+            } else {
+                return response()->json([
+                    'message' => 'Failed to Generate: Data not found'
+                ]);
+            }
             $dtr = DB::table('daily_time_records')
                 ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
                 ->where(function ($query) use ($biometric_id, $monthof, $yearof) {
@@ -438,13 +448,10 @@ class DTRcontroller extends Controller
                         ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $yearof);
                 })
                 ->get();
-
             $arrivalDeparture = '';
-
             foreach ($dtr as $val) {
                 $timestampsreq = $this->helper->Get_Schedule($biometric_id, $val->first_in); //biometricID
                 $arrivalDeparture = $this->ArrivalDeparture($timestampsreq, $yearof, $monthof);
-
                 if (count($timestampsreq) >= 1) {
                     $validate = [
                         (object)[
@@ -468,8 +475,8 @@ class DTRcontroller extends Controller
             $empDetails = [
                 'OHF' => $ohf,
                 'Arrival_Departure' => $arrivalDeparture,
-                'Employee_Name' => 'Reenjay M. Caimor',
-                'DTRFile_Name' => 'Caimor,Reenjay M.'
+                'Employee_Name' => $empname,
+                'DTRFile_Name' => $empname
             ];
             return $this->Print_Dtr($monthof, $yearof, $biometric_id, $empDetails, $view);
         } catch (\Throwable $th) {
@@ -583,7 +590,7 @@ class DTRcontroller extends Controller
                 ];
             }, $dtrecords);
 
-            $holidays = DB::table('holiday_lists')->get();
+            $holidays = DB::table('holidays')->get();
 
 
 
@@ -754,13 +761,6 @@ class DTRcontroller extends Controller
                 $schedule = $this->helper->Get_Schedule($value->biometric_id, $value->first_in);
                 $isHalfSchedule = $this->isHalfEntrySchedule($schedule);
 
-                // if ($isHalfSchedule) {
-                //     $f1 = $value->first_in;
-                //     $f2 = $value->first_out;
-                //     return $f1 . $f2;
-                // }
-
-
                 if (isset($schedule['date_start']) && isset($schedule['date_end'])) {
                     $datenow = date('Y-m-d');
                     $datestart =  $schedule['date_start'];
@@ -835,7 +835,6 @@ class DTRcontroller extends Controller
                     }
                 }
             }
-
             $daysabsences = [];
             $dayspresent = [];
             foreach ($dateranges as $key => $value) {
@@ -852,7 +851,6 @@ class DTRcontroller extends Controller
                     $dayspresent[] = $value;
                 }
             }
-
             $numeric_days = array_map(function ($res) {
                 $timestamp = strtotime($res);
                 $formatted_date = date('Y-m-d', $timestamp);
@@ -880,8 +878,6 @@ class DTRcontroller extends Controller
                 $daysabsences = $newDaysAbsences;
                 $absences = count($daysabsences);
             }
-
-
             $dtr = [
                 'biometric_ID' => $biometric_id,
                 'employeeName' => 'Reenjay Caimor',

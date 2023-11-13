@@ -61,11 +61,18 @@ Route::controller(App\Http\Controllers\DTR\BioMSController::class)->group(
 
 Route::controller(App\Http\Controllers\DTR\MailController::class)->group(
     function () {
-        Route::get('/testemail', 'testemail')->name('testemail');
+        Route::get('/sendOTP', 'sendOTP')->name('mail.sendOTP');
     }
 );
 
 
+
+Route::controller(App\Http\Controllers\DTR\TwoFactorAuthController::class)->group(
+    function () {
+        Route::get('/verify', 'EVerification')->name('verify');
+    }
+);
+
 Route::get('/', function () {
-    return view('welcome');
+    return view('mail.otp');
 });

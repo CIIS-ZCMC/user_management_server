@@ -77,7 +77,8 @@ class EmployeeProfile extends Authenticatable
         return $this->hasMany(AccessToken::class);
     }
 
-    public function specialAccessRole(){
+    public function specialAccessRole()
+    {
         return $this->hasMany(SpecialAccessRole::class);
     }
 
@@ -95,7 +96,7 @@ class EmployeeProfile extends Authenticatable
     {
         return $this->email_verified_at === null;
     }
-    
+
     public function createToken()
     {
         Log::channel('custom-info')->info('PASSED');
@@ -121,8 +122,13 @@ class EmployeeProfile extends Authenticatable
     public function name()
     {
         $personal_information = $this->personalInformation;
-        $fullName = $personal_information['first_name'].' '.$personal_information['last_name'];
+        $fullName = $personal_information['first_name'] . ' ' . $personal_information['last_name'];
 
         return $fullName;
+    }
+
+    public function GetPersonalInfo()
+    {
+        return $this->personalInformation;
     }
 }
