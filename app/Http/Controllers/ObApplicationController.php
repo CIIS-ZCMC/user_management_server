@@ -199,40 +199,19 @@ class ObApplicationController extends Controller
             $official_business_application->status = "for-approval-supervisor";
             $official_business_application->reason = "for-approval-supervisor";
             $official_business_application->date = date('Y-m-d');
-            
-            if ($request->hasFile('requirements')) {
-                $requirements = $request->file('requirements');
-
-                if($requirements){
-
-                    $official_business_application_id = $official_business_application->id; 
-                    foreach ($requirements as $requirement) {
-                        $official_business_requirement = $this->storeOfficialBusinessApplicationRequirement($official_business_application_id);
-                        $official_business_requirement_id = $official_business_requirement->id;
-
-                        if($official_business_requirement){
-                            $filename = config('enums.storage.ob') . '/' 
-                                        . $official_business_requirement_id ;
-
-                            $uploaded_image = $this->file_service->uploadRequirement($official_business_requirement_id->id, $requirement, $filename, "REQ");
-
-                            if ($uploaded_image) {                     
-                                $official_business_requirement_id = ObApplicationRequirement::where('id','=',$official_business_requirement->id)->first();  
-                                if($official_business_requirement  ){
-                                    $official_business_requirement_name = $requirement->getobOriginalName();
-                                    $official_business_requirement =  ObApplicationRequirement::findOrFail($official_business_requirement->id);
-                                    $official_business_requirement->name = $official_business_requirement_name;
-                                    $official_business_requirement->filename = $uploaded_image;
-                                    $official_business_requirement->update();
-                                }                                      
-                            }                           
-                        }
-                    }
-                        
-                }     
+            if ($request->hasFile('personal_order')) {
+                $imagePath = $request->file('personal_order')->store('images', 'public');
+                $official_business_application->personal_order = $imagePath;
             }
+            if ($request->hasFile('certificate_of_appearance')) {
+                $imagePath = $request->file('certificate_of_appearance')->store('images', 'public');
+                $official_business_application->certificate_of_appearance = $imagePath;
+            }
+        
+            $official_business_application->save();
+           
             $process_name="Applied";
-            $official_business_logs = $this->storeOfficialBusinessApplicationLog($official_business_application_id,$process_name);
+            $official_business_logs = $this->storeOfficialBusinessApplicationLog($official_business_application->id,$process_name);
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
          

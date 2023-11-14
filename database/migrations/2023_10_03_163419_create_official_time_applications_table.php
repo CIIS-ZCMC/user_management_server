@@ -20,6 +20,8 @@ return new class extends Migration
             $table->string('reason')->nullable();
             $table->string('status');
             $table->string('date')->nullable();
+            $table->string('personal_order')->nullable();
+            $table->string('certificate_of_apperance')->nullable();
             $table->string('reference_number')->nullable();
             $table->unsignedBigInteger('employee_profile_id')->unsigned();
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles')->onDelete('cascade');
