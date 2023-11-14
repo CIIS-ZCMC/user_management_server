@@ -40,7 +40,7 @@ class ObApplicationController extends Controller
     }
 
     public function getObApplications(Request $request)
-    {
+    { 
         $status = $request->status;  
         $ob_applications = [];
 
@@ -138,7 +138,9 @@ class ObApplicationController extends Controller
     public function updateObApplication(Request $request)
     {
         try{
+            
             $ob_application_id= $request->ot_application_id;
+            
             $official_business_application = ObApplication::findOrFail($ob_application_id); 
             $official_business_application->date_from = $request->date_from;
             $official_business_application->date_to = $request->date_to;
