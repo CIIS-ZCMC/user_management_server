@@ -11,7 +11,7 @@ class LeaveApplicationLog extends Model
     protected $table = 'leave_application_logs';
 
     public $fillable = [
-        'action_by',
+        'action_by_id',
         'leave_application_id',
         'process_name',
         'status',

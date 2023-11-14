@@ -10,7 +10,7 @@ class RequirementLog extends Model
     use HasFactory;
     protected $table = 'requirement_logs';
     protected $fillable = [
-        'action_by',
+        'action_by_id',
         'action'
     ];
     public function requirement() {

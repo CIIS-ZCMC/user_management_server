@@ -11,7 +11,7 @@ class OtApplicationLog extends Model
     protected $table = 'ot_application_logs';
 
     public $fillable = [
-        'action_by',
+        'action_by_id',
         'official_time_application_id',
         'process_name',
         'status',

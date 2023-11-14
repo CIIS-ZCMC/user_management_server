@@ -11,7 +11,7 @@ class ObApplicationLog extends Model
     protected $table = 'ob_application_logs';
 
     public $fillable = [
-        'action_by',
+        'action_by_id',
         'ob_application_id',
         'process_name',
         'status',

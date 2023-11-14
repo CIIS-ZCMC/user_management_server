@@ -11,7 +11,7 @@ class MoneApplicationLog extends Model
     protected $table = 'mone_application_logs';
     public $fillable = [
         'monetization_application_id',
-        'action_by',
+        'action_by_id',
         'action',
         'status',
         'date',
