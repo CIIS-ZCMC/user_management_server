@@ -34,7 +34,7 @@ class AssignAreaController extends Controller
 
             $assigned_areas = AssignedArea::all();
 
-            $this->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json(['data' => AssignAreaResource::collection($assigned_areas), 'message' => 'Record of employee assigned area retrieved.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -61,7 +61,7 @@ class AssignAreaController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' => new AssignAreaResource($assigned_area), 'message' => 'Employee assigned area found.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -85,7 +85,7 @@ class AssignAreaController extends Controller
 
             $assigned_area = AssignedArea::create($cleanData);
 
-            $this->registerSystemLogs($request, $assigned_area['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $assigned_area['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' =>  new AssignAreaResource($assigned_area),'message' => 'New employee assign area registered.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -104,7 +104,7 @@ class AssignAreaController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' => new AssignAreaResource($assigned_area), 'message' => 'Assigned area record found.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -135,7 +135,7 @@ class AssignAreaController extends Controller
 
             $assigned_area->update($cleanData);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' =>  new AssignAreaResource($assigned_area),'message' => 'New employee assign area registered.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -156,30 +156,12 @@ class AssignAreaController extends Controller
 
             $assigned_area->delete();
             
-            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['data' => 'Assigned area record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-    }
-
-    protected function registerSystemLogs($request, $moduleID, $status, $remarks)
-    {
-        $ip = $request->ip();
-        $user = $request->user;
-        $assigned_area = $request->assigned_area;
-        list($action, $module) = explode(' ', $assigned_area);
-
-        SystemLogs::create([
-            'employee_profile_id' => $user->id,
-            'module_id' => $moduleID,
-            'action' => $action,
-            'module' => $module,
-            'status' => $status,
-            'remarks' => $remarks,
-            'ip_assigned_area' => $ip
-        ]);
     }
 }

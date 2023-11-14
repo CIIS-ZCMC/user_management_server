@@ -10,6 +10,8 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use App\Services\RequestLogger;
+use App\Services\FileValidationAndUpload;
 use App\Http\Requests\DepartmentRequest;
 use App\Http\Requests\DepartmentAssignHeadRequest;
 use App\Http\Requests\DepartmentAssignTrainingOfficerRequest;
@@ -17,7 +19,6 @@ use App\Http\Requests\DepartmentAssignOICRequest;
 use App\Http\Resources\DepartmentResource;
 use App\Models\Department;
 use App\Models\EmployeeProfile;
-use App\Models\SystemLogs;
 
 class DepartmentController extends Controller
 {
@@ -26,10 +27,12 @@ class DepartmentController extends Controller
     private $SINGULAR_MODULE_NAME = 'department';
 
     protected $requestLogger;
+    protected $file_validation_and_upload;
 
-    public function __construct(RequestLogger $requestLogger)
+    public function __construct(RequestLogger $requestLogger, FileValidationAndUpload $file_validation_and_upload)
     {
         $this->requestLogger = $requestLogger;
+        $this->file_validation_and_upload = $file_validation_and_upload;
     }
 
     public function index(Request $request)
@@ -41,7 +44,7 @@ class DepartmentController extends Controller
                 return Department::all();
             });
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json(['data' => DepartmentResource::collection($departments)], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -80,12 +83,12 @@ class DepartmentController extends Controller
 
             $cleanData = [];
             $cleanData['supervisor_employee_profile_id'] = $employee_profile->id;
-            $cleanData['supervisor_attachment_url'] = $request->input('attachment')===null?'NONE': $this->check_save_file($request->input('attachment'));
+            $cleanData['supervisor_attachment_url'] = $request->input('attachment')===null?'NONE': $this->file_validation_and_upload->check_save_file($request->input('attachment'),"department/file");
             $cleanData['supervisor_effective_at'] = Carbon::now();
 
             $department->update($cleanData);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in assigning head'.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in assigning head'.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json(['data' => new DepartmentResource($department), 'message' => 'New department head assigned.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -125,12 +128,12 @@ class DepartmentController extends Controller
 
             $cleanData = [];
             $cleanData['training_officer_employee_profile_id'] = $employee_profile->id;
-            $cleanData['training_officer_attachment_url'] = $request->input('attachment')===null?'NONE': $this->check_save_file($request->input('attachment'));
+            $cleanData['training_officer_attachment_url'] = $request->input('attachment')===null?'NONE':  $this->file_validation_and_upload->check_save_file($request->input('attachment'),"department/file");
             $cleanData['training_officer_effective_at'] = Carbon::now();
 
             $department->update($cleanData);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in assigning head'.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in assigning head'.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json(['data' => new DepartmentResource($department), 'message' => 'New traning officer assigned.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -172,13 +175,13 @@ class DepartmentController extends Controller
 
             $cleanData = [];
             $cleanData['oic_employee_profile_id'] = $employee_profile->id;
-            $cleanData['oic_attachment_url'] = $request->input('attachment')===null?'NONE': $this->check_save_file($request->input('attachment'));
+            $cleanData['oic_attachment_url'] = $request->input('attachment')===null?'NONE': $this->file_validation_and_upload->check_save_file($request->input('attachment'),"department/file");
             $cleanData['oic_effective_at'] = strip_tags($request->input('effective_at'));
             $cleanData['oic_end_at'] = strip_tags($request->input('end_at'));
 
             $department->update($cleanData);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in assigning officer in charge '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in assigning officer in charge '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json(['data' => new DepartmentResource($department), 'New officer incharge assigned.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -203,7 +206,7 @@ class DepartmentController extends Controller
 
             $department = Department::create($cleanData);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' =>  new DepartmentResource($department),'message' => 'Newly added department.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -222,7 +225,7 @@ class DepartmentController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' => new DepartmentResource($department), 'message' => 'Department record found.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -254,7 +257,7 @@ class DepartmentController extends Controller
 
             $department -> update($cleanData);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' =>  new DepartmentResource($department),'message' => 'Update department details.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -275,64 +278,12 @@ class DepartmentController extends Controller
 
             $department -> delete();
 
-            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['message' => 'Department record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-    }
-
-    protected function check_save_file($request)
-    {
-        $FILE_URL = 'department/file';
-        $fileName = '';
-
-        if ($request->file('attachment')->isValid()) {
-            $file = $request->file('attachment');
-            $filePath = $file->getRealPath();
-
-            $finfo = new \finfo(FILEINFO_MIME);
-            $mime = $finfo->file($filePath);
-            
-            $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
-
-            if (!in_array($mime, $allowedMimeTypes)) {
-                return response()->json(['message' => 'Invalid file type'], 400);
-            }
-
-            // Check for potential malicious content
-            $fileContent = file_get_contents($filePath);
-
-            if (preg_match('/<\s*script|eval|javascript|vbscript|onload|onerror/i', $fileContent)) {
-                return response()->json(['message' => 'File contains potential malicious content'], 400);
-            }
-
-            $file = $request->file('attachment');
-            $fileName = Hash::make(time()) . '.' . $file->getClientOriginalExtension();
-
-            $file->move(public_path($FILE_URL), $fileName);
-        }
-        
-        return $fileName;
-    }
-    
-    protected function registerSystemLogs($request, $moduleID, $status, $remarks)
-    {
-        $ip = $request->ip();
-        $user = $request->user;
-        $permission = $request->permission;
-        list($action, $module) = explode(' ', $permission);
-
-        SystemLogs::create([
-            'employee_profile_id' => $user->id,
-            'module_id' => $moduleID,
-            'action' => $action,
-            'module' => $module,
-            'status' => $status,
-            'remarks' => $remarks,
-            'ip_address' => $ip
-        ]);
     }
 }
