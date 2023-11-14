@@ -7,6 +7,7 @@ use App\Models\LeaveType;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\LeaveType as ResourcesLeaveType;
 use App\Models\EmployeeProfile;
+use App\Models\LeaveAttachment;
 use App\Models\LeaveCredit;
 use App\Models\LeaveTypeLog;
 use Illuminate\Http\Request;
@@ -64,16 +65,19 @@ class LeaveTypeController extends Controller
             $leave_type->status = 'active';
             $leave_type->is_special =$request->has('is_special');
             $leave_type->leave_credit_year = $request->leave_credit_year;
-            if ($request->hasFile('attachment')) {
-                $attachment = $request->file('attachment');//Pdf or docs
-                if ($attachment->isValid()) {
-                    $extension = $attachment->getClientOriginalExtension();
-                    $filename = $request->name . $extension;
-                    $image_path = 'images/leave/attachment' . $filename;
-                    Image::make($attachment)->save($image_path);
-                    
-                }
+            foreach ($request->file('attachments') as $file) {
+                // Generate a unique name for each file
+                $file_name = time() . '_' . $file->getClientOriginalName();
+    
+                // Move the file to the storage directory
+                $file->move(public_path('attachments'), $file_name);
+                $leave_attachment= new LeaveAttachment();
+                $leave_attachment->file_name= $file_name;
+                $leave_attachment->save();
+               
+                
             }
+
 
             $leave_type->attachment = $filename;
             $leave_type->save();

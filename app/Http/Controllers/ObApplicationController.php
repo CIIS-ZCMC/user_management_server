@@ -207,11 +207,11 @@ class ObApplicationController extends Controller
             $official_business_application->reason = "for-approval-supervisor";
             $official_business_application->date = date('Y-m-d');
             if ($request->hasFile('personal_order')) {
-                $imagePath = $request->file('personal_order')->store('images', 'public');
+                $imagePath = $request->file('personal_order')->store('official_business', 'public');
                 $official_business_application->personal_order = $imagePath;
             }
             if ($request->hasFile('certificate_of_appearance')) {
-                $imagePath = $request->file('certificate_of_appearance')->store('images', 'public');
+                $imagePath = $request->file('certificate_of_appearance')->store('official_business', 'public');
                 $official_business_application->certificate_of_appearance = $imagePath;
             }
         
