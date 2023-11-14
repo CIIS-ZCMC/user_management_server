@@ -5,7 +5,9 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class SystemRoleResource extends JsonResource
+use App\Http\Resources\ModulePermissionResource;
+
+class SystemModulePermissionResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -14,13 +16,13 @@ class SystemRoleResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $system_name = $this->system_id === null? 'NONE':$this->system->name;
+        $module_permissions = ModulePermissionResource::collection($this->modulePermissions);
 
         return [
             'name' => $this->name,
             'code' => $this->code,
-            'system_name' => $system_name,
-            'effective_at' => $this->effective_at
+            'description' => $this->description,
+            'module_permissions' => $module_permissions
         ];
     }
 }

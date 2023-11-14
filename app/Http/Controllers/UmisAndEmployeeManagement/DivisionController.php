@@ -39,7 +39,7 @@ class DivisionController extends Controller
                 return Division::all();
             });
 
-            $this->registerSystemLogs($request, null, true, 'Success in deleting '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in deleting '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json(['data' => DivisionResource::collection($divisions), 'message' => 'Division record retrieved.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -83,7 +83,7 @@ class DivisionController extends Controller
 
             $division->update($cleanData);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in assigning chief '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in assigning chief '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json(['data' => new DivisionResource($division), 'message' => 'New chief assigned in department.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -131,7 +131,7 @@ class DivisionController extends Controller
 
             $division->update($cleanData);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in assigning chief '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in assigning chief '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json(['data' => new DivisionResource($division),'message' => 'New officer incharge assign in department.' ], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -156,7 +156,7 @@ class DivisionController extends Controller
 
             $division = Division::create($cleanData);
 
-            $this->registerSystemLogs($request, $division['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $division['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' => new DivisionResource($division),'message' => 'Newly added division.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -175,7 +175,7 @@ class DivisionController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' => new DivisionResource($division), 'message' => 'Division details found.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -202,7 +202,7 @@ class DivisionController extends Controller
 
             $division -> update($cleanData);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' => new DivisionResource($division),'message' => 'Newly added division.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -223,7 +223,7 @@ class DivisionController extends Controller
 
             $division -> delete();
             
-            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -264,23 +264,5 @@ class DivisionController extends Controller
         }
         
         return $fileName;
-    }
-
-    protected function registerSystemLogs($request, $moduleID, $status, $remarks)
-    {
-        $ip = $request->ip();
-        $user = $request->user;
-        $permission = $request->permission;
-        list($action, $module) = explode(' ', $permission);
-
-        SystemLogs::create([
-            'employee_profile_id' => $user->id,
-            'module_id' => $moduleID,
-            'action' => $action,
-            'module' => $module,
-            'status' => $status,
-            'remarks' => $remarks,
-            'ip_address' => $ip
-        ]);
     }
 }

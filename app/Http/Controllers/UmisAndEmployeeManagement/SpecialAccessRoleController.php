@@ -34,7 +34,7 @@ class SpecialAccessRoleController extends Controller
 
             $special_access_roles = SpecialAccessRole::all();
 
-            $this->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
             return response() -> json([
                 'data' => SpecialAccessRoleResource::collection($special_access_roles),
@@ -71,7 +71,7 @@ class SpecialAccessRoleController extends Controller
 
             $special_access_role = SpecialAccessRole::create($cleanData);
             
-            $this->registerSystemLogs($request, $special_access_role['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $special_access_role['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response() -> json([
                 'data' => new SpecialAccessRoleResource($special_access_role),
@@ -93,7 +93,7 @@ class SpecialAccessRoleController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response() -> json([
                 'data' => new SpecialAccessRoleResource($special_access_role), 
@@ -117,30 +117,12 @@ class SpecialAccessRoleController extends Controller
 
             $special_access_role -> delete();
 
-            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response() -> json(['message' => 'Special access role record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-    }
-
-    protected function registerSystemLogs($request, $moduleID, $status, $remarks)
-    {
-        $ip = $request->ip();
-        $user = $request->user;
-        $permission = $request->permission;
-        list($action, $module) = explode(' ', $permission);
-
-        SystemLogs::create([
-            'employee_profile_id' => $user->id,
-            'module_id' => $moduleID,
-            'action' => $action,
-            'module' => $module,
-            'status' => $status,
-            'remarks' => $remarks,
-            'ip_address' => $ip
-        ]);
     }
 }

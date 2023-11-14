@@ -15,7 +15,6 @@ use App\Models\ModulePermission;
 use App\Models\Permission;
 use App\Models\System;
 use App\Models\SystemModule;
-use App\Models\SystemLogs;
 
 class SystemModuleController extends Controller
 {
@@ -35,7 +34,7 @@ class SystemModuleController extends Controller
         try{
             $system_modules = SystemModule::where('system_id', $id)->get();
 
-            $this->registerSystemLogs($request, $id, true, 'Success in system module fetching '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in system module fetching '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => SystemModuleResource::collection($system_modules),
@@ -66,7 +65,7 @@ class SystemModuleController extends Controller
 
             $system_module = SystemModule::create($cleanData);
 
-            $this->registerSystemLogs($request, $system_module['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $system_module['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => new SystemModuleResource($system_module),
@@ -132,6 +131,7 @@ class SystemModuleController extends Controller
                             'permission_id' => $permission['id'],
                             'code' => $code
                         ]);
+                        continue;
                     }
 
                     $fail_registration = [
@@ -154,20 +154,20 @@ class SystemModuleController extends Controller
 
             if(count($failed) === count($permissions))
             {
-                $this->registerSystemLogs($request, $id, false, 'Failed in creating module permission '.$this->SINGULAR_MODULE_NAME.'.');
+                $this->requestLogger->registerSystemLogs($request, $id, false, 'Failed in creating module permission '.$this->SINGULAR_MODULE_NAME.'.');
 
                 return response()->json(['message' => "Failed to register all permissions for this module id ".$id." ."], Response::HTTP_OK);
             }
 
             if(count($failed) > 0)
             {
-                $this->registerSystemLogs($request, $id, true, 'Success in creating module permission but some failed '.$this->SINGULAR_MODULE_NAME.'.');
+                $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in creating module permission but some failed '.$this->SINGULAR_MODULE_NAME.'.');
 
                 return response()->json(['data' => ModulePermissionResource::collection($new_module_permission) , 'failed'  => $failed, 'message' => "Some permission did not register."], Response::HTTP_OK);
             }
 
 
-            $this->registerSystemLogs($request, $id, true, 'Success in creating module permission '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in creating module permission '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => ModulePermissionResource::collection($new_module_permission),
@@ -189,7 +189,7 @@ class SystemModuleController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => new SystemModuleResource($system_module),
@@ -219,7 +219,7 @@ class SystemModuleController extends Controller
 
             $system_module->update($cleanData);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => new SystemModuleResource($system_module),
@@ -244,36 +244,18 @@ class SystemModuleController extends Controller
             $module_permissions = $system_module->modulePermissions;
 
             if(count($module_permissions)>0){    
-                $this->registerSystemLogs($request, $id, true, 'Failed in deleting cause this data in use with by other record '.$this->SINGULAR_MODULE_NAME.'.');
+                $this->requestLogger->registerSystemLogs($request, $id, true, 'Failed in deleting cause this data in use with by other record '.$this->SINGULAR_MODULE_NAME.'.');
                 return response()->json(['message' => "There are data using this system module, can't, delete this record."], Response::HTTP_OK); 
             }
 
             $system_module->delete();
             
-            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['message' => 'System module record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-    }
-
-    protected function registerSystemLogs($request, $moduleID, $status, $remarks)
-    {
-        $ip = $request->ip();
-        $user = $request->user;
-        $permission = $request->permission;
-        list($module, $action) = explode(' ', $permission);
-
-        SystemLogs::create([
-            'employee_profile_id' => $user->id,
-            'module_id' => $moduleID,
-            'action' => $action,
-            'module' => $module,
-            'status' => $status,
-            'remarks' => $remarks,
-            'ip_address' => $ip
-        ]);
     }
 }

@@ -39,7 +39,7 @@ class EducationalBackgroundController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->registerSystemLogs($request, $educational_backgrounds['id'], true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $educational_backgrounds['id'], true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json(['data' => EducationalBackgroundResource::collection($educational_backgrounds), 'message' => 'Employee educational record found.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -61,7 +61,7 @@ class EducationalBackgroundController extends Controller
             $personal_information = $employee_profile->personalInformation;
             $educational_backgrounds = $personal_information->educational_backgrounds;
 
-            $this->registerSystemLogs($request, $educational_backgrounds['id'], true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $educational_backgrounds['id'], true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json(['data' => EducationalBackgroundResource::collection($educational_backgrounds), 'message' => 'Employee educational record found.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -85,7 +85,7 @@ class EducationalBackgroundController extends Controller
 
             $educational_background = EducationalBackground::create($cleanData);
 
-            $this->registerSystemLogs($request, $educational_background['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $educational_background['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' => new EducationalBackground($educational_background) ,'message' => 'New employee education background registered.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -104,7 +104,7 @@ class EducationalBackgroundController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' => new EducationalBackground($educational_background), 'message' => 'Educational record found.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -135,7 +135,7 @@ class EducationalBackgroundController extends Controller
 
             $educational_background->update($cleanData);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' => new EducationalBackgroundResource($educational_background), 'message' => 'Employee educational_background data is updated.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -156,7 +156,7 @@ class EducationalBackgroundController extends Controller
 
             $educational_background->delete();
             
-            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['message' => 'Employee educational_background record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -179,7 +179,7 @@ class EducationalBackgroundController extends Controller
                 $educational_background->delete();
             }
             
-            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['message' => 'Employee educational_backgrounds record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -205,30 +205,12 @@ class EducationalBackgroundController extends Controller
                 $educational_background->delete();
             }
             
-            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['message' => 'Employee educational_backgrounds record deleted'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-    }
-
-    protected function registerSystemLogs($request, $moduleID, $status, $remarks)
-    {
-        $ip = $request->ip();
-        $user = $request->user;
-        $permission = $request->permission;
-        list($action, $module) = explode(' ', $permission);
-
-        SystemLogs::create([
-            'employee_profile_id' => $user->id,
-            'module_id' => $moduleID,
-            'action' => $action,
-            'module' => $module,
-            'status' => $status,
-            'remarks' => $remarks,
-            'ip_educational_background' => $ip
-        ]);
     }
 }
