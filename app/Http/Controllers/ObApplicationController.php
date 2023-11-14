@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\ObApplication as ResourcesObApplication;
 use App\Http\Resources\ObApplicationLog as ResourcesObApplicationLog;
 use App\Models\EmployeeProfile;
+use App\Models\LeaveType;
 use App\Models\ObApplicationLog;
 use App\Models\ObApplicationRequirement;
 use Illuminate\Http\Request;
@@ -193,7 +194,11 @@ class ObApplicationController extends Controller
     public function store(Request $request)
     {
         try{
+            
+            $user_id = Auth::user()->id;
+            $user = EmployeeProfile::where('id','=',$user_id)->first();
             $official_business_application = new ObApplication();
+            $official_business_application->employee_profile_id = $user->id;
             $official_business_application->date_from = $request->date_from;
             $official_business_application->date_to = $request->date_to;
             $official_business_application->business_from = $request->business_from;

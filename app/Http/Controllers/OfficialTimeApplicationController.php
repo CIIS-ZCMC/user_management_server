@@ -77,8 +77,10 @@ class OfficialTimeApplicationController extends Controller
     public function store(Request $request)
     {
         try{
-
+            $user_id = Auth::user()->id;
+            $user = EmployeeProfile::where('id','=',$user_id)->first();
             $official_time_application = new OfficialTimeApplication();
+            $official_time_application->employee_profile_id = $user->id;
             $official_time_application->date_from = $request->date_from;
             $official_time_application->date_to = $request->date_to;
             $official_time_application->time_from = $request->time_from;
