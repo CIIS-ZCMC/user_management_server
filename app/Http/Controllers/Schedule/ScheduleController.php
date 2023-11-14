@@ -238,9 +238,55 @@ class ScheduleController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(ScheduleRequest $request, $id)
+    public function update(Request $request, $id)
     {
-        //
+        try {
+            $data = Schedule::findOrFail($id);
+
+            if(!$data) {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $cleanData = [];
+
+            foreach ($request->all() as $key => $value) {
+                if (empty($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                if (DateTime::createFromFormat('Y-m-d', $value)) {
+                    $cleanData[$key] = Carbon::parse($value);
+                    continue;
+                }
+
+                if (is_int($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                $cleanData[$key] = strip_tags($value);
+            }
+
+            $data->time_shift_id    = $cleanData['time_shift_id'];
+            $data->holiday_id       = $cleanData['holiday_id'];
+            
+            $data->month            = $cleanData['month'];
+            $data->date_start       = $cleanData['date_start'];
+            $data->date_end         = $cleanData['date_end'];
+            $data->is_weekend       = $cleanData['is_weekend'];
+            $data->status           = $cleanData['status'];
+            $data->remarks          = $cleanData['remarks'];
+            $data->update();
+            
+            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            return response()->json(['data' => $data], Response::HTTP_OK);
+
+        } catch (\Throwable $th) {
+
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**
