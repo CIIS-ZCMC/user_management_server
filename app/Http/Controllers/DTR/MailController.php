@@ -11,24 +11,24 @@ use App\Http\Controllers\DTR\TwoFactorAuthController;
 class MailController extends Controller
 {
     private $mail;
-    private $twoauth;
+    private $two_auth;
     public function __construct()
     {
         $this->mail = new MailConfig();
-        $this->twoauth = new TwoFactorAuthController();
+        $this->two_auth = new TwoFactorAuthController();
     }
     public function sendOTP(Request $request)
     {
         $data = $request->data;
         $employee = EmployeeProfile::where('employee_id', $data['employeeID']);
-        $body = view('mail.otp', ['otpcode' => $this->twoauth->Get_OTP($employee)]);
+        $body = view('mail.otp', ['otpcode' => $this->two_auth->getOTP($employee)]);
         $data = [
             'Subject' => 'ONE TIME PIN',
             'To_receiver' => $data['To_receiver'],
             'Receiver_Name' => $data['Receiver_Name'],
             'Body' => $body
         ];
-        if ($this->mail->Send($data)) {
+        if ($this->mail->send($data)) {
             return response()->json(['message' => 'Send Successfully!']);
         }
         return response()->json(['message' => 'Messaged Sending Failed!']);

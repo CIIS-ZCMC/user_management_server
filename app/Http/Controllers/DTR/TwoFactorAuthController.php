@@ -9,7 +9,7 @@ use App\Models\Contact;
 
 class TwoFactorAuthController extends Controller
 {
-    public function Get_OTP($employee)
+    public function getOTP($employee)
     {
         /**
          * Creates the One time Pin
@@ -17,45 +17,45 @@ class TwoFactorAuthController extends Controller
          * Validation Included ( checking for expiry ).
          * if expired then we'll renew the code and its expiration
          */
-        $otpcode = '';
-        $gencode = rand(100000, 999999);
-        $otpexpiry = date('Y-m-d H:i:s', strtotime('+5 minutes')); /* Expires after 5 minutes. */
-        $datenow = date('Y-m-d H:i:s');
+        $otp_code = '';
+        $gen_code = rand(100000, 999999);
+        $otp_expiry = date('Y-m-d H:i:s', strtotime('+5 minutes')); /* Expires after 5 minutes. */
+        $date_now = date('Y-m-d H:i:s');
         $emp = $employee->get();
         if ($emp[0]->otp == null) {
             $employee->update([
-                'otp' => $gencode,
-                'otp_expiration' => $otpexpiry
+                'otp' => $gen_code,
+                'otp_expiration' => $otp_expiry
             ]);
-            $otpcode = $gencode;
+            $otp_code = $gen_code;
         } else {
-            if ($datenow > $emp[0]->otp_expiration) {
+            if ($date_now > $emp[0]->otp_expiration) {
                 $employee->update([
-                    'otp' => $gencode,
-                    'otp_expiration' => $otpexpiry
+                    'otp' => $gen_code,
+                    'otp_expiration' => $otp_expiry
                 ]);
-                $otpcode = $gencode;
+                $otp_code = $gen_code;
             } else {
-                $otpcode = $emp[0]->otp;
+                $otp_code = $emp[0]->otp;
             }
         }
-        return $otpcode;
+        return $otp_code;
     }
-    private function isOTP_active($employee)
+    private function isOTPActive($employee)
     {
         $emp = $employee->get();
-        $datenow = date('Y-m-d H:i:s');
-        $otpexiry = date('Y-m-d H:i:s', strtotime($emp[0]->otp_expiration));
+        $date_now = date('Y-m-d H:i:s');
+        $otp_exiry = date('Y-m-d H:i:s', strtotime($emp[0]->otp_expiration));
 
 
-        if ($datenow > $otpexiry) {
+        if ($date_now > $otp_exiry) {
             //If expired OTP then allow Sending Email
             return false;
         }
         return true;
     }
 
-    private function ValidateEmployee($employeeID, $email)
+    private function validateEmployee($employee_ID, $email)
     {
         /**
          * Validating employee
@@ -63,10 +63,10 @@ class TwoFactorAuthController extends Controller
          * once validated then
          * we check into its contact if email address matches the given to its employee profile
          */
-        $employee = EmployeeProfile::where('employee_id', $employeeID);
+        $employee = EmployeeProfile::where('employee_id', $employee_ID);
         if (count($employee->get()) >= 1) {
-            $checkEmail = Contact::where('personal_information_id', $employee->first()->GetPersonalInfo()['id'])->where('email_address', $email)->get();
-            if (count($checkEmail) >= 1) {
+            $check_Email = Contact::where('personal_information_id', $employee->first()->GetPersonalInfo()['id'])->where('email_address', $email)->get();
+            if (count($check_Email) >= 1) {
                 return $employee;
             }
         }
@@ -74,7 +74,7 @@ class TwoFactorAuthController extends Controller
     }
 
 
-    public function EVerification(Request $request)
+    public function eVerification(Request $request)
     {
         /**
          * This function Covers OTP two factor auth for Login and Password Recovery
@@ -85,28 +85,28 @@ class TwoFactorAuthController extends Controller
          */
 
         try {
-            $employeeID = $request->employeeID;
+            $employee_ID = $request->employeeID;
             $email = $request->email;
 
-            if ($this->ValidateEmployee($employeeID, $email)) {
-                $employee = $this->ValidateEmployee($employeeID, $email);
-                $employeeData = [
+            if ($this->ValidateEmployee($employee_ID, $email)) {
+                $employee = $this->ValidateEmployee($employee_ID, $email);
+                $employee_Data = [
                     'To_receiver' => $email,
                     'Receiver_Name' => $employee->first()->name(),
-                    'employeeID' => $employeeID
+                    'employeeID' => $employee_ID
                 ];
                 if ($this->isOTP_active($employee)) {
                     return response()->json(['message' => 'Ok']);
                 }
                 $this->Get_OTP($employee);
-                return redirect()->route('mail.sendOTP', ['data' => $employeeData])->cookie('access', json_encode(['email' => $email, 'employeeID' => $employeeID]), 60, '/', env('SESSION_DOMAIN'), true);
+                return redirect()->route('mail.sendOTP', ['data' => $employee_Data])->cookie('access', json_encode(['email' => $email, 'employeeID' => $employee_ID]), 60, '/', env('SESSION_DOMAIN'), true);
             }
             return response()->json(['message' => 'Records not found'], 401);
         } catch (\Throwable $th) {
             //throw $th;
         }
     }
-    public function Verify_OTP(Request $request)
+    public function verifyOTP(Request $request)
     {
         /**
          * Validating OTP code sent by the user. 
@@ -115,16 +115,16 @@ class TwoFactorAuthController extends Controller
          */
         try {
             $otpCode = $request->otpCode;
-            $employeeData = json_decode($request->cookie('access'));
-            if (!isset($employeeData)) {
+            $employee_Data = json_decode($request->cookie('access'));
+            if (!isset($employee_Data)) {
                 return response()->json(['message' => 'Invalid Request'], 401);
             }
-            $email = $employeeData->email;
-            $employeeID = $employeeData->employeeID;
-            if ($this->ValidateEmployee($employeeID, $email)) {
-                $employee = $this->ValidateEmployee($employeeID, $email);
-                if ($this->isOTP_active($employee)) {
-                    $activecode  =   $this->Get_OTP($employee);
+            $email = $employee_Data->email;
+            $employee_ID = $employee_Data->employeeID;
+            if ($this->validateEmployee($employee_ID, $email)) {
+                $employee = $this->validateEmployee($employee_ID, $email);
+                if ($this->isOTPActive($employee)) {
+                    $activecode  =   $this->getOTP($employee);
                 } else {
                     return response()->json(['message' => 'Code Expired'], 401);
                 }

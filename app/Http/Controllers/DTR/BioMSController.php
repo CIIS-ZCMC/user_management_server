@@ -4,16 +4,16 @@ namespace App\Http\Controllers\DTR;
 
 use Illuminate\Http\Request;
 use App\Models\devices;
-use App\Methods\Bio_contr;
+use App\Methods\BioControl;
 use App\Http\Controllers\Controller;
 
 class BioMSController extends Controller
 {
-    protected $Device;
+    protected $device;
 
     public function __construct()
     {
-        $this->Device = new Bio_contr();
+        $this->device = new BioControl();
     }
     public function index()
     {
@@ -24,7 +24,7 @@ class BioMSController extends Controller
             $status = "Offline";
             foreach ($bios as $row) {
 
-                if (!$this->Device->BIO($row)) {
+                if (!$this->device->BIO($row)) {
                     $status = "Offline";
                 } else {
                     $status = "Online";
@@ -53,7 +53,7 @@ class BioMSController extends Controller
         }
     }
 
-    public function operating_device()
+    public function operatingDevice()
     {
 
         try {
@@ -67,7 +67,7 @@ class BioMSController extends Controller
         }
     }
 
-    public function registration_device()
+    public function registrationDevice()
     {
 
         try {
@@ -82,7 +82,7 @@ class BioMSController extends Controller
     }
 
 
-    public function add_device(Request $request)
+    public function addDevice(Request $request)
     {
 
         try {
@@ -113,8 +113,8 @@ class BioMSController extends Controller
                 
                 */
                 if ($is_registration) {
-                    $checkifregistrationexist = devices::where('is_registration', 1)->get();
-                    if (count($checkifregistrationexist) >= 1) {
+                    $check_if_registration_exist = devices::where('is_registration', 1)->get();
+                    if (count($check_if_registration_exist) >= 1) {
                         return response()->json(['message' => 'Registration Device Already Exist']);
                     }
                 }
@@ -134,13 +134,13 @@ class BioMSController extends Controller
         }
     }
 
-    public function test_device_connection(Request $request)
+    public function testDeviceConnection(Request $request)
     {
         try {
             $device_id = $request->device_id;
             $device = devices::find($device_id);
 
-            if ($this->Device->BIO($device)) {
+            if ($this->device->bIO($device)) {
                 return response()->json(['message' => 'Connection Successful']);
             }
             return response()->json(['message' => 'Connection Failed']);
@@ -149,7 +149,7 @@ class BioMSController extends Controller
         }
     }
 
-    public function Update_device(Request $request)
+    public function updateDevice(Request $request)
     {
         try {
             $device_id = $request->device_id;
@@ -205,7 +205,7 @@ class BioMSController extends Controller
     }
 
 
-    public function Delete_device(Request $request)
+    public function deleteDevice(Request $request)
     {
         try {
             $device_id = $request->device_id;

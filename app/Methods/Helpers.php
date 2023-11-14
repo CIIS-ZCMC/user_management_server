@@ -12,7 +12,7 @@ use App\Models\devices;
 
 class Helpers
 {
-    public function Validated_DeviceDT($deviceDT)
+    public function validatedDeviceDT($deviceDT)
     {
         return true;
         // $datetime = '';
@@ -27,10 +27,10 @@ class Helpers
     }
 
 
-    public function Within_Interval($lastentry, $bioentry)
+    public function withinInterval($last_entry, $bio_entry)
     {
-        $WithInterval = date('Y-m-d H:i:s', strtotime($lastentry) + floor(env('ALLOTED_DTR_INTERVAL') * 60));
-        if ($WithInterval <= $bioentry[0]['date_time']) {
+        $With_Interval = date('Y-m-d H:i:s', strtotime($last_entry) + floor(env('ALLOTED_DTR_INTERVAL') * 60));
+        if ($With_Interval <= $bio_entry[0]['date_time']) {
             return true;
         }
         return false;
@@ -40,30 +40,30 @@ class Helpers
     {
         $biometric = biometrics::where('biometric_id', $biometric_id)->get();
         if (count($biometric) >= 1) {
-            $isemployee = EmployeeProfile::where('biometric_id', $biometric_id)->get();
-            if (count($isemployee) >= 1) {
+            $is_employee = EmployeeProfile::where('biometric_id', $biometric_id)->get();
+            if (count($is_employee) >= 1) {
                 return true;
             }
         }
         return false;
     }
 
-    public function Get_Schedule($biometric_id, $datenow)
+    public function getSchedule($biometric_id, $date_now)
     {
         $f1 = env('FIRSTIN');
         $f2 = env('FIRSTOUT');
         $f3 = env('SECONDIN');
         $f4 = env('SECONDOUT');
-        if (!isset($datenow)) {
-            $datenow = date('Y-m-d');
+        if (!isset($date_now)) {
+            $date_now = date('Y-m-d');
         }
-        $getSched = DB::select("
+        $get_Sched = DB::select("
     SELECT s.*, 
        CASE 
            WHEN s.id IS NOT NULL THEN 
                (SELECT date_start
                 FROM schedules 
-                WHERE '$datenow' BETWEEN date_start AND date_end 
+                WHERE '$date_now' BETWEEN date_start AND date_end 
                 AND status = 1 
                 AND shift_id = s.id
                 LIMIT 1)
@@ -73,7 +73,7 @@ class Helpers
            WHEN s.id IS NOT NULL THEN 
                (SELECT date_end
                 FROM schedules 
-                WHERE '$datenow' BETWEEN date_start AND date_end 
+                WHERE '$date_now' BETWEEN date_start AND date_end 
                 AND status = 1 
                 AND shift_id = s.id
                 LIMIT 1)
@@ -83,7 +83,7 @@ FROM shifts s
 WHERE s.id IN (
     SELECT shift_id 
     FROM schedules 
-    WHERE '$datenow' BETWEEN date_start AND date_end 
+    WHERE '$date_now' BETWEEN date_start AND date_end 
     AND status = 1 
     AND id IN (
         SELECT schedule_id 
@@ -96,24 +96,24 @@ WHERE s.id IN (
     )
 );
     ");
-        if ($this->isNurse_Or_Doctor($biometric_id)) {
+        if ($this->isNurseOrDoctor($biometric_id)) {
             /* Check if Available Schedule */
-            return $this->GetEmployee_Sched($getSched, $f1, $f2, $f3, $f4, true);
+            return $this->getEmployeeSched($get_Sched, $f1, $f2, $f3, $f4, true);
         }
-        return $this->GetEmployee_Sched($getSched, $f1, $f2, $f3, $f4, false);
+        return $this->getEmployeeSched($get_Sched, $f1, $f2, $f3, $f4, false);
     }
 
-    public function GetEmployee_Sched($getSched, $f1, $f2, $f3, $f4, $isNurseorDoctor)
+    public function getEmployeeSched($get_Sched, $f1, $f2, $f3, $f4, $is_Nurse_or_Doctor)
     {
-        if (count($getSched) >= 1) {
+        if (count($get_Sched) >= 1) {
             return [
-                'first_entry' => $getSched[0]->first_in,
-                'second_entry' => $getSched[0]->first_out,
-                'third_entry' => $getSched[0]->second_in,
-                'last_entry' => $getSched[0]->second_out,
-                'total_hours' => $getSched[0]->total_hours,
-                'date_start' => $getSched[0]->date_start,
-                'date_end' => $getSched[0]->date_end,
+                'first_entry' => $get_Sched[0]->first_in,
+                'second_entry' => $get_Sched[0]->first_out,
+                'third_entry' => $get_Sched[0]->second_in,
+                'last_entry' => $get_Sched[0]->second_out,
+                'total_hours' => $get_Sched[0]->total_hours,
+                'date_start' => $get_Sched[0]->date_start,
+                'date_end' => $get_Sched[0]->date_end,
             ];
         }
         return [
@@ -128,52 +128,52 @@ WHERE s.id IN (
     }
 
 
-    private function extract_BreakSchedule($timeString, $opposite)
+    private function extractBreakSchedule($time_String, $opposite)
     {
-        $timeParts = explode(':', $timeString, 3);
-        $extractedTime = $timeParts[0] . ':' . $timeParts[1];
+        $time_Parts = explode(':', $time_String, 3);
+        $extracted_Time = $time_Parts[0] . ':' . $time_Parts[1];
         if ($opposite) {
-            $timeParts = explode(':', $timeString);
-            $hours = (int)$timeParts[0];
-            $minutes = (int)$timeParts[1];
+            $timeParts = explode(':', $time_String);
+            $hours = (int)$time_Parts[0];
+            $minutes = (int)$time_Parts[1];
             if ($hours === 12 && $minutes === 0) {
-                $timeString = '00:00:00';
+                $time_String = '00:00:00';
             } else
             if ($hours >= 12) {
                 if ($hours > 12) {
                     $hours -= 12;
                 }
-                $timeString = sprintf("%02d:%02d", $hours, $minutes);
+                $time_String = sprintf("%02d:%02d", $hours, $minutes);
             } else {
                 $hours += 12;
-                $timeString = sprintf("%02d:%02d", $hours, $minutes);
+                $time_String = sprintf("%02d:%02d", $hours, $minutes);
             }
-            $timeParts = explode(':', $timeString, 3);
-            $extractedTime = $timeParts[0] . ':' . $timeParts[1];
-            return $extractedTime;
+            $time_Parts = explode(':', $time_String, 3);
+            $extracted_Time = $time_Parts[0] . ':' . $time_Parts[1];
+            return $extracted_Time;
         }
-        return $extractedTime;
+        return $extracted_Time;
     }
 
 
 
-    public function Get_BreakSchedule($biometric_id, $schedule)
+    public function getBreakSchedule($biometric_id, $schedule)
     {
-        if ($this->isNurse_Or_Doctor($biometric_id)) {
+        if ($this->isNurseOrDoctor($biometric_id)) {
             return [];
         }
         if (isset($schedule['third_entry'])) {
             return  [
-                'break1' => $this->extract_BreakSchedule($schedule['second_entry'], false),
-                'break2' => $this->extract_BreakSchedule($schedule['second_entry'], true),
-                'otherout' => $this->extract_BreakSchedule($schedule['last_entry'], true),
-                'adminOut' => $this->extract_BreakSchedule($schedule['last_entry'], false),
+                'break1' => $this->extractBreakSchedule($schedule['second_entry'], false),
+                'break2' => $this->extractBreakSchedule($schedule['second_entry'], true),
+                'otherout' => $this->extractBreakSchedule($schedule['last_entry'], true),
+                'adminOut' => $this->extractBreakSchedule($schedule['last_entry'], false),
             ];
         }
         return [];
     }
 
-    public function isNurse_Or_Doctor($biometric_id)
+    public function isNurseOrDoctor($biometric_id)
     {
         /**
          * Get the employee status
@@ -189,14 +189,14 @@ WHERE s.id IN (
     }
 
 
-    public  function In_($biometric_id, $allotedhours, $sc, $sched)
+    public  function inEntry($biometric_id, $alloted_hours, $sc, $sched)
     {
-        $firstEntry = $sched['first_entry'];
-        $timestamp = strtotime($firstEntry);
-        $newTimestamp = $timestamp - ($allotedhours * 3600);
-        $Calculated_allotedHours = date('Y-m-d H:i:s', $newTimestamp);
-        $employeeIn = date('Y-m-d H:i:s', strtotime($sc['date_time']));
-        if ($Calculated_allotedHours <= $employeeIn) {
+        $first_Entry = $sched['first_entry'];
+        $time_stamp = strtotime($first_Entry);
+        $new_Time_stamp = $time_stamp - ($alloted_hours * 3600);
+        $Calculated_allotedHours = date('Y-m-d H:i:s', $new_Time_stamp);
+        $employee_In = date('Y-m-d H:i:s', strtotime($sc['date_time']));
+        if ($Calculated_allotedHours <= $employee_In) {
             daily_time_records::create([
                 'biometric_id' => $biometric_id,
                 // 'first_in' => strtotime($sc['date_time']),
@@ -206,14 +206,14 @@ WHERE s.id IN (
         }
     }
 
-    public function SaveFirstEntry($sequence, $breakTimeReq, $biometric_id, $checkRecords)
+    public function saveFirstEntry($sequence, $break_Time_Req, $biometric_id, $checkRecords)
     {
-        $allotedhours = env('ALLOTED_VALID_TIME_FOR_FIRSTENTRY');
-        $sched = $this->Get_Schedule($biometric_id, null);
+        $alloted_hours = env('ALLOTED_VALID_TIME_FOR_FIRSTENTRY');
+        $sched = $this->getSchedule($biometric_id, null);
         foreach ($sequence as $sc) {
             $in = date('H:i', strtotime($sc['date_time']));  // From Bio
-            if (count($breakTimeReq) >= 1) {
-                if ($in >= $breakTimeReq['break1'] && $in < $breakTimeReq['adminOut'] || $in >= $breakTimeReq['break2'] && $in <  $breakTimeReq['otherout']) {
+            if (count($break_Time_Req) >= 1) {
+                if ($in >= $break_Time_Req['break1'] && $in < $break_Time_Req['adminOut'] || $in >= $break_Time_Req['break2'] && $in <  $break_Time_Req['otherout']) {
                     /* SECOND IN ENTRY */
                     $save =  daily_time_records::create([
                         'biometric_id' => $biometric_id,
@@ -223,33 +223,33 @@ WHERE s.id IN (
                     ]);
                 } else {
                     /* FIRST IN ENTRY */
-                    $this->In_($biometric_id, $allotedhours, $sc, $sched);
+                    $this->inEntry($biometric_id, $alloted_hours, $sc, $sched);
                 }
             } else {
-                $this->In_($biometric_id, $allotedhours, $sc, $sched);
+                $this->inEntry($biometric_id, $alloted_hours, $sc, $sched);
             }
         }
     }
 
-    public function Get_total_time_Registered($f1, $f2, $f3, $f4)
+    public function getTotalTimeRegistered($f1, $f2, $f3, $f4)
     {
-        $totalrendered = 0;
-        $time = $this->ForceToStrtimeFormat($f2) - $this->ForceToStrtimeFormat($f1);
+        $total_rendered = 0;
+        $time = $this->forceToStrTimeFormat($f2) - $this->forceToStrTimeFormat($f1);
         $hours = floor($time / 3600);
         $minutes = floor(($time % 3600) / 60);
-        $totalrendered = floor(($hours * 60) + $minutes);
+        $total_rendered = floor(($hours * 60) + $minutes);
         if ($f3 && $f4) {
-            $time1 = $this->ForceToStrtimeFormat($f4) - $this->ForceToStrtimeFormat($f3);
+            $time1 = $this->forceToStrTimeFormat($f4) - $this->forceToStrTimeFormat($f3);
             $hours1 = floor($time1 / 3600);
             $minutes1 = floor(($time1 % 3600) / 60);
             $oah = $hours + $hours1;
             $oam = $minutes + $minutes1;
             $totalrendered = floor(($oah * 60) + $oam);
         }
-        return $totalrendered;
+        return $total_rendered;
     }
 
-    public function setting_date_Schedule($entry, $sched)
+    public function settingDateSchedule($entry, $sched)
     {
         $date = date('Y-m-d', strtotime($entry));
         $pattern = '/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/';
@@ -262,13 +262,13 @@ WHERE s.id IN (
         return null;
     }
 
-    public function validate_Schedule($timestampsreq)
+    public function validateSchedule($time_stamps_req)
     {
         if (
-            isset($timestampsreq['first_entry']) ||
-            isset($timestampsreq['second_entry']) ||
-            isset($timestampsreq['third_entry']) ||
-            isset($timestampsreq['last_entry'])
+            isset($time_stamps_req['first_entry']) ||
+            isset($time_stamps_req['second_entry']) ||
+            isset($time_stamps_req['third_entry']) ||
+            isset($time_stamps_req['last_entry'])
         ) {
             return true;
         }
@@ -276,19 +276,19 @@ WHERE s.id IN (
     }
 
 
-    public function SaveTotalWorkingHours($validate, $value, $sequence, $timestampsreq, $checkforgenerate)
+    public function saveTotalWorkingHours($validate, $value, $sequence, $time_stamps_req, $check_for_generate)
     {
         foreach ($sequence as $sc) {
             /* Entries */
-            $f1entry = $validate[0]->first_in;
-            $f2entry = $validate[0]->first_out;
-            $f3entry = null;
-            $f4entry = null;
+            $f1_entry = $validate[0]->first_in;
+            $f2_entry = $validate[0]->first_out;
+            $f3_entry = null;
+            $f4_entry = null;
 
-            $f3entryTimestamp = 0;
-            $f4entryTimestamp = 0;
-            $s3Timestamp = 0;
-            $s4Timestamp = 0;
+            $f3_entry_Time_stamp = 0;
+            $f4_entry_Time_stamp = 0;
+            $s3_Time_stamp = 0;
+            $s4_Time_stamp = 0;
 
             $underTime_inWords = null;
             $underTime_Minutes = 0;
@@ -301,30 +301,30 @@ WHERE s.id IN (
                 $f3entry = $validate[0]->second_in;
                 $f4entry = $validate[0]->second_out;
             }
-            if (!$checkforgenerate) {
+            if (!$check_for_generate) {
                 if (!isset($f2entry) && !isset($f3entry)) {
                     $f2entry = $sc['date_time'];
                 } else {
                     $f4entry = $sc['date_time'];
                 }
             }
-            $requiredWH = $timestampsreq['total_hours'];
-            $requiredWH_Minutes = $requiredWH * 60;
+            $required_WH = $time_stamps_req['total_hours'];
+            $required_WH_Minutes = $required_WH * 60;
 
-            if ($this->validate_Schedule($timestampsreq)) {
+            if ($this->validateSchedule($time_stamps_req)) {
                 /* Schedule */
-                $s1 = $this->setting_date_Schedule($f1entry, $timestampsreq['first_entry']);
-                $s2 = $this->setting_date_Schedule($f2entry, $timestampsreq['second_entry']);
-                $s3 = $this->setting_date_Schedule($f3entry, $timestampsreq['third_entry']);
-                $s4 = $this->setting_date_Schedule($f4entry, $timestampsreq['last_entry']);
+                $s1 = $this->settingDateSchedule($f1_entry, $time_stamps_req['first_entry']);
+                $s2 = $this->settingDateSchedule($f2_entry, $time_stamps_req['second_entry']);
+                $s3 = $this->settingDateSchedule($f3_entry, $time_stamps_req['third_entry']);
+                $s4 = $this->settingDateSchedule($f4_entry, $time_stamps_req['last_entry']);
                 /* End Schedule */
-                $undertime3rdentry = 0;
-                $undertimeMinutes4thentry = 0;
-                $f1entryTimestamp = strtotime($f1entry);
-                $s1Timestamp = strtotime($s1);
-                $f2entryTimestamp = strtotime($f2entry);
-                $s2Timestamp = strtotime($s2);
-                if ($f3entry && $f4entry) {
+                $undertime_3rd_entry = 0;
+                $undertime_Minutes_4th_entry = 0;
+                $f1_entry_Time_stamp = strtotime($f1_entry);
+                $s1_Time_stamp = strtotime($s1);
+                $f2_entry_Time_stamp = strtotime($f2_entry);
+                $s2_Time_stamp = strtotime($s2);
+                if ($f3_entry && $f4_entry) {
                     if (isset($s3) && isset($s4)) {
                         $f3entryTimestamp = strtotime($f3entry);
                         $s3Timestamp = strtotime($s3);
@@ -332,48 +332,48 @@ WHERE s.id IN (
                         $s4Timestamp = strtotime($s4);
                     }
                 }
-                $undertime1stentry = max(0, $f1entryTimestamp - $s1Timestamp);
-                $undertime2ndentry = max(0, $s2Timestamp - $f2entryTimestamp);
-                $overtime2ndentry = max(0, $f2entryTimestamp - $s2Timestamp);
-                if ($f3entry && $f4entry) {
-                    $undert3rdentry = max(0, $f3entryTimestamp - $s3Timestamp);
-                    $undertime4thentry = max(0, $s4Timestamp - $f4entryTimestamp);
-                    $overtime4thentry = max(0, $f4entryTimestamp - $s4Timestamp);
+                $undertime_1st_entry = max(0, $f1_entry_Time_stamp - $s1_Time_stamp);
+                $undertime_2nd_entry = max(0, $s2_Time_stamp - $f2_entry_Time_stamp);
+                $overtime_2nd_entry = max(0, $f2_entry_Time_stamp - $s2_Time_stamp);
+                if ($f3_entry && $f4_entry) {
+                    $undert_3rd_entry = max(0, $f3_entry_Time_stamp - $s3_Time_stamp);
+                    $undertime_4th_entry = max(0, $s4Timestamp - $f4_entry_Time_stamp);
+                    $overtime_4th_entry = max(0, $f4_entry_Time_stamp - $s4_Time_stamp);
                 }
-                $undertimeMinutes1stentry = $undertime1stentry / 60;
-                $undertimeMinutes2ndentry = $undertime2ndentry / 60;
-                $overtime2ndentry = $overtime2ndentry / 60;
-                if ($f3entry && $f4entry) {
-                    $undertime3rdentry = $undert3rdentry / 60;
-                    $undertimeMinutes4thentry = $undertime4thentry / 60;
-                    $overtime4thentry = $overtime4thentry / 60;
+                $undertime_Minutes_1st_entry = $undertime_1st_entry / 60;
+                $undertime_Minutes_2nd_entry = $undertime_2nd_entry / 60;
+                $overtime_2nd_entry = $overtime_2nd_entry / 60;
+                if ($f3_entry && $f4_entry) {
+                    $undertime_3rd_entry = $undert_3rd_entry / 60;
+                    $undertime_Minutes_4th_entry = $undertime_4th_entry / 60;
+                    $overtime_4th_entry = $overtime_4th_entry / 60;
                 }
-                $undertime = floor($undertimeMinutes1stentry + $undertimeMinutes2ndentry + $undertime3rdentry + $undertimeMinutes4thentry);
-                if ($f3entry && $f4entry) {
-                    $overtime = $overtime4thentry;
+                $undertime = floor($undertime_Minutes_1st_entry + $undertime_Minutes_2nd_entry + $undertime_3rd_entry + $undertime_Minutes_4th_entry);
+                if ($f3_entry && $f4_entry) {
+                    $overtime = $overtime_4th_entry;
                 } else {
-                    $overtime = $overtime2ndentry;
+                    $overtime = $overtime_2nd_entry;
                 }
                 $ot = round($overtime);
                 $ut = round($undertime);
-                $Schedule_Minutes  = $this->Get_total_time_Registered(
+                $Schedule_Minutes  = $this->getTotalTimeRegistered(
                     $s1,
                     $s2,
                     $s3,
                     $s4
                 );
                 /* Overtime */
-                $overTime_inWords = $this->ToWords_Minutes($ot)['Inwords'];
-                $overTime_Minutes =  $this->ToWords_Minutes($ot)['InMinutes'];
+                $overTime_inWords = $this->toWordsMinutes($ot)['Inwords'];
+                $overTime_Minutes =  $this->toWordsMinutes($ot)['InMinutes'];
                 /* Undertime  */
-                $underTime_inWords = $this->ToWords_Minutes($ut)['Inwords'];
-                $underTime_Minutes =  $this->ToWords_Minutes($ut)['InMinutes'];
+                $underTime_inWords = $this->toWordsMinutes($ut)['Inwords'];
+                $underTime_Minutes =  $this->toWordsMinutes($ut)['InMinutes'];
             }
-            $Registered_minutes = $this->Get_total_time_Registered(
-                $f1entry,
-                $f2entry,
-                $f3entry,
-                $f4entry
+            $Registered_minutes = $this->getTotalTimeRegistered(
+                $f1_entry,
+                $f2_entry,
+                $f3_entry,
+                $f4_entry
             );
             /* Required Working Hours */
             //$requiredWH         | required_working_hours
@@ -383,12 +383,12 @@ WHERE s.id IN (
 
             if ($Schedule_Minutes <= $tWH) {
                 $tWH = floor($Schedule_Minutes - $underTime_Minutes);
-                $totalWH_words = $this->ToWords_Minutes($tWH)['Inwords'];
-                $totalWH_minutes = $this->ToWords_Minutes($tWH)['InMinutes'];
+                $total_WH_words = $this->toWordsMinutes($tWH)['Inwords'];
+                $total_WH_minutes = $this->toWordsMinutes($tWH)['InMinutes'];
             } else {
                 $tWH = floor($Schedule_Minutes - $underTime_Minutes);
-                $totalWH_words = $this->ToWords_Minutes($tWH)['Inwords'];
-                $totalWH_minutes = $this->ToWords_Minutes($tWH)['InMinutes'];
+                $total_WH_words = $this->toWordsMinutes($tWH)['Inwords'];
+                $total_WH_minutes = $this->toWordsMinutes($tWH)['InMinutes'];
             }
             /* Registered Minutes */
             //$Registered_minutes | total_minutes_reg
@@ -417,17 +417,17 @@ WHERE s.id IN (
 
             // echo "Schedule :" . $s1 . " | " . $s2 . " | " . $s3 . " | " . $s4 . "\n";
         }
-        $overallminutesRendered = floor(($totalWH_minutes + $overTime_Minutes) - $underTime_Minutes);
+        $over_all_minutes_Rendered = floor(($total_WH_minutes + $overTime_Minutes) - $underTime_Minutes);
 
         //  echo "Overall Minutes Rendered :" . $overallminutesRendered . "\n";
-        if (isset($f3entry) && isset($f4entry)) {
-            if ($checkforgenerate) {
+        if (isset($f3_entry) && isset($f4_entry)) {
+            if ($check_for_generate) {
                 daily_time_records::find($validate[0]->id)->update([
-                    'total_working_hours' => $totalWH_words,
-                    'required_working_hours' => $requiredWH,
-                    'required_working_minutes' => $requiredWH_Minutes,
-                    'total_working_minutes' => $totalWH_minutes,
-                    'overall_minutes_rendered' => $overallminutesRendered,
+                    'total_working_hours' => $total_WH_words,
+                    'required_working_hours' => $required_WH,
+                    'required_working_minutes' => $required_WH_Minutes,
+                    'total_working_minutes' => $total_WH_minutes,
+                    'overall_minutes_rendered' => $over_all_minutes_Rendered,
                     'total_minutes_reg' => $Registered_minutes,
                     'undertime' => $underTime_inWords,
                     'undertime_minutes' => $underTime_Minutes,
@@ -438,11 +438,11 @@ WHERE s.id IN (
                 daily_time_records::find($validate[0]->id)->update([
                     //   'first_out' => strtotime($sc['date_time']),
                     'second_out' => $sc['date_time'],
-                    'total_working_hours' => $totalWH_words,
-                    'required_working_hours' => $requiredWH,
-                    'required_working_minutes' => $requiredWH_Minutes,
-                    'total_working_minutes' => $totalWH_minutes,
-                    'overall_minutes_rendered' => $overallminutesRendered,
+                    'total_working_hours' => $total_WH_words,
+                    'required_working_hours' => $required_WH,
+                    'required_working_minutes' => $required_WH_Minutes,
+                    'total_working_minutes' => $total_WH_minutes,
+                    'overall_minutes_rendered' => $over_all_minutes_Rendered,
                     'total_minutes_reg' => $Registered_minutes,
                     'undertime' => $underTime_inWords,
                     'undertime_minutes' => $underTime_Minutes,
@@ -451,13 +451,13 @@ WHERE s.id IN (
                 ]);
             }
         } else {
-            if ($checkforgenerate) {
+            if ($check_for_generate) {
                 daily_time_records::find($validate[0]->id)->update([
-                    'total_working_hours' => $totalWH_words,
-                    'required_working_hours' => $requiredWH,
-                    'required_working_minutes' => $requiredWH_Minutes,
-                    'total_working_minutes' => $totalWH_minutes,
-                    'overall_minutes_rendered' => $overallminutesRendered,
+                    'total_working_hours' => $total_WH_words,
+                    'required_working_hours' => $required_WH,
+                    'required_working_minutes' => $required_WH_Minutes,
+                    'total_working_minutes' => $total_WH_minutes,
+                    'overall_minutes_rendered' => $over_all_minutes_Rendered,
                     'total_minutes_reg' => $Registered_minutes,
                     'undertime' => $underTime_inWords,
                     'undertime_minutes' => $underTime_Minutes,
@@ -469,11 +469,11 @@ WHERE s.id IN (
                 daily_time_records::find($validate[0]->id)->update([
                     //   'first_out' => strtotime($sc['date_time']),
                     'first_out' => $sc['date_time'],
-                    'total_working_hours' => $totalWH_words,
-                    'required_working_hours' => $requiredWH,
-                    'required_working_minutes' => $requiredWH_Minutes,
-                    'total_working_minutes' => $totalWH_minutes,
-                    'overall_minutes_rendered' => $overallminutesRendered,
+                    'total_working_hours' => $total_WH_words,
+                    'required_working_hours' => $required_WH,
+                    'required_working_minutes' => $required_WH_Minutes,
+                    'total_working_minutes' => $total_WH_minutes,
+                    'overall_minutes_rendered' => $over_all_minutes_Rendered,
                     'total_minutes_reg' => $Registered_minutes,
                     'undertime' => $underTime_inWords,
                     'undertime_minutes' => $underTime_Minutes,
@@ -485,31 +485,31 @@ WHERE s.id IN (
     }
 
 
-    public function SaveIntervalValidation($sequence, $validate)
+    public function saveIntervalValidation($sequence, $validate)
     {
         foreach ($sequence as $sc) {
-            $timeout = new DateTime(date('Y-m-d H:i:s', strtotime($validate[0]->first_out)));
-            $timein = new DateTime($sc['date_time']);
-            $interval =  $timeout->diff($timein);
+            $time_out = new DateTime(date('Y-m-d H:i:s', strtotime($validate[0]->first_out)));
+            $time_in = new DateTime($sc['date_time']);
+            $interval =  $time_out->diff($time_in);
             $minutes = $interval->i; // Minutes
             $seconds = $interval->s; // Seconds
-            $timeinterval = '';
+            $time_interval = '';
             $IntervalStatus = '';
             if ($minutes < env('ALLOTED_DTR_INTERVAL')) {
                 /* Calculate the time interval */
-                $IntervalStatus = 'Invalid';
+                $Interval_Status = 'Invalid';
             } else {
-                $IntervalStatus = 'OK';
+                $Interval_Status = 'OK';
             }
-            $timeinterval = [
+            $time_interval = [
                 'minutes' => $minutes,
                 'seconds' => $seconds,
-                'Status' => $IntervalStatus
+                'Status' => $Interval_Status
             ];
             daily_time_records::find($validate[0]->id)->update([
                 // 'second_in' => strtotime($sc['date_time']),
                 'second_in' => $sc['date_time'],
-                'interval_req' => json_encode($timeinterval),
+                'interval_req' => json_encode($time_interval),
             ]);
         }
     }
@@ -517,29 +517,29 @@ WHERE s.id IN (
     public function sequence($sched, $attdData)
     {
         $sequences = array();
-        $tempSequence = array();
-        $prevTiming = null;
+        $temp_Sequence = array();
+        $prev_Timing = null;
         foreach ($attdData as $value) {
             $timing = $value['timing'];
-            if ($prevTiming !== null && $timing !== ($prevTiming + 1)) {
-                if (!empty($tempSequence)) {
-                    $sequences[] = $tempSequence;
+            if ($prev_Timing !== null && $timing !== ($prev_Timing + 1)) {
+                if (!empty($temp_Sequence)) {
+                    $sequences[] = $temp_Sequence;
                 }
-                $tempSequence = array();
+                $temp_Sequence = array();
             }
-            $tempSequence[] = $value;
+            $temp_Sequence[] = $value;
             $prevTiming = $timing;
         }
-        if (!empty($tempSequence)) {
-            $sequences[] = $tempSequence;
+        if (!empty($temp_Sequence)) {
+            $sequences[] = $temp_Sequence;
         }
         return $sequences[$sched];
     }
 
-    public function Status_description($attendanceLog)
+    public function statusDescription($attendance_Log)
     {
         $status_description = '';
-        switch ($attendanceLog['status']) {
+        switch ($attendance_Log['status']) {
             case 0:
                 $status_description = 'CHECK-IN';
                 break;
@@ -559,10 +559,10 @@ WHERE s.id IN (
                 $status_description = 'OVERTIME-OUT';
                 break;
             case 255:
-                $biometric_id = $attendanceLog['biometric_id'];
-                $datenow = date('Y-m-d');
+                $biometric_id = $attendance_Log['biometric_id'];
+                $date_now = date('Y-m-d');
                 $Records = daily_time_records::where('biometric_id', $biometric_id)
-                    ->whereDate('created_at', $datenow)->get();
+                    ->whereDate('created_at', $date_now)->get();
                 if (count($Records) >= 1) {
                     foreach ($Records as $row) {
                         if ($row->first_in) {
@@ -583,7 +583,7 @@ WHERE s.id IN (
         return $status_description;
     }
 
-    public function Check_if_FingerPrint_Exist($tad, $userPin)
+    public function checkIfFingerPrintExist($tad, $userPin)
     {
         $usertemp = $tad->get_user_template(['pin' => $userPin]);
         $utemp = simplexml_load_string($usertemp);
@@ -601,42 +601,42 @@ WHERE s.id IN (
         }
     }
 
-    public function SaveDTRLogs($checkRecords, $validate, $device)
+    public function saveDTRLogs($check_Records, $validate, $device)
     {
-        $newtiming = 0;
-        $uniqueEmployeeIDs = [];
-        $datenow = date('Y-m-d');
-        foreach ($checkRecords as $record) {
-            $employeeID = $record['biometric_id'];
-            if (!in_array($employeeID, $uniqueEmployeeIDs)) {
-                $uniqueEmployeeIDs[] = $employeeID;
+        $new_timing = 0;
+        $unique_Employee_IDs = [];
+        $date_now = date('Y-m-d');
+        foreach ($check_Records as $record) {
+            $employee_ID = $record['biometric_id'];
+            if (!in_array($employee_ID, $unique_Employee_IDs)) {
+                $unique_Employee_IDs[] = $employee_ID;
             }
         }
-        foreach ($uniqueEmployeeIDs as $id) {
-            $employeeRecords = array_filter($checkRecords, function ($att) use ($id) {
+        foreach ($unique_Employee_IDs as $id) {
+            $employee_Records = array_filter($check_Records, function ($att) use ($id) {
                 return $att['biometric_id'] == $id;
             });
-            foreach ($employeeRecords as $kk => $new) {
-                $newRec[] = [
-                    'timing' => $newtiming,
+            foreach ($employee_Records as $kk => $new) {
+                $new_Rec[] = [
+                    'timing' => $new_timing,
                     'biometric_id' => $new['biometric_id'],
                     'name' => $new['name'],
                     'date_time' => $new['date_time'],
                     'status' => $new['status'],
                     'status_description' => $new['status_description'],
                 ];
-                $newtiming++;
+                $new_timing++;
             }
             // /* Checking if DTR logs for the day is generated */
-            $checkDTRLogs = daily_time_record_logs::whereDate('created_at', $datenow)->where('biometric_id', $id)->where('validated', 1);
-            if (count($checkDTRLogs->get()) >= 1) {
+            $check_DTR_Logs = daily_time_record_logs::whereDate('created_at', $date_now)->where('biometric_id', $id)->where('validated', 1);
+            if (count($check_DTR_Logs->get()) >= 1) {
                 // /* Counting logs data */
-                $logData = count($checkDTRLogs->get()) >= 1 ? $checkDTRLogs->get()[0]->json_logs : '';
-                $logdataArray = json_decode($logData, true);
+                $log_Data = count($check_DTR_Logs->get()) >= 1 ? $check_DTR_Logs->get()[0]->json_logs : '';
+                $log_data_Array = json_decode($log_Data, true);
                 // /* Saving individually to user-attendance jsonLogs */
-                $logdataArray = array_merge($logdataArray, $newRec);
+                $log_data_Array = array_merge($log_data_Array, $new_Rec);
                 $ndata = [];
-                foreach ($logdataArray as $n) {
+                foreach ($log_data_Array as $n) {
                     if ($n['biometric_id'] == $id) {
                         $ndata[] = $n;
                     }
@@ -656,12 +656,12 @@ WHERE s.id IN (
                     ];
                     $newt++;
                 }
-                $checkDTRLogs->update([
+                $check_DTR_Logs->update([
                     'json_logs' => json_encode($nr)
                 ]);
             } else {
                 $ndata = [];
-                foreach ($newRec as $n) {
+                foreach ($new_Rec as $n) {
                     if ($n['biometric_id'] == $id) {
                         $ndata[] = $n;
                     }
@@ -681,17 +681,17 @@ WHERE s.id IN (
                     ];
                     $newt++;
                 }
-                $checkDTR = daily_time_records::whereDate('created_at', $datenow)->where('biometric_id', $id);
-                if (count($checkDTR->get()) >= 1) {
+                $chec_kDTR = daily_time_records::whereDate('created_at', $date_now)->where('biometric_id', $id);
+                if (count($chec_kDTR->get()) >= 1) {
                     daily_time_record_logs::create([
                         'biometric_id' => $id,
-                        'dtr_id' => $checkDTR->get()[0]->id,
+                        'dtr_id' => $chec_kDTR->get()[0]->id,
                         'json_logs' => json_encode($nr),
                         'validated' => $validate
                     ]);
                 } else {
-                    $checkDTRLogsInvalid = daily_time_record_logs::whereDate('created_at', $datenow)->where('biometric_id', $id)->where('validated', 0)->get();
-                    if (count($checkDTRLogsInvalid) == 0) {
+                    $check_DTR_Logs_Invalid = daily_time_record_logs::whereDate('created_at', $date_now)->where('biometric_id', $id)->where('validated', 0)->get();
+                    if (count($check_DTR_Logs_Invalid) == 0) {
                         daily_time_record_logs::create([
                             'biometric_id' => $id,
                             'dtr_id' => 0,
@@ -701,12 +701,12 @@ WHERE s.id IN (
                     } else {
                         if ($validate == 0) {
 
-                            $logInv = count($checkDTRLogsInvalid) >= 1 ? $checkDTRLogsInvalid[0]->json_logs : '';
-                            $logdataArrayinv = json_decode($logInv, true);
+                            $log_Inv = count($check_DTR_Logs_Invalid) >= 1 ? $check_DTR_Logs_Invalid[0]->json_logs : '';
+                            $log_data_Array_inv = json_decode($log_Inv, true);
                             // /* Saving individually to user-attendance jsonLogs */
-                            $logdataArrayinv = array_merge($logdataArrayinv, $nr);
-                            daily_time_record_logs::where('id', $checkDTRLogsInvalid[0]->id)->update([
-                                'json_logs' => json_encode($logdataArrayinv),
+                            $log_data_Array_inv = array_merge($log_data_Array_inv, $nr);
+                            daily_time_record_logs::where('id', $check_DTR_Logs_Invalid[0]->id)->update([
+                                'json_logs' => json_encode($log_data_Array_inv),
                             ]);
                         }
                     }
@@ -716,9 +716,9 @@ WHERE s.id IN (
     }
 
 
-    public function Get_Attendance($attendance)
+    public function getAttendance($attendance)
     {
-        $attendanceLogs = [];
+        $attendance_Logs = [];
         foreach ($attendance->Row as $row) {
             $result = [
                 'biometric_id' => (string) $row->PIN,
@@ -727,100 +727,100 @@ WHERE s.id IN (
                 'status' => (string) $row->Status,
                 'workcode' => (string) $row->WorkCode,
             ];
-            $attendanceLogs[] = $result;
+            $attendance_Logs[] = $result;
         }
-        return $attendanceLogs;
+        return $attendance_Logs;
     }
 
-    public function Get_Employee($userInf)
+    public function getEmployee($user_Inf)
     {
-        $EmployeeInfo = [];
-        foreach ($userInf->Row as $row) {
+        $Employee_Info = [];
+        foreach ($user_Inf->Row as $row) {
             $result = [
                 'biometric_id' => (string) $row->PIN2,
                 'name' => (string) $row->Name,
             ];
-            $EmployeeInfo[] = $result;
+            $Employee_Info[] = $result;
         }
-        return $EmployeeInfo;
+        return $Employee_Info;
     }
 
-    public function Get_Employee_attendance($attendanceLogs, $EmployeeInfo)
+    public function getEmployeeAttendance($attendance_Logs, $Employee_Info)
     {
-        $EmployeeAttendance = [];
-        foreach ($attendanceLogs as $key =>  $attendanceLog) {
-            $employeeID = $attendanceLog['biometric_id'];
-            $employeeName = '';
+        $Employee_Attendance = [];
+        foreach ($attendance_Logs as $key =>  $attendance_Log) {
+            $employee_ID = $attendance_Log['biometric_id'];
+            $employee_Name = '';
             $count = 0;
-            foreach ($EmployeeInfo as  $k => $info) {
-                if ($info['biometric_id'] === $employeeID) {
-                    $employeeName = $info['name'];
+            foreach ($Employee_Info as  $k => $info) {
+                if ($info['biometric_id'] === $employee_ID) {
+                    $employee_Name = $info['name'];
                     $count++;
                     break;
                 }
             }
-            if (!empty($employeeName)) {
-                $EmployeeAttendance[] = [
+            if (!empty($employee_Name)) {
+                $Employee_Attendance[] = [
                     'timing' => $key,
-                    'biometric_id' => $employeeID,
-                    'name' => $employeeName,
-                    'date_time' => $attendanceLog['date_time'],
-                    'status' => $attendanceLog['status'],
-                    'status_description' => $this->Status_description($attendanceLog),
+                    'biometric_id' => $employee_ID,
+                    'name' => $employee_Name,
+                    'date_time' => $attendance_Log['date_time'],
+                    'status' => $attendance_Log['status'],
+                    'status_description' => $this->statusDescription($attendance_Log),
                 ];
             }
         }
-        return $EmployeeAttendance;
+        return $Employee_Attendance;
     }
 
 
-    public function ForceToStrtimeFormat($dateOrTimestamp)
+    public function forceToStrTimeFormat($date_Or_Timestamp)
     {
-        if (is_numeric($dateOrTimestamp) && (int)$dateOrTimestamp == $dateOrTimestamp) {
-            return $dateOrTimestamp;
-        } elseif (strtotime($dateOrTimestamp) !== false || DateTime::createFromFormat('Y-m-d', $dateOrTimestamp) instanceof DateTime) {
-            return strtotime($dateOrTimestamp);
+        if (is_numeric($date_Or_Timestamp) && (int)$date_Or_Timestamp == $date_Or_Timestamp) {
+            return $date_Or_Timestamp;
+        } elseif (strtotime($date_Or_Timestamp) !== false || DateTime::createFromFormat('Y-m-d', $date_Or_Timestamp) instanceof DateTime) {
+            return strtotime($date_Or_Timestamp);
         } else {
             return null;
         }
     }
 
-    public function ToWords_Minutes($minutes)
+    public function toWordsMinutes($minutes)
     {
-        $inWords = '';
+        $in_Words = '';
         $entry = $minutes;
         if ($minutes >= 60) {
             $hours = floor($minutes / 60);
             $minutes = $minutes % 60;
 
             if ($hours > 0) {
-                $inWords = $hours . ' hour';
+                $in_Words = $hours . ' hour';
                 if ($hours > 1) {
-                    $inWords .= 's';
+                    $in_Words .= 's';
                 }
                 if ($minutes > 0) {
-                    $inWords .= ' and ' . $minutes . ' minute';
+                    $in_Words .= ' and ' . $minutes . ' minute';
                     if ($minutes > 1) {
-                        $inWords .= 's';
+                        $in_Words .= 's';
                     }
                 }
             } else {
-                $inWords = $minutes . ' minute';
+                $in_Words = $minutes . ' minute';
                 if ($minutes > 1) {
-                    $inWords .= 's';
+                    $in_Words .= 's';
                 }
             }
-            $undertime = $inWords;
+            $undertime = $in_Words;
             $uh = $hours;
             $um = $minutes;
         } else {
-            $inWords = $minutes . ' minute';
+            $in_Words = $minutes . ' minute';
             if ($minutes > 1) {
-                $inWords .= 's';
+                $in_Words .= 's';
             }
         }
         return [
-            'Inwords' => $inWords,
+            'Inwords' => $in_Words,
             'InMinutes' => $entry
         ];
     }
