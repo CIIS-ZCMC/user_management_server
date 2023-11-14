@@ -14,7 +14,7 @@ class Permission extends Model
     public $fillable = [
         'name',
         'action',
-        'deactivated'
+        'active'
     ];
     
     public function modulePermission(){

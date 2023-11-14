@@ -19,7 +19,7 @@ class SystemRoleSeeder extends Seeder
      */
     public function run(): void
     {
-        $system = System::WHERE("code",  env('SYSTEM_ABBREVATION'))->first();
+        $system = System::WHERE("code",  env('SYSTEM_ABBREVIATION'))->first();
 
         Log::channel('custom-error')->error($system);
 

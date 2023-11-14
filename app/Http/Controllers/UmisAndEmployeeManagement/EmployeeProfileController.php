@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use App\Services\RequestLogger;
+use App\Services\FileValidationAndUpload;
 use App\Http\Requests\SignInRequest;
 use App\Http\Requests\EmployeeProfileRequest;
 use App\Http\Resources\EmployeeProfileResource;
@@ -33,10 +34,12 @@ class EmployeeProfileController extends Controller
     private $SINGULAR_MODULE_NAME = 'employee profile';
 
     protected $requestLogger;
+    protected $file_validation_and_upload;
 
-    public function __construct(RequestLogger $requestLogger)
+    public function __construct(RequestLogger $requestLogger, FileValidationAndUpload $file_validation_and_upload)
     {
         $this->requestLogger = $requestLogger;
+        $this->file_validation_and_upload = $file_validation_and_upload;
     }
 
     /**
@@ -243,9 +246,7 @@ class EmployeeProfileController extends Controller
         }else{
             $side_bar_details = $sidebar_cache;
         }
-        
-        // return $side_bar_details;
-
+    
         /**
          * For Empoyee with Special Access Roles
          * Validate if employee has Special Access Roles
@@ -475,7 +476,7 @@ class EmployeeProfileController extends Controller
                 return EmployeeProfile::all();
             });
 
-            $this->registerSystemLogs($request, null, true, 'Success in fetching a '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching a '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json(['data' => EmployeeProfileResource::collection($employee_profiles), 'message' => 'list of employees retrieved.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -496,7 +497,7 @@ class EmployeeProfileController extends Controller
                 }
                 if($key === 'profile_url')
                 {
-                    $cleanData[$key] = $this->check_save_file($request);
+                    $cleanData[$key] = $this->file_validation_and_upload->check_save_file($request, "employee/profiles");
                     continue;
                 }
 
@@ -513,7 +514,7 @@ class EmployeeProfileController extends Controller
 
             $employee_profile = EmployeeProfile::create($cleanData);
             
-            $this->registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' => new EmployeeProfileResource($employee_profile), 'message' => 'Newly employee registered.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -583,7 +584,7 @@ class EmployeeProfileController extends Controller
              * Additional content advice employee to register biometrics in IHOMP
              */
 
-            $this->registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a '.$this->SINGULAR_MODULE_NAME.' account.');
+            $this->requestLogger->registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a '.$this->SINGULAR_MODULE_NAME.' account.');
 
             return response()->json(['message' => 'Employee account created.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -602,7 +603,7 @@ class EmployeeProfileController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching a '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching a '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' => new EmployeeProfileResource($employee_profile), 'message' => 'Employee details found.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -622,7 +623,7 @@ class EmployeeProfileController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching a '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching a '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' => new EmployeeProfileResource($employee_profile), 'message' => 'Employee details found.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -669,7 +670,7 @@ class EmployeeProfileController extends Controller
 
             $employee_profile->update($cleanData);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in updating a '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating a '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' => new EmployeeProfileResource($employee_profile) ,'message' => 'Employee details updated.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -696,12 +697,12 @@ class EmployeeProfileController extends Controller
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
-
-            $file_value = $this->check_save_file($request->file('profile_image'));
+            
+            $file_value = $this->file_validation_and_upload->check_save_file($request->file('profile_image'), "employee/profiles");
 
             $employee_profile->update(['profile_url' => $file_value]);
 
-            $this->registerSystemLogs($request, $employee_profile->id, true, 'Success in changing profile picture of an employee profile.');
+            $this->requestLogger->registerSystemLogs($request, $employee_profile->id, true, 'Success in changing profile picture of an employee profile.');
 
             return response()->json(['data' => new EmployeeProfileResource($employee_profile),'message' => 'Employee profile picture updated.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -732,63 +733,12 @@ class EmployeeProfileController extends Controller
 
             $employee_profile->delete();
 
-            $this->registerSystemLogs($request, $employee_profile->id, true, 'Success in deleting a '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $employee_profile->id, true, 'Success in deleting a '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['message' => 'Employee profile deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-    }
-
-    protected function check_save_file($request)
-    {
-        $FILE_URL = 'employee/profiles';
-        $fileName = '';
-
-        if ($request->file('profile_image')->isValid()) {
-            $file = $request->file('profile_image');
-            $filePath = $file->getRealPath();
-
-            $finfo = new \finfo(FILEINFO_MIME);
-            $mime = $finfo->file($filePath);
-            
-            $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
-
-            if (!in_array($mime, $allowedMimeTypes)) {
-                return response()->json(['message' => 'Invalid file type'], 400);
-            }
-
-            // Check for potential malicious content
-            $fileContent = file_get_contents($filePath);
-
-            if (preg_match('/<\s*script|eval|javascript|vbscript|onload|onerror/i', $fileContent)) {
-                return response()->json(['message' => 'File contains potential malicious content'], 400);
-            }
-
-            $file = $request->file('profile_image');
-            $fileName = Hash::make(time()) . '.' . $file->getClientOriginalExtension();
-
-            $file->move(public_path($FILE_URL), $fileName);
-        }
-        
-        return $fileName;
-    }
-    
-    protected function registerSystemLogs($request, $moduleID, $status, $remarks)
-    {
-        $ip = $request->ip();
-        $user = $request->user;
-        $permission = $request->permission;
-        list($action, $module) = explode(' ', $permission);
-
-        SystemLogs::create([
-            'employee_profile_id' => $user->id,
-            'module_id' => $moduleID,
-            'action' => $action,
-            'status' => $status,
-            'remarks' => $remarks,
-            'ip_address' => $ip
-        ]);
     }
 }
