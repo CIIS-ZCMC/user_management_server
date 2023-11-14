@@ -70,6 +70,7 @@ Route::controller(App\Http\Controllers\DTR\MailController::class)->group(
 Route::controller(App\Http\Controllers\DTR\TwoFactorAuthController::class)->group(
     function () {
         Route::get('/verify', 'EVerification')->name('verify');
+        Route::get('/verifyOtp', 'Verify_OTP')->name('Verify_OTP');
     }
 );
 
