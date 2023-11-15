@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\DTR;
 
 use Illuminate\Http\Request;
-use  App\Models\biometrics;
+use  App\Models\Biometrics;
 use App\Methods\BioControl;
 use App\Http\Controllers\DTR\BioMSController;
-use App\Models\devices;
+use App\Models\Devices;
 use App\Http\Controllers\Controller;
 
 class BioController extends Controller
@@ -36,7 +36,7 @@ class BioController extends Controller
         $privilege = $request->privilege;
         /* The IP of this option must be the registration device. */
 
-        $bio = biometrics::where('biometric_id', $biometric_id);
+        $bio = Biometrics::where('biometric_id', $biometric_id);
 
         if (count($bio->get()) == 0) {
             $save = $bio->create([
@@ -109,7 +109,7 @@ class BioController extends Controller
     {
         try {
             foreach ($this->device_ids as $dv) {
-                $bios = devices::where('id', $dv)->get();
+                $bios = Devices::where('id', $dv)->get();
                 $this->device->fetchAllDataToDevice($bios[0]);
             }
             return response()->json(['message' => 'User Data has been fetched to device successfully']);
@@ -124,7 +124,7 @@ class BioController extends Controller
             $biometric_id = $request->biometric_id;
             $unset = $request->unset;
             foreach ($this->device_ids as $dv) {
-                $bios = devices::where('id', $dv)->get();
+                $bios = Devices::where('id', $dv)->get();
                 $this->device->setSuperAdmin($bios[0], $biometric_id, $unset);
             }
             return response()->json(['message' => 'Settings saved successfully!']);
@@ -138,7 +138,7 @@ class BioController extends Controller
         try {
             $biometric_id = $request->biometric_id;
             foreach ($this->device_ids as $dv) {
-                $bios = devices::where('id', $dv)->get();
+                $bios = Devices::where('id', $dv)->get();
                 $this->device->deleteDataFromDevice($bios[0], $biometric_id);
             }
             return response()->json(['message' => 'User data from this device has been deleted successfully']);
@@ -152,7 +152,7 @@ class BioController extends Controller
     {
         try {
             foreach ($this->device_ids as $dv) {
-                $bios = devices::where('id', $dv)->get();
+                $bios = Devices::where('id', $dv)->get();
                 $this->device->deleteAllDataFromDevice($bios[0]);
             }
             return response()->json(['message' => 'All data from device has been deleted successfully']);
@@ -167,7 +167,7 @@ class BioController extends Controller
         try {
 
             foreach ($this->device_ids as $dv) {
-                $bios = devices::where('id', $dv)->get();
+                $bios = Devices::where('id', $dv)->get();
                 $this->device->setDeviceDateAndTime($bios[0]);
             }
             return response()->json(['message' => 'Date and Time Synced Successfully!']);
@@ -181,7 +181,7 @@ class BioController extends Controller
         try {
             $type_of_action = $request->TypeofAction;
             foreach ($this->device_ids as $dv) {
-                $bios = devices::where('id', $dv)->get();
+                $bios = Devices::where('id', $dv)->get();
                 $this->device->deviceEnableORDisable($bios[0], $type_of_action);
             }
             return response()->json(['message' => 'Settings Set Successfully']);
@@ -195,7 +195,7 @@ class BioController extends Controller
         try {
             $type_of_action = $request->TypeofAction;
             foreach ($this->device_ids as $dv) {
-                $bios = devices::where('id', $dv)->get();
+                $bios = Devices::where('id', $dv)->get();
                 $this->device->deviceShutdownORrestart($bios[0], $type_of_action);
             }
 
@@ -210,7 +210,7 @@ class BioController extends Controller
         try {
             $time = $request->time;
             foreach ($this->device_ids as $dv) {
-                $bios = devices::where('id', $dv)->get();
+                $bios = Devices::where('id', $dv)->get();
                 $this->device->setCustomDeviceDateAndTime($bios[0], $time);
             }
             return response()->json(['message' => 'Date and Time Synced Successfully!']);

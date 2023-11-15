@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class dtr_anomalies extends Model
+class DtrAnomalies extends Model
 {
     use HasFactory;
 

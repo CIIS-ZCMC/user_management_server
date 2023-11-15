@@ -2,13 +2,13 @@
 
 namespace App\Methods;
 
-use App\Models\daily_time_records;
-use App\Models\daily_time_record_logs;
+use App\Models\DailyTimeRecords;
+use App\Models\DailyTimeRecordlogs;
 use DateTime;
 use Illuminate\Support\Facades\DB;
-use App\Models\biometrics;
+use App\Models\Biometrics;
 use App\Models\EmployeeProfile;
-use App\Models\devices;
+use App\Models\Devices;
 
 class Helpers
 {
@@ -38,7 +38,7 @@ class Helpers
 
     public function isEmployee($biometric_id)
     {
-        $biometric = biometrics::where('biometric_id', $biometric_id)->get();
+        $biometric = Biometrics::where('biometric_id', $biometric_id)->get();
         if (count($biometric) >= 1) {
             $is_employee = EmployeeProfile::where('biometric_id', $biometric_id)->get();
             if (count($is_employee) >= 1) {
@@ -197,7 +197,7 @@ WHERE s.id IN (
         $Calculated_allotedHours = date('Y-m-d H:i:s', $new_Time_stamp);
         $employee_In = date('Y-m-d H:i:s', strtotime($sc['date_time']));
         if ($Calculated_allotedHours <= $employee_In) {
-            daily_time_records::create([
+            DailyTimeRecords::create([
                 'biometric_id' => $biometric_id,
                 // 'first_in' => strtotime($sc['date_time']),
                 'first_in' => $sc['date_time'],
@@ -215,7 +215,7 @@ WHERE s.id IN (
             if (count($break_Time_Req) >= 1) {
                 if ($in >= $break_Time_Req['break1'] && $in < $break_Time_Req['adminOut'] || $in >= $break_Time_Req['break2'] && $in <  $break_Time_Req['otherout']) {
                     /* SECOND IN ENTRY */
-                    $save =  daily_time_records::create([
+                    $save =  DailyTimeRecords::create([
                         'biometric_id' => $biometric_id,
                         //  'second_in' => strtotime($sc['date_time']), //USE THIS
                         'second_in' => $sc['date_time'],
@@ -422,7 +422,7 @@ WHERE s.id IN (
         //  echo "Overall Minutes Rendered :" . $overallminutesRendered . "\n";
         if (isset($f3_entry) && isset($f4_entry)) {
             if ($check_for_generate) {
-                daily_time_records::find($validate[0]->id)->update([
+                DailyTimeRecords::find($validate[0]->id)->update([
                     'total_working_hours' => $total_WH_words,
                     'required_working_hours' => $required_WH,
                     'required_working_minutes' => $required_WH_Minutes,
@@ -435,7 +435,7 @@ WHERE s.id IN (
                     'overtime_minutes' => $overTime_Minutes
                 ]);
             } else {
-                daily_time_records::find($validate[0]->id)->update([
+                DailyTimeRecords::find($validate[0]->id)->update([
                     //   'first_out' => strtotime($sc['date_time']),
                     'second_out' => $sc['date_time'],
                     'total_working_hours' => $total_WH_words,
@@ -452,7 +452,7 @@ WHERE s.id IN (
             }
         } else {
             if ($check_for_generate) {
-                daily_time_records::find($validate[0]->id)->update([
+                DailyTimeRecords::find($validate[0]->id)->update([
                     'total_working_hours' => $total_WH_words,
                     'required_working_hours' => $required_WH,
                     'required_working_minutes' => $required_WH_Minutes,
@@ -466,7 +466,7 @@ WHERE s.id IN (
                 ]);
             } else {
 
-                daily_time_records::find($validate[0]->id)->update([
+                DailyTimeRecords::find($validate[0]->id)->update([
                     //   'first_out' => strtotime($sc['date_time']),
                     'first_out' => $sc['date_time'],
                     'total_working_hours' => $total_WH_words,
@@ -506,7 +506,7 @@ WHERE s.id IN (
                 'seconds' => $seconds,
                 'Status' => $Interval_Status
             ];
-            daily_time_records::find($validate[0]->id)->update([
+            DailyTimeRecords::find($validate[0]->id)->update([
                 // 'second_in' => strtotime($sc['date_time']),
                 'second_in' => $sc['date_time'],
                 'interval_req' => json_encode($time_interval),
@@ -561,7 +561,7 @@ WHERE s.id IN (
             case 255:
                 $biometric_id = $attendance_Log['biometric_id'];
                 $date_now = date('Y-m-d');
-                $Records = daily_time_records::where('biometric_id', $biometric_id)
+                $Records = DailyTimeRecords::where('biometric_id', $biometric_id)
                     ->whereDate('created_at', $date_now)->get();
                 if (count($Records) >= 1) {
                     foreach ($Records as $row) {
@@ -595,7 +595,7 @@ WHERE s.id IN (
 
     private function getDeviceName($deviceid)
     {
-        $data = devices::where('id', $deviceid)->get();
+        $data = Devices::where('id', $deviceid)->get();
         if (count($data) >= 1) {
             return $data[0]->device_name;
         }
@@ -628,7 +628,7 @@ WHERE s.id IN (
                 $new_timing++;
             }
             // /* Checking if DTR logs for the day is generated */
-            $check_DTR_Logs = daily_time_record_logs::whereDate('created_at', $date_now)->where('biometric_id', $id)->where('validated', 1);
+            $check_DTR_Logs = DailyTimeRecordlogs::whereDate('created_at', $date_now)->where('biometric_id', $id)->where('validated', 1);
             if (count($check_DTR_Logs->get()) >= 1) {
                 // /* Counting logs data */
                 $log_Data = count($check_DTR_Logs->get()) >= 1 ? $check_DTR_Logs->get()[0]->json_logs : '';
@@ -681,18 +681,18 @@ WHERE s.id IN (
                     ];
                     $newt++;
                 }
-                $chec_kDTR = daily_time_records::whereDate('created_at', $date_now)->where('biometric_id', $id);
+                $chec_kDTR = DailyTimeRecords::whereDate('created_at', $date_now)->where('biometric_id', $id);
                 if (count($chec_kDTR->get()) >= 1) {
-                    daily_time_record_logs::create([
+                    DailyTimeRecordlogs::create([
                         'biometric_id' => $id,
                         'dtr_id' => $chec_kDTR->get()[0]->id,
                         'json_logs' => json_encode($nr),
                         'validated' => $validate
                     ]);
                 } else {
-                    $check_DTR_Logs_Invalid = daily_time_record_logs::whereDate('created_at', $date_now)->where('biometric_id', $id)->where('validated', 0)->get();
+                    $check_DTR_Logs_Invalid = DailyTimeRecordlogs::whereDate('created_at', $date_now)->where('biometric_id', $id)->where('validated', 0)->get();
                     if (count($check_DTR_Logs_Invalid) == 0) {
-                        daily_time_record_logs::create([
+                        DailyTimeRecordlogs::create([
                             'biometric_id' => $id,
                             'dtr_id' => 0,
                             'json_logs' => json_encode($nr),
@@ -705,7 +705,7 @@ WHERE s.id IN (
                             $log_data_Array_inv = json_decode($log_Inv, true);
                             // /* Saving individually to user-attendance jsonLogs */
                             $log_data_Array_inv = array_merge($log_data_Array_inv, $nr);
-                            daily_time_record_logs::where('id', $check_DTR_Logs_Invalid[0]->id)->update([
+                            DailyTimeRecordlogs::where('id', $check_DTR_Logs_Invalid[0]->id)->update([
                                 'json_logs' => json_encode($log_data_Array_inv),
                             ]);
                         }

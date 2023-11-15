@@ -3,8 +3,8 @@
 namespace App\Methods;
 
 use TADPHP\TADFactory;
-use  App\Models\biometrics;
-use App\Models\devices;
+use  App\Models\Biometrics;
+use App\Models\Devices;
 
 class BioControl
 {
@@ -26,14 +26,14 @@ class BioControl
             $tad = $tad_factory->get_instance();
             if ($tad->get_date()) {
                 $getsnmc = json_decode($this->getSNMAC($tad)->getContent(), true);
-                devices::findorFail($device['id'])->update([
+                Devices::findorFail($device['id'])->update([
                     'serial_number' => $getsnmc['serialnumber'],
                     'mac_address' => $getsnmc['macaddress']
                 ]);
                 return $tad;
             }
         } catch (\Throwable $th) {
-            devices::findorFail($device['id'])->update([
+            Devices::findorFail($device['id'])->update([
                 'serial_number' => null,
                 'mac_address' => null,
             ]);
@@ -64,10 +64,10 @@ class BioControl
     public function setSuperAdmin($device, $biometric_id, $unset)
     {
         if ($tad = $this->bIO($device)) {
-            $user_data = biometrics::where('biometric_id', $biometric_id)->get();
+            $user_data = Biometrics::where('biometric_id', $biometric_id)->get();
             function saveSettings($biometric_id, $user_data, $tad, $is_Admin, $priv)
             {
-                biometrics::where('biometric_id', $biometric_id)->update([
+                Biometrics::where('biometric_id', $biometric_id)->update([
                     'privilege' => $priv
                 ]);
                 $added =  $tad->set_user_info([
@@ -110,7 +110,7 @@ class BioControl
     public function fetchUserDataFromDBToDevice($device, $biometric_id)
     {
         if ($tad = $this->bIO($device)) {
-            $user_data = biometrics::where('biometric_id', $biometric_id)->get();
+            $user_data = Biometrics::where('biometric_id', $biometric_id)->get();
             if (count($user_data) >= 1) {
                 $added =  $tad->set_user_info([
                     'pin' => $user_data[0]->biometric_id,
@@ -159,7 +159,7 @@ class BioControl
                 $BIO_User[] = $result;
             }
             $Employee_Info[] = $result;
-            $validate = biometrics::where('biometric_id', $biometric_id);
+            $validate = Biometrics::where('biometric_id', $biometric_id);
             if (count($validate->get()) >= 1) {
                 if ($BIO_User[0]['Template']) {
                     $validate->update([
@@ -176,7 +176,7 @@ class BioControl
                         $name = (string) $row->Name;
                     }
                 }
-                biometrics::create([
+                Biometrics::create([
                     'biometric_id' => $biometric_id,
                     'name' => $name,
                     'biometric' => $BIO_User[0]['Template'] ? json_encode($BIO_User) : "NOT_YET_REGISTERED"
@@ -240,7 +240,7 @@ class BioControl
     public function fetchDataToDevice($device, $biometric_id)
     {
         if ($tad = $this->bIO($device)) {
-            $data = biometrics::where('biometric_id', $biometric_id)
+            $data = Biometrics::where('biometric_id', $biometric_id)
                 ->Where('biometric', '!=', 'NOT_YET_REGISTERED')
                 ->whereNotNull('biometric')->get();
             foreach ($data as $key => $emp) {
@@ -276,7 +276,7 @@ class BioControl
     {
         try {
             if ($tad = $this->bIO($device)) {
-                $data = biometrics::Where('biometric', '!=', 'NOT_YET_REGISTERED')->whereNotNull('biometric')->get();
+                $data = Biometrics::Where('biometric', '!=', 'NOT_YET_REGISTERED')->whereNotNull('biometric')->get();
                 function saveSettings($tad, $emp, $is_Admin)
                 {
                     $added =  $tad->set_user_info([

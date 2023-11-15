@@ -3,17 +3,16 @@
 namespace App\Http\Controllers\DTR;
 
 use Illuminate\Http\Request;
-use App\Models\daily_time_records;
+use App\Models\DailyTimeRecords;
 use App\Methods\Helpers;
 use App\Methods\BioControl;
-use App\Models\dtr_anomalies;
+use App\Models\DtrAnomalies;
 use Illuminate\Support\Facades\DB;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use App\Http\Controllers\DTR\BioMSController;
-use App\Models\holiday_list;
+use App\Models\Holidaylist;
 use App\Models\EmployeeProfile;
-use App\Models\biometrics;
 use App\Http\Controllers\Controller;
 
 class DTRcontroller extends Controller
@@ -67,7 +66,7 @@ class DTRcontroller extends Controller
                             foreach ($check_Records as $key => $value) {
                                 $biometric_id =  $value['biometric_id'];
                                 if ($this->helper->isEmployee($biometric_id)) { // Validating if User is an employee with Biometric data and employee data
-                                    $validate = daily_time_records::whereDate('created_at', $date_now)->where('biometric_id', $biometric_id)->get();
+                                    $validate = DailyTimeRecords::whereDate('created_at', $date_now)->where('biometric_id', $biometric_id)->get();
                                     $date_now = date('Y-m-d');
 
                                     if (count($validate) >= 1) {
@@ -213,7 +212,7 @@ class DTRcontroller extends Controller
                                         $yester_date = date('Y-m-d', strtotime('-1 day'));
                                         $time_stamps_req = $this->helper->getSchedule($biometric_id, null);
 
-                                        $check_yesterday_Records = daily_time_records::whereDate('created_at', $yester_date)->where('biometric_id', $biometric_id)->get();
+                                        $check_yesterday_Records = DailyTimeRecords::whereDate('created_at', $yester_date)->where('biometric_id', $biometric_id)->get();
                                         $proceed_new = false;
                                         if (count($check_yesterday_Records) >= 1) {
                                             foreach ($check_yesterday_Records as $key => $rcrd) {
@@ -300,7 +299,7 @@ class DTRcontroller extends Controller
                          * 
                          */
                         foreach ($Employee_Attendance as $key => $value) {
-                            dtr_anomalies::create([
+                            DtrAnomalies::create([
                                 'biometric_id' => $value['biometric_id'],
                                 'name' => $value['name'],
                                 'dtr_entry' => $value['date_time'],
@@ -665,7 +664,7 @@ class DTRcontroller extends Controller
     public function getHolidays()
     {
         try {
-            return response()->json(['data' => holiday_list::all()]);
+            return response()->json(['data' => Holidaylist::all()]);
         } catch (\Throwable $th) {
             return response()->json(['message' =>  $th->getMessage()]);
         }
@@ -680,7 +679,7 @@ class DTRcontroller extends Controller
             $is_special = $request->isspecial;
             $effective_Date = $request->effectiveDate;
 
-            holiday_list::create([
+            Holidaylist::create([
                 'description' => $description,
                 'month_day' => $month . '-' . $day,
                 'isspecial' => $is_special,
@@ -702,7 +701,7 @@ class DTRcontroller extends Controller
             $is_special = $request->isspecial;
             $effective_Date = $request->effectiveDate;
 
-            holiday_list::where('id', $holiday_id)->update([
+            Holidaylist::where('id', $holiday_id)->update([
                 'description' => $description,
                 'month_day' => $month . '-' . $day,
                 'isspecial' => $is_special,
@@ -725,7 +724,7 @@ class DTRcontroller extends Controller
 
     private function isHoliday($date)
     {
-        $holiday_list = holiday_list::where('effectiveDate', date('Y-m-d', strtotime($date)))->get();
+        $holiday_list = Holidaylist::where('effectiveDate', date('Y-m-d', strtotime($date)))->get();
         if (count($holiday_list) >= 1) {
             return true;
         }

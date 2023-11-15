@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class holiday_list extends Model
+class HolidayList extends Model
 {
     use HasFactory;
     protected $table = 'holidays';
