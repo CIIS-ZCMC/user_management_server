@@ -1184,27 +1184,64 @@ Route::middleware('auth.cookie')->group(function(){
      * Leave and Overtime Management
      */
     Route::namespace('App\Http\Controllers')->group(function(){
-        Route::post('reset-password', 'UserController@resetPassword');
+      
+        //leave types
         Route::get('leave_types', 'LeaveTypeController@index');
         Route::post('store_leave_types', 'LeaveTypeController@store');
         Route::post('update_leave_types/{id}', 'LeaveTypeController@update');
-        Route::get('deactivate_leave_type/{id}', 'LeaveTypeController@deactivateLeaveType');
-        Route::get('reactivate_leave_type/{id}', 'LeaveTypeController@reactivateLeaveType');
+        Route::post('deactivate_leave_type/{id}', 'LeaveTypeController@deactivateLeaveType');
+        Route::post('reactivate_leave_type/{id}', 'LeaveTypeController@reactivateLeaveType');
 
+        //requirements
         Route::get('requirements', 'RequirementController@index');
         Route::post('store_requirements', 'RequirementController@store');
         Route::post('update_requirements/{id}', 'RequirementController@update');
 
-
+        //leave applications
         Route::get('leave_applications', 'LeaveApplicationController@index');
         Route::get('user_leave_applications', 'LeaveApplicationController@getUserLeaveApplication');
-        Route::get('official_time_applications', 'OfficialTimeApplicationController@index');
-        Route::get('official_business_applications', 'ObApplicationController@index');
+        Route::post('store_leave_applications', 'LeaveApplicationController@store');
+        Route::post('decline_leave_applications/{id}', 'LeaveApplicationController@declineLeaveApplication');
+        Route::post('cancel_leave_applications/{id}', 'LeaveApplicationController@cancelLeaveApplication');
+        Route::post('update_leave_applications_status/{id}', 'LeaveApplicationController@updateLeaveApplicationStatus');
+
+        //leave credits 
         Route::get('employee_leave_credit', 'LeaveApplicationController@getEmployeeLeaveCredit');
         Route::get('employee_leave_credit_logs', 'LeaveApplicationController@getEmployeeLeaveCreditLogs');
         Route::get('user_leave_credit_logs', 'LeaveApplicationController@getUserLeaveCreditsLogs');
-        Route::get('days', 'LeaveCreditController@addMonthlyLeaveCredit');
-        Route::post('leave_type', 'LeaveTypeController@store');
+        Route::get('add_monthly_leave_credit', 'LeaveCreditController@addMonthlyLeaveCredit');
+        Route::get('check_user_leave_credit', 'LeaveCreditController@checkUserLeaveCredit');
+        Route::get('get_employee_leave_credit', 'LeaveCreditController@getEmployeeLeaveCredit');
+        Route::get('get_employee_leave_credit_logs', 'LeaveCreditController@getEmployeeLeaveCreditLogs');
+
+
+        //official time applications
+        Route::get('official_time_applications', 'OfficialTimeApplicationController@index');
+        Route::get('user_official_time_applications', 'OfficialTimeApplicationController@getOtApplications');
+        Route::post('store_official_time_applications', 'OfficialTimeApplicationController@store');
+        Route::post('decline_official_time_applications/{id}', 'OfficialTimeApplicationController@declineOtApplication');
+        Route::post('cancel_official_time_applications/{id}', 'OfficialTimeApplicationController@cancelOtApplication');
+        Route::post('update_official_time_application_status/{id}', 'OfficialTimeApplicationController@updateStatus');
+        Route::post('update_official_time_application/{id}', 'OfficialTimeApplicationController@updateOtApplication');
+
+
+        //official business applications
+        Route::get('official_business_applications', 'OfficialBusinessApplicationController@index');
+        Route::get('user_official_business_applications', 'OfficialBusinessApplicationController@getObApplications');
+        Route::post('store_official_business_applications', 'OfficialBusinessApplicationController@store');
+        Route::post('decline_official_business_applications/{id}', 'OfficialBusinessApplicationController@declineObApplication');
+        Route::post('cancel_official_business_applications/{id}', 'OfficialBusinessApplicationController@cancelObApplication');
+        Route::post('update_official_business_application_status/{id}', 'OfficialBusinessApplicationController@updateStatus');
+        Route::post('update_official_business_application/{id}', 'OfficialBusinessApplicationController@updateObApplication');
+
+        //monetization application
+        
+
+
+       
+       
+       
+
     });
 
     /**

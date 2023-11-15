@@ -41,6 +41,7 @@ class LeaveType extends Model
         }
         public function attachments()
         {
+            
             return $this->hasMany(LeaveAttachment::class);
         }
 }
