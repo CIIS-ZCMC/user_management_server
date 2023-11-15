@@ -4,7 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\OvertimeApplication;
 use App\Http\Controllers\Controller;
+use App\Models\EmployeeProfile;
 use Illuminate\Http\Request;
+
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 
 class OvertimeApplicationController extends Controller
 {
@@ -29,7 +33,47 @@ class OvertimeApplicationController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        try{
+            $user_id = Auth::user()->id;
+            $user = EmployeeProfile::where('id','=',$user_id)->first();
+            $overtime = OvertimeApplication::create([
+                'user_id' => $user->id,
+                'reference_number' => $user->id,
+                'status' => 'applied',
+                'remarks' => 'applied',
+                'purpose' => $request->purpose,
+                'date' => date('Y-m-d')
+                
+            ]);
+
+            foreach ($request->activities as $activityData) {
+                $activity = $overtime->activities()->create([
+                    'activity_name' => $activityData['activity_name'],
+                    'quantity' => $activityData['quantity'],
+                ]);
+    
+              
+                foreach ($activityData['dates'] as $dateData) {
+                    $date = $activity->dates()->create([
+                        'date' => $dateData['date'],
+                        'time_from' => $dateData['time_from'],
+                        'time_to' => $dateData['time_to'],
+                    ]);
+    
+                    foreach ($dateData['employees'] as $employeeData) {
+                        $date->employees()->create([
+                            'employee_id' => $employeeData['employee_id'],
+                           
+                        ]);
+                    }
+                }
+            }
+           
+            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+        }catch(\Throwable $th){
+         
+            return response()->json(['message' => $th->getMessage()], 500);
+        }
     }
 
     /**
