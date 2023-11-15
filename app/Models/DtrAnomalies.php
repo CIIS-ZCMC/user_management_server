@@ -9,6 +9,7 @@ class DtrAnomalies extends Model
 {
     use HasFactory;
 
+    protected $table = "dtr_anomalies";
     protected $fillable = [
         'employee_id',
         'name',

@@ -23,12 +23,10 @@ class BioController extends Controller
         $this->device_ids = [
             1
         ];
-        $this->ip_registration = json_decode($this->bioms->registration_device()->getContent(), true)['data'];
+        $this->ip_registration = json_decode($this->bioms->registrationDevice()->getContent(), true)['data'];
     }
 
     /* ----------------------------- THIS IS FOR REGISTRATION OF BIOMETRICS----------------------------------- */
-
-
     public function registerBio(Request $request)
     {
         $biometric_id = $request->biometric_id;
@@ -60,10 +58,6 @@ class BioController extends Controller
         }
         return response()->json(['message' => 'User has already been registered!']);
     }
-
-
-
-
 
     public function fetchUserFromDevice(Request $request)
     {

@@ -50,6 +50,8 @@ class DTRcontroller extends Controller
                         $attendance_Logs,
                         $Employee_Info
                     );
+
+
                     $date_and_timeD = simplexml_load_string($tad->get_date());
                     if ($this->helper->validatedDeviceDT($date_and_timeD)) { //Validating Time of server and time of device
                         $date_now = date('Y-m-d');
@@ -91,7 +93,7 @@ class DTRcontroller extends Controller
 
                                             if ($value['status'] == 255) {
                                                 if ($this->helper->withinInterval($f1, $this->helper->sequence(0, [$value]))) {
-                                                    return   $this->helper->saveTotalWorkingHours(
+                                                    $this->helper->saveTotalWorkingHours(
                                                         $validate,
                                                         $value,
                                                         $this->helper->sequence(0, [$value]),
@@ -486,7 +488,7 @@ class DTRcontroller extends Controller
                 'Employee_Name' => $emp_name,
                 'DTRFile_Name' => $emp_name
             ];
-            return $this->Print_Dtr($month_of, $year_of, $biometric_id, $emp_Details, $view);
+            return $this->PrintDtr($month_of, $year_of, $biometric_id, $emp_Details, $view);
         } catch (\Throwable $th) {
 
             return response()->json(['message' =>  $th->getMessage()]);
@@ -603,7 +605,7 @@ class DTRcontroller extends Controller
 
 
             if ($view) {
-                return view('generate_dtr.printDTR_PDF',  [
+                return view('generate_dtr.PrintDTRPDF',  [
                     'daysInMonth' => $days_In_Month,
                     'year' => $year_of,
                     'month' => $month_of,
@@ -627,7 +629,7 @@ class DTRcontroller extends Controller
                 $options->set('isRemoteEnabled', true);
                 $dompdf = new Dompdf($options);
                 $dompdf->getOptions()->setChroot([base_path() . '\public\storage']);
-                $dompdf->loadHtml(view('generate_dtr.printDTR_PDF',  [
+                $dompdf->loadHtml(view('generate_dtr.PrintDTRPDF',  [
                     'daysInMonth' => $days_In_Month,
                     'year' => $year_of,
                     'month' => $month_of,

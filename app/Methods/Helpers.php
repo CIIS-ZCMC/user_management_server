@@ -29,6 +29,7 @@ class Helpers
 
     public function withinInterval($last_entry, $bio_entry)
     {
+
         $With_Interval = date('Y-m-d H:i:s', strtotime($last_entry) + floor(env('ALLOTED_DTR_INTERVAL') * 60));
         if ($With_Interval <= $bio_entry[0]['date_time']) {
             return true;
@@ -65,7 +66,7 @@ class Helpers
                 FROM schedules 
                 WHERE '$date_now' BETWEEN date_start AND date_end 
                 AND status = 1 
-                AND shift_id = s.id
+                AND time_shift_id = s.id
                 LIMIT 1)
            ELSE 'NONE'
        END AS date_start,
@@ -75,13 +76,13 @@ class Helpers
                 FROM schedules 
                 WHERE '$date_now' BETWEEN date_start AND date_end 
                 AND status = 1 
-                AND shift_id = s.id
+                AND time_shift_id = s.id
                 LIMIT 1)
            ELSE 'NONE'
        END AS date_end
-FROM shifts s
+FROM time_shifts s
 WHERE s.id IN (
-    SELECT shift_id 
+    SELECT time_shift_id 
     FROM schedules 
     WHERE '$date_now' BETWEEN date_start AND date_end 
     AND status = 1 
@@ -90,7 +91,7 @@ WHERE s.id IN (
         FROM employee_profile_schedule 
         WHERE employee_profile_id IN (
             SELECT id 
-            FROM employee_profile 
+            FROM employee_profiles 
             WHERE biometric_id = '$biometric_id'
         )
     )
@@ -244,9 +245,9 @@ WHERE s.id IN (
             $minutes1 = floor(($time1 % 3600) / 60);
             $oah = $hours + $hours1;
             $oam = $minutes + $minutes1;
-            $totalrendered = floor(($oah * 60) + $oam);
+            $total_rendered = floor(($oah * 60) + $oam);
         }
-        return $total_rendered;
+        return $total_rendered >= 1 ? $total_rendered : 0;
     }
 
     public function settingDateSchedule($entry, $sched)
@@ -282,8 +283,8 @@ WHERE s.id IN (
             /* Entries */
             $f1_entry = $validate[0]->first_in;
             $f2_entry = $validate[0]->first_out;
-            $f3_entry = null;
-            $f4_entry = null;
+            $f3_entry =  $validate[0]->second_in;
+            $f4_entry = $validate[0]->second_out;
 
             $f3_entry_Time_stamp = 0;
             $f4_entry_Time_stamp = 0;
@@ -297,6 +298,12 @@ WHERE s.id IN (
             $ut = 0;
             $Schedule_Minutes = 0;
 
+            if (!$f2_entry) {
+                $f2_entry = $sc['date_time'];
+            } else {
+                $f4_entry = $sc['date_time'];
+            }
+
             if (isset($validate[0]->second_in) || isset($validate[0]->second_out)) {
                 $f3entry = $validate[0]->second_in;
                 $f4entry = $validate[0]->second_out;
@@ -308,6 +315,8 @@ WHERE s.id IN (
                     $f4entry = $sc['date_time'];
                 }
             }
+
+
             $required_WH = $time_stamps_req['total_hours'];
             $required_WH_Minutes = $required_WH * 60;
 
@@ -375,6 +384,9 @@ WHERE s.id IN (
                 $f3_entry,
                 $f4_entry
             );
+
+
+
             /* Required Working Hours */
             //$requiredWH         | required_working_hours
             //$requiredWH_Minutes | required_working_minutes
@@ -421,6 +433,7 @@ WHERE s.id IN (
 
         //  echo "Overall Minutes Rendered :" . $overallminutesRendered . "\n";
         if (isset($f3_entry) && isset($f4_entry)) {
+
             if ($check_for_generate) {
                 DailyTimeRecords::find($validate[0]->id)->update([
                     'total_working_hours' => $total_WH_words,
@@ -536,9 +549,12 @@ WHERE s.id IN (
         return $sequences[$sched];
     }
 
-    public function statusDescription($attendance_Log)
+    public function statusDescription($attendance_Log, $key)
     {
         $status_description = '';
+        $Status_Entry = '';
+        $active_entry = 'f1';
+        $on_Active_Status = date('Y-m-d H:i:s', strtotime($attendance_Log['date_time'] . '-5 minutes'));
         switch ($attendance_Log['status']) {
             case 0:
                 $status_description = 'CHECK-IN';
@@ -566,12 +582,15 @@ WHERE s.id IN (
                 if (count($Records) >= 1) {
                     foreach ($Records as $row) {
                         if ($row->first_in) {
+                            $on_Active_Status = $row->first_in;
                             $status_description = 'CHECK-OUT';
                         }
                         if ($row->first_out) {
+                            $on_Active_Status = $row->first_out;
                             $status_description = 'CHECK-IN';
                         }
                         if ($row->second_in) {
+                            $on_Active_Status = $row->second_in;
                             $status_description = 'CHECK-OUT';
                         }
                     }
@@ -580,7 +599,29 @@ WHERE s.id IN (
                 }
                 break;
         }
-        return $status_description;
+        $dt = [
+            0 => ['date_time' => $attendance_Log['date_time']],
+        ];
+        if (!$this->withinInterval($on_Active_Status, $dt)) {
+            $Within_interval = "NO";
+        } else {
+            $Within_interval = "YES";
+        }
+
+        if ($key == 0) {
+            if ($Within_interval == "YES") {
+                $Status_Entry = "OK";
+            } else {
+                $Status_Entry = "FAILED";
+            }
+        } else {
+            $Status_Entry = "FAILED";
+        }
+        return [
+            'description' => $status_description,
+            'within_interval' => $Within_interval,
+            'status_entry' => $Status_Entry
+        ];
     }
 
     public function checkIfFingerPrintExist($tad, $userPin)
@@ -603,6 +644,8 @@ WHERE s.id IN (
 
     public function saveDTRLogs($check_Records, $validate, $device)
     {
+
+
         $new_timing = 0;
         $unique_Employee_IDs = [];
         $date_now = date('Y-m-d');
@@ -745,6 +788,8 @@ WHERE s.id IN (
         return $Employee_Info;
     }
 
+
+
     public function getEmployeeAttendance($attendance_Logs, $Employee_Info)
     {
         $Employee_Attendance = [];
@@ -759,6 +804,7 @@ WHERE s.id IN (
                     break;
                 }
             }
+
             if (!empty($employee_Name)) {
                 $Employee_Attendance[] = [
                     'timing' => $key,
@@ -766,7 +812,8 @@ WHERE s.id IN (
                     'name' => $employee_Name,
                     'date_time' => $attendance_Log['date_time'],
                     'status' => $attendance_Log['status'],
-                    'status_description' => $this->statusDescription($attendance_Log),
+                    'status_description' => $this->statusDescription($attendance_Log, $key)
+
                 ];
             }
         }

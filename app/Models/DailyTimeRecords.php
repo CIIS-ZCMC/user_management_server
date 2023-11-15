@@ -9,6 +9,7 @@ class DailyTimeRecords extends Model
 {
     use HasFactory;
 
+    protected $table = "daily_time_records";
     protected $fillable = [
         'biometric_id',
         'first_in',

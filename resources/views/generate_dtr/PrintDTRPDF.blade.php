@@ -43,10 +43,10 @@
     <table id="tbleformat">
         <tr>
             <td style="border-right: 1px solid black;">
-                @include('generate_dtr.dtrformat')
+                @include('generate_dtr.DtrFormat')
             </td>
             <td>
-                @include('generate_dtr.dtrformat')
+                @include('generate_dtr.DtrFormat')
             </td>
         </tr>
     </table>
