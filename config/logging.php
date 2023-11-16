@@ -72,7 +72,7 @@ return [
             'days' => 14,
             'replace_placeholders' => true,
         ],
-        
+
         'custom-info' => [
             'driver' => 'single',
             'path' => storage_path('logs/request.log'),
@@ -91,6 +91,20 @@ return [
             'level' => 'error',
         ],
 
+
+        'custom-dtr-log' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/daily_time_record.log'),
+            'level' => 'info',
+        ],
+
+        'custom-dtr-log-error' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/daily_time_record.log'),
+            'level' => 'error',
+        ],
+
+
         'slack' => [
             'driver' => 'slack',
             'url' => env('LOG_SLACK_WEBHOOK_URL'),
@@ -107,7 +121,7 @@ return [
             'handler_with' => [
                 'host' => env('PAPERTRAIL_URL'),
                 'port' => env('PAPERTRAIL_PORT'),
-                'connectionString' => 'tls://'.env('PAPERTRAIL_URL').':'.env('PAPERTRAIL_PORT'),
+                'connectionString' => 'tls://' . env('PAPERTRAIL_URL') . ':' . env('PAPERTRAIL_PORT'),
             ],
             'processors' => [PsrLogMessageProcessor::class],
         ],

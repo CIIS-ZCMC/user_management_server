@@ -14,6 +14,7 @@ use App\Http\Controllers\DTR\BioMSController;
 use App\Models\Holidaylist;
 use App\Models\EmployeeProfile;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Log;
 
 class DTRcontroller extends Controller
 {
@@ -30,7 +31,7 @@ class DTRcontroller extends Controller
         $this->devices = json_decode($this->bioms->operatingDevice()->getContent(), true)['data'];
     }
 
-    public function fetchDTRFromDevice(Request $request)
+    public function fetchDTRFromDevice()
     {
 
         try {
@@ -273,17 +274,18 @@ class DTRcontroller extends Controller
                                                     }
                                                 }
                                             }
-                                        }
-                                        /* Save new records */
-                                        if ($value['status'] == 0 || $value['status'] == 255) {
+                                        } else {
+                                            /* Save new records */
+                                            if ($value['status'] == 0 || $value['status'] == 255) {
 
-                                            $break_Time_Req = $this->helper->getBreakSchedule($biometric_id, $time_stamps_req); // Put employee ID
-                                            $this->helper->SaveFirstEntry(
-                                                $this->helper->sequence(0, [$value]),
-                                                $break_Time_Req,
-                                                $biometric_id,
-                                                $check_Records
-                                            );
+                                                $break_Time_Req = $this->helper->getBreakSchedule($biometric_id, $time_stamps_req); // Put employee ID
+                                                $this->helper->SaveFirstEntry(
+                                                    $this->helper->sequence(0, [$value]),
+                                                    $break_Time_Req,
+                                                    $biometric_id,
+                                                    $check_Records
+                                                );
+                                            }
                                         }
                                     }
                                 }
@@ -315,7 +317,7 @@ class DTRcontroller extends Controller
                 } // End Checking if Connected to Device
             }
         } catch (\Throwable $th) {
-            // return $th;
+            Log::channel("custom-dtr-log-error")->error($th->getMessage());
             return response()->json(['message' => 'Unable to connect to device', 'Throw error' => $th->getMessage()]);
         }
     }
@@ -472,6 +474,7 @@ class DTRcontroller extends Controller
                             'second_out' => $val->second_out
                         ],
                     ];
+
                     $this->helper->saveTotalWorkingHours(
                         $validate,
                         $val,

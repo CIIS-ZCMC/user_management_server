@@ -298,12 +298,13 @@ WHERE s.id IN (
             $ut = 0;
             $Schedule_Minutes = 0;
 
-            if (!$f2_entry) {
-                $f2_entry = $sc['date_time'];
-            } else {
-                $f4_entry = $sc['date_time'];
+            if (!$check_for_generate) {
+                if (!$f2_entry) {
+                    $f2_entry = $sc['date_time'];
+                } else {
+                    $f4_entry = $sc['date_time'];
+                }
             }
-
             if (isset($validate[0]->second_in) || isset($validate[0]->second_out)) {
                 $f3entry = $validate[0]->second_in;
                 $f4entry = $validate[0]->second_out;
@@ -315,8 +316,6 @@ WHERE s.id IN (
                     $f4entry = $sc['date_time'];
                 }
             }
-
-
             $required_WH = $time_stamps_req['total_hours'];
             $required_WH_Minutes = $required_WH * 60;
 
@@ -608,19 +607,9 @@ WHERE s.id IN (
             $Within_interval = "YES";
         }
 
-        if ($key == 0) {
-            if ($Within_interval == "YES") {
-                $Status_Entry = "OK";
-            } else {
-                $Status_Entry = "FAILED";
-            }
-        } else {
-            $Status_Entry = "FAILED";
-        }
         return [
             'description' => $status_description,
             'within_interval' => $Within_interval,
-            'status_entry' => $Status_Entry
         ];
     }
 
