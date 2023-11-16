@@ -24,12 +24,49 @@ class LeaveTypeController extends Controller
     public function index()
     {
         try{
-        //     $leave_types=[];
+       
+        // $leaveTypes = LeaveType::with('logs.employeeProfile.personalInformation','requirements.logs.employeeProfile')->get();
+        $leaveTypes = LeaveType::with('logs.employeeProfile.personalInformation', 'requirements.logs.employeeProfile.personalInformation')->get();
+
+            // Use map to customize the data
+            $leaveTypesArray = $leaveTypes->map(function ($leaveType) {
+                return [
+                    'id' => $leaveType->id,
+                    'name' => $leaveType->name,
+                    'description' => $leaveType->description,
+                    'period' => $leaveType->period,
+                    'file_date' => $leaveType->file_date,
+                    'code' => $leaveType->code,
+                    'status' => $leaveType->status,
+                    'is_special' => $leaveType->is_special,
+                    'leave_credit_year' => $leaveType->leave_credit_year ,
+                    'logs' => $leaveType->logs->map(function ($log) {
+                        return [
+                            'id' => $log->id,
+                            'action_by' => optional($log->employeeProfile)->personalInformation->first_name ?? null,
+                            'action' => $log->action,
+                            'date' => $log->date,
+                        ];
+                    }),
+                    'requirements' => $leaveType->requirements->map(function ($requirement) {
+                        return [
+                            'id' => $requirement->id,
+                            'name' => $requirement->name,
+                            'logs' => $requirement->logs->map(function ($log) {
+                                return [
+                                    'id' => $log->id,
+                                    'employee_name' => optional($log->employeeProfile)->personalInformation->first_name ?? null,
+                                    'action_by' => optional($log->employeeProfile)->personalInformation->first_name ?? null,
+                                    'action' => $log->action,
+                                    'date' => $log->date,
+                                ];
+                            }),
+                        ];
+                    }),
+                ];
+            });
             
-        //    $leave_types =LeaveType::all();
-        //    $leave_type_resource=ResourcesLeaveType::collection($leave_types);
-        $leaveTypes = LeaveType::with('logs.employeeProfile','requirements.logs.employeeProfile')->get();
-             return response()->json(['data' => $leaveTypes], Response::HTTP_OK);
+             return response()->json(['data' => $leaveTypesArray], Response::HTTP_OK);
         }catch(\Throwable $th){
         
             return response()->json(['message' => $th->getMessage()], 500);

@@ -8,4 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class EmployeeOvertimeCredit extends Model
 {
     use HasFactory;
+
+    public function employeeProfile()
+{
+    return $this->belongsTo(EmployeeProfile::class);
+}
 }

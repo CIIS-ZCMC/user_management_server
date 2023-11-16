@@ -4,9 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\OvertimeApplication;
 use App\Http\Controllers\Controller;
+use App\Models\EmployeeOvertimeCredit;
 use App\Models\EmployeeProfile;
 use Illuminate\Http\Request;
-
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 
@@ -23,11 +24,57 @@ class OvertimeApplicationController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function getEmployeeOvertimeTotal()
     {
-        //
+        $employeeProfiles = EmployeeProfile::with(['overtimeCredits', 'personalInformation'])
+        ->get();
+
+        $employeeOvertimeTotals = $employeeProfiles->map(function ($employeeProfile) {
+        $totalAddCredits = $employeeProfile->overtimeCredits->where('operation', 'add')->sum('overtime_hours');
+        $totalDeductCredits = $employeeProfile->overtimeCredits->where('operation', 'deduct')->sum('overtime_hours');
+
+        $totalOvertimeCredits = $totalAddCredits - $totalDeductCredits;
+
+        return [
+            'employee_id' => $employeeProfile->id,
+            'employee_name' => $employeeProfile->personalInformation->first_name,
+            'total_overtime_credits' => $totalOvertimeCredits,
+        ];
+        });
+
+        return response()->json(['data' => $employeeOvertimeTotals], Response::HTTP_OK);
     }
 
+    public function getEmployees()
+    {
+        $currentMonth = date('m');
+        $currentYear = date('Y');
+
+        $filteredEmployees = EmployeeProfile::with(['overtimeCredits', 'personalInformation']) // Eager load the 'overtimeCredits' and 'profileInformation' relationships
+        ->get()
+        ->filter(function ($employeeProfile) use ($currentMonth, $currentYear) {
+            $totalAddCredits = $employeeProfile->overtimeCredits->where('operation', 'add')->sum('overtime_hours');
+        $totalDeductCredits = $employeeProfile->overtimeCredits->where('operation', 'deduct')->sum('overtime_hours');
+        
+        $totalOvertimeCredits = $totalAddCredits - $totalDeductCredits;
+
+        return $totalOvertimeCredits < 40 && $totalOvertimeCredits < 120;
+        })
+        ->map(function ($employeeProfile) {
+            $totalAddCredits = $employeeProfile->overtimeCredits->where('operation', 'add')->sum('overtime_hours');
+            $totalDeductCredits = $employeeProfile->overtimeCredits->where('operation', 'deduct')->sum('overtime_hours');
+            
+            $totalOvertimeCredits = $totalAddCredits - $totalDeductCredits;
+
+            return [
+                'employee_name' => $employeeProfile->personalInformation->first_name, // Assuming 'name' is the field in the ProfileInformation model representing the employee name
+                'total_overtime_credits' => $totalOvertimeCredits,
+            ];
+        });
+      
+            return response()->json(['data' => $filteredEmployees], Response::HTTP_OK);
+
+    }
     /**
      * Store a newly created resource in storage.
      */

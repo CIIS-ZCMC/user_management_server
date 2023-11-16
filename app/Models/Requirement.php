@@ -19,6 +19,7 @@ class Requirement extends Model
     {
         return $this->hasMany(LeaveTypeRequirement::class, 'requirement_id');
     }
+  
     public function logs(){ 
         return $this->hasMany(RequirementLog::class);
     }

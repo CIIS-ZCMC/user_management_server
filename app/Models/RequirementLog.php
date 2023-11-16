@@ -17,6 +17,6 @@ class RequirementLog extends Model
         return $this->belongsTo(Requirement::class);
     }
     public function employeeProfile() {
-        return $this->belongsTo(EmployeeProfile::class, 'action_by');
+        return $this->belongsTo(EmployeeProfile::class, 'action_by_id');
     }
 }

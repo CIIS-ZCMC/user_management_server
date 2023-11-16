@@ -18,7 +18,7 @@ class LeaveTypeLog extends Model
         return $this->belongsTo(LeaveType::class);
     }
     public function employeeProfile() {
-        return $this->belongsTo(EmployeeProfile::class);
+        return $this->belongsTo(EmployeeProfile::class, 'action_by_id');
     }
 
 }

@@ -24,6 +24,10 @@ Route::namespace('App\Http\Controllers')->group(function () {
     Route::post('reset-password', 'EmployeeProfileController@resetPassword');
     Route::get('retrieve-token', 'CsrfTokenController@generateCsrfToken');
     Route::get('validate-token', 'CsrfTokenController@validateToken');
+    Route::get('get_employees', 'OvertimeApplicationController@getEmployees');
+    Route::get('get_employees_overtime_total', 'OvertimeApplicationController@getEmployeeOvertimeTotal');
+    Route::get('requirements', 'RequirementController@index');
+    Route::get('leave_types', 'LeaveTypeController@index');
 });
 
 Route::middleware('auth.cookie')->group(function(){
@@ -1186,14 +1190,14 @@ Route::middleware('auth.cookie')->group(function(){
     Route::namespace('App\Http\Controllers')->group(function(){
       
         //leave types
-        Route::get('leave_types', 'LeaveTypeController@index');
+        // Route::get('leave_types', 'LeaveTypeController@index');
         Route::post('store_leave_types', 'LeaveTypeController@store');
         Route::post('update_leave_types/{id}', 'LeaveTypeController@update');
         Route::post('deactivate_leave_type/{id}', 'LeaveTypeController@deactivateLeaveType');
         Route::post('reactivate_leave_type/{id}', 'LeaveTypeController@reactivateLeaveType');
 
         //requirements
-        Route::get('requirements', 'RequirementController@index');
+        // Route::get('requirements', 'RequirementController@index');
         Route::post('store_requirements', 'RequirementController@store');
         Route::post('update_requirements/{id}', 'RequirementController@update');
 
@@ -1235,7 +1239,10 @@ Route::middleware('auth.cookie')->group(function(){
         Route::post('update_official_business_application/{id}', 'OfficialBusinessApplicationController@updateObApplication');
 
         //monetization application
-        
+
+        //overtime application
+
+        //   Route::get('get_employees', 'OvertimeApplicationApplicationController@getEmployees');
 
 
        
