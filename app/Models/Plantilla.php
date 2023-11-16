@@ -13,13 +13,18 @@ class Plantilla extends Model
 
     public $fillable = [
         'plantilla_no',
-        'tranche',
-        'category',
+        'slot',
+        'available',
         'effective_at',
         'designation_id'
     ];
 
     public $timestamps = TRUE;
+
+    public function plantillaNumber()
+    {
+        return $this->hasMany(PlantillaNumber::class);
+    }
 
     public function designation()
     {
