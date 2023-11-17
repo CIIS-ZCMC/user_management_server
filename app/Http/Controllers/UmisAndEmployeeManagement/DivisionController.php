@@ -7,15 +7,17 @@ use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
+use App\Services\RequestLogger;
+use App\Services\FileValidationAndUpload;
 use App\Http\Requests\DivisionRequest;
 use App\Http\Requests\DivisionAssignChiefRequest;
 use App\Http\Requests\DivisionAssignOICRequest;
 use App\Http\Resources\DivisionResource;
 use App\Models\Division;
 use App\Models\EmployeeProfile;
-use App\Models\SystemLogs;
 
 class DivisionController extends Controller
 {
@@ -24,10 +26,12 @@ class DivisionController extends Controller
     private $SINGULAR_MODULE_NAME = 'division';
 
     protected $requestLogger;
+    protected $file_validation_and_upload;
 
-    public function __construct(RequestLogger $requestLogger)
+    public function __construct(RequestLogger $requestLogger, FileValidationAndUpload $file_validation_and_upload)
     {
         $this->requestLogger = $requestLogger;
+        $this->file_validation_and_upload = $file_validation_and_upload;
     }
 
     public function index(Request $request)
@@ -78,7 +82,7 @@ class DivisionController extends Controller
 
             $cleanData = [];
             $cleanData['chief_employee_profile_id'] = $employee_profile->id;
-            $cleanData['chief_attachment_url'] = $request->input('attachment')===null?'NONE': $this->check_save_file($request->input('attachment'));
+            $cleanData['chief_attachment_url'] = $request->input('attachment')===null?'NONE': $this->file_validation_and_upload->check_save_file($request->input('attachment'), 'division\files');
             $cleanData['chief_effective_at'] = Carbon::now();
 
             $division->update($cleanData);
@@ -125,7 +129,7 @@ class DivisionController extends Controller
 
             $cleanData = [];
             $cleanData['oic_employee_profile_id'] = $employee_profile->id;
-            $cleanData['oic_attachment_url'] = $request->input('attachment')===null?'NONE': $this->check_save_file($request->input('attachment'));
+            $cleanData['oic_attachment_url'] = $request->input('attachment')===null?'NONE': $this->file_validation_and_upload->check_save_file($request->input('attachment'), 'division\files');
             $cleanData['oic_effective_at'] = strip_tags($request->input('effective_at'));
             $cleanData['oic_end_at'] = strip_tags($request->input('end_at'));
 
@@ -230,39 +234,5 @@ class DivisionController extends Controller
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-    }
-
-    protected function check_save_file($request)
-    {
-        $FILE_URL = 'division/file';
-        $fileName = '';
-
-        if ($request->file('attachment')->isValid()) {
-            $file = $request->file('attachment');
-            $filePath = $file->getRealPath();
-
-            $finfo = new \finfo(FILEINFO_MIME);
-            $mime = $finfo->file($filePath);
-            
-            $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
-
-            if (!in_array($mime, $allowedMimeTypes)) {
-                return response()->json(['message' => 'Invalid file type'], 400);
-            }
-
-            // Check for potential malicious content
-            $fileContent = file_get_contents($filePath);
-
-            if (preg_match('/<\s*script|eval|javascript|vbscript|onload|onerror/i', $fileContent)) {
-                return response()->json(['message' => 'File contains potential malicious content'], 400);
-            }
-
-            $file = $request->file('attachment');
-            $fileName = Hash::make(time()) . '.' . $file->getClientOriginalExtension();
-
-            $file->move(public_path($FILE_URL), $fileName);
-        }
-        
-        return $fileName;
     }
 }

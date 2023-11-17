@@ -7,10 +7,10 @@ use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use App\Services\RequestLogger;
 use App\Http\Resources\EmploymentTypeResource;
-use App\Model\EmploymentType;
+use App\Models\EmploymentType;
 
 class EmploymentTypeController extends Controller
 {  
@@ -34,7 +34,7 @@ class EmploymentTypeController extends Controller
                 return EmploymentType::all();
             });
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
             
             return response()->json(['data' => EmploymentTypeResource::collection($employment_types),'message' => 'Employment type list retrieved.' ], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -46,7 +46,7 @@ class EmploymentTypeController extends Controller
     public function store(Request $request)
     {
         try{
-            $validatedData = $request->validate([
+            $request->validate([
                 'name' => 'required|string'
             ]);
 
@@ -62,7 +62,7 @@ class EmploymentTypeController extends Controller
 
             $employment_type = EmploymentType::create($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['data' => new EmploymentTypeResource($employment_type),'message' => 'New employment type registered.'], Response::HTTP_OK);
         }catch(\Throwable $th){

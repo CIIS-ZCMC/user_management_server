@@ -7,13 +7,12 @@ use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use App\Services\RequestLogger;
 use App\Http\Requests\PositionSystemRoleRequest;
 use App\Http\Resources\PositionSystemRoleResource;
 use App\Models\PositionSystemRole;
-use App\Models\EmployeeProfile;
-use App\Models\SystemLogs;
+use App\Models\Designation;
 
 class PositionSystemRoleController extends Controller
 {
@@ -37,9 +36,9 @@ class PositionSystemRoleController extends Controller
                 return PositionSystemRole::all();
             });
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => PositionSystemRoleResource::collection($departments)], Response::HTTP_OK);
+            return response()->json(['data' => PositionSystemRoleResource::collection($position_system_roles)], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -67,7 +66,7 @@ class PositionSystemRoleController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => PositionSystemRoleResource::collection($departments)], Response::HTTP_OK);
+            return response()->json(['data' => PositionSystemRoleResource::collection($position_system_role)], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'designationAccessRights', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -85,9 +84,9 @@ class PositionSystemRoleController extends Controller
 
             $position_system_role = PositionSystemRole::create($cleanData);
             
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => new ReferenceResource($position_system_role),'message' => 'Success'], Response::HTTP_OK);
+            return response()->json(['data' => new PositionSystemRoleResource($position_system_role),'message' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -133,7 +132,7 @@ class PositionSystemRoleController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => new ReferenceResource($position_system_role),'message' => 'Success'], Response::HTTP_OK);
+            return response()->json(['data' => new PositionSystemRoleResource($position_system_role),'message' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -145,7 +144,7 @@ class PositionSystemRoleController extends Controller
         try{
             $position_system_role = PositionSystemRole::findOrFail($id);
 
-            if(!$position_system_roles)
+            if(!$position_system_role)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }

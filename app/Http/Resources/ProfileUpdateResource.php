@@ -27,8 +27,8 @@ class ProfileUpdateResource extends JsonResource
             'employee_id' => $employee_id,
             'name' => $name,
             'approved_by' => $approved_by,
-            'request_at' => $request_at,
-            'approved_at' => $approved_at,
+            'request_at' => $this->request_at,
+            'approved_at' => $this->approved_at,
             'request_details' => RequestDetailResource::collection($request_details)
         ];
     }

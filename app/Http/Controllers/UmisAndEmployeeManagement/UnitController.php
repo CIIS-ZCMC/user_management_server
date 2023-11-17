@@ -7,18 +7,17 @@ use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Cache;
 use App\Services\RequestLogger;
 use App\Services\FileValidationAndUpload;
 use App\Http\Requests\UnitRequest;
-use App\Http\Requests\UnitAssignSupervisorRequest;
 use App\Http\Requests\UnitAssignOICRequest;
+use App\Http\Requests\UnitAssignHeadRequest;
 use App\Http\Resources\UnitResource;
 use App\Models\Unit;
 use App\Models\EmployeeProfile;
-use App\Models\SystemLogs;
 
 class UnitController extends Controller
 {  
@@ -44,7 +43,7 @@ class UnitController extends Controller
                 return Unit::all();
             });
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => UnitResource::collection($units),
@@ -167,7 +166,7 @@ class UnitController extends Controller
 
             $unit = Unit::create($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' =>  new UnitResource($unit),'message' => 'New unit added.'], Response::HTTP_OK);
         }catch(\Throwable $th){

@@ -35,7 +35,7 @@ class EmployeeProfileResource extends JsonResource
         return [
             'employee_id' => $this->employee_id,
             'name' => $name,
-            'profile_url' => $profile_url,
+            'profile_url' => $this->profile_url,
             'area_code' => $area_code,
             'area_name' => $area_name,
             'is_regular_employee' => $is_regular_employee,

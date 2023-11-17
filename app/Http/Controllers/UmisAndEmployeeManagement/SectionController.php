@@ -7,8 +7,8 @@ use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Cache;
 use App\Services\RequestLogger;
 use App\Services\FileValidationAndUpload;
@@ -44,7 +44,7 @@ class SectionController extends Controller
                 return Section::all();
             });
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => SectionResource::collection($sections),
@@ -60,7 +60,7 @@ class SectionController extends Controller
      * Assign Supervisor
      * This must be in section
      */
-    public function assignSupervisorByEmployeeID($id, SectionAssignChiefRequest $request)
+    public function assignSupervisorByEmployeeID($id, SectionAssignSupervisorRequest $request)
     {
         try{
             $section = Section::find($id);
@@ -170,7 +170,7 @@ class SectionController extends Controller
 
             $section = Section::create($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([
                 'data' =>  new SectionResource($section),

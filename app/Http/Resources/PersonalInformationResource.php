@@ -34,7 +34,7 @@ class PersonalInformationResource extends JsonResource
             'height' => $this->height,
             'weight' => $this->weight,
             'blood_type' => $this->blood_type,
-            'employee_id' => $this->employee_id
+            'employee_id' => $employee_id
         ];
     }
 }

@@ -4,19 +4,15 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Log;
 use App\Services\RequestLogger;
 use App\Services\FileValidationAndUpload;
-use App\Http\Requests\ProfileUpdateRequestRequest;
-use App\Http\Resources\ProfileUpdateRequestResource;
+use App\Http\Requests\ProfileRequest;
+use App\Http\Resources\ProfileUpdateResource;
 use App\Models\ProfileUpdateRequest;
 use App\Models\RequestDetail;
 use App\Models\EmployeeProfile;
-use App\Models\SystemLogs;
 
 class ProfileUpdateController extends Controller
 {
@@ -38,7 +34,7 @@ class ProfileUpdateController extends Controller
         try{
             $profile_update_requests = ProfileUpdateRequest::where('personal_information_id', $id)->get();
 
-            if(!$profile_update_request)
+            if(!$profile_update_requests)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
@@ -46,7 +42,7 @@ class ProfileUpdateController extends Controller
             $this->requestLogger->registerSystemLogs($request, $profile_update_requests['id'], true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
-                'data' => ProfileUpdateRequestResource::collection($profile_update_requests), 
+                'data' => ProfileUpdateResource::collection($profile_update_requests), 
                 'message' => 'Employee profile update request record found.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -71,7 +67,7 @@ class ProfileUpdateController extends Controller
             $this->requestLogger->registerSystemLogs($request, $profile_update_requests['id'], true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
-                'data' => ProfileUpdateRequestResource::collection($profile_update_requests), 
+                'data' => ProfileUpdateResource::collection($profile_update_requests), 
                 'message' => 'Employee profile update request record found.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -80,7 +76,7 @@ class ProfileUpdateController extends Controller
         }
     }
     
-    public function store(ProfileUpdateRequestRequest $request)
+    public function store(ProfileRequest $request)
     {
         try{
             $cleanData = [];
@@ -142,7 +138,7 @@ class ProfileUpdateController extends Controller
         }
     }
     
-    public function update($id, ProfileUpdateRequestRequest $request)
+    public function update($id, ProfileRequest $request)
     {
         try{
             $profile_update_request = ProfileUpdateRequest::find($id);
@@ -180,7 +176,7 @@ class ProfileUpdateController extends Controller
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([
-                'data' => new ProfileUpdateRequestResource($profile_update_request), 
+                'data' => new ProfileUpdateResource($profile_update_request), 
                 'message' => 'Employee profile update request data is updated.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -220,7 +216,7 @@ class ProfileUpdateController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            foreach($profile_update_request as $key => $profile_update_request){
+            foreach($profile_update_requests as $key => $profile_update_request){
                 $profile_update_request->delete();
             }
             
@@ -246,11 +242,11 @@ class ProfileUpdateController extends Controller
             $personal_information = $employee_profile->personalInformation;
             $profile_update_requests = $personal_information->profile_update_requests;
 
-            foreach($profile_update_request as $key => $profile_update_request){
+            foreach($profile_update_requests as $key => $profile_update_request){
                 $profile_update_request->delete();
             }
             
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['message' => 'Employee profile update request record deleted'], Response::HTTP_OK);
         }catch(\Throwable $th){

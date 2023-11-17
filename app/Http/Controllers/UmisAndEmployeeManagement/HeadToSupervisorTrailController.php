@@ -4,14 +4,12 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
 use App\Services\RequestLogger;
-use App\Http\Resources\HeadToSupervisorResource;
+use App\Http\Resources\HeadToSupervisorTrailResource;
 use App\Models\HeadToSupervisorTrail;
-use App\Models\SystemLogs;
+use App\Models\EmployeeProfile;
 
 class HeadToSupervisorTrailController extends Controller
 {
@@ -33,7 +31,7 @@ class HeadToSupervisorTrailController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => HeadToSupervisorResource::collection($head_to_supervisor_trails), 'message' => 'Record of employee assigned area trail history retrieved.'], Response::HTTP_OK);
+            return response()->json(['data' => HeadToSupervisorTrailResource::collection($head_to_supervisor_trails), 'message' => 'Record of employee assigned area trail history retrieved.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -58,9 +56,9 @@ class HeadToSupervisorTrailController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => new HeadToSupervisorResource($head_to_supervisor_trail), 'message' => 'Employee assigned area record trail found.'], Response::HTTP_OK);
+            return response()->json(['data' => new HeadToSupervisorTrailResource($head_to_supervisor_trail), 'message' => 'Employee assigned area record trail found.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -79,7 +77,7 @@ class HeadToSupervisorTrailController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => new HeadToSupervisorResource($head_to_supervisor_trail), 'message' => 'Assigned area record trail found.'], Response::HTTP_OK);
+            return response()->json(['data' => new HeadToSupervisorTrailResource($head_to_supervisor_trail), 'message' => 'Assigned area record trail found.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -100,7 +98,7 @@ class HeadToSupervisorTrailController extends Controller
             
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => 'Assigned area record trail deleted.'], Response::HTTP_OK);
+            return response()->json(['message' => 'Assigned area record trail deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

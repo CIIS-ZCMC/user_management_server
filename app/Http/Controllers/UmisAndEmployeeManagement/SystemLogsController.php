@@ -4,13 +4,13 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Crypt;
 use App\Services\RequestLogger;
 use App\Models\SystemLogs;
-use App\Http\Responces\SystemLogsResource;
+use App\Http\Resources\SystemLogsResource;
 
 class SystemLogsController extends Controller
 {

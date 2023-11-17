@@ -4,10 +4,8 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
 use App\Services\RequestLogger;
 use App\Http\Requests\OtherInformationRequest;
 use App\Http\Resources\OtherInformationResource;
@@ -72,7 +70,7 @@ class OtherInformationController extends Controller
         }
     }
     
-    public function store(OtherInfomrationRequest $request)
+    public function store(OtherInformationRequest $request)
     {
         try{
             $cleanData = [];
@@ -83,10 +81,10 @@ class OtherInformationController extends Controller
 
             $other_information = OtherInformation::create($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([
-                'data' => new OthereInformationResource($other_information),
+                'data' => new OtherInformationResource($other_information),
                 'message' => 'New employee other information registered.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -117,7 +115,7 @@ class OtherInformationController extends Controller
         }
     }
     
-    public function update($id, OtherInfomrationRequest $request)
+    public function update($id, OtherInformationRequest $request)
     {
         try{
             $other_information = OtherInformation::find($id);
@@ -138,7 +136,7 @@ class OtherInformationController extends Controller
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([
-                'data' => new OthereInformationResource($other_information),
+                'data' => new OtherInformationResource($other_information),
                 'message' => 'Other information record updated.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
