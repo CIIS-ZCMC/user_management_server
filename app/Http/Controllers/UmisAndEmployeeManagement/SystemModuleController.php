@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
 use App\Services\RequestLogger;
 use App\Http\Resources\ModulePermissionResource;
 use App\Http\Resources\SystemModuleResource;
@@ -140,7 +139,7 @@ class SystemModuleController extends Controller
                     ];
 
                     $failed[] = $fail_registration;
-                }catch(\Thorwable $th){
+                }catch(\Throwable $th){
                     $this->requestLogger->errorLog($this->CONTROLLER_NAME,'addPermission', $th->getMessage());
 
                     $fail_registration = [

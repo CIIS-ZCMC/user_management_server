@@ -4,17 +4,13 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Log;
 use App\Services\RequestLogger;
 use App\Http\Requests\VoluntaryWorkRequest;
 use App\Http\Resources\VoluntaryWorkResource;
 use App\Models\VoluntaryWork;
 use App\Models\EmployeeProfile;
-use App\Models\SystemLogs;
 
 class VoluntaryWorkController extends Controller
 {
@@ -34,7 +30,7 @@ class VoluntaryWorkController extends Controller
         try{
             $voluntary_works = VoluntaryWork::where('personal_information_id', $id)->get();
 
-            if(!$voluntary_work)
+            if(!$voluntary_works)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
@@ -190,7 +186,7 @@ class VoluntaryWorkController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            foreach($voluntary_work as $key => $voluntary_work){
+            foreach($voluntary_works as $key => $voluntary_work){
                 $voluntary_work->delete();
             }
             
@@ -216,11 +212,11 @@ class VoluntaryWorkController extends Controller
             $personal_information = $employee_profile->personalInformation;
             $voluntary_works = $personal_information->voluntary_works;
 
-            foreach($voluntary_work as $key => $voluntary_work){
+            foreach($voluntary_works as $key => $voluntary_work){
                 $voluntary_work->delete();
             }
             
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['message' => 'Employee voluntary works record deleted'], Response::HTTP_OK);
         }catch(\Throwable $th){

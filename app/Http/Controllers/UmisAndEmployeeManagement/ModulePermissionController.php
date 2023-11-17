@@ -8,7 +8,6 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
 use App\Services\RequestLogger;
 use App\Http\Resources\ModulePermissionResource;
 use App\Http\Resources\SystemModulePermissionResource;

@@ -4,16 +4,12 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
 use App\Services\RequestLogger;
 use App\Http\Requests\LegalInformationRequest;
 use App\Http\Resources\LegalInformationResource;
 use App\Models\LegalInformation;
-use App\Models\SystemLogs;
 
 class LegalInformationController extends Controller
 {
@@ -46,7 +42,7 @@ class LegalInformationController extends Controller
         }
     }
     
-    public function store(Request $request)
+    public function store(LegalInformationRequest $request)
     {
         try{
             $cleanData = [];
@@ -61,7 +57,7 @@ class LegalInformationController extends Controller
 
             $legal_information = LegalInformation::create($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['data' => new LegalInformation($legal_information) ,'message' => 'New employee legal information registered.'], Response::HTTP_OK);
         }catch(\Throwable $th){

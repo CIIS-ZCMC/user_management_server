@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -157,7 +156,7 @@ Route::middleware('auth.cookie')->group(function(){
         });
 
         Route::middleware(['auth.permission:UMIS-SM view'])->group(function(){
-            Route::get('system-role-add-permission/{id}', 'SystemRoleController@findSystemRolePermissions');
+            Route::get('system-role/find-permissions/{id}', 'SystemRoleController@findSystemRolePermissions');
         });
 
         Route::middleware(['auth.permission:UMIS-SM view'])->group(function(){

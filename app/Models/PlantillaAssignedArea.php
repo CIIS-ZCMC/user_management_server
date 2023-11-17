@@ -5,30 +5,26 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class AssignAreaTrail extends Model
+class PlantillaAssignedArea extends Model
 {
     use HasFactory;
 
-    protected $table = 'assigned_area_trails';
+    protected $table = 'plantilla_assigned_areas';
 
     public $fillable = [
-        'employee_profile_id',
+        'plantilla_number_id',
         'division_id',
         'department_id',
         'section_id',
         'unit_id',
-        'designation_id',
-        'plantilla_id',
-        'plantilla_number_id',
-        'started_at',
-        'end_at'
+        'effective_at'
     ];
 
     public $timestamps = TRUE;
 
-    public function employeeProfile()
+    public function plantillaNumber()
     {
-        return $this->belongsTo(EmployeeProfile::class);
+        return $this->belongsTo(PlantillaNumber::class);
     }
 
     public function division()
@@ -50,19 +46,9 @@ class AssignAreaTrail extends Model
     {
         return $this->belongsTo(Unit::class);
     }
-    
-    public function designation()
-    {
-        return $this->belongsTo(Designation::class);
-    }
 
     public function plantilla()
     {
-        return $this->belongsTo(Plantilla::class);
-    }
-
-    public function plantillaNumber()
-    {
-        return $this->belongsTo(PlantillaNumber::class);
+        return $this->belongsTo(PlantillaNumber::class, Plantilla::class);
     }
 }

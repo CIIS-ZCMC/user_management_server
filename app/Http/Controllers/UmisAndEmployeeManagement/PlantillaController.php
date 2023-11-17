@@ -7,13 +7,12 @@ use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use App\Services\RequestLogger;
 use App\Http\Requests\PlantillaRequest;
+use App\Http\Resources\DesignationEmployeesResource;
 use App\Http\Resources\PlantillaResource;
 use App\Models\Plantilla;
-use App\Models\SystemLogs;
 
 class PlantillaController extends Controller
 {
@@ -37,7 +36,7 @@ class PlantillaController extends Controller
                 return Plantilla::all();
             });
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => PlantillaResource::collection($plantillas),
@@ -52,7 +51,7 @@ class PlantillaController extends Controller
     public function findByDesignationID($id, Request $request)
     {
         try{
-            $sector_employees = Plantilla::with('assigned_areas')->findOrFail($designationId);;
+            $sector_employees = Plantilla::with('assigned_areas')->findOrFail($id);
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
@@ -81,7 +80,7 @@ class PlantillaController extends Controller
 
             $plantilla = Plantilla::create($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => new PlantillaResource($plantilla),

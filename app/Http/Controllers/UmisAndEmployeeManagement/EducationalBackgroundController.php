@@ -4,17 +4,13 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Log;
 use App\Services\RequestLogger;
 use App\Http\Requests\EducationalBackgroundRequest;
 use App\Http\Resources\EducationalBackgroundResource;
 use App\Models\EducationalBackground;
 use App\Models\EmployeeProfile;
-use App\Models\SystemLogs;
 
 class EducationalBackgroundController extends Controller
 {
@@ -34,7 +30,7 @@ class EducationalBackgroundController extends Controller
         try{
             $educational_backgrounds = EducationalBackground::where('personal_information_id', $id)->get();
 
-            if(!$educational_background)
+            if(!$educational_backgrounds)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
@@ -175,7 +171,7 @@ class EducationalBackgroundController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            foreach($educational_background as $key => $educational_background){
+            foreach($educational_backgrounds as $key => $educational_background){
                 $educational_background->delete();
             }
             
@@ -201,11 +197,11 @@ class EducationalBackgroundController extends Controller
             $personal_information = $employee_profile->personalInformation;
             $educational_backgrounds = $personal_information->educational_backgrounds;
 
-            foreach($educational_background as $key => $educational_background){
+            foreach($educational_backgrounds as $key => $educational_background){
                 $educational_background->delete();
             }
             
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['message' => 'Employee educational_backgrounds record deleted'], Response::HTTP_OK);
         }catch(\Throwable $th){

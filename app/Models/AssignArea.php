@@ -23,7 +23,8 @@ class AssignArea extends Model
         'section_id',
         'unit_id',
         'designation_id',
-        'plantilla_id'
+        'plantilla_id',
+        'plantilla_number_id',
     ];
 
     public $timestamps = TRUE;
@@ -61,6 +62,11 @@ class AssignArea extends Model
     public function plantilla()
     {
         return $this->belongsTo(Plantilla::class);
+    }
+
+    public function plantillaNumber()
+    {
+        return $this->belongsTo(PlantillaNumber::class);
     }
 
     public function findDetails()

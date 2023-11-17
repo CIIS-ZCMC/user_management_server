@@ -11,21 +11,16 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;   
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
 use App\Services\RequestLogger;
 use App\Services\FileValidationAndUpload;
 use App\Http\Requests\SignInRequest;
 use App\Http\Requests\EmployeeProfileRequest;
 use App\Http\Resources\EmployeeProfileResource;
-use App\Http\Resources\SignInResource;
-use App\Models\AssignArea;
 use App\Models\DefaultPassword;
 use App\Models\EmployeeProfile;
 use App\Models\LoginTrail;
 use App\Models\PositionSystemRole;
 use App\Models\SpecialAccessRole;
-use App\Models\SystemLogs;
 
 class EmployeeProfileController extends Controller
 {
@@ -110,7 +105,7 @@ class EmployeeProfileController extends Controller
                 $created_at = Carbon::parse($access_token['created_at']);
                 $current_time = Carbon::now();
 
-                $difference_in_minutes = $currentTime->diffInMinutes($created_at);
+                $difference_in_minutes = $current_time->diffInMinutes($created_at);
                 
                 $login_trail = LoginTrail::where('employee_profile_id', $employee_profile['id'])->first();
 
@@ -237,7 +232,7 @@ class EmployeeProfileController extends Controller
                 }
 
                 if(!$system_exist){
-                    $side_bar_details->system[] = $this->buildSystemDetails($system_role);
+                    $side_bar_details['system'][] = $this->buildSystemDetails($system_role);
                 }
             }
 
@@ -369,10 +364,10 @@ class EmployeeProfileController extends Controller
                 $designation = $plantilla->designation;
             }
 
-            $special_access_roles = $employee->specialAccessRole;
+            $special_access_roles = $employee_profile->specialAccessRole;
             
             //Retrieve Sidebar Details for the employee base on designation.
-            $side_bar_details = $this->buildSidebarDetails($designation, $special_access_roles);  
+            $side_bar_details = $this->buildSidebarDetails($employee_profile, $designation, $special_access_roles);  
 
             $area_assigned = $employee_profile->assignArea->findDetails; 
 
@@ -392,7 +387,7 @@ class EmployeeProfileController extends Controller
                 'platform' => $device['platform'],
                 'browser' => $device['browser'],
                 'browser_version' => $device['version'],
-                'employee_profile_id' => $user['id']
+                'employee_profile_id' => $employee_profile['id']
             ]);
 
             return response()
@@ -407,9 +402,9 @@ class EmployeeProfileController extends Controller
     public function revalidateAccessToken(Request $request)
     {
         try{
-            $user = $request->user;
+            $employee_profile = $request->user;
 
-            $personal_information = $user->personalInformation;
+            $personal_information = $employee_profile->personalInformation;
             $name = $personal_information->employeeName();
 
             $assigned_area = $employee_profile->assignedArea;
@@ -425,10 +420,10 @@ class EmployeeProfileController extends Controller
                 $designation = $plantilla->designation;
             }
 
-            $special_access_roles = $employee->specialAccessRole;
+            $special_access_roles = $employee_profile->specialAccessRole;
             
             //Retrieve Sidebar Details for the employee base on designation.
-            $side_bar_details = $this->buildSidebarDetails($designation, $special_access_roles);  
+            $side_bar_details = $this->buildSidebarDetails($employee_profile, $designation, $special_access_roles);  
 
             $area_assigned = $employee_profile->assignArea->findDetails; 
 
@@ -616,14 +611,14 @@ class EmployeeProfileController extends Controller
     {
         try{
             $employee_id = $request->input('employee_id');
-            $employee_profile = EmployeeProfile::where('employee_id', $id)->first();
+            $employee_profile = EmployeeProfile::where('employee_id', $employee_id)->first();
 
             if(!$employee_profile)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching a '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching a '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' => new EmployeeProfileResource($employee_profile), 'message' => 'Employee details found.'], Response::HTTP_OK);
         }catch(\Throwable $th){

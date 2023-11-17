@@ -7,8 +7,6 @@ use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use App\Services\RequestLogger;
 use App\Http\Requests\DesignationRequest;
@@ -17,7 +15,6 @@ use App\Http\Resources\DesignationTotalEmployeeResource;
 use App\Http\Resources\DesignationTotalPlantillaResource;
 use App\Http\Resources\DesignationEmployeesResource;
 use App\Models\Designation;
-use App\Models\SystemLogs;
 
 class DesignationController extends Controller
 {
@@ -43,7 +40,10 @@ class DesignationController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => DesignationResource::collection($designations)], Response::HTTP_OK);
+            return response()->json([
+                'data' => DesignationResource::collection($designations),
+                'message' => 'Designation records retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -57,7 +57,10 @@ class DesignationController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => DesignationTotalEmployeeResource::collection($total_employee_per_designation)], Response::HTTP_OK);
+            return response()->json([
+                'data' => DesignationTotalEmployeeResource::collection($total_employee_per_designation),
+                'message' => 'Total employee per disignation retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'totalEmployeePerDesignation', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -71,7 +74,10 @@ class DesignationController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => DesignationTotalPlantillaResource::collection($total_plantilla_per_designation)], Response::HTTP_OK);
+            return response()->json([
+                'data' => DesignationTotalPlantillaResource::collection($total_plantilla_per_designation),
+                'message' => 'Total plantilla per designation retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'totalEmployeePerDesignation', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -85,7 +91,10 @@ class DesignationController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => DesignationEmployeesResource::collection($employee_with_designation)], Response::HTTP_OK);
+            return response()->json([
+                'data' => DesignationEmployeesResource::collection($employee_with_designation),
+                'message' => 'Designation employee list retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'employeesOfSector', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -103,9 +112,12 @@ class DesignationController extends Controller
 
             $designation = Designation::create($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => $designation], Response::HTTP_OK);
+            return response()->json([
+                'data' => new DesignationResource($designation),
+                'message' => 'New designation added.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -124,7 +136,10 @@ class DesignationController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => new DesignationResource($job_position)], Response::HTTP_OK);
+            return response()->json([
+                'data' => new DesignationResource($designation),
+                'message' => 'Designation record retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -146,7 +161,10 @@ class DesignationController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new DesignationResource($designation), 
+                'message' => 'Designation details updated.'], 
+                Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -167,7 +185,7 @@ class DesignationController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['message' => 'Designation record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

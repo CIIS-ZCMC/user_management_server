@@ -4,15 +4,12 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
 use App\Services\RequestLogger;
 use App\Http\Requests\PersonalInformationRequest;
 use App\Http\Resources\PersonalInformationResource;
 use App\Models\PersonalInformation;
-use App\Models\SystemLogs;
 
 class PersonalInformationController extends Controller
 {
@@ -30,11 +27,9 @@ class PersonalInformationController extends Controller
     public function index(PersonalInformationRequest $request)
     {
         try{
-            $cacheExpiration = Carbon::now()->addDay();
-
             $personal_informations = PersonalInformation::all();
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
             
             return response()->json(['data' => PersonalInformationResource::collection($personal_informations)], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -54,9 +49,9 @@ class PersonalInformationController extends Controller
 
             $personal_information = PersonalInformation::create($cleanData);
             
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['data' => new PersonalInformationResource($personal_information)], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

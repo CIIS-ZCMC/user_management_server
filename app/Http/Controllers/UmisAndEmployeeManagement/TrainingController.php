@@ -4,15 +4,13 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
 use App\Services\RequestLogger;
 use App\Http\Requests\TrainingRequest;
 use App\Http\Resources\TrainingResource;
 use App\Models\Training;
-use App\Models\SystemLogs;
+use App\Models\EmployeeProfile;
 
 class TrainingController extends Controller
 {
@@ -89,7 +87,7 @@ class TrainingController extends Controller
 
             $training = Training::create($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => new TrainingResource($training),
