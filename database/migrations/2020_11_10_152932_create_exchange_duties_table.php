@@ -13,6 +13,18 @@ return new class extends Migration
     {
         Schema::create('exchange_duties', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('schedule_id');
+            $table->foreign('schedule_id')->references('id')->on('schedules')->onUpdate('cascade');
+
+            $table->unsignedBigInteger('requested_employee_id');
+            $table->foreign('requested_employee_id')->references('id')->on('employee_profiles')->onUpdate('cascade');
+            
+            $table->unsignedBigInteger('reliever_employee_id');
+            $table->foreign('reliever_employee_id')->references('id')->on('employee_profiles')->onUpdate('cascade');
+            
+            $table->string('reason');
+            $table->json('approve_by');
+            $table->softDeletes();
             $table->timestamps();
         });
     }
