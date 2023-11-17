@@ -138,4 +138,13 @@ class EmployeeProfile extends Authenticatable
 {
     return $this->hasMany(EmployeeOvertimeCredit::class);
 }
+
+public function leaveApplications() {
+    return $this->hasMany(LeaveApplication::class);
+}
+
+public function leaveApplicationLogs() {
+    return $this->hasMany(LeaveApplicationLog::class);
+}
+
 }

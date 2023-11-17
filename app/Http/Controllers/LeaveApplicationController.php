@@ -69,10 +69,62 @@ class LeaveApplicationController extends Controller
             
             $leave_applications=[];
             
-           $leave_applications =LeaveApplication::with(['dates','logs', 'requirements', 'leaveType'])->get();
-        //    $leave_application_resource=ResourcesLeaveApplication::collection($leave_applications);
+           $leave_applications =LeaveApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])->get();
+           $leave_applications_result = $leave_applications->map(function ($leave_application) {
+            $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
+            $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
+            return [
+                'id' => $leave_application->id,
+                'reference_number' => $leave_application->reference_number,
+                'country' => $leave_application->country,
+                'city' => $leave_application->city,
+                'zip_code' => $leave_application->zip_code,
+                'patient_type' => $leave_application->patient_type,
+                'illness' => $leave_application->illness,
+                'reason' => $leave_application->reason,
+                'leave_credit_total' => $leave_application->leave_credit_total ,
+                'status' => $leave_application->status ,
+                'remarks' => $leave_application->remarks ,
+                'date' => $leave_application->date ,
+                'with_pay' => $leave_application->with_pay ,
+                'employee_name' => "{$first_name} {$last_name}" ,
+                'division_name' => $leave_application->employeeProfile->assignedArea->division->name,
+                'department_name' => $leave_application->employeeProfile->assignedArea->department->name,
+                'section_name' => $leave_application->employeeProfile->assignedArea->section->name,
+                'unit_name' => $leave_application->employeeProfile->assignedArea->unit->name,
+                'logs' => $leave_application->logs->map(function ($log) {
+                    $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
+                     $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
+                    return [
+                        'id' => $log->id,
+                        'leave_application_id' => $log->leave_application_id,
+                        'action_by' => "{$first_name} {$last_name}" ,
+                        'action' => $log->action,
+                        'date' => $log->date,
+                    ];
+                }),
+                'requirements' => $leave_application->requirements->map(function ($requirement) {
+                    return [
+                       
+                        'id' => $requirement->id,
+                        'leave_application_id' => $requirement->leave_application_id,
+                        'name' => $requirement->name,
+                        'file_name' => $requirement->file_name,
+                    ];
+                }),
+                'dates' => $leave_application->dates->map(function ($date) {
+                    return [
+                       
+                        'id' => $date->id,
+                        'leave_application_id' => $date->leave_application_id,
+                        'date_from' => $date->date_from,
+                        'date_to' => $date->date_to,
+                    ];
+                }),
+            ];
+        });
            
-             return response()->json(['data' => $leave_applications], Response::HTTP_OK);
+             return response()->json(['data' => $leave_applications_result], Response::HTTP_OK);
         }catch(\Throwable $th){
         
             return response()->json(['message' => $th->getMessage()], 500);

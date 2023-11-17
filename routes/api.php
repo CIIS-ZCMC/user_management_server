@@ -28,6 +28,7 @@ Route::namespace('App\Http\Controllers')->group(function () {
     Route::get('get_employees_overtime_total', 'OvertimeApplicationController@getEmployeeOvertimeTotal');
     Route::get('requirements', 'RequirementController@index');
     Route::get('leave_types', 'LeaveTypeController@index');
+    Route::get('leave_applications', 'LeaveApplicationController@index');
 });
 
 Route::middleware('auth.cookie')->group(function(){
@@ -1202,7 +1203,7 @@ Route::middleware('auth.cookie')->group(function(){
         Route::post('update_requirements/{id}', 'RequirementController@update');
 
         //leave applications
-        Route::get('leave_applications', 'LeaveApplicationController@index');
+        // Route::get('leave_applications', 'LeaveApplicationController@index');
         Route::get('user_leave_applications', 'LeaveApplicationController@getUserLeaveApplication');
         Route::post('store_leave_applications', 'LeaveApplicationController@store');
         Route::post('decline_leave_applications/{id}', 'LeaveApplicationController@declineLeaveApplication');

@@ -21,5 +21,7 @@ class LeaveApplicationLog extends Model
         public function leave_application(){
             return $this->belongsTo(LeaveApplication::class);
         }
-      
-}
+        public function employeeProfile() {
+            return $this->belongsTo(EmployeeProfile::class, 'action_by_id');
+        }
+    }

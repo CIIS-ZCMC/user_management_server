@@ -26,37 +26,40 @@ class LeaveTypeController extends Controller
         try{
        
         // $leaveTypes = LeaveType::with('logs.employeeProfile.personalInformation','requirements.logs.employeeProfile')->get();
-        $leaveTypes = LeaveType::with('logs.employeeProfile.personalInformation', 'requirements.logs.employeeProfile.personalInformation')->get();
+        $leave_types = LeaveType::with('logs.employeeProfile.personalInformation', 'requirements.logs.employeeProfile.personalInformation')->get();
 
-            // Use map to customize the data
-            $leaveTypesArray = $leaveTypes->map(function ($leaveType) {
+           
+            $leave_types_result = $leave_types->map(function ($leave_type) {
                 return [
-                    'id' => $leaveType->id,
-                    'name' => $leaveType->name,
-                    'description' => $leaveType->description,
-                    'period' => $leaveType->period,
-                    'file_date' => $leaveType->file_date,
-                    'code' => $leaveType->code,
-                    'status' => $leaveType->status,
-                    'is_special' => $leaveType->is_special,
-                    'leave_credit_year' => $leaveType->leave_credit_year ,
-                    'logs' => $leaveType->logs->map(function ($log) {
+                    'id' => $leave_type->id,
+                    'name' => $leave_type->name,
+                    'description' => $leave_type->description,
+                    'period' => $leave_type->period,
+                    'file_date' => $leave_type->file_date,
+                    'code' => $leave_type->code,
+                    'status' => $leave_type->status,
+                    'is_special' => $leave_type->is_special,
+                    'leave_credit_year' => $leave_type->leave_credit_year ,
+                    'logs' => $leave_type->logs->map(function ($log) {
+                        $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null ;
+                        $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
                         return [
                             'id' => $log->id,
-                            'action_by' => optional($log->employeeProfile)->personalInformation->first_name ?? null,
+                            'action_by' => "{$first_name} {$last_name}",
                             'action' => $log->action,
                             'date' => $log->date,
                         ];
                     }),
-                    'requirements' => $leaveType->requirements->map(function ($requirement) {
+                    'requirements' => $leave_type->requirements->map(function ($requirement) {
                         return [
                             'id' => $requirement->id,
                             'name' => $requirement->name,
                             'logs' => $requirement->logs->map(function ($log) {
+                                $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null ;
+                                $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
                                 return [
                                     'id' => $log->id,
-                                    'employee_name' => optional($log->employeeProfile)->personalInformation->first_name ?? null,
-                                    'action_by' => optional($log->employeeProfile)->personalInformation->first_name ?? null,
+                                    'action_by' => "{$first_name} {$last_name}",
                                     'action' => $log->action,
                                     'date' => $log->date,
                                 ];
@@ -66,7 +69,7 @@ class LeaveTypeController extends Controller
                 ];
             });
             
-             return response()->json(['data' => $leaveTypesArray], Response::HTTP_OK);
+             return response()->json(['data' => $leave_types_result], Response::HTTP_OK);
         }catch(\Throwable $th){
         
             return response()->json(['message' => $th->getMessage()], 500);
