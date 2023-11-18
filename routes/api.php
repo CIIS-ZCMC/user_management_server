@@ -225,7 +225,7 @@ Route::middleware('auth.cookie')->group(function(){
     /**
      * Employee Management
      */
-    Route::namespace('App\Http\Controllers')->group(function(){
+    Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function(){
         /**
          * Address Module
          */
@@ -1005,31 +1005,31 @@ Route::middleware('auth.cookie')->group(function(){
          * Section Module
          */
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function(){
-            Route::get('salary-grade-all', 'SectionController@index');
+            Route::get('section-all', 'SectionController@index');
         });
         
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
-            Route::post('salary-grade/assign-supervisor/{id}', 'SectionController@assignSupervisorByEmployeeID');
+            Route::post('section/assign-supervisor/{id}', 'SectionController@assignSupervisorByEmployeeID');
         });
 
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
-            Route::post('salary-grade/assign-oic/{id}', 'SectionController@assignOICByEmployeeID');
+            Route::post('section/assign-oic/{id}', 'SectionController@assignOICByEmployeeID');
         });
 
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
-            Route::post('salary-grade', 'SectionController@store');
+            Route::post('section', 'SectionController@store');
         });
 
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
-            Route::get('salary-grade/{id}', 'SectionController@show');
+            Route::get('section/{id}', 'SectionController@show');
         });
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
-            Route::put('salary-grade/{id}', 'SectionController@update');
+            Route::put('section/{id}', 'SectionController@update');
         });
         
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
-            Route::delete('salary-grade/{id}', 'SectionController@destroy');
+            Route::delete('section/{id}', 'SectionController@destroy');
         });
 
         /**

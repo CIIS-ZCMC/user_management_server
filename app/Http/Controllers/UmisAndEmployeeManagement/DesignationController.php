@@ -53,7 +53,7 @@ class DesignationController extends Controller
     public function totalEmployeePerDesignation(Request $request)
     {
         try{
-            $total_employee_per_designation = Designation::withCount('assigned_areas')->get();
+            $total_employee_per_designation = Designation::withCount('assignAreas')->get();
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
@@ -70,7 +70,7 @@ class DesignationController extends Controller
     public function totalPlantillaPerDesignation(Request $request)
     {
         try{
-            $total_plantilla_per_designation = Designation::withCount('plantillas')->get();
+            $total_plantilla_per_designation = Designation::withCount('plantilla')->get();
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
@@ -83,16 +83,16 @@ class DesignationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
+ 
     public function employeeListInDesignation($id, Request $request)
     {
         try{
-            $employee_with_designation = Designation::with('assigned_areas')->findOrFail($id);;
+            $employee_with_designation = Designation::with('assignAreas.employeeProfile')->findOrFail($id);
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
-                'data' => DesignationEmployeesResource::collection($employee_with_designation),
+                'data' => new DesignationEmployeesResource($employee_with_designation),
                 'message' => 'Designation employee list retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -179,6 +179,11 @@ class DesignationController extends Controller
             if(!$designation)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            if(count($designation->plantila??[]) > 0 || count($designation->positionSystemRoles??[]) > 0)
+            {
+                return response()->json(['message' => 'Some data is using this designation record deletion is prohibited.'], Response::HTTP_BAD_REQUEST);
             }
 
             $designation -> delete();
