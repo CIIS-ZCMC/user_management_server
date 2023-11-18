@@ -13,9 +13,8 @@ return new class extends Migration
     {
         Schema::create('plantillas', function (Blueprint $table) {
             $table->id();
-            $table->string('plantilla_no');
             $table->integer('slot');
-            $table->integer('available');
+            $table->integer('total_used_plantilla_no')->default(0);
             $table->date('effective_at')->default(now());
             $table->unsignedBigInteger('designation_id');
             $table->foreign('designation_id')->references('id')->on('designations');

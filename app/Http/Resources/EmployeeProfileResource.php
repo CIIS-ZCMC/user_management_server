@@ -18,7 +18,7 @@ class EmployeeProfileResource extends JsonResource
         $nameExtension = $personal_information === null?'':' '.$personal_information->name_extension.' ';
         $nameTitle = $personal_information===null?'': ' '.$personal_information->name_title;
 
-        $name = $personal_information->first_name.' '.$personal_information->last_name.$nameExtension.$nameTitle;
+        $name = $personal_information->name;
         $assigned_area = $this->assignedArea;
         $area_details = $assigned_area->findDetails();
         $area_code = $area_details['code'];

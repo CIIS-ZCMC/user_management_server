@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class DesignationResource extends JsonResource
+class PlantillaRequirementResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -15,9 +15,11 @@ class DesignationResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'name' => $this->name,
-            'code' => $this->code,
-            'salary_grade' => new SalaryGradeResource($this->salaryGrade)
+            'education' => $this->education,
+            'training' => $this->training??'NONE',
+            'experience' => $this->experince,
+            'eligibility' => $this->eligibility??'NONE',
+            'competency' => $this->competency??'NONE'
         ];
     }
 }

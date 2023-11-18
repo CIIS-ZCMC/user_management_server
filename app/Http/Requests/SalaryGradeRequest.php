@@ -24,8 +24,8 @@ class SalaryGradeRequest extends FormRequest
         return [
             'salary_grade_number' => 'required|integer',
             'step' => 'required|integer',
-            'amount' => 'required|float',
-            'effective_at' => 'required|date:Y-m-d'
+            'amount' => 'required|numeric',
+            'effective_at' => 'required|date:Y-m-d',
         ];
     }
 }

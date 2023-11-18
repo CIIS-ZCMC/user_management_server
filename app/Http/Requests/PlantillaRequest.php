@@ -21,21 +21,16 @@ class PlantillaRequest extends FormRequest
      */
     public function rules(): array
     {
-        if($this->designation_id === null){
-            return [
-                'planttila_no' => 'required|string|max:255',
-                'tranche' => 'nullable|string|max:255',
-                'effective_at' => 'required|date:Y-m-d',
-                'category' => 'nullable|integer',
-            ];
-        }
-
         return [
-            'planttila_no' => 'required|string|max:255',
-            'tranche' => 'nullable|string|max:255',
-            'effective_at' => 'required|date:Y-m-d',
-            'category' => 'nullable|integer',
             'designation_id' => 'required|integer',
+            'slot' => 'nullable|integer',
+            'effective_at' => 'required|date:Y-m-d',
+            'education' => 'required|string|max:255',
+            'training' => 'nullable|string|max:255',
+            'experience' => 'nullable|numeric',
+            'eligibility' => 'nullable|string|max:255',
+            'competency' => 'nullable|string|max:255',
+            'plantilla_number' => 'required|array'
         ];
     }
 }

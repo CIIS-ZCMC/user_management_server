@@ -13,6 +13,8 @@ use App\Http\Requests\PlantillaRequest;
 use App\Http\Resources\DesignationEmployeesResource;
 use App\Http\Resources\PlantillaResource;
 use App\Models\Plantilla;
+use App\Models\PlantillaNumber;
+use App\Models\PlantillaRequirement;
 
 class PlantillaController extends Controller
 {
@@ -71,7 +73,7 @@ class PlantillaController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if($value === null){
+                if($key === 'plantilla_number'){
                     $cleanData[$key] = $value;
                     continue;
                 }
@@ -80,12 +82,60 @@ class PlantillaController extends Controller
 
             $plantilla = Plantilla::create($cleanData);
 
+            $cleanData['plantilla_id'] = $plantilla->id;
+            $plantilla_requirement = PlantillaRequirement::create($cleanData);
+
+            $failed = [];
+
+            foreach($cleanData['plantilla_number'] as $value)
+            {
+                try{
+                    if(!is_string($value))
+                    {
+                        $failed_to_register = [
+                            'plantilla_number' => $value,
+                            'remarks' => 'Invalid type require string.'
+                        ];
+                        
+                        $failed[] = $failed_to_register;
+                        continue;
+                    }
+
+                    PlantillaNumber::create([
+                        'number' => $value,
+                        'plantilla_id' => $plantilla->id
+                    ]);
+                }catch(\Throwable $th){
+                    $failed_to_register = [
+                        'plantilla_number' => $value,
+                        'remarks' => 'Something went wrong.'
+                    ];
+                    $failed[] = $failed_to_register;
+                    continue;
+                }
+            }
+
+            $data = new PlantillaResource($plantilla);
+            $message = 'New plantilla registered.';
+
+            if(count($failed) === count($cleanData['plantilla_number']))
+            {
+                $data = [];
+                $message = 'Failed to register plantilla numbers.';
+            }
+
+            if(count($failed) > 0)
+            {
+                $data = [
+                    'new_plantilla' => new PlantillaResource($plantilla),
+                    'failed' => $failed
+                ];
+                $message = 'Some plantilla number failed to register.';
+            }
+
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json([
-                'data' => new PlantillaResource($plantilla),
-                'message' => 'New plantilla registered.'
-            ], Response::HTTP_OK);
+            return response()->json([$data, $message], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

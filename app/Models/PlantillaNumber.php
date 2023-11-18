@@ -13,8 +13,10 @@ class PlantillaNumber extends Model
 
     public $fillable = [
         'number',
+        'is_vacant',
         'assigned_at',
-        'plantilla_id'
+        'plantilla_id',
+        'employee_profile_id'
     ];
 
     public $timestamps = TRUE;
@@ -24,8 +26,13 @@ class PlantillaNumber extends Model
         return $this->belongsTo(Plantilla::class);
     }
 
-    public function plantillaAssignedArea()
+    public function assignedArea()
     {
         return $this->hasOne(PlantillaAssignedArea::class);
+    }
+
+    public function employee()
+    {
+        return $this->belongsTo(EmployeeProfile::class);
     }
 }

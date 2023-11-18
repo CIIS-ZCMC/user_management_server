@@ -126,6 +126,10 @@ class SalaryGradeController extends Controller
                 return response()->json(['message' => "No record found"], Response::HTTP_NOT_FOUND);
             }
 
+            if(count($salary_grade->designation) > 0){
+                return response()->json(['message' => "Some data is using this salary grade record deletion is prohibited."], Response::HTTP_BAD_REQUEST);
+            }
+
             $salary_grade -> delete();
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
