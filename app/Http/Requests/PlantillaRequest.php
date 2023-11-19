@@ -30,7 +30,7 @@ class PlantillaRequest extends FormRequest
             'experience' => 'nullable|numeric',
             'eligibility' => 'nullable|string|max:255',
             'competency' => 'nullable|string|max:255',
-            'plantilla_number' => 'required|array'
+            'plantilla_number' => 'nullable|array'
         ];
     }
 }

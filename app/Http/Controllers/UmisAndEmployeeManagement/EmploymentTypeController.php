@@ -4,11 +4,12 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 use App\Services\RequestLogger;
+use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Resources\EmploymentTypeResource;
 use App\Models\EmploymentType;
 
@@ -28,15 +29,14 @@ class EmploymentTypeController extends Controller
     public function index(Request $request)
     {
         try{
-            $cacheExpiration = Carbon::now()->addDay();
-
-            $employment_types = Cache::remember('employment_types', $cacheExpiration, function(){
-                return EmploymentType::all();
-            });
+            $employment_types = EmploymentType::all();
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
             
-            return response()->json(['data' => EmploymentTypeResource::collection($employment_types),'message' => 'Employment type list retrieved.' ], Response::HTTP_OK);
+            return response()->json([
+                'data' => EmploymentTypeResource::collection($employment_types),
+                'message' => 'Employment type list retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -47,24 +47,19 @@ class EmploymentTypeController extends Controller
     {
         try{
             $request->validate([
-                'name' => 'required|string'
+                'name' => 'required|string|max:255'
             ]);
 
-            $cleanData = [];
+            $name = strip_tags($request->input('name'));
 
-            foreach ($request->all() as $key => $value) {
-                if($value === null){
-                    $cleanData[$key] = $value;
-                    continue;
-                }
-                $cleanData[$key] = strip_tags($value);
-            }
-
-            $employment_type = EmploymentType::create($cleanData);
+            $employment_type = EmploymentType::create($name);
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => new EmploymentTypeResource($employment_type),'message' => 'New employment type registered.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new EmploymentTypeResource($employment_type),
+                'message' => 'New employment type registered.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -93,37 +88,55 @@ class EmploymentTypeController extends Controller
     public function update($id, Request $request)
     {
         try{
-            $validatedData = $request->validate([
-                'name' => 'required|string'
+            $request->validate([
+                'name' => 'required|string|max:255'
             ]);
 
             $employment_type = EmploymentType::find($id);
 
-            $cleanData = [];
-
-            foreach ($request->all() as $key => $value) {
-                $cleanData[$key] = strip_tags($value);
+            if(!$employment_type)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $employment_type -> update($cleanData);
+            $name = strip_tags($request->input('name'));
+
+            $employment_type -> update(['name' => $name]);
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => new EmploymentTypeResource($employment_type),'message' => 'Employment type record updated.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new EmploymentTypeResource($employment_type),
+                'message' => 'Employment type record updated.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function destroy($id, Request $request)
+    public function destroy($id, PasswordApprovalRequest $request)
     {
-        try{
+        try{ 
+            $password = strip_tags($request->input('password'));
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $employment_type = EmploymentType::findOrFail($id);
 
             if(!$employment_type)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            if(count($employment_type->employees)>0){
+                return response()->json(['message' => 'Some data is using this employment type record deletion is prohibited.'], Response::HTTP_BAD_REQUEST);
             }
 
             $employment_type -> delete();

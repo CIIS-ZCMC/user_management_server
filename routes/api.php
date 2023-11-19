@@ -596,7 +596,7 @@ Route::middleware('auth.cookie')->group(function(){
          */
         
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function(){
-            Route::get('employment-type/{id}', 'EmploymentTypeController@index');
+            Route::get('employment-type-all', 'EmploymentTypeController@index');
         });
         
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
@@ -883,6 +883,10 @@ Route::middleware('auth.cookie')->group(function(){
         
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
             Route::delete('plantilla/{id}', 'PlantillaController@destroy');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
+            Route::delete('plantilla-number/{id}', 'PlantillaController@destroyPlantillaNumber');
         });
 
         /**
