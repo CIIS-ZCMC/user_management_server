@@ -12,11 +12,13 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use App\Services\RequestLogger;
 use App\Services\FileValidationAndUpload;
+use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\DivisionRequest;
 use App\Http\Requests\DivisionAssignChiefRequest;
 use App\Http\Requests\DivisionAssignOICRequest;
 use App\Http\Resources\DivisionResource;
 use App\Models\Division;
+use App\Models\Designation;
 use App\Models\EmployeeProfile;
 
 class DivisionController extends Controller
@@ -45,7 +47,10 @@ class DivisionController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in deleting '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => DivisionResource::collection($divisions), 'message' => 'Division record retrieved.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => DivisionResource::collection($divisions), 
+                'message' => 'Division record retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -149,20 +154,33 @@ class DivisionController extends Controller
         try{
             $cleanData = [];
 
+            $designation = Designation::find($request->input('designation_id'));
+
             foreach ($request->all() as $key => $value) {
                 if($value === null)
                 {
-                    $cleanData[$key] = null;
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                if($key === 'attachment')
+                {
+                    $cleanData['division_attachment_url'] = $this->file_validation_and_upload->check_save_file($request, 'division\files');
                     continue;
                 }
                 $cleanData[$key] = strip_tags($value);
             }
+            
+            $cleanData['job_specification'] = $designation['code'];
 
             $division = Division::create($cleanData);
 
             $this->requestLogger->registerSystemLogs($request, $division['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => new DivisionResource($division),'message' => 'Newly added division.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new DivisionResource($division),
+                'message' => 'Newly added division.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -181,14 +199,17 @@ class DivisionController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => new DivisionResource($division), 'message' => 'Division details found.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new DivisionResource($division),
+                'message' => 'Division details found.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function update($id, DivisionRequest $request)
+    public function update($id, Request $request)
     {
         try{
             $division = Division::find($id);
@@ -198,26 +219,52 @@ class DivisionController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
+            $designation = Designation::find($request->input('designation_id'));
+
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
+                if($value === null)
+                {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+                
+                if($key === 'attachment')
+                {
+                    $cleanData['division_attachment_url'] = $this->file_validation_and_upload->check_save_file($request, 'division\files');
+                    continue;
+                }
                 $cleanData[$key] = strip_tags($value);
             }
-
+            $cleanData['job_specification'] = $designation['code'];
             $division -> update($cleanData);
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => new DivisionResource($division),'message' => 'Newly added division.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new DivisionResource($division),
+                'message' => 'Newly added division.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function destroy($id, Request $request)
+    public function destroy($id, PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->input('password'));
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $division = Division::findOrFail($id);
 
             if(!$division)
@@ -225,11 +272,16 @@ class DivisionController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
+            if(count($division->departments) > 0)
+            {
+                return response()->json(['message' => 'Some data is using this record deletion is prohibited.'], Response::HTTP_BAD_REQUEST);
+            }
+
             $division -> delete();
             
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['message' => 'Division record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

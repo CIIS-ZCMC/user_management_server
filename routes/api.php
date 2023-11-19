@@ -16,6 +16,11 @@ use Illuminate\Support\Facades\Route;
 // Attach CSP in response
 // Route::middleware('csp.token')->group(function(){});
 
+
+Route::get('/initialize-storage', function () {
+    Artisan::call('storage:link');
+});
+
 Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
     Route::post('sign-in', 'EmployeeProfileController@signIn');
     Route::post('send-otp', 'EmployeeProfileController@sendOTPEmail');
@@ -454,11 +459,11 @@ Route::middleware('auth.cookie')->group(function(){
             Route::get('division-all', 'DivisionController@index');
         });
         
-        Route::middleware(['auth.permission:UMIS-EM put'])->group(function(){
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
             Route::put('division-assign-chief-employee/{id}', 'DivisionController@assignChiefByEmployeeID');
         });
         
-        Route::middleware(['auth.permission:UMIS-EM put'])->group(function(){
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
             Route::put('division-assign-oic-employee/{id}', 'DivisionController@assignOICByEmployeeID');
         });
         
