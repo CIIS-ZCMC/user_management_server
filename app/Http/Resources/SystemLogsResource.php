@@ -14,16 +14,13 @@ class SystemLogsResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $status = $this->status ? 'Complete': "Failed";
-        $employee_id = $this->employee->employee_id;
-
         return [
             'action' => $this->action,
             'module_id' => $this->module_id,
-            'status' => $status,
+            'status' => $this->status ? 'Complete': "Failed",
             'ip_address' => $this->ip_address,
             'remarks' => $this->remarks,
-            'employee_id' => $employee_id
+            'employee_id' => $this->employeeProfile->employee_id
         ];
     }
 }

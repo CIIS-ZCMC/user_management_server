@@ -102,15 +102,15 @@ Route::middleware('auth.cookie')->group(function(){
          * System Logs Module
          */
         Route::middleware(['auth.permission:UMIS-SM view-all'])->group(function(){
-            Route::get('system-all', 'SystemController@index');
+            Route::get('system-log-all', 'SystemLogsController@index');
         });
 
         Route::middleware(['auth.permission:UMIS-SM view'])->group(function(){
-            Route::get('system/{id}', 'SystemController@show');
+            Route::get('system-log/{id}', 'SystemLogsController@show');
         });
         
         Route::middleware(['auth.permission:UMIS-SM delete'])->group(function(){
-            Route::delete('system/{id}', 'SystemController@destroy');
+            Route::delete('system-log/{id}', 'SystemLogsController@destroy');
         });
 
         /**
@@ -778,7 +778,7 @@ Route::middleware('auth.cookie')->group(function(){
          * Login Trail Module
          */
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
-            Route::get('login-trail/{id}', 'LoginTrailController@show');
+            Route::get('login-trail', 'LoginTrailController@show');
         });
         
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){

@@ -23,26 +23,29 @@ class LoginTrailController extends Controller
         $this->requestLogger = $requestLogger;
     }
 
-    public function show($id, Request $request)
+    public function show(Request $request)
     {
         try{    
-            $login_trails = LoginTrail::where('employee_profile_id', $id)->get();
-            
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            $employee_profile = $request->user;
 
-            return response()->json(['data' => LoginTrailResource::collection($login_trails), 'message' => 'Employee login trail retrieved.'], Response::HTTP_OK);
+            $login_trails = LoginTrail::where('employee_profile_id', $employee_profile['id'])->get();
+            
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+
+            return response()->json([
+                'data' => LoginTrailResource::collection($login_trails), 
+                'message' => 'Employee login trail retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
-    public function findByEmployeeID(Request $request)
+    public function findByEmployeeID($id, Request $request)
     {
-        try{   
-            $employee_id = $request->input('employee_id');
-
-            $employee_profile = EmployeeProfile::where('employee_id', $employee_id)->first();
+        try{
+            $employee_profile = EmployeeProfile::where('employee_id', $id)->first();
 
             if(!$employee_profile)
             {

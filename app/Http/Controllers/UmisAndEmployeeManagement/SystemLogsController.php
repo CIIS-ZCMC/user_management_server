@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Crypt;
+use App\Http\Requests\PasswordApprovalRequest;
 use App\Services\RequestLogger;
 use App\Models\SystemLogs;
 use App\Http\Resources\SystemLogsResource;
@@ -28,10 +29,10 @@ class SystemLogsController extends Controller
     public function index(Request $request)
     {
         try{
-            $stations = SystemLogs::all();
+            $system_logs = SystemLogs::all();
 
             return response()->json([
-                'data' => SystemLogsResource::collection($stations), 
+                'data' => SystemLogsResource::collection($system_logs), 
                 'message' => 'System logs retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -43,9 +44,9 @@ class SystemLogsController extends Controller
     public function show($id, Request $request)
     {
         try{
-            $station = SystemLogs::find($id);
+            $system_log = SystemLogs::find($id);
 
-            if(!$station)
+            if(!$system_log)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
@@ -53,7 +54,7 @@ class SystemLogsController extends Controller
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json([
-                'data' => new SystemLogsResource($station),
+                'data' => new SystemLogsResource($system_log),
                 'message' => 'System Log record retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -62,26 +63,27 @@ class SystemLogsController extends Controller
         }
     }
     
-    public function destroy($id, Request $request)
+    public function destroy($id, PasswordApprovalRequest $request)
     {
         try{
-            $user = $request->user;
-            $cleanData['password'] = strip_tags($request->input('password'));
+            $password = strip_tags($request->input('password'));
 
-            $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
+            $employee_profile = $request->user;
 
-            if (!Hash::check($cleanData['password'].env("SALT_VALUE"), $decryptedPassword)) {
-                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
             }
             
-            $station = SystemLogs::findOrFail($id);
+            $system_log = SystemLogs::findOrFail($id);
 
-            if(!$station)
+            if(!$system_log)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $station -> delete();
+            $system_log -> delete();
             
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
