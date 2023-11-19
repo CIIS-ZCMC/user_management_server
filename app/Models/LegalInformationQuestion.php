@@ -27,6 +27,6 @@ class LegalInformationQuestion extends Model
 
     public function subQuestions()
     {
-        return $this->hasMany(LegalInformationQuestion::class);
+        return $this->hasMany(LegalInformationQuestion::class, 'legal_iq_id');
     }
 }

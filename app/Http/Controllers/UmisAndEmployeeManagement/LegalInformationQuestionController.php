@@ -8,11 +8,13 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 use App\Services\RequestLogger;
+use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\LegalInformationQuestionRequest;
 use App\Http\Resources\LegalInformationQuestionResource;
 use App\Models\LegalInformationQuestion;
-use App\Models\SystemLogs;
 
 class LegalInformationQuestionController extends Controller
 {
@@ -33,7 +35,7 @@ class LegalInformationQuestionController extends Controller
             $cacheExpiration = Carbon::now()->addDay();
 
             $legal_information_questions = Cache::remember('legal_information_questions', $cacheExpiration, function(){
-                return LegalInformationQuestion::all();
+                return LegalInformationQuestion::where('legal_iq_id', null)->orderBy('order_by', 'asc')->get();
             });
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
@@ -54,7 +56,7 @@ class LegalInformationQuestionController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if($key === 'has_sub_question' || $key === 'legal_iq_id'){
+                if($value === null){
                     $cleanData[$key] = $value;
                     continue;
                 }
@@ -131,9 +133,19 @@ class LegalInformationQuestionController extends Controller
         }
     }
     
-    public function destroy($id, Request $request)
+    public function destroy($id, PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->input('password'));
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $legal_information_question = LegalInformationQuestion::findOrFail($id);
 
             if(!$legal_information_question)
