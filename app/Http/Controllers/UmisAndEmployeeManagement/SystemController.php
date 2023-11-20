@@ -7,7 +7,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Services\RequestLogger;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Crypt;
 use App\Http\Requests\SystemRequest;
 use App\Http\Resources\SystemResource;
@@ -31,7 +30,7 @@ class SystemController extends Controller
         try{
             $systems = System::all();
 
-            $this->requestLogger->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
             
             return response() -> json([
                 'data' => SystemResource::collection($systems),
@@ -119,7 +118,7 @@ class SystemController extends Controller
 
             if(!is_int($status) || $status < 0 || $status > 2)
             {
-                return response()->json(['message' => 'Invalid Data.'], Response::HTTP_INVALID_REQUEST);
+                return response()->json(['message' => 'Invalid Data.'], Response::HTTP_BAD_REQUEST);
             }
 
             $system = System::find($id);

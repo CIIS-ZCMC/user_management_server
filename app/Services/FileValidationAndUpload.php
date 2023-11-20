@@ -2,9 +2,7 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Log;
-
-use App\Models\SystemLogs;
+use Illuminate\Support\Facades\Hash;
 
 class FileValidationAndUpload {
 

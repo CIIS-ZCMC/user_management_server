@@ -7,9 +7,9 @@ use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Hash;
 use App\Services\RequestLogger;
 use App\Services\FileValidationAndUpload;
 use App\Http\Requests\DepartmentRequest;
@@ -44,9 +44,12 @@ class DepartmentController extends Controller
                 return Department::all();
             });
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => DepartmentResource::collection($departments)], Response::HTTP_OK);
+            return response()->json([
+                'data' => DepartmentResource::collection($departments),
+                'message' => 'Department records retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -90,7 +93,10 @@ class DepartmentController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in assigning head'.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => new DepartmentResource($department), 'message' => 'New department head assigned.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new DepartmentResource($department), 
+                'message' => 'New department head assigned.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'assignHeadByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -135,7 +141,10 @@ class DepartmentController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in assigning head'.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => new DepartmentResource($department), 'message' => 'New traning officer assigned.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new DepartmentAssignTrainingOfficerRequest($department), 
+                'message' => 'New training officer assigned.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'assignHeadByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -183,7 +192,9 @@ class DepartmentController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in assigning officer in charge '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => new DepartmentResource($department), 'New officer incharge assigned.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new DepartmentResource($department), 
+                'message' => 'New officer incharge assigned.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'assignOICByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -206,9 +217,12 @@ class DepartmentController extends Controller
 
             $department = Department::create($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' =>  new DepartmentResource($department),'message' => 'Newly added department.'], Response::HTTP_OK);
+            return response()->json([
+                'data' =>  new DepartmentResource($department),
+                'message' => 'Newly added department.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -227,7 +241,10 @@ class DepartmentController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => new DepartmentResource($department), 'message' => 'Department record found.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new DepartmentResource($department), 
+                'message' => 'Department record found.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -259,7 +276,10 @@ class DepartmentController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' =>  new DepartmentResource($department),'message' => 'Update department details.'], Response::HTTP_OK);
+            return response()->json([
+                'data' =>  new DepartmentResource($department),
+                'message' => 'Update department details.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

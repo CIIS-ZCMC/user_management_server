@@ -4,17 +4,13 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Log;
 use App\Services\RequestLogger;
 use App\Http\Requests\AddressRequest;
 use App\Http\Resources\AddressResource;
 use App\Models\Address;
 use App\Models\EmployeeProfile;
-use App\Models\SystemLogs;
 
 class AddressController extends Controller
 {
@@ -34,14 +30,17 @@ class AddressController extends Controller
         try{
             $addresses = Address::where('personal_information_id', $id)->get();
 
-            if(!$address)
+            if(count($addresses) === 0)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
             $this->requestLogger->registerSystemLogs($request, $addresses['id'], true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => AddressResource::collection($addresses)], Response::HTTP_OK);
+            return response()->json([
+                'data' => AddressResource::collection($addresses),
+                'message' => 'Address records retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByPersonalInformationID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -61,9 +60,17 @@ class AddressController extends Controller
             $personal_information = $employee_profile->personalInformation;
             $addresses = $personal_information->addresses;
 
+            if(count($addresses) === 0)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
             $this->requestLogger->registerSystemLogs($request, $addresses['id'], true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => AddressResource::collection($addresses)], Response::HTTP_OK);
+            return response()->json([
+                'data' => AddressResource::collection($addresses),
+                'message' => 'Employee address records retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -87,7 +94,10 @@ class AddressController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, $address['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new AddressResource($address),
+                'message' => 'New employee address added.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -106,7 +116,10 @@ class AddressController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => $address], Response::HTTP_OK);
+            return response()->json([
+                'data' => new AddressResource($address),
+                'message' => 'Employee address retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -137,7 +150,10 @@ class AddressController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new AddressResource($address),
+                'message' => 'Employee address detail updated.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -158,7 +174,7 @@ class AddressController extends Controller
             
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['message' => 'Employee address deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -170,18 +186,18 @@ class AddressController extends Controller
         try{
             $addresses = Address::where('personal_information_id', $id)->get();
 
-            if(!$addresses)
+            if(count($addresses) === 0)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            foreach($address as $key => $address){
+            foreach($addresses as $key => $address){
                 $address->delete();
             }
             
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['message' => 'Employee address records deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -201,13 +217,18 @@ class AddressController extends Controller
             $personal_information = $employee_profile->personalInformation;
             $addresses = $personal_information->addresses;
 
-            foreach($address as $key => $address){
+            if(count($addresses) === 0)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            foreach($addresses as $key => $address){
                 $address->delete();
             }
             
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['message' => 'Employee address records deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

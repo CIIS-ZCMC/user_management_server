@@ -4,15 +4,12 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
 use App\Services\RequestLogger;
 use App\Http\Requests\IssuanceInformationRequest;
 use App\Http\Resources\IssuanceInformationResource;
 use App\Models\IssuanceInformation;
-use App\Models\SystemLogs;
 
 class IssuanceInformationController extends Controller
 {
@@ -43,7 +40,7 @@ class IssuanceInformationController extends Controller
 
             $issuance_information = IssuanceInformation::create($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
            
             return response()->json(['data' => new IssuanceInformationResource($issuance_information) ,'message' => 'Newly added employee issuance information.'], Response::HTTP_OK);
         }catch(\Throwable $th){

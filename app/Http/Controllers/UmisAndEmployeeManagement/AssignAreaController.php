@@ -4,15 +4,13 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
 use App\Services\RequestLogger;
 use App\Http\Requests\AssignAreaRequest;
 use App\Http\Resources\AssignAreaResource;
-use App\Models\AssignedArea;
-use App\Models\SystemLogs;
+use App\Models\AssignArea;
+use App\Models\EmployeeProfile;
 
 class AssignAreaController extends Controller
 { 
@@ -30,13 +28,14 @@ class AssignAreaController extends Controller
     public function index(Request $request)
     {
         try{
-            $cacheExpiration = Carbon::now()->addDay();
-
-            $assigned_areas = AssignedArea::all();
+            $assigned_areas = AssignArea::all();
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => AssignAreaResource::collection($assigned_areas), 'message' => 'Record of employee assigned area retrieved.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => AssignAreaResource::collection($assigned_areas), 
+                'message' => 'Record of employee assigned area retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -54,7 +53,7 @@ class AssignAreaController extends Controller
             }
 
 
-            $assigned_area = AssignedArea::where('employee_profile_id',$employe_profile['id'])->first();
+            $assigned_area = AssignArea::where('employee_profile_id',$employe_profile['id'])->first();
 
             if(!$assigned_area)
             {
@@ -63,14 +62,17 @@ class AssignAreaController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => new AssignAreaResource($assigned_area), 'message' => 'Employee assigned area found.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new AssignAreaResource($assigned_area), 
+                'message' => 'Employee assigned area found.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function store(AssignedAreaRequest $request)
+    public function store(AssignAreaRequest $request)
     {
         try{
             $cleanData = [];
@@ -83,11 +85,14 @@ class AssignAreaController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $assigned_area = AssignedArea::create($cleanData);
+            $assigned_area = AssignArea::create($cleanData);
 
             $this->requestLogger->registerSystemLogs($request, $assigned_area['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' =>  new AssignAreaResource($assigned_area),'message' => 'New employee assign area registered.'], Response::HTTP_OK);
+            return response()->json([
+                'data' =>  new AssignAreaResource($assigned_area),
+                'message' => 'New employee assign area registered.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -97,7 +102,7 @@ class AssignAreaController extends Controller
     public function show($id, Request $request)
     {
         try{
-            $assigned_area = AssignedArea::findOrFail($id);
+            $assigned_area = AssignArea::findOrFail($id);
 
             if(!$assigned_area)
             {
@@ -106,17 +111,20 @@ class AssignAreaController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => new AssignAreaResource($assigned_area), 'message' => 'Assigned area record found.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new AssignAreaResource($assigned_area), 
+                'message' => 'Assigned area record found.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function update($id, AssignedAreaRequest $request)
+    public function update($id, AssignAreaRequest $request)
     {
         try{
-            $assigned_area = AssignedArea::find($id);
+            $assigned_area = AssignArea::find($id);
 
             if(!$assigned_area)
             {
@@ -137,7 +145,10 @@ class AssignAreaController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' =>  new AssignAreaResource($assigned_area),'message' => 'New employee assign area registered.'], Response::HTTP_OK);
+            return response()->json([
+                'data' =>  new AssignAreaResource($assigned_area),
+                'message' => 'New employee assign area registered.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -147,7 +158,7 @@ class AssignAreaController extends Controller
     public function destroy($id, Request $request)
     {
         try{
-            $assigned_area = AssignedArea::findOrFail($id);
+            $assigned_area = AssignArea::findOrFail($id);
 
             if(!$assigned_area)
             {
@@ -158,7 +169,7 @@ class AssignAreaController extends Controller
             
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => 'Assigned area record deleted.'], Response::HTTP_OK);
+            return response()->json(['message' => 'Assigned area record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

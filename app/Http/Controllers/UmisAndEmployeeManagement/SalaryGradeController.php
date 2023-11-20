@@ -4,16 +4,12 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
 use App\Services\RequestLogger;
 use App\Http\Requests\SalaryGradeRequest;
 use App\Http\Resources\SalaryGradeResource;
 use App\Models\SalaryGrade;
-use App\Models\SystemLogs;
 
 class SalaryGradeController extends Controller
 {
@@ -31,11 +27,9 @@ class SalaryGradeController extends Controller
     public function index(Request $request)
     {
         try{
-            $cacheExpiration = Carbon::now()->addDay();
-
             $salary_grades = SalaryGrade::all();
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => SalaryGradeResource::collection($salary_grades),
@@ -47,7 +41,7 @@ class SalaryGradeController extends Controller
         }
     }
     
-    public function store(Request $request)
+    public function store(SalaryGradeRequest $request)
     {
         try{ 
             $cleanData = [];
@@ -58,7 +52,7 @@ class SalaryGradeController extends Controller
 
             $salary_grade = SalaryGrade::create($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => new SalaryGradeResource($salary_grade),
@@ -92,7 +86,7 @@ class SalaryGradeController extends Controller
         }
     }
     
-    public function update($id, Request $request)
+    public function update($id, SalaryGradeRequest $request)
     {
         try{ 
             $salary_grade = SalaryGrade::find($id);
@@ -130,6 +124,10 @@ class SalaryGradeController extends Controller
             if(!$salary_grade)
             {
                 return response()->json(['message' => "No record found"], Response::HTTP_NOT_FOUND);
+            }
+
+            if(count($salary_grade->designation) > 0){
+                return response()->json(['message' => "Some data is using this salary grade record deletion is prohibited."], Response::HTTP_BAD_REQUEST);
             }
 
             $salary_grade -> delete();

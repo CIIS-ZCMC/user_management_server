@@ -4,16 +4,13 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
 use App\Services\RequestLogger;
 use App\Http\Requests\WorkExperienceRequest;
 use App\Http\Resources\WorkExperienceResource;
 use App\Models\WorkExperience;
 use App\Models\EmployeeProfile;
-use App\Models\SystemLogs;
 
 class WorkExperienceController extends Controller
 {
@@ -75,7 +72,7 @@ class WorkExperienceController extends Controller
         }
     }
     
-    public function store(Request $request)
+    public function store(WorkExperienceRequest $request)
     {
         try{
             $cleanData = [];
@@ -90,7 +87,7 @@ class WorkExperienceController extends Controller
 
             $work_experience = WorkExperience::create($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => new WorkExperienceResource($work_experience),
@@ -124,7 +121,7 @@ class WorkExperienceController extends Controller
         }
     }
     
-    public function update($id, Request $request)
+    public function update($id, WorkExperienceRequest $request)
     {
         try{
             $work_experience = WorkExperience::find($id);

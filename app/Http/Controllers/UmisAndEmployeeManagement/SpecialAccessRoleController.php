@@ -7,12 +7,12 @@ use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
 use App\Services\RequestLogger;
+use App\Http\Requests\SpecialAccessRoleRequest;
 use App\Http\Resources\SpecialAccessRoleResource;
 use App\Models\SpecialAccessRole;
-use App\Models\SystemLogs;
+use App\Models\EmployeeProfile;
+use App\Models\SystemRole;
 
 class SpecialAccessRoleController extends Controller
 {
