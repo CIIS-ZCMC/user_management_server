@@ -1111,7 +1111,7 @@ Route::middleware('auth.cookie')->group(function(){
         });
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
-            Route::put('unit/{id}', 'UnitController@update');
+            Route::post('unit-update/{id}', 'UnitController@update');
         });
         
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){

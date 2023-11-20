@@ -18,7 +18,7 @@ class UnitResource extends JsonResource
         {
             $name = $this->name;
             $code = $this->code;
-            $designation = $this->headJobSpecification;
+            $designation = $this->headJobSpecification();
             $job_specification = $designation['name'];
             $head_status = $this->head_status? 'On Site':'On Leave';
             $approving_officer = $this->head_status? 'Head':'OIC';
@@ -47,9 +47,7 @@ class UnitResource extends JsonResource
             ];
         }
 
-        $head_designation = $this->headRequirement;
-        $job_specification = $head_designation['name'];
-
+        $job_specification = $this->headJobSpecification()->name;
 
         return [
             'code' => $this->code,

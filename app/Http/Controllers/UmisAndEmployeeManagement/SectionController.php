@@ -199,12 +199,12 @@ class SectionController extends Controller
             }
             
             foreach ($request->all() as $key => $value) {
-                if($value === null || $key === 'attachment'){
+                if($value === null){
                     $cleanData[$key] = $value;
                     continue;
                 }
                 if($key === 'attachment'){
-                    $cleanData['section_attachment_url'] = $value;
+                    $cleanData['section_attachment_url'] = $this->file_validation_and_upload->check_save_file($request, 'section/files');
                     continue;
                 }
                 $cleanData[$key] = strip_tags($value);
@@ -296,12 +296,12 @@ class SectionController extends Controller
             }
             
             foreach ($request->all() as $key => $value) {
-                if($value === null || $key === 'attachment'){
+                if($value === null){
                     $cleanData[$key] = $value;
                     continue;
                 }
                 if($key === 'attachment'){
-                    $cleanData['section_attachment_url'] = $value;
+                    $cleanData['section_attachment_url'] = $this->file_validation_and_upload->check_save_file($request, 'section/files');
                     continue;
                 }
                 $cleanData[$key] = strip_tags($value);
