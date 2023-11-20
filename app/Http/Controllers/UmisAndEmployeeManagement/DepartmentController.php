@@ -12,11 +12,13 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use App\Services\RequestLogger;
 use App\Services\FileValidationAndUpload;
+use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\DepartmentRequest;
 use App\Http\Requests\DepartmentAssignHeadRequest;
 use App\Http\Requests\DepartmentAssignTrainingOfficerRequest;
 use App\Http\Requests\DepartmentAssignOICRequest;
 use App\Http\Resources\DepartmentResource;
+use App\Models\Division;
 use App\Models\Department;
 use App\Models\EmployeeProfile;
 
@@ -204,12 +206,25 @@ class DepartmentController extends Controller
     public function store(DepartmentRequest $request)
     {
         try{
+            $division_id = $request->input('division_id');
+            $division = Division::find($division_id);
+
+            if(!$division)
+            {
+                return response()->json(['message' => 'No division record found for id '.$division_id], Response::HTTP_BAD_REQUEST);
+            }
+
             $cleanData = [];
             
             foreach ($request->all() as $key => $value) {
-                if($value === null && $key === 'attachment')
+                if($value === null)
                 {
-                    $cleanData['department_attachment_url'] = $value;
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+                if($key === 'attachment')
+                {
+                    $cleanData['department_attachment_url'] = $this->file_validation_and_upload->check_save_file($request, 'department/files');
                     continue;
                 }
                 $cleanData[$key] = strip_tags($value);
@@ -256,6 +271,18 @@ class DepartmentController extends Controller
         try{
             $department = Department::find($id);
 
+            if($department['division_id'] !== $request->input('division_id'))
+            {
+                $division = Division::find($request->input('division_id'));
+
+                if(!$division)
+                {
+                    return response()->json([
+                        'message' => 'No division record found with id of '.$request->input('division_id')
+                    ], Response::HTTP_BAD_REQUEST);
+                }
+            }
+
             if(!$department)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
@@ -286,9 +313,19 @@ class DepartmentController extends Controller
         }
     }
     
-    public function destroy($id, Request $request)
+    public function destroy($id, PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->input('password'));
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $department = Department::findOrFail($id);
 
             if(!$department)

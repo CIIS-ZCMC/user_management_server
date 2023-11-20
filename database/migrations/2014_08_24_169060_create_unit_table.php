@@ -21,8 +21,8 @@ return new class extends Migration
             $table->string('job_specification');
             $table->datetime('head_effective_at');
             $table->string('oic_attachment_url')->nullable();
-            $table->datetime('oic_effective_at');
-            $table->datetime('oic_end_at');
+            $table->datetime('oic_effective_at')->nullable();
+            $table->datetime('oic_end_at')->nullable();
             $table->unsignedBigInteger('section_id');
             $table->foreign('section_id')->references('id')->on('sections');
             $table->unsignedBigInteger('head_employee_profile_id')->nullable();

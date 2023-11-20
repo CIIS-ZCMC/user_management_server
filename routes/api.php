@@ -390,11 +390,11 @@ Route::middleware('auth.cookie')->group(function(){
         });
         
         Route::middleware(['auth.permission:UMIS-EM put'])->group(function(){
-            Route::put('department-assign-head-employee/{id}', 'DepartmentController@assignHeadByEmployeeID');
+            Route::post('department-assign-head-employee/{id}', 'DepartmentController@assignHeadByEmployeeID');
         });
         
         Route::middleware(['auth.permission:UMIS-EM put'])->group(function(){
-            Route::put('department-assign-to-employee/{id}', 'DepartmentController@assignTrainingOfficerByEmployeeID');
+            Route::post('department-assign-to-employee/{id}', 'DepartmentController@assignTrainingOfficerByEmployeeID');
         });
         
         Route::middleware(['auth.permission:UMIS-EM put'])->group(function(){
@@ -410,7 +410,7 @@ Route::middleware('auth.cookie')->group(function(){
         });
         
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
-            Route::put('department/{id}', 'DepartmentController@update');
+            Route::post('department-update/{id}', 'DepartmentController@update');
         });
         
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
