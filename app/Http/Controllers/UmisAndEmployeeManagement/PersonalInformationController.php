@@ -38,7 +38,12 @@ class PersonalInformationController extends Controller
         }
     }
     
-    public function store(Request $request)
+    /**
+     * Employee PDS Registration
+     * This must have registration of employee information such as name, height, weight, etc
+     * contacts and addresses
+     */
+    public function store(PersonalInformationRequest $request)
     {
         try{
             $cleanData = [];
