@@ -187,7 +187,7 @@ class DivisionController extends Controller
         }
     }
     
-    public function show($id, Request $request)
+    public function show($id, DivisionRequest $request)
     {
         try{
             $division = Division::findOrFail($id);

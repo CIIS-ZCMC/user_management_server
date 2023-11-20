@@ -476,7 +476,7 @@ Route::middleware('auth.cookie')->group(function(){
         });
         
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
-            Route::put('division/{id}', 'DivisionController@update');
+            Route::post('division-update/{id}', 'DivisionController@update');
         });
         
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
