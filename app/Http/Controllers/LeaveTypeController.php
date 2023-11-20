@@ -26,7 +26,7 @@ class LeaveTypeController extends Controller
         try{
        
         // $leaveTypes = LeaveType::with('logs.employeeProfile.personalInformation','requirements.logs.employeeProfile')->get();
-        $leave_types = LeaveType::with('logs.employeeProfile.personalInformation', 'requirements.logs.employeeProfile.personalInformation')->get();
+        $leave_types = LeaveType::with('logs.employeeProfile.personalInformation', 'requirements.logs.employeeProfile.personalInformation','attachments')->get();
 
            
             $leave_types_result = $leave_types->map(function ($leave_type) {
@@ -64,6 +64,13 @@ class LeaveTypeController extends Controller
                                     'date' => $log->date,
                                 ];
                             }),
+                        ];
+                    }),
+                    'attachments' => $leave_type->attachments->map(function ($attachment) {
+                        return [
+                            'id' => $attachment->id,
+                            'name' => $attachment->name,
+                            
                         ];
                     }),
                 ];

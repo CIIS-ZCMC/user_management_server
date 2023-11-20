@@ -75,6 +75,8 @@ class LeaveApplicationController extends Controller
             $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
             return [
                 'id' => $leave_application->id,
+                'leave_type_name' => $leave_application->leaveType->name,
+                'is_special' => $leave_application->leaveType->is_special,
                 'reference_number' => $leave_application->reference_number,
                 'country' => $leave_application->country,
                 'city' => $leave_application->city,
@@ -87,6 +89,7 @@ class LeaveApplicationController extends Controller
                 'remarks' => $leave_application->remarks ,
                 'date' => $leave_application->date ,
                 'with_pay' => $leave_application->with_pay ,
+                'employee_id' => $leave_application->employee_profile_id,
                 'employee_name' => "{$first_name} {$last_name}" ,
                 'division_name' => $leave_application->employeeProfile->assignedArea->division->name,
                 'department_name' => $leave_application->employeeProfile->assignedArea->department->name,
@@ -94,13 +97,15 @@ class LeaveApplicationController extends Controller
                 'unit_name' => $leave_application->employeeProfile->assignedArea->unit->name,
                 'logs' => $leave_application->logs->map(function ($log) {
                     $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
-                     $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
+                    $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
+                    $date=$log->date;
+                    $formatted_date=Carbon::parse($date)->format('M-d-Y');
                     return [
                         'id' => $log->id,
                         'leave_application_id' => $log->leave_application_id,
                         'action_by' => "{$first_name} {$last_name}" ,
                         'action' => $log->action,
-                        'date' => $log->date,
+                        'date' => $formatted_date,
                     ];
                 }),
                 'requirements' => $leave_application->requirements->map(function ($requirement) {
@@ -253,8 +258,8 @@ class LeaveApplicationController extends Controller
         $status = $request->status;  
         $leave_applications = [];   
 
-        if($status == 'for-verification-hrmo'){
-            $leave_applications = LeaveApplication::where('status', '=', 'for-verification-hrmo' );          
+        if($status == 'applied'){
+            $leave_applications = LeaveApplication::where('status', '=', 'applied' );          
         }
         else if($status == 'for-approval-supervisor'){
             $leave_applications = LeaveApplication::where('status', '=', 'for-approval-supervisor' );
@@ -265,9 +270,7 @@ class LeaveApplicationController extends Controller
         else if($status == 'declined'){
             $leave_applications = LeaveApplication::where('status', '=', 'declined');                                        
         }
-        else if($status == 'approved'){
-            $leave_applications = LeaveApplication::where('status', '=', 'approved');                                         
-        }
+      
         else{
             $leave_applications = LeaveApplication::where('status', '=', $status )
             ->whereHas('leave_application_logs', function($log) use ($status) {
@@ -310,9 +313,9 @@ class LeaveApplicationController extends Controller
                                 $new_status='approved';
                                 $message_action="Approved";
                             }
-                            else if($status == 'for-verification-hrmo'){
+                            else if($status == 'applied'){
                                 $action = 'Verified by HRMO';
-                                $new_status='verified';
+                                $new_status='for-approval-supervisor';
                                 $message_action="verified";
                             }
                             else{
