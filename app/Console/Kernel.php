@@ -13,7 +13,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        $schedule->command('app:pull-d-t-r')->everyEightMinutes();
+        //$schedule->command('app:pull-d-t-r')->everyMinute();
+        $schedule->command('app:pull-d-t-r')->everyThreeMinutes();
     }
 
     /**

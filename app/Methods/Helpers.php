@@ -321,6 +321,7 @@ WHERE s.id IN (
 
             if ($this->validateSchedule($time_stamps_req)) {
                 /* Schedule */
+
                 $s1 = $this->settingDateSchedule($f1_entry, $time_stamps_req['first_entry']);
                 $s2 = $this->settingDateSchedule($f2_entry, $time_stamps_req['second_entry']);
                 $s3 = $this->settingDateSchedule($f3_entry, $time_stamps_req['third_entry']);
@@ -334,10 +335,10 @@ WHERE s.id IN (
                 $s2_Time_stamp = strtotime($s2);
                 if ($f3_entry && $f4_entry) {
                     if (isset($s3) && isset($s4)) {
-                        $f3entryTimestamp = strtotime($f3entry);
-                        $s3Timestamp = strtotime($s3);
-                        $f4entryTimestamp = strtotime($f4entry);
-                        $s4Timestamp = strtotime($s4);
+                        $f3_entry_Time_stamp = strtotime($f3entry);
+                        $s3_Time_stamp = strtotime($s3);
+                        $f4_entry_Time_stamp = strtotime($f4entry);
+                        $s4_Time_stamp = strtotime($s4);
                     }
                 }
                 $undertime_1st_entry = max(0, $f1_entry_Time_stamp - $s1_Time_stamp);
@@ -345,7 +346,7 @@ WHERE s.id IN (
                 $overtime_2nd_entry = max(0, $f2_entry_Time_stamp - $s2_Time_stamp);
                 if ($f3_entry && $f4_entry) {
                     $undert_3rd_entry = max(0, $f3_entry_Time_stamp - $s3_Time_stamp);
-                    $undertime_4th_entry = max(0, $s4Timestamp - $f4_entry_Time_stamp);
+                    $undertime_4th_entry = max(0, $s4_Time_stamp - $f4_entry_Time_stamp);
                     $overtime_4th_entry = max(0, $f4_entry_Time_stamp - $s4_Time_stamp);
                 }
                 $undertime_Minutes_1st_entry = $undertime_1st_entry / 60;
@@ -384,12 +385,11 @@ WHERE s.id IN (
                 $f4_entry
             );
 
-
-
             /* Required Working Hours */
             //$requiredWH         | required_working_hours
             //$requiredWH_Minutes | required_working_minutes
             /* Total Working Hours */
+
             $tWH = floor($Registered_minutes - $ut);
 
             if ($Schedule_Minutes <= $tWH) {
@@ -430,6 +430,13 @@ WHERE s.id IN (
         }
         $over_all_minutes_Rendered = floor(($total_WH_minutes + $overTime_Minutes) - $underTime_Minutes);
 
+        if ($total_WH_minutes < 0) {
+            $total_WH_words = '0 minute';
+            $total_WH_minutes = 0;
+            $over_all_minutes_Rendered = 0;
+            $underTime_inWords = 'undefined';
+            $underTime_Minutes = 0;
+        }
         //  echo "Overall Minutes Rendered :" . $overallminutesRendered . "\n";
         if (isset($f3_entry) && isset($f4_entry)) {
 
@@ -514,9 +521,10 @@ WHERE s.id IN (
                 $Interval_Status = 'OK';
             }
             $time_interval = [
+                'Status' => $Interval_Status,
+                'alloted_dtr_interval' => env('ALLOTED_DTR_INTERVAL'),
                 'minutes' => $minutes,
                 'seconds' => $seconds,
-                'Status' => $Interval_Status
             ];
             DailyTimeRecords::find($validate[0]->id)->update([
                 // 'second_in' => strtotime($sc['date_time']),
@@ -610,6 +618,7 @@ WHERE s.id IN (
         return [
             'description' => $status_description,
             'within_interval' => $Within_interval,
+            'isEmployee' => $this->isEmployee($biometric_id)
         ];
     }
 

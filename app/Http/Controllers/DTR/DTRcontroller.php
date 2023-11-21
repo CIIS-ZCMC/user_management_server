@@ -272,6 +272,17 @@ class DTRcontroller extends Controller
                                                             }
                                                         }
                                                     }
+                                                } else {
+                                                    if ($value['status'] == 0 || $value['status'] == 255) {
+
+                                                        $break_Time_Req = $this->helper->getBreakSchedule($biometric_id, $time_stamps_req); // Put employee ID
+                                                        $this->helper->SaveFirstEntry(
+                                                            $this->helper->sequence(0, [$value]),
+                                                            $break_Time_Req,
+                                                            $biometric_id,
+                                                            $check_Records
+                                                        );
+                                                    }
                                                 }
                                             }
                                         } else {

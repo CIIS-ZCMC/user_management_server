@@ -46,8 +46,6 @@ class TwoFactorAuthController extends Controller
         $emp = $employee->get();
         $date_now = date('Y-m-d H:i:s');
         $otp_exiry = date('Y-m-d H:i:s', strtotime($emp[0]->otp_expiration));
-
-
         if ($date_now > $otp_exiry) {
             //If expired OTP then allow Sending Email
             return false;
