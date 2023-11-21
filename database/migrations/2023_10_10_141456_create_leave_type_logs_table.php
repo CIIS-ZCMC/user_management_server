@@ -19,6 +19,7 @@ return new class extends Migration
             $table->foreign('action_by_id')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->string('action')->nullable();
             $table->string('date');
+            $table->string('time')->nullable();
             $table->timestamps();
         });
     }

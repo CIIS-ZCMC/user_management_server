@@ -110,7 +110,6 @@ class LeaveApplicationController extends Controller
                 }),
                 'requirements' => $leave_application->requirements->map(function ($requirement) {
                     return [
-                       
                         'id' => $requirement->id,
                         'leave_application_id' => $requirement->leave_application_id,
                         'name' => $requirement->name,

@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('credit_value');
             $table->string('status')->nullable();
             $table->string('date')->nullable();
+            $table->string('time')->nullable();
             $table->string('attachment')->nullable();
             $table->timestamps();
         });
