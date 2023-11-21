@@ -118,6 +118,7 @@ class ObApplicationController extends Controller
                                 $ob_application_log->ob_application_id = $ob_application_id;
                                 $ob_application_log->action_by = $user_id;
                                 $ob_application_log->date = date('Y-m-d');
+                                $ob_application_log->time =  date('H:i:s');
                                 $ob_application_log->save();
 
                                 $ob_application = ObApplication::findOrFail($ob_application_id);   
@@ -147,7 +148,6 @@ class ObApplicationController extends Controller
             $official_business_application->date_to = $request->date_to;
             $official_business_application->business_from = $request->business_from;
             $official_business_application->business_to = $request->business_to;
-            $official_business_application->date = date('Y-m-d');
             $official_business_application->update();
          
             if ($request->hasFile('requirements')) {
@@ -206,6 +206,7 @@ class ObApplicationController extends Controller
             $official_business_application->status = "for-approval-supervisor";
             $official_business_application->reason = "for-approval-supervisor";
             $official_business_application->date = date('Y-m-d');
+            $official_business_application->time =  date('H:i:s');
             if ($request->hasFile('personal_order')) {
                 $imagePath = $request->file('personal_order')->store('official_business', 'public');
                 $official_business_application->personal_order = $imagePath;
@@ -245,6 +246,7 @@ class ObApplicationController extends Controller
                                 $ob_application_log->action = 'declined';
                                 $ob_application_log->ob_application_id = $ob_application_id;
                                 $ob_application_log->date = date('Y-m-d');
+                                $ob_application_log->time =  date('H:i:s');
                                 $ob_application_log->action_by = $user_id;
                                 $ob_application_log->save();
 
@@ -285,6 +287,7 @@ class ObApplicationController extends Controller
             $official_time_application_log->action = $process_name;
             $official_time_application_log->status = "applied";
             $official_time_application_log->date = date('Y-m-d');
+            $official_time_application_log->time =  date('H:i:s');
             $official_time_application_log->save();
 
             return $official_time_application_log;
@@ -312,6 +315,7 @@ class ObApplicationController extends Controller
                                 $ob_application_log->action = 'cancelled';
                                 $ob_application_log->ob_application_id = $ob_application_id;
                                 $ob_application_log->date = date('Y-m-d');
+                                $ob_application_log->time =  date('H:i:s');
                                 $ob_application_log->action_by = $user_id;
                                 $ob_application_log->save();
 

@@ -22,7 +22,8 @@ return new class extends Migration
             $table->string('status')->nullable();
             $table->boolean('is_special')->default(false);
             $table->string('leave_credit_year')->nullable();
-            
+            $table->string('date')->nullable();
+            $table->string('time')->nullable();
             $table->timestamps();
             
         });

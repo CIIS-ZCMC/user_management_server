@@ -148,6 +148,7 @@ class LeaveCreditController extends Controller
                                 $employeeCredit->undertime_total = $total_undertime;
                                 $employeeCredit->credit_value = $undertime_credit_value;
                                 $employeeCredit->date = date('Y-m-d');
+                                $employeeCredit->time =  date('H:i:s');
                                 $employeeCredit->save();
                             }
             

@@ -145,6 +145,7 @@ class MonetizationApplicationController extends Controller
             $mone_application->status = "for-approval-supervisor";
             $mone_application->reason = "for-approval-supervisor";
             $mone_application->date = date('Y-m-d');
+            $mone_application->time =  date('H:i:s');
             if ($request->hasFile('attachment')) {
                 $imagePath = $request->file('attachment')->store('images', 'public');
                 $mone_application->attachment = $imagePath;
@@ -231,6 +232,7 @@ class MonetizationApplicationController extends Controller
             $mone_application_log->action = $process_name;
             $mone_application_log->status = "applied";
             $mone_application_log->date = date('Y-m-d');
+            $mone_application_log->time =  date('H:i:s');
             $mone_application_log->save();
 
             return $mone_application_log;

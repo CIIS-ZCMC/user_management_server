@@ -227,14 +227,16 @@ class LeaveTypeController extends Controller
     {
         try {
             $user_id="1";
-            $leave_application_log = new LeaveTypeLog();                       
-            $leave_application_log->leave_type_id = $leave_type_id                                                                ;
-            $leave_application_log->action_by = $user_id;
-            $leave_application_log->process_name = $process_name;
-            $leave_application_log->date = now()->toDateString('Ymd');
-            $leave_application_log->save();
+            $leave_type_log = new LeaveTypeLog();                       
+            $leave_type_log->leave_type_id = $leave_type_id                                                                ;
+            $leave_type_log->action_by = $user_id;
+            $leave_type_log->process_name = $process_name;
+            // $leave_type_log->date = now()->toDateString('Ymd');
+            $leave_type_log->date = date('Y-m-d');
+            $leave_type_log->time =  date('H:i:s');
+            $leave_type_log->save();
 
-            return $leave_application_log;
+            return $leave_type_log;
         } catch(\Exception $e) {
             return response()->json(['message' => $e->getMessage(),'error'=>true]);
         }

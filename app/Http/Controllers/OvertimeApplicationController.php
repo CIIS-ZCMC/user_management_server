@@ -6,6 +6,7 @@ use App\Models\OvertimeApplication;
 use App\Http\Controllers\Controller;
 use App\Models\EmployeeOvertimeCredit;
 use App\Models\EmployeeProfile;
+use App\Models\OvtApplicationLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Response;
@@ -89,7 +90,8 @@ class OvertimeApplicationController extends Controller
                 'status' => 'applied',
                 'remarks' => 'applied',
                 'purpose' => $request->purpose,
-                'date' => date('Y-m-d')
+                'date' => date('Y-m-d'),
+                'time' => date('H:i:s')
                 
             ]);
 
@@ -116,6 +118,8 @@ class OvertimeApplicationController extends Controller
                 }
             }
            
+            $process_name="Applied";
+            $overtime_application_logs = $this->storeOvertimeApplicationLog($overtime->id,$process_name);
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
          
@@ -123,6 +127,25 @@ class OvertimeApplicationController extends Controller
         }
     }
 
+    public function storeOvertimeApplicationLog($overtime_application_id,$process_name)
+    {
+        try {
+            $user_id = Auth::user()->id;
+            $user = EmployeeProfile::where('id','=',$user_id)->first();
+            $overtime_application_log = new OvtApplicationLog();                       
+            $overtime_application_log->overtime_application_id = $overtime_application_id;
+            $overtime_application_log->action_by = $user_id;
+            $overtime_application_log->process_name = $process_name;
+            $overtime_application_log->status = "applied";
+            $overtime_application_log->date = date('Y-m-d');
+            $overtime_application_log->time = date('H:i:s');
+            $overtime_application_log->save();
+
+            return $overtime_application_log;
+        } catch(\Exception $e) {
+            return response()->json(['message' => $e->getMessage(),'error'=>true]);
+        }
+    }
     /**
      * Display the specified resource.
      */
