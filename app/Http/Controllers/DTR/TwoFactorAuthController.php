@@ -86,17 +86,18 @@ class TwoFactorAuthController extends Controller
             $employee_ID = $request->employeeID;
             $email = $request->email;
 
-            if ($this->ValidateEmployee($employee_ID, $email)) {
-                $employee = $this->ValidateEmployee($employee_ID, $email);
+            if ($this->validateEmployee($employee_ID, $email)) {
+
+                $employee = $this->validateEmployee($employee_ID, $email);
                 $employee_Data = [
                     'To_receiver' => $email,
                     'Receiver_Name' => $employee->first()->name(),
                     'employeeID' => $employee_ID
                 ];
-                if ($this->isOTP_active($employee)) {
+                if ($this->isOTPActive($employee)) {
                     return response()->json(['message' => 'Ok']);
                 }
-                $this->Get_OTP($employee);
+                $this->getOTP($employee);
                 return redirect()->route('mail.sendOTP', ['data' => $employee_Data])->cookie('access', json_encode(['email' => $email, 'employeeID' => $employee_ID]), 60, '/', env('SESSION_DOMAIN'), true);
             }
             return response()->json(['message' => 'Records not found'], 401);
