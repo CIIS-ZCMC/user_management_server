@@ -869,4 +869,47 @@ WHERE s.id IN (
             'InMinutes' => $entry
         ];
     }
+
+    /**
+     * This Function backups selected table in database.
+     * which will be stored in : Storage/Backup
+     */
+    public function backUpTable($table)
+    {
+        $validateFile = storage_path('backups/' . $table . '_' . now()->format('Y_m_d') . '.sql');
+        /***
+         * Requirements for the system to validate file--
+         */
+        $pullingRequirements = "30 minutes";
+        /* --------------------------------- */
+        if (file_exists($validateFile)) {
+            $fileContent = file_get_contents($validateFile);
+            // Extract the line with the timestamp using a regular expression
+            if (preg_match('/--(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})/', $fileContent, $matches)) {
+                $timestampLine = ltrim($matches[0], '-');
+                $convertedDate = date('Y-m-d H:i:s', strtotime($timestampLine . ' +' . $pullingRequirements));
+                if (now() < $convertedDate) {
+                    return;
+                } else {
+                    unlink($validateFile);
+                }
+            }
+        }
+        $currentDate = now()->toDateString();
+        $data = DB::table($table)->whereDate('created_at', $currentDate)->get();
+        $header = "--" . now() . PHP_EOL . "-- ZCMC_CIIS@2023 " . PHP_EOL;
+        $sqlDump =  $header . "-- Daily Backup of table '{$table}' "  . PHP_EOL;
+        foreach ($data as $row) {
+            $values = implode(', ', array_map(function ($value) {
+                return "'" . addslashes($value) . "'";
+            }, (array)$row));
+            $sqlDump .= "INSERT INTO {$table} VALUES ({$values});" . PHP_EOL;
+        }
+        $directory = storage_path('backups');
+        if (!file_exists($directory)) {
+            mkdir($directory, 0755, true);
+        }
+        $backupPath = $directory . '/' . $table . '_' . now()->format('Y_m_d') . '.sql';
+        file_put_contents($backupPath, $sqlDump);
+    }
 }

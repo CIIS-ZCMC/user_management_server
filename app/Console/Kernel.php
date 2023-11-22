@@ -15,6 +15,7 @@ class Kernel extends ConsoleKernel
     {
         //$schedule->command('app:pull-d-t-r')->everyMinute();
         $schedule->command('app:pull-d-t-r')->everyThreeMinutes();
+        $schedule->command('app:backup-d-t-r')->everyThirtyMinutes();
     }
 
     /**

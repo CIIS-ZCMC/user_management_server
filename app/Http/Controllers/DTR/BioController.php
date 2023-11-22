@@ -8,6 +8,8 @@ use App\Methods\BioControl;
 use App\Http\Controllers\DTR\BioMSController;
 use App\Models\Devices;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\DB;
+
 
 class BioController extends Controller
 {
@@ -172,6 +174,7 @@ class BioController extends Controller
 
     public function enableORDisable(Request $request)
     {
+
         try {
             $type_of_action = $request->TypeofAction;
             foreach ($this->device_ids as $dv) {
