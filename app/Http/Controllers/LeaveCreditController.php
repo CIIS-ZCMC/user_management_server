@@ -55,30 +55,25 @@ class LeaveCreditController extends Controller
          // Get the last day of the last month
         $lastDayOfLastMonth = date('Y-m-t', strtotime($lastMonthDate));
         $employees=[];
-        $employees = ModelsEmployeeProfile::with('biometric.dtr')
-        ->get();
+        $employees = ModelsEmployeeProfile::get();
 
         if($employees)
         {
             foreach ($employees as $employee) {
 
                 $month = $currentMonth; 
-                $biometric_id = $employee->biometric_id; 
-                $request->merge(['monthof' => $month]);
-                $request->merge(['biometric_id' => $biometric_id]);
                 // $firstController = new FirstController();
                 // $employee_records = $firstController->DTR_UTOT_Report($request);;
                 $employee_records = $this->DTR_UTOT_Report($request);
                 // $dates = $data['dates'];
                 // $absences = $data['absences']
-                ;
                     $total_absences="1";
                     $total_undertime="5";
                     $leaveTypes=[];
                     $vl_leave=[];
                     $leaveTypes = LeaveType::where('is_special', '=', '1')->get();
-                    $vl_leave = LeaveType::where('name', '=', 'Sick Leave')->first();
-                        $employee_leave_credits= ModelsEmployeeLeaveCredit::where('employee_profile_id', '=','1')->get();
+                    $vl_leave = LeaveType::where('name', '=', 'Vacation Leave')->first();
+                    $employee_leave_credits= ModelsEmployeeLeaveCredit::where('employee_profile_id',$employee->id)->get();
                 
                         $totalLeaveCredits = $employee_leave_credits->mapToGroups(function ($credit) {
                             return [$credit->operation => $credit->credit_value];
@@ -160,8 +155,6 @@ class LeaveCreditController extends Controller
                             if($leaveType->is_special == '1')
                             {
                                  $month_credit_value = $leaveType->leave_credit_year/12;
-                                 
-             
                                  $employeeCredit = new ModelsEmployeeLeaveCredit();
                                  $employeeCredit->leave_type_id = $leaveType->id;
                                  $employeeCredit->employee_profile_id = $employee->id;
@@ -172,18 +165,11 @@ class LeaveCreditController extends Controller
                                  $employeeCredit->save();
         
                             }
-        
-                        
-        
-        
+
                         }
             }
         }
-        
-            
-
-    
-            return response()->json(['data' => $employee_leave_credits], Response::HTTP_OK);
+        return response()->json(['data' => $employee_leave_credits], Response::HTTP_OK);
 
     }
 

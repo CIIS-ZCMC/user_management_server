@@ -29,6 +29,8 @@ Route::namespace('App\Http\Controllers')->group(function () {
     Route::get('requirements', 'RequirementController@index');
     Route::get('leave_types', 'LeaveTypeController@index');
     Route::get('leave_applications', 'LeaveApplicationController@index');
+    Route::get('division', 'LeaveApplicationController@getDivisionLeaveApplications');
+    Route::get('add', 'LeaveCreditController@addMonthlyLeaveCredit');
 });
 
 Route::middleware('auth.cookie')->group(function(){

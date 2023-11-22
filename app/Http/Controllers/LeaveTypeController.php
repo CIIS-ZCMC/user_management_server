@@ -171,6 +171,10 @@ class LeaveTypeController extends Controller
     public function update($id,Request $request, LeaveType $leaveType)
     {
         try{
+           
+            $originalValues = $record->getOriginal();
+            $columnsString="";
+          
             $leave_type = LeaveType::findOrFail($id);
             $leave_type->name = ucwords($request->name);
             $leave_type->description = $request->description;
@@ -194,9 +198,18 @@ class LeaveTypeController extends Controller
             if (!empty($request->leave_requirements)) {
                 $this->storeLeaveTypeRequirements($leave_type->id, $request->leave_requirements);
             } 
+
+            if ($leave_type->isDirty()) {
+                $changedColumns = $leave_type->getChanges();
+              
+                $columnsString = implode(', ', $changedColumns);
+        
+                // You can now use $originalValues and $changedValues as needed
+                // For example, log the changes or perform additional actions
+            } 
             $leave_type_id=$leave_type->id;
             $process_name="Update";
-            $leave_type_logs = $this->storeLeaveTypeLog($leave_type_id,$process_name);
+            $leave_type_logs = $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString);
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
          
@@ -223,7 +236,7 @@ class LeaveTypeController extends Controller
         }
     }
 
-    public function storeLeaveTypeLog($leave_type_id,$process_name)
+    public function storeLeaveTypeLog($leave_type_id,$process_name,$changedfields)
     {
         try {
             $user_id="1";
@@ -234,6 +247,7 @@ class LeaveTypeController extends Controller
             // $leave_type_log->date = now()->toDateString('Ymd');
             $leave_type_log->date = date('Y-m-d');
             $leave_type_log->time =  date('H:i:s');
+            $leave_type_log->field =  $changedfields;
             $leave_type_log->save();
 
             return $leave_type_log;
