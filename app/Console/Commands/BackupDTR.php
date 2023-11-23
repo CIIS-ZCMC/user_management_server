@@ -14,7 +14,7 @@ class BackupDTR extends Command
      * @var string
      */
     protected $signature = 'app:backup-d-t-r';
-    protected $backituo;
+    protected $backitup;
     /**
      * The console command description.
      *
@@ -24,7 +24,7 @@ class BackupDTR extends Command
     public function __construct(Helpers $helpers)
     {
         parent::__construct();
-        $this->backituo = $helpers;
+        $this->backitup = $helpers;
     }
 
     /**
@@ -32,7 +32,7 @@ class BackupDTR extends Command
      */
     public function handle()
     {
-        $this->backituo->backUpTable('daily_time_records');
-        $this->backituo->backUpTable('daily_time_record_logs');
+        $this->backitup->backUpTable('daily_time_records');
+        $this->backitup->backUpTable('daily_time_record_logs');
     }
 }

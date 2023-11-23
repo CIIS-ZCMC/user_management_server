@@ -63,8 +63,11 @@ class BioControl
 
     public function setSuperAdmin($device, $biometric_id, $unset)
     {
+
         if ($tad = $this->bIO($device)) {
+
             $user_data = Biometrics::where('biometric_id', $biometric_id)->get();
+
             function saveSettings($biometric_id, $user_data, $tad, $is_Admin, $priv)
             {
                 Biometrics::where('biometric_id', $biometric_id)->update([
@@ -142,7 +145,9 @@ class BioControl
 
     public function fetchUserDataFromDeviceToDB($device, $biometric_id)
     {
+
         if ($tad = $this->BIO($device)) {
+
             $user_temp = $tad->get_user_template(['pin' => $biometric_id]);
             $utemp = simplexml_load_string($user_temp);
             $BIO_User = [];

@@ -35,6 +35,11 @@ class BioController extends Controller
         $name = $request->name;
         $privilege = $request->privilege;
         /* The IP of this option must be the registration device. */
+        $ipreg = [];
+
+        if (isset($this->ip_registration[0])) {
+            $ipreg = $this->ip_registration[0];
+        }
 
         $bio = Biometrics::where('biometric_id', $biometric_id);
 
@@ -48,7 +53,7 @@ class BioController extends Controller
 
             if ($save) {
                 $this->device->fetchdatatoDeviceforNewFPRegistration(
-                    $this->ip_registration[0],
+                    $ipreg,
                     $biometric_id,
                     $name
 
@@ -65,7 +70,16 @@ class BioController extends Controller
     {
         try {
             $biometric_id = $request->biometric_id;
-            $dvc = $this->ip_registration[0];
+            $dvc = [];
+
+            if (isset($this->ip_registration[0])) {
+                $dvc = $this->ip_registration[0];
+            }
+
+            if (!$dvc) {
+                return response()->json(['message' => 'Failed to pull data']);
+            }
+
 
             if ($this->device->fetchUserDataFromDeviceToDB($dvc, $biometric_id)) {
                 if ($this->device->validateTemplate($dvc, $biometric_id)) {
@@ -73,7 +87,6 @@ class BioController extends Controller
                 }
                 return response()->json(['message' => 'User Data from Device has been pulled successfully!']);
             }
-            return response()->json(['message' => 'Failed to pull data']);
         } catch (\Throwable $th) {
 
             return response()->json(['message' =>  $th->getMessage()]);
@@ -84,11 +97,20 @@ class BioController extends Controller
     {
         try {
             $biometric_id = $request->biometric_id;
-            $dvc = $this->ip_registration[0];
+
+            $dvc = [];
+
+            if (isset($this->ip_registration[0])) {
+                $dvc = $this->ip_registration[0];
+            }
+
+            if (!$dvc) {
+                return response()->json(['message' => 'Failed to push data']);
+            }
+
             if ($this->device->fetchUserDataFromDBToDevice($dvc, $biometric_id)) {
                 return response()->json(['message' => 'User Data fetched to device successfully!']);
             }
-            return response()->json(['message' => 'Failed to push data']);
         } catch (\Throwable $th) {
             return response()->json(['message' =>  $th->getMessage()]);
         }
@@ -121,6 +143,7 @@ class BioController extends Controller
             $unset = $request->unset;
             foreach ($this->device_ids as $dv) {
                 $bios = Devices::where('id', $dv)->get();
+
                 $this->device->setSuperAdmin($bios[0], $biometric_id, $unset);
             }
             return response()->json(['message' => 'Settings saved successfully!']);
