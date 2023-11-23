@@ -172,10 +172,9 @@ class LeaveTypeController extends Controller
     {
         try{
            
-            $originalValues = $record->getOriginal();
-            $columnsString="";
-          
             $leave_type = LeaveType::findOrFail($id);
+            $originalValues = $leave_type->getOriginal();
+            $columnsString="";
             $leave_type->name = ucwords($request->name);
             $leave_type->description = $request->description;
             $leave_type->period = ucwords($request->period);
@@ -204,8 +203,6 @@ class LeaveTypeController extends Controller
               
                 $columnsString = implode(', ', $changedColumns);
         
-                // You can now use $originalValues and $changedValues as needed
-                // For example, log the changes or perform additional actions
             } 
             $leave_type_id=$leave_type->id;
             $process_name="Update";

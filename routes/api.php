@@ -1241,12 +1241,9 @@ Route::middleware('auth.cookie')->group(function(){
         Route::post('update_official_business_application_status/{id}', 'OfficialBusinessApplicationController@updateStatus');
         Route::post('update_official_business_application/{id}', 'OfficialBusinessApplicationController@updateObApplication');
 
-        //monetization application
-
-        //overtime application
-
-        //   Route::get('get_employees', 'OvertimeApplicationApplicationController@getEmployees');
-
+        Route::middleware(['auth.permission:UMIS-LOM view-all'])->group(function(){
+            Route::get('time-shift', 'TimeShiftController@index');
+        });
 
        
        
