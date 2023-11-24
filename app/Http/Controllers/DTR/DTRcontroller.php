@@ -90,8 +90,6 @@ class DTRcontroller extends Controller
                                         /* ---------------------------------------------------------------------------------------------------------------------------------------------- */
 
                                         if ($f1 && !$f2 && !$f3 && !$f4) {
-
-
                                             if ($value['status'] == 255) {
                                                 if ($this->helper->withinInterval($f1, $this->helper->sequence(0, [$value]))) {
                                                     $this->helper->saveTotalWorkingHours(
@@ -103,7 +101,6 @@ class DTRcontroller extends Controller
                                                     );
                                                 }
                                             }
-
                                             if ($value['status'] == 1) {
                                                 $this->helper->saveTotalWorkingHours(
                                                     $validate,
@@ -134,7 +131,6 @@ class DTRcontroller extends Controller
                                                         );
                                                     }
                                                 }
-
                                                 if ($value['status'] == 0) {
 
                                                     $this->helper->saveIntervalValidation(
@@ -144,7 +140,6 @@ class DTRcontroller extends Controller
                                                 }
                                             }
                                         }
-
                                         /* check In_am and out_am and  in_pm and not set out_pm */
                                         /* 
                                        We have set the last entry, 
@@ -212,6 +207,8 @@ class DTRcontroller extends Controller
                                          * which has two entries for schedule only.
                                          * if data not found. then we save into first entry
                                          */
+
+
                                         $yester_date = date('Y-m-d', strtotime('-1 day'));
                                         $time_stamps_req = $this->helper->getSchedule($biometric_id, null);
 
@@ -273,8 +270,8 @@ class DTRcontroller extends Controller
                                                         }
                                                     }
                                                 } else {
-                                                    if ($value['status'] == 0 || $value['status'] == 255) {
 
+                                                    if ($value['status'] == 0 || $value['status'] == 255) {
                                                         $break_Time_Req = $this->helper->getBreakSchedule($biometric_id, $time_stamps_req); // Put employee ID
                                                         $this->helper->SaveFirstEntry(
                                                             $this->helper->sequence(0, [$value]),
@@ -286,6 +283,7 @@ class DTRcontroller extends Controller
                                                 }
                                             }
                                         } else {
+
                                             /* Save new records */
                                             if ($value['status'] == 0 || $value['status'] == 255) {
 

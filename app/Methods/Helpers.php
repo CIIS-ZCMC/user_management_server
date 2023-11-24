@@ -192,12 +192,15 @@ WHERE s.id IN (
 
     public  function inEntry($biometric_id, $alloted_hours, $sc, $sched)
     {
+
         $first_Entry = $sched['first_entry'];
         $time_stamp = strtotime($first_Entry);
         $new_Time_stamp = $time_stamp - ($alloted_hours * 3600);
         $Calculated_allotedHours = date('Y-m-d H:i:s', $new_Time_stamp);
         $employee_In = date('Y-m-d H:i:s', strtotime($sc['date_time']));
+
         if ($Calculated_allotedHours <= $employee_In) {
+
             DailyTimeRecords::create([
                 'biometric_id' => $biometric_id,
                 // 'first_in' => strtotime($sc['date_time']),
@@ -209,11 +212,14 @@ WHERE s.id IN (
 
     public function saveFirstEntry($sequence, $break_Time_Req, $biometric_id, $checkRecords)
     {
+
         $alloted_hours = env('ALLOTED_VALID_TIME_FOR_FIRSTENTRY');
         $sched = $this->getSchedule($biometric_id, null);
+
         foreach ($sequence as $sc) {
             $in = date('H:i', strtotime($sc['date_time']));  // From Bio
             if (count($break_Time_Req) >= 1) {
+
                 if ($in >= $break_Time_Req['break1'] && $in < $break_Time_Req['adminOut'] || $in >= $break_Time_Req['break2'] && $in <  $break_Time_Req['otherout']) {
                     /* SECOND IN ENTRY */
                     $save =  DailyTimeRecords::create([
@@ -223,6 +229,7 @@ WHERE s.id IN (
                         'is_biometric' => 1,
                     ]);
                 } else {
+
                     /* FIRST IN ENTRY */
                     $this->inEntry($biometric_id, $alloted_hours, $sc, $sched);
                 }
@@ -279,6 +286,7 @@ WHERE s.id IN (
 
     public function saveTotalWorkingHours($validate, $value, $sequence, $time_stamps_req, $check_for_generate)
     {
+
         foreach ($sequence as $sc) {
             /* Entries */
             $f1_entry = $validate[0]->first_in;
@@ -298,11 +306,15 @@ WHERE s.id IN (
             $ut = 0;
             $Schedule_Minutes = 0;
 
+
             if (!$check_for_generate) {
-                if (!$f2_entry) {
+                if ($f1_entry && !$f2_entry) {
                     $f2_entry = $sc['date_time'];
                 } else {
-                    $f4_entry = $sc['date_time'];
+
+                    if (!$f1_entry  && !$f2_entry && $f3_entry) {
+                        $f4_entry = $sc['date_time'];
+                    }
                 }
             }
             if (isset($validate[0]->second_in) || isset($validate[0]->second_out)) {
@@ -358,6 +370,7 @@ WHERE s.id IN (
                     $overtime_4th_entry = $overtime_4th_entry / 60;
                 }
                 $undertime = floor($undertime_Minutes_1st_entry + $undertime_Minutes_2nd_entry + $undertime_3rd_entry + $undertime_Minutes_4th_entry);
+
                 if ($f3_entry && $f4_entry) {
                     $overtime = $overtime_4th_entry;
                 } else {
@@ -405,18 +418,18 @@ WHERE s.id IN (
             //$Registered_minutes | total_minutes_reg
 
             /* ValueIn */
-            // echo "First Entry:" . $f1entry . "\n";
-            // echo "Second Entry:" . $f2entry . "\n";
-            // echo "Third Entry:" . $f3entry . "\n";
-            // echo "Fourth Entry:" . $f4entry . "\n\n\n";
+            // echo "First Entry:" . $f1_entry . "\n";
+            // echo "Second Entry:" . $f2_entry . "\n";
+            // echo "Third Entry:" . $f3_entry . "\n";
+            // echo "Fourth Entry:" . $f4_entry . "\n\n\n";
             // echo "Bio Entry_ :" . $sc['date_time'] . "\n";
 
-            // if (!isset($s1) && !isset($s2)) {
-            //     $underTime_inWords = null;
-            //     $overTime_inWords = null;
-            //     $totalWH_words = null;
-            // }
-            // Output undertime in minutes
+            if (!isset($s1) && !isset($s2)) {
+                $underTime_inWords = null;
+                $overTime_inWords = null;
+                $totalWH_words = null;
+            }
+            //  Output undertime in minutes
             // echo "Undertime : " . $underTime_inWords  . "\n";
             // echo "Undertime Minutes: " . $underTime_Minutes  . "\n";
             // echo "Overtime : " .  $overTime_inWords . " \n";
@@ -428,7 +441,23 @@ WHERE s.id IN (
 
             // echo "Schedule :" . $s1 . " | " . $s2 . " | " . $s3 . " | " . $s4 . "\n";
         }
+
         $over_all_minutes_Rendered = floor(($total_WH_minutes + $overTime_Minutes) - $underTime_Minutes);
+
+        // return [
+        //     //   'first_out' => strtotime($sc['date_time']),
+        //     'second_out' => $sc['date_time'],
+        //     'total_working_hours' => $total_WH_words,
+        //     'required_working_hours' => $required_WH,
+        //     'required_working_minutes' => $required_WH_Minutes,
+        //     'total_working_minutes' => $total_WH_minutes,
+        //     'overall_minutes_rendered' => $over_all_minutes_Rendered,
+        //     'total_minutes_reg' => $Registered_minutes,
+        //     'undertime' => $underTime_inWords,
+        //     'undertime_minutes' => $underTime_Minutes,
+        //     'overtime' => $overTime_inWords,
+        //     'overtime_minutes' => $overTime_Minutes
+        // ];
 
         if ($total_WH_minutes < 0) {
             $total_WH_words = '0 minute';
@@ -438,68 +467,61 @@ WHERE s.id IN (
             $underTime_Minutes = 0;
         }
         //  echo "Overall Minutes Rendered :" . $overallminutesRendered . "\n";
+        $attr = [
+            'total_WH_words' => $total_WH_words,
+            'required_WH' => $required_WH,
+            'required_WH_Minutes' => $required_WH_Minutes,
+            'total_WH_minutes' => $total_WH_minutes,
+            'over_all_minutes_Rendered' => $over_all_minutes_Rendered,
+            'Registered_minutes' => $Registered_minutes,
+            'underTime_inWords' => $underTime_inWords,
+            'underTime_Minutes' => $underTime_Minutes,
+            'overTime_inWords' => $overTime_inWords,
+            'overTime_Minutes' => $overTime_Minutes
+        ];
+
         if (isset($f3_entry) && isset($f4_entry)) {
-
-            if ($check_for_generate) {
-                DailyTimeRecords::find($validate[0]->id)->update([
-                    'total_working_hours' => $total_WH_words,
-                    'required_working_hours' => $required_WH,
-                    'required_working_minutes' => $required_WH_Minutes,
-                    'total_working_minutes' => $total_WH_minutes,
-                    'overall_minutes_rendered' => $over_all_minutes_Rendered,
-                    'total_minutes_reg' => $Registered_minutes,
-                    'undertime' => $underTime_inWords,
-                    'undertime_minutes' => $underTime_Minutes,
-                    'overtime' => $overTime_inWords,
-                    'overtime_minutes' => $overTime_Minutes
-                ]);
-            } else {
-                DailyTimeRecords::find($validate[0]->id)->update([
-                    //   'first_out' => strtotime($sc['date_time']),
-                    'second_out' => $sc['date_time'],
-                    'total_working_hours' => $total_WH_words,
-                    'required_working_hours' => $required_WH,
-                    'required_working_minutes' => $required_WH_Minutes,
-                    'total_working_minutes' => $total_WH_minutes,
-                    'overall_minutes_rendered' => $over_all_minutes_Rendered,
-                    'total_minutes_reg' => $Registered_minutes,
-                    'undertime' => $underTime_inWords,
-                    'undertime_minutes' => $underTime_Minutes,
-                    'overtime' => $overTime_inWords,
-                    'overtime_minutes' => $overTime_Minutes
-                ]);
-            }
+            $this->SaveToDTR($check_for_generate, $validate, $attr, $sc, 'second_out');
         } else {
-            if ($check_for_generate) {
-                DailyTimeRecords::find($validate[0]->id)->update([
-                    'total_working_hours' => $total_WH_words,
-                    'required_working_hours' => $required_WH,
-                    'required_working_minutes' => $required_WH_Minutes,
-                    'total_working_minutes' => $total_WH_minutes,
-                    'overall_minutes_rendered' => $over_all_minutes_Rendered,
-                    'total_minutes_reg' => $Registered_minutes,
-                    'undertime' => $underTime_inWords,
-                    'undertime_minutes' => $underTime_Minutes,
-                    'overtime' => $overTime_inWords,
-                    'overtime_minutes' => $overTime_Minutes
-                ]);
+            if ($f1_entry && $f2_entry && $f3_entry && !$f4_entry) {
+                $this->SaveToDTR($check_for_generate, $validate, $attr, $sc, 'second_out');
             } else {
-
-                DailyTimeRecords::find($validate[0]->id)->update([
-                    //   'first_out' => strtotime($sc['date_time']),
-                    'first_out' => $sc['date_time'],
-                    'total_working_hours' => $total_WH_words,
-                    'required_working_hours' => $required_WH,
-                    'required_working_minutes' => $required_WH_Minutes,
-                    'total_working_minutes' => $total_WH_minutes,
-                    'overall_minutes_rendered' => $over_all_minutes_Rendered,
-                    'total_minutes_reg' => $Registered_minutes,
-                    'undertime' => $underTime_inWords,
-                    'undertime_minutes' => $underTime_Minutes,
-                    'overtime' => $overTime_inWords,
-                    'overtime_minutes' => $overTime_Minutes
-                ]);
+                $this->SaveToDTR($check_for_generate, $validate, $attr, $sc, 'first_out');
             }
+        }
+    }
+
+    public function SaveToDTR($check_for_generate, $validate, $attr, $sc, $out)
+    {
+        if ($check_for_generate) {
+            DailyTimeRecords::find($validate[0]->id)->update([
+                'total_working_hours' => $attr['total_WH_words'],
+                'required_working_hours' => $attr['required_WH'],
+                'required_working_minutes' => $attr['required_WH_Minutes'],
+                'total_working_minutes' => $attr['total_WH_minutes'],
+                'overall_minutes_rendered' => $attr['over_all_minutes_Rendered'],
+                'total_minutes_reg' => $attr['Registered_minutes'],
+                'undertime' => $attr['underTime_inWords'],
+                'undertime_minutes' => $attr['underTime_Minutes'],
+                'overtime' => $attr['overTime_inWords'],
+                'overtime_minutes' => $attr['overTime_Minutes']
+            ]);
+        } else {
+
+            DailyTimeRecords::find($validate[0]->id)->update([
+                //   'first_out' => strtotime($sc['date_time']),
+                $out => $sc['date_time'],
+                'total_working_hours' => $attr['total_WH_words'],
+                'required_working_hours' => $attr['required_WH'],
+                'required_working_minutes' => $attr['required_WH_Minutes'],
+                'total_working_minutes' => $attr['total_WH_minutes'],
+                'overall_minutes_rendered' => $attr['over_all_minutes_Rendered'],
+                'total_minutes_reg' => $attr['Registered_minutes'],
+                'undertime' => $attr['underTime_inWords'],
+                'undertime_minutes' => $attr['underTime_Minutes'],
+                'overtime' => $attr['overTime_inWords'],
+                'overtime_minutes' => $attr['overTime_Minutes']
+            ]);
         }
     }
 
