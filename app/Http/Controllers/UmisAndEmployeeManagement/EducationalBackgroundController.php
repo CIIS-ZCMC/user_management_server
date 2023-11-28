@@ -37,7 +37,10 @@ class EducationalBackgroundController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, $educational_backgrounds['id'], true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => EducationalBackgroundResource::collection($educational_backgrounds), 'message' => 'Employee educational record found.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => EducationalBackgroundResource::collection($educational_backgrounds), 
+                'message' => 'Employee educational record found.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByPersonalInformationID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -59,7 +62,10 @@ class EducationalBackgroundController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, $educational_backgrounds['id'], true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => EducationalBackgroundResource::collection($educational_backgrounds), 'message' => 'Employee educational record found.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => EducationalBackgroundResource::collection($educational_backgrounds), 
+                'message' => 'Employee educational record found.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

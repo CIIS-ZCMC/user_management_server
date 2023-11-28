@@ -12,10 +12,7 @@ class Address extends Model
     protected $table = 'addresses';
 
     public $fillable = [
-        'street',
-        'barangay',
-        'city',
-        'province',
+        'address',
         'zip_code',
         'country',
         'is_residential',

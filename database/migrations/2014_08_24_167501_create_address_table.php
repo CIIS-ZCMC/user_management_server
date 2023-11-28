@@ -13,10 +13,7 @@ return new class extends Migration
     {
         Schema::create('addresses', function (Blueprint $table) {
             $table->id();
-            $table->string('street');
-            $table->string('barangay');
-            $table->string('city');
-            $table->string('province');
+            $table->string('address');
             $table->string('zip_code');
             $table->string('country')->default('Philippines');
             $table->boolean('is_residential')->default(FALSE);

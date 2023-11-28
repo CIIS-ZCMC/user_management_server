@@ -22,7 +22,7 @@ class LegalInformation extends Model
 
     public function legalInformationQuestion()
     {
-        return $this->belongsTo(LegalInformationQuestion::class);
+        return $this->belongsTo(LegalInformationQuestion::class, 'legal_iq_id');
     }
 
     public function personalInformation()

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Http\Resources\SignInResource;
 use Carbon\Carbon;
 use Jenssegers\Agent\Agent;
 use Illuminate\Http\Request;
@@ -141,8 +142,7 @@ class EmployeeProfileController extends Controller
             $area_assigned = $employee_profile->assignedArea->findDetails(); 
 
             $data = [
-                'employee_id' => $employee_profile['employee_id'],
-                'name' => $name,
+                'employee' => new SignInResource($employee_profile),
                 'designation'=> $designation['name'],
                 'area_assigned' => $area_assigned['details']->name,
                 'area_sector' => $area_assigned['sector'],

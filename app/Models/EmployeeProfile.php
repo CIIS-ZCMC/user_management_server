@@ -32,6 +32,7 @@ class EmployeeProfile extends Authenticatable
         'deactivated_at',
         'agency_employee_no',
         'allow_time_adjustment',
+        'is_2fa',
         'employee_type_id',
         'plantilla_number_id'
     ];
@@ -78,13 +79,14 @@ class EmployeeProfile extends Authenticatable
         return $this->hasMany(AccessToken::class);
     }
 
-    public function specialAccessRole(){
+    public function specialAccessRole()
+    {
         return $this->hasMany(SpecialAccessRole::class);
     }
 
     public function loginTrails()
     {
-        return $this->hasMany(LoginTrails::class);
+        return $this->hasMany(LoginTrail::class);
     }
 
     public function plantillaNumber()
@@ -139,5 +141,10 @@ class EmployeeProfile extends Authenticatable
         $designation = $assign_area->plantilla_id  === null?$assign_area->designation:$assign_area->plantilla->designation;
         
         return $designation;
+    }
+
+    public function issuanceInformation()
+    {
+        return $this->hasOne(IssuanceInformation::class);
     }
 }

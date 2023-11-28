@@ -22,12 +22,12 @@ class ChildRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'personal_information_id' => 'required|string|size:36',
-            'last_name' => 'required|string|max:255',
             'first_name' => 'required|string|max:255',
             'middle_name' => 'nullable|string|max:255',
+            'last_name' => 'required|string|max:255',
             'gender' => 'required|string|max:255',
-            'birthdate' => 'required|date:Y-m-d'
+            'birthdate' => 'required|date:Y-m-d',
+            'personal_information_id' => 'required|integer'
         ];
     }
 }

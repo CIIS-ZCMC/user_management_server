@@ -15,12 +15,22 @@ class LegalInformationQuestionResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $sub_question = LegalInformationQuestion::where('legal_iq_id', $this->id)->get();
+        if($this->has_sub_question)
+        {
+            $sub_question = LegalInformationQuestion::where('legal_iq_id', $this->id)->get();
+    
+            return [
+                'order_by' => $this->order_by,
+                'content_question' => $this->content_question,
+                'sub_question' => LegalInformationQuestionResource::collection($sub_question),
+                'created_at' => $this->created_at
+            ];
+        }
 
         return [
             'order_by' => $this->order_by,
             'content_question' => $this->content_question,
-            'sub_question' => LegalInformationQuestionResource::collection($sub_question),
+            'sub_question' => [],
             'created_at' => $this->created_at
         ];
     }

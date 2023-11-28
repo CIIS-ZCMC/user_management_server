@@ -4,6 +4,7 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Models\PersonalInformation;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
@@ -79,6 +80,13 @@ class FamilyBackgroundController extends Controller
         try{
             $cleanData = [];
 
+            $personal_information = PersonalInformation::find($request->input('personal_information_id'));
+
+            if(!$personal_information)
+            {
+                return response()->json(['message'=> 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
             foreach ($request->all() as $key => $value) {
                 if($value === null){
                     $cleanData[$key] = $value;
@@ -95,7 +103,10 @@ class FamilyBackgroundController extends Controller
             
             $this->requestLogger->registerSystemLogs($request, $family_background['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => new FamilyBackgroundResource($family_background) ,'message' => 'New family background registered.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new FamilyBackgroundResource($family_background) ,
+                'message' => 'New family background registered.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

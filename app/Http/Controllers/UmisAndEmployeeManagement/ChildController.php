@@ -4,6 +4,7 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Models\PersonalInformation;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Services\RequestLogger;
@@ -61,8 +62,8 @@ class ChildController extends Controller
             $children = $personal_information->children;
 
             $this->requestLogger->registerSystemLogs($request, $children['id'], true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
-
-            return response()->json([,
+            
+            return response()->json([
                 'data' => ChildResource::collection($children),
                 'message' => 'Employee children record retrieved.'
             ], Response::HTTP_OK);
@@ -76,6 +77,13 @@ class ChildController extends Controller
     {
         try{
             $cleanData = [];
+
+            $personal_information = PersonalInformation::find($request->input('personal_information_id'));
+
+            if(!$personal_information)
+            {
+                return response()->json(['message'=> 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
 
             foreach ($request->all() as $key => $value) {
                 if ($value === null) {
