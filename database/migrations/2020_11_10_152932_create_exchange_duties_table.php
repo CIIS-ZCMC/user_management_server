@@ -21,9 +21,18 @@ return new class extends Migration
             
             $table->unsignedBigInteger('reliever_employee_id');
             $table->foreign('reliever_employee_id')->references('id')->on('employee_profiles')->onUpdate('cascade');
+
+            $table->boolean('status')->default(true);
+  
+            // $table->unsignedBigInteger('section_head_id');
+            // $table->foreign('section_head_id')->references('id')->on('employee_profiles')->onUpdate('cascade');
+            // $table->boolean('supervisor_approval');
+                        
+            // $table->unsignedBigInteger('department_head_id');
+            // $table->foreign('department_head_id')->references('id')->on('employee_profiles')->onUpdate('cascade');
+            // $table->boolean('department_head_approval');
             
             $table->string('reason');
-            $table->json('approve_by');
             $table->softDeletes();
             $table->timestamps();
         });
