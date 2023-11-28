@@ -29,11 +29,11 @@ Route::namespace('App\Http\Controllers')->group(function () {
     Route::get('requirements', 'RequirementController@index');
     Route::get('leave-type-all', 'LeaveTypeController@index');
     Route::post('leave-type', 'LeaveTypeController@store');
-    Route::post('leave-type/{id}', 'LeaveTypeController@update');
+    Route::put('leave-type/{id}', 'LeaveTypeController@update');
     Route::post('leave-type-deactivate-password/{id}', 'LeaveTypeController@deactivateLeaveType');
     Route::post('leave-type-activate-password/{id}', 'LeaveTypeController@reactivateLeaveType');
     Route::post('requirement', 'RequirementController@store');
-    Route::post('requirement/{id}', 'RequirementController@update');
+    Route::put('requirement/{id}', 'RequirementController@update');
     Route::get('leave-application-all', 'LeaveApplicationController@index');
     Route::get('division', 'LeaveApplicationController@getDivisionLeaveApplications');
     Route::get('add', 'LeaveCreditController@addMonthlyLeaveCredit');

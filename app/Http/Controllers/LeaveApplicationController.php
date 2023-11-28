@@ -1215,12 +1215,12 @@ class LeaveApplicationController extends Controller
 
                             if($status == 'for-approval-section-head' ){
                                 $action = 'Aprroved by Supervisor';
-                                $new_status='for-approval-head';
+                                $new_status='for-approval-division-head';
                                 $message_action="Approved";
                             }
                             else if($status == 'for-approval-department-head'){
                                 $action = 'Aprroved by Supervisor';
-                                $new_status='approved';
+                                $new_status='for-approval-division-head';
                                 $message_action="Approved";
                             }
                             else if($status == 'for-approval-division-head'){
@@ -1241,9 +1241,6 @@ class LeaveApplicationController extends Controller
                                     $message_action="verified";
                                 }
                                 
-                            }
-                            else{
-                                $action = $status;
                             }
                             $leave_application_id = $request->leave_application_id;
                             $leave_applications = LeaveApplication::where('id','=', $leave_application_id)
