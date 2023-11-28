@@ -916,7 +916,7 @@ class DTRcontroller extends Controller
 
             $dtr = [
                 'biometric_ID' => $biometric_id,
-                'employeeName' => 'Reenjay Caimor',
+                'employeeName' => EmployeeProfile::where('biometric_id', $biometric_id)->first()->name(),
                 'Total_Undertime' =>  $undertime_Sum,
                 'Total_Overtime' =>   $overtime_Sum,
                 'TotalHoursofDuty' => $total_Hours_of_Duty,
