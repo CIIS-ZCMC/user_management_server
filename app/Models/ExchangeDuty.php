@@ -19,9 +19,10 @@ class ExchangeDuty extends Model
 
     protected $fillable = [
         'reason',
-        'approve_by',
+        'status',
         'schedule_id',
-        'employee_profile_id',
+        'requested_employee_id',
+        'reliever_employee_id'
     ];
     
     protected $softDelete = true;
@@ -35,6 +36,12 @@ class ExchangeDuty extends Model
 
     public function employee()
     {
-        return $this->belongsTo(EmployeeProfile::class);
+        return $this->belongsToMany(EmployeeProfile::class);
     }
+
+    public function approval()
+    {
+        return $this->belongsToMany(EmployeeProfile::class, 'exchange_duty_approval');
+    }
+    
 }

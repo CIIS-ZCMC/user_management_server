@@ -4,6 +4,9 @@ namespace App\Helpers;
 
 use App\Models\SystemLogs;
 use App\Models\Permission;
+use App\Models\TimeShift;
+use Str;
+
 
 class Helpers {
 
@@ -25,5 +28,23 @@ class Helpers {
         ]);
     }
     
+
+    public static function randomHexColor()
+    {
+        // Generate a random RGB color
+        $red = mt_rand(0, 255);
+        $green = mt_rand(0, 255);
+        $blue = mt_rand(0, 255);
+
+        // Convert RGB to hex
+        $hexColor = sprintf("#%02x%02x%02x", $red, $green, $blue);
+
+        $query = TimeShift::where('color', $hexColor)->exists();
+
+        if (!$query) {
+            return $hexColor;
+        }
+    }
+
 
 }
