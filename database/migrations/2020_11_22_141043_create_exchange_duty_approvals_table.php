@@ -11,10 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('pull_outs', function (Blueprint $table) {
+        Schema::create('exchange_duty_approvals', function (Blueprint $table) {
             $table->id();
-            $table->softDeletes();
-            $table->timestamps();
+            $table->integer('exchange_duty_id')->unasigned();
+            $table->integer('employee_profile_id')->unasigned();
+            $table->boolean('approval_status')->default(false);
         });
     }
 
@@ -23,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('pull_outs');
+        Schema::dropIfExists('exchange_duty_approvals');
     }
 };

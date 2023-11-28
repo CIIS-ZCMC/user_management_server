@@ -1239,7 +1239,7 @@ Route::middleware('auth.cookie')->group(function(){
             Route::delete('time-shift/{id}', 'TimeShiftController@destroy');
         });
 
-          /**
+        /**
          * Schedule Module
          */
         Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function(){
@@ -1247,7 +1247,7 @@ Route::middleware('auth.cookie')->group(function(){
         });
 
         Route::middleware(['auth.permission:UMIS-ScM write'])->group(function(){
-            // Route::post('schedule', 'ScheduleController@store');
+            Route::post('schedule', 'ScheduleController@store');
         });
 
         Route::middleware(['auth.permission:UMIS-ScM view'])->group(function(){
@@ -1261,10 +1261,32 @@ Route::middleware('auth.cookie')->group(function(){
         Route::middleware(['auth.permission:UMIS-ScM delete'])->group(function(){
             Route::delete('schedule/{id}', 'ScheduleController@destroy');
         });
-    });
-});
 
-Route::namespace('App\Http\Controllers\Schedule')->group(function(){
-    Route::put('exchange-duties/{id}', 'ExchangeDutyController@update');
-    Route::post('exchange-duties', 'ExchangeDutyController@store');
+        /**
+         * Exchange Schedule Module
+         */
+        Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function(){
+            Route::get('exchange-duties', 'ExchangeDutyController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM write'])->group(function(){
+            Route::post('exchange-duties', 'ExchangeDutyController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM view'])->group(function(){
+            Route::get('exchange-duties/{id}', 'ExchangeDutyController@show');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM update'])->group(function(){
+            Route::put('exchange-duties/{id}', 'ExchangeDutyController@update');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM delete'])->group(function(){
+            Route::delete('exchange-duties/{id}', 'ExchangeDutyController@destroy');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM update'])->group(function(){
+            Route::put('exchange-duties/approval/{id}', 'ExchangeDutyController@approve');
+        });
+    });
 });
