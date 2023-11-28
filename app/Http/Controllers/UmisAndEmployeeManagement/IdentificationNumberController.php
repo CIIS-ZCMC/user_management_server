@@ -4,16 +4,13 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
 use App\Services\RequestLogger;
 use App\Http\Requests\IdentificationNumberRequest;
 use App\Http\Resources\IdentificationNumberResource;
 use App\Models\IdentificationNumber;
 use App\Models\EmployeeProfile;
-use App\Models\SystemLogs;
 
 class IdentificationNumberController extends Controller
 {
@@ -38,7 +35,7 @@ class IdentificationNumberController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching employee '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching employee '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' => new IdentificationNumberResource($identification), 'message' => 'Employee identification number retrieved.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -60,7 +57,7 @@ class IdentificationNumberController extends Controller
             $personal_information = $employee_profile->personalInformation;
             $identification = $personal_information->identification;
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching employee '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching employee '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' => new IdentificationNumberResource($identification), 'message' => 'Employee identification number retrieved.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -84,7 +81,7 @@ class IdentificationNumberController extends Controller
 
             $identification = IdentificationNumber::create($cleanData);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' => new IdentificationNumberResource($identification) ,"message" => 'New employee identification number registred.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -103,7 +100,7 @@ class IdentificationNumberController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' => new IdentificationNumberResource($identification), 'message' => 'Identification number record retrieved.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -129,7 +126,7 @@ class IdentificationNumberController extends Controller
 
             $identification -> update($cleanData);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' => new IdentificationNumberResource($identification), "message" => 'Employee Identification number updated.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -150,7 +147,7 @@ class IdentificationNumberController extends Controller
 
             $identification -> delete();
             
-            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['message' => 'Employee identification number record Deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -171,7 +168,7 @@ class IdentificationNumberController extends Controller
 
             $identification -> delete();
             
-            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['message' => 'Employee identification number record Deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -194,7 +191,7 @@ class IdentificationNumberController extends Controller
             $identification = $personal_information->identification;
             $identification -> delete();
             
-            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['message' => 'Employee identification number record Deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -206,23 +203,5 @@ class IdentificationNumberController extends Controller
     protected function encryptData($dataToEncrypt)
     {
         return openssl_encrypt($dataToEncrypt, env("ENCRYPT_DECRYPT_ALGORITHM"), env("DATA_KEY_ENCRYPTION"), 0, substr(md5(env("DATA_KEY_ENCRYPTION")), 0, 16));
-    }
-
-    protected function registerSystemLogs($request, $moduleID, $status, $remarks)
-    {
-        $ip = $request->ip();
-        $user = $request->user;
-        $permission = $request->permission;
-        list($action, $module) = explode(' ', $permission);
-
-        SystemLogs::create([
-            'employee_profile_id' => $user->id,
-            'module_id' => $moduleID,
-            'action' => $action,
-            'module' => $module,
-            'status' => $status,
-            'remarks' => $remarks,
-            'ip_address' => $ip
-        ]);
     }
 }

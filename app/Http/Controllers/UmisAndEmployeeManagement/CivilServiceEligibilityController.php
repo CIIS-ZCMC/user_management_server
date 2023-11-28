@@ -4,16 +4,13 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
 use App\Services\RequestLogger;
 use App\Http\Requests\CivilServiceEligibilityRequest;
 use App\Http\Resources\CivilServiceEligibilityResource;
 use App\Models\CivilServiceEligibility;
 use App\Models\EmployeeProfile;
-use App\Models\SystemLogs;
 
 class CivilServiceEligibilityController extends Controller
 {
@@ -33,16 +30,19 @@ class CivilServiceEligibilityController extends Controller
         try{
             $civil_service_eligibilities = EmployeeProfile::find($id);
             
-            if(!$civil_service_eligibility || count($civil_service_eligibilities))
+            if(count($civil_service_eligibilities) === 0)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
             
-            $this->registerSystemLogs($request, null, true, 'Success in fetching employee '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching employee '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => CivilServiceEligibilityResource::collection($civil_service_eligibilities)], Response::HTTP_OK);
+            return response()->json([
+                'data' => CivilServiceEligibilityResource::collection($civil_service_eligibilities),
+                'message' => 'Employee civil service records retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByPersonalInformationID', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByPersonalInformationID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -60,16 +60,16 @@ class CivilServiceEligibilityController extends Controller
             $personal_information = $employee_profile->personalInformation;
             $civil_service_eligibilities = $personal_information->civilServiceEligibility;
             
-            $this->registerSystemLogs($request, null, true, 'Success in fetching employee '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching employee '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json(['data' => CivilServiceEligibilityResource::collection($civil_service_eligibilities)], Response::HTTP_OK);
         }catch(\Throwable $th){
-            this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByEmployeeID', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function store(Request $request)
+    public function store(CivilServiceEligibilityRequest $request)
     {
         try{
             $cleanData = [];
@@ -85,11 +85,14 @@ class CivilServiceEligibilityController extends Controller
 
             $civil_service_eligibility = CivilServiceEligibility::create($cleanData);
 
-            $this->registerSystemLogs($request, $civil_service_eligibility['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $civil_service_eligibility['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => new CivilServiceEligibilityResource($civil_service_eligibility), 'message' => 'success'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new CivilServiceEligibilityResource($civil_service_eligibility), 
+                'message' => 'New civil service record added.',
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -104,16 +107,19 @@ class CivilServiceEligibilityController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => new CivilServiceEligibilityResource($civil_service_eligibility)], Response::HTTP_OK);
+            return response()->json([
+                'data' => new CivilServiceEligibilityResource($civil_service_eligibility),
+                'message' => 'Employee civil service record retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function update($id, Request $request)
+    public function update($id, CivilServiceEligibilityRequest $request)
     {
         try{
             $civil_service_eligibility = CivilServiceEligibility::find($id);
@@ -136,11 +142,14 @@ class CivilServiceEligibilityController extends Controller
 
             $civil_service_eligibility -> update($cleanData);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' =>  new CivilServiceEligibilityResource($civil_service_eligibility),'message'=>'Success updating information'], Response::HTTP_OK);
+            return response()->json([
+                'data' =>  new CivilServiceEligibilityResource($civil_service_eligibility),
+                'message'=> 'Employee civil service details updated.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -157,11 +166,11 @@ class CivilServiceEligibilityController extends Controller
 
             $civil_service_eligibility -> delete();
 
-            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -169,9 +178,9 @@ class CivilServiceEligibilityController extends Controller
     public function destroyByPersonalInformationID($id, Request $request)
     {
         try{
-            $civil_service_eligibility = CivilServiceEligibility::where('personal_information_id',$id)->get();
+            $civil_service_eligibilities = CivilServiceEligibility::where('personal_information_id',$id)->get();
 
-            if(!$civil_service_eligibility)
+            if(count($civil_service_eligibilities) === 0)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
@@ -181,11 +190,11 @@ class CivilServiceEligibilityController extends Controller
                 $value -> delete();
             }
 
-            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['message' => 'Employee civil service records deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroyByPersonalInformationID', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroyByPersonalInformationID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -203,35 +212,22 @@ class CivilServiceEligibilityController extends Controller
             $personal_information = $employee_profile->personalInformation;
             $civil_service_eligibilities = $personal_information->civilServiceElibility;
 
+            if(count($civil_service_eligibilities) === 0)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
             foreach($civil_service_eligibilities as $key => $value)
             {
                 $value -> delete();
             }
 
-            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['message' => 'Employee civil service records deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroyByEmployeeID', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroyByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-    }
-
-    protected function registerSystemLogs($request, $moduleID, $status, $remarks)
-    {
-        $ip = $request->ip();
-        $user = $request->user;
-        $permission = $request->permission;
-        list($action, $module) = explode(' ', $permission);
-
-        SystemLogs::create([
-            'employee_profile_id' => $user->id,
-            'module_id' => $moduleID,
-            'action' => $action,
-            'module' => $module,
-            'status' => $status,
-            'remarks' => $remarks,
-            'ip_address' => $ip
-        ]);
     }
 }

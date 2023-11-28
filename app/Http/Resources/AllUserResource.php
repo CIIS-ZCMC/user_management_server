@@ -14,8 +14,6 @@ class AllUserResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        // return parent::toArray($request);
-
         $deactivated = $this->isDeactivated;
         $account_status = $this->isApproved?'APPROVED':'PENDING';
         $email_verified = $this->isEmailVerified?'YES':'NO';

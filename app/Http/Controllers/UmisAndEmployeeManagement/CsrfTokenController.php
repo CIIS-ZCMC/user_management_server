@@ -7,11 +7,20 @@ use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
+use App\Services\RequestLogger;
 use Illuminate\Support\Facades\Session;
 
 class CsrfTokenController extends Controller
 {
+    private $CONTROLLER_NAME = 'CsrfToken';
+
+    protected $requestLogger;
+
+    public function __construct(RequestLogger $requestLogger)
+    {
+        $this->requestLogger = $requestLogger;
+    }
+
     public function generateCsrfToken(Request $request)
     {
         try{ 

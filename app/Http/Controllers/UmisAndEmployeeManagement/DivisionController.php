@@ -7,15 +7,19 @@ use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
+use App\Services\RequestLogger;
+use App\Services\FileValidationAndUpload;
+use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\DivisionRequest;
 use App\Http\Requests\DivisionAssignChiefRequest;
 use App\Http\Requests\DivisionAssignOICRequest;
 use App\Http\Resources\DivisionResource;
 use App\Models\Division;
+use App\Models\Designation;
 use App\Models\EmployeeProfile;
-use App\Models\SystemLogs;
 
 class DivisionController extends Controller
 {
@@ -24,10 +28,12 @@ class DivisionController extends Controller
     private $SINGULAR_MODULE_NAME = 'division';
 
     protected $requestLogger;
+    protected $file_validation_and_upload;
 
-    public function __construct(RequestLogger $requestLogger)
+    public function __construct(RequestLogger $requestLogger, FileValidationAndUpload $file_validation_and_upload)
     {
         $this->requestLogger = $requestLogger;
+        $this->file_validation_and_upload = $file_validation_and_upload;
     }
 
     public function index(Request $request)
@@ -39,9 +45,12 @@ class DivisionController extends Controller
                 return Division::all();
             });
 
-            $this->registerSystemLogs($request, null, true, 'Success in deleting '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in deleting '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => DivisionResource::collection($divisions), 'message' => 'Division record retrieved.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => DivisionResource::collection($divisions), 
+                'message' => 'Division record retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -78,12 +87,12 @@ class DivisionController extends Controller
 
             $cleanData = [];
             $cleanData['chief_employee_profile_id'] = $employee_profile->id;
-            $cleanData['chief_attachment_url'] = $request->input('attachment')===null?'NONE': $this->check_save_file($request->input('attachment'));
+            $cleanData['chief_attachment_url'] = $request->input('attachment')===null?'NONE': $this->file_validation_and_upload->check_save_file($request->input('attachment'), 'division\files');
             $cleanData['chief_effective_at'] = Carbon::now();
 
             $division->update($cleanData);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in assigning chief '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in assigning chief '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json(['data' => new DivisionResource($division), 'message' => 'New chief assigned in department.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -125,13 +134,13 @@ class DivisionController extends Controller
 
             $cleanData = [];
             $cleanData['oic_employee_profile_id'] = $employee_profile->id;
-            $cleanData['oic_attachment_url'] = $request->input('attachment')===null?'NONE': $this->check_save_file($request->input('attachment'));
+            $cleanData['oic_attachment_url'] = $request->input('attachment')===null?'NONE': $this->file_validation_and_upload->check_save_file($request->input('attachment'), 'division\files');
             $cleanData['oic_effective_at'] = strip_tags($request->input('effective_at'));
             $cleanData['oic_end_at'] = strip_tags($request->input('end_at'));
 
             $division->update($cleanData);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in assigning chief '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in assigning chief '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json(['data' => new DivisionResource($division),'message' => 'New officer incharge assign in department.' ], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -145,27 +154,40 @@ class DivisionController extends Controller
         try{
             $cleanData = [];
 
+            $designation = Designation::find($request->input('designation_id'));
+
             foreach ($request->all() as $key => $value) {
                 if($value === null)
                 {
-                    $cleanData[$key] = null;
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                if($key === 'attachment')
+                {
+                    $cleanData['division_attachment_url'] = $this->file_validation_and_upload->check_save_file($request, 'division\files');
                     continue;
                 }
                 $cleanData[$key] = strip_tags($value);
             }
+            
+            $cleanData['job_specification'] = $designation['code'];
 
             $division = Division::create($cleanData);
 
-            $this->registerSystemLogs($request, $division['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $division['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => new DivisionResource($division),'message' => 'Newly added division.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new DivisionResource($division),
+                'message' => 'Newly added division.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function show($id, Request $request)
+    public function show($id, DivisionRequest $request)
     {
         try{
             $division = Division::findOrFail($id);
@@ -175,16 +197,19 @@ class DivisionController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => new DivisionResource($division), 'message' => 'Division details found.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new DivisionResource($division),
+                'message' => 'Division details found.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function update($id, DivisionRequest $request)
+    public function update($id, Request $request)
     {
         try{
             $division = Division::find($id);
@@ -194,26 +219,52 @@ class DivisionController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
+            $designation = Designation::find($request->input('designation_id'));
+
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
+                if($value === null)
+                {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+                
+                if($key === 'attachment')
+                {
+                    $cleanData['division_attachment_url'] = $this->file_validation_and_upload->check_save_file($request, 'division\files');
+                    continue;
+                }
                 $cleanData[$key] = strip_tags($value);
             }
-
+            $cleanData['job_specification'] = $designation['code'];
             $division -> update($cleanData);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => new DivisionResource($division),'message' => 'Newly added division.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new DivisionResource($division),
+                'message' => 'Newly added division.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function destroy($id, Request $request)
+    public function destroy($id, PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->input('password'));
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $division = Division::findOrFail($id);
 
             if(!$division)
@@ -221,66 +272,19 @@ class DivisionController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
+            if(count($division->departments) > 0)
+            {
+                return response()->json(['message' => 'Some data is using this record deletion is prohibited.'], Response::HTTP_BAD_REQUEST);
+            }
+
             $division -> delete();
             
-            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['message' => 'Division record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-    }
-
-    protected function check_save_file($request)
-    {
-        $FILE_URL = 'division/file';
-        $fileName = '';
-
-        if ($request->file('attachment')->isValid()) {
-            $file = $request->file('attachment');
-            $filePath = $file->getRealPath();
-
-            $finfo = new \finfo(FILEINFO_MIME);
-            $mime = $finfo->file($filePath);
-            
-            $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
-
-            if (!in_array($mime, $allowedMimeTypes)) {
-                return response()->json(['message' => 'Invalid file type'], 400);
-            }
-
-            // Check for potential malicious content
-            $fileContent = file_get_contents($filePath);
-
-            if (preg_match('/<\s*script|eval|javascript|vbscript|onload|onerror/i', $fileContent)) {
-                return response()->json(['message' => 'File contains potential malicious content'], 400);
-            }
-
-            $file = $request->file('attachment');
-            $fileName = Hash::make(time()) . '.' . $file->getClientOriginalExtension();
-
-            $file->move(public_path($FILE_URL), $fileName);
-        }
-        
-        return $fileName;
-    }
-
-    protected function registerSystemLogs($request, $moduleID, $status, $remarks)
-    {
-        $ip = $request->ip();
-        $user = $request->user;
-        $permission = $request->permission;
-        list($action, $module) = explode(' ', $permission);
-
-        SystemLogs::create([
-            'employee_profile_id' => $user->id,
-            'module_id' => $moduleID,
-            'action' => $action,
-            'module' => $module,
-            'status' => $status,
-            'remarks' => $remarks,
-            'ip_address' => $ip
-        ]);
     }
 }

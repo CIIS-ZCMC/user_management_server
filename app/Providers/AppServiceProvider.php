@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Schema;
 // use App\Observers\PositionSystemRoleObserver;
 
 use App\Services\RequestLogger;
+use App\Services\FileValidationAndUpload;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +20,10 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(RequestLogger::class, function ($app) {
             return new RequestLogger();
+        });
+        
+        $this->app->singleton(FileValidationAndUpload::class, function ($app) {
+            return new FileValidationAndUpload();
         });
     }
 

@@ -17,7 +17,7 @@ class Section extends Model
     public $fillable = [
         'name',
         'code',
-        'section_atachment_url',
+        'section_attachment_url',
         'job_specification',
         'supervisor_attachment_url',
         'supervisor_effective_at',

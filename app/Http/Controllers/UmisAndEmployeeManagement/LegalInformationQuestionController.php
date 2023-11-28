@@ -7,13 +7,14 @@ use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 use App\Services\RequestLogger;
+use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\LegalInformationQuestionRequest;
 use App\Http\Resources\LegalInformationQuestionResource;
 use App\Models\LegalInformationQuestion;
-use App\Models\SystemLogs;
 
 class LegalInformationQuestionController extends Controller
 {
@@ -34,10 +35,10 @@ class LegalInformationQuestionController extends Controller
             $cacheExpiration = Carbon::now()->addDay();
 
             $legal_information_questions = Cache::remember('legal_information_questions', $cacheExpiration, function(){
-                return LegalInformationQuestion::all();
+                return LegalInformationQuestion::where('legal_iq_id', null)->orderBy('order_by', 'asc')->get();
             });
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => LegalInformationQuestionResource::collection($legal_information_questions),
@@ -55,7 +56,7 @@ class LegalInformationQuestionController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if($key === 'has_sub_question' || $key === 'legal_iq_id'){
+                if($value === null){
                     $cleanData[$key] = $value;
                     continue;
                 }
@@ -64,7 +65,7 @@ class LegalInformationQuestionController extends Controller
 
             $legal_information_question = LegalInformationQuestion::create($cleanData);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => new LegalInformationQuestionResource($legal_information_question),
@@ -86,7 +87,7 @@ class LegalInformationQuestionController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => new LegalInformationQuestionResource($legal_information_question),
@@ -120,7 +121,7 @@ class LegalInformationQuestionController extends Controller
 
             $legal_information_question -> update($cleanData);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => new LegalInformationQuestionResource($legal_information_question),
@@ -132,9 +133,19 @@ class LegalInformationQuestionController extends Controller
         }
     }
     
-    public function destroy($id, Request $request)
+    public function destroy($id, PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->input('password'));
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $legal_information_question = LegalInformationQuestion::findOrFail($id);
 
             if(!$legal_information_question)
@@ -144,30 +155,12 @@ class LegalInformationQuestionController extends Controller
 
             $legal_information_question -> delete();
 
-            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['message' => 'Legal information question record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-    }
-
-    protected function registerSystemLogs($request, $moduleID, $status, $remarks)
-    {
-        $ip = $request->ip();
-        $user = $request->user;
-        $permission = $request->permission;
-        list($action, $module) = explode(' ', $permission);
-
-        SystemLogs::create([
-            'employee_profile_id' => $user->id,
-            'module_id' => $moduleID,
-            'action' => $action,
-            'module' => $module,
-            'status' => $status,
-            'remarks' => $remarks,
-            'ip_address' => $ip
-        ]);
     }
 }

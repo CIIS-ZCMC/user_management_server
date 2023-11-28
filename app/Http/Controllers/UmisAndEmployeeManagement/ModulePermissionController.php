@@ -8,11 +8,11 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
 use App\Services\RequestLogger;
 use App\Http\Resources\ModulePermissionResource;
+use App\Http\Resources\SystemModulePermissionResource;
 use App\Models\ModulePermission;
-use App\Models\SystemLogs;
+use App\Models\System;
 
 class ModulePermissionController extends Controller
 {
@@ -36,7 +36,7 @@ class ModulePermissionController extends Controller
                 return ModulePermission::all();
             });
 
-            $this->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => ModulePermissionResource::collection($module_permissions),
@@ -63,16 +63,16 @@ class ModulePermissionController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $module_permissions = $system->modules()->with('module_permissions')->get()->pluck('module_permissions')->flatten();
+            $module_permissions = $system->modules()->with('modulePermissions')->get();
 
-            $this->registerSystemLogs($request, null, true, 'Success in retrieving system permissions '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in retrieving system permissions '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
-                'data' => ModulePermissionResource::collection($module_permissions),
+                'data' => SystemModulePermissionResource::collection($module_permissions),
                 'message' => 'System module permission retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'systemModulePermission', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -87,11 +87,11 @@ class ModulePermissionController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' => new ModulePermissionResource($module_permission), 'message' => 'Module permission record found.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -108,30 +108,12 @@ class ModulePermissionController extends Controller
 
             $module_permission->delete();
             
-            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['message' => 'Module permission record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-    }
-
-    protected function registerSystemLogs($request, $moduleID, $status, $remarks)
-    {
-        $ip = $request->ip();
-        $user = $request->user;
-        $permission = $request->permission;
-        list($action, $module) = explode(' ', $permission);
-
-        SystemLogs::create([
-            'employee_profile_id' => $user->id,
-            'module_id' => $moduleID,
-            'action' => $action,
-            'module' => $module,
-            'status' => $status,
-            'remarks' => $remarks,
-            'ip_address' => $ip
-        ]);
     }
 }

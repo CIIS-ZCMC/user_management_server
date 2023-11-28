@@ -4,19 +4,22 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Models\Section;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Cache;
+use App\Services\RequestLogger;
+use App\Services\FileValidationAndUpload;
+use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\UnitRequest;
-use App\Http\Requests\UnitAssignSupervisorRequest;
 use App\Http\Requests\UnitAssignOICRequest;
+use App\Http\Requests\UnitAssignHeadRequest;
 use App\Http\Resources\UnitResource;
 use App\Models\Unit;
 use App\Models\EmployeeProfile;
-use App\Models\SystemLogs;
 
 class UnitController extends Controller
 {  
@@ -25,10 +28,12 @@ class UnitController extends Controller
     private $SINGULAR_MODULE_NAME = 'unit';
 
     protected $requestLogger;
+        protected $file_validation_and_upload;
 
-    public function __construct(RequestLogger $requestLogger)
+    public function __construct(RequestLogger $requestLogger, FileValidationAndUpload $file_validation_and_upload)
     {
         $this->requestLogger = $requestLogger;
+        $this->file_validation_and_upload = $file_validation_and_upload;
     }
 
     public function index(Request $request)
@@ -40,7 +45,7 @@ class UnitController extends Controller
                 return Unit::all();
             });
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => UnitResource::collection($units),
@@ -82,12 +87,12 @@ class UnitController extends Controller
 
             $cleanData = [];
             $cleanData['head_employee_profile_id'] = $employee_profile->id;
-            $cleanData['head_attachment_url'] = $request->input('attachment')===null?'NONE': $this->check_save_file($request->input('attachment'));
+            $cleanData['head_attachment_url'] = $request->input('attachment')===null?'NONE': $this->file_validation_and_upload->check_save_file($request->input('attachment'), "unit/files");
             $cleanData['head_effective_at'] = Carbon::now();
 
             $unit->update($cleanData);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in assigning head '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in assigning head '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json(['data' => new UnitResource($unit), 'message' => 'New unit head assigned.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -129,13 +134,13 @@ class UnitController extends Controller
 
             $cleanData = [];
             $cleanData['oic_employee_profile_id'] = $employee_profile->id;
-            $cleanData['oic_attachment_url'] = $request->input('attachment')===null?'NONE': $this->check_save_file($request->input('attachment'));
+            $cleanData['oic_attachment_url'] = $request->input('attachment')===null?'NONE': $this->file_validation_and_upload->check_save_file($request->input('attachment'), "unit/files");
             $cleanData['oic_effective_at'] = strip_tags($request->input('effective_at'));
             $cleanData['oic_end_at'] = strip_tags($request->input('end_at'));
 
             $unit->update($cleanData);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in assigning officer in charge '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in assigning officer in charge '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => new UnitResource($unit),
@@ -151,11 +156,22 @@ class UnitController extends Controller
     {
         try{
             $cleanData = [];
+
+            $section = Section::find($request->input('section_id'));
+
+            if(!$section){
+                return response()->json(['message' => 'Section is required.'], Response::HTTP_BAD_REQUEST);
+            }
             
             foreach ($request->all() as $key => $value) {
-                if($value === null && $key === 'attachment')
+                if($value === null)
                 {
-                    $cleanData['unit_attachment_url'] = $value;
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+                if($key === 'attachment')
+                {
+                    $cleanData['unit_attachment_url'] = $this->file_validation_and_upload->check_save_file($request,'unit/files');
                     continue;
                 }
                 $cleanData[$key] = strip_tags($value);
@@ -163,9 +179,12 @@ class UnitController extends Controller
 
             $unit = Unit::create($cleanData);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' =>  new UnitResource($unit),'message' => 'New unit added.'], Response::HTTP_OK);
+            return response()->json([
+                'data' =>  new UnitResource($unit),
+                'message' => 'New unit added.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -182,7 +201,7 @@ class UnitController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' => new UnitResource($unit), 'message' => 'Unit record found.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -201,12 +220,23 @@ class UnitController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $cleanData = [];
+            $section = Section::find($request->input('section_id'));
 
+            if(!$section){
+                return response()->json(['message' => 'Section is required.'], Response::HTTP_BAD_REQUEST);
+            }
+
+            $cleanData = [];
+            
             foreach ($request->all() as $key => $value) {
-                if($value === null && $key === 'attachment')
+                if($value === null)
                 {
-                    $cleanData['unit_attachment_url'] = $value;
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+                if($key === 'attachment')
+                {
+                    $cleanData['unit_attachment_url'] = $this->file_validation_and_upload->check_save_file($request,'unit/files');
                     continue;
                 }
                 $cleanData[$key] = strip_tags($value);
@@ -214,18 +244,31 @@ class UnitController extends Controller
 
             $unit -> update($cleanData);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' =>  new UnitResource($unit),'message' => 'Updated unit details.'], Response::HTTP_OK);
+            return response()->json([
+                'data' =>  new UnitResource($unit),
+                'message' => 'Updated unit details.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function destroy($id, Request $request)
+    public function destroy($id, PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->input('password'));
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $unit = Unit::findOrFail($id);
 
             if(!$unit)
@@ -235,64 +278,12 @@ class UnitController extends Controller
 
             $unit -> delete();
 
-            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['message' => 'Unit record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-    }
-
-    protected function check_save_file($request)
-    {
-        $FILE_URL = 'employee/profiles';
-        $fileName = '';
-
-        if ($request->file('profile_image')->isValid()) {
-            $file = $request->file('profile_image');
-            $filePath = $file->getRealPath();
-
-            $finfo = new \finfo(FILEINFO_MIME);
-            $mime = $finfo->file($filePath);
-            
-            $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
-
-            if (!in_array($mime, $allowedMimeTypes)) {
-                return response()->json(['message' => 'Invalid file type'], 400);
-            }
-
-            // Check for potential malicious content
-            $fileContent = file_get_contents($filePath);
-
-            if (preg_match('/<\s*script|eval|javascript|vbscript|onload|onerror/i', $fileContent)) {
-                return response()->json(['message' => 'File contains potential malicious content'], 400);
-            }
-
-            $file = $request->file('profile_image');
-            $fileName = Hash::make(time()) . '.' . $file->getClientOriginalExtension();
-
-            $file->move(public_path($FILE_URL), $fileName);
-        }
-        
-        return $fileName;
-    }
-    
-    protected function registerSystemLogs($request, $moduleID, $status, $remarks)
-    {
-        $ip = $request->ip();
-        $user = $request->user;
-        $permission = $request->permission;
-        list($action, $module) = explode(' ', $permission);
-
-        SystemLogs::create([
-            'employee_profile_id' => $user->id,
-            'module_id' => $moduleID,
-            'action' => $action,
-            'module' => $module,
-            'status' => $status,
-            'remarks' => $remarks,
-            'ip_address' => $ip
-        ]);
     }
 }

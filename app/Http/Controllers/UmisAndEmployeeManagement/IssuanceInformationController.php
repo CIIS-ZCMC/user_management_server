@@ -4,15 +4,12 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
 use App\Services\RequestLogger;
 use App\Http\Requests\IssuanceInformationRequest;
 use App\Http\Resources\IssuanceInformationResource;
 use App\Models\IssuanceInformation;
-use App\Models\SystemLogs;
 
 class IssuanceInformationController extends Controller
 {
@@ -43,7 +40,7 @@ class IssuanceInformationController extends Controller
 
             $issuance_information = IssuanceInformation::create($cleanData);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
            
             return response()->json(['data' => new IssuanceInformationResource($issuance_information) ,'message' => 'Newly added employee issuance information.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -62,7 +59,7 @@ class IssuanceInformationController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' => new IssuanceInformation($issuance_information), 'message' => 'Employee issuance information found.' ], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -95,8 +92,7 @@ class IssuanceInformationController extends Controller
 
             $issuance_information -> update($cleanData); 
 
-            $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
-           
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['data' => new IssuanceInformationResource($issuance_information) ,'message' => 'Updated employee issuance information.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -117,30 +113,12 @@ class IssuanceInformationController extends Controller
 
             $issuance_information -> delete();
 
-            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
            
             return response()->json(['message' => 'employee issuance information deleted'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-    }
-
-    protected function registerSystemLogs($request, $moduleID, $status, $remarks)
-    {
-        $ip = $request->ip();
-        $user = $request->user;
-        $permission = $request->permission;
-        list($action, $module) = explode(' ', $permission);
-
-        SystemLogs::create([
-            'employee_profile_id' => $user->id,
-            'module_id' => $moduleID,
-            'action' => $action,
-            'module' => $module,
-            'status' => $status,
-            'remarks' => $remarks,
-            'ip_address' => $ip
-        ]);
     }
 }

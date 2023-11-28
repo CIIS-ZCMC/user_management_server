@@ -7,12 +7,10 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Services\RequestLogger;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Crypt;
 use App\Http\Requests\SystemRequest;
 use App\Http\Resources\SystemResource;
 use App\Models\System;
-use App\Models\SystemLogs;
 
 class SystemController extends Controller
 {   
@@ -32,7 +30,7 @@ class SystemController extends Controller
         try{
             $systems = System::all();
 
-            $this->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
             
             return response() -> json([
                 'data' => SystemResource::collection($systems),
@@ -60,7 +58,7 @@ class SystemController extends Controller
 
             $system = System::create($cleanData);
 
-            $this->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response() -> json([
                 'data' => new SystemResource($system),
@@ -95,7 +93,7 @@ class SystemController extends Controller
             $system -> updated_at = now();
             $system -> save();
 
-            $this->registerSystemLogs($request, $id, true, 'Success in generating API Key '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in generating API Key '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response() -> json([
                 'data' => new SystemResource($system),
@@ -120,7 +118,7 @@ class SystemController extends Controller
 
             if(!is_int($status) || $status < 0 || $status > 2)
             {
-                return response()->json(['message' => 'Invalid Data.'], Response::HTTP_INVALID_REQUEST);
+                return response()->json(['message' => 'Invalid Data.'], Response::HTTP_BAD_REQUEST);
             }
 
             $system = System::find($id);
@@ -134,7 +132,7 @@ class SystemController extends Controller
                 'updated_at' => now()
             ]);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in Updating System Status'.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in Updating System Status'.$this->SINGULAR_MODULE_NAME.'.');
             
             return response() -> json([
                 'data' => new SystemResource($system),
@@ -155,7 +153,7 @@ class SystemController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response() -> json([
                 'data' => new SystemResource($system),
@@ -189,7 +187,7 @@ class SystemController extends Controller
 
             $system -> update($cleanData);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response() -> json([
                 'data' => new SystemResource($system),
@@ -211,30 +209,12 @@ class SystemController extends Controller
 
             $system -> delete();
 
-            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response() -> json(['message' => 'System record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-    }
-
-    protected function registerSystemLogs($request, $moduleID, $status, $remarks)
-    {
-        $ip = $request->ip();
-        $user = $request->user;
-        $permission = $request->permission;
-        list($module, $action) = explode(' ', $permission);
-
-        SystemLogs::create([
-            'employee_profile_id' => $user->id,
-            'module_id' => $moduleID,
-            'action' => $action,
-            'module' => $module,
-            'status' => $status,
-            'remarks' => $remarks,
-            'ip_address' => $ip
-        ]);
     }
 }

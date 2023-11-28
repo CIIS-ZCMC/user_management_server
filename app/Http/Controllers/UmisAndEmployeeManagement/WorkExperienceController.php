@@ -4,16 +4,13 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
 use App\Services\RequestLogger;
 use App\Http\Requests\WorkExperienceRequest;
 use App\Http\Resources\WorkExperienceResource;
 use App\Models\WorkExperience;
 use App\Models\EmployeeProfile;
-use App\Models\SystemLogs;
 
 class WorkExperienceController extends Controller
 {
@@ -38,7 +35,7 @@ class WorkExperienceController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching employee '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching employee '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => WorkExperienceResource::collection($work_experience),
@@ -63,7 +60,7 @@ class WorkExperienceController extends Controller
             $personal_information = $employee_profile->personalInformation;
             $work_experience = $personal_information->workExperience;
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching employee '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching employee '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => WorkExperienceResource::collection($work_experience),
@@ -75,7 +72,7 @@ class WorkExperienceController extends Controller
         }
     }
     
-    public function store(Request $request)
+    public function store(WorkExperienceRequest $request)
     {
         try{
             $cleanData = [];
@@ -90,7 +87,7 @@ class WorkExperienceController extends Controller
 
             $work_experience = WorkExperience::create($cleanData);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => new WorkExperienceResource($work_experience),
@@ -112,7 +109,7 @@ class WorkExperienceController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => new WorkExperienceResource($work_experience),
@@ -124,7 +121,7 @@ class WorkExperienceController extends Controller
         }
     }
     
-    public function update($id, Request $request)
+    public function update($id, WorkExperienceRequest $request)
     {
         try{
             $work_experience = WorkExperience::find($id);
@@ -146,7 +143,7 @@ class WorkExperienceController extends Controller
 
             $work_experience -> update($cleanData);
 
-            $this->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => new WorkExperienceResource($work_experience),
@@ -170,7 +167,7 @@ class WorkExperienceController extends Controller
 
             $work_experience -> delete();
             
-            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['message' => 'Work experience record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -193,7 +190,7 @@ class WorkExperienceController extends Controller
                 $value->delete();
             }
             
-            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['message' => 'Employee work experience record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -219,30 +216,12 @@ class WorkExperienceController extends Controller
                 $value->delete();
             }
             
-            $this->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['message' => 'Employee work experience record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroyByPersonalInformationID', $th->getMessage());
             return response()->json(['meTruessage' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-    }
-
-    protected function registerSystemLogs($request, $moduleID, $status, $remarks)
-    {
-        $ip = $request->ip();
-        $user = $request->user;
-        $permission = $request->permission;
-        list($action, $module) = explode(' ', $permission);
-
-        SystemLogs::create([
-            'employee_profile_id' => $user->id,
-            'module_id' => $moduleID,
-            'action' => $action,
-            'module' => $module,
-            'status' => $status,
-            'remarks' => $remarks,
-            'ip_address' => $ip
-        ]);
     }
 }

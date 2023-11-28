@@ -23,8 +23,8 @@ class DefaultPasswordRequest extends FormRequest
     {
         return [
             'password' => 'required|string|max:255',
-            'status' => 'required|integer',
-            'end_at' => 'nullable|date'
+            'status' => 'nullable|integer',
+            'end_at' => 'nullable|date:Y-m-d'
         ];
     }
 }

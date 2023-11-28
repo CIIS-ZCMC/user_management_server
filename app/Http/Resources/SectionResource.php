@@ -18,7 +18,7 @@ class SectionResource extends JsonResource
         {
             $name = $this->name;
             $code = $this->code;
-            $designation = $this->supervisorJobSpecification;
+            $designation = $this->supervisorJobSpecification();
             $job_specification = $designation['name'];
             $supervisor_status = $this->supervisor_status? 'On Site':'On Leave';
             $approving_officer = $this->supervisor_status? 'Chief':'OIC';
@@ -47,7 +47,7 @@ class SectionResource extends JsonResource
             ];
         }
 
-        $designation = $this->supervisorJobSpecification;
+        $designation = $this->supervisorJobSpecification();
         $job_specification = $designation['name'];
 
         return [
