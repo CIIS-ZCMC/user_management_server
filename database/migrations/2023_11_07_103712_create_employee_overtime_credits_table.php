@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('overtime_hours')->nullable();
             $table->string('credit_value');
             $table->string('date');
+            $table->string('time')->nullable();
             $table->timestamps();
         });
     }

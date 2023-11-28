@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('ovt_application_datetimes', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('ovt_application_employee_id')->unsigned();
-            $table->foreign('ovt_application_employee_id')->references('id')->on('ovt_application_employees')->onDelete('cascade');
+            $table->unsignedBigInteger('ovt_application_activity_id')->unsigned();
+            $table->foreign('ovt_application_activity_id')->references('id')->on('ovt_application_activities')->onDelete('cascade');
             $table->string('time_from')->nullable(); 
             $table->string('time_to')->nullable(); 
             $table->string('date')->nullable(); 

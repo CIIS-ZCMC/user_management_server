@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\ObApplication as ResourcesObApplication;
 use App\Http\Resources\ObApplicationLog as ResourcesObApplicationLog;
 use App\Models\EmployeeProfile;
+use App\Models\LeaveType;
 use App\Models\ObApplicationLog;
 use App\Models\ObApplicationRequirement;
 use Illuminate\Http\Request;
@@ -40,7 +41,7 @@ class ObApplicationController extends Controller
     }
 
     public function getObApplications(Request $request)
-    {
+    { 
         $status = $request->status;  
         $ob_applications = [];
 
@@ -117,6 +118,7 @@ class ObApplicationController extends Controller
                                 $ob_application_log->ob_application_id = $ob_application_id;
                                 $ob_application_log->action_by = $user_id;
                                 $ob_application_log->date = date('Y-m-d');
+                                $ob_application_log->time =  date('H:i:s');
                                 $ob_application_log->save();
 
                                 $ob_application = ObApplication::findOrFail($ob_application_id);   
@@ -138,13 +140,14 @@ class ObApplicationController extends Controller
     public function updateObApplication(Request $request)
     {
         try{
+            
             $ob_application_id= $request->ot_application_id;
+            
             $official_business_application = ObApplication::findOrFail($ob_application_id); 
             $official_business_application->date_from = $request->date_from;
             $official_business_application->date_to = $request->date_to;
             $official_business_application->business_from = $request->business_from;
             $official_business_application->business_to = $request->business_to;
-            $official_business_application->date = date('Y-m-d');
             $official_business_application->update();
          
             if ($request->hasFile('requirements')) {
@@ -191,7 +194,11 @@ class ObApplicationController extends Controller
     public function store(Request $request)
     {
         try{
+            
+            $user_id = Auth::user()->id;
+            $user = EmployeeProfile::where('id','=',$user_id)->first();
             $official_business_application = new ObApplication();
+            $official_business_application->employee_profile_id = $user->id;
             $official_business_application->date_from = $request->date_from;
             $official_business_application->date_to = $request->date_to;
             $official_business_application->business_from = $request->business_from;
@@ -199,40 +206,20 @@ class ObApplicationController extends Controller
             $official_business_application->status = "for-approval-supervisor";
             $official_business_application->reason = "for-approval-supervisor";
             $official_business_application->date = date('Y-m-d');
-            
-            if ($request->hasFile('requirements')) {
-                $requirements = $request->file('requirements');
-
-                if($requirements){
-
-                    $official_business_application_id = $official_business_application->id; 
-                    foreach ($requirements as $requirement) {
-                        $official_business_requirement = $this->storeOfficialBusinessApplicationRequirement($official_business_application_id);
-                        $official_business_requirement_id = $official_business_requirement->id;
-
-                        if($official_business_requirement){
-                            $filename = config('enums.storage.ob') . '/' 
-                                        . $official_business_requirement_id ;
-
-                            $uploaded_image = $this->file_service->uploadRequirement($official_business_requirement_id->id, $requirement, $filename, "REQ");
-
-                            if ($uploaded_image) {                     
-                                $official_business_requirement_id = ObApplicationRequirement::where('id','=',$official_business_requirement->id)->first();  
-                                if($official_business_requirement  ){
-                                    $official_business_requirement_name = $requirement->getobOriginalName();
-                                    $official_business_requirement =  ObApplicationRequirement::findOrFail($official_business_requirement->id);
-                                    $official_business_requirement->name = $official_business_requirement_name;
-                                    $official_business_requirement->filename = $uploaded_image;
-                                    $official_business_requirement->update();
-                                }                                      
-                            }                           
-                        }
-                    }
-                        
-                }     
+            $official_business_application->time =  date('H:i:s');
+            if ($request->hasFile('personal_order')) {
+                $imagePath = $request->file('personal_order')->store('official_business', 'public');
+                $official_business_application->personal_order = $imagePath;
             }
+            if ($request->hasFile('certificate_of_appearance')) {
+                $imagePath = $request->file('certificate_of_appearance')->store('official_business', 'public');
+                $official_business_application->certificate_of_appearance = $imagePath;
+            }
+        
+            $official_business_application->save();
+           
             $process_name="Applied";
-            $official_business_logs = $this->storeOfficialBusinessApplicationLog($official_business_application_id,$process_name);
+            $official_business_logs = $this->storeOfficialBusinessApplicationLog($official_business_application->id,$process_name);
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
          
@@ -259,6 +246,7 @@ class ObApplicationController extends Controller
                                 $ob_application_log->action = 'declined';
                                 $ob_application_log->ob_application_id = $ob_application_id;
                                 $ob_application_log->date = date('Y-m-d');
+                                $ob_application_log->time =  date('H:i:s');
                                 $ob_application_log->action_by = $user_id;
                                 $ob_application_log->save();
 
@@ -299,6 +287,7 @@ class ObApplicationController extends Controller
             $official_time_application_log->action = $process_name;
             $official_time_application_log->status = "applied";
             $official_time_application_log->date = date('Y-m-d');
+            $official_time_application_log->time =  date('H:i:s');
             $official_time_application_log->save();
 
             return $official_time_application_log;
@@ -326,6 +315,7 @@ class ObApplicationController extends Controller
                                 $ob_application_log->action = 'cancelled';
                                 $ob_application_log->ob_application_id = $ob_application_id;
                                 $ob_application_log->date = date('Y-m-d');
+                                $ob_application_log->time =  date('H:i:s');
                                 $ob_application_log->action_by = $user_id;
                                 $ob_application_log->save();
 

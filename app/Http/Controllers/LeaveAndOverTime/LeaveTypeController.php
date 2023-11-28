@@ -8,6 +8,7 @@ use App\Models\LeaveType;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\LeaveType as ResourcesLeaveType;
 use App\Models\EmployeeProfile;
+use App\Models\LeaveAttachment;
 use App\Models\LeaveCredit;
 use App\Models\LeaveTypeLog;
 use Illuminate\Http\Request;
@@ -24,12 +25,59 @@ class LeaveTypeController extends Controller
     public function index()
     {
         try{
-        //     $leave_types=[];
+       
+        // $leaveTypes = LeaveType::with('logs.employeeProfile.personalInformation','requirements.logs.employeeProfile')->get();
+        $leave_types = LeaveType::with('logs.employeeProfile.personalInformation', 'requirements.logs.employeeProfile.personalInformation','attachments')->get();
+
+           
+            $leave_types_result = $leave_types->map(function ($leave_type) {
+                return [
+                    'id' => $leave_type->id,
+                    'name' => $leave_type->name,
+                    'description' => $leave_type->description,
+                    'period' => $leave_type->period,
+                    'file_date' => $leave_type->file_date,
+                    'code' => $leave_type->code,
+                    'status' => $leave_type->status,
+                    'is_special' => $leave_type->is_special,
+                    'leave_credit_year' => $leave_type->leave_credit_year ,
+                    'logs' => $leave_type->logs->map(function ($log) {
+                        $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null ;
+                        $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
+                        return [
+                            'id' => $log->id,
+                            'action_by' => "{$first_name} {$last_name}",
+                            'action' => $log->action,
+                            'date' => $log->date,
+                        ];
+                    }),
+                    'requirements' => $leave_type->requirements->map(function ($requirement) {
+                        return [
+                            'id' => $requirement->id,
+                            'name' => $requirement->name,
+                            'logs' => $requirement->logs->map(function ($log) {
+                                $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null ;
+                                $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
+                                return [
+                                    'id' => $log->id,
+                                    'action_by' => "{$first_name} {$last_name}",
+                                    'action' => $log->action,
+                                    'date' => $log->date,
+                                ];
+                            }),
+                        ];
+                    }),
+                    'attachments' => $leave_type->attachments->map(function ($attachment) {
+                        return [
+                            'id' => $attachment->id,
+                            'name' => $attachment->name,
+                            
+                        ];
+                    }),
+                ];
+            });
             
-        //    $leave_types =LeaveType::all();
-        //    $leave_type_resource=ResourcesLeaveType::collection($leave_types);
-        $leaveTypes = LeaveType::with('logs.employeeProfile','requirements.logs.employeeProfile')->get();
-             return response()->json(['data' => $leaveTypes], Response::HTTP_OK);
+             return response()->json(['data' => $leave_types_result], Response::HTTP_OK);
         }catch(\Throwable $th){
         
             return response()->json(['message' => $th->getMessage()], 500);
@@ -65,16 +113,19 @@ class LeaveTypeController extends Controller
             $leave_type->status = 'active';
             $leave_type->is_special =$request->has('is_special');
             $leave_type->leave_credit_year = $request->leave_credit_year;
-            if ($request->hasFile('attachment')) {
-                $attachment = $request->file('attachment');//Pdf or docs
-                if ($attachment->isValid()) {
-                    $extension = $attachment->getClientOriginalExtension();
-                    $filename = $request->name . $extension;
-                    $image_path = 'images/leave/attachment' . $filename;
-                    Image::make($attachment)->save($image_path);
-                    
-                }
+            foreach ($request->file('attachments') as $file) {
+                // Generate a unique name for each file
+                $file_name = time() . '_' . $file->getClientOriginalName();
+    
+                // Move the file to the storage directory
+                $file->move(public_path('attachments'), $file_name);
+                $leave_attachment= new LeaveAttachment();
+                $leave_attachment->file_name= $file_name;
+                $leave_attachment->save();
+               
+                
             }
+
 
             $leave_type->attachment = $filename;
             $leave_type->save();
@@ -121,7 +172,10 @@ class LeaveTypeController extends Controller
     public function update($id,Request $request, LeaveType $leaveType)
     {
         try{
+           
             $leave_type = LeaveType::findOrFail($id);
+            $originalValues = $leave_type->getOriginal();
+            $columnsString="";
             $leave_type->name = ucwords($request->name);
             $leave_type->description = $request->description;
             $leave_type->period = ucwords($request->period);
@@ -144,9 +198,16 @@ class LeaveTypeController extends Controller
             if (!empty($request->leave_requirements)) {
                 $this->storeLeaveTypeRequirements($leave_type->id, $request->leave_requirements);
             } 
+
+            if ($leave_type->isDirty()) {
+                $changedColumns = $leave_type->getChanges();
+              
+                $columnsString = implode(', ', $changedColumns);
+        
+            } 
             $leave_type_id=$leave_type->id;
             $process_name="Update";
-            $leave_type_logs = $this->storeLeaveTypeLog($leave_type_id,$process_name);
+            $leave_type_logs = $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString);
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
          
@@ -173,18 +234,21 @@ class LeaveTypeController extends Controller
         }
     }
 
-    public function storeLeaveTypeLog($leave_type_id,$process_name)
+    public function storeLeaveTypeLog($leave_type_id,$process_name,$changedfields)
     {
         try {
             $user_id="1";
-            $leave_application_log = new LeaveTypeLog();                       
-            $leave_application_log->leave_type_id = $leave_type_id                                                                ;
-            $leave_application_log->action_by = $user_id;
-            $leave_application_log->process_name = $process_name;
-            $leave_application_log->date = now()->toDateString('Ymd');
-            $leave_application_log->save();
+            $leave_type_log = new LeaveTypeLog();                       
+            $leave_type_log->leave_type_id = $leave_type_id                                                                ;
+            $leave_type_log->action_by = $user_id;
+            $leave_type_log->process_name = $process_name;
+            // $leave_type_log->date = now()->toDateString('Ymd');
+            $leave_type_log->date = date('Y-m-d');
+            $leave_type_log->time =  date('H:i:s');
+            $leave_type_log->field =  $changedfields;
+            $leave_type_log->save();
 
-            return $leave_application_log;
+            return $leave_type_log;
         } catch(\Exception $e) {
             return response()->json(['message' => $e->getMessage(),'error'=>true]);
         }
