@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
 
 class FileValidationAndUpload {
@@ -16,18 +17,19 @@ class FileValidationAndUpload {
 
             $finfo = new \finfo(FILEINFO_MIME);
             $mime = $finfo->file($filePath);
-            
+            $mime = explode(';', $mime)[0];
+
             $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
 
             if (!in_array($mime, $allowedMimeTypes)) {
-                return response()->json(['message' => 'Invalid file type'], 400);
+                return response()->json(['message' => 'Invalid file type'], Response::HTTP_BAD_REQUEST);
             }
 
             // Check for potential malicious content
             $fileContent = file_get_contents($filePath);
 
             if (preg_match('/<\s*script|eval|javascript|vbscript|onload|onerror/i', $fileContent)) {
-                return response()->json(['message' => 'File contains potential malicious content'], 400);
+                return response()->json(['message' => 'File contains potential malicious content'], Response::HTTP_BAD_REQUEST);
             }
 
             $file = $request->file('attachment');

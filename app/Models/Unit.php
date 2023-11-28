@@ -53,12 +53,12 @@ class Unit extends Model
 
     public function assignedAreas()
     {
-        return $this->hasMany(AssignedArea::class);
+        return $this->hasMany(AssignArea::class);
     }
 
     public function assignedAreaTrails()
     {
-        return $this->hasMany(AssignedAreaTrail::class);
+        return $this->hasMany(AssignAreaTrail::class);
     }
 
     public function headTrails()

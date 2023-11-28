@@ -4,6 +4,9 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Http\Requests\PasswordApprovalRequest;
+use App\Models\Department;
+use App\Models\Division;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -18,7 +21,6 @@ use App\Http\Requests\SectionAssignOICRequest;
 use App\Http\Resources\SectionResource;
 use App\Models\Section;
 use App\Models\EmployeeProfile;
-use App\Models\SystemLogs;
 
 class SectionController extends Controller
 {    
@@ -158,11 +160,51 @@ class SectionController extends Controller
     {
         try{
             $cleanData = [];
+
+            /**
+             * Validate if no given diviosn id or department id
+             * as it is important and required by the system.
+             */
+            if($request->input('division_id') === null && $request->input('department_id') === null)
+            {
+                return response() -> json(['message'=> 'Division or Department area is required.'], Response::HTTP_BAD_REQUEST);
+            }
+
+            /**
+             * Validate if has division id
+             * Validate if division id trully exist.
+             */
+            if($request->input('division_id') !== null)
+            {
+                $division = Division::find($request->input('division_id'));
+
+                if(!$division)
+                {
+                    return response()->json(['message' => 'No division record found for id '.$request->input('division_id')], Response::HTTP_BAD_REQUEST);
+                }
+            }
+
+            /**
+             * Validate if has department id
+             * Validate if department id trully exist.
+             */
+            if($request->input('department_id') !== null)
+            {
+                $division = Department::find($request->input('department_id'));
+
+                if(!$division)
+                {
+                    return response()->json(['message' => 'No department record found for id '.$request->input('department_id')], Response::HTTP_BAD_REQUEST);
+                }
+            }
             
             foreach ($request->all() as $key => $value) {
-                if($value === null && $key === 'attachment')
-                {
-                    $cleanData['section_attachment_url'] = $value;
+                if($value === null){
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+                if($key === 'attachment'){
+                    $cleanData['section_attachment_url'] = $this->file_validation_and_upload->check_save_file($request, 'section/files');
                     continue;
                 }
                 $cleanData[$key] = strip_tags($value);
@@ -213,13 +255,53 @@ class SectionController extends Controller
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
-
+            
             $cleanData = [];
 
-            foreach ($request->all() as $key => $value) {
-                if($value === null && $key === 'attachment')
+            /**
+             * Validate if no given diviosn id or department id
+             * as it is important and required by the system.
+             */
+            if($request->input('division_id') === null && $request->input('department_id') === null)
+            {
+                return response() -> json(['message'=> 'Division or Department area is required.'], Response::HTTP_BAD_REQUEST);
+            }
+
+            /**
+             * Validate if has division id
+             * Validate if division id trully exist.
+             */
+            if($request->input('division_id') !== null)
+            {
+                $division = Division::find($request->input('division_id'));
+
+                if(!$division)
                 {
-                    $cleanData['section_attachment_url'] = $value;
+                    return response()->json(['message' => 'No division record found for id '.$request->input('division_id')], Response::HTTP_BAD_REQUEST);
+                }
+            }
+
+            /**
+             * Validate if has department id
+             * Validate if department id trully exist.
+             */
+            if($request->input('department_id') !== null)
+            {
+                $division = Department::find($request->input('department_id'));
+
+                if(!$division)
+                {
+                    return response()->json(['message' => 'No department record found for id '.$request->input('department_id')], Response::HTTP_BAD_REQUEST);
+                }
+            }
+            
+            foreach ($request->all() as $key => $value) {
+                if($value === null){
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+                if($key === 'attachment'){
+                    $cleanData['section_attachment_url'] = $this->file_validation_and_upload->check_save_file($request, 'section/files');
                     continue;
                 }
                 $cleanData[$key] = strip_tags($value);
@@ -239,9 +321,19 @@ class SectionController extends Controller
         }
     }
     
-    public function destroy($id, Request $request)
+    public function destroy($id, PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->input('password'));
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $section = Section::findOrFail($id);
 
             if(!$section)

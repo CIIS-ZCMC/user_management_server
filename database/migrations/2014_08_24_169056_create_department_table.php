@@ -24,7 +24,7 @@ return new class extends Migration
              */
             $table->string('head_attachment_url')->nullable();
             $table->string('head_job_specification');
-            $table->datetime('head_effective_at');
+            $table->datetime('head_effective_at')->nullable();
             $table->boolean('head_status')->default(FALSE);
             $table->unsignedBigInteger('head_employee_profile_id')->nullable();
             $table->foreign('head_employee_profile_id')->references('id')->on('employee_profiles');
@@ -43,12 +43,11 @@ return new class extends Migration
              * Training Officer Data
              */
             $table->string('oic_attachment_url')->nullable();
-            $table->datetime('oic_effective_at');
-            $table->datetime('oic_end_at');
+            $table->datetime('oic_effective_at')->nullable();
+            $table->datetime('oic_end_at')->nullable();
             $table->unsignedBigInteger('oic_employee_profile_id')->nullable();
             $table->foreign('oic_employee_profile_id')->references('id')->on('employee_profiles');
             
-
             $table->timestamps();
         });
     }

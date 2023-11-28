@@ -18,7 +18,7 @@ class DivisionResource extends JsonResource
         {
             $name = $this->name;
             $code = $this->code;
-            $designation = $this->chiefRequirement;
+            $designation = $this->chiefRequirement();
             $job_specification = $designation['name'];
             $chief_status = $this->chief_status? 'On Site':'On Leave';
             $approving_officer = $this->chief_status? 'Chief':'OIC';
@@ -47,7 +47,7 @@ class DivisionResource extends JsonResource
             ];
         }
 
-        $chief_designation = $this->chiefRequirement;
+        $chief_designation = $this->chiefRequirement();
         $job_specification = $chief_designation['name'];
 
 

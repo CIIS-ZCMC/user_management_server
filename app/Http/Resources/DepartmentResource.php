@@ -18,12 +18,12 @@ class DepartmentResource extends JsonResource
         {
             $name = $this->name;
             $code = $this->code;
-            $head_designation = $this->headJobSpecification;
+            $head_designation = $this->headJobSpecification();
             $head_job_specification = $head_designation['name'];
             $head_status = $this->head_status? 'On Site':'On Leave';
             $approving_officer = $this->head_status? 'Head':'OIC';
 
-            $to_job_specification = $this->trainingOfficerJobSpecification;
+            $to_job_specification = $this->trainingOfficerJobSpecification();
             $training_officer_job_specification = $to_job_specification['name'];
 
 
@@ -50,8 +50,8 @@ class DepartmentResource extends JsonResource
             }
 
             return [
-                'name' => $this->name,
-                'code' => $this->code,
+                'name' => $name,
+                'code' => $code,
                 'head_job_specification' => $head_job_specification,
                 'head' => $head,
                 'head_status' => $head_status,
@@ -62,10 +62,10 @@ class DepartmentResource extends JsonResource
             ];
         }
 
-        $head_designation = $this->headJobSpecification;
+        $head_designation = $this->headJobSpecification();
         $head_job_specification = $head_designation['name'];
 
-        $to_job_specification = $this->trainingOfficerJobSpecification;
+        $to_job_specification = $this->trainingOfficerJobSpecification();
         $training_officer_job_specification = $to_job_specification['name'];
 
         return [

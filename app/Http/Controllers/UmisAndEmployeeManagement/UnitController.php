@@ -4,6 +4,7 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Models\Section;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Cache;
 use App\Services\RequestLogger;
 use App\Services\FileValidationAndUpload;
+use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\UnitRequest;
 use App\Http\Requests\UnitAssignOICRequest;
 use App\Http\Requests\UnitAssignHeadRequest;
@@ -26,7 +28,7 @@ class UnitController extends Controller
     private $SINGULAR_MODULE_NAME = 'unit';
 
     protected $requestLogger;
-    protected $file_validation_and_upload;
+        protected $file_validation_and_upload;
 
     public function __construct(RequestLogger $requestLogger, FileValidationAndUpload $file_validation_and_upload)
     {
@@ -154,11 +156,22 @@ class UnitController extends Controller
     {
         try{
             $cleanData = [];
+
+            $section = Section::find($request->input('section_id'));
+
+            if(!$section){
+                return response()->json(['message' => 'Section is required.'], Response::HTTP_BAD_REQUEST);
+            }
             
             foreach ($request->all() as $key => $value) {
-                if($value === null && $key === 'attachment')
+                if($value === null)
                 {
-                    $cleanData['unit_attachment_url'] = $value;
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+                if($key === 'attachment')
+                {
+                    $cleanData['unit_attachment_url'] = $this->file_validation_and_upload->check_save_file($request,'unit/files');
                     continue;
                 }
                 $cleanData[$key] = strip_tags($value);
@@ -168,7 +181,10 @@ class UnitController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' =>  new UnitResource($unit),'message' => 'New unit added.'], Response::HTTP_OK);
+            return response()->json([
+                'data' =>  new UnitResource($unit),
+                'message' => 'New unit added.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -204,12 +220,23 @@ class UnitController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $cleanData = [];
+            $section = Section::find($request->input('section_id'));
 
+            if(!$section){
+                return response()->json(['message' => 'Section is required.'], Response::HTTP_BAD_REQUEST);
+            }
+
+            $cleanData = [];
+            
             foreach ($request->all() as $key => $value) {
-                if($value === null && $key === 'attachment')
+                if($value === null)
                 {
-                    $cleanData['unit_attachment_url'] = $value;
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+                if($key === 'attachment')
+                {
+                    $cleanData['unit_attachment_url'] = $this->file_validation_and_upload->check_save_file($request,'unit/files');
                     continue;
                 }
                 $cleanData[$key] = strip_tags($value);
@@ -219,16 +246,29 @@ class UnitController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' =>  new UnitResource($unit),'message' => 'Updated unit details.'], Response::HTTP_OK);
+            return response()->json([
+                'data' =>  new UnitResource($unit),
+                'message' => 'Updated unit details.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     
-    public function destroy($id, Request $request)
+    public function destroy($id, PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->input('password'));
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $unit = Unit::findOrFail($id);
 
             if(!$unit)
