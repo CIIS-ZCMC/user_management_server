@@ -3,40 +3,45 @@
 namespace App\Http\Controllers\DTR;
 
 use Illuminate\Http\Request;
-use  App\Models\biometrics;
-use App\Methods\Bio_contr;
+use  App\Models\Biometrics;
+use App\Methods\BioControl;
 use App\Http\Controllers\DTR\BioMSController;
-use App\Models\devices;
+use App\Models\Devices;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\DB;
+
 
 class BioController extends Controller
 {
-    protected $Device;
+    protected $device;
     protected $device_ids;
     protected $ip_registration;
     protected $devices;
     protected $bioms;
     public function __construct()
     {
-        $this->Device = new Bio_contr();
+        $this->device = new BioControl();
         $this->bioms = new BioMSController();
         $this->device_ids = [
             1
         ];
-        $this->ip_registration = json_decode($this->bioms->registration_device()->getContent(), true)['data'];
+        $this->ip_registration = json_decode($this->bioms->registrationDevice()->getContent(), true)['data'];
     }
 
     /* ----------------------------- THIS IS FOR REGISTRATION OF BIOMETRICS----------------------------------- */
-
-
-    public function Register_Bio(Request $request)
+    public function registerBio(Request $request)
     {
         $biometric_id = $request->biometric_id;
         $name = $request->name;
         $privilege = $request->privilege;
         /* The IP of this option must be the registration device. */
+        $ipreg = [];
 
-        $bio = biometrics::where('biometric_id', $biometric_id);
+        if (isset($this->ip_registration[0])) {
+            $ipreg = $this->ip_registration[0];
+        }
+
+        $bio = Biometrics::where('biometric_id', $biometric_id);
 
         if (count($bio->get()) == 0) {
             $save = $bio->create([
@@ -47,8 +52,8 @@ class BioController extends Controller
             ]);
 
             if ($save) {
-                $this->Device->FetchdatatoDevice_for_New_FP_Registration(
-                    $this->ip_registration[0],
+                $this->device->fetchdatatoDeviceforNewFPRegistration(
+                    $ipreg,
                     $biometric_id,
                     $name
 
@@ -61,38 +66,51 @@ class BioController extends Controller
         return response()->json(['message' => 'User has already been registered!']);
     }
 
-
-
-
-
-    public function Fetch_User_FromDevice(Request $request)
+    public function fetchUserFromDevice(Request $request)
     {
         try {
             $biometric_id = $request->biometric_id;
-            $dvc = $this->ip_registration[0];
+            $dvc = [];
 
-            if ($this->Device->FetchUser_datafromdevice_toDB($dvc, $biometric_id)) {
-                if ($this->Device->ValidateTemplate($dvc, $biometric_id)) {
-                    $this->Device->Delete_datafromdevice($dvc, $biometric_id); //DELETE USER INFO , IF FINGERPRINT DETECTED
+            if (isset($this->ip_registration[0])) {
+                $dvc = $this->ip_registration[0];
+            }
+
+            if (!$dvc) {
+                return response()->json(['message' => 'Failed to pull data']);
+            }
+
+
+            if ($this->device->fetchUserDataFromDeviceToDB($dvc, $biometric_id)) {
+                if ($this->device->validateTemplate($dvc, $biometric_id)) {
+                    $this->device->deleteDataFromDevice($dvc, $biometric_id); //DELETE USER INFO , IF FINGERPRINT DETECTED
                 }
                 return response()->json(['message' => 'User Data from Device has been pulled successfully!']);
             }
-            return response()->json(['message' => 'Failed to pull data']);
         } catch (\Throwable $th) {
 
             return response()->json(['message' =>  $th->getMessage()]);
         }
     }
 
-    public function Fetch_User_ToDevice(Request $request)
+    public function fetchUserToDevice(Request $request)
     {
         try {
             $biometric_id = $request->biometric_id;
-            $dvc = $this->ip_registration[0];
-            if ($this->Device->FetchUser_datafromDB_toDevice($dvc, $biometric_id)) {
+
+            $dvc = [];
+
+            if (isset($this->ip_registration[0])) {
+                $dvc = $this->ip_registration[0];
+            }
+
+            if (!$dvc) {
+                return response()->json(['message' => 'Failed to push data']);
+            }
+
+            if ($this->device->fetchUserDataFromDBToDevice($dvc, $biometric_id)) {
                 return response()->json(['message' => 'User Data fetched to device successfully!']);
             }
-            return response()->json(['message' => 'Failed to push data']);
         } catch (\Throwable $th) {
             return response()->json(['message' =>  $th->getMessage()]);
         }
@@ -105,12 +123,12 @@ class BioController extends Controller
     TO DO --- ip address
     get all the device ID for this function to apply in each devices
     */
-    public function Fetch_BIO_To_Device()
+    public function fetchBIOToDevice()
     {
         try {
             foreach ($this->device_ids as $dv) {
-                $bios = devices::where('id', $dv)->get();
-                $this->Device->Fetchall_data_to_device($bios[0]);
+                $bios = Devices::where('id', $dv)->get();
+                $this->device->fetchAllDataToDevice($bios[0]);
             }
             return response()->json(['message' => 'User Data has been fetched to device successfully']);
         } catch (\Throwable $th) {
@@ -118,14 +136,15 @@ class BioController extends Controller
         }
     }
 
-    public function Set_User_SuperAdmin(Request $request)
+    public function setUserSuperAdmin(Request $request)
     {
         try {
             $biometric_id = $request->biometric_id;
             $unset = $request->unset;
             foreach ($this->device_ids as $dv) {
-                $bios = devices::where('id', $dv)->get();
-                $this->Device->Set_SuperAdmin($bios[0], $biometric_id, $unset);
+                $bios = Devices::where('id', $dv)->get();
+
+                $this->device->setSuperAdmin($bios[0], $biometric_id, $unset);
             }
             return response()->json(['message' => 'Settings saved successfully!']);
         } catch (\Throwable $th) {
@@ -133,13 +152,13 @@ class BioController extends Controller
         }
     }
 
-    public function Delete_SpecificBIO_From_Device(Request $request)
+    public function deleteSpecificBIOFromDevice(Request $request)
     {
         try {
             $biometric_id = $request->biometric_id;
             foreach ($this->device_ids as $dv) {
-                $bios = devices::where('id', $dv)->get();
-                $this->Device->Delete_datafromdevice($bios[0], $biometric_id);
+                $bios = Devices::where('id', $dv)->get();
+                $this->device->deleteDataFromDevice($bios[0], $biometric_id);
             }
             return response()->json(['message' => 'User data from this device has been deleted successfully']);
         } catch (\Throwable $th) {
@@ -148,12 +167,12 @@ class BioController extends Controller
     }
 
 
-    public function Delete_AllBIO_From_Device()
+    public function deleteAllBIOFromDevice()
     {
         try {
             foreach ($this->device_ids as $dv) {
-                $bios = devices::where('id', $dv)->get();
-                $this->Device->DeleteAll_datafromdevice($bios[0]);
+                $bios = Devices::where('id', $dv)->get();
+                $this->device->deleteAllDataFromDevice($bios[0]);
             }
             return response()->json(['message' => 'All data from device has been deleted successfully']);
         } catch (\Throwable $th) {
@@ -162,13 +181,13 @@ class BioController extends Controller
     }
 
 
-    public function SyncTime()
+    public function syncTime()
     {
         try {
 
             foreach ($this->device_ids as $dv) {
-                $bios = devices::where('id', $dv)->get();
-                $this->Device->Set_device_dateandtime($bios[0]);
+                $bios = Devices::where('id', $dv)->get();
+                $this->device->setDeviceDateAndTime($bios[0]);
             }
             return response()->json(['message' => 'Date and Time Synced Successfully!']);
         } catch (\Throwable $th) {
@@ -176,13 +195,14 @@ class BioController extends Controller
         }
     }
 
-    public function Enable_OR_Disable(Request $request)
+    public function enableORDisable(Request $request)
     {
+
         try {
-            $TypeofAction = $request->TypeofAction;
+            $type_of_action = $request->TypeofAction;
             foreach ($this->device_ids as $dv) {
-                $bios = devices::where('id', $dv)->get();
-                $this->Device->Device_Enable_OR_Disable($bios[0], $TypeofAction);
+                $bios = Devices::where('id', $dv)->get();
+                $this->device->deviceEnableORDisable($bios[0], $type_of_action);
             }
             return response()->json(['message' => 'Settings Set Successfully']);
         } catch (\Throwable $th) {
@@ -190,13 +210,13 @@ class BioController extends Controller
         }
     }
 
-    public function Restart_OR_Shutdown(Request $request)
+    public function restartORShutdown(Request $request)
     {
         try {
-            $TypeofAction = $request->TypeofAction;
+            $type_of_action = $request->TypeofAction;
             foreach ($this->device_ids as $dv) {
-                $bios = devices::where('id', $dv)->get();
-                $this->Device->Device_Shutdown_OR_restart($bios[0], $TypeofAction);
+                $bios = Devices::where('id', $dv)->get();
+                $this->device->deviceShutdownORrestart($bios[0], $type_of_action);
             }
 
             return response()->json(['message' => 'Device exiting...']);
@@ -205,13 +225,13 @@ class BioController extends Controller
         }
     }
 
-    public function settime(Request $request)
+    public function setTime(Request $request)
     {
         try {
             $time = $request->time;
             foreach ($this->device_ids as $dv) {
-                $bios = devices::where('id', $dv)->get();
-                $this->Device->Set_CustomDevice_dateandtime($bios[0], $time);
+                $bios = Devices::where('id', $dv)->get();
+                $this->device->setCustomDeviceDateAndTime($bios[0], $time);
             }
             return response()->json(['message' => 'Date and Time Synced Successfully!']);
         } catch (\Throwable $th) {

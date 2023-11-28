@@ -14,21 +14,21 @@ class MailConfig
     private $client_secret;
     private $token;
     private $provider;
-    private $sysemail;
-    private $fromSystem;
+    private $sys_email;
+    private $from_System;
     public function __construct()
     {
         $this->client_id = env('GOOGLE_API_CLIENT_ID');
         $this->client_secret = env('GOOGLE_API_CLIENT_SECRET');
         $this->token = env('SYSTEM_EMAIL_TOKEN');
-        $this->sysemail = env('SYSTEM_EMAIL');
-        $this->fromSystem = env('SYSTEM_NAME');
+        $this->sys_email = env('SYSTEM_EMAIL');
+        $this->from_System = env('SYSTEM_NAME');
         $this->provider = new Google([
             'clientId' => $this->client_id,
             'clientSecret' => $this->client_secret,
         ]);
     }
-    public function Send($data)
+    public function send($data)
     {
         $mail = new PHPMailer(true);
         try {
@@ -45,10 +45,10 @@ class MailConfig
                     'clientId' => $this->client_id,
                     'clientSecret' => $this->client_secret,
                     'refreshToken' => $this->token,
-                    'userName' => $this->sysemail,
+                    'userName' => $this->sys_email,
                 ])
             );
-            $mail->setFrom($this->sysemail, $this->fromSystem);
+            $mail->setFrom($this->sys_email, $this->from_System);
             $mail->addAddress($data['To_receiver'], $data['Receiver_Name']);
             $mail->Subject = $data['Subject'];
             $mail->CharSet = PHPMailer::CHARSET_UTF8;
@@ -61,7 +61,7 @@ class MailConfig
                 return false;
             }
         } catch (Exception $e) {
-            return $e;
+            return false;
         }
     }
 }

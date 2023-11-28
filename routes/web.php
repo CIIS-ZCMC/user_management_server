@@ -16,14 +16,14 @@ use Illuminate\Support\Facades\Route;
 
 Route::controller(App\Http\Controllers\DTR\DTRcontroller::class)->group(
     function () {
-        Route::get('/ftchdtrfrmdvc', 'Fetch_DTR_from_Device')->name('fetchdtrfromdevice');
-        Route::get('fetchUserDTR', 'FetchUser_DTR')->name('fetchuserdtr');
-        Route::get('generateDtr', 'Generate_DTR')->name('generateDtr');
-        Route::get('/getHolidays', 'Get_Holidays')->name('getHolidays');
-        Route::get('/setHolidays', 'Set_Holidays')->name('setHolidays');
-        Route::get('/modifyHolidays', 'Modify_Holidays')->name('modifyHolidays');
-        Route::get('/viewdtr', 'ViewDTR')->name('viewdtr');
-        Route::get('/dtrutotreport', 'DTR_UTOT_Report')->name('dtrutotreport');
+        Route::get('/ftchdtrfrmdvc', 'fetchDTRFromDevice')->name('fetchdtrfromdevice');
+        Route::get('fetchUserDTR', 'fetchUserDTR')->name('fetchuserdtr');
+        Route::get('generateDtr', 'generateDTR')->name('generateDtr');
+        Route::get('/getHolidays', 'getHolidays')->name('getHolidays');
+        Route::get('/setHolidays', 'setHolidays')->name('setHolidays');
+        Route::get('/modifyHolidays', 'modifyHolidays')->name('modifyHolidays');
+        Route::get('/viewdtr', 'viewDTR')->name('viewdtr');
+        Route::get('/dtrutotreport', 'dtrUTOTReport')->name('dtrutotreport');
         Route::get('/testtest', 'test')->name('testtest');
     }
 );
@@ -32,18 +32,18 @@ Route::controller(App\Http\Controllers\DTR\DTRcontroller::class)->group(
 Route::controller(App\Http\Controllers\DTR\BioController::class)->group(
     function () {
 
-        Route::get('/newRegistration', 'Register_Bio')->name('newregistration');
+        Route::get('/newRegistration', 'registerBio')->name('newregistration');
         //  Route::get('/pulldatafromdevice', 'FetchAllData_FromDevice')->name('pullingdata');
-        Route::get('/pushuserdatatodevice', 'Fetch_User_ToDevice')->name('pushinguserdata');
-        Route::get('/setuserasadmin', 'Set_User_SuperAdmin')->name('setuserasadmin');
-        Route::get('/pulluserdatafromdevice', 'Fetch_User_FromDevice')->name('pullinguserdata');
-        Route::get('/fetchallbio', 'Fetch_BIO_To_Device')->name('fetchallbio');
-        Route::get('/deleteall', 'Delete_AllBIO_From_Device')->name('deletealldatafromdevice');
-        Route::get('/delete', 'Delete_SpecificBIO_From_Device')->name('deleteuserdatafromdevice');
-        Route::get('/synctime', 'SyncTime')->name('synctdateandtime');
-        Route::get('/enable/disable', 'Enable_OR_Disable')->name('enabledisable');
-        Route::get('/restart/exit', 'Restart_OR_Shutdown')->name('resshut');
-        Route::get('/setTime', 'settime')->name('setTime');
+        Route::get('/pushuserdatatodevice', 'fetchUserToDevice')->name('pushinguserdata');
+        Route::get('/setuserasadmin', 'setUserSuperAdmin')->name('setuserasadmin');
+        Route::get('/pulluserdatafromdevice', 'fetchUserFromDevice')->name('pullinguserdata');
+        Route::get('/fetchallbio', 'fetchBIOToDevice')->name('fetchallbio');
+        Route::get('/deleteall', 'deleteAllBIOFromDevice')->name('deletealldatafromdevice');
+        Route::get('/delete', 'deleteSpecificBIOFromDevice')->name('deleteuserdatafromdevice');
+        Route::get('/synctime', 'syncTime')->name('synctdateandtime');
+        Route::get('/enable/disable', 'enableORDisable')->name('enabledisable');
+        Route::get('/restart/exit', 'restartORShutdown')->name('resshut');
+        Route::get('/setTime', 'setTime')->name('setTime');
     }
 );
 
@@ -52,20 +52,28 @@ Route::controller(App\Http\Controllers\DTR\BioController::class)->group(
 Route::controller(App\Http\Controllers\DTR\BioMSController::class)->group(
     function () {
         Route::get('/alldevice', 'index')->name('alldevice');
-        Route::get('/registerDevice', 'add_device')->name('registerDevice');
-        Route::get('/testdevice', 'test_device_connection')->name('testdevice');
-        Route::get('/deleteDevice', 'Delete_device')->name('deleteDevice');
-        Route::get('/updateDevice', 'Update_device')->name('updateDevice');
+        Route::get('/registerDevice', 'addDevice')->name('registerDevice');
+        Route::get('/testdevice', 'testDeviceConnection')->name('testdevice');
+        Route::get('/deleteDevice', 'deleteDevice')->name('deleteDevice');
+        Route::get('/updateDevice', 'updateDevice')->name('updateDevice');
     }
 );
 
 Route::controller(App\Http\Controllers\DTR\MailController::class)->group(
     function () {
-        Route::get('/testemail', 'testemail')->name('testemail');
+        Route::get('/sendOTP', 'sendOTP')->name('mail.sendOTP');
     }
 );
 
 
+
+Route::controller(App\Http\Controllers\DTR\TwoFactorAuthController::class)->group(
+    function () {
+        Route::get('/verify', 'eVerification')->name('verify');
+        Route::get('/verifyOtp', 'verifyOTP')->name('Verify_OTP');
+    }
+);
+
 Route::get('/', function () {
-    return view('welcome');
+    return view('mail.otp');
 });

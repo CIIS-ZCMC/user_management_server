@@ -3,13 +3,13 @@
 namespace App\Methods;
 
 use TADPHP\TADFactory;
-use  App\Models\biometrics;
-use App\Models\devices;
+use  App\Models\Biometrics;
+use App\Models\Devices;
 
-class Bio_contr
+class BioControl
 {
 
-    public function BIO($device)
+    public function bIO($device)
     {
         /* Validate if connected to device or not */
         try {
@@ -25,15 +25,15 @@ class Bio_contr
             $tad_factory = new TADFactory($options);
             $tad = $tad_factory->get_instance();
             if ($tad->get_date()) {
-                $getsnmc = json_decode($this->Get_SN_MAC($tad)->getContent(), true);
-                devices::findorFail($device['id'])->update([
+                $getsnmc = json_decode($this->getSNMAC($tad)->getContent(), true);
+                Devices::findorFail($device['id'])->update([
                     'serial_number' => $getsnmc['serialnumber'],
                     'mac_address' => $getsnmc['macaddress']
                 ]);
                 return $tad;
             }
         } catch (\Throwable $th) {
-            devices::findorFail($device['id'])->update([
+            Devices::findorFail($device['id'])->update([
                 'serial_number' => null,
                 'mac_address' => null,
             ]);
@@ -41,50 +41,53 @@ class Bio_contr
         }
     }
 
-    public function Get_SN_MAC($tad)
+    public function getSNMAC($tad)
     {
         $sn = $tad->get_serial_number();
         $ma = $tad->get_mac_address();
-        $devicesn =  simplexml_load_string($sn);
-        $devicema = simplexml_load_string($ma);
+        $devices_n =  simplexml_load_string($sn);
+        $device_ma = simplexml_load_string($ma);
         $serial_number = '';
-        $macaddress = '';
-        foreach ($devicema->Row as $dma) {
-            $macaddress = (string) $dma->Information;
+        $mac_address = '';
+        foreach ($device_ma->Row as $dma) {
+            $mac_address = (string) $dma->Information;
         }
-        foreach ($devicesn->Row as $dsn) {
+        foreach ($devices_n->Row as $dsn) {
             $serial_number = (string) $dsn->Information;
         }
         return response()->json([
             'serialnumber' => $serial_number,
-            'macaddress' => $macaddress
+            'macaddress' => $mac_address
         ]);
     }
 
-    public function Set_SuperAdmin($device, $biometric_id, $unset)
+    public function setSuperAdmin($device, $biometric_id, $unset)
     {
-        if ($tad = $this->BIO($device)) {
-            $userdata = biometrics::where('biometric_id', $biometric_id)->get();
-            function SaveSettings($biometric_id, $userdata, $tad, $isAdmin, $priv)
+
+        if ($tad = $this->bIO($device)) {
+
+            $user_data = Biometrics::where('biometric_id', $biometric_id)->get();
+
+            function saveSettings($biometric_id, $user_data, $tad, $is_Admin, $priv)
             {
-                biometrics::where('biometric_id', $biometric_id)->update([
+                Biometrics::where('biometric_id', $biometric_id)->update([
                     'privilege' => $priv
                 ]);
                 $added =  $tad->set_user_info([
-                    'pin' => $userdata[0]->biometric_id,
-                    'name' => $userdata[0]->name,
-                    'privilege' => $isAdmin
+                    'pin' => $user_data[0]->biometric_id,
+                    'name' => $user_data[0]->name,
+                    'privilege' => $is_Admin
                 ]);
-                $biometricData = json_decode($userdata[0]->biometric);
+                $biometric_Data = json_decode($user_data[0]->biometric);
                 if ($added) {
-                    if ($biometricData !== null) {
-                        foreach ($biometricData as $row) {
+                    if ($biometric_Data !== null) {
+                        foreach ($biometric_Data as $row) {
                             $fingerid = $row->Finger_ID;
                             $size = $row->Size;
                             $valid = $row->Valid;
                             $template = $row->Template;
                             $tad->set_user_template([
-                                'pin' => $userdata[0]->biometric_id,
+                                'pin' => $user_data[0]->biometric_id,
                                 'finger_id' => $fingerid,
                                 'size' => $size,
                                 'valid' => $valid,
@@ -94,11 +97,11 @@ class Bio_contr
                     }
                 }
             }
-            if (count($userdata) >= 1) {
+            if (count($user_data) >= 1) {
                 if ($unset) {
-                    SaveSettings($biometric_id, $userdata, $tad, 0, 0);
+                    saveSettings($biometric_id, $user_data, $tad, 0, 0);
                 } else {
-                    SaveSettings($biometric_id, $userdata, $tad, 14, 1);
+                    saveSettings($biometric_id, $user_data, $tad, 14, 1);
                 }
                 return true;
             }
@@ -107,25 +110,25 @@ class Bio_contr
     }
 
 
-    public function FetchUser_datafromDB_toDevice($device, $biometric_id)
+    public function fetchUserDataFromDBToDevice($device, $biometric_id)
     {
-        if ($tad = $this->BIO($device)) {
-            $userdata = biometrics::where('biometric_id', $biometric_id)->get();
-            if (count($userdata) >= 1) {
+        if ($tad = $this->bIO($device)) {
+            $user_data = Biometrics::where('biometric_id', $biometric_id)->get();
+            if (count($user_data) >= 1) {
                 $added =  $tad->set_user_info([
-                    'pin' => $userdata[0]->biometric_id,
-                    'name' => $userdata[0]->name,
+                    'pin' => $user_data[0]->biometric_id,
+                    'name' => $user_data[0]->name,
                 ]);
-                $biometricData = json_decode($userdata[0]->biometric);
+                $biometric_Data = json_decode($user_data[0]->biometric);
                 if ($added) {
-                    if ($biometricData !== null) {
-                        foreach ($biometricData as $row) {
+                    if ($biometric_Data !== null) {
+                        foreach ($biometric_Data as $row) {
                             $fingerid = $row->Finger_ID;
                             $size = $row->Size;
                             $valid = $row->Valid;
                             $template = $row->Template;
                             $tad->set_user_template([
-                                'pin' => $userdata[0]->biometric_id,
+                                'pin' => $user_data[0]->biometric_id,
                                 'finger_id' => $fingerid,
                                 'size' => $size,
                                 'valid' => $valid,
@@ -140,46 +143,48 @@ class Bio_contr
         }
     }
 
-    public function FetchUser_datafromdevice_toDB($device, $biometric_id)
+    public function fetchUserDataFromDeviceToDB($device, $biometric_id)
     {
+
         if ($tad = $this->BIO($device)) {
-            $usertemp = $tad->get_user_template(['pin' => $biometric_id]);
-            $utemp = simplexml_load_string($usertemp);
-            $BIOUser = [];
-            foreach ($utemp->Row as $userCred) {
+
+            $user_temp = $tad->get_user_template(['pin' => $biometric_id]);
+            $utemp = simplexml_load_string($user_temp);
+            $BIO_User = [];
+            foreach ($utemp->Row as $user_Cred) {
                 /* **
             Here we are attaching the fingerprint data into our database.
             */
                 $result = [
-                    'Finger_ID' => (string) $userCred->FingerID,
-                    'Size'  => (string) $userCred->Size,
-                    'Valid' => (string) $userCred->Valid,
-                    'Template' => (string) $userCred->Template,
+                    'Finger_ID' => (string) $user_Cred->FingerID,
+                    'Size'  => (string) $user_Cred->Size,
+                    'Valid' => (string) $user_Cred->Valid,
+                    'Template' => (string) $user_Cred->Template,
                 ];
-                $BIOUser[] = $result;
+                $BIO_User[] = $result;
             }
-            $EmployeeInfo[] = $result;
-            $validate = biometrics::where('biometric_id', $biometric_id);
+            $Employee_Info[] = $result;
+            $validate = Biometrics::where('biometric_id', $biometric_id);
             if (count($validate->get()) >= 1) {
-                if ($BIOUser[0]['Template']) {
+                if ($BIO_User[0]['Template']) {
                     $validate->update([
-                        'biometric' =>  json_encode($BIOUser)
+                        'biometric' =>  json_encode($BIO_User)
                     ]);
                 }
                 return true;
             } else {
                 $all_user_info = $tad->get_all_user_info();
-                $userInf = simplexml_load_string($all_user_info);
+                $user_Inf = simplexml_load_string($all_user_info);
                 $name = '';
-                foreach ($userInf->Row as $row) {
+                foreach ($user_Inf->Row as $row) {
                     if ($biometric_id == (string) $row->PIN2) {
                         $name = (string) $row->Name;
                     }
                 }
-                biometrics::create([
+                Biometrics::create([
                     'biometric_id' => $biometric_id,
                     'name' => $name,
-                    'biometric' => $BIOUser[0]['Template'] ? json_encode($BIOUser) : "NOT_YET_REGISTERED"
+                    'biometric' => $BIO_User[0]['Template'] ? json_encode($BIO_User) : "NOT_YET_REGISTERED"
                 ]);
                 return true;
             }
@@ -187,26 +192,26 @@ class Bio_contr
         return false;
     }
 
-    public function ValidateTemplate($device, $biometric_id)
+    public function validateTemplate($device, $biometric_id)
     {
         try {
-            if ($tad = $this->BIO($device)) {
-                $usertemp = $tad->get_user_template(['pin' => $biometric_id]);
-                $utemp = simplexml_load_string($usertemp);
-                $BIOUser = [];
-                foreach ($utemp->Row as $userCred) {
+            if ($tad = $this->bIO($device)) {
+                $user_temp = $tad->get_user_template(['pin' => $biometric_id]);
+                $utemp = simplexml_load_string($user_temp);
+                $BIO_User = [];
+                foreach ($utemp->Row as $user_Cred) {
                     /***  
                 Here we are attaching the fingerprint data into our database.
                      */
                     $result = [
-                        'Finger_ID' => (string) $userCred->FingerID,
-                        'Size'  => (string) $userCred->Size,
-                        'Valid' => (string) $userCred->Valid,
-                        'Template' => (string) $userCred->Template,
+                        'Finger_ID' => (string) $user_Cred->FingerID,
+                        'Size'  => (string) $user_Cred->Size,
+                        'Valid' => (string) $user_Cred->Valid,
+                        'Template' => (string) $user_Cred->Template,
                     ];
-                    $BIOUser[] = $result;
+                    $BIO_User[] = $result;
                 }
-                if ($BIOUser[0]['Template']) {
+                if ($BIO_User[0]['Template']) {
                     return true;
                 }
             }
@@ -219,9 +224,9 @@ class Bio_contr
      * 
      * 
      *  Fetch user wth none bio data to device. for fingerprint registration */
-    public function FetchdatatoDevice_for_New_FP_Registration($device, $biometric_id, $name)
+    public function fetchDataToDeviceForNewFPRegistration($device, $biometric_id, $name)
     {
-        if ($tad = $this->BIO($device)) {
+        if ($tad = $this->bIO($device)) {
             $tad->set_user_info([
                 'pin' => $biometric_id,
                 'name' => $name,
@@ -237,10 +242,10 @@ class Bio_contr
      *  Fetching Selected employee
      *  */
 
-    public function Fetch_data_to_device($device, $biometric_id)
+    public function fetchDataToDevice($device, $biometric_id)
     {
-        if ($tad = $this->BIO($device)) {
-            $data = biometrics::where('biometric_id', $biometric_id)
+        if ($tad = $this->bIO($device)) {
+            $data = Biometrics::where('biometric_id', $biometric_id)
                 ->Where('biometric', '!=', 'NOT_YET_REGISTERED')
                 ->whereNotNull('biometric')->get();
             foreach ($data as $key => $emp) {
@@ -248,10 +253,10 @@ class Bio_contr
                     'pin' => $emp->biometric_id,
                     'name' => $emp->name,
                 ]);
-                $biometricData = json_decode($emp->biometric);
+                $biometric_Data = json_decode($emp->biometric);
                 if ($added) {
-                    if ($biometricData !== null) {
-                        foreach ($biometricData as $row) {
+                    if ($biometric_Data !== null) {
+                        foreach ($biometric_Data as $row) {
                             $fingerid = $row->Finger_ID;
                             $size = $row->Size;
                             $valid = $row->Valid;
@@ -272,22 +277,22 @@ class Bio_contr
         return false;
     }
 
-    public function Fetchall_data_to_device($device)
+    public function fetchAllDataToDevice($device)
     {
         try {
-            if ($tad = $this->BIO($device)) {
-                $data = biometrics::Where('biometric', '!=', 'NOT_YET_REGISTERED')->whereNotNull('biometric')->get();
-                function SaveSettings($tad, $emp, $isAdmin)
+            if ($tad = $this->bIO($device)) {
+                $data = Biometrics::Where('biometric', '!=', 'NOT_YET_REGISTERED')->whereNotNull('biometric')->get();
+                function saveSettings($tad, $emp, $is_Admin)
                 {
                     $added =  $tad->set_user_info([
                         'pin' => $emp->biometric_id,
                         'name' => $emp->name,
-                        'privilege' => $isAdmin
+                        'privilege' => $is_Admin
                     ]);
-                    $biometricData = json_decode($emp->biometric);
+                    $biometric_Data = json_decode($emp->biometric);
                     if ($added) {
-                        if ($biometricData !== null) {
-                            foreach ($biometricData as $row) {
+                        if ($biometric_Data !== null) {
+                            foreach ($biometric_Data as $row) {
                                 $fingerid = $row->Finger_ID;
                                 $size = $row->Size;
                                 $valid = $row->Valid;
@@ -305,9 +310,9 @@ class Bio_contr
                 }
                 foreach ($data as $key => $emp) {
                     if ($emp->privilege) {
-                        SaveSettings($tad, $emp, 14);
+                        saveSettings($tad, $emp, 14);
                     } else {
-                        SaveSettings($tad, $emp, 0);
+                        saveSettings($tad, $emp, 0);
                     }
                 }
                 return true;
@@ -321,10 +326,10 @@ class Bio_contr
     /**
      * Setting Device date and time ( Syncing to server )
      */
-    public function Set_device_dateandtime($device)
+    public function setDeviceDateAndTime($device)
     {
         try {
-            if ($tad = $this->BIO($device)) {
+            if ($tad = $this->bIO($device)) {
                 $date = date('Y-m-d');
                 $time = date('H:i:s');
                 $tad->set_date(['date' => $date, 'time' => $time]);
@@ -337,10 +342,10 @@ class Bio_contr
     }
 
     /* Setting Device DATE and TIME */
-    public function Set_CustomDevice_dateandtime($device, $time)
+    public function setCustomDeviceDateAndTime($device, $time)
     {
         try {
-            if ($tad = $this->BIO($device)) {
+            if ($tad = $this->bIO($device)) {
 
                 $date = date('Y-m-d', strtotime($time));
                 $time = date('H:i:s', strtotime($time));
@@ -354,10 +359,10 @@ class Bio_contr
     }
 
 
-    public function Delete_datafromdevice($device, $biometric_id)
+    public function deleteDataFromDevice($device, $biometric_id)
     {
         try {
-            if ($tad = $this->BIO($device)) {
+            if ($tad = $this->bIO($device)) {
                 $tad->delete_template(['pin' =>  $biometric_id]);
                 $tad->delete_user(['pin' =>  $biometric_id]);
                 return true;
@@ -368,12 +373,12 @@ class Bio_contr
         }
     }
 
-    public function DeleteAll_datafromdevice($device)
+    public function deleteAllDataFromDevice($device)
     {
-        if ($tad = $this->BIO($device)) {
+        if ($tad = $this->bIO($device)) {
             $all_user_info = $tad->get_all_user_info();
-            $userInf = simplexml_load_string($all_user_info);
-            foreach ($userInf->Row as $row) {
+            $user_Inf = simplexml_load_string($all_user_info);
+            foreach ($user_Inf->Row as $row) {
                 $userPin = (string) $row->PIN2;
                 $tad->delete_template(['pin' =>  $userPin]);
                 $tad->delete_user(['pin' =>  $userPin]);
@@ -383,7 +388,7 @@ class Bio_contr
         return false;
     }
 
-    public function Device_Enable_OR_Disable($device, $TypeofAction)
+    public function deviceEnableORDisable($device, $type_of_action)
     {
         /**
          * Im not really sure how it works
@@ -392,7 +397,7 @@ class Bio_contr
          */
         try {
             if ($tad = $this->BIO($device)) {
-                switch ($TypeofAction) {
+                switch ($type_of_action) {
                     case 1:
                         $tad->enable();
                         break;
@@ -408,11 +413,11 @@ class Bio_contr
         }
     }
 
-    public function Device_Shutdown_OR_restart($device, $TypeofAction)
+    public function deviceShutdownORrestart($device, $type_of_action)
     {
         try {
             if ($tad = $this->BIO($device)) {
-                switch ($TypeofAction) {
+                switch ($type_of_action) {
                     case 1:
                         $tad->restart();
                         break;

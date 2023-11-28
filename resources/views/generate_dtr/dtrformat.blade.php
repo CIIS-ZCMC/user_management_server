@@ -400,7 +400,7 @@
                         $isExcept = true;
                     @endphp
              
-                 @include('generate_dtr.tableDtr_datespan') 
+                 @include('generate_dtr.TableDtrDateSpan') 
                 @else
                     @if ($isExcept == true)
                         
@@ -408,7 +408,7 @@
                             $isExcept = false;
                         @endphp
                     @else
-                      @include('generate_dtr.tableDtr_date')
+                      @include('generate_dtr.TableDtrDate')
                     @endif
                 @endif
         

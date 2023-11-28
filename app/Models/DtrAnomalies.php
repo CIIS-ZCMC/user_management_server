@@ -5,14 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class daily_time_record_logs extends Model
+class DtrAnomalies extends Model
 {
     use HasFactory;
 
+    protected $table = "dtr_anomalies";
     protected $fillable = [
-        'biometric_id',
-        'dtr_id',
-        'json_logs',
-        'validated'
+        'employee_id',
+        'name',
+        'dtr_entry',
+        'status',
+        'status_desc'
     ];
 }
