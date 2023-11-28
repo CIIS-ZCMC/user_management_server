@@ -42,7 +42,7 @@ class Division extends Model
 
     public function chief()
     {
-        return $this->belongsTo(EmployeeProfile::class, 'id', 'chief_employee_profile_id');
+        return $this->belongsTo(EmployeeProfile::class, 'chief_employee_profile_id');
     }
 
     public function oic()
@@ -58,5 +58,10 @@ class Division extends Model
     public function oicTrails()
     {
         return $this->hasMany(OfficerInChargeTrail::class);
+    }
+   
+    public function divisionHead()
+    {
+        return $this->belongsTo(EmployeeProfile::class, 'chief_employee_profile_id');
     }
 }

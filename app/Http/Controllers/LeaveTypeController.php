@@ -27,8 +27,6 @@ class LeaveTypeController extends Controller
        
         // $leaveTypes = LeaveType::with('logs.employeeProfile.personalInformation','requirements.logs.employeeProfile')->get();
         $leave_types = LeaveType::with('logs.employeeProfile.personalInformation', 'requirements.logs.employeeProfile.personalInformation','attachments')->get();
-
-           
             $leave_types_result = $leave_types->map(function ($leave_type) {
                 return [
                     'id' => $leave_type->id,
@@ -41,13 +39,33 @@ class LeaveTypeController extends Controller
                     'is_special' => $leave_type->is_special,
                     'leave_credit_year' => $leave_type->leave_credit_year ,
                     'logs' => $leave_type->logs->map(function ($log) {
-                        $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null ;
+                        $process_name=$log->action;
+                        $action ="";
+                        $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
                         $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
+                        if($log->action_by_id  === optional($log->employeeProfile->assignedArea->division)->chief_employee_profile_id ) 
+                        {
+                            $action =  $process_name . ' by ' . 'Division Head';
+                        }
+                        else if ($log->action_by_id === optional($log->employeeProfile->assignedArea->department)->head_employee_profile_id || optional($log->employeeProfile->assignedArea->section)->supervisor_employee_profile_id)
+                        {
+                            $action =  $process_name . ' by ' . 'Supervisor';
+                        }
+                        else{
+                            $action=  $process_name . ' by ' . $first_name .' '. $last_name;
+                        }
+                       
+                        $date=$log->date;
+                        $formatted_date=Carbon::parse($date)->format('M d,Y');
                         return [
                             'id' => $log->id,
-                            'action_by' => "{$first_name} {$last_name}",
+                            'leave_application_id' => $log->leave_application_id,
+                            'action_by' => "{$first_name} {$last_name}" ,
+                            'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
                             'action' => $log->action,
-                            'date' => $log->date,
+                            'date' => $formatted_date,
+                            'time' => $log->time,
+                            'process' => $action
                         ];
                     }),
                     'requirements' => $leave_type->requirements->map(function ($requirement) {
@@ -132,8 +150,8 @@ class LeaveTypeController extends Controller
             if (!empty($request->leave_requirements)) {
                 $this->storeLeaveTypeRequirements($leave_type->id, $request->leave_requirements);
             } 
-
-            $leave_type_logs = $this->storeLeaveTypeLog($leave_type_id,$process_name);
+            $columnsString="";
+            $leave_type_logs = $this->storeLeaveTypeLog($leave_type_id,$process_name,$changedfields);
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
          
@@ -257,6 +275,7 @@ class LeaveTypeController extends Controller
     public function deactivateLeaveType(Request $request,$leave_type_id)
     {
         try{
+            $columnsString="";
             $user_id = Auth::user()->id;
             $user = EmployeeProfile::where('id','=',$user_id)->first();
             $user_password=$user->password;
@@ -268,7 +287,7 @@ class LeaveTypeController extends Controller
                 $deactivate_leave_type->reason=$request->reason;
                 $deactivate_leave_type->update();
                 $process_name="Deactivate";
-                $leave_type_logs = $this->storeLeaveTypeLog($leave_type_id,$process_name);
+                $leave_type_logs = $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString);
                 return response()->json(['data' => 'Success'], Response::HTTP_OK);
             }
            
@@ -283,6 +302,7 @@ class LeaveTypeController extends Controller
     public function reactivateLeaveType(Request $request,$leave_type_id)
     {
         try{
+            $columnsString="";
             $user_id = Auth::user()->id;
             $user = EmployeeProfile::where('id','=',$user_id)->first();
             $user_password=$user->password;
@@ -294,7 +314,7 @@ class LeaveTypeController extends Controller
                 $deactivate_leave_type->reason=$request->reason;
                 $deactivate_leave_type->update();
                 $process_name="Reactivate";
-                $leave_type_logs = $this->storeLeaveTypeLog($leave_type_id,$process_name);
+                $leave_type_logs = $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString);
                 return response()->json(['data' => 'Success'], Response::HTTP_OK);
             }
            
