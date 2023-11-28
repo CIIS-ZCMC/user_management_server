@@ -146,6 +146,7 @@ class EmployeeProfile extends Authenticatable
     public function leaveApplicationLogs() {
         return $this->hasMany(LeaveApplicationLog::class);
     }
+   
 
 
 }

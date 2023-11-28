@@ -30,7 +30,6 @@ class LeaveApplicationController extends Controller
     ) { 
         $this->file_service = $file_service; 
     }
-
     public function checkUserLeaveCredit(Request $request)
     {
         $leave_application_id = $request->leave_application_id;
@@ -66,7 +65,6 @@ class LeaveApplicationController extends Controller
     public function index()
     {
         try{ 
-            
             $leave_applications=[];
             $leave_applications =LeaveApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','dates','logs', 'requirements','employeeProfile.leaveCredits.leaveType'])->get();
             $leave_applications_result = $leave_applications->map(function ($leave_application) {
@@ -76,6 +74,26 @@ class LeaveApplicationController extends Controller
             $deduct=EmployeeLeaveCredit::where('employee_profile_id',$leave_application->employee_profile_id)->where('leave_type_id',$leave_application->leave_type_id)
             ->where('operation', 'deduct')
             ->sum('credit_value');
+            $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
+            $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
+            $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
+            $chief_name=null;
+            $head_name=null;
+            $supervisor_name=null;
+            if ($division) {
+                $division = Division::with('chief.personalInformation')->find($division);
+                $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+            }
+            if($department)
+            {
+                $department = Department::with('head.personalInformation')->find($department);
+                $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+            }
+            if($section)
+            {
+                $section = Section::with('supervisor.personalInformation')->find($section);
+                $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+            }
             $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
             $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
             return [
@@ -98,6 +116,9 @@ class LeaveApplicationController extends Controller
                 'with_pay' => $leave_application->with_pay ,
                 'employee_id' => $leave_application->employee_profile_id,
                 'employee_name' => "{$first_name} {$last_name}" ,
+                'division_head' =>$chief_name,
+                'department_head' =>$head_name,
+                'section_head' =>$supervisor_name,
                 'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
                 'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
                 'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,
@@ -166,7 +187,6 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], 500);
         }
     }
-   
     public function getEmployeeLeaveCredit(Request $request)
     {
       
@@ -204,8 +224,6 @@ class LeaveApplicationController extends Controller
         ->get();
          return response()->json(['data' => $results]);
     }
-
-   
     public function getUserLeaveCreditsLogs()
     {
         try{ 
@@ -223,7 +241,6 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], 500);
         }
     }
-
     public function getUserLeaveApplication()
     {
         try{ 
@@ -286,20 +303,36 @@ class LeaveApplicationController extends Controller
     {
         $status = $request->status; 
         $employee_id = $request->employee_id; 
-        $leave_applications = [];   
+        $leave_applications = [];
         $division = AssignArea::where('employee_profile_id',$employee_id)->value('division_id');
         if($status == 'applied'){
-            $HRHeadId = Division::where('id', $division)->value('chief_employee_profile_id');
-            if($HRHeadId === $employee_id) {
-                $leave_applications = LeaveApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
-                ->whereHas('employeeProfile.assignedArea', function ($query) use ($division) {
-                    $query->where('id', $division);
-                })
+            $section = AssignArea::where('employee_profile_id',$employee_id)->value('section_id');
+            $hr_head_id = Section::where('id', $section)->value('supervisor_employee_profile_id');
+            if($hr_head_id === $employee_id) {
+                $leave_applications = LeaveApplication::with(['employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
                 ->where('status', 'applied') 
                 ->get();
-
                 $leave_applications_result = $leave_applications->map(function ($leave_application) {
-            
+                    $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
+                    $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
+                    $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
+                    $chief_name=null;
+                    $head_name=null;
+                    $supervisor_name=null;
+                    if ($division) {
+                        $division = Division::with('chief.personalInformation')->find($division);
+                        $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                    }
+                    if($department)
+                    {
+                        $department = Department::with('head.personalInformation')->find($department);
+                        $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                    }
+                    if($section)
+                    {
+                        $section = Section::with('supervisor.personalInformation')->find($section);
+                        $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                    }
                     $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
                     $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
                     return [
@@ -321,6 +354,9 @@ class LeaveApplicationController extends Controller
                         'with_pay' => $leave_application->with_pay ,
                         'employee_id' => $leave_application->employee_profile_id,
                         'employee_name' => "{$first_name} {$last_name}" ,
+                        'division_head' =>$chief_name,
+                        'department_head' =>$head_name,
+                        'section_head' =>$supervisor_name,
                         'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
                         'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
                         'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,
@@ -387,10 +423,30 @@ class LeaveApplicationController extends Controller
                     ->whereHas('employeeProfile.assignedArea', function ($query) use ($division) {
                         $query->where('id', $division);
                     })
-                    ->where('status', 'for-approval-division') 
+                    ->where('status', 'for-approval-division-head') 
                     ->get();
 
                     $leave_applications_result = $leave_applications->map(function ($leave_application) {
+                        $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
+                        $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
+                        $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
+                        $chief_name=null;
+                        $head_name=null;
+                        $supervisor_name=null;
+                        if ($division) {
+                            $division = Division::with('chief.personalInformation')->find($division);
+                            $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                        }
+                        if($department)
+                        {
+                            $department = Department::with('head.personalInformation')->find($department);
+                            $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                        }
+                        if($section)
+                        {
+                            $section = Section::with('supervisor.personalInformation')->find($section);
+                            $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                        }
                     $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
                     $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
                         return [
@@ -412,6 +468,9 @@ class LeaveApplicationController extends Controller
                             'with_pay' => $leave_application->with_pay ,
                             'employee_id' => $leave_application->employee_profile_id,
                             'employee_name' => "{$first_name} {$last_name}" ,
+                            'division_head' =>$chief_name,
+                            'department_head' =>$head_name,
+                            'section_head' =>$supervisor_name,
                             'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
                             'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
                             'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,
@@ -480,11 +539,30 @@ class LeaveApplicationController extends Controller
                 ->whereHas('employeeProfile.assignedArea', function ($query) use ($department) {
                     $query->where('id', $department);
                 })
-                ->where('status', 'for-approval-head') 
+                ->where('status', 'for-approval-department-head') 
                 ->get();
     
                 $leave_applications_result = $leave_applications->map(function ($leave_application) {
-               
+                    $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
+                    $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
+                    $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
+                    $chief_name=null;
+                    $head_name=null;
+                    $supervisor_name=null;
+                    if ($division) {
+                        $division = Division::with('chief.personalInformation')->find($division);
+                        $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                    }
+                    if($department)
+                    {
+                        $department = Department::with('head.personalInformation')->find($department);
+                        $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                    }
+                    if($section)
+                    {
+                        $section = Section::with('supervisor.personalInformation')->find($section);
+                        $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                    }
                     $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
                     $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
                     return [
@@ -506,6 +584,9 @@ class LeaveApplicationController extends Controller
                         'with_pay' => $leave_application->with_pay ,
                         'employee_id' => $leave_application->employee_profile_id,
                         'employee_name' => "{$first_name} {$last_name}" ,
+                        'division_head' =>$chief_name,
+                        'department_head' =>$head_name,
+                        'section_head' =>$supervisor_name,
                         'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
                         'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
                         'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,
@@ -524,8 +605,6 @@ class LeaveApplicationController extends Controller
                                 $action = $process_name;
 
                             }
-                        
-                           
                             $date=$log->date;
                             $formatted_date=Carbon::parse($date)->format('M d,Y');
                             return [
@@ -561,8 +640,6 @@ class LeaveApplicationController extends Controller
                         }),
                     ];
                 });
-            
-    
                 return response()->json(['leave_applications' => $leave_applications_result]);
             }
         }
@@ -575,11 +652,30 @@ class LeaveApplicationController extends Controller
                 ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
                     $query->where('id', $section);
                 })
-                ->where('status', 'applied') 
+                ->where('status', 'for-approval-section-head') 
                 ->get();
     
                 $leave_applications_result = $leave_applications->map(function ($leave_application) {
-               
+                    $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
+                    $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
+                    $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
+                    $chief_name=null;
+                    $head_name=null;
+                    $supervisor_name=null;
+                    if ($division) {
+                        $division = Division::with('chief.personalInformation')->find($division);
+                        $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                    }
+                    if($department)
+                    {
+                        $department = Department::with('head.personalInformation')->find($department);
+                        $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                    }
+                    if($section)
+                    {
+                        $section = Section::with('supervisor.personalInformation')->find($section);
+                        $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                    }
                     $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
                     $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
                     return [
@@ -601,6 +697,9 @@ class LeaveApplicationController extends Controller
                         'with_pay' => $leave_application->with_pay ,
                         'employee_id' => $leave_application->employee_profile_id,
                         'employee_name' => "{$first_name} {$last_name}" ,
+                        'division_head' =>$chief_name,
+                        'department_head' =>$head_name,
+                        'section_head' =>$supervisor_name,
                         'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
                         'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
                         'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,
@@ -662,20 +761,124 @@ class LeaveApplicationController extends Controller
             } 
         }
         else if($status == 'declined'){
-            $leave_applications = LeaveApplication::where('status', '=', 'declined');                                        
+            $leave_applications = LeaveApplication::with(['employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
+                ->where('status', 'declined') 
+                ->get();
+    
+                $leave_applications_result = $leave_applications->map(function ($leave_application) {
+                    $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
+                    $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
+                    $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
+                    $chief_name=null;
+                    $head_name=null;
+                    $supervisor_name=null;
+                    if ($division) {
+                        $division = Division::with('chief.personalInformation')->find($division);
+                        $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                    }
+                    if($department)
+                    {
+                        $department = Department::with('head.personalInformation')->find($department);
+                        $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                    }
+                    if($section)
+                    {
+                        $section = Section::with('supervisor.personalInformation')->find($section);
+                        $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                    }
+                    $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
+                    $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
+                    return [
+                        'id' => $leave_application->id,
+                        'leave_type_name' => $leave_application->leaveType->name,
+                        'is_special' => $leave_application->leaveType->is_special,
+                        'reference_number' => $leave_application->reference_number,
+                        'country' => $leave_application->country,
+                        'city' => $leave_application->city,
+                        'zip_code' => $leave_application->zip_code,
+                        'patient_type' => $leave_application->patient_type,
+                        'illness' => $leave_application->illness,
+                        'reason' => $leave_application->reason,
+                        'leave_credit_total' => $leave_application->leave_credit_total ,
+                        'days_total' => $leave_application->leave_credit_total ,
+                        'status' => $leave_application->status ,
+                        'remarks' => $leave_application->remarks ,
+                        'date' => $leave_application->date ,
+                        'with_pay' => $leave_application->with_pay ,
+                        'employee_id' => $leave_application->employee_profile_id,
+                        'employee_name' => "{$first_name} {$last_name}" ,
+                        'division_head' =>$chief_name,
+                        'department_head' =>$head_name,
+                        'section_head' =>$supervisor_name,
+                        'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
+                        'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
+                        'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,
+                        'unit_name' => $leave_application->employeeProfile->assignedArea->unit->name ?? null,
+                        'logs' => $leave_application->logs->map(function ($log) {
+                            $process_name=$log->action;
+                            $action ="";
+                            $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
+                            $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
+                            if($process_name === 'applied')
+                            {
+                                $action=  $process_name . ' by ' . $first_name .' '. $last_name;
+                            }
+                            else
+                            {
+                                $action = $process_name;
+
+                            }
+                        
+                           
+                            $date=$log->date;
+                            $formatted_date=Carbon::parse($date)->format('M d,Y');
+                            return [
+                                'id' => $log->id,
+                                'leave_application_id' => $log->leave_application_id,
+                                'action_by' => "{$first_name} {$last_name}" ,
+                                'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                'action' => $log->action,
+                                'date' => $formatted_date,
+                                'time' => $log->time,
+                                'process' => $action
+                            ];
+                        }),
+                        'requirements' => $leave_application->requirements->map(function ($requirement) {
+                            return [
+                                'id' => $requirement->id,
+                                'leave_application_id' => $requirement->leave_application_id,
+                                'name' => $requirement->name,
+                                'file_name' => $requirement->file_name,
+                            ];
+                        }),
+                        'dates' => $leave_application->dates->map(function ($date) {
+                            $formatted_date_from=Carbon::parse($date->date_from)->format('M d,Y');
+                            $formatted_date_to=Carbon::parse($date->date_to)->format('M d,Y');
+                            return [
+                               
+                                'id' => $date->id,
+                                'leave_application_id' => $date->leave_application_id,
+                                'date_from' => $formatted_date_from,
+                                'date_to' => $formatted_date_to,
+        
+                            ];
+                        }),
+                    ];
+                });
+            
+    
+                return response()->json(['leave_applications' => $leave_applications_result]);
         }
         else{
             $leave_applications = LeaveApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
             ->where('employee_profile_id',$employee_id )->get();
         }
-
         if (isset($request->search)) {
             $search = $request->search; 
             $leave_applications = $leave_applications->where('reference_number','like', '%' .$search . '%');
                                                  
             $leave_applications = isset($search) && $search; 
         }
-
         return ResourcesLeaveApplication::collection($leave_applications->paginate(50));
     }
 

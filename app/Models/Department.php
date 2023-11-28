@@ -42,7 +42,7 @@ class Department extends Model
     
     public function head()
     {
-        return $this->belongsTo(EmployeeProfile::class, 'id', 'head_employee_profile_id');
+        return $this->belongsTo(EmployeeProfile::class,'head_employee_profile_id');
     }
 
     public function headJobSpecification()
@@ -73,5 +73,10 @@ class Department extends Model
     public function oicTrails()
     {
         return $this->hasMany(OfficerInChargeTrail::class);
+    }
+
+    public function departmentHead()
+    {
+        return $this->belongsTo(EmployeeProfile::class, 'head_employee_profile_id');
     }
 }

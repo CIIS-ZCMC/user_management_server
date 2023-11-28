@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Services\FileService;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 class ObApplicationController extends Controller
 {
     /**
@@ -28,16 +29,57 @@ class ObApplicationController extends Controller
     public function index()
     {
         try{ 
-            $official_business_applications=[];
-            
-            $official_business_applications =ObApplication::with(['logs', 'requirements'])->get();
-            // $official_business_application_resource=ResourcesObApplication::collection($official_business_applications);
+                $official_business_applications =ObApplication::with(['employeeProfile.personalInformation','logs'])->get();
+                $official_business_applications_result = $official_business_applications->map(function ($official_business_application) {
+                        return [
+                            'id' => $official_business_application->id,
+                            'date_from' => $official_business_application->date_from,
+                            'date_to' => $official_business_application->date_to,
+                            'time_from' => $official_business_application->time_from,
+                            'time_to' => $official_business_application->time_to,
+                            'reason' => $official_business_application->reason,
+                            'status' => $official_business_application->status,
+                            'logs' => $official_business_application->logs->map(function ($log) {
+                                $process_name=$log->action;
+                                $action ="";
+                                $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
+                                $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
+                                if($log->action_by_id  === optional($log->employeeProfile->assignedArea->division)->chief_employee_profile_id ) 
+                                {
+                                    $action =  $process_name . ' by ' . 'Division Head';
+                                }
+                                else if ($log->action_by_id === optional($log->employeeProfile->assignedArea->department)->head_employee_profile_id || optional($log->employeeProfile->assignedArea->section)->supervisor_employee_profile_id)
+                                {
+                                    $action =  $process_name . ' by ' . 'Supervisor';
+                                }
+                                else{
+                                    $action=  $process_name . ' by ' . $first_name .' '. $last_name;
+                                }
+                               
+                                $date=$log->date;
+                                $formatted_date=Carbon::parse($date)->format('M d,Y');
+                                return [
+                                    'id' => $log->id,
+                                    'leave_application_id' => $log->leave_application_id,
+                                    'action_by' => "{$first_name} {$last_name}" ,
+                                    'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                    'action' => $log->action,
+                                    'date' => $formatted_date,
+                                    'time' => $log->time,
+                                    'process' => $action
+                                ];
+                            }),
+                          
+                        ];
+                    });
+                    
+                     return response()->json(['data' => $official_business_applications_result], Response::HTTP_OK);
+                }catch(\Throwable $th){
+                
+                    return response()->json(['message' => $th->getMessage()], 500);
+                }
            
-             return response()->json(['data' => $official_business_applications], Response::HTTP_OK);
-        }catch(\Throwable $th){
         
-            return response()->json(['message' => $th->getMessage()], 500);
-        }
     }
 
     public function getObApplications(Request $request)
@@ -215,9 +257,7 @@ class ObApplicationController extends Controller
                 $imagePath = $request->file('certificate_of_appearance')->store('official_business', 'public');
                 $official_business_application->certificate_of_appearance = $imagePath;
             }
-        
-            $official_business_application->save();
-           
+            $official_business_application->save();         
             $process_name="Applied";
             $official_business_logs = $this->storeOfficialBusinessApplicationLog($official_business_application->id,$process_name);
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
