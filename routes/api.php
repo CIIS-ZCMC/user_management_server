@@ -1243,5 +1243,33 @@ Route::middleware('auth.cookie')->group(function(){
         Route::middleware(['auth.permission:UMIS-ScM delete'])->group(function(){
             Route::delete('time-shift/{id}', 'TimeShiftController@destroy');
         });
+
+          /**
+         * Schedule Module
+         */
+        Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function(){
+            Route::get('schedule', 'ScheduleController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM write'])->group(function(){
+            // Route::post('schedule', 'ScheduleController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM view'])->group(function(){
+            Route::get('schedule/{id}', 'ScheduleController@show');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM update'])->group(function(){
+            Route::put('schedule/{id}', 'ScheduleController@update');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM delete'])->group(function(){
+            Route::delete('schedule/{id}', 'ScheduleController@destroy');
+        });
     });
+});
+
+Route::namespace('App\Http\Controllers\Schedule')->group(function(){
+    Route::put('exchange-duties/{id}', 'ExchangeDutyController@update');
+    Route::post('exchange-duties', 'ExchangeDutyController@store');
 });

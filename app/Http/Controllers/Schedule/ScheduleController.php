@@ -108,7 +108,7 @@ class ScheduleController extends Controller
             $date_start     = Carbon::parse($cleanData['date_start']);    // Replace with your start date
             $date_end       = Carbon::parse($cleanData['date_end']);      // Replace with your end date
             $selected_days  = $cleanData['selected_days'];                // Replace with your selected days
-            $selected_dates = [];                                       // Replace with your selected dates
+            $selected_dates = [];                                         // Replace with your selected dates
 
             switch ($cleanData['schedule_type']) {
                 case 'dates_only':
@@ -121,8 +121,8 @@ class ScheduleController extends Controller
                 break;
 
                 case 'days_only' :
-                    $year   = Carbon::now()->year;          // Replace with your desired year
-                    $month  = $cleanData['selected_month'];   // Replace with your desired month
+                    $year   = Carbon::now()->year;              // Replace with your desired year
+                    $month  = $cleanData['selected_month'];     // Replace with your desired month
 
                     $start_date = Carbon::create($year, $month, 1)->startOfMonth(); // Calculate the first day of the month
                     $end_date   = $start_date->copy()->endOfMonth();                // Calculate the last day of the month
@@ -187,7 +187,7 @@ class ScheduleController extends Controller
 
                         } else {
 
-                            $data->employee()->attach($employee);
+                            $data->employee()->attach($employee_id);
                             $msg = 'New employee schedule registered.';
                         }
                     }
@@ -238,9 +238,55 @@ class ScheduleController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(ScheduleRequest $request, $id)
+    public function update(Request $request, $id)
     {
-        //
+        try {
+            $data = Schedule::findOrFail($id);
+
+            if(!$data) {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $cleanData = [];
+
+            foreach ($request->all() as $key => $value) {
+                if (empty($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                if (DateTime::createFromFormat('Y-m-d', $value)) {
+                    $cleanData[$key] = Carbon::parse($value);
+                    continue;
+                }
+
+                if (is_int($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                $cleanData[$key] = strip_tags($value);
+            }
+
+            $data->time_shift_id    = $cleanData['time_shift_id'];
+            $data->holiday_id       = $cleanData['holiday_id'];
+            
+            $data->month            = $cleanData['month'];
+            $data->date_start       = $cleanData['date_start'];
+            $data->date_end         = $cleanData['date_end'];
+            $data->is_weekend       = $cleanData['is_weekend'];
+            $data->status           = $cleanData['status'];
+            $data->remarks          = $cleanData['remarks'];
+            $data->update();
+            
+            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            return response()->json(['data' => $data], Response::HTTP_OK);
+
+        } catch (\Throwable $th) {
+
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**
@@ -248,6 +294,21 @@ class ScheduleController extends Controller
      */
     public function destroy(Request $request, $id)
     {
-        //
+        try {
+            $data = Schedule::withTrashed()->findOrFail($id);
+
+            if (!$data) {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $data->employee()->detach($request->employee_id);
+
+            Helpers::registerSystemLogs($request, $id, true, 'Success in delete '.$this->SINGULAR_MODULE_NAME.'.');
+            return response()->json(['data' => $data], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 }
