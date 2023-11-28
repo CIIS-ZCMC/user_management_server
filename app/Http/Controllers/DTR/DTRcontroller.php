@@ -779,6 +779,7 @@ class DTRcontroller extends Controller
             $number_Of_Days = 0;
             $number_Of_all_Days_past = 0;
             $date_ranges = [];
+            $entryf = '';
             foreach ($dt_records as $key => $value) {
                 $schedule = $this->helper->getSchedule($value->biometric_id, $value->first_in);
                 $is_Half_Schedule = $this->isHalfEntrySchedule($schedule);
@@ -800,21 +801,21 @@ class DTRcontroller extends Controller
                     if ($date_end < $date_now) {
                         $number_Of_all_Days_past = $this->getDifferenceDate($date_start, $date_end) + 1;
                     }
-                    $entry = '';
                     if (isset($value->first_in)) {
-                        $entry = $value->first_in;
-                    }
+                        $entryf = $value->first_in;
+                    } else
                     if (isset($value->second_in)) {
-                        $entry = $value->second_in;
+                        $entryf = $value->second_in;
                     }
-
-                    if ($entry >= $date_start && $entry <= $date_end) {
+                    if ($entryf >= $date_start && $entryf <= $date_end) {
                         $mdtr[] = $this->mDTR($value);
                     }
                 } else {
                     $no_Sched_dtr[] = $this->mDTR($value);
                 }
             }
+
+
             $Records_with_Overtime = array_values(array_filter($mdtr, function ($res) {
                 return $res['overtime_minutes'] >= 1;
             }));
@@ -841,24 +842,34 @@ class DTRcontroller extends Controller
             $days_In_Month = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
             $days_of_duty = 0;
             $days_Rendered = [];
+
             for ($i = 1; $i <= $days_In_Month; $i++) {
                 $count = array_filter($mdtr, function ($res) use ($i) {
                     return date('d', strtotime($res['first_in'])) == $i;
                 });
+
                 $days_of_duty += count($count);
-                $days_Rendered[] = $count;
+                $days_Rendered[] = array_values($count);
             }
-            $days = array_filter($days_Rendered);
+
+
+            $days = $days_Rendered;
+
             $present_days = [];
             foreach ($days as $entry) {
+
                 if (is_array($entry)) {
+
                     foreach ($entry as $nested_Entry) {
                         $present_days[] = $nested_Entry;
                     }
                 }
             }
+
+
             $days_absences = [];
             $days_present = [];
+
             foreach ($date_ranges as $key => $value) {
                 $day_Entries = date('j', strtotime($value));
                 $count = array_filter($present_days, function ($res) use ($day_Entries) {
@@ -873,6 +884,7 @@ class DTRcontroller extends Controller
                     $days_present[] = $value;
                 }
             }
+
             $numeric_days = array_map(function ($res) {
                 $timestamp = strtotime($res);
                 $formatted_date = date('Y-m-d', $timestamp);
@@ -880,10 +892,11 @@ class DTRcontroller extends Controller
                 return $numerical_value + 1;
             }, $days_present);
 
+
             /**
              * IF Two schedules only
              */
-            $absences = floor($number_Of_all_Days_past - $days_of_duty);
+            $absences = floor($days_of_duty - $number_Of_all_Days_past);
             if ($is_Half_Schedule) {
                 $new_Days_Absences = [];
                 foreach ($days_absences as $value) {
@@ -900,6 +913,7 @@ class DTRcontroller extends Controller
                 $days_absences = $new_Days_Absences;
                 $absences = count($days_absences);
             }
+
             $dtr = [
                 'biometric_ID' => $biometric_id,
                 'employeeName' => 'Reenjay Caimor',
@@ -909,7 +923,7 @@ class DTRcontroller extends Controller
                 'TotalMinutesofDuty' => $total_minutes_of_Duty,
                 'TotalScheduleDays' => $number_Of_Days,
                 'TotalDaysRendered' => $days_of_duty,
-                'TotalAbsences' => $absences >= 1 ? $absences : 0,
+                'TotalAbsences' => count($days_absences),
                 'TotalDayswLate' => count($Records_with_Undertime),
                 'TotalDutywNosched' => count($no_Sched_dtr),
                 'fortheMonth' => date('F', strtotime($year_of . '-' . $month_of . '-1')),
@@ -1016,13 +1030,22 @@ class DTRcontroller extends Controller
             'undertime_minutes' => $value->undertime_minutes,
             'overall_minutes_rendered' => $value->overall_minutes_rendered,
             'total_minutes_reg' => $value->total_minutes_reg,
-            'day' => $value->day,
+            'day' => $this->getDAy($value),
             'created_at' => $value->created_at,
             'weekStatus' => $this->getWeekdayStatus($value->created_at),
             'isHoliday' => $this->isHoliday($value->created_at)
         ];
     }
 
+    public function getDAy($value)
+    {
+        if ($value->first_in) {
+            return date('d', strtotime($value->first_in));
+        }
+        if (!$value->first_in && $value->second_in) {
+            return date('d', strtotime($value->second_in));
+        }
+    }
     public function test()
     {
         /* 
