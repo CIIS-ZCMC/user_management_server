@@ -14,7 +14,9 @@ class LeaveType extends Model
     protected $table = 'leave_types';
     protected $casts = [
         'is_special' => 'boolean',
+        'is_active' => 'boolean',
     ];
+    
     public $fillable = [
         'name',
         'description',

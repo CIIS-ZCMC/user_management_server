@@ -1,12 +1,7 @@
 <?php
 
-<<<<<<< HEAD:app/Http/Controllers/MonetizationApplicationController.php
-namespace App\Http\Controllers;
-use Illuminate\Support\Facades\Auth;
-=======
 namespace App\Http\Controllers\LeaveAndOverTime;
 
->>>>>>> main:app/Http/Controllers/LeaveAndOverTime/MonetizationApplicationController.php
 use App\Models\MonetizationApplication;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\LeaveType;
