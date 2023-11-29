@@ -125,8 +125,12 @@ class LeaveTypeController extends Controller
             $leave_type->description = $request->description;
             $leave_type->period = $request->period;
             $leave_type->file_date = $request->file_date;
-            $code = preg_split("/[\s,_-]+/", $request->name);
-            $leave_type->code = $code;
+            $name_codes = explode(' ', $request->name);
+            $firstLetters = '';
+            foreach ($name_codes as $name_code) {
+                $firstLetters .= strtoupper(substr($word, 0, 1));
+            }
+            $leave_type->code = $firstLetters;
             $leave_type->is_active =$request->has('is_active');
             $leave_type->is_special =$request->has('is_special');
             $leave_type->leave_credit_year = $request->leave_credit_year;
@@ -143,7 +147,6 @@ class LeaveTypeController extends Controller
                 }
 
             }
-           
             $leave_type->save();
             $leave_type_id=$leave_type->id;
             if (!empty($request->leave_requirements)) {
