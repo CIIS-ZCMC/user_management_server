@@ -20,8 +20,6 @@ class RequirementController extends Controller
     public function index()
     {
         try{
-            
-    
 
     $requirements = Requirement::with('logs.employeeProfile.personalInformation') // Eager load relationships
         ->get();
@@ -37,11 +35,16 @@ class RequirementController extends Controller
                 // Access employee name for the current log
                 $first_name = optional($log->employeeProfile->personalInformation)->first_name ;
                 $last_name = optional($log->employeeProfile->personalInformation)->last_name;
+                $date=$log->date;
+                $formatted_date=Carbon::parse($date)->format('M d,Y');
                 return [
-                    'log_id' => $log->id,
-                    'log_action' => $log->action,
-                    'log_date' => $log->date,
-                    'employee_name' => "{$first_name} {$last_name}",
+                    'id' => $log->id,
+                    'action_by' => "{$first_name} {$last_name}" ,
+                    'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                    'action' => $log->action,
+                    'date' => $formatted_date,
+                    'time' => $log->time,
+                    'process' => $action
                 ];
             }
     
@@ -50,8 +53,8 @@ class RequirementController extends Controller
     
         return [
             'id' => $requirementDetails['id'],
-            'req_name' => $requirementDetails['name'],
-            'req_desc' => $requirementDetails['description'],
+            'value' => $requirementDetails['name'],
+            'label' => $requirementDetails['description'],
             'logs' => $logs,
         ];
     });
