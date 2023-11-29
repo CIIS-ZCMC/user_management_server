@@ -132,7 +132,7 @@ class LeaveTypeController extends Controller
                 $firstLetters .= strtoupper(substr($name_code, 0, 1));
             }
             $leave_type->code = $firstLetters;
-            $leave_type->is_active =$request->has('is_active');
+            $leave_type->is_active = true;
             $leave_type->is_special =$request->has('is_special');
             $leave_type->leave_credit_year = $request->leave_credit_year;
             $attachment=$request->file('attachments');
@@ -154,7 +154,7 @@ class LeaveTypeController extends Controller
                 $this->storeLeaveTypeRequirements($leave_type->id, $request->leave_requirements);
             } 
             $columnsString="";
-            $leave_type_logs = $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString);
+            $leave_type_log = $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString);
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
          
@@ -207,7 +207,7 @@ class LeaveTypeController extends Controller
                 $firstLetters .= strtoupper(substr($name_code, 0, 1));
             }
             $leave_type->code = $firstLetters;
-            $leave_type->is_active =$request->has('is_active');
+            $leave_type->is_active = true;
             $leave_type->is_special =$request->has('is_special');
             $leave_type->leave_credit_year = $request->leave_credit_year;
             $attachment=$request->file('attachments');
@@ -237,7 +237,7 @@ class LeaveTypeController extends Controller
             } 
             $leave_type_id=$leave_type->id;
             $process_name="Update";
-            $leave_type_logs = $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString);
+            $leave_type_log = $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString);
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
          
@@ -272,7 +272,6 @@ class LeaveTypeController extends Controller
             $leave_type_log->leave_type_id = $leave_type_id                                                                ;
             $leave_type_log->action_by = $user_id;
             $leave_type_log->process_name = $process_name;
-            // $leave_type_log->date = now()->toDateString('Ymd');
             $leave_type_log->date = date('Y-m-d');
             $leave_type_log->time =  date('H:i:s');
             $leave_type_log->field =  $changedfields;
