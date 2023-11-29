@@ -36,7 +36,7 @@ class LeaveTypeController extends Controller
                     'period' => $leave_type->period,
                     'file_date' => $leave_type->file_date,
                     'code' => $leave_type->code,
-                    'status' => $leave_type->status,
+                    'is_active' => $leave_type->is_active,
                     'is_special' => $leave_type->is_special,
                     'leave_credit_year' => $leave_type->leave_credit_year ,
                     'logs' => $leave_type->logs->map(function ($log) {
@@ -199,18 +199,27 @@ class LeaveTypeController extends Controller
             $leave_type->description = $request->description;
             $leave_type->period = ucwords($request->period);
             $leave_type->file_date = $request->file_date;
-            $leave_type->leave_credit_id = $request->leave_credit_id;
-            $code = preg_split("/[\s,_-]+/", $request->name);
-            $leave_type->code = $code;
-            if ($request->hasFile('attachment')) {
-                $attachment = $request->file('attachment');
-                if ($attachment->isValid()) {
-                    $extension = $attachment->getClientOriginalExtension();
-                    $filename = $request->name . $extension;
-                    $image_path = 'images/leave/attachment' . $filename;
-                    Image::make($attachment)->save($image_path);
-                    
+            $name_codes = explode(' ', $request->name);
+            $firstLetters = '';
+            foreach ($name_codes as $name_code) {
+                $firstLetters .= strtoupper(substr($word, 0, 1));
+            }
+            $leave_type->code = $firstLetters;
+            $leave_type->is_active =$request->has('is_active');
+            $leave_type->is_special =$request->has('is_special');
+            $leave_type->leave_credit_year = $request->leave_credit_year;
+            $attachment=$request->file('attachments');
+            if($attachment)
+            {
+                foreach ($request->file('attachments') as $file) {
+                    $file_name = time() . '_' . $file->getClientOriginalName();
+                    $file->move(public_path('attachments'), $file_name);
+                    $leave_attachment= LeaveAttachment::findOrFail($id);
+                    $leave_attachment->file_name= $file_name;
+                    $leave_attachment->leave_type_id = $leave_type->id;
+                    $leave_attachment->update();  
                 }
+
             }
             $leave_type->attachment = $filename;
             $leave_type->update();
