@@ -125,10 +125,11 @@ class LeaveTypeController extends Controller
             $leave_type->description = $request->description;
             $leave_type->period = $request->period;
             $leave_type->file_date = $request->file_date;
-            $name_codes = explode(' ', $request->name);
+            $input_name = $request->name;
+            $name_codes = explode(' ', $input_name);
             $firstLetters = '';
             foreach ($name_codes as $name_code) {
-                $firstLetters .= strtoupper(substr($name_codes, 0, 1));
+                $firstLetters .= strtoupper(substr($name_code, 0, 1));
             }
             $leave_type->code = $firstLetters;
             $leave_type->is_active =$request->has('is_active');
@@ -199,10 +200,11 @@ class LeaveTypeController extends Controller
             $leave_type->description = $request->description;
             $leave_type->period = ucwords($request->period);
             $leave_type->file_date = $request->file_date;
-            $name_codes = explode(' ', $request->name);
+            $input_name = $request->name;
+            $name_codes = explode(' ', $input_name);
             $firstLetters = '';
             foreach ($name_codes as $name_code) {
-                $firstLetters .= strtoupper(substr($name_codes, 0, 1));
+                $firstLetters .= strtoupper(substr($name_code, 0, 1));
             }
             $leave_type->code = $firstLetters;
             $leave_type->is_active =$request->has('is_active');
