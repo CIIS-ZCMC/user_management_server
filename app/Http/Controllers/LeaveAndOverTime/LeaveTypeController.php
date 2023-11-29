@@ -239,7 +239,7 @@ class LeaveTypeController extends Controller
             } 
             $leave_type_id=$leave_type->id;
             $process_name="Update";
-            $leave_type_log = $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString);
+            // $leave_type_log = $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString);
             $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString);
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -277,10 +277,10 @@ class LeaveTypeController extends Controller
             $leave_type_log->action = $process_name;
             $leave_type_log->date = date('Y-m-d');
             $leave_type_log->time =  date('H:i:s');
-            $leave_type_log->field =  $changedfields;
+            $leave_type_log->fields =  $changedfields;
             $leave_type_log->save();
 
-            return $leave_type_log;
+            // return $leave_type_log;
         } catch(\Exception $e) {
             return response()->json(['message' => $e->getMessage(),'error'=>true]);
         }
