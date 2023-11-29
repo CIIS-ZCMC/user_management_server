@@ -1550,7 +1550,8 @@ class LeaveApplicationController extends Controller
                                 }     
                             }
                             $process_name="Applied";
-                            $leave_application_logs = $this->storeLeaveApplicationLog($leave_application_id,$process_name);
+                            $leave_application_log = $this->storeLeaveApplicationLog($leave_application_id,$process_name);
+                            $this->storeLeaveApplicationLog($leave_application_log);
                     }
             }
            

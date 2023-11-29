@@ -40,6 +40,7 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
     Route::put('leave-type/{id}', 'LeaveTypeController@update');
     Route::post('leave-type-deactivate-password/{id}', 'LeaveTypeController@deactivateLeaveType');
     Route::post('leave-type-activate-password/{id}', 'LeaveTypeController@reactivateLeaveType');
+    Route::get('requirement-all', 'RequirementController@index');
     Route::post('requirement', 'RequirementController@store');
     Route::put('requirement/{id}', 'RequirementController@update');
     Route::get('leave-application-all', 'LeaveApplicationController@index');

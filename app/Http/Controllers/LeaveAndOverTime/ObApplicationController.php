@@ -639,7 +639,8 @@ class ObApplicationController extends Controller
             }
             $official_business_application->save();         
             $process_name="Applied";
-            $official_business_logs = $this->storeOfficialBusinessApplicationLog($official_business_application->id,$process_name);
+            $official_business_log = $this->storeOfficialBusinessApplicationLog($official_business_application->id,$process_name);
+            $this->storeOfficialBusinessApplicationLog($official_business_log);
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
          
