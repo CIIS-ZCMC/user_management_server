@@ -128,7 +128,7 @@ class LeaveTypeController extends Controller
             $name_codes = explode(' ', $request->name);
             $firstLetters = '';
             foreach ($name_codes as $name_code) {
-                $firstLetters .= strtoupper(substr($word, 0, 1));
+                $firstLetters .= strtoupper(substr($name_codes, 0, 1));
             }
             $leave_type->code = $firstLetters;
             $leave_type->is_active =$request->has('is_active');
@@ -202,7 +202,7 @@ class LeaveTypeController extends Controller
             $name_codes = explode(' ', $request->name);
             $firstLetters = '';
             foreach ($name_codes as $name_code) {
-                $firstLetters .= strtoupper(substr($word, 0, 1));
+                $firstLetters .= strtoupper(substr($name_codes, 0, 1));
             }
             $leave_type->code = $firstLetters;
             $leave_type->is_active =$request->has('is_active');
