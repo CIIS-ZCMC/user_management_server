@@ -27,6 +27,8 @@ return new class extends Migration
             $table->foreign('designation_id')->references('id')->on('designations');
             $table->unsignedBigInteger('plantilla_id')->nullable();
             $table->foreign('plantilla_id')->references('id')->on('plantillas');
+            $table->unsignedBigInteger('plantilla_number_id')->nullable();
+            $table->foreign('plantilla_number_id')->references('id')->on('plantilla_numbers');
             $table->datetime('effective_at');
             $table->timestamps();
         });

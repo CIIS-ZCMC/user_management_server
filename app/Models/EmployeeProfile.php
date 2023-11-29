@@ -32,7 +32,8 @@ class EmployeeProfile extends Authenticatable
         'deactivated_at',
         'agency_employee_no',
         'allow_time_adjustment',
-        'employee_type_id'
+        'employee_type_id',
+        'plantilla_number_id'
     ];
 
     public $timestamps = TRUE;
@@ -84,6 +85,11 @@ class EmployeeProfile extends Authenticatable
     public function loginTrails()
     {
         return $this->hasMany(LoginTrails::class);
+    }
+
+    public function plantillaNumber()
+    {
+        return $this->hasOne(PlantillaNumber::class);
     }
 
     public function isDeactivated()
@@ -156,4 +162,12 @@ class EmployeeProfile extends Authenticatable
     }
    
 
+    public function findDesignation()
+    {
+        $assign_area = $this->assignedArea; 
+
+        $designation = $assign_area->plantilla_id  === null?$assign_area->designation:$assign_area->plantilla->designation;
+        
+        return $designation;
+    }
 }

@@ -15,7 +15,7 @@ class LoginTrailResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'signin_at' => $this->signin_datetime,
+            'signin_at' => $this->signin_at,
             'ip_address' => $this->ip_address,
             'device' => $this->device,
             'platform'=> $this->platform,

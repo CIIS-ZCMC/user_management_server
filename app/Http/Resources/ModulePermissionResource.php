@@ -14,9 +14,9 @@ class ModulePermissionResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $module_name = $this->module->name;
-        $permission_name = $this->permission->name;
-        $status = $this->deactivated?'DEACTIVATED':'ACTIVE';
+        $module_name = $this->system_module_id===null?"NONE":$this->module->name;
+        $permission_name = $this->permission_id===null?"NONE":$this->permission->name;
+        $status = $this->active?'ACTIVE':'DEACTIVATED';
 
         return [
             'module_name' => $module_name,

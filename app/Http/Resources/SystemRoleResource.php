@@ -14,9 +14,12 @@ class SystemRoleResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $system_name = $this->system_id === null? 'NONE':$this->system->name;
+
         return [
             'name' => $this->name,
             'code' => $this->code,
+            'system_name' => $system_name,
             'effective_at' => $this->effective_at
         ];
     }

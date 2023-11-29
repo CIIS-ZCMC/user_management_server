@@ -26,10 +26,17 @@ class SystemRole extends Model
         return $this->belongsTo(System::class);
     }
 
-    public function roleModulePermission()
-    {
-        return $this->hasManyThrough(RoleModulePermission::class, ModulePermission::class);
-    }
+    // public function roleModulePermission()
+    // {
+    //     return $this->hasOneThrough(
+    //         RoleModulePermission::class,
+    //         ModulePermission::class,
+    //         'module_permission_id',  
+    //         'id',                
+    //         'id',                    
+    //         'system_role_id',       
+    //     );
+    // }
 
     public function roleModulePermissions()
     {

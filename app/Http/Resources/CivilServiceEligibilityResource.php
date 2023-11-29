@@ -22,8 +22,8 @@ class CivilServiceEligibilityResource extends JsonResource
             'rating' => $this->rating,
             'date_of_examination' => $this->date_of_examination,
             'place_of_examination' => $this->place_of_examination,
-            'license_number' => $this->license_number,
-            'license_release_at' => $this->license_release_at
+            'license_number' => $license_number,
+            'license_release_at' => $license_release_at
         ];
     }
 }

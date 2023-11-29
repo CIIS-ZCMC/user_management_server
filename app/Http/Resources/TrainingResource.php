@@ -15,7 +15,7 @@ class TrainingResource extends JsonResource
     public function toArray(Request $request): array
     {
         $conducted_by = $this->conducted_by === null? 'NONE': $this->conducted_by;
-        $total_hours = $this->total_hours === null? 'NONE': $this->total_hours;
+        $hours = $this->total_hours === null? 'NONE': $this->total_hours;
 
         return [
             'title' => $this->title,
