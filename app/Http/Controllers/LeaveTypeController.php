@@ -151,7 +151,7 @@ class LeaveTypeController extends Controller
                 $this->storeLeaveTypeRequirements($leave_type->id, $request->leave_requirements);
             } 
             $columnsString="";
-            $leave_type_logs = $this->storeLeaveTypeLog($leave_type_id,$process_name,$changedfields);
+            $leave_type_logs = $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString);
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
          

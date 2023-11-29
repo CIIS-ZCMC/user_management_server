@@ -37,6 +37,8 @@ Route::namespace('App\Http\Controllers')->group(function () {
     Route::get('leave-application-all', 'LeaveApplicationController@index');
     Route::get('division', 'LeaveApplicationController@getDivisionLeaveApplications');
     Route::get('add', 'LeaveCreditController@addMonthlyLeaveCredit');
+
+    Route::get('ob-application-all', 'ObApplicationController@index');
 });
 
 Route::middleware('auth.cookie')->group(function(){

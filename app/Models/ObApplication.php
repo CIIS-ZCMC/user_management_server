@@ -18,13 +18,13 @@ class ObApplication extends Model
         'time_to',
         'reason',
         'status',
-    ];
-        public function requirements()
-        {  
-            return $this->hasMany(ObApplicationRequirement::class);
-        }
+    ];      
         public function logs()
         {
             return $this->hasMany(ObApplicationLog::class);
+        }
+
+        public function employeeProfile() {
+            return $this->belongsTo(EmployeeProfile::class);
         }
 }

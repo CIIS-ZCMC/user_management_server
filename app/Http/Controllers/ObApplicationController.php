@@ -36,6 +36,28 @@ class ObApplicationController extends Controller
         try{ 
                 $official_business_applications =ObApplication::with(['employeeProfile.personalInformation','logs'])->get();
                 $official_business_applications_result = $official_business_applications->map(function ($official_business_application) {
+                        $division = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('division_id');
+                        $department = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('department_id');
+                        $section = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('section_id');
+                        $chief_name=null;
+                        $head_name=null;
+                        $supervisor_name=null;
+                        if ($division) {
+                            $division = Division::with('chief.personalInformation')->find($division);
+                            $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                        }
+                        if($department)
+                        {
+                            $department = Department::with('head.personalInformation')->find($department);
+                            $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                        }
+                        if($section)
+                        {
+                            $section = Section::with('supervisor.personalInformation')->find($section);
+                            $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                        }
+                    $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
+                    $last_name = optional($official_business_application->employeeProfile->personalInformation)->last_name ?? null;
                         return [
                             'id' => $official_business_application->id,
                             'date_from' => $official_business_application->date_from,
@@ -44,6 +66,15 @@ class ObApplicationController extends Controller
                             'time_to' => $official_business_application->time_to,
                             'reason' => $official_business_application->reason,
                             'status' => $official_business_application->status,
+                            'employee_id' => $official_business_application->employee_profile_id,
+                            'employee_name' => "{$first_name} {$last_name}" ,
+                            'division_head' =>$chief_name,
+                            'department_head' =>$head_name,
+                            'section_head' =>$supervisor_name,
+                            'division_name' => $official_business_application->employeeProfile->assignedArea->division->name ?? null,
+                            'department_name' => $official_business_application->employeeProfile->assignedArea->department->name ?? null,
+                            'section_name' => $official_business_application->employeeProfile->assignedArea->section->name ?? null,
+                            'unit_name' => $official_business_application->employeeProfile->assignedArea->unit->name ?? null,
                             'logs' => $official_business_application->logs->map(function ($log) {
                                 $process_name=$log->action;
                                 $action ="";
@@ -65,7 +96,7 @@ class ObApplicationController extends Controller
                                 $formatted_date=Carbon::parse($date)->format('M d,Y');
                                 return [
                                     'id' => $log->id,
-                                    'leave_application_id' => $log->leave_application_id,
+                                    'leave_application_id' => $log->ob_application_id,
                                     'action_by' => "{$first_name} {$last_name}" ,
                                     'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
                                     'action' => $log->action,
@@ -95,7 +126,7 @@ class ObApplicationController extends Controller
         $employee_id = $request->employee_id; 
         $official_business_applications = [];
         $division = AssignArea::where('employee_profile_id',$employee_id)->value('division_id');
-       if($status == 'for-approval-division-head'){
+        if($status == 'for-approval-division-head'){
                 $divisionHeadId = Division::where('id', $division)->value('chief_employee_profile_id');
                 if($divisionHeadId === $employee_id) {
                     $official_business_applications = ObApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','logs'])
@@ -126,6 +157,269 @@ class ObApplicationController extends Controller
                             $section = Section::with('supervisor.personalInformation')->find($section);
                             $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
                         }
+                    $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
+                    $last_name = optional($official_business_application->employeeProfile->personalInformation)->last_name ?? null;
+                    return [
+                        'id' => $official_business_application->id,
+                        'date_from' => $official_business_application->date_from,
+                        'date_to' => $official_business_application->date_to,
+                        'time_from' => $official_business_application->time_from,
+                        'time_to' => $official_business_application->time_to,
+                        'reason' => $official_business_application->reason,
+                        'status' => $official_business_application->status,
+                        'employee_id' => $official_business_application->employee_profile_id,
+                        'employee_name' => "{$first_name} {$last_name}" ,
+                        'division_head' =>$chief_name,
+                        'department_head' =>$head_name,
+                        'section_head' =>$supervisor_name,
+                        'division_name' => $official_business_application->employeeProfile->assignedArea->division->name ?? null,
+                        'department_name' => $official_business_application->employeeProfile->assignedArea->department->name ?? null,
+                        'section_name' => $official_business_application->employeeProfile->assignedArea->section->name ?? null,
+                        'unit_name' => $official_business_application->employeeProfile->assignedArea->unit->name ?? null,
+                        'logs' => $official_business_application->logs->map(function ($log) {
+                            $process_name=$log->action;
+                            $action ="";
+                            $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
+                            $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
+                            if($log->action_by_id  === optional($log->employeeProfile->assignedArea->division)->chief_employee_profile_id ) 
+                            {
+                                $action =  $process_name . ' by ' . 'Division Head';
+                            }
+                            else if ($log->action_by_id === optional($log->employeeProfile->assignedArea->department)->head_employee_profile_id || optional($log->employeeProfile->assignedArea->section)->supervisor_employee_profile_id)
+                            {
+                                $action =  $process_name . ' by ' . 'Supervisor';
+                            }
+                            else{
+                                $action=  $process_name . ' by ' . $first_name .' '. $last_name;
+                            }
+                           
+                            $date=$log->date;
+                            $formatted_date=Carbon::parse($date)->format('M d,Y');
+                            return [
+                                'id' => $log->id,
+                                'leave_application_id' => $log->ob_application_id,
+                                'action_by' => "{$first_name} {$last_name}" ,
+                                'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                'action' => $log->action,
+                                'date' => $formatted_date,
+                                'time' => $log->time,
+                                'process' => $action
+                            ];
+                        }),
+                      
+                    ];
+                    });
+                
+
+                    return response()->json(['official_business_applications' => $official_business_applications_result]);
+                } 
+        }
+        else if($status == 'for-approval-department-head'){
+            $department = AssignArea::where('employee_profile_id',$employee_id)->value('department_id');
+            $departmentHeadId = Department::where('id', $department)->value('head_employee_profile_id');
+            $training_officer_id = Department::where('id', $department)->value('training_officer_employee_profile_id');
+            if($departmentHeadId === $employee_id || $training_officer_id === $employee_id) {
+                $official_business_applications = ObApplication::with(['employeeProfile.assignedArea.department','employeeProfile.personalInformation','logs' ])
+                ->whereHas('employeeProfile.assignedArea', function ($query) use ($department) {
+                    $query->where('id', $department);
+                })
+                ->where('status', 'for-approval-department-head') 
+                ->get();
+    
+                $official_business_applications_result = $official_business_applications->map(function ($official_business_application) {
+                    $division = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('division_id');
+                    $department = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('department_id');
+                    $section = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('section_id');
+                    $chief_name=null;
+                    $head_name=null;
+                    $supervisor_name=null;
+                    if ($division) {
+                        $division = Division::with('chief.personalInformation')->find($division);
+                        $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                    }
+                    if($department)
+                    {
+                        $department = Department::with('head.personalInformation')->find($department);
+                        $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                    }
+                    if($section)
+                    {
+                        $section = Section::with('supervisor.personalInformation')->find($section);
+                        $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                    }
+                    $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
+                    $last_name = optional($official_business_application->employeeProfile->personalInformation)->last_name ?? null;
+                    return [
+                        'id' => $official_business_application->id,
+                        'date_from' => $official_business_application->date_from,
+                        'date_to' => $official_business_application->date_to,
+                        'time_from' => $official_business_application->time_from,
+                        'time_to' => $official_business_application->time_to,
+                        'reason' => $official_business_application->reason,
+                        'status' => $official_business_application->status,
+                        'employee_id' => $official_business_application->employee_profile_id,
+                        'employee_name' => "{$first_name} {$last_name}" ,
+                        'division_head' =>$chief_name,
+                        'department_head' =>$head_name,
+                        'section_head' =>$supervisor_name,
+                        'division_name' => $official_business_application->employeeProfile->assignedArea->division->name ?? null,
+                        'department_name' => $official_business_application->employeeProfile->assignedArea->department->name ?? null,
+                        'section_name' => $official_business_application->employeeProfile->assignedArea->section->name ?? null,
+                        'unit_name' => $official_business_application->employeeProfile->assignedArea->unit->name ?? null,
+                        'logs' => $official_business_application->logs->map(function ($log) {
+                            $process_name=$log->action;
+                            $action ="";
+                            $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
+                            $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
+                            if($log->action_by_id  === optional($log->employeeProfile->assignedArea->division)->chief_employee_profile_id ) 
+                            {
+                                $action =  $process_name . ' by ' . 'Division Head';
+                            }
+                            else if ($log->action_by_id === optional($log->employeeProfile->assignedArea->department)->head_employee_profile_id || optional($log->employeeProfile->assignedArea->section)->supervisor_employee_profile_id)
+                            {
+                                $action =  $process_name . ' by ' . 'Supervisor';
+                            }
+                            else{
+                                $action=  $process_name . ' by ' . $first_name .' '. $last_name;
+                            }
+                           
+                            $date=$log->date;
+                            $formatted_date=Carbon::parse($date)->format('M d,Y');
+                            return [
+                                'id' => $log->id,
+                                'leave_application_id' => $log->ob_application_id,
+                                'action_by' => "{$first_name} {$last_name}" ,
+                                'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                'action' => $log->action,
+                                'date' => $formatted_date,
+                                'time' => $log->time,
+                                'process' => $action
+                            ];
+                        }),
+                      
+                    ];
+                    });
+              
+                return response()->json(['official_business_applications' => $official_business_applications_result]);
+            }
+        }
+        else if($status == 'for-approval-section-head'){
+            $section = AssignArea::where('employee_profile_id',$employee_id)->value('section_id');
+            $sectionHeadId = Section::where('id', $section)->value('supervisor_employee_profile_id');
+            if($sectionHeadId === $employee_id) {
+      
+                $official_business_applications = ObApplication::with(['employeeProfile.assignedArea.section','employeeProfile.personalInformation','logs'])
+                ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
+                    $query->where('id', $section);
+                })
+                ->where('status', 'for-approval-section-head') 
+                ->get();
+    
+                $official_business_applications_result = $official_business_applications->map(function ($official_business_application) {
+                    $division = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('division_id');
+                    $department = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('department_id');
+                    $section = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('section_id');
+                    $chief_name=null;
+                    $head_name=null;
+                    $supervisor_name=null;
+                    if ($division) {
+                        $division = Division::with('chief.personalInformation')->find($division);
+                        $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                    }
+                    if($department)
+                    {
+                        $department = Department::with('head.personalInformation')->find($department);
+                        $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                    }
+                    if($section)
+                    {
+                        $section = Section::with('supervisor.personalInformation')->find($section);
+                        $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                    }
+                    $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
+                    $last_name = optional($official_business_application->employeeProfile->personalInformation)->last_name ?? null;
+                    return [
+                        'id' => $official_business_application->id,
+                        'date_from' => $official_business_application->date_from,
+                        'date_to' => $official_business_application->date_to,
+                        'time_from' => $official_business_application->time_from,
+                        'time_to' => $official_business_application->time_to,
+                        'reason' => $official_business_application->reason,
+                        'status' => $official_business_application->status,
+                        'employee_id' => $official_business_application->employee_profile_id,
+                        'employee_name' => "{$first_name} {$last_name}" ,
+                        'division_head' =>$chief_name,
+                        'department_head' =>$head_name,
+                        'section_head' =>$supervisor_name,
+                        'division_name' => $official_business_application->employeeProfile->assignedArea->division->name ?? null,
+                        'department_name' => $official_business_application->employeeProfile->assignedArea->department->name ?? null,
+                        'section_name' => $official_business_application->employeeProfile->assignedArea->section->name ?? null,
+                        'unit_name' => $official_business_application->employeeProfile->assignedArea->unit->name ?? null,
+                        'logs' => $official_business_application->logs->map(function ($log) {
+                            $process_name=$log->action;
+                            $action ="";
+                            $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
+                            $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
+                            if($log->action_by_id  === optional($log->employeeProfile->assignedArea->division)->chief_employee_profile_id ) 
+                            {
+                                $action =  $process_name . ' by ' . 'Division Head';
+                            }
+                            else if ($log->action_by_id === optional($log->employeeProfile->assignedArea->department)->head_employee_profile_id || optional($log->employeeProfile->assignedArea->section)->supervisor_employee_profile_id)
+                            {
+                                $action =  $process_name . ' by ' . 'Supervisor';
+                            }
+                            else{
+                                $action=  $process_name . ' by ' . $first_name .' '. $last_name;
+                            }
+                           
+                            $date=$log->date;
+                            $formatted_date=Carbon::parse($date)->format('M d,Y');
+                            return [
+                                'id' => $log->id,
+                                'leave_application_id' => $log->ob_application_id,
+                                'action_by' => "{$first_name} {$last_name}" ,
+                                'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                'action' => $log->action,
+                                'date' => $formatted_date,
+                                'time' => $log->time,
+                                'process' => $action
+                            ];
+                        }),
+                      
+                    ];
+                });
+            
+            
+    
+                return response()->json(['official_business_applications' => $official_business_applications_result]);
+            } 
+        }
+        else if($status == 'declined'){
+            $official_business_applications = ObApplication::with(['employeeProfile.personalInformation','logs'])
+                ->where('status', 'declined') 
+                ->get();
+    
+                $official_business_applications_result = $official_business_applications->map(function ($official_business_application) {
+                    $division = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('division_id');
+                    $department = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('department_id');
+                    $section = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('section_id');
+                    $chief_name=null;
+                    $head_name=null;
+                    $supervisor_name=null;
+                    if ($division) {
+                        $division = Division::with('chief.personalInformation')->find($division);
+                        $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                    }
+                    if($department)
+                    {
+                        $department = Department::with('head.personalInformation')->find($department);
+                        $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                    }
+                    if($section)
+                    {
+                        $section = Section::with('supervisor.personalInformation')->find($section);
+                        $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                    }
                     $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
                     $last_name = optional($official_business_application->employeeProfile->personalInformation)->last_name ?? null;
                     return [
@@ -168,256 +462,13 @@ class ObApplicationController extends Controller
                         }),
                       
                     ];
-                    });
-                
-
-                    return response()->json(['official_business_applications' => $official_business_applications_result]);
-                } 
-        }
-        else if($status == 'for-approval-department-head'){
-            $department = AssignArea::where('employee_profile_id',$employee_id)->value('department_id');
-            $departmentHeadId = Department::where('id', $department)->value('head_employee_profile_id');
-            $training_officer_id = Department::where('id', $department)->value('training_officer_employee_profile_id');
-            if($departmentHeadId === $employee_id || $training_officer_id === $employee_id) {
-                $official_business_applications = LeaveApplication::with(['employeeProfile.assignedArea.department','employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
-                ->whereHas('employeeProfile.assignedArea', function ($query) use ($department) {
-                    $query->where('id', $department);
-                })
-                ->where('status', 'for-approval-department-head') 
-                ->get();
-    
-                $official_business_applications_result = $official_business_applications->map(function ($leave_application) {
-                    $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
-                    $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
-                    $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                    $chief_name=null;
-                    $head_name=null;
-                    $supervisor_name=null;
-                    if ($division) {
-                        $division = Division::with('chief.personalInformation')->find($division);
-                        $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
-                    }
-                    if($department)
-                    {
-                        $department = Department::with('head.personalInformation')->find($department);
-                        $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
-                    }
-                    if($section)
-                    {
-                        $section = Section::with('supervisor.personalInformation')->find($section);
-                        $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
-                    }
-                    $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
-                    $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
-                    return [
-                        'id' => $official_business_application->id,
-                        'date_from' => $official_business_application->date_from,
-                        'date_to' => $official_business_application->date_to,
-                        'time_from' => $official_business_application->time_from,
-                        'time_to' => $official_business_application->time_to,
-                        'reason' => $official_business_application->reason,
-                        'status' => $official_business_application->status,
-                        'logs' => $official_business_application->logs->map(function ($log) {
-                            $process_name=$log->action;
-                            $action ="";
-                            $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
-                            $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
-                            if($log->action_by_id  === optional($log->employeeProfile->assignedArea->division)->chief_employee_profile_id ) 
-                            {
-                                $action =  $process_name . ' by ' . 'Division Head';
-                            }
-                            else if ($log->action_by_id === optional($log->employeeProfile->assignedArea->department)->head_employee_profile_id || optional($log->employeeProfile->assignedArea->section)->supervisor_employee_profile_id)
-                            {
-                                $action =  $process_name . ' by ' . 'Supervisor';
-                            }
-                            else{
-                                $action=  $process_name . ' by ' . $first_name .' '. $last_name;
-                            }
-                           
-                            $date=$log->date;
-                            $formatted_date=Carbon::parse($date)->format('M d,Y');
-                            return [
-                                'id' => $log->id,
-                                'leave_application_id' => $log->leave_application_id,
-                                'action_by' => "{$first_name} {$last_name}" ,
-                                'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
-                                'action' => $log->action,
-                                'date' => $formatted_date,
-                                'time' => $log->time,
-                                'process' => $action
-                            ];
-                        }),
-                      
-                    ];
-                });
-                return response()->json(['official_business_applications' => $official_business_applications_result]);
-            }
-        }
-        else if($status == 'for-approval-section-head'){
-            $section = AssignArea::where('employee_profile_id',$employee_id)->value('section_id');
-            $sectionHeadId = Section::where('id', $section)->value('supervisor_employee_profile_id');
-            if($sectionHeadId === $employee_id) {
-      
-                $official_business_applications = ObApplication::with(['employeeProfile.assignedArea.section','employeeProfile.personalInformation','logs'])
-                ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
-                    $query->where('id', $section);
-                })
-                ->where('status', 'for-approval-section-head') 
-                ->get();
-    
-                $official_business_applications_result = $official_business_applications->map(function ($leave_application) {
-                    $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
-                    $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
-                    $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                    $chief_name=null;
-                    $head_name=null;
-                    $supervisor_name=null;
-                    if ($division) {
-                        $division = Division::with('chief.personalInformation')->find($division);
-                        $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
-                    }
-                    if($department)
-                    {
-                        $department = Department::with('head.personalInformation')->find($department);
-                        $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
-                    }
-                    if($section)
-                    {
-                        $section = Section::with('supervisor.personalInformation')->find($section);
-                        $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
-                    }
-                    $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
-                    $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
-                    // return [
-                    //     // 'id' => $official_business_application->id,
-                    //     // 'date_from' => $official_business_application->date_from,
-                    //     // 'date_to' => $official_business_application->date_to,
-                    //     // 'time_from' => $official_business_application->time_from,
-                    //     // 'time_to' => $official_business_application->time_to,
-                    //     // 'reason' => $official_business_application->reason,
-                    //     // 'status' => $official_business_application->status,
-                    //     // 'logs' => $official_business_application->logs->map(function ($log) {
-                    //         $process_name=$log->action;
-                    //         $action ="";
-                    //         $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
-                    //         $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
-                    //         if($log->action_by_id  === optional($log->employeeProfile->assignedArea->division)->chief_employee_profile_id ) 
-                    //         {
-                    //             $action =  $process_name . ' by ' . 'Division Head';
-                    //         }
-                    //         else if ($log->action_by_id === optional($log->employeeProfile->assignedArea->department)->head_employee_profile_id || optional($log->employeeProfile->assignedArea->section)->supervisor_employee_profile_id)
-                    //         {
-                    //             $action =  $process_name . ' by ' . 'Supervisor';
-                    //         }
-                    //         else{
-                    //             $action=  $process_name . ' by ' . $first_name .' '. $last_name;
-                    //         }
-                           
-                    //         $date=$log->date;
-                    //         $formatted_date=Carbon::parse($date)->format('M d,Y');
-                    //         return [
-                    //             'id' => $log->id,
-                    //             'leave_application_id' => $log->leave_application_id,
-                    //             'action_by' => "{$first_name} {$last_name}" ,
-                    //             'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
-                    //             'action' => $log->action,
-                    //             'date' => $formatted_date,
-                    //             'time' => $log->time,
-                    //             'process' => $action
-                    //         ];
-                    //     }),
-                      
-                    // ];
                 });
             
     
                 return response()->json(['official_business_applications' => $official_business_applications_result]);
-            } 
         }
-        // else if($status == 'declined'){
-        //     $official_business_applications = LeaveApplication::with(['employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
-        //         ->where('status', 'declined') 
-        //         ->get();
-    
-        //         $official_business_applications_result = $official_business_applications->map(function ($leave_application) {
-        //             $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
-        //             $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
-        //             $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-        //             $chief_name=null;
-        //             $head_name=null;
-        //             $supervisor_name=null;
-        //             if ($division) {
-        //                 $division = Division::with('chief.personalInformation')->find($division);
-        //                 $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
-        //             }
-        //             if($department)
-        //             {
-        //                 $department = Department::with('head.personalInformation')->find($department);
-        //                 $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
-        //             }
-        //             if($section)
-        //             {
-        //                 $section = Section::with('supervisor.personalInformation')->find($section);
-        //                 $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
-        //             }
-        //             $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
-        //             $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
-        //             return [
-        //                 'id' => $official_business_application->id,
-        //                 'date_from' => $official_business_application->date_from,
-        //                 'date_to' => $official_business_application->date_to,
-        //                 'time_from' => $official_business_application->time_from,
-        //                 'time_to' => $official_business_application->time_to,
-        //                 'reason' => $official_business_application->reason,
-        //                 'status' => $official_business_application->status,
-        //                 'logs' => $official_business_application->logs->map(function ($log) {
-        //                     $process_name=$log->action;
-        //                     $action ="";
-        //                     $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
-        //                     $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
-        //                     if($log->action_by_id  === optional($log->employeeProfile->assignedArea->division)->chief_employee_profile_id ) 
-        //                     {
-        //                         $action =  $process_name . ' by ' . 'Division Head';
-        //                     }
-        //                     else if ($log->action_by_id === optional($log->employeeProfile->assignedArea->department)->head_employee_profile_id || optional($log->employeeProfile->assignedArea->section)->supervisor_employee_profile_id)
-        //                     {
-        //                         $action =  $process_name . ' by ' . 'Supervisor';
-        //                     }
-        //                     else{
-        //                         $action=  $process_name . ' by ' . $first_name .' '. $last_name;
-        //                     }
-                           
-        //                     $date=$log->date;
-        //                     $formatted_date=Carbon::parse($date)->format('M d,Y');
-        //                     return [
-        //                         'id' => $log->id,
-        //                         'leave_application_id' => $log->leave_application_id,
-        //                         'action_by' => "{$first_name} {$last_name}" ,
-        //                         'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
-        //                         'action' => $log->action,
-        //                         'date' => $formatted_date,
-        //                         'time' => $log->time,
-        //                         'process' => $action
-        //                     ];
-        //                 }),
-                      
-        //             ];
-        //         });
-            
-    
-        //         return response()->json(['official_business_applications' => $official_business_applications_result]);
-        // }
-        // else{
-        //     $official_business_applications = LeaveApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
-        //     ->where('employee_profile_id',$employee_id )->get();
-        // }
-        // if (isset($request->search)) {
-        //     $search = $request->search; 
-        //     $official_business_applications = $official_business_applications->where('reference_number','like', '%' .$search . '%');
-                                                 
-        //     $official_business_applications = isset($search) && $search; 
-        // }
-        // return ResourcesLeaveApplication::collection($official_business_applications->paginate(50));
+     
+       
 
       
     }catch(\Throwable $th){

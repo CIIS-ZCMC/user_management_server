@@ -21,4 +21,7 @@ class ObApplicationLog extends Model
         public function ob_application(){
             return $this->belongsTo(ObApplication::class);
         }
+        public function employeeProfile() {
+            return $this->belongsTo(EmployeeProfile::class, 'action_by_id');
+        }
     }

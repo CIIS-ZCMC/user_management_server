@@ -134,7 +134,7 @@ class EmployeeProfile extends Authenticatable
         return $this->hasMany(LeaveTypeLog::class);
     }
 
-        public function overtimeCredits()
+    public function overtimeCredits()
     {
         return $this->hasMany(EmployeeOvertimeCredit::class);
     }
@@ -147,6 +147,13 @@ class EmployeeProfile extends Authenticatable
         return $this->hasMany(LeaveApplicationLog::class);
     }
    
-
+    public function obApplications() {
+        return $this->hasMany(ObApplication::class);
+    }
+    
+    public function obApplicationLogs() {
+        return $this->hasMany(ObApplicationLog::class);
+    }
+   
 
 }
