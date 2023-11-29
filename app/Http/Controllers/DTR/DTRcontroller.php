@@ -1052,12 +1052,34 @@ class DTRcontroller extends Controller
         **
         * test on how to access request function on another controller for instance
         */
-        $request = new Request([
-            'biometric_id' => 5180,
-            'monthof' => 10,
-            'yearof' => 2023,
-            'is15thdays' => 0,
-        ]);
-        return $this->DTR_UTOT_Report($request);
+        for ($i = 1; $i < 30; $i++) {
+
+            $date = date('Y-m-d', strtotime('2023-11-' . $i));
+            $firstin = date('H:i:s', strtotime('today') + rand(25200, 30600));
+            $firstout =  date('H:i:s', strtotime('today') + rand(42600, 47400));
+            $secondin =  date('H:i:s', strtotime('today') + rand(45000, 49800));
+            $secondout = date('H:i:s', strtotime('today') + rand(59400, 77400));
+
+            DailyTimeRecords::create([
+                'biometric_id' => 5181,
+                'first_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin)),
+                'first_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstout)),
+                'second_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $secondin)),
+                'second_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $secondout)),
+                'interval_req' => null,
+                'required_working_hours' => null,
+                'required_working_minutes' => null,
+                'total_working_hours' => null,
+                'total_working_minutes' => null,
+                'overtime' => null,
+                'overtime_minutes' => null,
+                'undertime' => null,
+                'undertime_minutes' => null,
+                'overall_minutes_rendered' => null,
+                'total_minutes_reg' => null,
+                'is_biometric' => 1,
+                'created_at' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin))
+            ]);
+        }
     }
 }
