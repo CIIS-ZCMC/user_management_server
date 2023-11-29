@@ -88,8 +88,11 @@ class EducationalBackgroundController extends Controller
             $educational_background = EducationalBackground::create($cleanData);
 
             $this->requestLogger->registerSystemLogs($request, $educational_background['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
-
-            return response()->json(['data' => new EducationalBackground($educational_background) ,'message' => 'New employee education background registered.'], Response::HTTP_OK);
+           
+            return response()->json([
+                'data' => new EducationalBackgroundResource($educational_background),
+                'message' => 'New employee education background registered.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

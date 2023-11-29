@@ -20,8 +20,9 @@ class SystemSeeder extends Seeder
         System::create([
             'name' => 'User Management Information System',
             'code' => env('SYSTEM_ABBREVIATION'),
-            'domain' => env('SESSION_DOMAIN'),
-            'status' => 1
+            'domain' => Crypt::encrypt(env('SESSION_DOMAIN')),
+            'status' => 1,
+            'api_key' => null
         ]);
     }
 }

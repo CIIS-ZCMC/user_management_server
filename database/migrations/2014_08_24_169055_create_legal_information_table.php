@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreign('legal_iq_id')->references('id')->on('legal_information_questions');
             $table->unsignedBigInteger('personal_information_id');
             $table->foreign('personal_information_id')->references('id')->on('personal_informations');    
-            $table->boolean('answer')->default(FALSE);     
+            $table->boolean('answer')->nullable();     
             $table->text('details')->nullable();
             $table->timestamps();
         });

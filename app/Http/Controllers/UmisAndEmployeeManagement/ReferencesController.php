@@ -75,7 +75,7 @@ class ReferencesController extends Controller
     {
         try{
             $cleanData = [];
-
+            
             foreach ($request->all() as $key => $value) {
                 $cleanData[$key] = strip_tags($value);
             }

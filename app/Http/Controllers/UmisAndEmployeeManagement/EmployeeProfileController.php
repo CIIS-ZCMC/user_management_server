@@ -160,7 +160,7 @@ class EmployeeProfileController extends Controller
             ]);
 
             return response()
-                ->json([$data, 'message' => "Success login."], Response::HTTP_OK)
+                ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
                 ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), true);
         } catch (\Throwable $th) {
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'signIn', $th->getMessage());

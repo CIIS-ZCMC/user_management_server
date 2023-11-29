@@ -11,7 +11,6 @@ use App\Http\Requests\OtherInformationRequest;
 use App\Http\Resources\OtherInformationResource;
 use App\Models\OtherInformation;
 use App\Models\EmployeeProfile;
-use App\Models\SystemLogs;
 
 class OtherInformationController extends Controller
 {

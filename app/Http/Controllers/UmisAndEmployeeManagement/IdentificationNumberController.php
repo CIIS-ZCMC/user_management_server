@@ -83,7 +83,10 @@ class IdentificationNumberController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => new IdentificationNumberResource($identification) ,"message" => 'New employee identification number registred.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new IdentificationNumberResource($identification) ,
+                "message" => 'New employee identification number registred.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

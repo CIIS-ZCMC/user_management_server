@@ -30,7 +30,7 @@ class IdentificationNumberRequest extends FormRequest
             'tin_id_no' => 'nullable|string|max:255',
             'rdo_no' => 'nullable|string|max:255',
             'bank_account_no' => 'nullable|string|max:255',
-            'personal_information_id' => 'required|string|size:36',
+            'personal_information_id' => 'required|integer',
         ];
     }
 }

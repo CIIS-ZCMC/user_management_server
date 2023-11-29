@@ -90,7 +90,7 @@ class VoluntaryWorkController extends Controller
             $this->requestLogger->registerSystemLogs($request, $voluntary_work['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([
-                'data' => new VoluntaryWork($voluntary_work),
+                'data' => new VoluntaryWorkResource($voluntary_work),
                 'message' => 'New employee voluntary work registered.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){

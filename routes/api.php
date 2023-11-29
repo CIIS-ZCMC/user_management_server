@@ -383,6 +383,33 @@ Route::middleware('auth.cookie')->group(function(){
         });
 
         /**
+         * Civil Service Module
+         */
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function(){
+            Route::get('civil-service-eligibility-all-by-personal-info/{id}', 'CivilServiceEligibilityController@findByPersonalInformationID');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function(){
+            Route::get('civil-service-eligibility-all-by-employee/{id}', 'CivilServiceEligibilityController@findByEmployeeID');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('civil-service-eligibility', 'CivilServiceEligibilityController@store');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('civil-service-eligibility/{id}', 'CivilServiceEligibilityController@show');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
+            Route::put('civil-service-eligibility/{id}', 'CivilServiceEligibilityController@update');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
+            Route::delete('civil-service-eligibility/{id}', 'CivilServiceEligibilityController@destroy');
+        });
+
+        /**
          * Department Module
          */
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function(){
@@ -742,6 +769,10 @@ Route::middleware('auth.cookie')->group(function(){
 
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
             Route::post('legal-information', 'LegalInformationController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('legal-information-many', 'LegalInformationController@storeMany');
         });
         
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){

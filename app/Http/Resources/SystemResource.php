@@ -16,16 +16,31 @@ class SystemResource extends JsonResource
     public function toArray(Request $request): array
     {
         $api_key = $this->api_key === null? 'NONE': Crypt::decrypt($this->api_key);
-        $key_status = $this->key_deactivated_at;
-        $status = ($this->status === 1? 'Server is Active':$this->status === 2)? "Server Maintainance": "Server is not Running";
+        $key_status = $this->api_key === null? 'NO KEY': $this->key_deactivated_at;
+
+        $status_name = '';
+
+        switch($this->status)
+        {
+            case 1:
+                $status_name = 'Active';
+                break;
+            case 2:
+                $status_name = 'Under Maintainance';
+                break;
+            default:
+                $status_name = 'Server Down';
+        }
 
         return [
+            'id' => $this->id,
             'name' => $this->name,
             'code' => $this->code,
-            'domain' => $this->domain,
+            'domain' => Crypt::decrypt($this->domain),
             'api_key' => $api_key,
             'key_status' => $key_status,
-            'status' => $status
+            'status' => $this->status,
+            'status_name' => $status_name
         ];
     }
 }

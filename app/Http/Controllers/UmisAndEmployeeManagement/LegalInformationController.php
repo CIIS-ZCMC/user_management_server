@@ -4,6 +4,7 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Http\Requests\LegalInformationArrayStoreRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Services\RequestLogger;
@@ -59,7 +60,46 @@ class LegalInformationController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => new LegalInformation($legal_information) ,'message' => 'New employee legal information registered.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new LegalInformationResource($legal_information) ,
+                'message' => 'New employee legal information registered.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    public function storeMany(LegalInformationArrayStoreRequest $request)
+    {
+        try{
+            $cleanData = [];
+
+            $legal_informations = [];
+
+            foreach ($request->input("legal_information") as $legalInformation) {
+                $legal_data = [];
+                $legal_data['personal_information_id'] = $request->input('personal_information_id');
+                foreach($legalInformation as $key => $value){
+                    if($value === null){
+                        $legal_data[$key] = $value;
+                        continue;
+                    }
+                    $legal_data[$key] = strip_tags($value);
+                }
+                $cleanData[] = $legal_data;
+            }
+
+            foreach($cleanData as $value)
+            {
+                $legal_informations[] = LegalInformation::create($value);
+            }
+
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            
+            return response()->json([
+                'data' => LegalInformationResource::collection($legal_informations) ,
+                'message' => 'New employee legal information registered.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -85,7 +125,7 @@ class LegalInformationController extends Controller
         }
     }
     
-    public function update($id, Request $request)
+    public function update($id, LegalInformationRequest $request)
     {
         try{
             $legal_information = LegalInformation::find($id);
