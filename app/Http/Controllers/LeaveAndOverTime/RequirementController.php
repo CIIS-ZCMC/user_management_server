@@ -52,9 +52,9 @@ class RequirementController extends Controller
         })->filter(); // Remove null values from the result
     
         return [
-            'id' => $requirementDetails['id'],
-            'value' => $requirementDetails['name'],
-            'label' => $requirementDetails['description'],
+            'value' => $requirementDetails['id'],
+            'label' => $requirementDetails['name'],
+            'description' => $requirementDetails['description'],
             'logs' => $logs,
         ];
     });
