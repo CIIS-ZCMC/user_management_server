@@ -28,6 +28,10 @@ Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(functi
     Route::post('reset-password', 'EmployeeProfileController@resetPassword');
     Route::get('retrieve-token', 'CsrfTokenController@generateCsrfToken');
     Route::get('validate-token', 'CsrfTokenController@validateToken');
+});
+
+
+Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
     Route::get('get_employees', 'OvertimeApplicationController@getEmployees');
     Route::get('get_employees_overtime_total', 'OvertimeApplicationController@getEmployeeOvertimeTotal');
     Route::get('requirements', 'RequirementController@index');
