@@ -125,27 +125,25 @@ class LeaveTypeController extends Controller
             $leave_type->description = $request->description;
             $leave_type->period = $request->period;
             $leave_type->file_date = $request->file_date;
-            $leave_type->leave_credit_id = $request->leave_credit_id;
             $code = preg_split("/[\s,_-]+/", $request->name);
             $leave_type->code = $code;
-            $leave_type->status = 'active';
+            $leave_type->is_active =$request->has('is_active');
             $leave_type->is_special =$request->has('is_special');
             $leave_type->leave_credit_year = $request->leave_credit_year;
-            foreach ($request->file('attachments') as $file) {
-                // Generate a unique name for each file
-                $file_name = time() . '_' . $file->getClientOriginalName();
-    
-                // Move the file to the storage directory
-                $file->move(public_path('attachments'), $file_name);
-                $leave_attachment= new LeaveAttachment();
-                $leave_attachment->file_name= $file_name;
-                $leave_attachment->save();
-               
-                
+            $attachment=$request->file('attachments');
+            if($attachment)
+            {
+                foreach ($request->file('attachments') as $file) {
+                    $file_name = time() . '_' . $file->getClientOriginalName();
+                    $file->move(public_path('attachments'), $file_name);
+                    $leave_attachment= new LeaveAttachment();
+                    $leave_attachment->file_name= $file_name;
+                    $leave_attachment->leave_type_id = $leave_type->id;
+                    $leave_attachment->save();  
+                }
+
             }
-
-
-            $leave_type->attachment = $filename;
+           
             $leave_type->save();
             $leave_type_id=$leave_type->id;
             if (!empty($request->leave_requirements)) {

@@ -12,8 +12,6 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('dtr_anomalies', function (Blueprint $table) {
-<<<<<<< HEAD
-=======
             // $table->id();
             // $table->integer('biometric_id');
             // $table->string('name');
@@ -24,7 +22,6 @@ return new class extends Migration
 
             
 
->>>>>>> main
             $table->id();
             $table->integer('biometric_id');
             $table->string('first_in')->nullable();
