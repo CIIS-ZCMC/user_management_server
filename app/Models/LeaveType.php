@@ -18,6 +18,8 @@ class LeaveType extends Model
     ];
     
     public $fillable = [
+        'is_special',
+        'is_active',
         'name',
         'description',
         'leave_credit_id',
