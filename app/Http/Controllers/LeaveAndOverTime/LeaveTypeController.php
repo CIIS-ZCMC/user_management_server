@@ -134,7 +134,7 @@ class LeaveTypeController extends Controller
             }
             $leave_type->code = $firstLetters;
             $leave_type->is_active = true;
-            $leave_type->is_special =$request->has('is_special');
+            $leave_type->is_special =$request->is_special;
             $leave_type->leave_credit_year = $request->leave_credit_year;
             $attachment=$request->file('attachments');
             if($attachment)
