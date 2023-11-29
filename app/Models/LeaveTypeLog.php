@@ -11,6 +11,11 @@ class LeaveTypeLog extends Model
     public $fillable = [
         'action',
         'action_by_id',
+        'leave_type_id',
+        'action',
+        'date',
+        'time',
+        'fields'
        
        
     ];
