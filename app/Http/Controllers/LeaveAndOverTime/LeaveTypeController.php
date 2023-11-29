@@ -118,6 +118,7 @@ class LeaveTypeController extends Controller
     {
       
         try{
+            $employee_id = $request->employee_id; 
             $filename="";
             $process_name="Add";
             $leave_type = new LeaveType();
@@ -150,11 +151,12 @@ class LeaveTypeController extends Controller
             }
             $leave_type->save();
             $leave_type_id=$leave_type->id;
-            if (!empty($request->leave_requirements)) {
-                $this->storeLeaveTypeRequirements($leave_type->id, $request->leave_requirements);
+            if (!empty($request->requirements)) {
+                $this->storeLeaveTypeRequirements($leave_type->id, $request->requirements);
             } 
             $columnsString="";
             $leave_type_log = $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString);
+            $this->storeLeaveTypeLog($leave_type_log);
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
          
@@ -225,8 +227,8 @@ class LeaveTypeController extends Controller
             }
             $leave_type->attachment = $filename;
             $leave_type->update();
-            if (!empty($request->leave_requirements)) {
-                $this->storeLeaveTypeRequirements($leave_type->id, $request->leave_requirements);
+            if (!empty($request->requirements)) {
+                $this->storeLeaveTypeRequirements($leave_type->id, $request->requirements);
             } 
 
             if ($leave_type->isDirty()) {
@@ -238,6 +240,7 @@ class LeaveTypeController extends Controller
             $leave_type_id=$leave_type->id;
             $process_name="Update";
             $leave_type_log = $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString);
+            $this->storeLeaveTypeLog($leave_type_log);
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
          
@@ -270,7 +273,7 @@ class LeaveTypeController extends Controller
             $user_id="1";
             $leave_type_log = new LeaveTypeLog();                       
             $leave_type_log->leave_type_id = $leave_type_id                                                                ;
-            $leave_type_log->action_by = $user_id;
+            $leave_type_log->action_by_id = $user_id;
             $leave_type_log->process_name = $process_name;
             $leave_type_log->date = date('Y-m-d');
             $leave_type_log->time =  date('H:i:s');
