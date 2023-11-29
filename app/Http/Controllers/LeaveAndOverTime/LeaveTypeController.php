@@ -240,7 +240,7 @@ class LeaveTypeController extends Controller
             $leave_type_id=$leave_type->id;
             $process_name="Update";
             $leave_type_log = $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString);
-            $this->storeLeaveTypeLog($leave_type_log);
+            $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString);
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
          
