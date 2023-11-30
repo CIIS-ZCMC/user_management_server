@@ -9,7 +9,6 @@ class LeaveTypeLog extends Model
 {
     use HasFactory;
     public $fillable = [
-        'action',
         'action_by_id',
         'leave_type_id',
         'action',

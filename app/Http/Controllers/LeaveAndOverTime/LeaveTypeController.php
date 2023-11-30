@@ -111,9 +111,6 @@ class LeaveTypeController extends Controller
         //
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
       
@@ -137,6 +134,7 @@ class LeaveTypeController extends Controller
             $leave_type->is_special = $request->input('is_special');
             $leave_type->leave_credit_year = $request->leave_credit_year;
             $attachment=$request->file('attachments');
+            $leave_type->save();
             if($attachment)
             {
                 foreach ($request->file('attachments') as $file) {
@@ -149,13 +147,14 @@ class LeaveTypeController extends Controller
                 }
 
             }
-            $leave_type->save();
             $leave_type_id=$leave_type->id;
+
+
             if (!empty($request->requirements)) {
                 $this->storeLeaveTypeRequirements($leave_type->id, $request->requirements);
             } 
+            
             $columnsString="";
-            $leave_type_log = $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString);
             $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString);
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -267,20 +266,35 @@ class LeaveTypeController extends Controller
         }
     }
 
+    public function testLog(Request $request)
+    {
+        $leave_type_id = 1;
+        $process_name = "ADD";
+        $changedfields = "Action";
+        
+        $data = $this->storeLeaveTypeLog($leave_type_id,$process_name,$changedfields);
+
+        return response()->json(['data' => $data], 200);
+    }
+
     public function storeLeaveTypeLog($leave_type_id,$process_name,$changedfields)
     {
+
         try {
             $user_id="1";
-            $leave_type_log = new LeaveTypeLog();                       
-            $leave_type_log->leave_type_id = $leave_type_id                                                                ;
-            $leave_type_log->action_by_id = $user_id;
-            $leave_type_log->action = $process_name;
-            $leave_type_log->date = date('Y-m-d');
-            $leave_type_log->time =  date('H:i:s');
-            $leave_type_log->fields =  $changedfields;
-            $leave_type_log->save();
 
-            // return $leave_type_log;
+            $data = [
+                'leave_type_id' => $leave_type_id,
+                'action_by_id' => $user_id,
+                'action' => $process_name,
+                'date' => date('Y-m-d'),
+                'time' => date('H:i:s'),
+                'fields' => $changedfields
+            ];
+
+            $leave_type_log = LeaveTypeLog::create($data);    
+
+            return $leave_type_log;
         } catch(\Exception $e) {
             return response()->json(['message' => $e->getMessage(),'error'=>true]);
         }
