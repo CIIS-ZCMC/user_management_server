@@ -54,7 +54,7 @@ class RequirementController extends Controller
     
         return [
             'id' => $requirementDetails['id'],
-            'label' => $requirementDetails['name'],
+            'name' => $requirementDetails['name'],
             'description' => $requirementDetails['description'],
             'logs' => $logs,
         ];
