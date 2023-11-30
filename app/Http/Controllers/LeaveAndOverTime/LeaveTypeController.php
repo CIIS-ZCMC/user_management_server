@@ -222,9 +222,17 @@ class LeaveTypeController extends Controller
             } 
             $process_name="Update";
             $leave_type_id=$leave_type->id;
-
                 if ($request->hasFile('attachments')) {
-                   
+                    $leaveType = LeaveType::with('attachments')->findOrFail($id);
+                    foreach ($leaveType->attachments as $attachment) {
+                        $filePath = $attachment->path;
+                       
+                            if (Storage::disk('public')->exists($filePath)) {
+                                Storage::disk('public')->delete($filePath);
+                            }
+                        
+                        $attachment->delete();
+                    }
                     foreach ($request->file('attachments') as $file) {
                         $fileName = pathinfo(Str::uuid() . '_' . $file->getClientOriginalName(), PATHINFO_FILENAME);
                         $extension = $file->getClientOriginalExtension();
