@@ -125,11 +125,15 @@ class LeaveTypeController extends Controller
             $leave_type->code = $firstLetters;
             $leave_type->is_active = true;
             $leave_type->is_special = $request->input('is_special');
-            if($request->leave_credit_year)
+            if($request->leave_credit_year != null)
+            {
+                $leave_type->leave_credit_year = $request->leave_credit_year;
+            }
+            else
             {
                 $leave_type->leave_credit_year = "";
             }
-            $leave_type->leave_credit_year = $request->leave_credit_year;
+           
             $leave_type->save();
             $attachment=$request->file('attachments');
             $leave_type_id=$leave_type->id;
@@ -216,7 +220,7 @@ class LeaveTypeController extends Controller
             $process_name="Update";
             $attachment=$request->file('attachments');
             $leave_type_id=$leave_type->id;
-                if ($request->hasFile('attachment')) {
+                if ($request->hasFile('attachments')) {
                     $attachment = $request->file('attachments');
                     $leave_type->attachments->delete(); 
                     foreach ($request->file('attachments') as $file) {
@@ -226,6 +230,7 @@ class LeaveTypeController extends Controller
                         $path = $file->storeAs('public', $uniqueFileName);
                         $leave_attachment= new LeaveAttachment();
                         $leave_attachment->file_name= $fileName;
+                        $leave_attachment->path= $$path;
                         $leave_attachment->leave_type_id = $leave_type_id;
                         $leave_attachment->save();  
                     }
