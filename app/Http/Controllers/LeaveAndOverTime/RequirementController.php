@@ -140,6 +140,8 @@ class RequirementController extends Controller
             $requirement_log->requirement_id = $requirement->id;
             $requirement_log->action_by_id = '1';
             $requirement_log->action = 'Update ';
+            $requirement_log->date = date('Y-m-d');
+            $requirement_log->time = date('H:i:s');
             $requirement_log->save();
 
 
