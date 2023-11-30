@@ -87,7 +87,7 @@ class RequirementController extends Controller
 
             $requirement_log = new RequirementLog();
             $requirement_log->requirement_id = $requirement->id;
-            $requirement_log->action_by = '1';
+            $requirement_log->action_by_id = '1';
             $requirement_log->action_name = 'Add';
             $requirement_log->save();
 

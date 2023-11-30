@@ -12,5 +12,6 @@ class LeaveAttachment extends Model
     public $fillable = [
         'leave_type_id',
         'file_name',
+        'path',
     ];
 }

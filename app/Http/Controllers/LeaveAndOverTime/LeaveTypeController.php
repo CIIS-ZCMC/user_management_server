@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use \Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 class LeaveTypeController extends Controller
 {
     /**
@@ -38,7 +40,7 @@ class LeaveTypeController extends Controller
                     'code' => $leave_type->code,
                     'is_active' => $leave_type->is_active,
                     'is_special' => $leave_type->is_special,
-                    'leave_credit_year' => $leave_type->leave_credit_year ,
+                    'leave_credit_year' => $leave_type->leave_credit_year,
                     'logs' => $leave_type->logs->map(function ($log) {
                         $process_name=$log->action;
                         $action ="";
@@ -125,7 +127,7 @@ class LeaveTypeController extends Controller
             $leave_type->code = $firstLetters;
             $leave_type->is_active = true;
             $leave_type->is_special = $request->input('is_special');
-            if($request->leave_credit_year != null)
+            if (!empty($request->leave_credit_year)) 
             {
                 $leave_type->leave_credit_year = $request->leave_credit_year;
             }
@@ -140,13 +142,14 @@ class LeaveTypeController extends Controller
             if($request->hasFile('attachments'))
             {
                 foreach ($request->file('attachments') as $file) {
-                    $fileName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+                    $fileName = pathinfo(Str::uuid() . '_' . $file->getClientOriginalName(), PATHINFO_FILENAME);
                     $extension = $file->getClientOriginalExtension();
                     $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
                     $path = $file->storeAs('public', $uniqueFileName);
                     $leave_attachment= new LeaveAttachment();
                     $leave_attachment->file_name= $fileName;
                     $leave_attachment->leave_type_id = $leave_type_id;
+                    $leave_attachment->path = $path;
                     $leave_attachment->save();  
                 }
 
@@ -218,19 +221,29 @@ class LeaveTypeController extends Controller
         
             } 
             $process_name="Update";
-            $attachment=$request->file('attachments');
             $leave_type_id=$leave_type->id;
                 if ($request->hasFile('attachments')) {
-                    $attachment = $request->file('attachments');
-                    $leave_type->attachments->delete(); 
+                    $leaveType = LeaveType::with('attachments')->findOrFail($id);
+                    foreach ($leaveType->attachments as $attachment) {
+                        $filePath = $attachment->path;
+                        foreach($filePath as $path)
+                        {
+                            if (Storage::disk('public')->exists($filePath)) {
+                                Storage::disk('public')->delete($filePath);
+                            }
+
+                        }
+                        
+                        $attachment->delete();
+                    }
                     foreach ($request->file('attachments') as $file) {
-                        $fileName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+                        $fileName = pathinfo(Str::uuid() . '_' . $file->getClientOriginalName(), PATHINFO_FILENAME);
                         $extension = $file->getClientOriginalExtension();
                         $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
                         $path = $file->storeAs('public', $uniqueFileName);
                         $leave_attachment= new LeaveAttachment();
                         $leave_attachment->file_name= $fileName;
-                        $leave_attachment->path= $$path;
+                        $leave_attachment->path= $path;
                         $leave_attachment->leave_type_id = $leave_type_id;
                         $leave_attachment->save();  
                     }
