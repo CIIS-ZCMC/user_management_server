@@ -138,13 +138,13 @@ class RequirementController extends Controller
 
             $requirement_log = new RequirementLog();
             $requirement_log->requirement_id = $requirement->id;
-            $requirement_log->action_by = '1';
+            $requirement_log->action_by_id = '1';
             $requirement_log->action_name = 'Update ';
             $requirement_log->save();
 
 
           
-            return response() -> json(['data' => "Success"], 200);
+            return response()->json(['message' => 'Requirement has been sucessfully updated','data' => $requirement ], Response::HTTP_OK);
         }catch(\Throwable $th){
            
             return response() -> json(['message' => $th -> getMessage()], 500);

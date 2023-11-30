@@ -43,7 +43,7 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
     Route::post('leave-type-activate-password/{id}', 'LeaveTypeController@reactivateLeaveType');
     Route::get('requirement-all', 'RequirementController@index');
     Route::post('requirement', 'RequirementController@store');
-    Route::put('requirement/{id}', 'RequirementController@update');
+    Route::post('requirement/{id}', 'RequirementController@update');
     Route::get('leave-application-all', 'LeaveApplicationController@index');
     Route::get('division', 'LeaveApplicationController@getDivisionLeaveApplications');
     Route::get('add', 'LeaveCreditController@addMonthlyLeaveCredit');
