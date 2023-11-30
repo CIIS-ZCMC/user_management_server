@@ -45,6 +45,7 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
     Route::post('requirement', 'RequirementController@store');
     Route::post('requirement/{id}', 'RequirementController@update');
     Route::get('leave-application-all', 'LeaveApplicationController@index');
+    Route::post('leave-application', 'LeaveApplicationController@store');
     Route::get('division', 'LeaveApplicationController@getDivisionLeaveApplications');
     Route::get('add', 'LeaveCreditController@addMonthlyLeaveCredit');
 

@@ -1499,7 +1499,6 @@ class LeaveApplicationController extends Controller
                             $leave_application->whole_day = $request->whole_day;
                             $leave_application->leave_credit_total = "2";
                             $leave_application->status = "applied";
-                            $time=Carbon::now()->format('H:i:s');
                             $leave_application->date = date('Y-m-d');
                             $leave_application->time =  date('H:i:s');
                             $leave_application->save();

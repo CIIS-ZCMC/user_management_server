@@ -108,8 +108,6 @@ class LeaveTypeController extends Controller
     {
       
         try{
-          
-
             $employee_id = $request->employee_id; 
             $filename="";
             $process_name="Add";
@@ -145,7 +143,9 @@ class LeaveTypeController extends Controller
                     $fileName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
                     $extension = $file->getClientOriginalExtension();
                     $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
-                    $path = $file->storeAs('public', $uniqueFileName);
+                    $folderName = 'attachments';
+                    Storage::makeDirectory('public/' . $folderName);
+                    $path = $file->storeAs('public/' . $folderName, $uniqueFileName);
                     $leave_attachment= new LeaveAttachment();
                     $leave_attachment->file_name= $fileName;
                     $leave_attachment->leave_type_id = $leave_type_id;
@@ -233,7 +233,9 @@ class LeaveTypeController extends Controller
                         $fileName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
                         $extension = $file->getClientOriginalExtension();
                         $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
-                        $path = $file->storeAs('public', $uniqueFileName);
+                        $folderName = 'attachments';
+                        Storage::makeDirectory('public/' . $folderName);
+                        $path = $file->storeAs('public/' . $folderName, $uniqueFileName);
                         $leave_attachment= new LeaveAttachment();
                         $leave_attachment->file_name= $fileName;
                         $leave_attachment->path= $path;
