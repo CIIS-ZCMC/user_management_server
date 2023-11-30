@@ -135,27 +135,28 @@ class LeaveTypeController extends Controller
             $leave_type->leave_credit_year = $request->leave_credit_year;
             $attachment=$request->file('attachments');
             $leave_type->save();
-            if($attachment)
+            $leave_type_id=$leave_type->id;
+            if($request->hasFile('attachments'))
             {
                 foreach ($request->file('attachments') as $file) {
-                    $file_name = time() . '_' . $file->getClientOriginalName();
-                    $file->move(public_path('attachments'), $file_name);
+                    $fileName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+                    $extension = $file->getClientOriginalExtension();
+                    $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
+                    $path = $file->storeAs('public', $uniqueFileName);
                     $leave_attachment= new LeaveAttachment();
                     $leave_attachment->file_name= $file_name;
-                    $leave_attachment->leave_type_id = $leave_type->id;
+                    $leave_attachment->leave_type_id = $leave_type_id;
                     $leave_attachment->save();  
                 }
 
             }
-            $leave_type_id=$leave_type->id;
-
-
-            if (!empty($request->requirements)) {
-                $this->storeLeaveTypeRequirements($leave_type_id, $request->requirements);
-            } 
+           
+            $selectedRequirements = $request->input('requirements', []);
+            $leave_type->requirements()->sync($selectedRequirements);
+        
             $columnsString="";
             $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString);
-            return response()->json(['data' =>  $leave_type ], Response::HTTP_OK);
+            return response()->json(['message' => 'Leave Type has been sucessfully saved','data' => $leave_type ], Response::HTTP_OK);
         }catch(\Throwable $th){
          
             return response()->json(['message' => $th->getMessage()], 500);

@@ -25,8 +25,6 @@ class LeaveType extends Model
         'leave_credit_id',
         'period',
         'file_date',
-        
-       
     ];
 
         public function leave_credit(){
@@ -45,7 +43,6 @@ class LeaveType extends Model
         }
         public function attachments()
         {
-            
             return $this->hasMany(LeaveAttachment::class);
         }
 }
