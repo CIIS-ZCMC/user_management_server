@@ -28,7 +28,7 @@ class LeaveTypeController extends Controller
        
         // $leaveTypes = LeaveType::with('logs.employeeProfile.personalInformation','requirements.logs.employeeProfile')->get();
         $leave_types = LeaveType::with('logs.employeeProfile.personalInformation', 'requirements.logs.employeeProfile.personalInformation','attachments')->get();
-            $leave_types_result = $leave_types->map(function ($leave_type) {
+        $leave_types_result = $leave_types->map(function ($leave_type) {
                 return [
                     'id' => $leave_type->id,
                     'name' => $leave_type->name,
@@ -151,12 +151,11 @@ class LeaveTypeController extends Controller
 
 
             if (!empty($request->requirements)) {
-                $this->storeLeaveTypeRequirements($leave_type->id, $request->requirements);
+                $this->storeLeaveTypeRequirements($leave_type_id, $request->requirements);
             } 
-            
             $columnsString="";
             $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString);
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['data' =>  $leave_type ], Response::HTTP_OK);
         }catch(\Throwable $th){
          
             return response()->json(['message' => $th->getMessage()], 500);
