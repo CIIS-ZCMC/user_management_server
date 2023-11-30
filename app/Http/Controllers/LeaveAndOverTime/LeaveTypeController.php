@@ -193,7 +193,7 @@ class LeaveTypeController extends Controller
     public function update($id,Request $request, LeaveType $leaveType)
     {
         try{
-           
+           dd($request);
             $leave_type = LeaveType::findOrFail($id);
             $originalValues = $leave_type->getOriginal();
             $columnsString="";
@@ -228,11 +228,6 @@ class LeaveTypeController extends Controller
                     $extension = $file->getClientOriginalExtension();
                     $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
                     $path = $file->storeAs('public', $uniqueFileName); 
-                    // $data = [
-                    //     'leave_type_id' => $leave_type_id,
-                    //     'file_name' => $fileName
-                    // ];
-                    // $leave_attachment_save = LeaveAttachment::create($data); 
                     $leave_attachment= new LeaveAttachment();
                     $leave_attachment->file_name= $fileName;
                     $leave_attachment->leave_type_id = $leave_type_id;
@@ -298,7 +293,7 @@ class LeaveTypeController extends Controller
                 $deactivate_leave_type->reason=$request->reason;
                 $deactivate_leave_type->update();
                 $process_name="Deactivate";
-                $leave_type_logs = $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString);
+                $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString);
                 return response()->json(['data' => 'Success'], Response::HTTP_OK);
             }
            
@@ -325,7 +320,7 @@ class LeaveTypeController extends Controller
                 $deactivate_leave_type->reason=$request->reason;
                 $deactivate_leave_type->update();
                 $process_name="Reactivate";
-                $leave_type_logs = $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString);
+                 $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString);
                 return response()->json(['data' => 'Success'], Response::HTTP_OK);
             }
            

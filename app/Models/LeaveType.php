@@ -31,7 +31,7 @@ class LeaveType extends Model
              return $this->belongsTo(LeaveCredit::class, 'leave_credit_id', 'id');
         }
         public function requirements(){ 
-            return $this->belongsToMany(Requirement::class, 'leave_type_requirements', 'leave_type_id', 'requirement_id');
+            return $this->belongsToMany(Requirement::class);
         }
         public function employeeLeaveCredits()
         {
