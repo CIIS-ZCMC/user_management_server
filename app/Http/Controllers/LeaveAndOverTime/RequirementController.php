@@ -94,7 +94,7 @@ class RequirementController extends Controller
             $requirement_log->save();
 
 
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            return response()->json(['message' => 'Requirement has been sucessfully saved','data' => $requirement ], Response::HTTP_OK);
         }catch(\Throwable $th){
            
             return response()->json(['message' => $th->getMessage()], 500);
