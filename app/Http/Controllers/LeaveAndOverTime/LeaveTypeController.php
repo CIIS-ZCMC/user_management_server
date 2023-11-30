@@ -289,19 +289,19 @@ class LeaveTypeController extends Controller
     {
         try{
             $columnsString="";
-            $user_id = Auth::user()->id;
-            $user = EmployeeProfile::where('id','=',$user_id)->first();
+            // $user_id = Auth::user()->id;
+            $user = EmployeeProfile::where('id','=','1')->first();
             $user_password=$user->password;
             $password=$request->password;
             if($user_password==$password)
             {
                 $deactivate_leave_type = LeaveType::findOrFail($leave_type_id);
                 $deactivate_leave_type->status="deactivated";
-                $deactivate_leave_type->reason=$request->reason;
+                $deactivate_leave_type->is_active=false;
                 $deactivate_leave_type->update();
                 $process_name="Deactivate";
                 $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString);
-                return response()->json(['data' => 'Success'], Response::HTTP_OK);
+                return response()->json(['message' => 'Leave Type has been sucessfully deactivated','data' => $deactivate_leave_type ], Response::HTTP_OK);
             }
            
             
@@ -316,19 +316,19 @@ class LeaveTypeController extends Controller
     {
         try{
             $columnsString="";
-            $user_id = Auth::user()->id;
-            $user = EmployeeProfile::where('id','=',$user_id)->first();
+            // $user_id = Auth::user()->id;
+            $user = EmployeeProfile::where('id','=','1')->first();
             $user_password=$user->password;
             $password=$request->password;
             if($user_password==$password)
             {
-                $deactivate_leave_type = LeaveType::findOrFail($leave_type_id);
-                $deactivate_leave_type->status="active";
-                $deactivate_leave_type->reason=$request->reason;
-                $deactivate_leave_type->update();
+                $reactivate_leave_type = LeaveType::findOrFail($leave_type_id);
+                $reactivate_leave_type->status="active";
+                $reactivate_leave_type->is_active=true;
+                $reactivate_leave_type->update();
                 $process_name="Reactivate";
                  $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString);
-                return response()->json(['data' => 'Success'], Response::HTTP_OK);
+                 return response()->json(['message' => 'Leave Type has been sucessfully reactivated','data' => $reactivate_leave_type ], Response::HTTP_OK);
             }
            
             
