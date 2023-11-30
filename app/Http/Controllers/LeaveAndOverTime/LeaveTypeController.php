@@ -44,17 +44,6 @@ class LeaveTypeController extends Controller
                         $action ="";
                         $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
                         $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
-                        if($log->action_by_id  === optional($log->employeeProfile->assignedArea->division)->chief_employee_profile_id ) 
-                        {
-                            $action =  $process_name . ' by ' . 'Division Head';
-                        }
-                        else if ($log->action_by_id === optional($log->employeeProfile->assignedArea->department)->head_employee_profile_id || optional($log->employeeProfile->assignedArea->section)->supervisor_employee_profile_id)
-                        {
-                            $action =  $process_name . ' by ' . 'Supervisor';
-                        }
-                        else{
-                            $action=  $process_name . ' by ' . $first_name .' '. $last_name;
-                        }
                        
                         $date=$log->date;
                         $formatted_date=Carbon::parse($date)->format('M d,Y');
@@ -66,7 +55,7 @@ class LeaveTypeController extends Controller
                             'action' => $log->action,
                             'date' => $formatted_date,
                             'time' => $log->time,
-                            'process' => $action
+                          
                         ];
                     }),
                     'requirements' => $leave_type->requirements->map(function ($requirement) {
@@ -79,8 +68,10 @@ class LeaveTypeController extends Controller
                                 return [
                                     'id' => $log->id,
                                     'action_by' => "{$first_name} {$last_name}",
+                                    'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
                                     'action' => $log->action,
                                     'date' => $log->date,
+                                    'time' => $log->time,
                                 ];
                             }),
                         ];
@@ -88,7 +79,7 @@ class LeaveTypeController extends Controller
                     'attachments' => $leave_type->attachments->map(function ($attachment) {
                         return [
                             'id' => $attachment->id,
-                            'name' => $attachment->name,
+                            'name' => $attachment->file_name,
                             
                         ];
                     }),
@@ -116,6 +107,7 @@ class LeaveTypeController extends Controller
       
         try{
           
+
             $employee_id = $request->employee_id; 
             $filename="";
             $process_name="Add";
@@ -133,6 +125,10 @@ class LeaveTypeController extends Controller
             $leave_type->code = $firstLetters;
             $leave_type->is_active = true;
             $leave_type->is_special = $request->input('is_special');
+            if($request->leave_credit_year)
+            {
+                $leave_type->leave_credit_year = "";
+            }
             $leave_type->leave_credit_year = $request->leave_credit_year;
             $leave_type->save();
             $attachment=$request->file('attachments');
@@ -152,7 +148,7 @@ class LeaveTypeController extends Controller
 
             }
            
-            $selectedRequirements = $request->input('requirements', []);
+            $selectedRequirements = $request->input('requirements');
             $leave_type->requirements()->sync($selectedRequirements);
             $columnsString="";
             $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString);
@@ -193,7 +189,6 @@ class LeaveTypeController extends Controller
     public function update($id,Request $request, LeaveType $leaveType)
     {
         try{
-           dd($request);
             $leave_type = LeaveType::findOrFail($id);
             $originalValues = $leave_type->getOriginal();
             $columnsString="";
@@ -221,19 +216,20 @@ class LeaveTypeController extends Controller
             $process_name="Update";
             $attachment=$request->file('attachments');
             $leave_type_id=$leave_type->id;
-            if($request->hasFile('attachments'))
-            {
-                foreach ($request->file('attachments') as $file) {
-                    $fileName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-                    $extension = $file->getClientOriginalExtension();
-                    $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
-                    $path = $file->storeAs('public', $uniqueFileName); 
-                    $leave_attachment= new LeaveAttachment();
-                    $leave_attachment->file_name= $fileName;
-                    $leave_attachment->leave_type_id = $leave_type_id;
-                    $leave_attachment->save();  
-                }
-
+                if ($request->hasFile('attachment')) {
+                    $attachment = $request->file('attachments');
+                    $leave_type->attachments->delete(); 
+                    foreach ($request->file('attachments') as $file) {
+                        $fileName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+                        $extension = $file->getClientOriginalExtension();
+                        $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
+                        $path = $file->storeAs('public', $uniqueFileName);
+                        $leave_attachment= new LeaveAttachment();
+                        $leave_attachment->file_name= $fileName;
+                        $leave_attachment->leave_type_id = $leave_type_id;
+                        $leave_attachment->save();  
+                    }
+               
             }
             $selectedRequirements = $request->input('requirements', []);
             $leave_type->requirements()->sync($selectedRequirements);
