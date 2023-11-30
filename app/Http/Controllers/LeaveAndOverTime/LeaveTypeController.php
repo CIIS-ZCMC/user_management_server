@@ -142,7 +142,7 @@ class LeaveTypeController extends Controller
             if($request->hasFile('attachments'))
             {
                 foreach ($request->file('attachments') as $file) {
-                    $fileName = pathinfo(Str::uuid() . '_' . $file->getClientOriginalName(), PATHINFO_FILENAME);
+                    $fileName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
                     $extension = $file->getClientOriginalExtension();
                     $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
                     $path = $file->storeAs('public', $uniqueFileName);
@@ -226,15 +226,11 @@ class LeaveTypeController extends Controller
                     $leaveType = LeaveType::with('attachments')->findOrFail($id);
                     foreach ($leaveType->attachments as $attachment) {
                         $filePath = $attachment->path;
-                       
-                            if (Storage::disk('public')->exists($filePath)) {
-                                Storage::disk('public')->delete($filePath);
-                            }
-                        
+                        Storage::delete($filePath);
                         $attachment->delete();
                     }
                     foreach ($request->file('attachments') as $file) {
-                        $fileName = pathinfo(Str::uuid() . '_' . $file->getClientOriginalName(), PATHINFO_FILENAME);
+                        $fileName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
                         $extension = $file->getClientOriginalExtension();
                         $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
                         $path = $file->storeAs('public', $uniqueFileName);

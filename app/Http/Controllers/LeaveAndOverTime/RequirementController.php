@@ -45,7 +45,7 @@ class RequirementController extends Controller
                     'action' => $log->action,
                     'date' => $formatted_date,
                     'time' => $log->time,
-                    'process' => $action
+                   
                 ];
             }
     
