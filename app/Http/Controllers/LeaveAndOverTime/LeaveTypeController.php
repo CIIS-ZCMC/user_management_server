@@ -295,7 +295,6 @@ class LeaveTypeController extends Controller
             if($user_password==$password)
             {
                 $deactivate_leave_type = LeaveType::findOrFail($leave_type_id);
-                $deactivate_leave_type->status="deactivated";
                 $deactivate_leave_type->is_active=false;
                 $deactivate_leave_type->update();
                 $process_name="Deactivate";
@@ -322,7 +321,6 @@ class LeaveTypeController extends Controller
             if($user_password==$password)
             {
                 $reactivate_leave_type = LeaveType::findOrFail($leave_type_id);
-                $reactivate_leave_type->status="active";
                 $reactivate_leave_type->is_active=true;
                 $reactivate_leave_type->update();
                 $process_name="Reactivate";

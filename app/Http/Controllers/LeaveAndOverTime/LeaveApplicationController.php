@@ -1479,8 +1479,8 @@ class LeaveApplicationController extends Controller
             // if($user_status == 'Permanent')
             // {
                 $employee_leave_credit=EmployeeLeaveCredit::where('employee_profile_id','=','1')
-                                                    ->where('leave_type_id','=', $leave_type_id)
-                                                    ->first();
+                                                    ->where('leave_type_id','=','54')
+                                                    ->get();
                 if($employee_leave_credit)
                 {
                     $total_leave_credit = $employee_leave_credit->mapToGroups(function ($credit) {
