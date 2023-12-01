@@ -24,11 +24,11 @@ class RequirementController extends Controller
 
     $requirements = Requirement::with('logs.employeeProfile.personalInformation') // Eager load relationships
         ->get();
-    
+
     $result = $requirements->map(function ($requirement) {
         // Access requirement details
         $requirementDetails = $requirement->toArray();
-    
+
         // Access logs for the current requirement
         $logs = $requirement->logs->map(function ($log) {
             // Check if the employeeProfile relation is present
@@ -41,17 +41,17 @@ class RequirementController extends Controller
                 return [
                     'id' => $log->id,
                     'action_by' => "{$first_name} {$last_name}" ,
-                    'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                    'position' => $log->employeeProfile->assignedArea->designation->code ?? null,
                     'action' => $log->action,
                     'date' => $formatted_date,
                     'time' => $log->time,
-                   
+
                 ];
             }
-    
+
             return null; // or handle this case according to your logic
         })->filter(); // Remove null values from the result
-    
+
         return [
             'id' => $requirementDetails['id'],
             'name' => $requirementDetails['name'],
@@ -59,10 +59,10 @@ class RequirementController extends Controller
             'logs' => $logs,
         ];
     });
-    
+
              return response()->json(['data' => $result ], Response::HTTP_OK);
         }catch(\Throwable $th){
-        
+
             return response()->json(['message' => $th->getMessage()], 500);
         }
     }
@@ -97,7 +97,7 @@ class RequirementController extends Controller
 
             return response()->json(['message' => 'Requirement has been sucessfully saved','data' => $requirement ], Response::HTTP_OK);
         }catch(\Throwable $th){
-           
+
             return response()->json(['message' => $th->getMessage()], 500);
         }
     }
@@ -112,7 +112,7 @@ class RequirementController extends Controller
 
             return response() -> json(['data' => $data], 200);
         }catch(\Throwable $th){
-           
+
             return response() -> json(['message' => $th -> getMessage()], 500);
         }
     }
@@ -139,16 +139,16 @@ class RequirementController extends Controller
             $requirement_log = new RequirementLog();
             $requirement_log->requirement_id = $requirement->id;
             $requirement_log->action_by_id = '1';
-            $requirement_log->action = 'Update ';
+            $requirement_log->action = 'Update';
             $requirement_log->date = date('Y-m-d');
             $requirement_log->time = date('H:i:s');
             $requirement_log->save();
 
 
-          
+
             return response()->json(['message' => 'Requirement has been sucessfully updated','data' => $requirement ], Response::HTTP_OK);
         }catch(\Throwable $th){
-           
+
             return response() -> json(['message' => $th -> getMessage()], 500);
         }
     }
@@ -161,7 +161,7 @@ class RequirementController extends Controller
         //
     }
 
-   
 
-   
+
+
 }

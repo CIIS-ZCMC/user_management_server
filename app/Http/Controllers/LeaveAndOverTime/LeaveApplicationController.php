@@ -22,9 +22,6 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 class LeaveApplicationController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     protected $file_service;
     public function __construct(
         FileService $file_service
@@ -1474,78 +1471,94 @@ class LeaveApplicationController extends Controller
     {
         try{
             $leave_type_id = $request->leave_type_id;
-            $user_id = Auth::user()->id;
-            $user = EmployeeProfile::where('id','=',$user_id)->first();
-            $user_status = $user->status;
-            $division = AssignArea::where('employee_profile_id',$user->id)->value('division_id');
+            // $user_id = Auth::user()->id;
+            $user = EmployeeProfile::where('id','=','1')->first();
+            // $user_status = $user->status;
+            $division = AssignArea::where('employee_profile_id','1')->value('division_id');
 
-            if($user_status == 'Permanent')
-            {
-                $employee_leave_credit=EmployeeLeaveCredit::where('employee_id','=',$user->id)
+            // if($user_status == 'Permanent')
+            // {
+                $employee_leave_credit=EmployeeLeaveCredit::where('employee_profile_id','=','1')
                                                     ->where('leave_type_id','=', $leave_type_id)
                                                     ->first();
-                $total_leave_credit=$employee_leave_credit->total_leave_credit;
-                    if($total_leave_credit > 0)
-                    {
-                            $leave_application = new Leaveapplication();
-                            $leave_application->leave_type_id = $leave_type_id;
-                            $leave_application->reference_number = $request->reference_number;
-                            $leave_application->country = $request->country;
-                            $leave_application->city = $request->city;
-                            $leave_application->patient_type = $request->patient_type;
-                            $leave_application->illnes = $request->illnes;
-                            $leave_application->reason = $request->reason;
-                            $leave_application->with_pay =  $request->has('with_pay');
-                            $leave_application->whole_day = $request->whole_day;
-                            $leave_application->leave_credit_total = "2";
-                            $leave_application->status = "applied";
-                            $leave_application->date = date('Y-m-d');
-                            $leave_application->time =  date('H:i:s');
-                            $leave_application->save();
-                            $date=$request->date_from;
-                            if($date!=null)
-                            {
-                                foreach ($date as $dates) {
-                                    $leave_application_date_time = new LeaveApplicationDateTime();
-                                    $leave_application_date_time->date_from = $request->date_from;
-                                    $leave_application_date_time->date_to = $request->date_to;
-                                    $leave_application_date_time->time_from = $request->time_from;
-                                    $leave_application_date_time->time_to = $request->time_to;
-                                    $leave_application_date_time->save();
-                                    }
+                if($employee_leave_credit)
+                {
+                    $total_leave_credit = $employee_leave_credit->mapToGroups(function ($credit) {
+                    return [$credit->operation => $credit->credit_value];
+                    })->map(function ($operationCredits, $operation) {
+                    return $operation === 'add' ? $operationCredits->sum() : -$operationCredits->sum();
+                    })->sum();
 
-                            }
+                    $dates=$request->date_from;
+                    $total_days = 0;
+                    foreach ($dates as $date) {
+                        $date_from = Carbon::parse($request->date_from);
+                        $date_to = Carbon::parse($request->date_to);
+                        $total_days += $date_to->diffInDays($date_from) + 1;
+                    }
 
-
-                            if ($request->hasFile('requirements')) {
-                                $requirements = $request->file('requirements');
-                                if($requirements){
-
-                                    $leave_application_id = $leave_application->id;
-                                    foreach ($requirements as $requirement) {
-                                        $fileName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-                                        $extension = $file->getClientOriginalExtension();
-                                        $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
-                                        $folderName = 'requirements';
-                                        Storage::makeDirectory('public/' . $folderName);
-                                        $path = $file->storeAs('public/' . $folderName, $uniqueFileName);
-                                        $leave_attachment= new LeaveApplicationRequirement();
-                                        $leave_attachment->file_name= $fileName;
-                                        $leave_attachment->name= $request->name;
-                                        $leave_attachment->leave_application_id = $leave_application_id;
-                                        $leave_attachment->path = $path;
-                                        $leave_attachment->save();
-                                    }
+                        if($total_leave_credit >  $total_days)
+                        {
+                                $leave_application = new Leaveapplication();
+                                $leave_application->leave_type_id = $leave_type_id;
+                                $leave_application->reference_number = $request->reference_number;
+                                $leave_application->country = $request->country;
+                                $leave_application->city = $request->city;
+                                $leave_application->patient_type = $request->patient_type;
+                                $leave_application->illnes = $request->illnes;
+                                $leave_application->reason = $request->reason;
+                                $leave_application->with_pay =  $request->has('with_pay');
+                                $leave_application->whole_day = $request->whole_day;
+                                $leave_application->leave_credit_total = "2";
+                                $leave_application->status = "applied";
+                                $leave_application->date = date('Y-m-d');
+                                $leave_application->time =  date('H:i:s');
+                                $leave_application->save();
+                                $dates=$request->date_from;
+                                if($dates!=null)
+                                {
+                                    foreach ($dates as $date) {
+                                        $leave_application_date_time = new LeaveApplicationDateTime();
+                                        $leave_application_date_time->date_from = $request->date_from;
+                                        $leave_application_date_time->date_to = $request->date_to;
+                                        $leave_application_date_time->time_from = $request->time_from;
+                                        $leave_application_date_time->time_to = $request->time_to;
+                                        $leave_application_date_time->save();
+                                        }
 
                                 }
-                            }
-                            $process_name="Applied";
-                            $this->storeLeaveApplicationLog($leave_application_id,$process_name,$columnsString);
-                           
-                    }
-            }
 
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+
+                                if ($request->hasFile('requirements')) {
+                                    $requirements = $request->file('requirements');
+                                    if($requirements){
+
+                                        $leave_application_id = $leave_application->id;
+                                        foreach ($requirements as $requirement) {
+                                            $fileName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+                                            $extension = $file->getClientOriginalExtension();
+                                            $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
+                                            $folderName = 'requirements';
+                                            Storage::makeDirectory('public/' . $folderName);
+                                            $path = $file->storeAs('public/' . $folderName, $uniqueFileName);
+                                            $leave_attachment= new LeaveApplicationRequirement();
+                                            $leave_attachment->file_name= $fileName;
+                                            $leave_attachment->name= $request->name;
+                                            $leave_attachment->leave_application_id = $leave_application_id;
+                                            $leave_attachment->path = $path;
+                                            $leave_attachment->save();
+                                        }
+
+                                    }
+                                }
+                                $process_name="Applied";
+                                $this->storeLeaveApplicationLog($leave_application_id,$process_name,$columnsString);
+
+                        }
+
+                        return response()->json(['data' => 'Success'], Response::HTTP_OK);
+                }
+
         }catch(\Throwable $th){
 
             return response()->json(['message' => $th->getMessage()], 500);
