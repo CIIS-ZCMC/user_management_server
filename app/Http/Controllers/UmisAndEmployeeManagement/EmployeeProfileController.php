@@ -5,6 +5,7 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 use App\Http\Controllers\Controller;
 
 use App\Http\Resources\SignInResource;
+use App\Models\PlantillaNumber;
 use Carbon\Carbon;
 use Jenssegers\Agent\Agent;
 use Illuminate\Http\Request;
@@ -288,7 +289,8 @@ class EmployeeProfileController extends Controller
         return $side_bar_details;
     }
 
-    private function buildSystemDetails($system_role) {
+    private function buildSystemDetails($system_role) 
+    {
         return [
             'id' => $system_role->system['id'],
             'name' => $system_role->system['name'],
@@ -296,7 +298,8 @@ class EmployeeProfileController extends Controller
         ];
     }
     
-    private function buildRoleDetails($system_role) {
+    private function buildRoleDetails($system_role) 
+    {
         $modules = [];
 
         $role_module_permissions = $system_role->roleModulePermissions;
@@ -484,6 +487,20 @@ class EmployeeProfileController extends Controller
     {
         try{
             $cleanData = [];
+            $plantilla_number_id = $request->input('plantilla_number_id');
+
+            if($plantilla_number_id !== null)
+            {
+                $plantilla_number = PlantillaNumber::find($plantilla_number_id);
+
+                if(!$plantilla_number){
+                    return response()->json(['message' => 'No record found for plantilla number '.$plantilla_number_id], Response::HTTP_NOT_FOUND);
+                }
+
+                $plantilla = $plantilla_number->plantilla;
+                $plantilla_assigned_area = $plantilla_number->assignedArea();
+
+            }
 
             foreach ($request->all() as $key => $value) {
                 if($key === 'profile_url' && $value === null){
