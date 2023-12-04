@@ -14,6 +14,7 @@ class DailyTimeRecordLogs extends Model
         'biometric_id',
         'dtr_id',
         'json_logs',
-        'validated'
+        'validated',
+        'dtr_date'
     ];
 }

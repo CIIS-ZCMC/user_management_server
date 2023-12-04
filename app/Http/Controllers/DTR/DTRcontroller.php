@@ -62,8 +62,6 @@ class DTRcontroller extends Controller
                         });
 
 
-
-                        // Add Validation here based on DT of user based on server Time and the Interval of pull
                         if (count($check_Records) >= 1) {
 
                             foreach ($check_Records as $key => $value) {
@@ -203,7 +201,7 @@ class DTRcontroller extends Controller
                                         }
                                     } else {
                                         /**
-                                         * Here we are checking if theres an existing first entry this is usually for nursing and doctors
+                                         * Here we are checking if theres an existing first entry this is  for nursing and doctors
                                          * which has two entries for schedule only.
                                          * if data not found. then we save into first entry
                                          */
@@ -212,7 +210,7 @@ class DTRcontroller extends Controller
                                         $yester_date = date('Y-m-d', strtotime('-1 day'));
                                         $time_stamps_req = $this->helper->getSchedule($biometric_id, null);
 
-                                        $check_yesterday_Records = DailyTimeRecords::whereDate('created_at', $yester_date)->where('biometric_id', $biometric_id)->get();
+                                        $check_yesterday_Records = DailyTimeRecords::whereDate('first_in', $yester_date)->where('biometric_id', $biometric_id)->get();
                                         $proceed_new = false;
                                         if (count($check_yesterday_Records) >= 1) {
                                             foreach ($check_yesterday_Records as $key => $rcrd) {
@@ -300,7 +298,19 @@ class DTRcontroller extends Controller
                                 }
                             }
                             /* Save DTR Logs */
-                            $this->helper->saveDTRLogs($check_Records, 1, $device);
+                            $this->helper->saveDTRLogs($check_Records, 1, $device, 0);
+                            /* Clear device data */
+                            $tad->delete_data(['value' => 3]);
+                        } else {
+                            //yesterday Time
+                            // Save the past 24 hours records
+                            $yester_date = date('Y-m-d', strtotime('-1 day'));
+                            $yesterday_Records = array_filter($Employee_Attendance, function ($attd) use ($yester_date) {
+                                return date('Y-m-d', strtotime($attd['date_time'])) == $yester_date;
+                            });
+                            $this->helper->saveYesterdayRecords($yesterday_Records, $yester_date);
+                            /* Save DTR Logs */
+                            $this->helper->saveDTRLogs($yesterday_Records, 1, $device, 1);
                             /* Clear device data */
                             $tad->delete_data(['value' => 3]);
                         }
@@ -1055,31 +1065,34 @@ class DTRcontroller extends Controller
         for ($i = 1; $i < 30; $i++) {
 
             $date = date('Y-m-d', strtotime('2023-11-' . $i));
-            $firstin = date('H:i:s', strtotime('today') + rand(25200, 30600));
-            $firstout =  date('H:i:s', strtotime('today') + rand(42600, 47400));
-            $secondin =  date('H:i:s', strtotime('today') + rand(45000, 49800));
-            $secondout = date('H:i:s', strtotime('today') + rand(59400, 77400));
 
-            DailyTimeRecords::create([
-                'biometric_id' => 5181,
-                'first_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin)),
-                'first_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstout)),
-                'second_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $secondin)),
-                'second_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $secondout)),
-                'interval_req' => null,
-                'required_working_hours' => null,
-                'required_working_minutes' => null,
-                'total_working_hours' => null,
-                'total_working_minutes' => null,
-                'overtime' => null,
-                'overtime_minutes' => null,
-                'undertime' => null,
-                'undertime_minutes' => null,
-                'overall_minutes_rendered' => null,
-                'total_minutes_reg' => null,
-                'is_biometric' => 1,
-                'created_at' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin))
-            ]);
+            if (date('D', strtotime($date)) != 'Sun') {
+                $firstin = date('H:i:s', strtotime('today') + rand(25200, 30600));
+                $firstout =  date('H:i:s', strtotime('today') + rand(42600, 47400));
+                $secondin =  date('H:i:s', strtotime('today') + rand(45000, 49800));
+                $secondout = date('H:i:s', strtotime('today') + rand(59400, 77400));
+
+                DailyTimeRecords::create([
+                    'biometric_id' => 5181,
+                    'first_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin)),
+                    'first_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstout)),
+                    'second_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $secondin)),
+                    'second_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $secondout)),
+                    'interval_req' => null,
+                    'required_working_hours' => null,
+                    'required_working_minutes' => null,
+                    'total_working_hours' => null,
+                    'total_working_minutes' => null,
+                    'overtime' => null,
+                    'overtime_minutes' => null,
+                    'undertime' => null,
+                    'undertime_minutes' => null,
+                    'overall_minutes_rendered' => null,
+                    'total_minutes_reg' => null,
+                    'is_biometric' => 1,
+                    'created_at' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin))
+                ]);
+            }
         }
     }
 }
