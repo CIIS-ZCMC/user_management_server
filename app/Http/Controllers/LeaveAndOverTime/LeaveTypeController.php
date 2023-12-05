@@ -109,7 +109,9 @@ class LeaveTypeController extends Controller
                     return [
                         'value' => "$leave_type->id",
                         'label' => $leave_type->name,
-
+                        'description' => $leave_type->description,
+                        'file_date' => $leave_type->file_date,
+                        'period' => $leave_type->period,
                     ];
                 });
 

@@ -201,7 +201,6 @@ class LeaveApplicationController extends Controller
                 });
 
                 $result[] = [
-
                     'leave_type' => $leave_type,
                     'total_balance' => $total_balance,
                 ];
