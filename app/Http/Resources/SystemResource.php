@@ -20,6 +20,7 @@ class SystemResource extends JsonResource
         $status = ($this->status === 1? 'Server is Active':$this->status === 2)? "Server Maintainance": "Server is not Running";
 
         return [
+            'id' => $this->id,
             'name' => $this->name,
             'code' => $this->code,
             'domain' => $this->domain,

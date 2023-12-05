@@ -19,6 +19,7 @@ class ModulePermissionResource extends JsonResource
         $status = $this->active?'ACTIVE':'DEACTIVATED';
 
         return [
+            'id' => $this->id,
             'module_name' => $module_name,
             'permission_name' => $permission_name,
             'code' => $this->code,

@@ -17,6 +17,7 @@ class PermissionResource extends JsonResource
         $status = $this->active?"ACTIVE":"DEACTIVED";
 
         return [
+            'id' => $this->id,
             'name' => $this->name,
             'action' => $this->action,
             'status' => $status

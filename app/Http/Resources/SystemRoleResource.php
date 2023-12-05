@@ -17,6 +17,7 @@ class SystemRoleResource extends JsonResource
         $system_name = $this->system_id === null? 'NONE':$this->system->name;
 
         return [
+            'id' => $this->id,
             'name' => $this->name,
             'code' => $this->code,
             'system_name' => $system_name,

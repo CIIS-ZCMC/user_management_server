@@ -69,6 +69,7 @@ class DepartmentResource extends JsonResource
         $training_officer_job_specification = $to_job_specification['name'];
 
         return [
+            'id' => $this->id,
             'name' => $this->name,
             'code' => $this->code,
             'head_job_specification' => $head_job_specification,

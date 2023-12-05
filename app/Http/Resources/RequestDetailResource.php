@@ -15,6 +15,7 @@ class RequestDetailResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'id' => $this->id,
             'attachment_url' => $this->attachment_url,
             'target_data' => $this->target_data,
             'new_data' => $this->new_data 

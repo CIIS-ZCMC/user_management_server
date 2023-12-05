@@ -37,6 +37,7 @@ class DivisionResource extends JsonResource
             }
 
             return [
+                'id' => $this->id,
                 'name' => $name,
                 'code' => $code,
                 'job_specification' => $job_specification,
@@ -52,6 +53,7 @@ class DivisionResource extends JsonResource
 
 
         return [
+            'id' => $this->id,
             'code' => $this->code,
             'name' => $this->name,
             'job_specification' => $job_specification,

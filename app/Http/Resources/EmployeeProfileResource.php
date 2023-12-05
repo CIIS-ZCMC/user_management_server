@@ -33,6 +33,7 @@ class EmployeeProfileResource extends JsonResource
         $account_status = $this->deactivated_at === null? 'Active':$this->deactivated_at;
 
         return [
+            'id' => $this->id,
             'employee_id' => $this->employee_id,
             'name' => $name,
             'profile_url' => $this->profile_url,

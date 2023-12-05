@@ -22,6 +22,7 @@ class IssuanceInformationResource extends JsonResource
         $person_administrative_oath = $this->person_administrative_oath===null? 'NONE':$this->person_administrative_oath;
 
         return [
+            'id' => $this->id,
             'employee_id' => $employee_id,
             'license_no' => $license_no,
             'govt_issued_id' => $govt_issued_id,

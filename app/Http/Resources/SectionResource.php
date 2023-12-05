@@ -37,6 +37,7 @@ class SectionResource extends JsonResource
             }
 
             return [
+                'id' => $this->id,
                 'name' => $name,
                 'code' => $code,
                 'job_specification' => $job_specification,
@@ -51,6 +52,7 @@ class SectionResource extends JsonResource
         $job_specification = $designation['name'];
 
         return [
+            'id' => $this->id,
             'code' => $this->code,
             'name' => $this->name,
             'job_specification' => $job_specification,

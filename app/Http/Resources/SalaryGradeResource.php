@@ -15,6 +15,7 @@ class SalaryGradeResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'id' => $this->id,
             'salary_grade_number' => $this->salary_grade_number,
             'step' => $this->step,
             'amount' => $this->amount,

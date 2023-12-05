@@ -15,6 +15,7 @@ class PlantillaRequirementResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'id' => $this->id,
             'education' => $this->education,
             'training' => $this->training??'NONE',
             'experience' => $this->experince,

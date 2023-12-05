@@ -15,6 +15,7 @@ class SystemRolePermissionsResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'id' => $this->id,
             'system_role_id' => new SystemRoleResource($this->systemRole),
             'module_permission' => new ModulePermissionResource($this->modulePermission) 
         ];

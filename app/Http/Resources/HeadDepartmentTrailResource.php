@@ -24,6 +24,7 @@ class HeadDepartmentTrailResource extends JsonResource
         $position_title = $this->position_title;
 
         return [
+            'id' => $this->id,
             'employee_name' => $employee_name,
             'position_title' => $position_title,
             'department_name' => $department_name,
