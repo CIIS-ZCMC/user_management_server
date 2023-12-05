@@ -16,7 +16,8 @@ return new class extends Migration
             $table->unsignedBigInteger('leave_application_id')->unsigned();
             $table->foreign('leave_application_id')->references('id')->on('leave_applications')->onDelete('cascade');
             $table->string('name');
-            $table->string('file_name');
+            $table->string('file_name')->nullable();
+            $table->string('path')->nullable();
             $table->timestamps();
         });
     }

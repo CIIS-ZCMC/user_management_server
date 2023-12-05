@@ -10,16 +10,20 @@ use Illuminate\Database\Eloquent\Model;
 class LeaveType extends Model
 {
     use HasFactory;
-    
+
     protected $table = 'leave_types';
     protected $casts = [
         'is_special' => 'boolean',
         'is_active' => 'boolean',
+        'is_country' => 'boolean',
+        'is_illness' => 'boolean',
     ];
-    
+
     public $fillable = [
         'is_special',
         'is_active',
+        'is_country',
+        'is_illness',
         'name',
         'description',
         'leave_credit_id',
@@ -30,9 +34,12 @@ class LeaveType extends Model
         public function leave_credit(){
              return $this->belongsTo(LeaveCredit::class, 'leave_credit_id', 'id');
         }
-        public function requirements(){ 
+        public function requirements(){
             return $this->belongsToMany(Requirement::class);
         }
+        // public function fields(){
+        //     return $this->belongsToMany(Field::class);
+        // }
         public function employeeLeaveCredits()
         {
             return $this->hasMany(EmployeeLeaveCredit::class);

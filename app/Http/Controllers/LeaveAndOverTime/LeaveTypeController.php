@@ -27,7 +27,6 @@ class LeaveTypeController extends Controller
     public function index()
     {
         try{
-
         // $leaveTypes = LeaveType::with('logs.employeeProfile.personalInformation','requirements.logs.employeeProfile')->get();
         $leave_types = LeaveType::with('logs.employeeProfile.personalInformation', 'requirements.logs.employeeProfile.personalInformation','attachments')->get();
         $leave_types_result = $leave_types->map(function ($leave_type) {
@@ -40,6 +39,8 @@ class LeaveTypeController extends Controller
                     'code' => $leave_type->code,
                     'is_active' => $leave_type->is_active,
                     'is_special' => $leave_type->is_special,
+                    'is_country' => $leave_type->is_country,
+                    'is_illness' => $leave_type->is_illness,
                     'leave_credit_year' => $leave_type->leave_credit_year,
                     'logs' => $leave_type->logs->map(function ($log) {
                         $process_name=$log->action;
@@ -99,9 +100,24 @@ class LeaveTypeController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function select()
     {
-        //
+        try{
+
+            $leave_types = LeaveType::get();
+            $leave_types_result = $leave_types->map(function ($leave_type) {
+                    return [
+                        'value' => "$leave_type->id",
+                        'label' => $leave_type->name,
+
+                    ];
+                });
+
+                 return response()->json(['data' => $leave_types_result], Response::HTTP_OK);
+            }catch(\Throwable $th){
+
+                return response()->json(['message' => $th->getMessage()], 500);
+            }
     }
 
     public function store(Request $request)
@@ -125,6 +141,8 @@ class LeaveTypeController extends Controller
             $leave_type->code = $firstLetters;
             $leave_type->is_active = true;
             $leave_type->is_special = $request->input('is_special');
+            $leave_type->is_country = $request->input('is_country');
+            $leave_type->is_illness = $request->input('is_illness');
             if (!empty($request->leave_credit_year))
             {
                 $leave_type->leave_credit_year = $request->leave_credit_year;
@@ -154,7 +172,6 @@ class LeaveTypeController extends Controller
                 }
 
             }
-
             $selectedRequirements = $request->input('requirements');
             $leave_type->requirements()->sync($selectedRequirements);
             $columnsString="";
@@ -171,6 +188,7 @@ class LeaveTypeController extends Controller
      */
     public function show($id,LeaveType $leaveType)
     {
+
         try{
             $data = LeaveCredit::find($id);
 
@@ -209,7 +227,17 @@ class LeaveTypeController extends Controller
                 $firstLetters .= strtoupper(substr($name_code, 0, 1));
             }
             $leave_type->code = $firstLetters;
-            $leave_type->leave_credit_year = $request->leave_credit_year;
+            $leave_type->is_special = $request->input('is_special');
+            $leave_type->is_country = $request->input('is_country');
+            $leave_type->is_illness = $request->input('is_illness');
+            if (!empty($request->leave_credit_year))
+            {
+                $leave_type->leave_credit_year = $request->leave_credit_year;
+            }
+            else
+            {
+                $leave_type->leave_credit_year = "";
+            }
             $leave_type->update();
             if ($leave_type->isDirty()) {
                 $changedColumns = $leave_type->getChanges();

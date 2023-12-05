@@ -7,8 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class LeaveTypeRequirement extends Model
 {
-    protected $table = 'leave_type_requirements';
-    
+    protected $table = 'leave_type_requirement';
+
     // public function leaveType()
     // {
     //     return $this->belongsTo(LeaveType::class, 'leave_type_id');

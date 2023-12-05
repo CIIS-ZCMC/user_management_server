@@ -17,6 +17,7 @@ use App\Models\LeaveApplicationLog;
 use App\Models\LeaveApplicationRequirement;
 use App\Models\Section;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use App\Services\FileService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -87,10 +88,10 @@ class LeaveApplicationController extends Controller
                 $department = Department::with('head.personalInformation')->find($department);
                 $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
             }
-            if($section)
+            else if($section)
             {
                 $section = Section::with('supervisor.personalInformation')->find($section);
-                $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                $head_name = optional($section->supervisor->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
             }
             $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
             $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
@@ -200,12 +201,14 @@ class LeaveApplicationController extends Controller
                 });
 
                 $result[] = [
+
                     'leave_type' => $leave_type,
                     'total_balance' => $total_balance,
                 ];
             }
 
             return [
+
                 'employee_id' => $employee->id,
                 'employee_name' =>   $employee->personalInformation->first_name,
                 'leave_credit_balance' => $result,
@@ -222,7 +225,7 @@ class LeaveApplicationController extends Controller
         ->get();
          return response()->json(['data' => $results]);
     }
-    public function getUserLeaveCreditsLogs()
+    public function getUserLeaveCreditsLogs( )
     {
         try{
             $user_id = Auth::user()->id;
@@ -242,6 +245,7 @@ class LeaveApplicationController extends Controller
     public function getUserLeaveApplication()
     {
         try{
+
             $user_id = Auth::user()->id;
             $user = EmployeeProfile::where('id','=',$user_id)->first();
             $leave_applications=[];
@@ -282,7 +286,6 @@ class LeaveApplicationController extends Controller
                     'illness' => $leave_application->illness,
                     'reason' => $leave_application->reason,
                     'leave_credit_total' => $leave_application->leave_credit_total ,
-                    'leave_credit_balance' => $add - $deduct,
                     'days_total' => $leave_application->leave_credit_total ,
                     'status' => $leave_application->status ,
                     'remarks' => $leave_application->remarks ,
@@ -358,6 +361,7 @@ class LeaveApplicationController extends Controller
             // Compute total leave credits to add
             $total_leave_credit_to_add = EmployeeLeaveCredit::where('employee_profile_id', '1')
             ->where('operation', 'add')
+            ->groupby()
             ->sum('credit_value');
 
             // Compute total leave credits to deduct
@@ -1303,17 +1307,18 @@ class LeaveApplicationController extends Controller
 
     }
 
-    public function updateLeaveApplicationStatus (Request $request)
+    public function updateLeaveApplicationStatus ($id,$status,Request $request)
     {
         try {
-                $employee_id = $request->employee_id;
-                $user_id = Auth::user()->id;
-                $user = EmployeeProfile::where('id','=',$user_id)->first();
-                $division = AssignArea::where('employee_profile_id',$employee_id)->value('is_medical');
-                $user_password=$user->password;
-                $password=$request->password;
-                if($user_password==$password)
-                {
+                // $employee_id = $request->employee_id;
+                // $user_id = Auth::user()->id;
+                // $user = EmployeeProfile::where('id','=',$user_id)->first();
+                // $division = AssignArea::where('employee_profile_id',$employee_id)->value('is_medical');
+                // $user_password=$user->password;
+                // $password=$request->password;
+                // if($user_password==$password)
+                // {
+                            $division= true;
                             $message_action = '';
                             $action = '';
                             $new_status = '';
@@ -1349,14 +1354,15 @@ class LeaveApplicationController extends Controller
 
                             }
                             $leave_application_id = $request->leave_application_id;
-                            $leave_applications = LeaveApplication::where('id','=', $leave_application_id)
+                            $leave_applications = LeaveApplication::where('id','=', '1')
                                                                     ->first();
                             if($leave_applications){
                                 $leave_application_log = new LeaveApplicationLog();
                                 $leave_application_log->action = $action;
                                 $leave_application_log->leave_application_id = $leave_application_id;
-                                $leave_application_log->action_by = $user_id;
+                                $leave_application_log->action_by_id = '1';
                                 $leave_application_log->date = date('Y-m-d');
+                                $leave_application_log->time = date('h-i-s');
                                 $leave_application_log->save();
 
                                 $leave_application = LeaveApplication::findOrFail($leave_application_id);
@@ -1376,7 +1382,7 @@ class LeaveApplicationController extends Controller
                                     }
 
                                     $employee_leave_credits = new EmployeeLeaveCredit();
-                                    $employee_leave_credits->employee_profile_id = $user->id;
+                                    $employee_leave_credits->employee_profile_id = '1';
                                     $employee_leave_credits->leave_application_id = $leave_application_id;
                                     $employee_leave_credits->operation = "deduct";
                                     $employee_leave_credits->leave_credit = $total_days;
@@ -1385,7 +1391,7 @@ class LeaveApplicationController extends Controller
 
                                 }
                                 return response(['message' => 'Application has been sucessfully '.$message_action, 'data' => $leave_application], Response::HTTP_CREATED);
-                            }
+                            // }
                 }
             }
          catch (\Exception $e) {
@@ -1395,26 +1401,27 @@ class LeaveApplicationController extends Controller
     }
 
 
-    public function declineLeaveApplication(Request $request)
+    public function declineLeaveApplication($id,Request $request)
     {
         try {
-                    $leave_application_id = $request->leave_application_id;
-                    $leave_applications = LeaveApplication::where('id','=', $leave_application_id)
+                    // $leave_application_id = $request->leave_application_id;
+                    $leave_application_id = '1';
+                    $leave_applications = LeaveApplication::where('id','=', '1')
                                                             ->first();
                 if($leave_applications)
                 {
-                        $user_id = Auth::user()->id;
-                        $user = EmployeeProfile::where('id','=',$user_id)->first();
-                        $user_password=$user->password;
-                        $password=$request->password;
-                        if($user_password==$password)
-                        {
-                            if($user_id){
+                        // $user_id = Auth::user()->id;
+                        // $user = EmployeeProfile::where('id','=',$user_id)->first();
+                        // $user_password=$user->password;
+                        // $password=$request->password;
+                        // if($user_password==$password)
+                        // {
+                            // if($user_id){
                                 $leave_application_log = new LeaveApplicationLog();
                                 $leave_application_log->action = 'declined';
                                 $leave_application_log->leave_application_id = $leave_application_id;
                                 $leave_application_log->date = date('Y-m-d');
-                                $leave_application_log->action_by = $user_id;
+                                $leave_application_log->action_by_id = '1';
                                 $leave_application_log->save();
 
                                 $leave_application = LeaveApplication::findOrFail($leave_application_id);
@@ -1422,34 +1429,35 @@ class LeaveApplicationController extends Controller
                                 $leave_application->update();
                                 return response(['message' => 'Application has been sucessfully declined', 'data' => $leave_application], Response::HTTP_CREATED);
 
-                            }
-                         }
+                            // }
+                        //  }
                 }
             } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage(),  'error'=>true]);
         }
     }
 
-    public function cancelLeaveApplication(Request $request)
+    public function cancelLeaveApplication($id,Request $request)
     {
         try {
-                    $leave_application_id = $request->leave_application_id;
+                    // $leave_application_id = $request->leave_application_id;
+                    $leave_application_id = '1';
                     $leave_applications = LeaveApplication::where('id','=', $leave_application_id)
                                                             ->first();
                 if($leave_applications)
                 {
-                        $user_id = Auth::user()->id;
-                        $user = EmployeeProfile::where('id','=',$user_id)->first();
-                        $user_password=$user->password;
-                        $password=$request->password;
-                        if($user_password==$password)
-                        {
-                            if($user_id){
+                        // $user_id = Auth::user()->id;
+                        // $user = EmployeeProfile::where('id','=',$user_id)->first();
+                        // $user_password=$user->password;
+                        // $password=$request->password;
+                        // if($user_password==$password)
+                        // {
+                        //     if($user_id){
                                 $leave_application_log = new LeaveApplicationLog();
                                 $leave_application_log->action = 'cancel';
                                 $leave_application_log->leave_application_id = $leave_application_id;
                                 $leave_application_log->date = date('Y-m-d');
-                                $leave_application_log->action_by = $user_id;
+                                $leave_application_log->action_by_id = '1';
                                 $leave_application_log->save();
 
                                 $leave_application = LeaveApplication::findOrFail($leave_application_id);
@@ -1457,8 +1465,8 @@ class LeaveApplicationController extends Controller
                                 $leave_application->update();
                                 return response(['message' => 'Application has been sucessfully cancelled', 'data' => $leave_application], Response::HTTP_CREATED);
 
-                            }
-                         }
+                        //     }
+                        //  }
                 }
             } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage(),  'error'=>true]);
@@ -1489,75 +1497,96 @@ class LeaveApplicationController extends Controller
                     return $operation === 'add' ? $operationCredits->sum() : -$operationCredits->sum();
                     })->sum();
 
-                    $dates=$request->date_from;
+                    $fromDates = $request->input('date_from');
+                    $toDates = $request->input('date_to');
+                    $fromTime = $request->input('time_from');
+                    $toTime = $request->input('time_to');
                     $total_days = 0;
-                    foreach ($dates as $date) {
-                        $date_from = Carbon::parse($request->date_from);
-                        $date_to = Carbon::parse($request->date_to);
-                        $total_days += $date_to->diffInDays($date_from) + 1;
+
+                    if (count($fromDates) !== count($toDates) || count($fromTime) !== count($toTime)) {
+                        return response()->json(['error' => 'Mismatched date and time'], 400);
                     }
 
+                    for ($i = 0; $i < count($fromDates); $i++) {
+                        $startDate = Carbon::createFromFormat('Y-m-d', $fromDates[$i]);
+                        $endDate = Carbon::createFromFormat('Y-m-d', $toDates[$i]);
+
+                        $numberOfDays = $startDate->diffInDays($endDate) + 1;
+                        $total_days += $numberOfDays;
+
+
+                    }
                         if($total_leave_credit >  $total_days)
                         {
+
                                 $leave_application = new Leaveapplication();
                                 $leave_application->leave_type_id = $leave_type_id;
                                 $leave_application->reference_number = $request->reference_number;
                                 $leave_application->country = $request->country;
                                 $leave_application->city = $request->city;
                                 $leave_application->patient_type = $request->patient_type;
-                                $leave_application->illnes = $request->illnes;
+                                $leave_application->illness = $request->illness;
                                 $leave_application->reason = $request->reason;
                                 $leave_application->with_pay =  $request->has('with_pay');
-                                $leave_application->whole_day = $request->whole_day;
-                                $leave_application->leave_credit_total = "2";
+                                $leave_application->leave_credit_total = $total_days;
                                 $leave_application->status = "applied";
                                 $leave_application->date = date('Y-m-d');
                                 $leave_application->time =  date('H:i:s');
+                                $leave_application->employee_profile_id ="1";
+                                $leave_application->leave_type_id ="54";
                                 $leave_application->save();
-                                $dates=$request->date_from;
-                                if($dates!=null)
-                                {
-                                    foreach ($dates as $date) {
-                                        $leave_application_date_time = new LeaveApplicationDateTime();
-                                        $leave_application_date_time->date_from = $request->date_from;
-                                        $leave_application_date_time->date_to = $request->date_to;
-                                        $leave_application_date_time->time_from = $request->time_from;
-                                        $leave_application_date_time->time_to = $request->time_to;
-                                        $leave_application_date_time->save();
-                                        }
+                                $leave_application_id = $leave_application->id;
 
-                                }
+                                    for ($i = 0; $i < count($fromDates); $i++) {
+                                        LeaveApplicationDateTime::create([
+                                            'leave_application_id' => $leave_application->id,
+                                            'date_to' => $fromDates[$i],
+                                            'date_from' => $toDates[$i],
+                                            'time_to' => $toTime[$i],
+                                            'time_from' => $fromTime[$i],
+                                        ]);
+                                    }
 
 
+                                $columnsString="";
+                                $name = $request->input('name');
+                                $leave_application_id = $leave_application->id;
                                 if ($request->hasFile('requirements')) {
                                     $requirements = $request->file('requirements');
                                     if($requirements){
 
-                                        $leave_application_id = $leave_application->id;
-                                        foreach ($requirements as $requirement) {
+                                        foreach ($request->file('requirements') as $file) {
                                             $fileName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
                                             $extension = $file->getClientOriginalExtension();
                                             $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
                                             $folderName = 'requirements';
                                             Storage::makeDirectory('public/' . $folderName);
                                             $path = $file->storeAs('public/' . $folderName, $uniqueFileName);
-                                            $leave_attachment= new LeaveApplicationRequirement();
-                                            $leave_attachment->file_name= $fileName;
-                                            $leave_attachment->name= $request->name;
-                                            $leave_attachment->leave_application_id = $leave_application_id;
-                                            $leave_attachment->path = $path;
-                                            $leave_attachment->save();
+                                            for ($i = 0; $i < count($fromDates); $i++) {
+                                                LeaveApplicationRequirement::create([
+                                                    'leave_application_id' => $leave_application->id,
+                                                    'file_name' => $fileName,
+                                                    'name' => $name[$i],
+                                                    'path' => $path,
+                                                ]);
+                                            }
                                         }
 
                                     }
                                 }
                                 $process_name="Applied";
                                 $this->storeLeaveApplicationLog($leave_application_id,$process_name,$columnsString);
-
+                                return response()->json(['data' => 'Success'], Response::HTTP_OK);
+                        }
+                        else
+                        {
+                            return response()->json(['message' => 'Insufficient Leave Credit Value'], Response::HTTP_OK);
                         }
 
-                        return response()->json(['data' => 'Success'], Response::HTTP_OK);
+
+
                 }
+
 
         }catch(\Throwable $th){
 
@@ -1578,19 +1607,22 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $e->getMessage(),'error'=>true]);
         }
     }
-    public function storeLeaveApplicationLog($leave_application_id,$process_name)
+    public function storeLeaveApplicationLog($leave_application_id,$process_name,$changedfields)
     {
         try {
-            $user_id = Auth::user()->id;
-            $user = EmployeeProfile::where('id','=',$user_id)->first();
-            $leave_application_log = new LeaveApplicationLog();
-            $leave_application_log->leave_application_id = $leave_application_id;
-            $leave_application_log->action_by = $user->id;
-            $leave_application_log->action = $process_name;
-            $leave_application_log->status = "applied";
-            $leave_application_log->date = date('Y-m-d');
-            $leave_application_log->time =  date('H:i:s');
-            $leave_application_log->save();
+            $user_id="1";
+
+            $data = [
+                'leave_application_id' => $leave_application_id,
+                'action_by_id' => $user_id,
+                'action' => $process_name,
+                'date' => date('Y-m-d'),
+                'time' => date('H:i:s'),
+                'fields' => $changedfields
+            ];
+
+            $leave_application_log = LeaveApplicationLog::create($data);
+
             return $leave_application_log;
         } catch(\Exception $e) {
             return response()->json(['message' => $e->getMessage(),'error'=>true]);
