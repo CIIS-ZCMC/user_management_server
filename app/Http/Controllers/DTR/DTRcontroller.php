@@ -542,19 +542,26 @@ class DTRcontroller extends Controller
             $dt_records = [];
             $No_schedule_DTR = [];
             $is_Half_Schedule = false;
+            $day = [];
+            $entry = '';
+            //echo $dtr[12]->first_in;
             foreach ($dtr as $val) {
                 /* Validating DTR with its Matching Schedules */
                 /* 
                 *   if no matching schedule then
                 *   it will not display the daily time record
                 */
-                $schedule = $this->helper->getSchedule($val->biometric_id, $val->first_in);
+                $schedule = $this->helper->getSchedule($val->biometric_id, date('Y-m-d', strtotime($val->first_in)));
+
                 $is_Half_Schedule = $this->isHalfEntrySchedule($schedule);
+                //return $schedule['date_start'] . $schedule['date_end'];
+
 
                 if (isset($schedule['date_start']) && isset($schedule['date_end'])) {
+
                     $date_start =  $schedule['date_start'];
                     $date_end =  $schedule['date_end'];
-                    $entry = '';
+
                     if (isset($val->first_in)) {
                         $entry = $val->first_in;
                     } else {
@@ -564,10 +571,14 @@ class DTRcontroller extends Controller
                     }
 
 
-                    if ($entry >= $date_start && $entry <= $date_end) {
+
+
+                    if (date('Y-m-d', strtotime($entry)) >= $date_start && date('Y-m-d', strtotime($entry)) <= $date_end) {
+                        //   echo $entry;
                         $date_entry = date('Y-m-d H:i', strtotime($entry));
                         $schedule_fEntry = date('Y-m-d H:i', strtotime(date('Y-m-d', strtotime($date_entry)) . ' ' . $schedule['first_entry']));
                         //return $this->WithinScheduleRange($dateentry, $schedulefEntry);
+
                         if ($this->WithinScheduleRange($date_entry, $schedule_fEntry)) {
                             $dt_records[] = [
                                 'first_in' => $val->first_in,
@@ -588,8 +599,11 @@ class DTRcontroller extends Controller
                         'undertime_minutes' => $val->undertime_minutes,
                         'created' => $val->created_at
                     ];
+                    //  echo $val->first_in;
                 }
             }
+
+
             $days_In_Month = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
             $first_in = array_map(function ($res) {
                 return [
@@ -1062,7 +1076,7 @@ class DTRcontroller extends Controller
         **
         * test on how to access request function on another controller for instance
         */
-        for ($i = 1; $i < 30; $i++) {
+        for ($i = 1; $i <= 30; $i++) {
 
             $date = date('Y-m-d', strtotime('2023-11-' . $i));
 
@@ -1073,7 +1087,7 @@ class DTRcontroller extends Controller
                 $secondout = date('H:i:s', strtotime('today') + rand(59400, 77400));
 
                 DailyTimeRecords::create([
-                    'biometric_id' => 5181,
+                    'biometric_id' => 5180,
                     'first_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin)),
                     'first_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstout)),
                     'second_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $secondin)),

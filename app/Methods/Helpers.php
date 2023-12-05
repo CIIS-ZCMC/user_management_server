@@ -29,7 +29,6 @@ class Helpers
 
     public function withinInterval($last_entry, $bio_entry)
     {
-
         $With_Interval = date('Y-m-d H:i:s', strtotime($last_entry) + floor(env('ALLOTED_DTR_INTERVAL') * 60));
         if ($With_Interval <= $bio_entry[0]['date_time']) {
             return true;
@@ -938,7 +937,6 @@ WHERE s.id IN (
                         ]);
                     } else {
                         if ($validate == 0) {
-
                             $log_Inv = count($check_DTR_Logs_Invalid) >= 1 ? $check_DTR_Logs_Invalid[0]->json_logs : '';
                             $log_data_Array_inv = json_decode($log_Inv, true);
                             // /* Saving individually to user-attendance jsonLogs */
