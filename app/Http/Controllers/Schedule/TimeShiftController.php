@@ -118,6 +118,8 @@ class TimeShiftController extends Controller
                     'total_hours'   => 'required|min:8|max:24',
                 ]);
 
+                $cleanData['color'] = Helpers::randomHexColor();
+                
                 $data = TimeShift::create($cleanData);
             }
 

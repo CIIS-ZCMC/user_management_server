@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
+use App\Models\Schedule;
+
 class EmployeeProfile extends Authenticatable
 {
     use HasFactory;
@@ -139,5 +141,9 @@ class EmployeeProfile extends Authenticatable
         $designation = $assign_area->plantilla_id  === null?$assign_area->designation:$assign_area->plantilla->designation;
         
         return $designation;
+    }
+
+    public function schedule() {
+        return $this->belongsToMany(Schedule::class, 'employee_profile_schedule')->withPivot('employee_profile_id');
     }
 }

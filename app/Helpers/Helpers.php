@@ -5,7 +5,10 @@ namespace App\Helpers;
 use App\Models\SystemLogs;
 use App\Models\Permission;
 use App\Models\TimeShift;
-use Str;
+
+use DateTime;
+use DateInterval;
+use DatePeriod;
 
 
 class Helpers {
@@ -45,5 +48,42 @@ class Helpers {
         }
     }
 
+    public static function getDatesInMonth($year, $month, $value)
+    {
+        $start  = new DateTime("{$year}-{$month}-01");
+        $end    = new DateTime("{$year}-{$month}-" . $start->format('t'));
 
+        $interval   = new DateInterval('P1D');
+        $period     = new DatePeriod($start, $interval, $end->modify('+1 day'));
+
+        $dates = [];
+
+        foreach ($period as $date) {
+            switch ($value) {
+                case 'Day':
+                    $dates[] = $date->format('d');
+                    break;
+
+                case 'Week':
+                    $dates[] = $date->format('D');
+                    break;
+
+                case 'Month':
+                    $dates[] = $date->format('m');
+                    break;
+
+                case 'Year':
+                    $dates[] = $date->format('Y');
+                    break;
+
+                default:
+                    $dates[] = $date->format('Y-m-d');
+                    break;
+            }
+            
+        }
+
+        return $dates;
+    }
+    
 }

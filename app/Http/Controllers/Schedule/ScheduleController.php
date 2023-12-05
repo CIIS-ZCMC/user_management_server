@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Schedule;
 
+use App\Models\Holiday;
 use App\Models\Schedule;
 use App\Models\EmployeeProfile;
 use App\Http\Resources\ScheduleResource;
@@ -305,6 +306,71 @@ class ScheduleController extends Controller
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in delete '.$this->SINGULAR_MODULE_NAME.'.');
             return response()->json(['data' => $data], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+    /**
+     * Generate PDF file of schedule
+     */
+    public function generate(Request $request)
+    {
+        try {
+
+            $cleanData = [];
+
+            foreach ($request->all() as $key => $value) {
+                if (empty($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                if (DateTime::createFromFormat('Y-m-d', $value)) {
+                    $cleanData[$key] = Carbon::parse($value);
+                    continue;
+                }
+
+                if (is_int($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                $cleanData[$key] = strip_tags($value);
+            }
+
+
+            $month  = $cleanData['month'];   // Replace with the desired month (1 to 12)
+            $year   = $cleanData['year'];     // Replace with the desired year
+
+            $days   = Helpers::getDatesInMonth($year, $month, "Day");
+            $weeks  = Helpers::getDatesInMonth($year, $month, "Week");
+            $dates  = Helpers::getDatesInMonth($year, $month, "");
+
+            $data = EmployeeProfile::join('personal_informations as PI', 'employee_profiles.personal_information_id', '=', 'PI.id')
+            ->select('employee_profiles.id','employee_id','biometric_id', 'PI.first_name','PI.middle_name', 'PI.last_name')
+            ->with(['assignedArea', 'schedule' => function ($query) use ($year, $month) {
+                $query->with(['timeShift', 'holiday'])->whereYear('date_start', '=', $year)->whereMonth('date_start', '=', $month);
+            }])->whereHas('assignedArea', function ($query) use ($cleanData) {
+                $query->where('section_id', $cleanData['section']);
+            })->get();
+
+                 
+            // $data = Schedule::with(['employee' => function ($query) {
+            //     $query->join('personal_informations as PI', 'employee_profiles.personal_information_id', '=', 'PI.id')
+            //           ->select('employee_profiles.id','employee_id','biometric_id', 'PI.first_name','PI.middle_name', 'PI.last_name');
+            // },'timeShift','holiday'])
+            // ->whereYear('date_start', '=', $year)
+            // ->whereMonth('date_start', '=', $month)
+            // ->get();
+     
+            Helpers::registerSystemLogs($request, $id, true, 'Success in delete '.$this->SINGULAR_MODULE_NAME.'.');
+            return view('generate_schedule/section-schedule', compact('data', 'month', 'year', 'days', 'weeks', 'dates'));
+
+
         } catch (\Throwable $th) {
 
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());

@@ -1293,5 +1293,13 @@ Route::middleware('auth.cookie')->group(function(){
         Route::middleware(['auth.permission:UMIS-ScM update'])->group(function(){
             Route::put('exchange-duties/approval/{id}', 'ExchangeDutyController@approve');
         });
+
+        /**
+         * Generate Schedule Module
+         */
+        Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function(){
+            Route::get('generate', 'ScheduleController@generate');
+        });
+
     });
 });

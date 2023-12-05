@@ -25,7 +25,7 @@ class Schedule extends Model
         'is_weekend',
         'status',
         'remarks',
-        'shift_id',
+        'time_shift_id',
         'holiday_id',
     ];
 

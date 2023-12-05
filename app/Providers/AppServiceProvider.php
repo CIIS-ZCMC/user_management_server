@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Schema;
 use App\Services\RequestLogger;
 use App\Services\FileValidationAndUpload;
 
+use App\Helpers\Helpers;
+
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -33,5 +35,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Schema::defaultStringLength(191);
+
+        $this->app->singleton('Helpers', function () {
+            return new Helpers();
+        });
     }
 }

@@ -66,6 +66,11 @@ Route::controller(App\Http\Controllers\DTR\MailController::class)->group(
 );
 
 
-Route::get('/', function () {
+Route::get('/welcome', function () {
     return view('welcome');
+});
+
+
+Route::namespace('App\Http\Controllers\Schedule')->group(function(){
+    Route::get('/generate', 'ScheduleController@generate');
 });
