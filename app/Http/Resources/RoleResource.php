@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class PermissionResource extends JsonResource
+class RoleResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -14,14 +14,13 @@ class PermissionResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $status = $this->active?"Actived":"Deactived";
+        $system_roles = $this->systemRoles;
 
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'action' => $this->action,
-            'status' => $status,
-            'total_assign' => count($this->modulePermission)
+            'code' => $this->code,
+            'system_roles' => count($system_roles)
         ];
     }
 }

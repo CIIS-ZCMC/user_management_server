@@ -6,7 +6,10 @@ use App\Http\Controllers\Controller;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 use App\Services\RequestLogger;
+use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Resources\ModulePermissionResource;
 use App\Http\Resources\SystemModuleResource;
 use App\Http\Requests\SystemModuleRequest;
@@ -28,7 +31,24 @@ class SystemModuleController extends Controller
         $this->requestLogger = $requestLogger;
     }
 
-    public function index($id, Request $request)
+    public function index(Request $request)
+    {
+        try{
+            $system_modules = SystemModule::all();
+
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in system module fetching '.$this->PLURAL_MODULE_NAME.'.');
+
+            return response()->json([
+                'data' => SystemModuleResource::collection($system_modules),
+                'message' => 'System module list retrieved.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function systemModulesByID($id, Request $request)
     {
         try{
             $system_modules = SystemModule::where('system_id', $id)->get();
@@ -40,7 +60,7 @@ class SystemModuleController extends Controller
                 'message' => 'System module list retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'systemModulesByID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -68,7 +88,7 @@ class SystemModuleController extends Controller
 
             return response()->json([
                 'data' => new SystemModuleResource($system_module),
-                'message' => 'New system module record added'
+                'message' => 'System module created successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
@@ -202,7 +222,17 @@ class SystemModuleController extends Controller
     
     public function update($id, SystemModuleRequest $request)
     {
-        try{
+        try{ 
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $system_module = SystemModule::find($id);
 
             if(!$system_module)
@@ -222,7 +252,7 @@ class SystemModuleController extends Controller
 
             return response()->json([
                 'data' => new SystemModuleResource($system_module),
-                'message' => 'System module record updated'
+                'message' => 'System Module updated successfully'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
@@ -230,9 +260,19 @@ class SystemModuleController extends Controller
         }
     }
     
-    public function destroy($id, Request $request)
+    public function destroy($id, PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $system_module = SystemModule::findOrFail($id);
 
             if(!$system_module)
@@ -251,7 +291,7 @@ class SystemModuleController extends Controller
             
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['message' => 'System module record deleted.'], Response::HTTP_OK);
+            return response()->json(['message' => 'System module deleted successfully.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

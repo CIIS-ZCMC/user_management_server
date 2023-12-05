@@ -143,7 +143,11 @@ Route::middleware('auth.cookie')->group(function(){
          * System Modules Module
          */
         Route::middleware(['auth.permission:UMIS-SM view-all'])->group(function(){
-            Route::get('system-module-all/{id}', 'SystemModuleController@index');
+            Route::get('system-module-all', 'SystemModuleController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-SM view-all'])->group(function(){
+            Route::get('system-module/find-by-system/{id}', 'SystemModuleController@systemModulesByID');
         });
 
         Route::middleware(['auth.permission:UMIS-SM write'])->group(function(){
@@ -196,6 +200,30 @@ Route::middleware('auth.cookie')->group(function(){
         Route::middleware(['auth.permission:UMIS-SM delete'])->group(function(){
             Route::delete('system-role/{id}', 'SystemRoleController@destroy');
         });
+
+        /**
+         * Role Module
+         */
+        Route::middleware(['auth.permission:UMIS-SM view-all'])->group(function(){
+            Route::get('role-all', 'RoleController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-SM write'])->group(function(){
+            Route::post('role', 'RoleController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-SM view'])->group(function(){
+            Route::get('role/{id}', 'RoleController@show');
+        });
+
+        Route::middleware(['auth.permission:UMIS-SM update'])->group(function(){
+            Route::put('role/{id}', 'RoleController@update');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-SM delete'])->group(function(){
+            Route::delete('role/{id}', 'RoleController@destroy');
+        });
+        
         
         /**
          * Permission Module

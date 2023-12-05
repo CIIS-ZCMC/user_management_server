@@ -9,6 +9,9 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Services\RequestLogger;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
+use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\SystemRoleRequest;
 use App\Http\Resources\SystemRoleResource;
 use App\Http\Resources\SystemRolePermissionsResource;
@@ -207,6 +210,16 @@ class SystemRoleController extends Controller
     public function update($id, SystemRoleRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $systemRole = SystemRole::find($id);
 
             $cleanData = [];
@@ -228,9 +241,19 @@ class SystemRoleController extends Controller
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    public function destroy($id, Request $request)
+    public function destroy($id, PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $systemRole = SystemRole::findOrFail($id);
 
             if(!$systemRole){

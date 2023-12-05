@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Role;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
@@ -23,9 +24,10 @@ class SystemRoleSeeder extends Seeder
 
         Log::channel('custom-error')->error($system);
 
+        $role = Role::where('code',"super_admin")->first();
+
         $super_admin = SystemRole::create([
-            'name' => 'Super Admin',
-            'code' => 'Super_admin',
+            'role_id' => $role->id,
             'system_id' => $system -> id
         ]);
 
