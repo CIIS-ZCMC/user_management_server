@@ -13,6 +13,16 @@ return new class extends Migration
     {
         Schema::create('pull_outs', function (Blueprint $table) {
             $table->id();
+            
+            $table->unsignedBigInteger('requested_employee_id');
+            $table->foreign('requested_employee_id')->references('id')->on('employee_profiles')->onUpdate('cascade');
+                        
+            $table->unsignedBigInteger('approve_by_employee_id');
+            $table->foreign('approve_by_employee_id')->references('id')->on('employee_profiles')->onUpdate('cascade');
+
+            $table->date('date');
+            $table->string('reason');
+            $table->boolean('status')->default(false);
             $table->softDeletes();
             $table->timestamps();
         });

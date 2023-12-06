@@ -121,12 +121,23 @@
                                         {{ date('h A', strtotime(substr($resource->schedule->first()->timeShift->first_in ?? '' , 0, 2) . ':00')) }} <br>
 
                                         @if ($resource->schedule->first()->timeShift->second_out ?? '' != null)
-                                            {{ date('h A', strtotime(substr($resource->schedule->first()->timeShift->second_out ?? '' , 0, 2) . ':00')) }}
+                                            {{ date('h A', strtotime(substr($resource->schedule->first()->timeShift->second_out ?? '' , 0, 2) . ':00')) }} <br>
                                         @else
-                                            {{ date('h A', strtotime(substr($resource->schedule->first()->timeShift->first_out ?? '' , 0, 2) . ':00')) }}
+                                            {{ date('h A', strtotime(substr($resource->schedule->first()->timeShift->first_out ?? '' , 0, 2) . ':00')) }} <br>
+                                        @endif
+
+                                        @if ($pull_out->where('date', $date)->count() > 0)
+                                            <small> 
+                                                    PO 
+                                            </small> <br>
                                         @endif
                                     @endif
+                                    
+                                    @if ($holiday->where('effectiveDate', $date)->count() > 0)
+                                        H
+                                    @endif
                                 </td>
+ 
                             @endforeach
 
                             <td> {{ $resource->schedule->first()->timeShift->total_hours ?? '' }} </td>

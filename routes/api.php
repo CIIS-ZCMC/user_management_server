@@ -1294,12 +1294,39 @@ Route::middleware('auth.cookie')->group(function(){
             Route::put('exchange-duties/approval/{id}', 'ExchangeDutyController@approve');
         });
 
+
+        /**
+         * Pull Out Module
+         */
+        Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function(){
+            Route::get('pull-out', 'PullOutController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM write'])->group(function(){
+            Route::post('pull-out', 'PullOutController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM view'])->group(function(){
+            Route::get('pull-out/{id}', 'PullOutController@show');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM update'])->group(function(){
+            Route::put('pull-out/{id}', 'PullOutController@update');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM delete'])->group(function(){
+            Route::delete('pull-out/{id}', 'PullOutController@destroy');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM update'])->group(function(){
+            Route::put('pull-out/approval/{id}', 'PullOutController@approve');
+        });
+
         /**
          * Generate Schedule Module
          */
         Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function(){
             Route::get('generate', 'ScheduleController@generate');
         });
-
     });
 });

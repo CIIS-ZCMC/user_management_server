@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Schedule;
 
+use App\Models\PullOut;
 use App\Models\Holiday;
 use App\Models\Schedule;
 use App\Models\EmployeeProfile;
+
 use App\Http\Resources\ScheduleResource;
 use App\Http\Requests\ScheduleRequest;
 use App\Services\RequestLogger;
@@ -187,8 +189,7 @@ class ScheduleController extends Controller
                             $msg = 'employee schedule already exist';
 
                         } else {
-
-                            $data->employee()->attach($employee_id);
+                            $data->employee()->attach($employee_id, ['is_on_call' => $value['is_on_call']]);
                             $msg = 'New employee schedule registered.';
                         }
                     }
@@ -357,19 +358,13 @@ class ScheduleController extends Controller
             }])->whereHas('assignedArea', function ($query) use ($cleanData) {
                 $query->where('section_id', $cleanData['section']);
             })->get();
+            
+            $holiday = Holiday::all();
 
-                 
-            // $data = Schedule::with(['employee' => function ($query) {
-            //     $query->join('personal_informations as PI', 'employee_profiles.personal_information_id', '=', 'PI.id')
-            //           ->select('employee_profiles.id','employee_id','biometric_id', 'PI.first_name','PI.middle_name', 'PI.last_name');
-            // },'timeShift','holiday'])
-            // ->whereYear('date_start', '=', $year)
-            // ->whereMonth('date_start', '=', $month)
-            // ->get();
-     
-            Helpers::registerSystemLogs($request, $id, true, 'Success in delete '.$this->SINGULAR_MODULE_NAME.'.');
-            return view('generate_schedule/section-schedule', compact('data', 'month', 'year', 'days', 'weeks', 'dates'));
+            $pull_out = PullOut::all();
 
+            Helpers::registerSystemLogs($request, $data->id, true, 'Success in delete '.$this->SINGULAR_MODULE_NAME.'.');
+            return view('generate_schedule/section-schedule', compact('data', 'holiday', 'pull_out', 'month', 'year', 'days', 'weeks', 'dates'));
 
         } catch (\Throwable $th) {
 
