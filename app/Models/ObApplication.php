@@ -11,14 +11,14 @@ class ObApplication extends Model
     protected $table = 'ob_applications';
 
     public $fillable = [
-        'user_id',
+        'employee_profile_id',
         'date_from',
         'date_to',
         'time_from',
         'time_to',
         'reason',
         'status',
-    ];      
+    ];
         public function logs()
         {
             return $this->hasMany(ObApplicationLog::class);

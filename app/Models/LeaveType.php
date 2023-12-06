@@ -37,9 +37,6 @@ class LeaveType extends Model
         public function requirements(){
             return $this->belongsToMany(Requirement::class);
         }
-        // public function fields(){
-        //     return $this->belongsToMany(Field::class);
-        // }
         public function employeeLeaveCredits()
         {
             return $this->hasMany(EmployeeLeaveCredit::class);

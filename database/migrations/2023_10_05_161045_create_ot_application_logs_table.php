@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('status');
             $table->string('date');
             $table->string('time')->nullable();
+            $table->string('fields')->nullable();
             $table->timestamps();
         });
     }

@@ -13,10 +13,11 @@ class ObApplicationLog extends Model
     public $fillable = [
         'action_by_id',
         'ob_application_id',
-        'process_name',
-        'status',
+        'action',
         'date',
-      
+        'time',
+        'fields'
+
     ];
         public function ob_application(){
             return $this->belongsTo(ObApplication::class);

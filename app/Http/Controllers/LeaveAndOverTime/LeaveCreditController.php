@@ -69,6 +69,7 @@ class LeaveCreditController extends Controller
                 // $absences = $data['absences']
                     $total_absences="1";
                     $total_undertime="15";
+                    $total_working_hours="150";
                     $leaveTypes=[];
                     $vl_leave=[];
                     $leaveTypes = LeaveType::where('is_special', '=', '1')->get();
@@ -160,6 +161,7 @@ class LeaveCreditController extends Controller
                                  $employeeCredit->employee_profile_id = '1';
                                  $employeeCredit->operation = "add";
                                  $employeeCredit->reason = "Monthly Leave Credits";
+                                 $employeeCredit->working_hours_total = $total_working_hours;
                                  $employeeCredit->credit_value = $month_credit_value;
                                  $employeeCredit->date = date('Y-m-d');
                                  $employeeCredit->save();
@@ -195,7 +197,7 @@ class LeaveCreditController extends Controller
                 $employeeCredit->leave_type_id = $spl_leave->id;
                 $employeeCredit->employee_profile_id = $employee->id;
                 $employeeCredit->operation = "add";
-                $employeeCredit->reason = "Yearly Leave Credits";
+                $employeeCredit->reason = "Yearly SPL Credits";
                 $employeeCredit->credit_value = '3';
                 $employeeCredit->date = date('Y-m-d');
                 $employeeCredit->save();
@@ -207,7 +209,7 @@ class LeaveCreditController extends Controller
                     $employeeCredit->leave_type_id = $fl_leave->id;
                     $employeeCredit->employee_profile_id = $employee->id;
                     $employeeCredit->operation = "add";
-                    $employeeCredit->reason = "Yearly Leave Credits";
+                    $employeeCredit->reason = "Yearly FL Credits";
                     $employeeCredit->credit_value = '5';
                     $employeeCredit->date = date('Y-m-d');
                     $employeeCredit->save();

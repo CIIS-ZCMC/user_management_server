@@ -24,9 +24,9 @@ return new class extends Migration
             $table->string('date')->nullable();
             $table->string('time')->nullable();
             $table->string('personal_order')->nullable();
-            $table->string('certificate_of_apperance')->nullable();
+            $table->string('certificate_of_appearance')->nullable();
             $table->string('reference_number')->nullable();
-           
+
             $table->timestamps();
         });
     }

@@ -38,7 +38,6 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
     Route::get('leave-type-all', 'LeaveTypeController@index');
     Route::get('leave-type-select', 'LeaveTypeController@select');
     Route::post('leave-type', 'LeaveTypeController@store');
-    Route::post('leave-type-log', 'LeaveTypeController@testLog');
     Route::post('leave-type/{id}', 'LeaveTypeController@update');
     Route::post('leave-type-deactivate-password/{id}', 'LeaveTypeController@deactivateLeaveType');
     Route::post('leave-type-activate-password/{id}', 'LeaveTypeController@reactivateLeaveType');
@@ -50,8 +49,28 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
     Route::post('leave-application-decline/{id}', 'LeaveApplicationController@declineLeaveApplication');
     Route::post('leave-application-cancel/{id}', 'LeaveApplicationController@cancelLeaveApplication');
     Route::post('leave-application-update/{id}/{status}', 'LeaveApplicationController@updateLeaveApplicationStatus');
-    Route::post('user-credit/{id}/{status}', 'LeaveApplicationController@updateLeaveApplicationStatus');
-    Route::post('user-credit', 'LeaveApplicationController@getEmployeeLeaveCredit');
+    Route::post('user-leave-application/{id}', 'LeaveApplicationController@getUserLeaveApplication');
+    Route::post('user-leave-credit-logs/{id}', 'LeaveApplicationController@getUserLeaveCreditsLogs');
+    Route::post('access-level-leave-application/{id}/{status}', 'LeaveApplicationController@getLeaveApplications');
+
+    Route::get('ob-application-all', 'ObApplicationController@index');
+    Route::post('ob-application', 'ObApplicationController@store');
+    //Route::post('ob-application/{id}', 'ObApplicationController@update');
+    Route::post('ob-application-decline/{id}', 'ObApplicationController@declineObApplication');
+    Route::post('ob-application-cancel/{id}', 'ObApplicationController@cancelObApplication');
+    Route::post('ob-application-update/{id}/{status}', 'ObApplicationController@updateObApplicationStatus');
+    Route::post('user-ob-application/{id}', 'ObApplicationController@getUserObApplication');
+    Route::post('access-level-ob-application/{id}/{status}', 'ObApplicationController@getObApplications');
+
+    Route::get('ot-application-all', 'OfficialTimeApplicationController@index');
+    Route::post('ot-application', 'OfficialTimeApplicationController@store');
+    //Route::post('OfficialTime-application/{id}', 'OfficialTimeApplicationController@update');
+    Route::post('ot-application-decline/{id}', 'OfficialTimeApplicationController@declineOfficialTimeApplication');
+    Route::post('ot-application-cancel/{id}', 'OfficialTimeApplicationController@cancelOfficialTimeApplication');
+    Route::post('ot-application-update/{id}/{status}', 'OfficialTimeApplicationController@updateOfficialTimeApplicationStatus');
+    Route::post('user-ot-application/{id}', 'OfficialTimeApplicationController@getUserOfficialTimeApplication');
+    Route::post('access-level-ot-application/{id}/{status}', 'OfficialTimeApplicationController@getObApplications');
+
     Route::get('division', 'LeaveApplicationController@getDivisionLeaveApplications');
 
     Route::get('add', 'LeaveCreditController@addMonthlyLeaveCredit');
