@@ -219,7 +219,7 @@ class OfficialTimeApplicationController extends Controller
                         });
 
 
-                        return response()->json(['OfficialTimeApplication' => $OfficialTimeApplication_result]);
+                        return response()->json(['OfficialTimeApplication' => $official_time_applications_result]);
                     }
             }
             else if($status == 'for-approval-department-head'){
