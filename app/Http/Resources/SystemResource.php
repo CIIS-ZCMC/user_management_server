@@ -18,7 +18,8 @@ class SystemResource extends JsonResource
     {
         $api_key = $this->api_key === null || $this->api_key === 'NONE'? 'NONE': Crypt::decrypt($this->api_key);
         $key_status = $this->key_deactivated_at??"NONE";
-        $status_message = ($this->status === 1? 'Active':$this->status === 2)? "Maintainance": "Server Down";
+        $status_message = ($this->status === 0) ? "Maintainance" : (($this->status === 1) ? "Active" : "Server Down");
+        
         $total_user = DB::table('systems as s')
             ->join('system_roles as sr', 'sr.system_id', '=', 's.id')
             ->join('position_system_roles as psr', 'psr.system_role_id', '=', 'sr.id')

@@ -4,6 +4,9 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Http\Requests\NewRolePermissionRequest;
+use App\Models\Role;
+use App\Models\SystemModule;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -78,6 +81,62 @@ class SystemRoleController extends Controller
             return response() -> json([
                 'data' => new SystemRoleResource($systemRole),
                 "message" => 'New system role added'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    
+    public function registerNewRoleAndItsPermission($id, NewRolePermissionRequest $request)
+    {
+        try{
+            $success_data = [];
+
+            $system = System::find($id);
+
+            if(!$system)
+            {
+                return response()->json(['message' => 'No record found for system id '.$id." ."], Response::HTTP_NOT_FOUND);
+            }
+
+            foreach($request->roles as $role_value){
+                $role = Role::find($role_value['role_id']);
+
+                if(!$role) continue;
+
+                $system_role = SystemRole::create([
+                    'system_id' => $system->id,
+                    'role_id' => $role->id
+                ]);
+
+                $result['system_role'] = $system_role;
+                $result['permissions'] = [];
+                
+                foreach($role_value['modules'] as $module_value){
+                    foreach($module_value['permissions'] as $permission_value){
+                        $module_permission = ModulePermission::where('system_module_id', $module_value['module_id'])
+                            ->where('permission_id', $permission_value)->first();
+
+                        if(!$module_permission) break;
+
+                        $role_module_permission = RoleModulePermission::create([
+                            'module_permission_id' => $module_permission->id,
+                            'system_role_id' => $system_role->id 
+                        ]);
+
+                        $result['permissions'][] = $role_module_permission;
+                    }
+                }
+                $success_data[] = $result;
+            }
+
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in creating system role, attaching permissions '.$this->SINGULAR_MODULE_NAME.'.');
+            
+            return response() -> json([
+                'data' => $success_data,
+                "message" => 'System roles and access rights registered successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());

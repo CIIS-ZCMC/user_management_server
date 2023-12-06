@@ -297,4 +297,41 @@ class SystemModuleController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+    
+    public function destroyAllPermission($id, PasswordApprovalRequest $request)
+    {
+        try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $system_module = SystemModule::findOrFail($id);
+
+            if(!$system_module)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $module_permissions = $system_module->modulePermissions;
+
+            foreach($module_permissions as $permission){
+                $permission->delete();
+            }
+
+            $system_module->delete();
+            
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            
+            return response()->json(['message' => 'System module and its permission deleted successfully.'], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }

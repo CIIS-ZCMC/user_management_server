@@ -16,7 +16,6 @@ return new class extends Migration
             $table->string('name');
             $table->string('code');
             $table->string('section_attachment_url')->nullable();
-            $table->string('job_specification');
             $table->string('supervisor_attachment_url')->nullable();
             $table->datetime('supervisor_effective_at')->nullable();
             $table->boolean('supervisor_status')->default(FALSE);

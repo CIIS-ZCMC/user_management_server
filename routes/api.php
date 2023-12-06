@@ -45,7 +45,7 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
     Route::post('requirement', 'RequirementController@store');
     Route::put('requirement/{id}', 'RequirementController@update');
     Route::get('leave-application-all', 'LeaveApplicationController@index');
-    Route::get('division', 'LeaveApplicationController@getDivisionLeaveApplications');
+    Route::get('division-laot', 'LeaveApplicationController@getDivisionLeaveApplications');
     Route::get('add', 'LeaveCreditController@addMonthlyLeaveCredit');
 
     Route::get('ob-application-all', 'ObApplicationController@index');
@@ -134,6 +134,10 @@ Route::middleware('auth.cookie')->group(function(){
         Route::middleware(['auth.permission:UMIS-SM view'])->group(function(){
             Route::get('system-log/{id}', 'SystemLogsController@show');
         });
+
+        Route::middleware(['auth.permission:UMIS-SM view'])->group(function(){
+            Route::get('system-log-access-rights', 'SystemLogsController@findByAccessRights');
+        });
         
         Route::middleware(['auth.permission:UMIS-SM delete'])->group(function(){
             Route::delete('system-log/{id}', 'SystemLogsController@destroy');
@@ -170,6 +174,10 @@ Route::middleware('auth.cookie')->group(function(){
             Route::delete('system-module/{id}', 'SystemModuleController@destroy');
         });
 
+        Route::middleware(['auth.permission:UMIS-SM delete'])->group(function(){
+            Route::delete('system-module/all-permission/{id}', 'SystemModuleController@destroyAllPermission');
+        });
+
         /**
          * System Role Module
          */
@@ -183,6 +191,10 @@ Route::middleware('auth.cookie')->group(function(){
 
         Route::middleware(['auth.permission:UMIS-SM write'])->group(function(){
             Route::post('system-role-add-permission/{id}', 'SystemRoleController@addRolePermission');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-SM write'])->group(function(){
+            Route::post('system-role-new-role-permission/{id}', 'SystemRoleController@registerNewRoleAndItsPermission');
         });
 
         Route::middleware(['auth.permission:UMIS-SM view'])->group(function(){
@@ -1248,7 +1260,7 @@ Route::middleware('auth.cookie')->group(function(){
     /**
      * Leave and Overtime Management
      */
-    Route::namespace('App\Http\Controllers')->group(function(){
+    Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function(){
       
         //leave types
         // Route::get('leave_types', 'LeaveTypeController@index');
@@ -1291,22 +1303,17 @@ Route::middleware('auth.cookie')->group(function(){
 
 
         //official business applications
-        Route::get('official_business_applications', 'OfficialBusinessApplicationController@index');
-        Route::get('user_official_business_applications', 'OfficialBusinessApplicationController@getObApplications');
-        Route::post('store_official_business_applications', 'OfficialBusinessApplicationController@store');
-        Route::post('decline_official_business_applications/{id}', 'OfficialBusinessApplicationController@declineObApplication');
-        Route::post('cancel_official_business_applications/{id}', 'OfficialBusinessApplicationController@cancelObApplication');
-        Route::post('update_official_business_application_status/{id}', 'OfficialBusinessApplicationController@updateStatus');
-        Route::post('update_official_business_application/{id}', 'OfficialBusinessApplicationController@updateObApplication');
+        // Route::get('official_business_applications', 'OfficialBusinessApplicationController@index');
+        // Route::get('user_official_business_applications', 'OfficialBusinessApplicationController@getObApplications');
+        // Route::post('store_official_business_applications', 'OfficialBusinessApplicationController@store');
+        // Route::post('decline_official_business_applications/{id}', 'OfficialBusinessApplicationController@declineObApplication');
+        // Route::post('cancel_official_business_applications/{id}', 'OfficialBusinessApplicationController@cancelObApplication');
+        // Route::post('update_official_business_application_status/{id}', 'OfficialBusinessApplicationController@updateStatus');
+        // Route::post('update_official_business_application/{id}', 'OfficialBusinessApplicationController@updateObApplication');
 
         Route::middleware(['auth.permission:UMIS-LOM view-all'])->group(function(){
             Route::get('time-shift', 'TimeShiftController@index');
         });
-
-       
-       
-       
-
     });
 
     /**

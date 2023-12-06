@@ -86,7 +86,6 @@ class PlantillaController extends Controller
             $plantilla = Plantilla::create($cleanData);
 
             $cleanData['plantilla_id'] = $plantilla->id;
-            $plantilla_requirement = PlantillaRequirement::create($cleanData);
 
             $failed = [];
 
@@ -119,7 +118,7 @@ class PlantillaController extends Controller
             }
 
             $data = new PlantillaResource($plantilla);
-            $message = 'New plantilla registered.';
+            $message = 'Plantilla created successfully.';
 
             if(count($failed) === count($cleanData['plantilla_number']))
             {
@@ -195,7 +194,7 @@ class PlantillaController extends Controller
             
             return response()->json([
                 'data' => new PlantillaResource($plantilla),
-                'message' => 'Plantilla record retrieved.'], Response::HTTP_OK);
+                'message' => 'Plantilla update successfully.'], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -205,7 +204,7 @@ class PlantillaController extends Controller
     public function destroy($id, PasswordApprovalRequest $request)
     {
         try{
-            $password = strip_tags($request->input('password'));
+            $password = strip_tags($request->password);
 
             $employee_profile = $request->user;
 
@@ -263,7 +262,7 @@ class PlantillaController extends Controller
     public function destroyPlantillaNumber($id, PasswordApprovalRequest $request)
     {
         try{
-            $password = strip_tags($request->input('password'));
+            $password = strip_tags($request->password);
 
             $employee_profile = $request->user;
 
@@ -284,7 +283,7 @@ class PlantillaController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['message' => 'Plantilla number deleted.'], Response::HTTP_OK);
+            return response()->json(['message' => 'Plantilla number deleted successfully.'], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

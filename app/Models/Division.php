@@ -18,7 +18,6 @@ class Division extends Model
         'code',
         'name',
         'division_attachment_url',
-        'job_specification',
         'chief_attachment_url',
         'chief_effective_at',
         'oic_attachment_url',
@@ -33,11 +32,6 @@ class Division extends Model
     public function departments()
     {
         return $this->hasMany(Department::class);
-    }
-
-    public function chiefRequirement()
-    {
-        return Designation::where('code', $this->job_specification)->first();
     }
 
     public function chief()

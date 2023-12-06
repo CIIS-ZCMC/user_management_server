@@ -65,6 +65,16 @@ class SectionController extends Controller
     public function assignSupervisorByEmployeeID($id, SectionAssignSupervisorRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $section = Section::find($id);
 
             if(!$section)
@@ -73,22 +83,15 @@ class SectionController extends Controller
             }  
 
             $employee_profile = EmployeeProfile::where('employee_id', $request['employee_id'])->first();
-            $assigned_area = $employee_profile->assignedArea;
-            $employee_designation = $assigned_area->plantilla_id === null?$assigned_area->designation:$assigned_area->plantilla->designation;
 
             if(!$employee_profile)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             } 
 
-            if(!$employee_designation['code'].include($section['job_specification']))
-            {
-                return response()->json(['message' => 'Invalid job specification.'], Response::HTTP_BAD_REQUEST);
-            }
-
             $cleanData = [];
             $cleanData['supervisor_employee_profile_id'] = $employee_profile->id;
-            $cleanData['supervisor_attachment_url'] = $request->input('attachment')===null?'NONE': $this->file_validation_and_upload->check_save_file($request->input('attachment'),"section/files");
+            $cleanData['supervisor_attachment_url'] = $request->attachment===null?'NONE': $this->file_validation_and_upload->check_save_file($request->input('attachment'),"section/files");
             $cleanData['supervisor_effective_at'] = Carbon::now();
 
             $section->update($cleanData);
@@ -113,6 +116,16 @@ class SectionController extends Controller
     public function assignOICByEmployeeID($id, SectionAssignOICRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $section = Section::find($id);
 
             if(!$section)
@@ -128,7 +141,7 @@ class SectionController extends Controller
             } 
 
             $user = $request->user;
-            $cleanData['password'] = strip_tags($request->input('password'));
+            $cleanData['password'] = strip_tags($request->password);
 
             $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
 
@@ -139,8 +152,8 @@ class SectionController extends Controller
             $cleanData = [];
             $cleanData['oic_employee_profile_id'] = $employee_profile->id;
             $cleanData['oic_attachment_url'] = $request->input('attachment')===null?'NONE': $this->file_validation_and_upload->check_save_file($request->input('attachment'),"section/files");
-            $cleanData['oic_effective_at'] = strip_tags($request->input('effective_at'));
-            $cleanData['oic_end_at'] = strip_tags($request->input('end_at'));
+            $cleanData['oic_effective_at'] = strip_tags($request->effective_at);
+            $cleanData['oic_end_at'] = strip_tags($request->end_at);
 
             $section->update($cleanData);
 
@@ -165,7 +178,7 @@ class SectionController extends Controller
              * Validate if no given diviosn id or department id
              * as it is important and required by the system.
              */
-            if($request->input('division_id') === null && $request->input('department_id') === null)
+            if($request->division_id === null && $request->department_id === null)
             {
                 return response() -> json(['message'=> 'Division or Department area is required.'], Response::HTTP_BAD_REQUEST);
             }
@@ -174,9 +187,9 @@ class SectionController extends Controller
              * Validate if has division id
              * Validate if division id trully exist.
              */
-            if($request->input('division_id') !== null)
+            if($request->division_id !== null)
             {
-                $division = Division::find($request->input('division_id'));
+                $division = Division::find($request->division_id);
 
                 if(!$division)
                 {
@@ -188,9 +201,9 @@ class SectionController extends Controller
              * Validate if has department id
              * Validate if department id trully exist.
              */
-            if($request->input('department_id') !== null)
+            if($request->department_id !== null)
             {
-                $division = Department::find($request->input('department_id'));
+                $division = Department::find($request->department_id);
 
                 if(!$division)
                 {
@@ -216,7 +229,7 @@ class SectionController extends Controller
 
             return response()->json([
                 'data' =>  new SectionResource($section),
-                'message' => 'New section added.'
+                'message' => 'Section created successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
@@ -313,7 +326,7 @@ class SectionController extends Controller
 
             return response()->json([
                 'data' =>  new SectionResource($section),
-                'message' => 'Updated section details.'
+                'message' => 'Section updated successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
@@ -324,7 +337,7 @@ class SectionController extends Controller
     public function destroy($id, PasswordApprovalRequest $request)
     {
         try{
-            $password = strip_tags($request->input('password'));
+            $password = strip_tags($request->password);
 
             $employee_profile = $request->user;
 
@@ -345,7 +358,7 @@ class SectionController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['message' => 'Section record deleted.'], Response::HTTP_OK);
+            return response()->json(['message' => 'Section deleted successfully.'], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

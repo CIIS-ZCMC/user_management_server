@@ -18,7 +18,6 @@ use App\Http\Requests\DivisionAssignChiefRequest;
 use App\Http\Requests\DivisionAssignOICRequest;
 use App\Http\Resources\DivisionResource;
 use App\Models\Division;
-use App\Models\Designation;
 use App\Models\EmployeeProfile;
 
 class DivisionController extends Controller
@@ -64,6 +63,15 @@ class DivisionController extends Controller
     public function assignChiefByEmployeeID($id, DivisionAssignChiefRequest $request)
     {
         try{
+            $user = $request->user;
+            $cleanData['password'] = strip_tags($request->password);
+
+            $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
+
+            if (!Hash::check($cleanData['password'].env("SALT_VALUE"), $decryptedPassword)) {
+                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $division = Division::find($id);
 
             if(!$division)
@@ -72,17 +80,10 @@ class DivisionController extends Controller
             }  
 
             $employee_profile = EmployeeProfile::where('employee_id', $request['employee_id'])->first();
-            $assigned_area = $employee_profile->assignedArea;
-            $employee_designation = $assigned_area->plantilla_id === null?$assigned_area->designation:$assigned_area->plantilla->designation;
 
             if(!$employee_profile)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            } 
-
-            if(!$employee_designation['code'].include($division['job_specification']))
-            {
-                return response()->json(['message' => 'Invalid job specification.'], Response::HTTP_BAD_REQUEST);
             }
 
             $cleanData = [];
@@ -124,7 +125,7 @@ class DivisionController extends Controller
             } 
 
             $user = $request->user;
-            $cleanData['password'] = strip_tags($request->input('password'));
+            $cleanData['password'] = strip_tags($request->password);
 
             $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
 
@@ -142,7 +143,10 @@ class DivisionController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in assigning chief '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => new DivisionResource($division),'message' => 'New officer incharge assign in department.' ], Response::HTTP_OK);
+            return response()->json([
+                'data' => new DivisionResource($division),
+                'message' => 'New officer incharge assign in department.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'assignOICByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -153,8 +157,6 @@ class DivisionController extends Controller
     {
         try{
             $cleanData = [];
-
-            $designation = Designation::find($request->input('designation_id'));
 
             foreach ($request->all() as $key => $value) {
                 if($value === null)
@@ -170,8 +172,6 @@ class DivisionController extends Controller
                 }
                 $cleanData[$key] = strip_tags($value);
             }
-            
-            $cleanData['job_specification'] = $designation['code'];
 
             $division = Division::create($cleanData);
 
@@ -179,7 +179,7 @@ class DivisionController extends Controller
 
             return response()->json([
                 'data' => new DivisionResource($division),
-                'message' => 'Newly added division.'
+                'message' => 'Division created successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
@@ -187,7 +187,7 @@ class DivisionController extends Controller
         }
     }
     
-    public function show($id, DivisionRequest $request)
+    public function show($id, Request $request)
     {
         try{
             $division = Division::findOrFail($id);
@@ -209,7 +209,7 @@ class DivisionController extends Controller
         }
     }
     
-    public function update($id, Request $request)
+    public function update($id, DivisionRequest $request)
     {
         try{
             $division = Division::find($id);
@@ -218,8 +218,6 @@ class DivisionController extends Controller
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
-
-            $designation = Designation::find($request->input('designation_id'));
 
             $cleanData = [];
 
@@ -237,14 +235,13 @@ class DivisionController extends Controller
                 }
                 $cleanData[$key] = strip_tags($value);
             }
-            $cleanData['job_specification'] = $designation['code'];
             $division -> update($cleanData);
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => new DivisionResource($division),
-                'message' => 'Newly added division.'
+                'message' => 'Division updated successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
@@ -255,7 +252,7 @@ class DivisionController extends Controller
     public function destroy($id, PasswordApprovalRequest $request)
     {
         try{
-            $password = strip_tags($request->input('password'));
+            $password = strip_tags($request->password);
 
             $employee_profile = $request->user;
 
@@ -281,7 +278,7 @@ class DivisionController extends Controller
             
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['message' => 'Division record deleted.'], Response::HTTP_OK);
+            return response()->json(['message' => 'Division deleted successfully.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

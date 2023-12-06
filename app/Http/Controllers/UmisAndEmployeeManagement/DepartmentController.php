@@ -65,6 +65,16 @@ class DepartmentController extends Controller
     public function assignHeadByEmployeeID($id, DepartmentAssignHeadRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $department = Department::find($id);
 
             if(!$department)
@@ -113,6 +123,16 @@ class DepartmentController extends Controller
     public function assignTrainingOfficerByEmployeeID($id, DepartmentAssignHeadRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $department = Department::find($id);
 
             if(!$department)
@@ -161,6 +181,16 @@ class DepartmentController extends Controller
     public function assignOICByEmployeeID($id, DepartmentAssignOICRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $department = Department::find($id);
 
             if(!$department)
@@ -176,7 +206,7 @@ class DepartmentController extends Controller
             } 
 
             $user = $request->user;
-            $cleanData['password'] = strip_tags($request->input('password'));
+            $cleanData['password'] = strip_tags($request->password);
 
             $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
 
@@ -206,7 +236,7 @@ class DepartmentController extends Controller
     public function store(DepartmentRequest $request)
     {
         try{
-            $division_id = $request->input('division_id');
+            $division_id = $request->division_id;
             $division = Division::find($division_id);
 
             if(!$division)
@@ -236,7 +266,7 @@ class DepartmentController extends Controller
 
             return response()->json([
                 'data' =>  new DepartmentResource($department),
-                'message' => 'Newly added department.'
+                'message' => 'Department created successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
@@ -305,7 +335,7 @@ class DepartmentController extends Controller
 
             return response()->json([
                 'data' =>  new DepartmentResource($department),
-                'message' => 'Update department details.'
+                'message' => 'Department updated successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
@@ -316,7 +346,7 @@ class DepartmentController extends Controller
     public function destroy($id, PasswordApprovalRequest $request)
     {
         try{
-            $password = strip_tags($request->input('password'));
+            $password = strip_tags($request->password);
 
             $employee_profile = $request->user;
 
@@ -337,7 +367,7 @@ class DepartmentController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['message' => 'Department record deleted.'], Response::HTTP_OK);
+            return response()->json(['message' => 'Department deleted successfully.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

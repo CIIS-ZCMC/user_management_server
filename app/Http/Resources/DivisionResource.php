@@ -18,8 +18,6 @@ class DivisionResource extends JsonResource
         {
             $name = $this->name;
             $code = $this->code;
-            $designation = $this->chiefRequirement();
-            $job_specification = $designation['name'];
             $chief_status = $this->chief_status? 'On Site':'On Leave';
             $approving_officer = $this->chief_status? 'Chief':'OIC';
 
@@ -40,7 +38,6 @@ class DivisionResource extends JsonResource
                 'id' => $this->id,
                 'name' => $name,
                 'code' => $code,
-                'job_specification' => $job_specification,
                 'chief' => $chief,
                 'chief_status' => $chief_status,
                 'approving_officer' => $approving_officer,
@@ -48,15 +45,10 @@ class DivisionResource extends JsonResource
             ];
         }
 
-        $chief_designation = $this->chiefRequirement();
-        $job_specification = $chief_designation['name'];
-
-
         return [
             'id' => $this->id,
             'code' => $this->code,
             'name' => $this->name,
-            'job_specification' => $job_specification,
             'chief' => 'NONE',
             'chief_status' => 'No Chief',
             'approving_officer' => 'NONE',

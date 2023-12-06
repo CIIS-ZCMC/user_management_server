@@ -4,10 +4,12 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Cache;
 use App\Http\Requests\PasswordApprovalRequest;
 use App\Services\RequestLogger;
 use App\Models\SystemLogs;
@@ -29,7 +31,12 @@ class SystemLogsController extends Controller
     public function index(Request $request)
     {
         try{
-            $system_logs = SystemLogs::all();
+            
+            $cacheExpiration = Carbon::now()->addDay();
+
+            $system_logs = Cache::remember('system_logs', $cacheExpiration, function(){
+                return SystemLogs::all();
+            });
 
             return response()->json([
                 'data' => SystemLogsResource::collection($system_logs), 
@@ -59,6 +66,28 @@ class SystemLogsController extends Controller
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], 500);
+        }
+    }
+    
+    public function findByAccessRights(Request $request)
+    {
+        try{
+            $system_logs = SystemLogs::where('action', $request->action)->get();
+
+            if(!$system_logs)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            
+            return response()->json([
+                'data' => SystemLogsResource::collection($system_logs),
+                'message' => 'System Log record retrieved.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByAccessRights', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], 500);
         }
     }

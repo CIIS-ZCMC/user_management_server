@@ -50,7 +50,7 @@ class ChildController extends Controller
     public function findByEmployeeID(Request $request)
     {
         try{
-            $employee_profile = EmployeeProfile::where('employee_id',$request->input('employee_id'))->get();
+            $employee_profile = EmployeeProfile::where('employee_id',$request->employee_id)->get();
 
             if(!$employee_profile)
             {
@@ -60,9 +60,9 @@ class ChildController extends Controller
             $personal_information = $employee_profile->personalInformation;
             $children = $personal_information->children;
 
-            $this->requestLogger->registerSystemLogs($request, $children['id'], true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $request->employee_id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json([,
+            return response()->json([
                 'data' => ChildResource::collection($children),
                 'message' => 'Employee children record retrieved.'
             ], Response::HTTP_OK);
