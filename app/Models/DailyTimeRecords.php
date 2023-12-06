@@ -12,6 +12,7 @@ class DailyTimeRecords extends Model
     protected $table = "daily_time_records";
     protected $fillable = [
         'biometric_id',
+        'dtr_date',
         'first_in',
         'first_out',
         'second_in',

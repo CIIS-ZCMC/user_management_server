@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('daily_time_records', function (Blueprint $table) {
             $table->id();
             $table->integer('biometric_id');
+            $table->date('dtr_date');
             $table->string('first_in')->nullable();
             $table->string('first_out')->nullable();
             $table->string('second_in')->nullable();
