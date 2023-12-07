@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use App\Services\RequestLogger;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
+use App\Services\RequestLogger;
+use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\SystemRequest;
 use App\Http\Resources\SystemResource;
 use App\Models\System;
@@ -62,7 +64,7 @@ class SystemController extends Controller
             
             return response() -> json([
                 'data' => new SystemResource($system),
-                'message' => 'New system record added.'
+                'message' => 'System created successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
@@ -111,10 +113,20 @@ class SystemController extends Controller
      * finding a system record according to the ID given and if found
      * the system status will be updated.
      */
-    public function updateSystemStatus($id, Request $request)
+    public function updateSystemStatus($id, PasswordApprovalRequest $request)
     {
         try{
-            $status = $request->status;
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $status = $request->input('status');
 
             if(!is_int($status) || $status < 0 || $status > 2)
             {
@@ -127,16 +139,13 @@ class SystemController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $system->update([
-                'status' => $status,
-                'updated_at' => now()
-            ]);
+            $system->update(['status' => $status]);
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in Updating System Status'.$this->SINGULAR_MODULE_NAME.'.');
             
             return response() -> json([
                 'data' => new SystemResource($system),
-                'message' => 'System record updated.'
+                'message' => 'System updated successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'activateSystem', $th->getMessage());
@@ -168,6 +177,16 @@ class SystemController extends Controller
     public function update($id, Request $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $system = System::find($id);
             
             if (!$system) {
@@ -198,9 +217,19 @@ class SystemController extends Controller
         }
     }
 
-    public function destroy($id, Request $request)
+    public function destroy($id, PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $system = System::findOrFail($id);
 
             if(!$system){
@@ -211,7 +240,7 @@ class SystemController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response() -> json(['message' => 'System record deleted.'], Response::HTTP_OK);
+            return response() -> json(['message' => 'System deleted successfully.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

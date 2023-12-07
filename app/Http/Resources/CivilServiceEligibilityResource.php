@@ -18,6 +18,7 @@ class CivilServiceEligibilityResource extends JsonResource
         $license_release_at = $this->license_release_at === null?'NONE':$this->license_release_at;
 
         return [
+            'id'=> $this->id,
             'career_service' => $this->career_service,
             'rating' => $this->rating,
             'date_of_examination' => $this->date_of_examination,

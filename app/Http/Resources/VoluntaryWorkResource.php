@@ -15,6 +15,7 @@ class VoluntaryWorkResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'id' => $this->id,
             'name_address_organization' => $this->name_address_organization,
             'inclusive_from' => $this->inclusive_from,
             'inclusive_to' => $this->inclusive_to,

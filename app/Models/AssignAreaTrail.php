@@ -12,6 +12,7 @@ class AssignAreaTrail extends Model
     protected $table = 'assigned_area_trails';
 
     public $fillable = [
+        'salary_grade_step',
         'employee_profile_id',
         'division_id',
         'department_id',

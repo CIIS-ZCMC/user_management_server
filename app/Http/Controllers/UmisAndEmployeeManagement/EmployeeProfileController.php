@@ -160,7 +160,7 @@ class EmployeeProfileController extends Controller
             ]);
 
             return response()
-                ->json(['data' => $data, 'message' => "Success login."], Response::HTTP_OK)
+                ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
                 ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), true);
         } catch (\Throwable $th) {
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'signIn', $th->getMessage());
@@ -191,7 +191,7 @@ class EmployeeProfileController extends Controller
                         'roleModulePermissions' => function($query){
                             $query->with([
                                 'modulePermission' => function($query){
-                                    $query->with(['systemModule', 'permission']);
+                                    $query->with(['module', 'permission']);
                                 }
                             ]);
                         },
@@ -255,7 +255,7 @@ class EmployeeProfileController extends Controller
                     $query->with([
                         'system',
                         'roleModulePermissions' => function ($query) {
-                            $query->with(['systemModule', 'permission']);
+                            $query->with(['module', 'permission']);
                         }
                     ]);
                 }
@@ -304,7 +304,7 @@ class EmployeeProfileController extends Controller
         // return $role_module_permissions;
     
         foreach ($role_module_permissions as $role_module_permission) {
-            $module_name = $role_module_permission->modulePermission->systemModule->name;
+            $module_name = $role_module_permission->modulePermission->module->name;
             $permission_action = $role_module_permission->modulePermission->permission->action;
     
             if (!isset($modules[$module_name])) {

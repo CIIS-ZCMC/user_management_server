@@ -17,7 +17,7 @@ class PositionSystemRoleSeeder extends Seeder
      */
     public function run(): void
     {
-        $system_role =  SystemRole::where('name', 'Super Admin')->first();
+        $system_role =  SystemRole::find(1);
 
         PositionSystemRole::create([
             'designation_id' => Designation::where('code', 'SA I')->first()->id,

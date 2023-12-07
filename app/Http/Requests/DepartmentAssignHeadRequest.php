@@ -23,7 +23,8 @@ class DepartmentAssignHeadRequest extends FormRequest
     {
         return [
             'employee_id' => 'required|string|max:255',
-            'attachment' => 'nullable|text'
+            'attachment' => 'nullable|text',
+            'password' => 'required|string|max:255'
         ];
     }
 }

@@ -23,6 +23,7 @@ class SupervisorSectionTrailResource extends JsonResource
         $attachment = $this->attachment_url;
 
         return [
+            'id' => $this->id,
             'supervisor' => $supervisor,
             'section_name' => $section_name,
             'section_code' => $section_code,

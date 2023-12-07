@@ -24,6 +24,7 @@ class ChiefDivisionTrailResource extends JsonResource
         $attachment = $this->attachment_url;
 
         return [
+            'id' => $this->id,
             'chief' => $chief,
             'division_name' => $division_name,
             'division_code' => $division_code,

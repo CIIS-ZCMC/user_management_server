@@ -18,6 +18,7 @@ class ContactResource extends JsonResource
         $email_address = $this->email_address === null?'NONE':$this->email_address;
 
         return [
+            'id'=> $this->id,
             'phone_number' => $phone_number,
             'email_address' => $email_address
         ];

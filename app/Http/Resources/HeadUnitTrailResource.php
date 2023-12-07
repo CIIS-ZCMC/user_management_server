@@ -24,6 +24,7 @@ class HeadUnitTrailResource extends JsonResource
         $attachment = $this->attachment_url;
 
         return [
+            'id' => $this->id,
             'head' => $head,
             'unit_name' => $unit_name,
             'unit_code' => $unit_code,

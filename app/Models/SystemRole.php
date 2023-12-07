@@ -13,13 +13,17 @@ class SystemRole extends Model
     protected $table = 'system_roles';
 
     protected $fillable = [
-        "name",
-        "code",
-        "effective_at",
-        "system_id"
+        "role_id",
+        "system_id",
+        "effective_at"
     ];
 
     public $timestamps = TRUE;
+
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
+    }
 
     public function system()
     {

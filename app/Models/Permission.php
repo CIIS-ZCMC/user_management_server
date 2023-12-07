@@ -17,7 +17,8 @@ class Permission extends Model
         'active'
     ];
     
-    public function modulePermission(){
+    public function modulePermission()
+    {
         return $this->hasMany(ModulePermission::class);
     }
 }
