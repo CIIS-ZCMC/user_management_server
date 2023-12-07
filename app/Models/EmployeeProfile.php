@@ -101,7 +101,7 @@ class EmployeeProfile extends Authenticatable
     {
         return $this->email_verified_at === null;
     }
-    
+
     public function createToken()
     {
         Log::channel('custom-info')->info('PASSED');
@@ -152,22 +152,31 @@ class EmployeeProfile extends Authenticatable
     public function leaveApplicationLogs() {
         return $this->hasMany(LeaveApplicationLog::class);
     }
-   
+
     public function obApplications() {
         return $this->hasMany(ObApplication::class);
     }
-    
+
     public function obApplicationLogs() {
         return $this->hasMany(ObApplicationLog::class);
     }
-   
+
+    public function otApplications() {
+        return $this->hasMany(OfficialTimeApplication::class);
+    }
+
+    public function otApplicationLogs() {
+        return $this->hasMany(otApplicationLogs::class);
+    }
+
+
 
     public function findDesignation()
     {
-        $assign_area = $this->assignedArea; 
+        $assign_area = $this->assignedArea;
 
         $designation = $assign_area->plantilla_id  === null?$assign_area->designation:$assign_area->plantilla->designation;
-        
+
         return $designation;
     }
 }

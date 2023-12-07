@@ -233,13 +233,13 @@ class ObApplicationController extends Controller
     {
 
         try{
-            $status = $request->status;
-            $employee_id = $request->employee_id;
+
             $official_business_applications = [];
-            $division = AssignArea::where('employee_profile_id',$employee_id)->value('division_id');
+
             if($status == 'for-approval-division-head'){
-                    $divisionHeadId = Division::where('id', $division)->value('chief_employee_profile_id');
-                    if($divisionHeadId === $employee_id) {
+                $division = AssignArea::where('employee_profile_id',$id)->value('division_id');
+                $divisionHeadId = Division::where('id', $division)->value('chief_employee_profile_id');
+                    if($divisionHeadId == $id) {
                         $official_business_applications = ObApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','logs'])
                         ->whereHas('employeeProfile.assignedArea', function ($query) use ($division) {
                             $query->where('id', $division);
@@ -254,19 +254,30 @@ class ObApplicationController extends Controller
                             $chief_name=null;
                             $head_name=null;
                             $supervisor_name=null;
-                            if ($division) {
-                                $division = Division::with('chief.personalInformation')->find($division);
-                                $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                            if($division) {
+                                $division_name = Division::with('chief.personalInformation')->find($division);
+                                if($division_name && $division_name->chief  && $division_name->personalInformation != null)
+                                {
+                                    $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                                }
+
+
                             }
                             if($department)
                             {
-                                $department = Department::with('head.personalInformation')->find($department);
-                                $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                                $department_name = Department::with('head.personalInformation')->find($department);
+                                if($department_name && $department_name->head  && $department_name->personalInformation != null)
+                                {
+                                 $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
+                                }
                             }
                             if($section)
                             {
-                                $section = Section::with('supervisor.personalInformation')->find($section);
-                                $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                                $section_name = Section::with('supervisor.personalInformation')->find($section);
+                                if($section_name && $section_name->head  && $section_name->personalInformation != null)
+                                {
+                                $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
+                                }
                             }
                         $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
                         $last_name = optional($official_business_application->employeeProfile->personalInformation)->last_name ?? null;
@@ -326,10 +337,10 @@ class ObApplicationController extends Controller
                     }
             }
             else if($status == 'for-approval-department-head'){
-                $department = AssignArea::where('employee_profile_id',$employee_id)->value('department_id');
+                $department = AssignArea::where('employee_profile_id',$id)->value('department_id');
                 $departmentHeadId = Department::where('id', $department)->value('head_employee_profile_id');
                 $training_officer_id = Department::where('id', $department)->value('training_officer_employee_profile_id');
-                if($departmentHeadId === $employee_id || $training_officer_id === $employee_id) {
+                if($departmentHeadId == $id || $training_officer_id == $id) {
                     $official_business_applications = ObApplication::with(['employeeProfile.assignedArea.department','employeeProfile.personalInformation','logs' ])
                     ->whereHas('employeeProfile.assignedArea', function ($query) use ($department) {
                         $query->where('id', $department);
@@ -415,9 +426,9 @@ class ObApplicationController extends Controller
                 }
             }
             else if($status == 'for-approval-section-head'){
-                $section = AssignArea::where('employee_profile_id',$employee_id)->value('section_id');
+                $section = AssignArea::where('employee_profile_id',$id)->value('section_id');
                 $sectionHeadId = Section::where('id', $section)->value('supervisor_employee_profile_id');
-                if($sectionHeadId === $employee_id) {
+                if($sectionHeadId == $id) {
 
                     $official_business_applications = ObApplication::with(['employeeProfile.assignedArea.section','employeeProfile.personalInformation','logs'])
                     ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
@@ -747,6 +758,7 @@ class ObApplicationController extends Controller
             $ob_id=$official_business_application->id;
             $columnsString="";
             $process_name="Applied";
+
             $this->storeOfficialBusinessApplicationLog($ob_id,$process_name,$columnsString);
             return response()->json(['message' => 'Official Business Application has been sucessfully saved','data' => $official_business_application ], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -759,7 +771,7 @@ class ObApplicationController extends Controller
     {
         try {
 
-                    $ob_applications = ObApplication::where('id','=', $id)
+                $ob_applications = ObApplication::where('id','=', $id)
                                                             ->first();
                 if($ob_applications)
                 {

@@ -136,7 +136,7 @@ class OfficialTimeApplicationController extends Controller
             $division = AssignArea::where('employee_profile_id',$employee_id)->value('division_id');
             if($status == 'for-approval-division-head'){
                     $divisionHeadId = Division::where('id', $division)->value('chief_employee_profile_id');
-                    if($divisionHeadId === $employee_id) {
+                    if($divisionHeadId == $employee_id) {
                         $OfficialTimeApplication = OfficialTimeApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','logs'])
                         ->whereHas('employeeProfile.assignedArea', function ($query) use ($division) {
                             $query->where('id', $division);
@@ -151,19 +151,30 @@ class OfficialTimeApplicationController extends Controller
                             $chief_name=null;
                             $head_name=null;
                             $supervisor_name=null;
-                            if ($division) {
-                                $division = Division::with('chief.personalInformation')->find($division);
-                                $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                            if($division) {
+                                $division_name = Division::with('chief.personalInformation')->find($division);
+                                if($division_name && $division_name->chief  && $division_name->personalInformation != null)
+                                {
+                                    $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                                }
+
+
                             }
                             if($department)
                             {
-                                $department = Department::with('head.personalInformation')->find($department);
-                                $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                                $department_name = Department::with('head.personalInformation')->find($department);
+                                if($department_name && $department_name->head  && $department_name->personalInformation != null)
+                                {
+                                 $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
+                                }
                             }
                             if($section)
                             {
-                                $section = Section::with('supervisor.personalInformation')->find($section);
-                                $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                                $section_name = Section::with('supervisor.personalInformation')->find($section);
+                                if($section_name && $section_name->head  && $section_name->personalInformation != null)
+                                {
+                                $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
+                                }
                             }
                         $first_name = optional($official_time_application->employeeProfile->personalInformation)->first_name ?? null;
                         $last_name = optional($official_time_application->employeeProfile->personalInformation)->last_name ?? null;
@@ -226,7 +237,7 @@ class OfficialTimeApplicationController extends Controller
                 $department = AssignArea::where('employee_profile_id',$employee_id)->value('department_id');
                 $departmentHeadId = Department::where('id', $department)->value('head_employee_profile_id');
                 $training_officer_id = Department::where('id', $department)->value('training_officer_employee_profile_id');
-                if($departmentHeadId === $employee_id || $training_officer_id === $employee_id) {
+                if($departmentHeadId == $employee_id || $training_officer_id === $employee_id) {
                     $OfficialTimeApplication = OfficialTimeApplication::with(['employeeProfile.assignedArea.department','employeeProfile.personalInformation','logs' ])
                     ->whereHas('employeeProfile.assignedArea', function ($query) use ($department) {
                         $query->where('id', $department);
@@ -241,19 +252,30 @@ class OfficialTimeApplicationController extends Controller
                         $chief_name=null;
                         $head_name=null;
                         $supervisor_name=null;
-                        if ($division) {
-                            $division = Division::with('chief.personalInformation')->find($division);
-                            $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                        if($division) {
+                            $division_name = Division::with('chief.personalInformation')->find($division);
+                            if($division_name && $division_name->chief  && $division_name->personalInformation != null)
+                            {
+                                $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                            }
+
+
                         }
                         if($department)
                         {
-                            $department = Department::with('head.personalInformation')->find($department);
-                            $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                            $department_name = Department::with('head.personalInformation')->find($department);
+                            if($department_name && $department_name->head  && $department_name->personalInformation != null)
+                            {
+                             $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
+                            }
                         }
                         if($section)
                         {
-                            $section = Section::with('supervisor.personalInformation')->find($section);
-                            $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                            $section_name = Section::with('supervisor.personalInformation')->find($section);
+                            if($section_name && $section_name->head  && $section_name->personalInformation != null)
+                            {
+                            $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
+                            }
                         }
                         $first_name = optional($official_time_application->employeeProfile->personalInformation)->first_name ?? null;
                         $last_name = optional($official_time_application->employeeProfile->personalInformation)->last_name ?? null;
@@ -314,7 +336,7 @@ class OfficialTimeApplicationController extends Controller
             else if($status == 'for-approval-section-head'){
                 $section = AssignArea::where('employee_profile_id',$employee_id)->value('section_id');
                 $sectionHeadId = Section::where('id', $section)->value('supervisor_employee_profile_id');
-                if($sectionHeadId === $employee_id) {
+                if($sectionHeadId == $employee_id) {
 
                     $official_time_applications = OfficialTimeApplication::with(['employeeProfile.assignedArea.section','employeeProfile.personalInformation','logs'])
                     ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
@@ -330,19 +352,30 @@ class OfficialTimeApplicationController extends Controller
                         $chief_name=null;
                         $head_name=null;
                         $supervisor_name=null;
-                        if ($division) {
-                            $division = Division::with('chief.personalInformation')->find($division);
-                            $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                        if($division) {
+                            $division_name = Division::with('chief.personalInformation')->find($division);
+                            if($division_name && $division_name->chief  && $division_name->personalInformation != null)
+                            {
+                                $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                            }
+
+
                         }
                         if($department)
                         {
-                            $department = Department::with('head.personalInformation')->find($department);
-                            $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                            $department_name = Department::with('head.personalInformation')->find($department);
+                            if($department_name && $department_name->head  && $department_name->personalInformation != null)
+                            {
+                             $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
+                            }
                         }
                         if($section)
                         {
-                            $section = Section::with('supervisor.personalInformation')->find($section);
-                            $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                            $section_name = Section::with('supervisor.personalInformation')->find($section);
+                            if($section_name && $section_name->head  && $section_name->personalInformation != null)
+                            {
+                            $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
+                            }
                         }
                         $first_name = optional($official_time_application->employeeProfile->personalInformation)->first_name ?? null;
                         $last_name = optional($official_time_application->employeeProfile->personalInformation)->last_name ?? null;
@@ -484,6 +517,103 @@ class OfficialTimeApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], 500);
         }
     }
+    public function getUserOtApplication($id)
+    {
+        try{
+        $ot_applications = OfficialTimeApplication::with(['employeeProfile.personalInformation','logs'])
+        ->where('employee_profile_id', $id)
+        ->get();
+            $ot_applications_result = $ot_applications->map(function ($ot_application) {
+            $division = AssignArea::where('employee_profile_id',$ot_application->employee_profile_id)->value('division_id');
+            $department = AssignArea::where('employee_profile_id',$ot_application->employee_profile_id)->value('department_id');
+            $section = AssignArea::where('employee_profile_id',$ot_application->employee_profile_id)->value('section_id');
+            $chief_name=null;
+            $head_name=null;
+            $supervisor_name=null;
+            if($division) {
+                $division_name = Division::with('chief.personalInformation')->find($division);
+                if($division_name && $division_name->chief  && $division_name->personalInformation != null)
+                {
+                    $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                }
+
+
+            }
+            if($department)
+            {
+                $department_name = Department::with('head.personalInformation')->find($department);
+                if($department_name && $department_name->head  && $department_name->personalInformation != null)
+                {
+                 $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
+                }
+            }
+            if($section)
+            {
+                $section_name = Section::with('supervisor.personalInformation')->find($section);
+                if($section_name && $section_name->head  && $section_name->personalInformation != null)
+                {
+                $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
+                }
+            }
+            $first_name = optional($ot_application->employeeProfile->personalInformation)->first_name ?? null;
+            $last_name = optional($ot_application->employeeProfile->personalInformation)->last_name ?? null;
+            return [
+                'id' => $ot_application->id,
+                'date_from' => $ot_application->date_from,
+                'date_to' => $ot_application->date_to,
+                'time_from' => $ot_application->time_from,
+                'time_to' => $ot_application->time_to,
+                'reason' => $ot_application->reason,
+                'status' => $ot_application->status,
+                'employee_id' => $ot_application->employee_profile_id,
+                'employee_name' => "{$first_name} {$last_name}" ,
+                'division_head' =>$chief_name,
+                'department_head' =>$head_name,
+                'section_head' =>$supervisor_name,
+                'division_name' => $ot_application->employeeProfile->assignedArea->division->name ?? null,
+                'department_name' => $ot_application->employeeProfile->assignedArea->department->name ?? null,
+                'section_name' => $ot_application->employeeProfile->assignedArea->section->name ?? null,
+                'unit_name' => $ot_application->employeeProfile->assignedArea->unit->name ?? null,
+                'logs' => $ot_application->logs->map(function ($log) {
+                    $process_name=$log->action;
+                    $action ="";
+                    $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
+                    $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
+                    if($log->action_by_id  === optional($log->employeeProfile->assignedArea->division)->chief_employee_profile_id )
+                    {
+                        $action =  $process_name . ' by ' . 'Division Head';
+                    }
+                    else if ($log->action_by_id === optional($log->employeeProfile->assignedArea->department)->head_employee_profile_id || optional($log->employeeProfile->assignedArea->section)->supervisor_employee_profile_id)
+                    {
+                        $action =  $process_name . ' by ' . 'Supervisor';
+                    }
+                    else{
+                        $action=  $process_name . ' by ' . $first_name .' '. $last_name;
+                    }
+
+                    $date=$log->date;
+                    $formatted_date=Carbon::parse($date)->format('M d,Y');
+                    return [
+                        'id' => $log->id,
+                        'leave_application_id' => $log->ob_application_id,
+                        'action_by' => "{$first_name} {$last_name}" ,
+                        'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                        'action' => $log->action,
+                        'date' => $formatted_date,
+                        'time' => $log->time,
+                        'process' => $action
+                    ];
+                }),
+
+            ];
+        });
+
+             return response()->json(['data' => $ot_applications_result], Response::HTTP_OK);
+        }catch(\Throwable $th){
+
+            return response()->json(['message' => $th->getMessage()], 500);
+        }
+    }
 
     public function store(Request $request)
     {
@@ -497,7 +627,6 @@ class OfficialTimeApplicationController extends Controller
             $official_time_application->time_from = $request->time_from;
             $official_time_application->time_to = $request->time_to;
             $official_time_application->status = "for-approval-supervisor";
-            $official_time_application->reason = "for-approval-supervisor";
             $official_time_application->date = date('Y-m-d');
             $official_time_application->time =  date('H:i:s');
             if ($request->hasFile('personal_order')) {
@@ -509,137 +638,156 @@ class OfficialTimeApplicationController extends Controller
                 $official_time_application->certificate_of_appearance = $imagePath;
             }
             $official_time_application->save();
-
-
+            $ot_id=$official_time_application->id;
+            $columnsString="";
             $process_name="Applied";
-            $official_time_logs = $this->storeOfficialTimeApplicationLog($official_time_application->id,$process_name);
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+
+
+            $this->storeOfficialTimeApplicationLog($ot_id,$process_name,$columnsString);
+            return response()->json(['message' => 'Official Business Application has been sucessfully saved','data' => $official_time_application ], Response::HTTP_OK);
         }catch(\Throwable $th){
 
             return response()->json(['message' => $th->getMessage()], 500);
         }
     }
 
-    public function declineOtApplication(Request $request)
+    public function declineOtApplication($id,Request $request)
     {
         try {
-                    $ot_application_id = $request->ot_application_id;
-                    $ot_applications = OfficialTimeApplication::where('id','=', $ot_application_id)
+
+                $ot_applications = OfficialTimeApplication::where('id','=', $id)
                                                             ->first();
                 if($ot_applications)
                 {
-                        $user_id = Auth::user()->id;
-                        $user = EmployeeProfile::where('id','=',$user_id)->first();
-                        $user_password=$user->password;
-                        $password=$request->password;
-                        if($user_password==$password)
-                        {
-                            if($user_id){
+                        // $user_id = Auth::user()->id;
+                        // $user = EmployeeProfile::where('id','=',$user_id)->first();
+                        // $user_password=$user->password;
+                        // $password=$request->password;
+                        // if($user_password==$password)
+                        // {
+                        //     if($user_id){
                                 $ot_application_log = new ModelsOtApplicationLog();
                                 $ot_application_log->action = 'declined';
-                                $ot_application_log->ot_application_id = $ot_application_id;
+                                $ot_application_log->official_time_application_id = $id;
                                 $ot_application_log->date = date('Y-m-d');
                                 $ot_application_log->time =  date('H:i:s');
-                                $ot_application_log->action_by = $user_id;
+                                $ot_application_log->action_by_id = '1';
                                 $ot_application_log->save();
 
-                                $ot_application = OfficialTimeApplication::findOrFail($ot_application_id);
-                                $ot_application->declined_at = now();
+                                $ot_application = OfficialTimeApplication::findOrFail($id);
                                 $ot_application->status = 'declined';
                                 $ot_application->update();
                                 return response(['message' => 'Application has been sucessfully declined', 'data' => $ot_application], Response::HTTP_CREATED);
 
-                            }
-                         }
+                        //     }
+                        //  }
                 }
             } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage(),  'error'=>true]);
         }
     }
 
-    public function cancelOtApplication(Request $request)
+    public function cancelOtApplication($id,Request $request)
     {
         try {
-                    $ot_application_id = $request->ot_application_id;
-                    $ot_applications = OfficialTimeApplication::where('id','=', $ot_application_id)
+
+                    $ot_applications = OfficialTimeApplication::where('id','=', $id)
                                                             ->first();
                 if($ot_applications)
                 {
-                        $user_id = Auth::user()->id;
-                        $user = EmployeeProfile::where('id','=',$user_id)->first();
-                        $user_password=$user->password;
-                        $password=$request->password;
-                        if($user_password==$password)
-                        {
-                            if($user_id){
+                //         $user_id = Auth::user()->id;
+                //         $user = EmployeeProfile::where('id','=',$user_id)->first();
+                //         $user_password=$user->password;
+                //         $password=$request->password;
+                //         if($user_password==$password)
+                //         {
+                //             if($user_id){
                                 $ot_application_log = new ModelsOtApplicationLog();
                                 $ot_application_log->action = 'cancelled';
-                                $ot_application_log->ot_application_id = $ot_application_id;
+                                $ot_application_log->official_time_application_id = $id;
                                 $ot_application_log->date = date('Y-m-d');
                                 $ot_application_log->time =  date('H:i:s');
-                                $ot_application_log->action_by = $user_id;
+                                $ot_application_log->action_by_id = '1';
                                 $ot_application_log->save();
 
-                                $ot_application = OfficialTimeApplication::findOrFail($ot_application_id);
+                                $ot_application = OfficialTimeApplication::findOrFail($id);
                                 $ot_application->status = 'cancelled';
                                 $ot_application->update();
                                 return response(['message' => 'Application has been sucessfully cancelled', 'data' => $ot_application], Response::HTTP_CREATED);
 
-                            }
-                         }
+                        //     }
+                        //  }
                 }
             } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage(),  'error'=>true]);
         }
     }
 
-    public function updateStatus (Request $request)
+    public function updateStatus ($id,$status,Request $request)
     {
         try {
-                $user_id = Auth::user()->id;
-                $user = EmployeeProfile::where('id','=',$user_id)->first();
-                $user_password=$user->password;
-                $password=$request->password;
-                if($user_password==$password)
-                {
+                // $user_id = Auth::user()->id;
+                // $user = EmployeeProfile::where('id','=',$user_id)->first();
+                // $user_password=$user->password;
+                // $password=$request->password;
+                // if($user_password==$password)
+                // {
                             $message_action = '';
                             $action = '';
                             $new_status = '';
-                            $status = $request->status;
+                            $division= true;
 
-                            if($status == 'for-approval-supervisor' ){
+                            if($status == 'applied'){
+
+                                if($division === true)
+                                {
+                                    $new_status='for-approval-department-head';
+                                    $message_action="verified";
+                                    $action = 'Aprroved by Supervisor';
+                                }
+                                else
+                                {
+                                    $new_status='for-approval-section-head';
+                                    $message_action="verified";
+                                    $action = 'Approved by Supervisor';
+                                }
+
+                            }
+                            else if($status == 'for-approval-section-head' ){
                                 $action = 'Aprroved by Supervisor';
-                                $new_status='for-approval-head';
+                                $new_status='for-approval-division-head';
                                 $message_action="Approved";
                             }
-                            else if($status == 'for-approval-head'){
+                            else if($status == 'for-approval-department-head'){
+                                $action = 'Aprroved by Supervisor';
+                                $new_status='for-approval-division-head';
+                                $message_action="Approved";
+                            }
+                            else if($status == 'for-approval-division-head'){
                                 $action = 'Aprroved by Department Head';
                                 $new_status='approved';
                                 $message_action="Approved";
                             }
-                            else{
-                                $action = $status;
-                            }
-                            $ot_application_id = $request->ot_application_id;
-                            $ot_applications = OfficialTimeApplication::where('id','=', $ot_application_id)
+
+                            $ot_applications = OfficialTimeApplication::where('id','=', $id)
                                                                     ->first();
                             if($ot_applications){
 
                                 $ot_application_log = new ModelsOtApplicationLog();
                                 $ot_application_log->action = $action;
-                                $ot_application_log->ot_application_id = $ot_application_id;
-                                $ot_application_log->action_by = $user_id;
+                                $ot_application_log->official_time_application_id = $id;
+                                $ot_application_log->action_by_id = '1';
                                 $ot_application_log->date = date('Y-m-d');
                                 $ot_application_log->time =  date('H:i:s');
                                 $ot_application_log->save();
 
-                                $ot_application = OfficialTimeApplication::findOrFail($ot_application_id);
+                                $ot_application = OfficialTimeApplication::findOrFail($id);
                                 $ot_application->status = $new_status;
                                 $ot_application->update();
 
                                 return response(['message' => 'Application has been sucessfully '.$message_action, 'data' => $ot_application], Response::HTTP_CREATED);
                                 }
-                }
+            //     }
             }
 
 
@@ -692,7 +840,8 @@ class OfficialTimeApplicationController extends Controller
                 }
             }
             $process_name="Update";
-            $official_time_logs = $this->storeOfficialTimeApplicationLog($official_time_application_id,$process_name);
+            $columnsString="";
+            $official_time_logs = $this->storeOfficialTimeApplicationLog($official_time_application_id,$process_name,$columnsString);
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
 
@@ -713,21 +862,23 @@ class OfficialTimeApplicationController extends Controller
             return response()->json(['message' => $e->getMessage(),'error'=>true]);
         }
     }
-    public function storeOfficialTimeApplicationLog($official_time_application_id,$process_name)
+    public function storeOfficialTimeApplicationLog($ot_id,$process_name,$changedFields)
     {
         try {
-            $user_id = Auth::user()->id;
-            $user = EmployeeProfile::where('id','=',$user_id)->first();
-            $official_time_application_log = new ModelsOtApplicationLog();
-            $official_time_application_log->official_time_application_id = $official_time_application_id;
-            $official_time_application_log->action_by = $user_id;
-            $official_time_application_log->process_name = $process_name;
-            $official_time_application_log->status = "applied";
-            $official_time_application_log->date = date('Y-m-d');
-            $official_time_application_log->time = date('H:i:s');
-            $official_time_application_log->save();
+            $user_id="1";
 
-            return $official_time_application_log;
+            $data = [
+                'official_time_application_id' => $ot_id,
+                'action_by_id' => $user_id,
+                'action' => $process_name,
+                'date' => date('Y-m-d'),
+                'time' => date('H:i:s'),
+                'fields' => $changedFields
+            ];
+
+            $ot_log = ModelsOtApplicationLog::create($data);
+
+            return $ot_log;
         } catch(\Exception $e) {
             return response()->json(['message' => $e->getMessage(),'error'=>true]);
         }
