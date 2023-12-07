@@ -385,14 +385,13 @@ class LeaveApplicationController extends Controller
     }
     public function getLeaveApplications($id,$status,Request $request)
     {
-        $status = $request->status;
-        $employee_id = $request->employee_id;
+
         $leave_applications = [];
-        $division = AssignArea::where('employee_profile_id',$employee_id)->value('division_id');
+        $division = AssignArea::where('employee_profile_id',$id)->value('division_id');
         if($status == 'applied'){
-            $section = AssignArea::where('employee_profile_id',$employee_id)->value('section_id');
+            $section = AssignArea::where('employee_profile_id',$id)->value('section_id');
             $hr_head_id = Section::where('id', $section)->value('supervisor_employee_profile_id');
-            if($hr_head_id === $employee_id) {
+            if($hr_head_id === $id) {
                 $leave_applications = LeaveApplication::with(['employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
                 ->where('status', 'applied')
                 ->get();
@@ -502,7 +501,7 @@ class LeaveApplicationController extends Controller
         }
         else if($status == 'for-approval-division-head'){
                 $divisionHeadId = Division::where('id', $division)->value('chief_employee_profile_id');
-                if($divisionHeadId === $employee_id) {
+                if($divisionHeadId === $id) {
                     $leave_applications = LeaveApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
                     ->whereHas('employeeProfile.assignedArea', function ($query) use ($division) {
                         $query->where('id', $division);
@@ -615,10 +614,10 @@ class LeaveApplicationController extends Controller
                 }
         }
         else if($status == 'for-approval-department-head'){
-            $department = AssignArea::where('employee_profile_id',$employee_id)->value('department_id');
+            $department = AssignArea::where('employee_profile_id',$id)->value('department_id');
             $departmentHeadId = Department::where('id', $department)->value('head_employee_profile_id');
             $training_officer_id = Department::where('id', $department)->value('training_officer_employee_profile_id');
-            if($departmentHeadId === $employee_id || $training_officer_id === $employee_id) {
+            if($departmentHeadId == $id || $training_officer_id === $id) {
                 $leave_applications = LeaveApplication::with(['employeeProfile.assignedArea.department','employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
                 ->whereHas('employeeProfile.assignedArea', function ($query) use ($department) {
                     $query->where('id', $department);
@@ -728,9 +727,9 @@ class LeaveApplicationController extends Controller
             }
         }
         else if($status == 'for-approval-section-head'){
-            $section = AssignArea::where('employee_profile_id',$employee_id)->value('section_id');
+            $section = AssignArea::where('employee_profile_id',$id)->value('section_id');
             $sectionHeadId = Section::where('id', $section)->value('supervisor_employee_profile_id');
-            if($sectionHeadId === $employee_id) {
+            if($sectionHeadId === $id) {
 
                 $leave_applications = LeaveApplication::with(['employeeProfile.assignedArea.section','employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
                 ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
@@ -846,8 +845,8 @@ class LeaveApplicationController extends Controller
         }
         else if($status == 'declined'){
             $leave_applications = LeaveApplication::with(['employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
-            ->whereHas('logs', function ($query) use ($employee_id) {
-                $query->where('action_by_id', $employee_id);
+            ->whereHas('logs', function ($query) use ($id) {
+                $query->where('action_by_id', $id);
             })
                 ->where('status', 'declined')
                 ->get();

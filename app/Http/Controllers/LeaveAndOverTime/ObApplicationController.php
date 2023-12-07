@@ -605,7 +605,8 @@ class ObApplicationController extends Controller
                 // $user_id = Auth::user()->id;
                 // $employee_id = $request->employee_id;
                 // $user = EmployeeProfile::where('id','=',$user_id)->first();
-                // $division = AssignArea::where('employee_profile_id',$employee_id)->value('is_medical');
+                // $area = AssignArea::where('employee_profile_id',$employee_id)->value('division_id');
+                // $division = Division::where('id',$area)->value('is_medical');
                 // $user_password=$user->password;
                 // $password=$request->password;
                 // if($user_password==$password)
@@ -616,23 +617,7 @@ class ObApplicationController extends Controller
                             $new_status = '';
 
 
-                            if($status == 'applied'){
-
-                                if($division === true)
-                                {
-                                    $new_status='for-approval-department-head';
-                                    $message_action="verified";
-                                    $action = 'Aprroved by Supervisor';
-                                }
-                                else
-                                {
-                                    $new_status='for-approval-section-head';
-                                    $message_action="verified";
-                                    $action = 'Approved by Supervisor';
-                                }
-
-                            }
-                            else if($status == 'for-approval-section-head' ){
+                            if($status == 'for-approval-section-head' ){
                                 $action = 'Aprroved by Supervisor';
                                 $new_status='for-approval-division-head';
                                 $message_action="Approved";
@@ -647,8 +632,6 @@ class ObApplicationController extends Controller
                                 $new_status='approved';
                                 $message_action="Approved";
                             }
-
-
                             $ob_applications = ObApplication::where('id','=', $id)
                                                                     ->first();
                             if($ob_applications){
@@ -735,13 +718,25 @@ class ObApplicationController extends Controller
 
             // $user_id = Auth::user()->id;
             // $user = EmployeeProfile::where('id','=',$user_id)->first();
+            // $area = AssignArea::where('employee_profile_id',$employee_id)->value('division_id');
+            // $division = Division::where('id',$area)->value('is_medical');
+
+            $division=true;
             $official_business_application = new ObApplication();
             $official_business_application->employee_profile_id = '1';
             $official_business_application->date_from = $request->date_from;
             $official_business_application->date_to = $request->date_to;
             $official_business_application->time_from = $request->time_from;
             $official_business_application->time_to = $request->time_to;
-            $official_business_application->status = "for-approval-supervisor";
+            if($division === true)
+            {
+                $status='for-approval-department-head';
+            }
+            else
+            {
+                $status='for-approval-section-head';
+            }
+            $official_business_application->status =$status;
             $official_business_application->date = date('Y-m-d');
             $official_business_application->time =  date('H:i:s');
 

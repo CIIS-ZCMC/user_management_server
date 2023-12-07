@@ -130,13 +130,13 @@ class OfficialTimeApplicationController extends Controller
     public function getOtApplications($id,$status,Request $request)
     {
         try{
-            $status = $request->status;
-            $employee_id = $request->employee_id;
+
             $OfficialTimeApplication = [];
-            $division = AssignArea::where('employee_profile_id',$employee_id)->value('division_id');
+            $division = AssignArea::where('employee_profile_id',$id)->value('division_id');
+            $divisionHeadId = Division::where('id', $division)->value('chief_employee_profile_id');
             if($status == 'for-approval-division-head'){
                     $divisionHeadId = Division::where('id', $division)->value('chief_employee_profile_id');
-                    if($divisionHeadId == $employee_id) {
+                    if($divisionHeadId == $id) {
                         $OfficialTimeApplication = OfficialTimeApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','logs'])
                         ->whereHas('employeeProfile.assignedArea', function ($query) use ($division) {
                             $query->where('id', $division);
@@ -234,10 +234,10 @@ class OfficialTimeApplicationController extends Controller
                     }
             }
             else if($status == 'for-approval-department-head'){
-                $department = AssignArea::where('employee_profile_id',$employee_id)->value('department_id');
+                $department = AssignArea::where('employee_profile_id',$id)->value('department_id');
                 $departmentHeadId = Department::where('id', $department)->value('head_employee_profile_id');
                 $training_officer_id = Department::where('id', $department)->value('training_officer_employee_profile_id');
-                if($departmentHeadId == $employee_id || $training_officer_id === $employee_id) {
+                if($departmentHeadId == $id || $training_officer_id == $id) {
                     $OfficialTimeApplication = OfficialTimeApplication::with(['employeeProfile.assignedArea.department','employeeProfile.personalInformation','logs' ])
                     ->whereHas('employeeProfile.assignedArea', function ($query) use ($department) {
                         $query->where('id', $department);
@@ -258,8 +258,6 @@ class OfficialTimeApplicationController extends Controller
                             {
                                 $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
                             }
-
-
                         }
                         if($department)
                         {
@@ -334,9 +332,9 @@ class OfficialTimeApplicationController extends Controller
                 }
             }
             else if($status == 'for-approval-section-head'){
-                $section = AssignArea::where('employee_profile_id',$employee_id)->value('section_id');
+                $section = AssignArea::where('employee_profile_id',$id)->value('section_id');
                 $sectionHeadId = Section::where('id', $section)->value('supervisor_employee_profile_id');
-                if($sectionHeadId == $employee_id) {
+                if($sectionHeadId == $id) {
 
                     $official_time_applications = OfficialTimeApplication::with(['employeeProfile.assignedArea.section','employeeProfile.personalInformation','logs'])
                     ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
@@ -620,13 +618,25 @@ class OfficialTimeApplicationController extends Controller
         try{
             // $user_id = Auth::user()->id;
             // $user = EmployeeProfile::where('id','=',$user_id)->first();
+            // $area = AssignArea::where('employee_profile_id',$employee_id)->value('division_id');
+            // $division = Division::where('id',$area)->value('is_medical');
+
+            $division=true;
             $official_time_application = new OfficialTimeApplication();
             $official_time_application->employee_profile_id = '1';
             $official_time_application->date_from = $request->date_from;
             $official_time_application->date_to = $request->date_to;
             $official_time_application->time_from = $request->time_from;
             $official_time_application->time_to = $request->time_to;
-            $official_time_application->status = "for-approval-supervisor";
+            if($division === true)
+            {
+                $status='for-approval-department-head';
+            }
+            else
+            {
+                $status='for-approval-section-head';
+            }
+            $official_time_application->status = $status;
             $official_time_application->date = date('Y-m-d');
             $official_time_application->time =  date('H:i:s');
             if ($request->hasFile('personal_order')) {
@@ -730,6 +740,8 @@ class OfficialTimeApplicationController extends Controller
                 // $user = EmployeeProfile::where('id','=',$user_id)->first();
                 // $user_password=$user->password;
                 // $password=$request->password;
+                // $area = AssignArea::where('employee_profile_id',$employee_id)->value('division_id');
+                // $division = Division::where('id',$area)->value('is_medical');
                 // if($user_password==$password)
                 // {
                             $message_action = '';
@@ -737,23 +749,7 @@ class OfficialTimeApplicationController extends Controller
                             $new_status = '';
                             $division= true;
 
-                            if($status == 'applied'){
-
-                                if($division === true)
-                                {
-                                    $new_status='for-approval-department-head';
-                                    $message_action="verified";
-                                    $action = 'Aprroved by Supervisor';
-                                }
-                                else
-                                {
-                                    $new_status='for-approval-section-head';
-                                    $message_action="verified";
-                                    $action = 'Approved by Supervisor';
-                                }
-
-                            }
-                            else if($status == 'for-approval-section-head' ){
+                         if($status == 'for-approval-section-head' ){
                                 $action = 'Aprroved by Supervisor';
                                 $new_status='for-approval-division-head';
                                 $message_action="Approved";
