@@ -37,6 +37,7 @@ class SystemResource extends JsonResource
             ->select(DB::raw('count(rmp.id) as permissions'))
             ->first();
 
+
         $date_created = $this->created_at;
         $date_modified = $this->updated_at;
 
@@ -52,6 +53,7 @@ class SystemResource extends JsonResource
             'users' => $total_user->users,
             'permissions' => $total_permissions->permissions,
             'roles_assigned' => count($system_roles),
+            'system_modules' => SystemModuleResource::collection($this->modules),
             'system_roles' => $system_roles,
             'date_created' => $date_created,
             'date_modified' => $date_modified
