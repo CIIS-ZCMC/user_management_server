@@ -245,7 +245,7 @@ class OvertimeApplicationController extends Controller
             }
 
             $process_name="Applied";
-             $this->storeOvertimeApplicationLog($overtime->id,$process_name);
+              $this->storeOvertimeApplicationLog($overtime->id,$process_name);
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
 

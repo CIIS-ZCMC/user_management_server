@@ -41,6 +41,7 @@ class LeaveTypeController extends Controller
                     'is_special' => $leave_type->is_special,
                     'is_country' => $leave_type->is_country,
                     'is_illness' => $leave_type->is_illness,
+                    'is_days_recommended' => $leave_type->is_days_recommended,
                     'leave_credit_year' => $leave_type->leave_credit_year,
                     'logs' => $leave_type->logs->map(function ($log) {
                         $process_name=$log->action;
@@ -145,6 +146,7 @@ class LeaveTypeController extends Controller
             $leave_type->is_special = $request->input('is_special');
             $leave_type->is_country = $request->input('is_country');
             $leave_type->is_illness = $request->input('is_illness');
+            $leave_type->is_days_recommended = $request->input('is_days_recommended');
             if (!empty($request->leave_credit_year))
             {
                 $leave_type->leave_credit_year = $request->leave_credit_year;
@@ -232,6 +234,8 @@ class LeaveTypeController extends Controller
             $leave_type->is_special = $request->input('is_special');
             $leave_type->is_country = $request->input('is_country');
             $leave_type->is_illness = $request->input('is_illness');
+            $leave_type->is_days_recommended = $request->input('is_days_recommended ');
+
             if (!empty($request->leave_credit_year))
             {
                 $leave_type->leave_credit_year = $request->leave_credit_year;

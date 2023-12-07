@@ -23,6 +23,7 @@ return new class extends Migration
             $table->boolean('is_special')->default(false);
             $table->boolean('is_country')->default(false);
             $table->boolean('is_illness')->default(false);
+            $table->boolean('is_days_recommended')->default(false);
             $table->string('leave_credit_year')->nullable();
             $table->string('date')->nullable();
             $table->string('time')->nullable();
