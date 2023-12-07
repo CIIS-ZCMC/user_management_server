@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\overtimeAndOverTime;
+namespace App\Http\Controllers\LeaveAndOverTime;
 
 use App\Models\OvertimeApplication;
 use App\Http\Controllers\Controller;
@@ -24,7 +24,7 @@ class OvertimeApplicationController extends Controller
     {
         try{
             $overtime_applications=[];
-            $overtime_applications =OvertimeApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','dates','logs', 'requirements','employeeProfile.overtimeCredits.overtimeType'])->get();
+            $overtime_applications =OvertimeApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','logs','activities'])->get();
             $overtime_applications_result = $overtime_applications->map(function ($overtime_application) {
             $division = AssignArea::where('employee_profile_id',$overtime_application->employee_profile_id)->value('division_id');
             $department = AssignArea::where('employee_profile_id',$overtime_application->employee_profile_id)->value('department_id');
@@ -127,9 +127,9 @@ class OvertimeApplicationController extends Controller
                                     $last_name = optional($employee->employeeProfile->personalInformation)->last_name ?? null;
                                 return [
                                         'id' => $employee->id,
-                                        'ovt_employee_id' =>$employee->overtime_datetime_id,
+                                        'ovt_employee_id' =>$employee->ovt_application_datetime_id,
                                         'employee_id' => $employee->id,
-                                        'employee_name' => $employee->date,
+                                        'employee_name' =>"{$first_name} {$last_name}",
 
                                     ];
                                 }),
@@ -245,7 +245,7 @@ class OvertimeApplicationController extends Controller
             }
 
             $process_name="Applied";
-            $overtime_application_logs = $this->storeOvertimeApplicationLog($overtime->id,$process_name);
+             $this->storeOvertimeApplicationLog($overtime->id,$process_name);
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
 

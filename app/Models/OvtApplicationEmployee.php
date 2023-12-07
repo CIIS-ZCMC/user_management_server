@@ -11,7 +11,7 @@ class OvtApplicationEmployee extends Model
     protected $table = 'ovt_application_employees';
 
     public $fillable = [
-        'overtime_datetime_id',
+        'ovt_application_datetime_id',
         'employee_profile_id',
         'remarks',
         'date'

@@ -13,7 +13,6 @@ class OvertimeApplication extends Model
 
     public $fillable = [
         'employee_profile_id',
-        'overtime_application_id',
         'reference_number',
         'status',
         'purpose',
@@ -30,5 +29,11 @@ class OvertimeApplication extends Model
     {
             return $this->hasMany(OvtApplicationLog::class);
     }
+    public function employeeProfile() {
+        return $this->belongsTo(EmployeeProfile::class);
+    }
+
+
+
 
 }

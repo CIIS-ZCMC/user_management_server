@@ -169,6 +169,14 @@ class EmployeeProfile extends Authenticatable
         return $this->hasMany(otApplicationLogs::class);
     }
 
+    public function ovtApplications() {
+        return $this->hasMany(OvertimeApplication::class);
+    }
+
+    public function ovtApplicationLogs() {
+        return $this->hasMany(ovtApplicationLogs::class);
+    }
+
 
 
     public function findDesignation()

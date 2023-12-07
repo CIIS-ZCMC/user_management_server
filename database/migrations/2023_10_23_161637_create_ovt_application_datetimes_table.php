@@ -15,9 +15,9 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('ovt_application_activity_id')->unsigned();
             $table->foreign('ovt_application_activity_id')->references('id')->on('ovt_application_activities')->onDelete('cascade');
-            $table->string('time_from')->nullable(); 
-            $table->string('time_to')->nullable(); 
-            $table->string('date')->nullable(); 
+            $table->string('time_from')->nullable();
+            $table->string('time_to')->nullable();
+            $table->string('date')->nullable();
             $table->timestamps();
         });
     }
