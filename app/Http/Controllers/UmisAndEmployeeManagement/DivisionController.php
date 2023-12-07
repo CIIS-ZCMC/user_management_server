@@ -41,9 +41,11 @@ class DivisionController extends Controller
         try{
             $cacheExpiration = Carbon::now()->addDay();
 
-            $divisions = Cache::remember('divisions', $cacheExpiration, function(){
-                return Division::all();
-            });
+            $divisions = Division::all();
+
+            // $divisions = Cache::remember('divisions', $cacheExpiration, function(){
+            //     return Division::all();
+            // });
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in deleting '.$this->PLURAL_MODULE_NAME.'.');
 
@@ -61,6 +63,7 @@ class DivisionController extends Controller
      * Assign Chief or Head
      * This must be in division/department/section/unit
      */
+    
     public function assignChiefByEmployeeID($id, DivisionAssignChiefRequest $request)
     {
         try{

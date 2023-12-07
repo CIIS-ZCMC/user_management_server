@@ -16,6 +16,7 @@ class DivisionResource extends JsonResource
     {
         if($this->chief_employee_profile_id !== null)
         {
+           
             $name = $this->name;
             $code = $this->code;
             $designation = $this->chiefRequirement();
@@ -37,6 +38,7 @@ class DivisionResource extends JsonResource
             }
 
             return [
+                'id' => $this->id,
                 'name' => $name,
                 'code' => $code,
                 'job_specification' => $job_specification,
@@ -52,6 +54,7 @@ class DivisionResource extends JsonResource
 
 
         return [
+            'id' => $this->id,
             'code' => $this->code,
             'name' => $this->name,
             'job_specification' => $job_specification,

@@ -96,7 +96,7 @@ Route::middleware('auth.cookie')->group(function(){
         });
 
         Route::middleware(['auth.permission:UMIS-SM update'])->group(function(){
-            Route::put('system/{id}', 'SystemController@update');
+            Route::put('system-update/{id}', 'SystemController@update');
         });
         
         Route::middleware(['auth.permission:UMIS-SM delete'])->group(function(){

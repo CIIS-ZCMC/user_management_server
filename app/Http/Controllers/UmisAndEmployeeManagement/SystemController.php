@@ -114,7 +114,7 @@ class SystemController extends Controller
     public function updateSystemStatus($id, Request $request)
     {
         try{
-            $status = $request->input('status');
+            $status = $request->status;
 
             if(!is_int($status) || $status < 0 || $status > 2)
             {
@@ -165,7 +165,7 @@ class SystemController extends Controller
         }
     }
 
-    public function update($id, SystemRequest $request)
+    public function update($id, Request $request)
     {
         try{
             $system = System::find($id);

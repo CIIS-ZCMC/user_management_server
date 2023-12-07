@@ -188,13 +188,13 @@ class SectionController extends Controller
              * Validate if has department id
              * Validate if department id trully exist.
              */
-            if($request->input('department_id') !== null)
+            if($request->department_id != null)
             {
-                $division = Department::find($request->input('department_id'));
+                $division = Department::find($request->department_id);
 
                 if(!$division)
                 {
-                    return response()->json(['message' => 'No department record found for id '.$request->input('department_id')], Response::HTTP_BAD_REQUEST);
+                    return response()->json(['message' => 'No department record found for id '.$request->department_id], Response::HTTP_BAD_REQUEST);
                 }
             }
             
