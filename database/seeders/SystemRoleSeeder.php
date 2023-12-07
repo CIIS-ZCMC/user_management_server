@@ -22,8 +22,6 @@ class SystemRoleSeeder extends Seeder
     {
         $system = System::WHERE("code",  env('SYSTEM_ABBREVIATION'))->first();
 
-        Log::channel('custom-error')->error($system);
-
         $role = Role::where('code',"super_admin")->first();
 
         $super_admin = SystemRole::create([
