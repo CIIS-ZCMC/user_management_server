@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('status');
             $table->string('remarks')->nullable();
             $table->string('purpose')->nullable();
+            $table->string('overtime_letter_of_request')->nullable();
             $table->string('date');
             $table->string('time')->nullable();
             $table->timestamps();

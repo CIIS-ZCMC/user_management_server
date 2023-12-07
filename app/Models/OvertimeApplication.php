@@ -7,21 +7,28 @@ use Illuminate\Database\Eloquent\Model;
 
 class OvertimeApplication extends Model
 {
-    
+
     use HasFactory;
     protected $table = 'overtime_applications';
 
     public $fillable = [
-        'user_id',
+        'employee_profile_id',
         'overtime_application_id',
         'reference_number',
         'status',
         'purpose',
-        'date'
-      
+        'overtime_letter_of_request',
+        'date',
+        'time'
+
     ];
     public function activities()
-    {  
+    {
         return $this->hasMany(OvtApplicationActivity::class);
     }
+    public function logs()
+    {
+            return $this->hasMany(OvtApplicationLog::class);
+    }
+
 }

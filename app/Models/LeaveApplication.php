@@ -13,7 +13,7 @@ class LeaveApplication extends Model
         'with_pay' => 'boolean',
     ];
     public $fillable = [
-        'user_id',
+        'employee_profile_id',
         'leave_type_id',
         'reference_number',
         'location',

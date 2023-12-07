@@ -11,15 +11,14 @@ class OvtApplicationDatetime extends Model
     protected $table = 'ovt_application_datetimes';
 
     public $fillable = [
-        'overtime_application_id',
-        'activity_name',
-        'quantity',
-        'man_hour',
-        'period_covered'
-      
+        'ovt_application_activity_id',
+        'time_from',
+        'time_to',
+        'date'
+
     ];
     public function employees()
-    {  
+    {
         return $this->hasMany(OvtApplicationEmployee::class);
     }
     public function activity()

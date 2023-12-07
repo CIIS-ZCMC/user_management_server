@@ -70,7 +70,18 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
     Route::post('ot-application-cancel/{id}', 'OfficialTimeApplicationController@cancelOtApplication');
     Route::post('ot-application-update/{id}/{status}', 'OfficialTimeApplicationController@updateStatus');
     Route::post('user-ot-application/{id}', 'OfficialTimeApplicationController@getUserOtApplication');
-    Route::post('access-level-ot-application/{id}/{status}', 'OfficialTimeApplicationController@getOtApplications');
+    Route::post('access-level-ot-application/{id}/{status}', 'OfficialTimeApplicationController@getOtAppl ications');
+
+    Route::get('ovt-application-all', 'OvertimeApplicationController@index');
+    Route::post('ovt-application', 'OvertimeApplicationController@store');
+    Route::post('ovt-application-logs/{id}/{pr}/{cf}', 'OvertimeApplicationController@storeOfficialTimeApplicationLog');
+    //Route::post('OfficialTime-application/{id}', 'OfficialTimeApplicationController@update');
+    Route::post('ovt-application-decline/{id}', 'OvertimeApplicationController@declineOtApplication');
+    Route::post('ovt-application-cancel/{id}', 'OvertimeApplicationController@cancelOtApplication');
+    Route::post('ovt-application-update/{id}/{status}', 'OvertimeApplicationController@updateStatus');
+    Route::post('user-ovt-application/{id}', 'OvertimeApplicationController@getUserOtApplication');
+    Route::post('access-level-ovt-application/{id}/{status}', 'OvertimeApplicationController@getOtAppl ications');
+
 
     Route::get('division', 'LeaveApplicationController@getDivisionLeaveApplications');
 
