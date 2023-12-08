@@ -9,6 +9,10 @@ use App\Models\Department;
 use App\Models\Division;
 use App\Models\EmployeeOvertimeCredit;
 use App\Models\EmployeeProfile;
+use Illuminate\Support\Facades\Storage;
+use App\Models\OvtApplicationActivity;
+use App\Models\OvtApplicationDatetime;
+use App\Models\OvtApplicationEmployee;
 use App\Models\OvtApplicationLog;
 use App\Models\Section;
 use Illuminate\Http\Request;
@@ -157,13 +161,10 @@ class OvertimeApplicationController extends Controller
     {
         $employeeProfiles = EmployeeProfile::with(['overtimeCredits', 'personalInformation'])
         ->get();
-
         $employeeOvertimeTotals = $employeeProfiles->map(function ($employeeProfile) {
         $totalAddCredits = $employeeProfile->overtimeCredits->where('operation', 'add')->sum('overtime_hours');
         $totalDeductCredits = $employeeProfile->overtimeCredits->where('operation', 'deduct')->sum('overtime_hours');
-
         $totalOvertimeCredits = $totalAddCredits - $totalDeductCredits;
-
         return [
             'employee_id' => $employeeProfile->id,
             'employee_name' => $employeeProfile->personalInformation->first_name,
@@ -208,44 +209,83 @@ class OvertimeApplicationController extends Controller
     public function store(Request $request)
     {
         try{
-            $user_id = Auth::user()->id;
-            $user = EmployeeProfile::where('id','=',$user_id)->first();
-            $overtime = OvertimeApplication::create([
-                'employee_profile_id' => $user->id,
-                'reference_number' => $user->id,
+            // $user_id = Auth::user()->id;
+            // $user = EmployeeProfile::where('id','=',$user_id)->first();
+            $path="";
+            if($request->hasFile('letter_of_request'))
+            {
+                foreach ($request->file('letter_of_request') as $file) {
+                    $fileName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+                    $extension = $file->getClientOriginalExtension();
+                    $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
+                    $folderName = 'Letter';
+                    Storage::makeDirectory('public/' . $folderName);
+                    $path = $file->storeAs('public/' . $folderName, $uniqueFileName);
+
+                }
+
+            }
+            $overtime_application = OvertimeApplication::create([
+                'employee_profile_id' => '1',
+                'reference_number' => '123',
                 'status' => 'applied',
-                'remarks' => 'applied',
                 'purpose' => $request->purpose,
                 'date' => date('Y-m-d'),
-                'time' => date('H:i:s')
-
+                'time' => date('H:i:s'),
+                'overtime_letter_of_request' => $path
             ]);
 
-            foreach ($request->activities as $activityData) {
-                $activity = $overtime->activities()->create([
-                    'activity_name' => $activityData['activity_name'],
-                    'quantity' => $activityData['quantity'],
+            $ovt_id=$overtime_application->id;
+            $activities = $request->input('activities');
+            $quantities = $request->input('quantities');
+            $manhours = $request->input('manhours');
+            $periods = $request->input('periods');
+
+            for ($i = 0; $i < count($activities); $i++) {
+                $activity_application = OvtApplicationActivity::create([
+                    'overtime_application_id' => $ovt_id,
+                    'activity_name' => $activities[$i],
+                    'quantity' => $quantities[$i],
+                    'man_hour' => $manhours[$i],
+                    'period_covered' => $periods[$i],
                 ]);
-
-
-                foreach ($activityData['dates'] as $dateData) {
-                    $date = $activity->dates()->create([
-                        'date' => $dateData['date'],
-                        'time_from' => $dateData['time_from'],
-                        'time_to' => $dateData['time_to'],
-                    ]);
-
-                    foreach ($dateData['employees'] as $employeeData) {
-                        $date->employees()->create([
-                            'employee_id' => $employeeData['employee_id'],
-
-                        ]);
-                    }
-                }
             }
 
+            $activity_id=$activity_application->id;
+            $time_from = $request->input('time_from');
+            $time_to = $request->input('time_to');
+            $date = $request->input('date');
+
+
+            for ($i = 0; $i < count($date); $i++) {
+               $date_application = OvtApplicationDatetime::create([
+                    'ovt_application_activity_id' => $activity_id,
+                    'time_from' => $time_from[$i],
+                    'time_to' => $time_to[$i],
+                    'date' => $date[$i],
+                ]);
+            }
+
+            $date_id=$date_application->id;
+            $time_from = $request->input('time_from');
+            $time_to = $request->input('time_to');
+            $date = $request->input('date');
+
+
+            $selectedEmployees = $request->input('employees');
+
+
+            for ($i = 0; $i < count($selectedEmployees); $i++) {
+                OvtApplicationEmployee::create([
+                    'ovt_application_datetime_id' => $date_id,
+                    'employee_profile_id' => $selectedEmployees[$i],
+                ]);
+            }
+
+
+            $columnsString="";
             $process_name="Applied";
-              $this->storeOvertimeApplicationLog($overtime->id,$process_name);
+            $this->storeOvertimeApplicationLog($ovt_id,$process_name,$columnsString);
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
 

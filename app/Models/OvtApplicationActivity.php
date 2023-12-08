@@ -12,10 +12,11 @@ class OvtApplicationActivity extends Model
 
     public $fillable = [
         'overtime_application_id',
-        'name',
+        'activity_name',
         'quantity',
         'man_hour',
         'period_covered'
+
 
     ];
     public function dates()

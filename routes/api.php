@@ -80,7 +80,7 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
     Route::post('ovt-application-cancel/{id}', 'OvertimeApplicationController@cancelOtApplication');
     Route::post('ovt-application-update/{id}/{status}', 'OvertimeApplicationController@updateStatus');
     Route::post('user-ovt-application/{id}', 'OvertimeApplicationController@getUserOtApplication');
-    Route::post('access-level-ovt-application/{id}/{status}', 'OvertimeApplicationController@getOtAppl ications');
+    Route::post('access-level-ovt-application/{id}/{status}', 'OvertimeApplicationController@getOtApplications');
 
 
     Route::get('division', 'LeaveApplicationController@getDivisionLeaveApplications');
