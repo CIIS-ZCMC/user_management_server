@@ -222,6 +222,7 @@ class LeaveTypeController extends Controller
             $originalValues = $leave_type->getOriginal();
             $columnsString="";
             $leave_type->name = ucwords($request->name);
+            $leave_type->description = $request->description;
             $leave_type->period = $request->period;
             $leave_type->file_date = $request->file_date;
             $input_name = $request->name;

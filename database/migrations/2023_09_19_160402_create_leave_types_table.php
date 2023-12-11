@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('description')->nullable();
-            $table->string('period');
+            $table->integer('period');
             $table->string('file_date');
             $table->string('code');
             $table->string('attachment')->nullable();

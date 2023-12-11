@@ -16,6 +16,7 @@ class OvtApplicationLog extends Model
         'action',
         'date',
         'time',
+        'fields'
 
     ];
         public function overtime_application(){

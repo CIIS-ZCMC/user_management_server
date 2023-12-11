@@ -197,6 +197,7 @@ class OvertimeApplicationController extends Controller
             $totalOvertimeCredits = $totalAddCredits - $totalDeductCredits;
 
             return [
+                'employee_id' => $employeeProfile->id,
                 'employee_name' => $employeeProfile->personalInformation->first_name, // Assuming 'name' is the field in the ProfileInformation model representing the employee name
                 'total_overtime_credits' => $totalOvertimeCredits,
             ];
@@ -273,15 +274,12 @@ class OvertimeApplicationController extends Controller
 
 
             $selectedEmployees = $request->input('employees');
-
-
             for ($i = 0; $i < count($selectedEmployees); $i++) {
                 OvtApplicationEmployee::create([
                     'ovt_application_datetime_id' => $date_id,
                     'employee_profile_id' => $selectedEmployees[$i],
                 ]);
             }
-
 
             $columnsString="";
             $process_name="Applied";
@@ -293,54 +291,97 @@ class OvertimeApplicationController extends Controller
         }
     }
 
-    public function storeOvertimeApplicationLog($overtime_application_id,$process_name)
+    public function storeOvertimeApplicationLog($overtime_application_id,$process_name,$changedfields)
     {
         try {
-            $user_id = Auth::user()->id;
-            $user = EmployeeProfile::where('id','=',$user_id)->first();
-            $overtime_application_log = new OvtApplicationLog();
-            $overtime_application_log->overtime_application_id = $overtime_application_id;
-            $overtime_application_log->action_by = $user_id;
-            $overtime_application_log->process_name = $process_name;
-            $overtime_application_log->status = "applied";
-            $overtime_application_log->date = date('Y-m-d');
-            $overtime_application_log->time = date('H:i:s');
-            $overtime_application_log->save();
+            $user_id="1";
+
+            $data = [
+                'overtime_application_id' => $overtime_application_id,
+                'action_by_id' => $user_id,
+                'action' => $process_name,
+                'date' => date('Y-m-d'),
+                'time' => date('H:i:s'),
+                'fields' => $changedfields
+            ];
+
+            $overtime_application_log = OvtApplicationLog::create($data);
 
             return $overtime_application_log;
         } catch(\Exception $e) {
             return response()->json(['message' => $e->getMessage(),'error'=>true]);
         }
     }
-    /**
-     * Display the specified resource.
-     */
-    public function show(OvertimeApplication $overtimeApplication)
+    public function declineOtApplication($id,Request $request)
     {
-        //
+        try {
+                    // $leave_application_id = $request->leave_application_id;
+
+                    $overtime_applications = OvertimeApplication::where('id','=', $id)
+                                                            ->first();
+                if($overtime_applications)
+                {
+                        // $user_id = Auth::user()->id;
+                        // $user = EmployeeProfile::where('id','=',$user_id)->first();
+                        // $user_password=$user->password;
+                        // $password=$request->password;
+                        // if($user_password==$password)
+                        // {
+                            // if($user_id){
+                                $overtime_application_log = new OvtApplicationLog();
+                                $overtime_application_log->action = 'declined';
+                                $overtime_application_log->overtime_application_id =$id;
+                                $overtime_application_log->date = date('Y-m-d');
+                                $overtime_application_log->time = date('h-i-s');
+                                $overtime_application_log->action_by_id = '1';
+                                $overtime_application_log->save();
+
+                                $overtime_application = overtimeApplication::findOrFail($id);
+                                $overtime_application->status = 'declined';
+                                $overtime_application->update();
+                                return response(['message' => 'Application has been sucessfully declined', 'data' => $overtime_application], Response::HTTP_CREATED);
+
+                            // }
+                        //  }
+                }
+            } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage(),  'error'=>true]);
+        }
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(OvertimeApplication $overtimeApplication)
+    public function cancelOtApplication($id,Request $request)
     {
-        //
-    }
+        try {
+                    // $leave_application_id = $request->leave_application_id;
+                    $overtime_application_id = '1';
+                    $overtime_applications = overtimeApplication::where('id','=', $overtime_application_id)
+                                                            ->first();
+                if($overtime_applications)
+                {
+                        // $user_id = Auth::user()->id;
+                        // $user = EmployeeProfile::where('id','=',$user_id)->first();
+                        // $user_password=$user->password;
+                        // $password=$request->password;
+                        // if($user_password==$password)
+                        // {
+                        //     if($user_id){
+                                $overtime_application_log = new OvtApplicationLog();
+                                $overtime_application_log->action = 'cancel';
+                                $overtime_application_log->overtime_application_id = $overtime_application_id;
+                                $overtime_application_log->date = date('Y-m-d');
+                                $overtime_application_log->action_by_id = '1';
+                                $overtime_application_log->save();
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, OvertimeApplication $overtimeApplication)
-    {
-        //
-    }
+                                $overtime_application = OvertimeApplication::findOrFail($overtime_application_id);
+                                $overtime_application->status = 'cancelled';
+                                $overtime_application->update();
+                                return response(['message' => 'Application has been sucessfully cancelled', 'data' => $overtime_application_log], Response::HTTP_CREATED);
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(OvertimeApplication $overtimeApplication)
-    {
-        //
+                        //     }
+                        //  }
+                }
+            } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage(),  'error'=>true]);
+        }
     }
 }
