@@ -384,4 +384,98 @@ class OvertimeApplicationController extends Controller
             return response()->json(['message' => $e->getMessage(),  'error'=>true]);
         }
     }
+
+    public function updateOvertimeApplicationStatus ($id,$status,Request $request)
+    {
+        try {
+                // $employee_id = $request->employee_id;
+                // $user_id = Auth::user()->id;
+                // $user = EmployeeProfile::where('id','=',$user_id)->first();
+                // $division = AssignArea::where('employee_profile_id',$employee_id)->value('is_medical');
+                // $user_password=$user->password;
+                // $password=$request->password;
+                // if($user_password==$password)
+                // {
+                            $division= true;
+                            $message_action = '';
+                            $action = '';
+                            $new_status = '';
+
+
+                            if($status == 'for-approval-section-head' ){
+                                $action = 'Aprroved by Supervisor';
+                                $new_status='for-approval-division-head';
+                                $message_action="Approved";
+                            }
+                            else if($status == 'for-approval-department-head'){
+                                $action = 'Aprroved by Supervisor';
+                                $new_status='for-approval-division-head';
+                                $message_action="Approved";
+                            }
+                            else if($status == 'for-approval-division-head'){
+                                $action = 'Aprroved by Division Head';
+                                $new_status='approved';
+                                $message_action="Approved";
+                            }
+                            else if($status == 'applied'){
+                                $action = 'Verified by HRMO';
+                                if($division === true)
+                                {
+                                    $new_status='for-approval-department-head';
+                                    $message_action="verified";
+                                }
+                                else
+                                {
+                                    $new_status='for-approval-section-head';
+                                    $message_action="verified";
+                                }
+
+                            }
+
+                            $leave_applications = LeaveApplication::where('id','=', $id)
+                                                                    ->first();
+                            if($leave_applications){
+                                $leave_application_log = new LeaveApplicationLog();
+                                $leave_application_log->action = $action;
+                                $leave_application_log->leave_application_id = $id;
+                                $leave_application_log->action_by_id = '1';
+                                $leave_application_log->date = date('Y-m-d');
+                                $leave_application_log->time = date('h-i-s');
+                                $leave_application_log->save();
+
+                                $leave_application = LeaveApplication::findOrFail($id);
+                                $leave_application->status = $new_status;
+                                $leave_application->update();
+
+                                if($new_status=="approved")
+                                {
+                                    $leave_application_date_time=LeaveApplicationDateTime::findOrFail($id);
+                                    $total_days = 0;
+
+                                    foreach ($leave_application_date_time as $leave_date_time) {
+                                        $date_from = Carbon::parse($leave_date_time->date_from);
+                                        $date_to = Carbon::parse($leave_date_time->date_to);
+                                        $total_days += $date_to->diffInDays($date_from) + 1; // Add 1 to include both the start and end dates
+
+                                    }
+
+                                    $employee_leave_credits = new EmployeeLeaveCredit();
+                                    $employee_leave_credits->employee_profile_id = '1';
+                                    $employee_leave_credits->leave_application_id = $id;
+                                    $employee_leave_credits->operation = "deduct";
+                                    $employee_leave_credits->operation = "Leave";
+                                    $employee_leave_credits->leave_credit = $total_days;
+                                    $employee_leave_credits->date = date('Y-m-d');;
+                                    $employee_leave_credits->save();
+
+                                }
+                                return response(['message' => 'Application has been sucessfully '.$message_action, 'data' => $leave_application], Response::HTTP_CREATED);
+                            // }
+                }
+            }
+         catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage(),'error'=>true]);
+        }
+
+    }
 }
