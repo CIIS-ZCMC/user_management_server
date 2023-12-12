@@ -23,7 +23,7 @@ class OvtApplicationActivity extends Model
     {
         return $this->hasMany(OvtApplicationDatetime::class);
     }
-    public function overtime(){
+    public function overtimeApplication(){
         return $this->belongsTo(OvertimeApplication::class);
     }
 }

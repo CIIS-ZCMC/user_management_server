@@ -82,6 +82,7 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
     Route::post('ovt-application-update/{id}/{status}', 'OvertimeApplicationController@updateOvertimeApplicationStatus');
     Route::post('user-ovt-application/{id}', 'OvertimeApplicationController@getUserOvertimeApplication');
     Route::post('access-level-ovt-application/{id}/{status}', 'OvertimeApplicationController@getOvertimeApplications');
+    Route::post('add-monthly-overtime', 'EmployeeOvertimeCreditController@store');
 
 
     Route::get('division', 'LeaveApplicationController@getDivisionLeaveApplications');

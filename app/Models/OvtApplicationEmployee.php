@@ -17,7 +17,7 @@ class OvtApplicationEmployee extends Model
         'date'
 
     ];
-    public function date()
+    public function dates()
     {
         return $this->belongsTo(OvtApplicationDatetime::class);
     }

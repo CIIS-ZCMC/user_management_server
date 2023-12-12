@@ -1425,7 +1425,7 @@ class LeaveApplicationController extends Controller
                                     $employee_leave_credits->employee_profile_id = '1';
                                     $employee_leave_credits->leave_application_id = $id;
                                     $employee_leave_credits->operation = "deduct";
-                                    $employee_leave_credits->operation = "Leave";
+                                    $employee_leave_credits->reason = "Leave";
                                     $employee_leave_credits->leave_credit = $total_days;
                                     $employee_leave_credits->date = date('Y-m-d');;
                                     $employee_leave_credits->save();
@@ -1583,7 +1583,7 @@ class LeaveApplicationController extends Controller
                                             'leave_application_id' => $leave_application->id,
                                             'date_to' => $fromDates[$i],
                                             'date_from' => $toDates[$i],
-                                        
+
                                         ]);
                                     }
 

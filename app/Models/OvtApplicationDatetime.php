@@ -21,7 +21,7 @@ class OvtApplicationDatetime extends Model
     {
         return $this->hasMany(OvtApplicationEmployee::class);
     }
-    public function activity()
+    public function activities()
     {
         return $this->belongsTo(OvtApplicationActivity::class);
     }
