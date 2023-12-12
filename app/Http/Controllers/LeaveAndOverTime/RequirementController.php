@@ -20,51 +20,51 @@ class RequirementController extends Controller
      */
     public function index()
     {
-        try{
+                try{
 
-    $requirements = Requirement::with('logs.employeeProfile.personalInformation') // Eager load relationships
-        ->get();
+            $requirements = Requirement::with('logs.employeeProfile.personalInformation') // Eager load relationships
+                ->get();
 
-    $result = $requirements->map(function ($requirement) {
-        // Access requirement details
-        $requirementDetails = $requirement->toArray();
+            $result = $requirements->map(function ($requirement) {
+                // Access requirement details
+                $requirementDetails = $requirement->toArray();
 
-        // Access logs for the current requirement
-        $logs = $requirement->logs->map(function ($log) {
-            // Check if the employeeProfile relation is present
-            if ($log->employeeProfile) {
-                // Access employee name for the current log
-                $first_name = optional($log->employeeProfile->personalInformation)->first_name ;
-                $last_name = optional($log->employeeProfile->personalInformation)->last_name;
-                $date=$log->date;
-                $formatted_date=Carbon::parse($date)->format('M d,Y');
+                // Access logs for the current requirement
+                $logs = $requirement->logs->map(function ($log) {
+                    // Check if the employeeProfile relation is present
+                    if ($log->employeeProfile) {
+                        // Access employee name for the current log
+                        $first_name = optional($log->employeeProfile->personalInformation)->first_name ;
+                        $last_name = optional($log->employeeProfile->personalInformation)->last_name;
+                        $date=$log->date;
+                        $formatted_date=Carbon::parse($date)->format('M d,Y');
+                        return [
+                            'id' => $log->id,
+                            'action_by' => "{$first_name} {$last_name}" ,
+                            'position' => $log->employeeProfile->assignedArea->designation->code ?? null,
+                            'action' => $log->action,
+                            'date' => $formatted_date,
+                            'time' => $log->time,
+
+                        ];
+                    }
+
+                    return null; // or handle this case according to your logic
+                })->filter(); // Remove null values from the result
+
                 return [
-                    'id' => $log->id,
-                    'action_by' => "{$first_name} {$last_name}" ,
-                    'position' => $log->employeeProfile->assignedArea->designation->code ?? null,
-                    'action' => $log->action,
-                    'date' => $formatted_date,
-                    'time' => $log->time,
-
+                    'id' => $requirementDetails['id'],
+                    'name' => $requirementDetails['name'],
+                    'description' => $requirementDetails['description'],
+                    'logs' => $logs,
                 ];
-            }
+            });
 
-            return null; // or handle this case according to your logic
-        })->filter(); // Remove null values from the result
+                return response()->json(['data' => $result ], Response::HTTP_OK);
+                }catch(\Throwable $th){
 
-        return [
-            'id' => $requirementDetails['id'],
-            'name' => $requirementDetails['name'],
-            'description' => $requirementDetails['description'],
-            'logs' => $logs,
-        ];
-    });
-
-             return response()->json(['data' => $result ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-
-            return response()->json(['message' => $th->getMessage()], 500);
-        }
+                    return response()->json(['message' => $th->getMessage()], 500);
+                }
     }
 
     /**
@@ -95,7 +95,7 @@ class RequirementController extends Controller
             $requirement_log->save();
 
 
-            return response()->json(['message' => 'Requirement has been sucessfully saved','data' => $requirement ], Response::HTTP_OK);
+            return response()->json(['message' => 'Requirement has been sucessfully saved','data' => $requirement,'logs' => $requirement_log ], Response::HTTP_OK);
         }catch(\Throwable $th){
 
             return response()->json(['message' => $th->getMessage()], 500);
@@ -144,9 +144,7 @@ class RequirementController extends Controller
             $requirement_log->time = date('H:i:s');
             $requirement_log->save();
 
-
-
-            return response()->json(['message' => 'Requirement has been sucessfully updated','data' => $requirement ], Response::HTTP_OK);
+            return response()->json(['message' => 'Requirement has been sucessfully updated','data' => $requirement,'logs' => $requirement_log], Response::HTTP_OK);
         }catch(\Throwable $th){
 
             return response() -> json(['message' => $th -> getMessage()], 500);
