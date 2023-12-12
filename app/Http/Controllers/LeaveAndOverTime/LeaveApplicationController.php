@@ -1541,11 +1541,10 @@ class LeaveApplicationController extends Controller
 
                     $fromDates = $request->input('date_from');
                     $toDates = $request->input('date_to');
-                    $fromTime = $request->input('time_from');
-                    $toTime = $request->input('time_to');
+
                     $total_days = 0;
 
-                    if (count($fromDates) !== count($toDates) || count($fromTime) !== count($toTime)) {
+                    if (count($fromDates) !== count($toDates)) {
                         return response()->json(['error' => 'Mismatched date and time'], 400);
                     }
 
@@ -1584,8 +1583,7 @@ class LeaveApplicationController extends Controller
                                             'leave_application_id' => $leave_application->id,
                                             'date_to' => $fromDates[$i],
                                             'date_from' => $toDates[$i],
-                                            'time_to' => $toTime[$i],
-                                            'time_from' => $fromTime[$i],
+                                        
                                         ]);
                                     }
 
