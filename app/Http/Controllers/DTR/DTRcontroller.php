@@ -70,12 +70,9 @@ class DTRcontroller extends Controller
                             //yesterday Time
                             // Save the past 24 hours records
                             $datenow = date('Y-m-d');
-
                             $late_Records = array_filter($Employee_Attendance, function ($attd) use ($datenow) {
                                 return date('Y-m-d', strtotime($attd['date_time'])) < $datenow;
                             });
-
-
                             $this->helper->saveDTRRecords($late_Records, true);
                             // /* Save DTR Logs */
                             $this->helper->saveDTRLogs($late_Records, 1, $device, 1);
@@ -225,6 +222,22 @@ class DTRcontroller extends Controller
             $month_of = $request->monthof;
             $year_of = $request->yearof;
             $view = $request->view;
+
+            /* 
+            Multiple IDS for Multiple PDF generation
+            */
+            $id = json_decode($biometric_id);
+
+            echo count($id) . '<br>';
+            foreach ($id as $bid) {
+                if ($this->helper->isEmployee($bid)) {
+                    echo $bid . ' is an employee <br>';
+                } else {
+                    echo $bid . ' is not employee <br>';
+                }
+            }
+            return;
+
             $emp_name = '';
             if ($this->helper->isEmployee($biometric_id)) {
                 $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
@@ -247,10 +260,13 @@ class DTRcontroller extends Controller
                         ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
                 })
                 ->get();
-            $arrival_Departure = '';
+            $arrival_Departure = [];
+            $time_stamps_req = '';
             foreach ($dtr as $val) {
                 $time_stamps_req = $this->helper->getSchedule($biometric_id, $val->first_in); //biometricID
-                $arrival_Departure = $this->arrivalDeparture($time_stamps_req, $year_of, $month_of);
+                $arrival_Departure[] = $this->arrivalDeparture($time_stamps_req, $year_of, $month_of);
+
+
                 if (count($time_stamps_req) >= 1) {
                     $validate = [
                         (object)[
@@ -271,19 +287,24 @@ class DTRcontroller extends Controller
                     );
                 }
             }
+
+
+
             $ohf = isset($time_stamps_req) ? $time_stamps_req['total_hours'] . ' HOURS' : null;
             $emp_Details = [
                 'OHF' => $ohf,
-                'Arrival_Departure' => $arrival_Departure,
+                'Arrival_Departure' => $arrival_Departure[0],
                 'Employee_Name' => $emp_name,
                 'DTRFile_Name' => $emp_name
             ];
+
             return $this->PrintDtr($month_of, $year_of, $biometric_id, $emp_Details, $view);
         } catch (\Throwable $th) {
 
             return response()->json(['message' =>  $th->getMessage()]);
         }
     }
+
 
     /* 
     *    This is either view or print as PDF
@@ -354,7 +375,7 @@ class DTRcontroller extends Controller
                                 'second_in' => $val->second_in,
                                 'second_out' => $val->second_out,
                                 'undertime_minutes' => $val->undertime_minutes,
-                                'created' => $val->created_at
+                                'created' => $val->dtr_date
                             ];
                         }
                     }
@@ -365,7 +386,7 @@ class DTRcontroller extends Controller
                         'second_in' => $val->second_in,
                         'second_out' => $val->second_out,
                         'undertime_minutes' => $val->undertime_minutes,
-                        'created' => $val->created_at
+                        'created' => $val->dtr_date
                     ];
                     //  echo $val->first_in;
                 }
@@ -845,38 +866,39 @@ class DTRcontroller extends Controller
         * test on how to access request function on another controller for instance
         */
 
-        return view('test');
-        // for ($i = 1; $i <= 30; $i++) {
 
-        //     $date = date('Y-m-d', strtotime('2023-11-' . $i));
+        for ($i = 1; $i <= 30; $i++) {
 
-        //     if (date('D', strtotime($date)) != 'Sun') {
-        //         $firstin = date('H:i:s', strtotime('today') + rand(25200, 30600));
-        //         $firstout =  date('H:i:s', strtotime('today') + rand(42600, 47400));
-        //         $secondin =  date('H:i:s', strtotime('today') + rand(45000, 49800));
-        //         $secondout = date('H:i:s', strtotime('today') + rand(59400, 77400));
+            $date = date('Y-m-d', strtotime('2023-11-' . $i));
 
-        //         DailyTimeRecords::create([
-        //             'biometric_id' => 5180,
-        //             'first_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin)),
-        //             'first_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstout)),
-        //             'second_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $secondin)),
-        //             'second_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $secondout)),
-        //             'interval_req' => null,
-        //             'required_working_hours' => null,
-        //             'required_working_minutes' => null,
-        //             'total_working_hours' => null,
-        //             'total_working_minutes' => null,
-        //             'overtime' => null,
-        //             'overtime_minutes' => null,
-        //             'undertime' => null,
-        //             'undertime_minutes' => null,
-        //             'overall_minutes_rendered' => null,
-        //             'total_minutes_reg' => null,
-        //             'is_biometric' => 1,
-        //             'created_at' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin))
-        //         ]);
-        //     }
-        // }
+            if (date('D', strtotime($date)) != 'Sun') {
+                $firstin = date('H:i:s', strtotime('today') + rand(25200, 30600));
+                $firstout =  date('H:i:s', strtotime('today') + rand(42600, 47400));
+                $secondin =  date('H:i:s', strtotime('today') + rand(45000, 49800));
+                $secondout = date('H:i:s', strtotime('today') + rand(59400, 77400));
+
+                DailyTimeRecords::create([
+                    'biometric_id' => 5181,
+                    'dtr_date' => $date,
+                    'first_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin)),
+                    'first_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstout)),
+                    'second_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $secondin)),
+                    'second_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $secondout)),
+                    'interval_req' => null,
+                    'required_working_hours' => null,
+                    'required_working_minutes' => null,
+                    'total_working_hours' => null,
+                    'total_working_minutes' => null,
+                    'overtime' => null,
+                    'overtime_minutes' => null,
+                    'undertime' => null,
+                    'undertime_minutes' => null,
+                    'overall_minutes_rendered' => null,
+                    'total_minutes_reg' => null,
+                    'is_biometric' => 1,
+                    'created_at' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin))
+                ]);
+            }
+        }
     }
 }
