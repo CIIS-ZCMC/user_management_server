@@ -113,6 +113,15 @@ class LeaveTypeController extends Controller
                         'description' => $leave_type->description,
                         'file_date' => $leave_type->file_date,
                         'period' => $leave_type->period,
+                        'is_country' => $leave_type->is_country,
+                        'is_illness' => $leave_type->is_illness,
+                        'is_days_recommended' => $leave_type->is_days_recommended,
+                        'requirements' => $leave_type->requirements->map(function ($requirement) {
+                            return [
+                                'id' => $requirement->id,
+                                'name' => $requirement->name,
+                            ];
+                        }),
                     ];
                 });
 
@@ -232,7 +241,7 @@ class LeaveTypeController extends Controller
                 $firstLetters .= strtoupper(substr($name_code, 0, 1));
             }
             $leave_type->code = $firstLetters;
-            $leave_type->is_special = $request->input('is_special');
+            // $leave_type->is_special = $request->input('is_special');
             $leave_type->is_country = $request->input('is_country');
             $leave_type->is_illness = $request->input('is_illness');
             $leave_type->is_days_recommended = $request->input('is_days_recommended ');
