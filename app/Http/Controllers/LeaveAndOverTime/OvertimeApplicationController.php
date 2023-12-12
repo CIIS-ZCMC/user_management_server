@@ -425,7 +425,7 @@ class OvertimeApplicationController extends Controller
                         });
 
 
-                        return response()->json(['OfficialTimeApplication' => $overtime_time_applications_result]);
+                        return response()->json(['OvertimeApplication' => $overtime_time_applications_result]);
                     }
             }
             else if($status == 'for-approval-department-head'){
@@ -558,7 +558,7 @@ class OvertimeApplicationController extends Controller
                     ];
                         });
 
-                    return response()->json(['OfficialTimeApplication' => $official_time_applications_result]);
+                    return response()->json(['OvertimeApplication' => $overtime_applications_result]);
                 }
             }
             else if($status == 'for-approval-section-head'){
@@ -566,17 +566,17 @@ class OvertimeApplicationController extends Controller
                 $sectionHeadId = Section::where('id', $section)->value('supervisor_employee_profile_id');
                 if($sectionHeadId == $id) {
 
-                    $official_time_applications = OfficialTimeApplication::with(['employeeProfile.assignedArea.section','employeeProfile.personalInformation','logs'])
+                    $overtime_applications = OfficialTimeApplication::with(['employeeProfile.assignedArea.section','employeeProfile.personalInformation','logs'])
                     ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
                         $query->where('id', $section);
                     })
                     ->where('status', 'for-approval-section-head')
                     ->get();
 
-                    $official_time_applications_result = $official_time_applications->map(function ($official_time_application) {
-                        $division = AssignArea::where('employee_profile_id',$official_time_application->employee_profile_id)->value('division_id');
-                        $department = AssignArea::where('employee_profile_id',$official_time_application->employee_profile_id)->value('department_id');
-                        $section = AssignArea::where('employee_profile_id',$official_time_application->employee_profile_id)->value('section_id');
+                    $overtime_applications_result = $OvertimeApplication->map(function ($overtime_application) {
+                        $division = AssignArea::where('employee_profile_id',$overtime_time_application->employee_profile_id)->value('division_id');
+                        $department = AssignArea::where('employee_profile_id',$overtime_time_application->employee_profile_id)->value('department_id');
+                        $section = AssignArea::where('employee_profile_id',$overtime_time_application->employee_profile_id)->value('section_id');
                         $chief_name=null;
                         $head_name=null;
                         $supervisor_name=null;
@@ -605,26 +605,27 @@ class OvertimeApplicationController extends Controller
                             $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
                             }
                         }
-                        $first_name = optional($official_time_application->employeeProfile->personalInformation)->first_name ?? null;
-                        $last_name = optional($official_time_application->employeeProfile->personalInformation)->last_name ?? null;
+                    $first_name = optional($overtime_application->employeeProfile->personalInformation)->first_name ?? null;
+                    $last_name = optional($overtime_application->employeeProfile->personalInformation)->last_name ?? null;
                         return [
-                            'id' => $official_time_application->id,
-                            'date_from' => $official_time_application->date_from,
-                            'date_to' => $official_time_application->date_to,
-                            'time_from' => $official_time_application->time_from,
-                            'time_to' => $official_time_application->time_to,
-                            'reason' => $official_time_application->reason,
-                            'status' => $official_time_application->status,
-                            'employee_id' => $official_time_application->employee_profile_id,
+                            'id' => $overtime_application->id,
+                            'reason' => $overtime_application->reason,
+                            'remarks' => $overtime_application->remarks,
+                            'purpose' => $overtime_application->purpose,
+                            'status' => $overtime_application->status,
+                            'overtime_letter' => $overtime_application->overtime_letter_of_request,
+                            'employee_id' => $overtime_application->employee_profile_id,
                             'employee_name' => "{$first_name} {$last_name}" ,
                             'division_head' =>$chief_name,
                             'department_head' =>$head_name,
                             'section_head' =>$supervisor_name,
-                            'division_name' => $official_time_application->employeeProfile->assignedArea->division->name ?? null,
-                            'department_name' => $official_time_application->employeeProfile->assignedArea->department->name ?? null,
-                            'section_name' => $official_time_application->employeeProfile->assignedArea->section->name ?? null,
-                            'unit_name' => $official_time_application->employeeProfile->assignedArea->unit->name ?? null,
-                            'logs' => $official_time_application->logs->map(function ($log) {
+                            'division_name' => $overtime_application->employeeProfile->assignedArea->division->name ?? null,
+                            'department_name' => $overtime_application->employeeProfile->assignedArea->department->name ?? null,
+                            'section_name' => $overtime_application->employeeProfile->assignedArea->section->name ?? null,
+                            'unit_name' => $overtime_application->employeeProfile->assignedArea->unit->name ?? null,
+                            'date' => $overtime_application->date,
+                            'time' => $overtime_application->time,
+                            'logs' => $overtime_application->logs->map(function ($log) {
                                 $process_name=$log->action;
                                 $action ="";
                                 $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
@@ -645,7 +646,7 @@ class OvertimeApplicationController extends Controller
                                 $formatted_date=Carbon::parse($date)->format('M d,Y');
                                 return [
                                     'id' => $log->id,
-                                    'leave_application_id' => $log->ob_application_id,
+                                    'overtime_application_id' => $log->overtime_application_id,
                                     'action_by' => "{$first_name} {$last_name}" ,
                                     'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
                                     'action' => $log->action,
@@ -654,10 +655,40 @@ class OvertimeApplicationController extends Controller
                                     'process' => $action
                                 ];
                             }),
+                            'activities' => $overtime_application->activities->map(function ($activity) {
+                                return [
+                                    'id' => $activity->id,
+                                    'overtime_application_id' => $activity->overtime_application_id,
+                                    'name' => $activity->name,
+                                    'quantity' => $activity->quantity,
+                                    'man_hour' => $activity->man_hour,
+                                    'period_covered' => $activity->period_covered,
+                                    'dates' => $activity->dates->map(function ($date) {
+                                        return [
+                                            'id' => $date->id,
+                                            'ovt_activity_id' =>$date->ovt_application_activity_id,
+                                            'time_from' => $date->time_from,
+                                            'time_to' => $date->time_to,
+                                            'date' => $date->date,
+                                            'dates' => $date->employees->map(function ($employee) {
+                                                $first_name = optional($employee->employeeProfile->personalInformation)->first_name ?? null;
+                                                $last_name = optional($employee->employeeProfile->personalInformation)->last_name ?? null;
+                                            return [
+                                                    'id' => $employee->id,
+                                                    'ovt_employee_id' =>$employee->ovt_application_datetime_id,
+                                                    'employee_id' => $employee->id,
+                                                    'employee_name' =>"{$first_name} {$last_name}",
+
+                                                ];
+                                            }),
+
+                                        ];
+                                    }),
+                                ];
+                            }),
 
                         ];
                     });
-
 
 
                     return response()->json(['official_time_applications' => $official_time_applications_result]);

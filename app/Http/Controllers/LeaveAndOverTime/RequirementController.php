@@ -94,8 +94,45 @@ class RequirementController extends Controller
             $requirement_log->time = date('H:i:s');
             $requirement_log->save();
 
+            $id=$requirement->id;
+            $requirement_return = Requirement::with('logs.employeeProfile.personalInformation') // Eager load relationships
+            ->where('id',$id)->get();
+            $result = $requirement_return->map(function ($requirement) {
+                // Access requirement details
+                $requirementDetails = $requirement->toArray();
 
-            return response()->json(['message' => 'Requirement has been sucessfully saved','data' => $requirement,'logs' => $requirement_log ], Response::HTTP_OK);
+                // Access logs for the current requirement
+                $logs = $requirement->logs->map(function ($log) {
+                    // Check if the employeeProfile relation is present
+                    if ($log->employeeProfile) {
+                        // Access employee name for the current log
+                        $first_name = optional($log->employeeProfile->personalInformation)->first_name ;
+                        $last_name = optional($log->employeeProfile->personalInformation)->last_name;
+                        $date=$log->date;
+                        $formatted_date=Carbon::parse($date)->format('M d,Y');
+                        return [
+                            'id' => $log->id,
+                            'action_by' => "{$first_name} {$last_name}" ,
+                            'position' => $log->employeeProfile->assignedArea->designation->code ?? null,
+                            'action' => $log->action,
+                            'date' => $formatted_date,
+                            'time' => $log->time,
+
+                        ];
+                    }
+
+                    return null; // or handle this case according to your logic
+                })->filter(); // Remove null values from the result
+
+                return [
+                    'id' => $requirementDetails['id'],
+                    'name' => $requirementDetails['name'],
+                    'description' => $requirementDetails['description'],
+                    'logs' => $logs,
+                ];
+            });
+
+            return response()->json(['message' => 'Requirement has been sucessfully saved','data' => $result ], Response::HTTP_OK);
         }catch(\Throwable $th){
 
             return response()->json(['message' => $th->getMessage()], 500);
