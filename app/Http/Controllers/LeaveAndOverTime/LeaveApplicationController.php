@@ -1427,7 +1427,7 @@ class LeaveApplicationController extends Controller
                                     $employee_leave_credits->operation = "deduct";
                                     $employee_leave_credits->reason = "Leave";
                                     $employee_leave_credits->leave_credit = $total_days;
-                                    $employee_leave_credits->date = date('Y-m-d');;
+                                    $employee_leave_credits->date = date('Y-m-d');
                                     $employee_leave_credits->save();
 
                                 }
@@ -1577,7 +1577,9 @@ class LeaveApplicationController extends Controller
                                 $leave_application->leave_type_id ="54";
                                 $leave_application->save();
                                 $leave_application_id = $leave_application->id;
-
+                                
+                                if($fromDates)
+                                {
                                     for ($i = 0; $i < count($fromDates); $i++) {
                                         LeaveApplicationDateTime::create([
                                             'leave_application_id' => $leave_application->id,
@@ -1586,6 +1588,8 @@ class LeaveApplicationController extends Controller
 
                                         ]);
                                     }
+                                }
+
 
 
                                 $columnsString="";
