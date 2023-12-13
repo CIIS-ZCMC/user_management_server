@@ -228,18 +228,14 @@ class DTRcontroller extends Controller
             */
             $id = json_decode($biometric_id);
 
-            echo count($id) . '<br>';
-            foreach ($id as $bid) {
-                if ($this->helper->isEmployee($bid)) {
-                    echo $bid . ' is an employee <br>';
-                } else {
-                    echo $bid . ' is not employee <br>';
-                }
+            if (count($id) >= 2) {
+                return $this->GenerateMultiple($id);
             }
-            return;
+
 
             $emp_name = '';
-            if ($this->helper->isEmployee($biometric_id)) {
+            $biometric_id = $id[0];
+            if ($this->helper->isEmployee($id[0])) {
                 $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
                 $emp_name = $employee->name();
             } else {
@@ -485,6 +481,13 @@ class DTRcontroller extends Controller
         }
     }
 
+
+    public function GenerateMultiple($id)
+    {
+        foreach ($id as $key => $biometric_id) {
+            echo $biometric_id;
+        }
+    }
     /* ----------------------------------------------------------------END OF GENERATION OF DAILY TIME RECORDS----------------------------------------------------------------------------------------------------------------------------- */
 
 
