@@ -77,7 +77,7 @@ class Helpers {
                     break;
 
                 default:
-                    $dates[] = $date->format('Y-m-d');
+                    $dates[] = $date->format('Y-m-d D');
                     break;
             }
             

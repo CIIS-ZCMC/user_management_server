@@ -1250,7 +1250,7 @@ Route::middleware('auth.cookie')->group(function(){
         Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function(){
             Route::get('schedule', 'ScheduleController@index');
         });
-
+        
         Route::middleware(['auth.permission:UMIS-ScM write'])->group(function(){
             Route::post('schedule', 'ScheduleController@store');
         });
@@ -1265,6 +1265,10 @@ Route::middleware('auth.cookie')->group(function(){
 
         Route::middleware(['auth.permission:UMIS-ScM delete'])->group(function(){
             Route::delete('schedule/{id}', 'ScheduleController@destroy');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function(){
+            Route::get('schedules', 'ScheduleController@create');
         });
 
         /**

@@ -59,12 +59,50 @@ class ScheduleController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create(ScheduleRequest $request, $id)
+    public function create(Request $request)
     {
         try {
-            
+            $cleanData = [];
+
+            foreach ($request->all() as $key => $value) {
+                if (empty($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                if (DateTime::createFromFormat('Y-m-d', $value)) {
+                    $cleanData[$key] = Carbon::parse($value);
+                    continue;
+                }
+
+                if (is_int($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                $cleanData[$key] = strip_tags($value);
+            }
+
+            $month  = $cleanData['month'];  // Replace with the desired month (1 to 12)
+            $year   = $cleanData['year'];   // Replace with the desired year
+
+            $date = Helpers::getDatesInMonth($year, $month, "");
+
+            $data = EmployeeProfile::join('personal_informations as PI', 'employee_profiles.personal_information_id', '=', 'PI.id')
+            ->select('employee_profiles.id','employee_id','biometric_id', 'PI.first_name','PI.middle_name', 'PI.last_name')
+            ->with(['assignedArea', 'schedule' => function ($query) use ($year, $month) {
+                $query->with(['timeShift', 'holiday'])->whereYear('date_start', '=', $year)->whereMonth('date_start', '=', $month);
+            }])->whereHas('assignedArea', function ($query) use ($cleanData) {
+                $query->where('section_id', $cleanData['section']);
+            })->get();
+
+            Helpers::registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            return response()->json(['data' => $data, 'date'=> $date], Response::HTTP_OK);
+
         } catch (\Throwable $th) {
-            //throw $th;
+
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -343,9 +381,8 @@ class ScheduleController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-
-            $month  = $cleanData['month'];   // Replace with the desired month (1 to 12)
-            $year   = $cleanData['year'];     // Replace with the desired year
+            $month  = $cleanData['month'];  // Replace with the desired month (1 to 12)
+            $year   = $cleanData['year'];   // Replace with the desired year
 
             $days   = Helpers::getDatesInMonth($year, $month, "Day");
             $weeks  = Helpers::getDatesInMonth($year, $month, "Week");
