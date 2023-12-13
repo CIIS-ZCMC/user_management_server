@@ -11,6 +11,7 @@ class LeaveApplication extends Model
     protected $table = 'leave_applications';
     protected $casts = [
         'with_pay' => 'boolean',
+        'patient_type' => 'boolean',
     ];
     public $fillable = [
         'employee_profile_id',
@@ -23,7 +24,10 @@ class LeaveApplication extends Model
         'leave_credit_total',
         'status',
         'remarks',
-        'date'
+        'date',
+        'illness',
+        'patient_type',
+        'country'
     ];
         public function leaveType()
         {
