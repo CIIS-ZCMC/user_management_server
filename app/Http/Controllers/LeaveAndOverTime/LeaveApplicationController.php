@@ -126,6 +126,7 @@ class LeaveApplicationController extends Controller
                 'with_pay' => $leave_application->with_pay ,
                 'employee_id' => $leave_application->employee_profile_id,
                 'employee_name' => "{$first_name} {$last_name}" ,
+                'position' => $leave_application->employeeProfile->assignedArea->designation->name ?? null,
                 'division_head' =>$chief_name,
                 'department_head' =>$head_name,
                 'section_head' =>$supervisor_name,
@@ -1529,7 +1530,7 @@ class LeaveApplicationController extends Controller
             // if($user_status == 'Permanent')
             // {
                 $employee_leave_credit=EmployeeLeaveCredit::where('employee_profile_id','=','1')
-                                                    ->where('leave_type_id','=','54')
+                                                    ->where('leave_type_id','=',$leave_type_id)
                                                     ->get();
                 if($employee_leave_credit)
                 {
@@ -1577,7 +1578,7 @@ class LeaveApplicationController extends Controller
                                 $leave_application->leave_type_id ="54";
                                 $leave_application->save();
                                 $leave_application_id = $leave_application->id;
-                                
+
                                 if($fromDates)
                                 {
                                     for ($i = 0; $i < count($fromDates); $i++) {
@@ -1620,7 +1621,7 @@ class LeaveApplicationController extends Controller
                                 }
                                 $process_name="Applied";
                                 $this->storeLeaveApplicationLog($leave_application_id,$process_name,$columnsString);
-                                return response()->json(['data' => 'Success'], Response::HTTP_OK);
+                                return response()->json(['message' => 'Leave Application has been sucessfully saved','data' => $leave_application ], Response::HTTP_OK);
                         }
                         else
                         {
