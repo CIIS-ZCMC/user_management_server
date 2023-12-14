@@ -189,6 +189,7 @@ class LeaveTypeController extends Controller
             $leave_type->requirements()->sync($selectedRequirements);
             $columnsString="";
             $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString);
+            
             return response()->json(['message' => 'Leave Type has been sucessfully saved','data' => $leave_type ], Response::HTTP_OK);
         }catch(\Throwable $th){
 

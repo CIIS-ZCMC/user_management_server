@@ -755,7 +755,93 @@ class ObApplicationController extends Controller
             $process_name="Applied";
 
             $this->storeOfficialBusinessApplicationLog($ob_id,$process_name,$columnsString);
-            return response()->json(['message' => 'Official Business Application has been sucessfully saved','data' => $official_business_application ], Response::HTTP_OK);
+            $official_business_applications =ObApplication::with(['employeeProfile.personalInformation','logs'])
+            ->where('id',$official_business_application->id)->get();
+            $official_business_applications_result = $official_business_applications->map(function ($official_business_application) {
+                    $division = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('division_id');
+                    $department = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('department_id');
+                    $section = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('section_id');
+                    $chief_name=null;
+                    $head_name=null;
+                    $supervisor_name=null;
+                    if($division) {
+                        $division_name = Division::with('chief.personalInformation')->find($division);
+                        if($division_name && $division_name->chief  && $division_name->personalInformation != null)
+                        {
+                            $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                        }
+
+
+                    }
+                    if($department)
+                    {
+                        $department_name = Department::with('head.personalInformation')->find($department);
+                        if($department_name && $department_name->head  && $department_name->personalInformation != null)
+                        {
+                         $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
+                        }
+                    }
+                    if($section)
+                    {
+                        $section_name = Section::with('supervisor.personalInformation')->find($section);
+                        if($section_name && $section_name->head  && $section_name->personalInformation != null)
+                        {
+                        $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
+                        }
+                    }
+                $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
+                $last_name = optional($official_business_application->employeeProfile->personalInformation)->last_name ?? null;
+                    return [
+                        'id' => $official_business_application->id,
+                        'date_from' => $official_business_application->date_from,
+                        'date_to' => $official_business_application->date_to,
+                        'time_from' => $official_business_application->time_from,
+                        'time_to' => $official_business_application->time_to,
+                        'reason' => $official_business_application->reason,
+                        'status' => $official_business_application->status,
+                        'employee_id' => $official_business_application->employee_profile_id,
+                        'employee_name' => "{$first_name} {$last_name}" ,
+                        'division_head' =>$chief_name,
+                        'department_head' =>$head_name,
+                        'section_head' =>$supervisor_name,
+                        'division_name' => $official_business_application->employeeProfile->assignedArea->division->name ?? null,
+                        'department_name' => $official_business_application->employeeProfile->assignedArea->department->name ?? null,
+                        'section_name' => $official_business_application->employeeProfile->assignedArea->section->name ?? null,
+                        'unit_name' => $official_business_application->employeeProfile->assignedArea->unit->name ?? null,
+                        'logs' => $official_business_application->logs->map(function ($log) {
+                            $process_name=$log->action;
+                            $action ="";
+                            $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
+                            $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
+                            if($log->action_by_id  === optional($log->employeeProfile->assignedArea->division)->chief_employee_profile_id )
+                            {
+                                $action =  $process_name . ' by ' . 'Division Head';
+                            }
+                            else if ($log->action_by_id === optional($log->employeeProfile->assignedArea->department)->head_employee_profile_id || optional($log->employeeProfile->assignedArea->section)->supervisor_employee_profile_id)
+                            {
+                                $action =  $process_name . ' by ' . 'Supervisor';
+                            }
+                            else{
+                                $action=  $process_name . ' by ' . $first_name .' '. $last_name;
+                            }
+
+                            $date=$log->date;
+                            $formatted_date=Carbon::parse($date)->format('M d,Y');
+                            return [
+                                'id' => $log->id,
+                                'leave_application_id' => $log->ob_application_id,
+                                'action_by' => "{$first_name} {$last_name}" ,
+                                'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                'action' => $log->action,
+                                'date' => $formatted_date,
+                                'time' => $log->time,
+                                'process' => $action
+                            ];
+                        }),
+
+                    ];
+                });
+            return response()->json(['message' => 'Official Business Application has been sucessfully saved','data' => $official_business_applications_result ], Response::HTTP_OK);
         }catch(\Throwable $th){
 
             return response()->json(['message' => $th->getMessage()], 500);
