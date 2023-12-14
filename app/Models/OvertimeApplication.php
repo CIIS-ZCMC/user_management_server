@@ -17,6 +17,7 @@ class OvertimeApplication extends Model
         'status',
         'purpose',
         'overtime_letter_of_request',
+        'path',
         'date',
         'time'
 
@@ -31,6 +32,10 @@ class OvertimeApplication extends Model
     }
     public function employeeProfile() {
         return $this->belongsTo(EmployeeProfile::class);
+    }
+    
+    public function directDates() {
+        return $this->hasMany(OvtApplicationDatetime::class);
     }
 
 

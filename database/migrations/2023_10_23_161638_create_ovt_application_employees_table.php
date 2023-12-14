@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('ovt_application_datetime_id')->unsigned();
             $table->foreign('ovt_application_datetime_id')->references('id')->on('ovt_application_datetimes')->onDelete('cascade');
-            $table->unsignedBigInteger('employee_id')->unsigned();
+            $table->unsignedBigInteger('employee_profile_id')->unsigned();
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->string('remarks')->nullable();
             $table->string('date')->nullable();

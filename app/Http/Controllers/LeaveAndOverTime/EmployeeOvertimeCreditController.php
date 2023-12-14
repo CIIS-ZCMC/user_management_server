@@ -51,13 +51,13 @@ class EmployeeOvertimeCreditController extends Controller
             ],
             [
                 'employee_profile_id' => 1,
-                'date' => '2023-12-14',
+                'date' => '2023-12-16',
                 'from_time' => '13:00:00',
                 'to_time' => '17:00:00',
             ],
             [
                 'employee_profile_id' => 1,
-                'date' => '2023-12-15',
+                'date' => '2023-12-14',
                 'from_time' => '14:00:00',
                 'to_time' => '17:00:00',
             ],
@@ -111,15 +111,16 @@ class EmployeeOvertimeCreditController extends Controller
                                         $overlapToTime = min($biometricToTime, $overtimeToTime);
 
                                         $totalOvertimeHours = $overlapToTime->diffInHours($overlapFromTime);
-
                                         // Store the total overtime hours for each unique combination in the database
+                                        $date_compare=$date->date;
+                                        $total =  $this->calculateTotal($date_compare);
                                         EmployeeOvertimeCredit::create([
                                             'employee_profile_id' => $employee->employee_profile_id,
                                             'date' => date('Y-m-d'),
                                             'operation' => 'add',
                                             'overtime_application_id' =>$overtimeApplication->id,
-                                            'credit_value' => $totalOvertimeHours,
-                                            'overtime_hours' => $totalOvertimeHours,
+                                            'credit_value' => $totalOvertimeHours * $total,
+                                            'overtime_hours' => $totalOvertimeHours * $total,
                                         ]);
                                     }
                                 }
@@ -136,26 +137,24 @@ class EmployeeOvertimeCreditController extends Controller
 
 
 
-    /**
-     * Display the specified resource.
-     */
+        public function calculateTotal($date)
+        {
+
+            $carbonDate = Carbon::parse($date);
+
+            // Check if the day is a weekend (Saturday or Sunday)
+            if ($carbonDate->isWeekend()) {
+                // Apply a multiplier of 1.5 for weekends
+                return 1.5;
+            } else {
+                // Apply a multiplier of 1 for weekdays
+                return 1;
+            }
+        }
+
     public function show(EmployeeOvertimeCredit $employeeOvertimeCredit)
     {
-        $employee_leave_credits = new EmployeeOvertimeCredit();
-        $employee_leave_credits->employee_profile_id =$employee->employee_profile_id;
-        $employee_leave_credits->overtime_application_id = $overtimeApplication->id;
-        $employee_leave_credits->operation = "add";
-        $employee_leave_credits->credit_value = $totalOvertimeHours;
-        $employee_leave_credits->date = date('Y-m-d');
-        $employee_leave_credits->save();
-        EmployeeOvertimeCredit::create([
-            'employee_profile_id' => $employee->employee_profile_id,
-            'date' => date('Y-m-d'),
-            'operation' => 'add',
-            'overtime_application_id' =>$overtimeApplication->id,
-            'credit_value' => $totalOvertimeHours,
-            'overtime_hours' => $totalOvertimeHours,
-        ]);
+      
     }
 
     /**

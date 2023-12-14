@@ -801,6 +801,7 @@ class ObApplicationController extends Controller
                         'status' => $official_business_application->status,
                         'employee_id' => $official_business_application->employee_profile_id,
                         'employee_name' => "{$first_name} {$last_name}" ,
+                        'position' => $official_business_application->employeeProfile->assignedArea->designation->name ?? null,
                         'division_head' =>$chief_name,
                         'department_head' =>$head_name,
                         'section_head' =>$supervisor_name,

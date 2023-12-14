@@ -25,4 +25,7 @@ class OvtApplicationDatetime extends Model
     {
         return $this->belongsTo(OvtApplicationActivity::class);
     }
+    public function overtimeApplication(){
+        return $this->belongsTo(OvertimeApplication::class);
+    }
 }
