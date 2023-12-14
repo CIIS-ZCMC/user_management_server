@@ -30,11 +30,15 @@ class OvertimeApplicationController extends Controller
             $overtime_applications=[];
             $overtime_applications =OvertimeApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','logs','activities'])->get();
             $overtime_applications_result = $overtime_applications->map(function ($overtime_application) {
+            $activitiesData = $overtime_application->activities ? $overtime_application->activities : collect();
+            $datesData = $overtime_application->pastDates ? $overtime_application->pastDates : collect();
+            $logsData = $overtime_application->logs ? $overtime_application->logs : collect();
             $division = AssignArea::where('employee_profile_id',$overtime_application->employee_profile_id)->value('division_id');
             $department = AssignArea::where('employee_profile_id',$overtime_application->employee_profile_id)->value('department_id');
             $section = AssignArea::where('employee_profile_id',$overtime_application->employee_profile_id)->value('section_id');
             $chief_name=null;
             $head_name=null;
+            return $division;
             $supervisor_name=null;
             if($division) {
                 $division_name = Division::with('chief.personalInformation')->find($division);
@@ -81,7 +85,7 @@ class OvertimeApplicationController extends Controller
                 'unit_name' => $overtime_application->employeeProfile->assignedArea->unit->name ?? null,
                 'date' => $overtime_application->date,
                 'time' => $overtime_application->time,
-                'logs' => $overtime_application->logs->map(function ($log) {
+                'logs' => $logsData ->map(function ($log) {
                     $process_name=$log->action;
                     $action ="";
                     $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
@@ -111,7 +115,7 @@ class OvertimeApplicationController extends Controller
                         'process' => $action
                     ];
                 }),
-                'activities' => $overtime_application->activities->map(function ($activity) {
+                'activities' => $activitiesData->map(function ($activity) {
                     return [
                         'id' => $activity->id,
                         'overtime_application_id' => $activity->overtime_application_id,
@@ -121,6 +125,29 @@ class OvertimeApplicationController extends Controller
                         'period_covered' => $activity->period_covered,
                         'dates' => $activity->dates->map(function ($date) {
                             return [
+                                'id' => $date->id,
+                                'ovt_activity_id' =>$date->ovt_application_activity_id,
+                                'time_from' => $date->time_from,
+                                'time_to' => $date->time_to,
+                                'date' => $date->date,
+                                'employees' => $date->employees->map(function ($employee) {
+                                    $first_name = optional($employee->employeeProfile->personalInformation)->first_name ?? null;
+                                    $last_name = optional($employee->employeeProfile->personalInformation)->last_name ?? null;
+                                return [
+                                        'id' => $employee->id,
+                                        'ovt_employee_id' =>$employee->ovt_application_datetime_id,
+                                        'employee_id' => $employee->id,
+                                        'employee_name' =>"{$first_name} {$last_name}",
+
+                                    ];
+                                }),
+
+                            ];
+                        }),
+                    ];
+                }),
+                'dates' => $datesData->map(function ($date) {
+                    return [
                                 'id' => $date->id,
                                 'ovt_activity_id' =>$date->ovt_application_activity_id,
                                 'time_from' => $date->time_from,
@@ -137,9 +164,6 @@ class OvertimeApplicationController extends Controller
 
                                     ];
                                 }),
-
-                            ];
-                        }),
                     ];
                 }),
 
@@ -915,8 +939,7 @@ class OvertimeApplicationController extends Controller
 
 
             }
-
-            if($division === true)
+            if($division  === true)
             {
                 $status='for-approval-department-head';
             }
@@ -954,7 +977,7 @@ class OvertimeApplicationController extends Controller
             $activity_id=$activity_application->id;
             $time_from = $request->input('time_from');
             $time_to = $request->input('time_to');
-            $date = $request->input('date');
+            $date = $request->input('dates');
 
 
             for ($i = 0; $i < count($date); $i++) {
@@ -983,7 +1006,7 @@ class OvertimeApplicationController extends Controller
             $columnsString="";
             $process_name="Applied";
             $this->storeOvertimeApplicationLog($ovt_id,$process_name,$columnsString);
-            $overtime_applications =OvertimeApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','logs','activities'])
+            $overtime_applications =OvertimeApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','logs','directDates'])
             ->where('id',$ovt_id)->get();
             $overtime_applications_result = $overtime_applications->map(function ($overtime_application) {
             $division = AssignArea::where('employee_profile_id',$overtime_application->employee_profile_id)->value('division_id');
@@ -1082,7 +1105,7 @@ class OvertimeApplicationController extends Controller
                                 'time_from' => $date->time_from,
                                 'time_to' => $date->time_to,
                                 'date' => $date->date,
-                                'dates' => $date->employees->map(function ($employee) {
+                                'employees' => $date->employees->map(function ($employee) {
                                     $first_name = optional($employee->employeeProfile->personalInformation)->first_name ?? null;
                                     $last_name = optional($employee->employeeProfile->personalInformation)->last_name ?? null;
                                 return [
@@ -1145,7 +1168,7 @@ class OvertimeApplicationController extends Controller
             $ovt_id=$overtime_application->id;
             $time_from = $request->input('time_from');
             $time_to = $request->input('time_to');
-            $date = $request->input('date');
+            $date = $request->input('dates');
 
 
             for ($i = 0; $i < count($date); $i++) {
@@ -1171,7 +1194,7 @@ class OvertimeApplicationController extends Controller
             $columnsString="";
             $process_name="Applied";
             $this->storeOvertimeApplicationLog($ovt_id,$process_name,$columnsString);
-            $overtime_applications =OvertimeApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','logs','activities'])
+            $overtime_applications =OvertimeApplication::with(['employeeProfile.assignedArea','employeeProfile.personalInformation','logs','activities'])
             ->where('id',$ovt_id)->get();
             $overtime_applications_result = $overtime_applications->map(function ($overtime_application) {
             $division = AssignArea::where('employee_profile_id',$overtime_application->employee_profile_id)->value('division_id');
@@ -1253,38 +1276,31 @@ class OvertimeApplicationController extends Controller
                         'date' => $formatted_date,
                         'time' => $log->time,
                         'process' => $action
-                    ];
-                }),
-                'dates' => $activity->dates->map(function ($date) {
-                    return [
-                        'id' => $activity->id,
-                        'overtime_application_id' => $activity->overtime_application_id,
-                        'name' => $activity->name,
-                        'quantity' => $activity->quantity,
-                        'man_hour' => $activity->man_hour,
-                        'period_covered' => $activity->period_covered,
-                        'dates' => $activity->dates->map(function ($date) {
-                            return [
-                                'id' => $date->id,
-                                'ovt_activity_id' =>$date->ovt_application_activity_id,
-                                'time_from' => $date->time_from,
-                                'time_to' => $date->time_to,
-                                'date' => $date->date,
-                                'dates' => $date->employees->map(function ($employee) {
-                                    $first_name = optional($employee->employeeProfile->personalInformation)->first_name ?? null;
-                                    $last_name = optional($employee->employeeProfile->personalInformation)->last_name ?? null;
-                                return [
-                                        'id' => $employee->id,
-                                        'ovt_employee_id' =>$employee->ovt_application_datetime_id,
-                                        'employee_id' => $employee->id,
-                                        'employee_name' =>"{$first_name} {$last_name}",
+                        ];
+                         }),
 
-                                    ];
-                                }),
+                        'dates' => $overtime_application->dates->map(function ($date) {
+                        return [
+                                    'id' => $date->id,
+                                    'overtime_application_id' =>$date->overtime_application_id,
+                                    'time_from' => $date->time_from,
+                                    'time_to' => $date->time_to,
+                                    'date' => $date->date,
+                                    'employees' => $date->employees->map(function ($employee) {
+                                        $first_name = optional($employee->employeeProfile->personalInformation)->first_name ?? null;
+                                        $last_name = optional($employee->employeeProfile->personalInformation)->last_name ?? null;
+                                    return [
+                                            'id' => $employee->id,
+                                            'ovt_employee_id' =>$employee->ovt_application_datetime_id,
+                                            'employee_id' => $employee->id,
+                                            'employee_name' =>"{$first_name} {$last_name}",
 
-                            ];
-                        }),
-                    ];
+                                        ];
+                                    }),
+
+                                ];
+
+
                 }),
 
             ];

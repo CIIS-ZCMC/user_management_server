@@ -74,6 +74,7 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
 
     Route::get('ovt-application-all', 'OvertimeApplicationController@index');
     Route::post('ovt-application', 'OvertimeApplicationController@store');
+    Route::post('ovt-application-past', 'OvertimeApplicationController@storePast');
     Route::get('ovt-employee-select', 'OvertimeApplicationController@computeEmployees');
     Route::post('ovt-application-logs/{id}/{pr}/{cf}', 'OvertimeApplicationController@storeOfficialTimeApplicationLog');
     //Route::post('OfficialTime-application/{id}', 'OfficialTimeApplicationController@update');
