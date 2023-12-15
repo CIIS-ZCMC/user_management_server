@@ -12,6 +12,7 @@ class OvtApplicationDatetime extends Model
 
     public $fillable = [
         'ovt_application_activity_id',
+        'overtime_application_id',
         'time_from',
         'time_to',
         'date'

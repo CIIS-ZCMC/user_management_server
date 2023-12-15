@@ -64,12 +64,13 @@ class EmployeeOvertimeCreditController extends Controller
 
         ];
 
-        // Get the current month
         $currentMonth = date('m');
         $overtimeApplications = OvertimeApplication::where('status', 'approved')->get();
 
-
-        foreach ($overtimeApplications as $overtimeApplication) {
+        $activitiesData = $overtimeApplications->activities ? $overtimeApplications->activities : collect();
+        $datesData = $overtimeApplications->directDates ? $overtimeApplications->directDates : collect();
+    foreach ($overtimeApplications as $overtimeApplication) {
+        if (!is_null($activitiesData)) {
             // Check if the overtime application is approved
             if ($overtimeApplication->status == 'approved') {
                 foreach ($overtimeApplication->activities as $activity) {
@@ -130,6 +131,70 @@ class EmployeeOvertimeCreditController extends Controller
                 }
             }
         }
+        else
+        {
+            if ($overtimeApplication->status == 'approved') {
+                    foreach ($datesData as $date) {
+                        // Check if the date is in the current month
+                        if (date('m', strtotime($date->date)) == $currentMonth) {
+                            // Iterate over employees before checking for matching biometric data
+                            foreach ($date->employees as $employee) {
+                                // Check if there is biometrics data available for the current date and employee
+                                $matchingBiometrics = collect($biometricsData)
+                                    ->where('date', $date->date)
+                                    ->where('employee_profile_id', $employee->employee_profile_id)
+                                    ->filter(function ($biometric) use ($date) {
+                                        // Convert times to Carbon objects for easy comparison
+                                        $biometricFromTime = Carbon::parse($biometric['from_time']);
+                                        $biometricToTime = Carbon::parse($biometric['to_time']);
+                                        $overtimeFromTime = Carbon::parse($date->time_from);
+                                        $overtimeToTime = Carbon::parse($date->time_to);
+
+                                        // Check if there is an overlap between the biometric time range and overtime period
+                                $isOverlapping = $biometricFromTime->lt($overtimeToTime) &&
+                                $biometricToTime->gt($overtimeFromTime);
+
+                                // Check if the biometric range is fully or partially within the overtime period
+                                return $isOverlapping || ($biometricFromTime >= $overtimeFromTime && $biometricToTime <= $overtimeToTime);
+                                    });
+
+                                // Proceed only if there is matching biometric data for the current date and employee
+                                if ($matchingBiometrics->isNotEmpty()) {
+                                    // Calculate and store the total overtime hours for each unique combination
+                                    foreach ($matchingBiometrics as $biometric) {
+                                        // Calculate the time difference in hours for the overlapping period
+                                        $biometricFromTime = Carbon::parse($biometric['from_time']);
+                                        $biometricToTime = Carbon::parse($biometric['to_time']);
+                                        $overtimeFromTime = Carbon::parse($date->time_from);
+                                        $overtimeToTime = Carbon::parse($date->time_to);
+
+                                        $overlapFromTime = max($biometricFromTime, $overtimeFromTime);
+                                        $overlapToTime = min($biometricToTime, $overtimeToTime);
+
+                                        $totalOvertimeHours = $overlapToTime->diffInHours($overlapFromTime);
+                                        // Store the total overtime hours for each unique combination in the database
+                                        $date_compare=$date->date;
+                                        $total =  $this->calculateTotal($date_compare);
+                                        EmployeeOvertimeCredit::create([
+                                            'employee_profile_id' => $employee->employee_profile_id,
+                                            'date' => date('Y-m-d'),
+                                            'operation' => 'add',
+                                            'overtime_application_id' =>$overtimeApplication->id,
+                                            'credit_value' => $totalOvertimeHours * $total,
+                                            'overtime_hours' => $totalOvertimeHours * $total,
+                                        ]);
+                                    }
+                                }
+                            }
+                        }
+
+                }
+            }
+
+        }
+    }
+
+
 
         }
 
@@ -154,7 +219,7 @@ class EmployeeOvertimeCreditController extends Controller
 
     public function show(EmployeeOvertimeCredit $employeeOvertimeCredit)
     {
-      
+
     }
 
     /**

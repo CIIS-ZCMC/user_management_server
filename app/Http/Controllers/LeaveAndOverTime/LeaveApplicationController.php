@@ -15,6 +15,7 @@ use App\Models\EmployeeProfile;
 use App\Models\LeaveApplicationDateTime;
 use App\Models\LeaveApplicationLog;
 use App\Models\LeaveApplicationRequirement;
+use App\Models\LeaveType;
 use App\Models\Section;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -1521,19 +1522,19 @@ class LeaveApplicationController extends Controller
     public function store(Request $request)
     {
         try{
-            $leave_type_id = $request->leave_type_id;
-            // $user_id = Auth::user()->id;
-            $user = EmployeeProfile::where('id','=','1')->first();
-            // $user_status = $user->status;
-            $division = AssignArea::where('employee_profile_id','1')->value('division_id');
-
-            // if($user_status == 'Permanent')
-            // {
+                 $leave_type_id = $request->leave_type_id;
+                // $user_id = Auth::user()->id;
+                 $user = EmployeeProfile::where('id','=','1')->first();
+                // $user_status = $user->status;
+                  $division = AssignArea::where('employee_profile_id','1')->value('division_id');
                 $employee_leave_credit=EmployeeLeaveCredit::where('employee_profile_id','=','1')
                                                     ->where('leave_type_id','=',$leave_type_id)
                                                     ->get();
-                if($employee_leave_credit)
+                $leavetype=LeaveType::where('id',$leave_type_id)->first();
+                if($leavetype->is_special == false)
                 {
+                    if($employee_leave_credit)
+                  {
                     $total_leave_credit = $employee_leave_credit->mapToGroups(function ($credit) {
                     return [$credit->operation => $credit->credit_value];
                     })->map(function ($operationCredits, $operation) {
@@ -1558,8 +1559,8 @@ class LeaveApplicationController extends Controller
 
 
                     }
-                        if($total_leave_credit >  $total_days)
-                        {
+                    if($total_leave_credit >  $total_days)
+                    {
 
                                 $leave_application = new Leaveapplication();
                                 $leave_application->leave_type_id = $leave_type_id;
@@ -1598,27 +1599,26 @@ class LeaveApplicationController extends Controller
                                 $leave_application_id = $leave_application->id;
                                 if ($request->hasFile('requirements')) {
 
-
-                                        foreach ($request->file('requirements') as $file) {
+                                        foreach ($request->file('requirements') as $key => $file) {
                                             $fileName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
                                             $extension = $file->getClientOriginalExtension();
                                             $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
                                             $folderName = 'requirements';
                                             Storage::makeDirectory('public/' . $folderName);
                                             $path = $file->storeAs('public/' . $folderName, $uniqueFileName);
-                                            for ($i = 0; $i < count($fromDates); $i++) {
+
+                                            $name_array = $name[$key] ?? null;
                                                 LeaveApplicationRequirement::create([
                                                     'leave_application_id' => $leave_application->id,
                                                     'file_name' => $fileName,
-                                                    'name' => $name[$i],
+                                                    'name' => $name_array,
                                                     'path' => $path,
                                                 ]);
-                                            }
-                                        
+
 
                                     }
-                                }
 
+                                }
                                 $process_name="Applied";
                                 $this->storeLeaveApplicationLog($leave_application_id,$process_name,$columnsString);
                                 $leave_applications =LeaveApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','dates','logs', 'requirements','employeeProfile.leaveCredits.leaveType'])
@@ -1744,9 +1744,6 @@ class LeaveApplicationController extends Controller
 
 
                                     ];
-
-
-
                                 });
 
                                 return response()->json(['message' => 'Leave Application has been sucessfully saved','data' => $leave_applications_result ], Response::HTTP_OK);
@@ -1755,14 +1752,206 @@ class LeaveApplicationController extends Controller
                         {
                             return response()->json(['message' => 'Insufficient Leave Credit Value'], Response::HTTP_OK);
                         }
+                 }
+
+                }
+                else
+                {
+                    
+                    $fromDates = $request->input('date_from');
+                    $toDates = $request->input('date_to');
+
+                    $total_days = 0;
+                    $leave_application = new Leaveapplication();
+                    $leave_application->leave_type_id = $leave_type_id;
+                    $leave_application->reference_number = $request->reference_number;
+                    $leave_application->country = $request->country;
+                    $leave_application->city = $request->city;
+                    $leave_application->patient_type = $request->patient_type;
+                    $leave_application->illness = $request->illness;
+                    $leave_application->reason = $request->reason;
+                    $leave_application->with_pay =  $request->has('with_pay');
+                    $leave_application->status = "applied";
+                    $leave_application->date = date('Y-m-d');
+                    $leave_application->time =  date('H:i:s');
+                    $leave_application->employee_profile_id ="1";
+                    $leave_application->leave_type_id =$leave_type_id;
+                    $leave_application->save();
+                    $leave_application_id = $leave_application->id;
+
+                    if($fromDates)
+                    {
+                        for ($i = 0; $i < count($fromDates); $i++) {
+                            LeaveApplicationDateTime::create([
+                                'leave_application_id' => $leave_application->id,
+                                'date_to' => $fromDates[$i],
+                                'date_from' => $toDates[$i],
+
+                            ]);
+                        }
+                    }
 
 
 
+                    $columnsString="";
+                    $name = $request->input('name');
+                    $leave_application_id = $leave_application->id;
+                    if ($request->hasFile('requirements')) {
+
+                        foreach ($request->file('requirements') as $key => $file) {
+                            $fileName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+                            $extension = $file->getClientOriginalExtension();
+                            $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
+                            $folderName = 'requirements';
+                            Storage::makeDirectory('public/' . $folderName);
+                            $path = $file->storeAs('public/' . $folderName, $uniqueFileName);
+
+                            $name_array = $name[$key] ?? null;
+                                LeaveApplicationRequirement::create([
+                                    'leave_application_id' => $leave_application->id,
+                                    'file_name' => $fileName,
+                                    'name' => $name_array,
+                                    'path' => $path,
+                                ]);
+
+
+                    }
+
+                    }
+                    $process_name="Applied";
+                    $this->storeLeaveApplicationLog($leave_application_id,$process_name,$columnsString);
+                    $leave_applications =LeaveApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','dates','logs', 'requirements','employeeProfile.leaveCredits.leaveType'])
+                    ->where('id',$leave_application->id)->get();
+                    $leave_applications_result = $leave_applications->map(function ($leave_application) {
+                        $add=EmployeeLeaveCredit::where('employee_profile_id',$leave_application->employee_profile_id)->where('leave_type_id',$leave_application->leave_type_id)
+                        ->where('operation', 'add')
+                        ->sum('credit_value');
+                        $deduct=EmployeeLeaveCredit::where('employee_profile_id',$leave_application->employee_profile_id)->where('leave_type_id',$leave_application->leave_type_id)
+                        ->where('operation', 'deduct')
+                        ->sum('credit_value');
+                        $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
+                        $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
+                        $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
+                        $chief_name=null;
+                        $head_name=null;
+                        $supervisor_name=null;
+                        if($division) {
+                            $division_name = Division::with('chief.personalInformation')->find($division);
+                            if($division_name && $division_name->chief  && $division_name->personalInformation != null)
+                            {
+                                $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                            }
+
+
+                        }
+                        if($department)
+                        {
+                            $department_name = Department::with('head.personalInformation')->find($department);
+                            if($department_name && $department_name->head  && $department_name->personalInformation != null)
+                            {
+                             $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
+                            }
+                        }
+                        if($section)
+                        {
+                            $section_name = Section::with('supervisor.personalInformation')->find($section);
+                            if($section_name && $section_name->head  && $section_name->personalInformation != null)
+                            {
+                            $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
+                            }
+                        }
+                        $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
+                        $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
+                        return [
+                            'id' => $leave_application->id,
+                            'leave_type_name' => $leave_application->leaveType->name,
+                            'is_special' => $leave_application->leaveType->is_special,
+                            'reference_number' => $leave_application->reference_number,
+                            'country' => $leave_application->country,
+                            'city' => $leave_application->city,
+                            'zip_code' => $leave_application->zip_code,
+                            'patient_type' => $leave_application->patient_type,
+                            'illness' => $leave_application->illness,
+                            'reason' => $leave_application->reason,
+                            'leave_credit_total' => $leave_application->leave_credit_total ,
+                            'leave_credit_balance' => $add - $deduct,
+                            'days_total' => $leave_application->leave_credit_total ,
+                            'status' => $leave_application->status ,
+                            'remarks' => $leave_application->remarks ,
+                            'date' => $leave_application->date ,
+                            'with_pay' => $leave_application->with_pay ,
+                            'employee_id' => $leave_application->employee_profile_id,
+                            'employee_name' => "{$first_name} {$last_name}" ,
+                            'position' => $leave_application->employeeProfile->assignedArea->designation->name ?? null,
+                            'division_head' =>$chief_name,
+                            'department_head' =>$head_name,
+                            'section_head' =>$supervisor_name,
+                            'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
+                            'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
+                            'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,
+                            'unit_name' => $leave_application->employeeProfile->assignedArea->unit->name ?? null,
+                            'logs' => $leave_application->logs->map(function ($log) {
+                                $process_name=$log->action;
+                                $action ="";
+                                $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
+                                $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
+                                if($log->action_by_id  === optional($log->employeeProfile->assignedArea->division)->chief_employee_profile_id )
+                                {
+                                    $action =  $process_name . ' by ' . 'Division Head';
+                                }
+                                else if ($log->action_by_id === optional($log->employeeProfile->assignedArea->department)->head_employee_profile_id || optional($log->employeeProfile->assignedArea->section)->supervisor_employee_profile_id)
+                                {
+                                    $action =  $process_name . ' by ' . 'Supervisor';
+                                }
+                                else{
+                                    $action=  $process_name . ' by ' . $first_name .' '. $last_name;
+                                }
+
+                                $date=$log->date;
+                                $formatted_date=Carbon::parse($date)->format('M d,Y');
+                                return [
+                                    'id' => $log->id,
+                                    'leave_application_id' => $log->leave_application_id,
+                                    'action_by' => "{$first_name} {$last_name}" ,
+                                    'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                    'action' => $log->action,
+                                    'date' => $formatted_date,
+                                    'time' => $log->time,
+                                    'process' => $action
+                                ];
+                            }),
+                            'requirements' => $leave_application->requirements->map(function ($requirement) {
+                                return [
+                                    'id' => $requirement->id,
+                                    'leave_application_id' => $requirement->leave_application_id,
+                                    'name' => $requirement->name,
+                                    'file_name' => $requirement->file_name,
+                                ];
+                            }),
+                            'dates' => $leave_application->dates->map(function ($date) {
+                                $formatted_date_from=Carbon::parse($date->date_from)->format('M d,Y');
+                                $formatted_date_to=Carbon::parse($date->date_to)->format('M d,Y');
+                                return [
+
+                                    'id' => $date->id,
+                                    'leave_application_id' => $date->leave_application_id,
+                                    'date_from' => $formatted_date_from,
+                                    'date_to' => $formatted_date_to,
+
+                                ];
+                            }),
+
+
+                        ];
+                    });
+
+                    return response()->json(['message' => 'Leave Application has been sucessfully saved','data' => $leave_applications_result ], Response::HTTP_OK);
                 }
 
 
-        }catch(\Throwable $th){
 
+
+        }catch(\Throwable $th){
             return response()->json(['message' => $th->getMessage()], 500);
         }
     }

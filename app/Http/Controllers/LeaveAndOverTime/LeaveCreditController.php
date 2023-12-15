@@ -73,7 +73,8 @@ class LeaveCreditController extends Controller
                     $leaveTypes=[];
                     $vl_leave=[];
                     $leaveTypes = LeaveType::where('is_special', '=', '1')->get();
-                    $vl_leave = LeaveType::where('id', '=', '62')->first();
+
+                    $vl_leave = LeaveType::where('id', '=', '1')->first();
                     $employee_leave_credits= ModelsEmployeeLeaveCredit::where('employee_profile_id','1')->get();
 
                         $totalLeaveCredits = $employee_leave_credits->mapToGroups(function ($credit) {
