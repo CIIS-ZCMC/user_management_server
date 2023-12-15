@@ -1533,7 +1533,7 @@ class LeaveApplicationController extends Controller
                 $leavetype=LeaveType::where('id',$leave_type_id)->first();
                 if($leavetype->is_special == false)
                 {
-                    if($employee_leave_credit)
+                if($employee_leave_credit)
                   {
                     $total_leave_credit = $employee_leave_credit->mapToGroups(function ($credit) {
                     return [$credit->operation => $credit->credit_value];
@@ -1727,6 +1727,7 @@ class LeaveApplicationController extends Controller
                                                 'leave_application_id' => $requirement->leave_application_id,
                                                 'name' => $requirement->name,
                                                 'file_name' => $requirement->file_name,
+                                                'path' => $requirement->path,
                                             ];
                                         }),
                                         'dates' => $leave_application->dates->map(function ($date) {
@@ -1745,8 +1746,9 @@ class LeaveApplicationController extends Controller
 
                                     ];
                                 });
+                                $singleArray = array_merge(...$leave_applications_result);
 
-                                return response()->json(['message' => 'Leave Application has been sucessfully saved','data' => $leave_applications_result ], Response::HTTP_OK);
+                                return response()->json(['message' => 'Leave Application has been sucessfully saved','data' => $singleArray ], Response::HTTP_OK);
                         }
                         else
                         {
@@ -1757,7 +1759,7 @@ class LeaveApplicationController extends Controller
                 }
                 else
                 {
-                    
+
                     $fromDates = $request->input('date_from');
                     $toDates = $request->input('date_to');
 
@@ -1926,6 +1928,7 @@ class LeaveApplicationController extends Controller
                                     'leave_application_id' => $requirement->leave_application_id,
                                     'name' => $requirement->name,
                                     'file_name' => $requirement->file_name,
+                                    'path' => $requirement->path,
                                 ];
                             }),
                             'dates' => $leave_application->dates->map(function ($date) {
@@ -1944,8 +1947,9 @@ class LeaveApplicationController extends Controller
 
                         ];
                     });
+                    $singleArray = array_merge(...$leave_applications_result);
 
-                    return response()->json(['message' => 'Leave Application has been sucessfully saved','data' => $leave_applications_result ], Response::HTTP_OK);
+                    return response()->json(['message' => 'Leave Application has been sucessfully saved','data' => $singleArray ], Response::HTTP_OK);
                 }
 
 

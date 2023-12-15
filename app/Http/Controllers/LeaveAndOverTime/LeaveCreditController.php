@@ -135,7 +135,7 @@ class LeaveCreditController extends Controller
                                 }
                             }
 
-                                if($undertime_credit_value !=0)
+                            if($undertime_credit_value !=0)
                                                 {
                                 $employeeCredit = new ModelsEmployeeLeaveCredit();
                                 $employeeCredit->leave_type_id = $vl_leave->id;
