@@ -34,10 +34,12 @@ class DesignationController extends Controller
         try{
             $cacheExpiration = Carbon::now()->addDay();
 
-            $designations = Cache::remember('designations', $cacheExpiration, function(){
-                return Designation::all();
-            });
+            // $designations = Cache::remember('designations', $cacheExpiration, function(){
+            //     return Designation::all();
+            // });
 
+            $designations =  Designation::all();
+            
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([

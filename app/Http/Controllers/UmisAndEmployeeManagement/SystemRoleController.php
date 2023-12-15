@@ -41,9 +41,11 @@ class SystemRoleController extends Controller
         try{
             $cacheExpiration = Carbon::now()->addDay();
 
-            $systemRoles = Cache::remember('system_roles', $cacheExpiration, function(){
-                return SystemRole::all();
-            });
+            // $systemRoles = Cache::remember('system_roles', $cacheExpiration, function(){
+            //     return SystemRole::all();
+            // });
+
+            $systemRoles = SystemRole::all();
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
             

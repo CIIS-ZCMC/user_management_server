@@ -35,17 +35,19 @@ class PlantillaController extends Controller
     public function index(Request $request)
     {
         try{
-            $cacheExpiration = Carbon::now()->addDay();
+            // $cacheExpiration = Carbon::now()->addDay();
 
-            $plantillas = Cache::remember('plantillas', $cacheExpiration, function(){
-                return Plantilla::all();
-            });
+            // $plantillas = Cache::remember('plantillas', $cacheExpiration, function(){
+            //     return Plantilla::all();
+            // });
+               $plantillas = Plantilla::all();
+          
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => PlantillaResource::collection($plantillas),
-                'message' => 'Plantilla list retrieved.'
+                'message' => 'Plantilla list retrieved.'    
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
