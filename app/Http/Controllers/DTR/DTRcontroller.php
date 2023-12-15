@@ -229,7 +229,7 @@ class DTRcontroller extends Controller
             $id = json_decode($biometric_id);
 
             if (count($id) >= 2) {
-                return $this->GenerateMultiple($id);
+                return $this->GenerateMultiple($id, $month_of, $year_of, $view);
             }
 
 
@@ -283,8 +283,6 @@ class DTRcontroller extends Controller
                     );
                 }
             }
-
-
 
             $ohf = isset($time_stamps_req) ? $time_stamps_req['total_hours'] . ' HOURS' : null;
             $emp_Details = [
@@ -482,11 +480,221 @@ class DTRcontroller extends Controller
     }
 
 
-    public function GenerateMultiple($id)
+    public function GenerateMultiple($id, $month_of, $year_of, $view)
     {
+        $data = [];
         foreach ($id as $key => $biometric_id) {
-            echo $biometric_id;
+            if ($this->helper->isEmployee($biometric_id)) {
+                $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
+                $emp_name = $employee->name();
+
+
+                try {
+                    $dtr = DB::table('daily_time_records')
+                        ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
+                        ->where(function ($query) use ($biometric_id, $month_of, $year_of) {
+                            $query->where('biometric_id', $biometric_id)
+                                ->whereMonth(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
+                                ->whereYear(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+                        })
+                        ->orWhere(function ($query) use ($biometric_id, $month_of, $year_of) {
+                            $query->where('biometric_id', $biometric_id)
+                                ->whereMonth(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
+                                ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+                        })
+                        ->get();
+
+
+                    $arrival_Departure = [];
+                    $time_stamps_req = '';
+                    foreach ($dtr as $val) {
+                        /* Validating DTR with its Matching Schedules */
+                        /* 
+                        *   if no matching schedule then
+                        *   it will not display the daily time record
+                        */
+                        $time_stamps_req = $this->helper->getSchedule($biometric_id, $val->first_in); //biometricID
+                        $arrival_Departure[] = $this->arrivalDeparture($time_stamps_req, $year_of, $month_of);
+                        if (count($time_stamps_req) >= 1) {
+                            $validate = [
+                                (object)[
+                                    'id' => $val->id,
+                                    'first_in' => $val->first_in,
+                                    'first_out' => $val->first_out,
+                                    'second_in' => $val->second_in,
+                                    'second_out' => $val->second_out
+                                ],
+                            ];
+                            $this->helper->saveTotalWorkingHours(
+                                $validate,
+                                $val,
+                                $val,
+                                $time_stamps_req,
+                                true
+                            );
+                        }
+                    }
+                } catch (\Throwable $th) {
+                    return response()->json(['message' =>  $th->getMessage()]);
+                }
+            }
         }
+        return $this->MultiplePrintOrView($id, $month_of, $year_of);
+    }
+
+
+    public function MultiplePrintOrView($id, $month_of, $year_of)
+    {
+
+        $data = [];
+        foreach ($id as $key => $biometric_id) {
+            if ($this->helper->isEmployee($biometric_id)) {
+                $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
+                $emp_name = $employee->name();
+
+
+                try {
+                    $dtr = DB::table('daily_time_records')
+                        ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
+                        ->where(function ($query) use ($biometric_id, $month_of, $year_of) {
+                            $query->where('biometric_id', $biometric_id)
+                                ->whereMonth(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
+                                ->whereYear(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+                        })
+                        ->orWhere(function ($query) use ($biometric_id, $month_of, $year_of) {
+                            $query->where('biometric_id', $biometric_id)
+                                ->whereMonth(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
+                                ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+                        })
+                        ->get();
+
+
+
+
+                    $arrival_Departure = [];
+                    $time_stamps_req = '';
+                    foreach ($dtr as $val) {
+                        /* Validating DTR with its Matching Schedules */
+                        /* 
+                        *   if no matching schedule then
+                        *   it will not display the daily time record
+                        */
+                        $time_stamps_req = $this->helper->getSchedule($biometric_id, $val->first_in); //biometricID
+                        $arrival_Departure[] = $this->arrivalDeparture($time_stamps_req, $year_of, $month_of);
+                        $schedule = $this->helper->getSchedule($val->biometric_id, date('Y-m-d', strtotime($val->first_in)));
+
+                        $is_Half_Schedule = $this->isHalfEntrySchedule($schedule);
+                        //return $schedule['date_start'] . $schedule['date_end'];
+
+
+                        if (isset($schedule['date_start']) && isset($schedule['date_end'])) {
+
+                            $date_start =  $schedule['date_start'];
+                            $date_end =  $schedule['date_end'];
+
+                            if (isset($val->first_in)) {
+                                $entry = $val->first_in;
+                            } else {
+                                if (isset($val->second_in)) {
+                                    $entry = $val->second_in;
+                                }
+                            }
+
+
+                            if (date('Y-m-d', strtotime($entry)) >= $date_start && date('Y-m-d', strtotime($entry)) <= $date_end) {
+                                //   echo $entry;
+                                $date_entry = date('Y-m-d H:i', strtotime($entry));
+                                $schedule_fEntry = date('Y-m-d H:i', strtotime(date('Y-m-d', strtotime($date_entry)) . ' ' . $schedule['first_entry']));
+                                //return $this->WithinScheduleRange($dateentry, $schedulefEntry);
+
+                                if ($this->WithinScheduleRange($date_entry, $schedule_fEntry)) {
+                                    $dt_records[] = [
+                                        'first_in' => $val->first_in,
+                                        'first_out' => $val->first_out,
+                                        'second_in' => $val->second_in,
+                                        'second_out' => $val->second_out,
+                                        'undertime_minutes' => $val->undertime_minutes,
+                                        'created' => $val->dtr_date
+                                    ];
+                                }
+                            }
+                        } else {
+                            $No_schedule_DTR[] = [
+                                'first_in' => $val->first_in,
+                                'first_out' => $val->first_out,
+                                'second_in' => $val->second_in,
+                                'second_out' => $val->second_out,
+                                'undertime_minutes' => $val->undertime_minutes,
+                                'created' => $val->dtr_date
+                            ];
+                            //  echo $val->first_in;
+                        }
+                    }
+
+
+                    $ohf = isset($time_stamps_req) ? $time_stamps_req['total_hours'] . ' HOURS' : null;
+                    $emp_Details = [
+                        'OHF' => $ohf,
+                        'Arrival_Departure' => $arrival_Departure[0],
+                        'Employee_Name' => $emp_name,
+                        'DTRFile_Name' => $emp_name
+                    ];
+
+                    $days_In_Month = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
+                    $first_in = array_map(function ($res) {
+                        return [
+                            'first_in' => $res['first_in']
+                        ];
+                    }, $dt_records);
+
+                    $first_out = array_map(function ($res) {
+                        return [
+                            'first_out' => $res['first_out']
+                        ];
+                    }, $dt_records);
+
+                    $second_in = array_map(function ($res) {
+                        return [
+                            'second_in' => $res['second_in']
+                        ];
+                    }, $dt_records);
+
+                    $second_out = array_map(function ($res) {
+                        return [
+                            'second_out' => $res['second_out']
+                        ];
+                    }, $dt_records);
+
+                    $ut =  array_map(function ($res) {
+                        return [
+                            'created' => $res['created'],
+                            'undertime' => $res['undertime_minutes']
+                        ];
+                    }, $dt_records);
+
+                    $holidays = DB::table('holidays')->get();
+                } catch (\Throwable $th) {
+                    return $th;
+                }
+                $data[] = [
+                    'emp_Details' => $emp_Details,
+                    'daysInMonth' => $days_In_Month,
+                    'year' => $year_of,
+                    'month' => $month_of,
+                    'firstin' => $first_in,
+                    'firstout' => $first_out,
+                    'secondin' => $second_in,
+                    'secondout' => $second_out,
+                    'undertime' => $ut,
+                    'dtrRecords' => $dt_records,
+                    'holidays' => $holidays,
+                    'print_view' => true,
+                    'halfsched' => $is_Half_Schedule,
+                ];
+            }
+        }
+
+        return $data;
     }
     /* ----------------------------------------------------------------END OF GENERATION OF DAILY TIME RECORDS----------------------------------------------------------------------------------------------------------------------------- */
 
