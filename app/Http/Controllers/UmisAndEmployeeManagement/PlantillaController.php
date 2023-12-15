@@ -15,6 +15,7 @@ use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\PlantillaRequest;
 use App\Http\Resources\DesignationEmployeesResource;
 use App\Http\Resources\PlantillaResource;
+use App\Http\Resources\PlantillaNumberAllResource;
 use App\Models\Plantilla;
 use App\Models\PlantillaNumber;
 use App\Models\PlantillaRequirement;
@@ -37,14 +38,14 @@ class PlantillaController extends Controller
         try{
             $cacheExpiration = Carbon::now()->addDay();
 
-            $plantillas = Cache::remember('plantillas', $cacheExpiration, function(){
-                return Plantilla::all();
+            $plantillas = Cache::remember('plantilla_numbers', $cacheExpiration, function(){
+                return PlantillaNumber::all();
             });
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
             
             return response()->json([
-                'data' => PlantillaResource::collection($plantillas),
+                'data' => PlantillaNumberAllResource::collection($plantillas),
                 'message' => 'Plantilla list retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
