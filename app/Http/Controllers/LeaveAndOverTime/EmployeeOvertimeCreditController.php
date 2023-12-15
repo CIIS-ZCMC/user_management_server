@@ -65,14 +65,14 @@ class EmployeeOvertimeCreditController extends Controller
         ];
 
         $currentMonth = date('m');
-        $overtimeApplications = OvertimeApplication::where('status', 'approved')->get();
+        $overtimeApplications = OvertimeApplication::where('status', 'approved')->with('activities', 'directDates')->get();
 
-        $activitiesData = $overtimeApplications->activities ? $overtimeApplications->activities : collect();
-        $datesData = $overtimeApplications->directDates ? $overtimeApplications->directDates : collect();
-    foreach ($overtimeApplications as $overtimeApplication) {
-        if (!is_null($activitiesData)) {
+      foreach ($overtimeApplications as $overtimeApplication) {
+        if (isset($overtimeApplication->activities)) {
+
+        //    return $overtimeApplication->relationLoaded('activities');
             // Check if the overtime application is approved
-            if ($overtimeApplication->status == 'approved') {
+
                 foreach ($overtimeApplication->activities as $activity) {
                     foreach ($activity->dates as $date) {
                         // Check if the date is in the current month
@@ -129,12 +129,11 @@ class EmployeeOvertimeCreditController extends Controller
                         }
                     }
                 }
-            }
+
         }
-        else
-        {
-            if ($overtimeApplication->status == 'approved') {
-                    foreach ($datesData as $date) {
+        if (isset($overtimeApplication->directDates))  {
+                    foreach ($overtimeApplication->directDates as $date) {
+
                         // Check if the date is in the current month
                         if (date('m', strtotime($date->date)) == $currentMonth) {
                             // Iterate over employees before checking for matching biometric data
@@ -186,24 +185,20 @@ class EmployeeOvertimeCreditController extends Controller
                                     }
                                 }
                             }
-                        }
+
 
                 }
             }
 
         }
+
+
+
+      }
     }
 
-
-
-        }
-
-
-
-
-
-        public function calculateTotal($date)
-        {
+    public function calculateTotal($date)
+    {
 
             $carbonDate = Carbon::parse($date);
 
@@ -215,7 +210,7 @@ class EmployeeOvertimeCreditController extends Controller
                 // Apply a multiplier of 1 for weekdays
                 return 1;
             }
-        }
+    }
 
     public function show(EmployeeOvertimeCredit $employeeOvertimeCredit)
     {

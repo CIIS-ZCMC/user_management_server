@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->unsignedBigInteger('overtime_application_id')->unsigned();
             $table->foreign('overtime_application_id')->references('id')->on('overtime_applications')->onDelete('cascade');
-            $table->unsignedBigInteger('cto_application_id')->unsigned();
+            $table->unsignedBigInteger('cto_application_id')->unsigned()->nullable();
             $table->foreign('cto_application_id')->references('id')->on('cto_applications')->onDelete('cascade')->nullable();
             $table->string('operation');
             $table->string('overtime_hours')->nullable();
