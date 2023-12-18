@@ -842,7 +842,8 @@ class ObApplicationController extends Controller
 
                     ];
                 });
-            return response()->json(['message' => 'Official Business Application has been sucessfully saved','data' => $official_business_applications_result ], Response::HTTP_OK);
+                $singleArray = array_merge(...$official_business_applications_result);
+            return response()->json(['message' => 'Official Business Application has been sucessfully saved','data' => $singleArray ], Response::HTTP_OK);
         }catch(\Throwable $th){
 
             return response()->json(['message' => $th->getMessage()], 500);

@@ -13,7 +13,7 @@ class CtoApplicationController extends Controller
      */
     public function index()
     {
-        //
+        
     }
 
     /**
