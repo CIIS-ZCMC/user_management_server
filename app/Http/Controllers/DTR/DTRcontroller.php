@@ -37,10 +37,7 @@ class DTRcontroller extends Controller
         try {
 
             foreach ($this->devices as $device) {
-
-
                 if ($tad = $this->device->bIO($device)) { //Checking if connected to device
-
                     $logs = $tad->get_att_log();
                     $all_user_info = $tad->get_all_user_info();
                     $attendance = simplexml_load_string($logs);
@@ -284,7 +281,10 @@ class DTRcontroller extends Controller
                 }
             }
 
+
+
             $ohf = isset($time_stamps_req) ? $time_stamps_req['total_hours'] . ' HOURS' : null;
+
             $emp_Details = [
                 'OHF' => $ohf,
                 'Arrival_Departure' => $arrival_Departure[0],
