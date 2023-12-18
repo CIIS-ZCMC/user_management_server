@@ -70,7 +70,7 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
     Route::post('ot-application-cancel/{id}', 'OfficialTimeApplicationController@cancelOtApplication');
     Route::post('ot-application-update/{id}/{status}', 'OfficialTimeApplicationController@updateStatus');
     Route::post('user-ot-application/{id}', 'OfficialTimeApplicationController@getUserOtApplication');
-    Route::post('access-level-ot-application/{id}/{status}', 'OfficialTimeApplicationController@getOtAppl ications');
+    Route::post('access-level-ot-application/{id}/{status}', 'OfficialTimeApplicationController@getOtApplications');
 
     Route::get('ovt-application-all', 'OvertimeApplicationController@index');
     Route::post('ovt-application', 'OvertimeApplicationController@store');
@@ -84,6 +84,16 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
     Route::post('user-ovt-application/{id}', 'OvertimeApplicationController@getUserOvertimeApplication');
     Route::post('access-level-ovt-application/{id}/{status}', 'OvertimeApplicationController@getOvertimeApplications');
     Route::post('add-monthly-overtime', 'EmployeeOvertimeCreditController@store');
+
+    Route::get('cto-application-all', 'CtoApplicationController@index');
+    Route::post('cto-application', 'CtoApplicationController@store');
+    Route::post('cto-application-logs/{id}/{pr}/{cf}', 'CtoApplicationController@storeCtoApplicationLog');
+    //Route::post('OfficialTime-application/{id}', 'CtoApplicationController@update');
+    Route::post('cto-application-decline/{id}', 'CtoApplicationController@declineCtoApplication');
+    Route::post('cto-application-cancel/{id}', 'CtoApplicationController@cancelCtoApplication');
+    Route::post('cto-application-update/{id}/{status}', 'CtoApplicationController@updateStatus');
+    Route::post('user-cto-application/{id}', 'CtoApplicationController@getUserCtoApplication');
+    Route::post('access-level-cto-application/{id}/{status}', 'CtoApplicationController@getCtoApplications');
 
 
     Route::get('division', 'LeaveApplicationController@getDivisionLeaveApplications');

@@ -20,6 +20,7 @@ use App\Models\Section;
 use Illuminate\Http\Request;
 use App\Services\FileService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 class OfficialTimeApplicationController extends Controller
 {
     protected $file_service;
@@ -121,10 +122,10 @@ class OfficialTimeApplicationController extends Controller
                 });
 
                  return response()->json(['data' => $official_time_applications_result], Response::HTTP_OK);
-            }catch(\Throwable $th){
+        }catch(\Throwable $th){
 
                 return response()->json(['message' => $th->getMessage()], 500);
-            }
+        }
 
     }
     public function getOtApplications($id,$status,Request $request)
@@ -640,12 +641,24 @@ class OfficialTimeApplicationController extends Controller
             $official_time_application->date = date('Y-m-d');
             $official_time_application->time =  date('H:i:s');
             if ($request->hasFile('personal_order')) {
-                $imagePath = $request->file('personal_order')->store('images', 'public');
-                $official_time_application->personal_order = $imagePath;
+                $folderName = 'official_business';
+                $fileName=pathinfo($request->file('personal_order')->getClientOriginalName(), PATHINFO_FILENAME);
+                $extension  = $request->file('personal_order')->getClientOriginalName();
+                $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
+                Storage::makeDirectory('public/' . $folderName);
+                $path = $request->file('personal_order')->storeAs('public/' . $folderName, $uniqueFileName);
+                $official_time_application->personal_order = $fileName;
+                $official_time_application->personal_order_path = $path;
             }
             if ($request->hasFile('certificate_of_appearance')) {
-                $imagePath = $request->file('certificate_of_appearance')->store('images', 'public');
-                $official_time_application->certificate_of_appearance = $imagePath;
+                $folderName = 'official_business';
+                $fileName=pathinfo($request->file('certificate_of_appearance')->getClientOriginalName(), PATHINFO_FILENAME);
+                $extension  = $request->file('certificate_of_appearance')->getClientOriginalName();
+                $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
+                Storage::makeDirectory('public/' . $folderName);
+                $path = $request->file('certificate_of_appearance')->storeAs('public/' . $folderName, $uniqueFileName);
+                $official_time_application->certificate_of_appearance = $fileName;
+                $official_time_application->certificate_of_appearance_path = $path;
             }
             $official_time_application->save();
             $ot_id=$official_time_application->id;

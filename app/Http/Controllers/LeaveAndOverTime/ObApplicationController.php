@@ -741,14 +741,26 @@ class ObApplicationController extends Controller
             $official_business_application->time =  date('H:i:s');
 
             if ($request->hasFile('personal_order')) {
-
-                $imagePath = $request->file('personal_order')->store('official_business', 'public');
-                $official_business_application->personal_order = $imagePath;
+                $folderName = 'official_business';
+                $fileName=pathinfo($request->file('personal_order')->getClientOriginalName(), PATHINFO_FILENAME);
+                $extension  = $request->file('personal_order')->getClientOriginalName();
+                $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
+                Storage::makeDirectory('public/' . $folderName);
+                $path = $request->file('personal_order')->storeAs('public/' . $folderName, $uniqueFileName);
+                $official_business_application->personal_order = $fileName;
+                $official_business_application->personal_order_path = $path;
             }
             if ($request->hasFile('certificate_of_appearance')) {
-                $imagePath = $request->file('certificate_of_appearance')->store('official_business', 'public');
-                $official_business_application->certificate_of_appearance = $imagePath;
+                $folderName = 'official_business';
+                $fileName=pathinfo($request->file('certificate_of_appearance')->getClientOriginalName(), PATHINFO_FILENAME);
+                $extension  = $request->file('certificate_of_appearance')->getClientOriginalName();
+                $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
+                Storage::makeDirectory('public/' . $folderName);
+                $path = $request->file('certificate_of_appearance')->storeAs('public/' . $folderName, $uniqueFileName);
+                $official_business_application->certificate_of_appearance = $fileName;
+                $official_business_application->certificate_of_appearance_path = $path;
             }
+
             $official_business_application->save();
             $ob_id=$official_business_application->id;
             $columnsString="";
