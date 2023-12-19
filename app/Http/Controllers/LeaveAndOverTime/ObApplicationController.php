@@ -814,7 +814,8 @@ class ObApplicationController extends Controller
                 $extension  = $request->file('personal_order')->getClientOriginalName();
                 $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
                 Storage::makeDirectory('public/' . $folderName);
-                $path = $request->file('personal_order')->storeAs('public/' . $folderName, $uniqueFileName);
+                $request->file('personal_order')->storeAs('public/' . $folderName, $uniqueFileName);
+                $path = $folderName .'/'. $uniqueFileName;
                 $size = $request->file('personal_order')->getSize();
                 $official_business_application->personal_order = $uniqueFileName;
                 $official_business_application->personal_order_path = $path;
@@ -826,8 +827,9 @@ class ObApplicationController extends Controller
                 $extension  = $request->file('certificate_of_appearance')->getClientOriginalName();
                 $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
                 Storage::makeDirectory('public/' . $folderName);
-                $path = $request->file('certificate_of_appearance')->storeAs('public/' . $folderName, $uniqueFileName);
+                $request->file('certificate_of_appearance')->storeAs('public/' . $folderName, $uniqueFileName);
                 $size = $request->file('certificate_of_appearance')->getSize();
+                $path = $folderName .'/'. $uniqueFileName;
                 $official_business_application->certificate_of_appearance = $uniqueFileName;
                 $official_business_application->certificate_of_appearance_path = $path;
                 $official_business_application->certificate_of_appearance_size = $size;

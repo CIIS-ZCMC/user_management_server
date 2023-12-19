@@ -14,7 +14,8 @@ class LeaveApplicationRequirement extends Model
         'leave_application_id',
         'name',
         'file_name',
-        'path'
+        'path',
+        'size'
 
     ];
         public function leave_application(){
