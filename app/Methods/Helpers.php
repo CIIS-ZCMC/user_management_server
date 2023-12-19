@@ -85,7 +85,7 @@ class Helpers
             WHEN s.id IS NOT NULL THEN 
                  (SELECT is_on_call
                  FROM employee_profile_schedule 
-                 WHERE schedule_id = s.id)
+                 WHERE schedule_id = s.id limit 1)
             ELSE 'NONE'
         END AS is_on_call
  FROM time_shifts s

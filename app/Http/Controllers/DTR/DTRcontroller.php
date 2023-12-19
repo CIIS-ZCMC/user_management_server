@@ -254,7 +254,11 @@ class DTRcontroller extends Controller
                 })
                 ->get();
             $arrival_Departure = [];
-            $time_stamps_req = '';
+            $time_stamps_req = [
+                'total_hours' => 8
+            ];
+
+
             foreach ($dtr as $val) {
                 $time_stamps_req = $this->helper->getSchedule($biometric_id, $val->first_in); //biometricID
                 $arrival_Departure[] = $this->arrivalDeparture($time_stamps_req, $year_of, $month_of);
@@ -282,14 +286,14 @@ class DTRcontroller extends Controller
             }
 
 
-
             $ohf = isset($time_stamps_req) ? $time_stamps_req['total_hours'] . ' HOURS' : null;
 
             $emp_Details = [
                 'OHF' => $ohf,
-                'Arrival_Departure' => $arrival_Departure[0],
+                'Arrival_Departure' => $arrival_Departure[0] ?? 'NO SCHEDULE',
                 'Employee_Name' => $emp_name,
-                'DTRFile_Name' => $emp_name
+                'DTRFile_Name' => $emp_name,
+                'biometric_ID' => $biometric_id
             ];
 
             return $this->PrintDtr($month_of, $year_of, $biometric_id, $emp_Details, $view);
@@ -328,6 +332,8 @@ class DTRcontroller extends Controller
             $day = [];
             $entry = '';
             //echo $dtr[12]->first_in;
+
+
             foreach ($dtr as $val) {
                 /* Validating DTR with its Matching Schedules */
                 /* 
@@ -364,6 +370,7 @@ class DTRcontroller extends Controller
 
                         if ($this->WithinScheduleRange($date_entry, $schedule_fEntry)) {
                             $dt_records[] = [
+                                'biometric_ID' => $val->biometric_id,
                                 'first_in' => $val->first_in,
                                 'first_out' => $val->first_out,
                                 'second_in' => $val->second_in,
@@ -375,6 +382,7 @@ class DTRcontroller extends Controller
                     }
                 } else {
                     $No_schedule_DTR[] = [
+                        'biometric_ID' => $val->biometric_id,
                         'first_in' => $val->first_in,
                         'first_out' => $val->first_out,
                         'second_in' => $val->second_in,
@@ -386,29 +394,32 @@ class DTRcontroller extends Controller
                 }
             }
 
-
             $days_In_Month = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
             $first_in = array_map(function ($res) {
                 return [
-                    'first_in' => $res['first_in']
+                    'first_in' => $res['first_in'],
+                    'biometric_ID' => $res['biometric_ID']
                 ];
             }, $dt_records);
 
             $first_out = array_map(function ($res) {
                 return [
-                    'first_out' => $res['first_out']
+                    'first_out' => $res['first_out'],
+                    'biometric_ID' => $res['biometric_ID']
                 ];
             }, $dt_records);
 
             $second_in = array_map(function ($res) {
                 return [
-                    'second_in' => $res['second_in']
+                    'second_in' => $res['second_in'],
+                    'biometric_ID' => $res['biometric_ID']
                 ];
             }, $dt_records);
 
             $second_out = array_map(function ($res) {
                 return [
-                    'second_out' => $res['second_out']
+                    'second_out' => $res['second_out'],
+                    'biometric_ID' => $res['biometric_ID']
                 ];
             }, $dt_records);
 
@@ -440,6 +451,7 @@ class DTRcontroller extends Controller
                     'holidays' => $holidays,
                     'print_view' => true,
                     'halfsched' => $is_Half_Schedule,
+                    'biometric_ID' => $biometric_id
                 ]);
             } else {
                 $options = new Options();
@@ -464,6 +476,7 @@ class DTRcontroller extends Controller
                     'holidays' => $holidays,
                     'print_view' => false,
                     'halfsched' => $is_Half_Schedule,
+                    'biometric_ID' => $biometric_id
                 ]));
 
                 $dompdf->setPaper('Letter', 'portrait');
@@ -539,11 +552,11 @@ class DTRcontroller extends Controller
                 }
             }
         }
-        return $this->MultiplePrintOrView($id, $month_of, $year_of);
+        return $this->MultiplePrintOrView($id, $month_of, $year_of, $view);
     }
 
 
-    public function MultiplePrintOrView($id, $month_of, $year_of)
+    public function MultiplePrintOrView($id, $month_of, $year_of, $view)
     {
 
         $data = [];
@@ -609,6 +622,7 @@ class DTRcontroller extends Controller
 
                                 if ($this->WithinScheduleRange($date_entry, $schedule_fEntry)) {
                                     $dt_records[] = [
+                                        'biometric_ID' => $val->biometric_id,
                                         'first_in' => $val->first_in,
                                         'first_out' => $val->first_out,
                                         'second_in' => $val->second_in,
@@ -620,6 +634,7 @@ class DTRcontroller extends Controller
                             }
                         } else {
                             $No_schedule_DTR[] = [
+                                'biometric_ID' => $val->biometric_id,
                                 'first_in' => $val->first_in,
                                 'first_out' => $val->first_out,
                                 'second_in' => $val->second_in,
@@ -637,31 +652,36 @@ class DTRcontroller extends Controller
                         'OHF' => $ohf,
                         'Arrival_Departure' => $arrival_Departure[0],
                         'Employee_Name' => $emp_name,
-                        'DTRFile_Name' => $emp_name
+                        'DTRFile_Name' => $emp_name,
+                        'biometric_ID' => $biometric_id
                     ];
 
                     $days_In_Month = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
                     $first_in = array_map(function ($res) {
                         return [
-                            'first_in' => $res['first_in']
+                            'first_in' => $res['first_in'],
+                            'biometric_ID' => $res['biometric_ID']
                         ];
                     }, $dt_records);
 
                     $first_out = array_map(function ($res) {
                         return [
-                            'first_out' => $res['first_out']
+                            'first_out' => $res['first_out'],
+                            'biometric_ID' => $res['biometric_ID']
                         ];
                     }, $dt_records);
 
                     $second_in = array_map(function ($res) {
                         return [
-                            'second_in' => $res['second_in']
+                            'second_in' => $res['second_in'],
+                            'biometric_ID' => $res['biometric_ID']
                         ];
                     }, $dt_records);
 
                     $second_out = array_map(function ($res) {
                         return [
-                            'second_out' => $res['second_out']
+                            'second_out' => $res['second_out'],
+                            'biometric_ID' => $res['biometric_ID']
                         ];
                     }, $dt_records);
 
@@ -694,7 +714,12 @@ class DTRcontroller extends Controller
             }
         }
 
-        return $data;
+
+        //$view
+
+        return view('generate_dtr.PrintDTRPDF',  [
+            'data' => $data
+        ]);
     }
     /* ----------------------------------------------------------------END OF GENERATION OF DAILY TIME RECORDS----------------------------------------------------------------------------------------------------------------------------- */
 
@@ -1089,7 +1114,7 @@ class DTRcontroller extends Controller
                 $secondout = date('H:i:s', strtotime('today') + rand(59400, 77400));
 
                 DailyTimeRecords::create([
-                    'biometric_id' => 5181,
+                    'biometric_id' => 5182,
                     'dtr_date' => $date,
                     'first_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin)),
                     'first_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstout)),
