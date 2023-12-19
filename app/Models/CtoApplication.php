@@ -17,6 +17,11 @@ class CtoApplication extends Model
         'purpose',
 
     ];
+
+    public function dates()
+    {
+        return $this->hasMany(CtoApplicationDate::class);
+    }
     public function logs()
     {
         return $this->hasMany(CtoApplicationLog::class);

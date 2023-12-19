@@ -41,13 +41,17 @@ class ObApplicationController extends Controller
                         $department = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('department_id');
                         $section = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('section_id');
                         $chief_name=null;
+                        $chief_position=null;
                         $head_name=null;
+                        $head_position=null;
                         $supervisor_name=null;
+                        $supervisor_position=null;
                         if($division) {
                             $division_name = Division::with('chief.personalInformation')->find($division);
                             if($division_name && $division_name->chief  && $division_name->personalInformation != null)
                             {
                                 $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                                $chief_position = $division->chief->assignedArea->designation->name ?? null;
                             }
 
 
@@ -58,14 +62,16 @@ class ObApplicationController extends Controller
                             if($department_name && $department_name->head  && $department_name->personalInformation != null)
                             {
                              $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
+                             $head_position = $department->head->assignedArea->designation->name ?? null;
                             }
                         }
                         if($section)
                         {
                             $section_name = Section::with('supervisor.personalInformation')->find($section);
-                            if($section_name && $section_name->head  && $section_name->personalInformation != null)
+                            if($section_name && $section_name->supervisor  && $section_name->personalInformation != null)
                             {
-                            $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
+                            $supervisor_name = optional($section->supervisor->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
+                            $supervisor_position = $section->supervisor->assignedArea->designation->name ?? null;
                             }
                         }
 
@@ -95,8 +101,11 @@ class ObApplicationController extends Controller
                             'employee_id' => $official_business_application->employee_profile_id,
                             'employee_name' => "{$first_name} {$last_name}" ,
                             'division_head' =>$chief_name,
+                            'division_head_position'=> $chief_position,
                             'department_head' =>$head_name,
+                            'department_head_position' =>$head_position,
                             'section_head' =>$supervisor_name,
+                            'section_head_position' =>$supervisor_position,
                             'division_name' => $official_business_application->employeeProfile->assignedArea->division->name ?? null,
                             'department_name' => $official_business_application->employeeProfile->assignedArea->department->name ?? null,
                             'section_name' => $official_business_application->employeeProfile->assignedArea->section->name ?? null,
@@ -154,13 +163,17 @@ class ObApplicationController extends Controller
             $department = AssignArea::where('employee_profile_id',$ob_application->employee_profile_id)->value('department_id');
             $section = AssignArea::where('employee_profile_id',$ob_application->employee_profile_id)->value('section_id');
             $chief_name=null;
+            $chief_position=null;
             $head_name=null;
+            $head_position=null;
             $supervisor_name=null;
+            $supervisor_position=null;
             if($division) {
                 $division_name = Division::with('chief.personalInformation')->find($division);
                 if($division_name && $division_name->chief  && $division_name->personalInformation != null)
                 {
                     $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                    $chief_position = $division->chief->assignedArea->designation->name ?? null;
                 }
 
 
@@ -171,14 +184,16 @@ class ObApplicationController extends Controller
                 if($department_name && $department_name->head  && $department_name->personalInformation != null)
                 {
                  $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
+                 $head_position = $department->head->assignedArea->designation->name ?? null;
                 }
             }
             if($section)
             {
                 $section_name = Section::with('supervisor.personalInformation')->find($section);
-                if($section_name && $section_name->head  && $section_name->personalInformation != null)
+                if($section_name && $section_name->supervisor  && $section_name->personalInformation != null)
                 {
-                $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
+                $supervisor_name = optional($section->supervisor->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
+                $supervisor_position = $section->supervisor->assignedArea->designation->name ?? null;
                 }
             }
             $first_name = optional($ob_application->employeeProfile->personalInformation)->first_name ?? null;
@@ -206,8 +221,11 @@ class ObApplicationController extends Controller
                 'employee_id' => $ob_application->employee_profile_id,
                 'employee_name' => "{$first_name} {$last_name}" ,
                 'division_head' =>$chief_name,
+                'division_head_position'=> $chief_position,
                 'department_head' =>$head_name,
+                'department_head_position' =>$head_position,
                 'section_head' =>$supervisor_name,
+                'section_head_position' =>$supervisor_position,
                 'division_name' => $ob_application->employeeProfile->assignedArea->division->name ?? null,
                 'department_name' => $ob_application->employeeProfile->assignedArea->department->name ?? null,
                 'section_name' => $ob_application->employeeProfile->assignedArea->section->name ?? null,
@@ -278,33 +296,39 @@ class ObApplicationController extends Controller
                             $department = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('department_id');
                             $section = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('section_id');
                             $chief_name=null;
-                            $head_name=null;
-                            $supervisor_name=null;
-                            if($division) {
-                                $division_name = Division::with('chief.personalInformation')->find($division);
-                                if($division_name && $division_name->chief  && $division_name->personalInformation != null)
-                                {
-                                    $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
-                                }
+                        $chief_position=null;
+                        $head_name=null;
+                        $head_position=null;
+                        $supervisor_name=null;
+                        $supervisor_position=null;
+                        if($division) {
+                            $division_name = Division::with('chief.personalInformation')->find($division);
+                            if($division_name && $division_name->chief  && $division_name->personalInformation != null)
+                            {
+                                $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                                $chief_position = $division->chief->assignedArea->designation->name ?? null;
+                            }
 
 
-                            }
-                            if($department)
+                        }
+                        if($department)
+                        {
+                            $department_name = Department::with('head.personalInformation')->find($department);
+                            if($department_name && $department_name->head  && $department_name->personalInformation != null)
                             {
-                                $department_name = Department::with('head.personalInformation')->find($department);
-                                if($department_name && $department_name->head  && $department_name->personalInformation != null)
-                                {
-                                 $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
-                                }
+                            $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
+                            $head_position = $department->head->assignedArea->designation->name ?? null;
                             }
-                            if($section)
+                        }
+                        if($section)
+                        {
+                            $section_name = Section::with('supervisor.personalInformation')->find($section);
+                            if($section_name && $section_name->supervisor  && $section_name->personalInformation != null)
                             {
-                                $section_name = Section::with('supervisor.personalInformation')->find($section);
-                                if($section_name && $section_name->head  && $section_name->personalInformation != null)
-                                {
-                                $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
-                                }
+                            $supervisor_name = optional($section->supervisor->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
+                            $supervisor_position = $section->supervisor->assignedArea->designation->name ?? null;
                             }
+                        }
                         $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
                         $last_name = optional($official_business_application->employeeProfile->personalInformation)->last_name ?? null;
                         $startDate = Carbon::createFromFormat('Y-m-d', $official_business_application->date_from);
@@ -330,8 +354,11 @@ class ObApplicationController extends Controller
                             'employee_id' => $official_business_application->employee_profile_id,
                             'employee_name' => "{$first_name} {$last_name}" ,
                             'division_head' =>$chief_name,
+                            'division_head_position'=> $chief_position,
                             'department_head' =>$head_name,
+                            'department_head_position' =>$head_position,
                             'section_head' =>$supervisor_name,
+                            'section_head_position' =>$supervisor_position,
                             'division_name' => $official_business_application->employeeProfile->assignedArea->division->name ?? null,
                             'department_name' => $official_business_application->employeeProfile->assignedArea->department->name ?? null,
                             'section_name' => $official_business_application->employeeProfile->assignedArea->section->name ?? null,
@@ -391,21 +418,38 @@ class ObApplicationController extends Controller
                         $department = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('department_id');
                         $section = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('section_id');
                         $chief_name=null;
+                        $chief_position=null;
                         $head_name=null;
+                        $head_position=null;
                         $supervisor_name=null;
-                        if ($division) {
-                            $division = Division::with('chief.personalInformation')->find($division);
-                            $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                        $supervisor_position=null;
+                        if($division) {
+                            $division_name = Division::with('chief.personalInformation')->find($division);
+                            if($division_name && $division_name->chief  && $division_name->personalInformation != null)
+                            {
+                                $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                                $chief_position = $division->chief->assignedArea->designation->name ?? null;
+                            }
+
+
                         }
                         if($department)
                         {
-                            $department = Department::with('head.personalInformation')->find($department);
-                            $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                            $department_name = Department::with('head.personalInformation')->find($department);
+                            if($department_name && $department_name->head  && $department_name->personalInformation != null)
+                            {
+                            $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
+                            $head_position = $department->head->assignedArea->designation->name ?? null;
+                            }
                         }
                         if($section)
                         {
-                            $section = Section::with('supervisor.personalInformation')->find($section);
-                            $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                            $section_name = Section::with('supervisor.personalInformation')->find($section);
+                            if($section_name && $section_name->supervisor  && $section_name->personalInformation != null)
+                            {
+                            $supervisor_name = optional($section->supervisor->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
+                            $supervisor_position = $section->supervisor->assignedArea->designation->name ?? null;
+                            }
                         }
                         $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
                         $last_name = optional($official_business_application->employeeProfile->personalInformation)->last_name ?? null;
@@ -432,8 +476,11 @@ class ObApplicationController extends Controller
                             'employee_id' => $official_business_application->employee_profile_id,
                             'employee_name' => "{$first_name} {$last_name}" ,
                             'division_head' =>$chief_name,
+                            'division_head_position'=> $chief_position,
                             'department_head' =>$head_name,
+                            'department_head_position' =>$head_position,
                             'section_head' =>$supervisor_name,
+                            'section_head_position' =>$supervisor_position,
                             'division_name' => $official_business_application->employeeProfile->assignedArea->division->name ?? null,
                             'department_name' => $official_business_application->employeeProfile->assignedArea->department->name ?? null,
                             'section_name' => $official_business_application->employeeProfile->assignedArea->section->name ?? null,
@@ -492,21 +539,38 @@ class ObApplicationController extends Controller
                         $department = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('department_id');
                         $section = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('section_id');
                         $chief_name=null;
+                        $chief_position=null;
                         $head_name=null;
+                        $head_position=null;
                         $supervisor_name=null;
-                        if ($division) {
-                            $division = Division::with('chief.personalInformation')->find($division);
-                            $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                        $supervisor_position=null;
+                        if($division) {
+                            $division_name = Division::with('chief.personalInformation')->find($division);
+                            if($division_name && $division_name->chief  && $division_name->personalInformation != null)
+                            {
+                                $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                                $chief_position = $division->chief->assignedArea->designation->name ?? null;
+                            }
+
+
                         }
                         if($department)
                         {
-                            $department = Department::with('head.personalInformation')->find($department);
-                            $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                            $department_name = Department::with('head.personalInformation')->find($department);
+                            if($department_name && $department_name->head  && $department_name->personalInformation != null)
+                            {
+                             $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
+                             $head_position = $department->head->assignedArea->designation->name ?? null;
+                            }
                         }
                         if($section)
                         {
-                            $section = Section::with('supervisor.personalInformation')->find($section);
-                            $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                            $section_name = Section::with('supervisor.personalInformation')->find($section);
+                            if($section_name && $section_name->supervisor  && $section_name->personalInformation != null)
+                            {
+                            $supervisor_name = optional($section->supervisor->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
+                            $supervisor_position = $section->supervisor->assignedArea->designation->name ?? null;
+                            }
                         }
                         $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
                         $last_name = optional($official_business_application->employeeProfile->personalInformation)->last_name ?? null;
@@ -532,8 +596,11 @@ class ObApplicationController extends Controller
                             'employee_id' => $official_business_application->employee_profile_id,
                             'employee_name' => "{$first_name} {$last_name}" ,
                             'division_head' =>$chief_name,
+                            'division_head_position'=> $chief_position,
                             'department_head' =>$head_name,
+                            'department_head_position' =>$head_position,
                             'section_head' =>$supervisor_name,
+                            'section_head_position' =>$supervisor_position,
                             'division_name' => $official_business_application->employeeProfile->assignedArea->division->name ?? null,
                             'department_name' => $official_business_application->employeeProfile->assignedArea->department->name ?? null,
                             'section_name' => $official_business_application->employeeProfile->assignedArea->section->name ?? null,
@@ -586,23 +653,44 @@ class ObApplicationController extends Controller
                         $division = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('division_id');
                         $department = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('department_id');
                         $section = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('section_id');
-                        $chief_name=null;
+                                    $chief_name=null;
+                        $chief_position=null;
                         $head_name=null;
+                        $head_position=null;
                         $supervisor_name=null;
-                        if ($division) {
-                            $division = Division::with('chief.personalInformation')->find($division);
-                            $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                        $supervisor_position=null;
+                        if($division) {
+                            $division_name = Division::with('chief.personalInformation')->find($division);
+                            if($division_name && $division_name->chief  && $division_name->personalInformation != null)
+                            {
+                                $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                                $chief_position = $division->chief->assignedArea->designation->name ?? null;
+                            }
+
+
                         }
                         if($department)
                         {
-                            $department = Department::with('head.personalInformation')->find($department);
-                            $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                            $department_name = Department::with('head.personalInformation')->find($department);
+                            if($department_name && $department_name->head  && $department_name->personalInformation != null)
+                            {
+                            $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
+                            $head_position = $department->head->assignedArea->designation->name ?? null;
+                            }
                         }
                         if($section)
                         {
-                            $section = Section::with('supervisor.personalInformation')->find($section);
-                            $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                            $section_name = Section::with('supervisor.personalInformation')->find($section);
+                            if($section_name && $section_name->supervisor  && $section_name->personalInformation != null)
+                            {
+                            $supervisor_name = optional($section->supervisor->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
+                            $supervisor_position = $section->supervisor->assignedArea->designation->name ?? null;
+                            }
                         }
+                        $startDate = Carbon::createFromFormat('Y-m-d', $official_business_application->date_from);
+                        $endDate = Carbon::createFromFormat('Y-m-d', $official_business_application->date_to);
+
+                        $numberOfDays = $startDate->diffInDays($endDate) + 1;
                         $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
                         $last_name = optional($official_business_application->employeeProfile->personalInformation)->last_name ?? null;
                         return [
@@ -611,6 +699,7 @@ class ObApplicationController extends Controller
                             'date_to' => $official_business_application->date_to,
                             'time_from' => $official_business_application->time_from,
                             'time_to' => $official_business_application->time_to,
+                            'total_days' => $numberOfDays,
                             'reason' => $official_business_application->reason,
                             'status' => $official_business_application->status,
                             'personal_order' => $official_business_application->personal_order,
@@ -619,6 +708,18 @@ class ObApplicationController extends Controller
                             'certificate_of_appearance' => $official_business_application->certificate_of_appearance,
                             'certificate_of_appearance_path' => $official_business_application->certificate_of_appearance_path,
                             'certificate_of_appearance_size' => $official_business_application->certificate_of_appearance_size,
+                            'employee_id' => $official_business_application->employee_profile_id,
+                            'employee_name' => "{$first_name} {$last_name}" ,
+                            'division_head' =>$chief_name,
+                            'division_head_position'=> $chief_position,
+                            'department_head' =>$head_name,
+                            'department_head_position' =>$head_position,
+                            'section_head' =>$supervisor_name,
+                            'section_head_position' =>$supervisor_position,
+                            'division_name' => $official_business_application->employeeProfile->assignedArea->division->name ?? null,
+                            'department_name' => $official_business_application->employeeProfile->assignedArea->department->name ?? null,
+                            'section_name' => $official_business_application->employeeProfile->assignedArea->section->name ?? null,
+                            'unit_name' => $official_business_application->employeeProfile->assignedArea->unit->name ?? null,
                             'logs' => $official_business_application->logs->map(function ($log) {
                                 $process_name=$log->action;
                                 $action ="";
@@ -640,7 +741,7 @@ class ObApplicationController extends Controller
                                 $formatted_date=Carbon::parse($date)->format('M d,Y');
                                 return [
                                     'id' => $log->id,
-                                    'leave_application_id' => $log->leave_application_id,
+                                    'leave_application_id' => $log->ob_application_id,
                                     'action_by' => "{$first_name} {$last_name}" ,
                                     'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
                                     'action' => $log->action,
@@ -848,13 +949,17 @@ class ObApplicationController extends Controller
                     $department = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('department_id');
                     $section = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('section_id');
                     $chief_name=null;
+                    $chief_position=null;
                     $head_name=null;
+                    $head_position=null;
                     $supervisor_name=null;
+                    $supervisor_position=null;
                     if($division) {
                         $division_name = Division::with('chief.personalInformation')->find($division);
                         if($division_name && $division_name->chief  && $division_name->personalInformation != null)
                         {
                             $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                            $chief_position = $division->chief->assignedArea->designation->name ?? null;
                         }
 
 
@@ -865,14 +970,16 @@ class ObApplicationController extends Controller
                         if($department_name && $department_name->head  && $department_name->personalInformation != null)
                         {
                          $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
+                         $head_position = $department->head->assignedArea->designation->name ?? null;
                         }
                     }
                     if($section)
                     {
                         $section_name = Section::with('supervisor.personalInformation')->find($section);
-                        if($section_name && $section_name->head  && $section_name->personalInformation != null)
+                        if($section_name && $section_name->supervisor  && $section_name->personalInformation != null)
                         {
-                        $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
+                        $supervisor_name = optional($section->supervisor->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
+                        $supervisor_position = $section->supervisor->assignedArea->designation->name ?? null;
                         }
                     }
                 $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
@@ -903,8 +1010,11 @@ class ObApplicationController extends Controller
                         'employee_name' => "{$first_name} {$last_name}" ,
                         'position' => $official_business_application->employeeProfile->assignedArea->designation->name ?? null,
                         'division_head' =>$chief_name,
+                        'division_head_position'=> $chief_position,
                         'department_head' =>$head_name,
+                        'department_head_position' =>$head_position,
                         'section_head' =>$supervisor_name,
+                        'section_head_position' =>$supervisor_position,
                         'division_name' => $official_business_application->employeeProfile->assignedArea->division->name ?? null,
                         'department_name' => $official_business_application->employeeProfile->assignedArea->department->name ?? null,
                         'section_name' => $official_business_application->employeeProfile->assignedArea->section->name ?? null,

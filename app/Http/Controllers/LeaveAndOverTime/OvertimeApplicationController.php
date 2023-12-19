@@ -36,34 +36,40 @@ class OvertimeApplicationController extends Controller
             $division = AssignArea::where('employee_profile_id',$overtime_application->employee_profile_id)->value('division_id');
             $department = AssignArea::where('employee_profile_id',$overtime_application->employee_profile_id)->value('department_id');
             $section = AssignArea::where('employee_profile_id',$overtime_application->employee_profile_id)->value('section_id');
-            $chief_name=null;
-            $head_name=null;
-            $supervisor_name=null;
-            if($division) {
-                $division_name = Division::with('chief.personalInformation')->find($division);
-                if($division_name && $division_name->chief  && $division_name->personalInformation != null)
-                {
-                    $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
-                }
+                    $chief_name=null;
+                    $chief_position=null;
+                    $head_name=null;
+                    $head_position=null;
+                    $supervisor_name=null;
+                    $supervisor_position=null;
+                    if($division) {
+                        $division_name = Division::with('chief.personalInformation')->find($division);
+                        if($division_name && $division_name->chief  && $division_name->personalInformation != null)
+                        {
+                            $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                            $chief_position = $division->chief->assignedArea->designation->name ?? null;
+                        }
 
 
-            }
-            if($department)
-            {
-                $department_name = Department::with('head.personalInformation')->find($department);
-                if($department_name && $department_name->head  && $department_name->personalInformation != null)
-                {
-                 $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
-                }
-            }
-            if($section)
-            {
-                $section_name = Section::with('supervisor.personalInformation')->find($section);
-                if($section_name && $section_name->head  && $section_name->personalInformation != null)
-                {
-                $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
-                }
-            }
+                    }
+                    if($department)
+                    {
+                        $department_name = Department::with('head.personalInformation')->find($department);
+                        if($department_name && $department_name->head  && $department_name->personalInformation != null)
+                        {
+                         $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
+                         $head_position = $department->head->assignedArea->designation->name ?? null;
+                        }
+                    }
+                    if($section)
+                    {
+                        $section_name = Section::with('supervisor.personalInformation')->find($section);
+                        if($section_name && $section_name->supervisor  && $section_name->personalInformation != null)
+                        {
+                        $supervisor_name = optional($section->supervisor->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
+                        $supervisor_position = $section->supervisor->assignedArea->designation->name ?? null;
+                        }
+                    }
             $first_name = optional($overtime_application->employeeProfile->personalInformation)->first_name ?? null;
             $last_name = optional($overtime_application->employeeProfile->personalInformation)->last_name ?? null;
             return [
@@ -76,8 +82,11 @@ class OvertimeApplicationController extends Controller
                 'employee_id' => $overtime_application->employee_profile_id,
                 'employee_name' => "{$first_name} {$last_name}" ,
                 'division_head' =>$chief_name,
+                'division_head_position'=> $chief_position,
                 'department_head' =>$head_name,
+                'department_head_position' =>$head_position,
                 'section_head' =>$supervisor_name,
+                'section_head_position' =>$supervisor_position,
                 'division_name' => $overtime_application->employeeProfile->assignedArea->division->name ?? null,
                 'department_name' => $overtime_application->employeeProfile->assignedArea->department->name ?? null,
                 'section_name' => $overtime_application->employeeProfile->assignedArea->section->name ?? null,
@@ -191,33 +200,39 @@ class OvertimeApplicationController extends Controller
             $department = AssignArea::where('employee_profile_id',$overtime_application->employee_profile_id)->value('department_id');
             $section = AssignArea::where('employee_profile_id',$overtime_application->employee_profile_id)->value('section_id');
             $chief_name=null;
-            $head_name=null;
-            $supervisor_name=null;
-            if($division) {
-                $division_name = Division::with('chief.personalInformation')->find($division);
-                if($division_name && $division_name->chief  && $division_name->personalInformation != null)
-                {
-                    $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
-                }
+                    $chief_position=null;
+                    $head_name=null;
+                    $head_position=null;
+                    $supervisor_name=null;
+                    $supervisor_position=null;
+                    if($division) {
+                        $division_name = Division::with('chief.personalInformation')->find($division);
+                        if($division_name && $division_name->chief  && $division_name->personalInformation != null)
+                        {
+                            $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                            $chief_position = $division->chief->assignedArea->designation->name ?? null;
+                        }
 
 
-            }
-            if($department)
-            {
-                $department_name = Department::with('head.personalInformation')->find($department);
-                if($department_name && $department_name->head  && $department_name->personalInformation != null)
-                {
-                 $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
-                }
-            }
-            if($section)
-            {
-                $section_name = Section::with('supervisor.personalInformation')->find($section);
-                if($section_name && $section_name->head  && $section_name->personalInformation != null)
-                {
-                $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
-                }
-            }
+                    }
+                    if($department)
+                    {
+                        $department_name = Department::with('head.personalInformation')->find($department);
+                        if($department_name && $department_name->head  && $department_name->personalInformation != null)
+                        {
+                         $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
+                         $head_position = $department->head->assignedArea->designation->name ?? null;
+                        }
+                    }
+                    if($section)
+                    {
+                        $section_name = Section::with('supervisor.personalInformation')->find($section);
+                        if($section_name && $section_name->supervisor  && $section_name->personalInformation != null)
+                        {
+                        $supervisor_name = optional($section->supervisor->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
+                        $supervisor_position = $section->supervisor->assignedArea->designation->name ?? null;
+                        }
+                    }
             $first_name = optional($overtime_application->employeeProfile->personalInformation)->first_name ?? null;
             $last_name = optional($overtime_application->employeeProfile->personalInformation)->last_name ?? null;
             return [
@@ -230,8 +245,11 @@ class OvertimeApplicationController extends Controller
                 'employee_id' => $overtime_application->employee_profile_id,
                 'employee_name' => "{$first_name} {$last_name}" ,
                 'division_head' =>$chief_name,
+                'division_head_position'=> $chief_position,
                 'department_head' =>$head_name,
+                'department_head_position' =>$head_position,
                 'section_head' =>$supervisor_name,
+                'section_head_position' =>$supervisor_position,
                 'division_name' => $overtime_application->employeeProfile->assignedArea->division->name ?? null,
                 'department_name' => $overtime_application->employeeProfile->assignedArea->department->name ?? null,
                 'section_name' => $overtime_application->employeeProfile->assignedArea->section->name ?? null,
@@ -335,13 +353,17 @@ class OvertimeApplicationController extends Controller
                                 $department = AssignArea::where('employee_profile_id',$overtime_application->employee_profile_id)->value('department_id');
                                 $section = AssignArea::where('employee_profile_id',$overtime_application->employee_profile_id)->value('section_id');
                                 $chief_name=null;
+                                $chief_position=null;
                                 $head_name=null;
+                                $head_position=null;
                                 $supervisor_name=null;
+                                $supervisor_position=null;
                                 if($division) {
                                     $division_name = Division::with('chief.personalInformation')->find($division);
                                     if($division_name && $division_name->chief  && $division_name->personalInformation != null)
                                     {
                                         $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                                        $chief_position = $division->chief->assignedArea->designation->name ?? null;
                                     }
 
 
@@ -351,15 +373,17 @@ class OvertimeApplicationController extends Controller
                                     $department_name = Department::with('head.personalInformation')->find($department);
                                     if($department_name && $department_name->head  && $department_name->personalInformation != null)
                                     {
-                                    $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
+                                     $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
+                                     $head_position = $department->head->assignedArea->designation->name ?? null;
                                     }
                                 }
                                 if($section)
                                 {
                                     $section_name = Section::with('supervisor.personalInformation')->find($section);
-                                    if($section_name && $section_name->head  && $section_name->personalInformation != null)
+                                    if($section_name && $section_name->supervisor  && $section_name->personalInformation != null)
                                     {
-                                    $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
+                                    $supervisor_name = optional($section->supervisor->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
+                                    $supervisor_position = $section->supervisor->assignedArea->designation->name ?? null;
                                     }
                                 }
                             $first_name = optional($overtime_application->employeeProfile->personalInformation)->first_name ?? null;
@@ -374,8 +398,11 @@ class OvertimeApplicationController extends Controller
                                 'employee_id' => $overtime_application->employee_profile_id,
                                 'employee_name' => "{$first_name} {$last_name}" ,
                                 'division_head' =>$chief_name,
+                                'division_head_position'=> $chief_position,
                                 'department_head' =>$head_name,
+                                'department_head_position' =>$head_position,
                                 'section_head' =>$supervisor_name,
+                                'section_head_position' =>$supervisor_position,
                                 'division_name' => $overtime_application->employeeProfile->assignedArea->division->name ?? null,
                                 'department_name' => $overtime_application->employeeProfile->assignedArea->department->name ?? null,
                                 'section_name' => $overtime_application->employeeProfile->assignedArea->section->name ?? null,
@@ -469,33 +496,39 @@ class OvertimeApplicationController extends Controller
                             $department = AssignArea::where('employee_profile_id',$overtime_application->employee_profile_id)->value('department_id');
                             $section = AssignArea::where('employee_profile_id',$overtime_application->employee_profile_id)->value('section_id');
                             $chief_name=null;
-                            $head_name=null;
-                            $supervisor_name=null;
-                            if($division) {
-                                $division_name = Division::with('chief.personalInformation')->find($division);
-                                if($division_name && $division_name->chief  && $division_name->personalInformation != null)
-                                {
-                                    $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
-                                }
+                    $chief_position=null;
+                    $head_name=null;
+                    $head_position=null;
+                    $supervisor_name=null;
+                    $supervisor_position=null;
+                    if($division) {
+                        $division_name = Division::with('chief.personalInformation')->find($division);
+                        if($division_name && $division_name->chief  && $division_name->personalInformation != null)
+                        {
+                            $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                            $chief_position = $division->chief->assignedArea->designation->name ?? null;
+                        }
 
 
-                            }
-                            if($department)
-                            {
-                                $department_name = Department::with('head.personalInformation')->find($department);
-                                if($department_name && $department_name->head  && $department_name->personalInformation != null)
-                                {
-                                $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
-                                }
-                            }
-                            if($section)
-                            {
-                                $section_name = Section::with('supervisor.personalInformation')->find($section);
-                                if($section_name && $section_name->head  && $section_name->personalInformation != null)
-                                {
-                                $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
-                                }
-                            }
+                    }
+                    if($department)
+                    {
+                        $department_name = Department::with('head.personalInformation')->find($department);
+                        if($department_name && $department_name->head  && $department_name->personalInformation != null)
+                        {
+                         $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
+                         $head_position = $department->head->assignedArea->designation->name ?? null;
+                        }
+                    }
+                    if($section)
+                    {
+                        $section_name = Section::with('supervisor.personalInformation')->find($section);
+                        if($section_name && $section_name->supervisor  && $section_name->personalInformation != null)
+                        {
+                        $supervisor_name = optional($section->supervisor->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
+                        $supervisor_position = $section->supervisor->assignedArea->designation->name ?? null;
+                        }
+                    }
                         $first_name = optional($overtime_application->employeeProfile->personalInformation)->first_name ?? null;
                         $last_name = optional($overtime_application->employeeProfile->personalInformation)->last_name ?? null;
                         return [
@@ -508,8 +541,11 @@ class OvertimeApplicationController extends Controller
                             'employee_id' => $overtime_application->employee_profile_id,
                             'employee_name' => "{$first_name} {$last_name}" ,
                             'division_head' =>$chief_name,
+                            'division_head_position'=> $chief_position,
                             'department_head' =>$head_name,
+                            'department_head_position' =>$head_position,
                             'section_head' =>$supervisor_name,
+                            'section_head_position' =>$supervisor_position,
                             'division_name' => $overtime_application->employeeProfile->assignedArea->division->name ?? null,
                             'department_name' => $overtime_application->employeeProfile->assignedArea->department->name ?? null,
                             'section_name' => $overtime_application->employeeProfile->assignedArea->section->name ?? null,
@@ -601,13 +637,17 @@ class OvertimeApplicationController extends Controller
                             $department = AssignArea::where('employee_profile_id',$overtime_application->employee_profile_id)->value('department_id');
                             $section = AssignArea::where('employee_profile_id',$overtime_application->employee_profile_id)->value('section_id');
                             $chief_name=null;
+                            $chief_position=null;
                             $head_name=null;
+                            $head_position=null;
                             $supervisor_name=null;
+                            $supervisor_position=null;
                             if($division) {
                                 $division_name = Division::with('chief.personalInformation')->find($division);
                                 if($division_name && $division_name->chief  && $division_name->personalInformation != null)
                                 {
                                     $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                                    $chief_position = $division->chief->assignedArea->designation->name ?? null;
                                 }
 
 
@@ -617,15 +657,17 @@ class OvertimeApplicationController extends Controller
                                 $department_name = Department::with('head.personalInformation')->find($department);
                                 if($department_name && $department_name->head  && $department_name->personalInformation != null)
                                 {
-                                $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
+                                 $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
+                                 $head_position = $department->head->assignedArea->designation->name ?? null;
                                 }
                             }
                             if($section)
                             {
                                 $section_name = Section::with('supervisor.personalInformation')->find($section);
-                                if($section_name && $section_name->head  && $section_name->personalInformation != null)
+                                if($section_name && $section_name->supervisor  && $section_name->personalInformation != null)
                                 {
-                                $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
+                                $supervisor_name = optional($section->supervisor->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
+                                $supervisor_position = $section->supervisor->assignedArea->designation->name ?? null;
                                 }
                             }
                         $first_name = optional($overtime_application->employeeProfile->personalInformation)->first_name ?? null;
@@ -640,8 +682,11 @@ class OvertimeApplicationController extends Controller
                             'employee_id' => $overtime_application->employee_profile_id,
                             'employee_name' => "{$first_name} {$last_name}" ,
                             'division_head' =>$chief_name,
+                            'division_head_position'=> $chief_position,
                             'department_head' =>$head_name,
+                            'department_head_position' =>$head_position,
                             'section_head' =>$supervisor_name,
+                            'section_head_position' =>$supervisor_position,
                             'division_name' => $overtime_application->employeeProfile->assignedArea->division->name ?? null,
                             'department_name' => $overtime_application->employeeProfile->assignedArea->department->name ?? null,
                             'section_name' => $overtime_application->employeeProfile->assignedArea->section->name ?? null,
@@ -722,38 +767,68 @@ class OvertimeApplicationController extends Controller
                         ->where('status', 'declined')
                         ->get();
 
-                        $overtime_applications_result = $overtime_applications->map(function ($official_time_application) {
-                            $division = AssignArea::where('employee_profile_id',$official_time_application->employee_profile_id)->value('division_id');
-                            $department = AssignArea::where('employee_pr-ofile_id',$official_time_application->employee_profile_id)->value('department_id');
-                            $section = AssignArea::where('employee_profile_id',$official_time_application->employee_profile_id)->value('section_id');
+                        $overtime_applications_result = $overtime_applications->map(function ($overtime_application) {
+                            $division = AssignArea::where('employee_profile_id',$overtime_application->employee_profile_id)->value('division_id');
+                            $department = AssignArea::where('employee_pr-ofile_id',$overtime_application->employee_profile_id)->value('department_id');
+                            $section = AssignArea::where('employee_profile_id',$overtime_application->employee_profile_id)->value('section_id');
                             $chief_name=null;
+                            $chief_position=null;
                             $head_name=null;
+                            $head_position=null;
                             $supervisor_name=null;
-                            if ($division) {
-                                $division = Division::with('chief.personalInformation')->find($division);
-                                $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                            $supervisor_position=null;
+                            if($division) {
+                                $division_name = Division::with('chief.personalInformation')->find($division);
+                                if($division_name && $division_name->chief  && $division_name->personalInformation != null)
+                                {
+                                    $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                                    $chief_position = $division->chief->assignedArea->designation->name ?? null;
+                                }
+
+
                             }
                             if($department)
                             {
-                                $department = Department::with('head.personalInformation')->find($department);
-                                $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                                $department_name = Department::with('head.personalInformation')->find($department);
+                                if($department_name && $department_name->head  && $department_name->personalInformation != null)
+                                {
+                                 $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
+                                 $head_position = $department->head->assignedArea->designation->name ?? null;
+                                }
                             }
                             if($section)
                             {
-                                $section = Section::with('supervisor.personalInformation')->find($section);
-                                $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                                $section_name = Section::with('supervisor.personalInformation')->find($section);
+                                if($section_name && $section_name->supervisor  && $section_name->personalInformation != null)
+                                {
+                                $supervisor_name = optional($section->supervisor->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
+                                $supervisor_position = $section->supervisor->assignedArea->designation->name ?? null;
+                                }
                             }
-                            $first_name = optional($official_time_application->employeeProfile->personalInformation)->first_name ?? null;
-                            $last_name = optional($official_time_application->employeeProfile->personalInformation)->last_name ?? null;
+                            $first_name = optional($overtime_application->employeeProfile->personalInformation)->first_name ?? null;
+                            $last_name = optional($overtime_application->employeeProfile->personalInformation)->last_name ?? null;
                             return [
-                                'id' => $official_time_application->id,
-                                'date_from' => $official_time_application->date_from,
-                                'date_to' => $official_time_application->date_to,
-                                'time_from' => $official_time_application->time_from,
-                                'time_to' => $official_time_application->time_to,
-                                'reason' => $official_time_application->reason,
-                                'status' => $official_time_application->status,
-                                'logs' => $official_time_application->logs->map(function ($log) {
+                                'id' => $overtime_application->id,
+                                'reason' => $overtime_application->reason,
+                                'remarks' => $overtime_application->remarks,
+                                'purpose' => $overtime_application->purpose,
+                                'status' => $overtime_application->status,
+                                'overtime_letter' => $overtime_application->overtime_letter_of_request,
+                                'employee_id' => $overtime_application->employee_profile_id,
+                                'employee_name' => "{$first_name} {$last_name}" ,
+                                'division_head' =>$chief_name,
+                                'division_head_position'=> $chief_position,
+                                'department_head' =>$head_name,
+                                'department_head_position' =>$head_position,
+                                'section_head' =>$supervisor_name,
+                                'section_head_position' =>$supervisor_position,
+                                'division_name' => $overtime_application->employeeProfile->assignedArea->division->name ?? null,
+                                'department_name' => $overtime_application->employeeProfile->assignedArea->department->name ?? null,
+                                'section_name' => $overtime_application->employeeProfile->assignedArea->section->name ?? null,
+                                'unit_name' => $overtime_application->employeeProfile->assignedArea->unit->name ?? null,
+                                'date' => $overtime_application->date,
+                                'time' => $overtime_application->time,
+                                'logs' => $overtime_application->logs->map(function ($log) {
                                     $process_name=$log->action;
                                     $action ="";
                                     $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
@@ -774,13 +849,44 @@ class OvertimeApplicationController extends Controller
                                     $formatted_date=Carbon::parse($date)->format('M d,Y');
                                     return [
                                         'id' => $log->id,
-                                        'leave_application_id' => $log->leave_application_id,
+                                        'overtime_application_id' => $log->overtime_application_id,
                                         'action_by' => "{$first_name} {$last_name}" ,
                                         'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
                                         'action' => $log->action,
                                         'date' => $formatted_date,
                                         'time' => $log->time,
                                         'process' => $action
+                                    ];
+                                }),
+                                'activities' => $overtime_application->activities->map(function ($activity) {
+                                    return [
+                                        'id' => $activity->id,
+                                        'overtime_application_id' => $activity->overtime_application_id,
+                                        'name' => $activity->name,
+                                        'quantity' => $activity->quantity,
+                                        'man_hour' => $activity->man_hour,
+                                        'period_covered' => $activity->period_covered,
+                                        'dates' => $activity->dates->map(function ($date) {
+                                            return [
+                                                'id' => $date->id,
+                                                'ovt_activity_id' =>$date->ovt_application_activity_id,
+                                                'time_from' => $date->time_from,
+                                                'time_to' => $date->time_to,
+                                                'date' => $date->date,
+                                                'dates' => $date->employees->map(function ($employee) {
+                                                    $first_name = optional($employee->employeeProfile->personalInformation)->first_name ?? null;
+                                                    $last_name = optional($employee->employeeProfile->personalInformation)->last_name ?? null;
+                                                return [
+                                                        'id' => $employee->id,
+                                                        'ovt_employee_id' =>$employee->ovt_application_datetime_id,
+                                                        'employee_id' => $employee->id,
+                                                        'employee_name' =>"{$first_name} {$last_name}",
+
+                                                    ];
+                                                }),
+
+                                            ];
+                                        }),
                                     ];
                                 }),
 
@@ -1008,13 +1114,17 @@ class OvertimeApplicationController extends Controller
             $department = AssignArea::where('employee_profile_id',$overtime_application->employee_profile_id)->value('department_id');
             $section = AssignArea::where('employee_profile_id',$overtime_application->employee_profile_id)->value('section_id');
             $chief_name=null;
+            $chief_position=null;
             $head_name=null;
+            $head_position=null;
             $supervisor_name=null;
+            $supervisor_position=null;
             if($division) {
                 $division_name = Division::with('chief.personalInformation')->find($division);
                 if($division_name && $division_name->chief  && $division_name->personalInformation != null)
                 {
                     $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                    $chief_position = $division->chief->assignedArea->designation->name ?? null;
                 }
 
 
@@ -1025,14 +1135,16 @@ class OvertimeApplicationController extends Controller
                 if($department_name && $department_name->head  && $department_name->personalInformation != null)
                 {
                  $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
+                 $head_position = $department->head->assignedArea->designation->name ?? null;
                 }
             }
             if($section)
             {
                 $section_name = Section::with('supervisor.personalInformation')->find($section);
-                if($section_name && $section_name->head  && $section_name->personalInformation != null)
+                if($section_name && $section_name->supervisor  && $section_name->personalInformation != null)
                 {
-                $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
+                $supervisor_name = optional($section->supervisor->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
+                $supervisor_position = $section->supervisor->assignedArea->designation->name ?? null;
                 }
             }
             $first_name = optional($overtime_application->employeeProfile->personalInformation)->first_name ?? null;
@@ -1047,8 +1159,11 @@ class OvertimeApplicationController extends Controller
                 'employee_id' => $overtime_application->employee_profile_id,
                 'employee_name' => "{$first_name} {$last_name}" ,
                 'division_head' =>$chief_name,
+                'division_head_position'=> $chief_position,
                 'department_head' =>$head_name,
+                'department_head_position' =>$head_position,
                 'section_head' =>$supervisor_name,
+                'section_head_position' =>$supervisor_position,
                 'division_name' => $overtime_application->employeeProfile->assignedArea->division->name ?? null,
                 'department_name' => $overtime_application->employeeProfile->assignedArea->department->name ?? null,
                 'section_name' => $overtime_application->employeeProfile->assignedArea->section->name ?? null,
@@ -1190,14 +1305,20 @@ class OvertimeApplicationController extends Controller
             $department = AssignArea::where('employee_profile_id',$overtime_application->employee_profile_id)->value('department_id');
             $section = AssignArea::where('employee_profile_id',$overtime_application->employee_profile_id)->value('section_id');
             $chief_name=null;
+            $chief_position=null;
             $head_name=null;
+            $head_position=null;
             $supervisor_name=null;
+            $supervisor_position=null;
             if($division) {
                 $division_name = Division::with('chief.personalInformation')->find($division);
                 if($division_name && $division_name->chief  && $division_name->personalInformation != null)
                 {
                     $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                    $chief_position = $division->chief->assignedArea->designation->name ?? null;
                 }
+
+
             }
             if($department)
             {
@@ -1205,14 +1326,16 @@ class OvertimeApplicationController extends Controller
                 if($department_name && $department_name->head  && $department_name->personalInformation != null)
                 {
                  $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
+                 $head_position = $department->head->assignedArea->designation->name ?? null;
                 }
             }
             if($section)
             {
                 $section_name = Section::with('supervisor.personalInformation')->find($section);
-                if($section_name && $section_name->head  && $section_name->personalInformation != null)
+                if($section_name && $section_name->supervisor  && $section_name->personalInformation != null)
                 {
-                $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
+                $supervisor_name = optional($section->supervisor->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
+                $supervisor_position = $section->supervisor->assignedArea->designation->name ?? null;
                 }
             }
             $first_name = optional($overtime_application->employeeProfile->personalInformation)->first_name ?? null;
