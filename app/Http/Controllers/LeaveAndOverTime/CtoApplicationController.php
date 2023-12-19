@@ -638,7 +638,7 @@ class CtoApplicationController extends Controller
                     });
 
 
-                    return response()->json(['cto_applications' => $cto_applications_result]);
+                    return response()->json(['cto_applications' => $cto_applications_result ]);
                 }
         }
         else if($status == 'for-approval-department-head'){

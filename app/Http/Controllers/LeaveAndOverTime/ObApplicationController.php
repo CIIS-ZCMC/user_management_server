@@ -78,6 +78,10 @@ class ObApplicationController extends Controller
                             'time_to' => $official_business_application->time_to,
                             'reason' => $official_business_application->reason,
                             'status' => $official_business_application->status,
+                            'personal_order' => $official_business_application->personal_order,
+                            'personal_order_path' => $official_business_application->personal_order_path,
+                            'certificate_of_appearance' => $official_business_application->certificate_of_appearance,
+                            'certificate_of_appearance_path' => $official_business_application->certificate_of_appearance_path,
                             'employee_id' => $official_business_application->employee_profile_id,
                             'employee_name' => "{$first_name} {$last_name}" ,
                             'division_head' =>$chief_name,
@@ -177,6 +181,10 @@ class ObApplicationController extends Controller
                 'time_to' => $ob_application->time_to,
                 'reason' => $ob_application->reason,
                 'status' => $ob_application->status,
+                'personal_order' => $ob_application->personal_order,
+                'personal_order_path' => $ob_application->personal_order_path,
+                'certificate_of_appearance' => $ob_application->certificate_of_appearance,
+                'certificate_of_appearance_path' => $ob_application->certificate_of_appearance_path,
                 'employee_id' => $ob_application->employee_profile_id,
                 'employee_name' => "{$first_name} {$last_name}" ,
                 'division_head' =>$chief_name,
@@ -289,6 +297,10 @@ class ObApplicationController extends Controller
                             'time_to' => $official_business_application->time_to,
                             'reason' => $official_business_application->reason,
                             'status' => $official_business_application->status,
+                            'personal_order' => $official_business_application->personal_order,
+                            'personal_order_path' => $official_business_application->personal_order_path,
+                            'certificate_of_appearance' => $official_business_application->certificate_of_appearance,
+                            'certificate_of_appearance_path' => $official_business_application->certificate_of_appearance_path,
                             'employee_id' => $official_business_application->employee_profile_id,
                             'employee_name' => "{$first_name} {$last_name}" ,
                             'division_head' =>$chief_name,
@@ -379,6 +391,10 @@ class ObApplicationController extends Controller
                             'time_to' => $official_business_application->time_to,
                             'reason' => $official_business_application->reason,
                             'status' => $official_business_application->status,
+                            'personal_order' => $official_business_application->personal_order,
+                            'personal_order_path' => $official_business_application->personal_order_path,
+                            'certificate_of_appearance' => $official_business_application->certificate_of_appearance,
+                            'certificate_of_appearance_path' => $official_business_application->certificate_of_appearance_path,
                             'employee_id' => $official_business_application->employee_profile_id,
                             'employee_name' => "{$first_name} {$last_name}" ,
                             'division_head' =>$chief_name,
@@ -468,6 +484,10 @@ class ObApplicationController extends Controller
                             'time_to' => $official_business_application->time_to,
                             'reason' => $official_business_application->reason,
                             'status' => $official_business_application->status,
+                            'personal_order' => $official_business_application->personal_order,
+                            'personal_order_path' => $official_business_application->personal_order_path,
+                            'certificate_of_appearance' => $official_business_application->certificate_of_appearance,
+                            'certificate_of_appearance_path' => $official_business_application->certificate_of_appearance_path,
                             'employee_id' => $official_business_application->employee_profile_id,
                             'employee_name' => "{$first_name} {$last_name}" ,
                             'division_head' =>$chief_name,
@@ -552,6 +572,10 @@ class ObApplicationController extends Controller
                             'time_to' => $official_business_application->time_to,
                             'reason' => $official_business_application->reason,
                             'status' => $official_business_application->status,
+                            'personal_order' => $official_business_application->personal_order,
+                            'personal_order_path' => $official_business_application->personal_order_path,
+                            'certificate_of_appearance' => $official_business_application->certificate_of_appearance,
+                            'certificate_of_appearance_path' => $official_business_application->certificate_of_appearance_path,
                             'logs' => $official_business_application->logs->map(function ($log) {
                                 $process_name=$log->action;
                                 $action ="";
@@ -737,6 +761,7 @@ class ObApplicationController extends Controller
                 $status='for-approval-section-head';
             }
             $official_business_application->status =$status;
+            $official_business_application->reason =$request->reason;
             $official_business_application->date = date('Y-m-d');
             $official_business_application->time =  date('H:i:s');
 
@@ -811,6 +836,10 @@ class ObApplicationController extends Controller
                         'time_to' => $official_business_application->time_to,
                         'reason' => $official_business_application->reason,
                         'status' => $official_business_application->status,
+                        'personal_order' => $official_business_application->personal_order,
+                        'personal_order_path' => $official_business_application->personal_order_path,
+                        'certificate_of_appearance' => $official_business_application->certificate_of_appearance,
+                        'certificate_of_appearance_path' => $official_business_application->certificate_of_appearance_path,
                         'employee_id' => $official_business_application->employee_profile_id,
                         'employee_name' => "{$first_name} {$last_name}" ,
                         'position' => $official_business_application->employeeProfile->assignedArea->designation->name ?? null,

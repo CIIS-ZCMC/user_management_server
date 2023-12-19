@@ -78,6 +78,10 @@ class OfficialTimeApplicationController extends Controller
                         'time_to' => $official_time_application->time_to,
                         'reason' => $official_time_application->reason,
                         'status' => $official_time_application->status,
+                        'personal_order' => $official_time_application->personal_order,
+                        'personal_order_path' => $official_time_application->personal_order_path,
+                        'certificate_of_appearance' => $official_time_application->certificate_of_appearance,
+                        'certificate_of_appearance_path' => $official_time_application->certificate_of_appearance_path,
                         'employee_id' => $official_time_application->employee_profile_id,
                         'employee_name' => "{$first_name} {$last_name}" ,
                         'division_head' =>$chief_name,
@@ -187,6 +191,10 @@ class OfficialTimeApplicationController extends Controller
                             'time_to' => $official_time_application->time_to,
                             'reason' => $official_time_application->reason,
                             'status' => $official_time_application->status,
+                            'personal_order' => $official_time_application->personal_order,
+                            'personal_order_path' => $official_time_application->personal_order_path,
+                            'certificate_of_appearance' => $official_time_application->certificate_of_appearance,
+                            'certificate_of_appearance_path' => $official_time_application->certificate_of_appearance_path,
                             'employee_id' => $official_time_application->employee_profile_id,
                             'employee_name' => "{$first_name} {$last_name}" ,
                             'division_head' =>$chief_name,
@@ -286,6 +294,10 @@ class OfficialTimeApplicationController extends Controller
                             'time_to' => $official_time_application->time_to,
                             'reason' => $official_time_application->reason,
                             'status' => $official_time_application->status,
+                            'personal_order' => $official_time_application->personal_order,
+                            'personal_order_path' => $official_time_application->personal_order_path,
+                            'certificate_of_appearance' => $official_time_application->certificate_of_appearance,
+                            'certificate_of_appearance_path' => $official_time_application->certificate_of_appearance_path,
                             'employee_id' => $official_time_application->employee_profile_id,
                             'employee_name' => "{$first_name} {$last_name}" ,
                             'division_head' =>$chief_name,
@@ -386,6 +398,10 @@ class OfficialTimeApplicationController extends Controller
                             'time_to' => $official_time_application->time_to,
                             'reason' => $official_time_application->reason,
                             'status' => $official_time_application->status,
+                            'personal_order' => $official_time_application->personal_order,
+                            'personal_order_path' => $official_time_application->personal_order_path,
+                            'certificate_of_appearance' => $official_time_application->certificate_of_appearance,
+                            'certificate_of_appearance_path' => $official_time_application->certificate_of_appearance_path,
                             'employee_id' => $official_time_application->employee_profile_id,
                             'employee_name' => "{$first_name} {$last_name}" ,
                             'division_head' =>$chief_name,
@@ -564,6 +580,10 @@ class OfficialTimeApplicationController extends Controller
                 'time_to' => $ot_application->time_to,
                 'reason' => $ot_application->reason,
                 'status' => $ot_application->status,
+                'personal_order' => $ot_application->personal_order,
+                'personal_order_path' => $ot_application->personal_order_path,
+                'certificate_of_appearance' => $ot_application->certificate_of_appearance,
+                'certificate_of_appearance_path' => $ot_application->certificate_of_appearance_path,
                 'employee_id' => $ot_application->employee_profile_id,
                 'employee_name' => "{$first_name} {$last_name}" ,
                 'division_head' =>$chief_name,
@@ -638,6 +658,7 @@ class OfficialTimeApplicationController extends Controller
                 $status='for-approval-section-head';
             }
             $official_time_application->status = $status;
+            $official_time_application->reason =$request->reason;
             $official_time_application->date = date('Y-m-d');
             $official_time_application->time =  date('H:i:s');
             if ($request->hasFile('personal_order')) {
@@ -711,6 +732,10 @@ class OfficialTimeApplicationController extends Controller
                         'time_to' => $official_time_application->time_to,
                         'reason' => $official_time_application->reason,
                         'status' => $official_time_application->status,
+                        'personal_order' => $official_time_application->personal_order,
+                        'personal_order_path' => $official_time_application->personal_order_path,
+                        'certificate_of_appearance' => $official_time_application->certificate_of_appearance,
+                        'certificate_of_appearance_path' => $official_time_application->certificate_of_appearance_path,
                         'employee_id' => $official_time_application->employee_profile_id,
                         'employee_name' => "{$first_name} {$last_name}" ,
                         'division_head' =>$chief_name,
