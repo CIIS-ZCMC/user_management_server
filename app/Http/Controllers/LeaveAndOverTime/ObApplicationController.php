@@ -68,20 +68,30 @@ class ObApplicationController extends Controller
                             $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
                             }
                         }
+
                     $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
                     $last_name = optional($official_business_application->employeeProfile->personalInformation)->last_name ?? null;
+
+                    $startDate = Carbon::createFromFormat('Y-m-d', $official_business_application->date_from);
+                    $endDate = Carbon::createFromFormat('Y-m-d', $official_business_application->date_to);
+
+                    $numberOfDays = $startDate->diffInDays($endDate) + 1;
+
                         return [
                             'id' => $official_business_application->id,
                             'date_from' => $official_business_application->date_from,
                             'date_to' => $official_business_application->date_to,
                             'time_from' => $official_business_application->time_from,
                             'time_to' => $official_business_application->time_to,
+                            'total_days'=> $numberOfDays,
                             'reason' => $official_business_application->reason,
                             'status' => $official_business_application->status,
                             'personal_order' => $official_business_application->personal_order,
                             'personal_order_path' => $official_business_application->personal_order_path,
+                            'personal_order_size' => $official_business_application->personal_order_size,
                             'certificate_of_appearance' => $official_business_application->certificate_of_appearance,
                             'certificate_of_appearance_path' => $official_business_application->certificate_of_appearance_path,
+                            'certificate_of_appearance_size' => $official_business_application->certificate_of_appearance_size,
                             'employee_id' => $official_business_application->employee_profile_id,
                             'employee_name' => "{$first_name} {$last_name}" ,
                             'division_head' =>$chief_name,
@@ -173,18 +183,26 @@ class ObApplicationController extends Controller
             }
             $first_name = optional($ob_application->employeeProfile->personalInformation)->first_name ?? null;
             $last_name = optional($ob_application->employeeProfile->personalInformation)->last_name ?? null;
+            $startDate = Carbon::createFromFormat('Y-m-d', $ob_application->date_from);
+            $endDate = Carbon::createFromFormat('Y-m-d', $ob_application->date_to);
+
+            $numberOfDays = $startDate->diffInDays($endDate) + 1;
+
             return [
                 'id' => $ob_application->id,
                 'date_from' => $ob_application->date_from,
                 'date_to' => $ob_application->date_to,
                 'time_from' => $ob_application->time_from,
                 'time_to' => $ob_application->time_to,
+                'total_days' => $numberOfDays,
                 'reason' => $ob_application->reason,
                 'status' => $ob_application->status,
                 'personal_order' => $ob_application->personal_order,
                 'personal_order_path' => $ob_application->personal_order_path,
+                'personal_order_size' => $ob_application->personal_order_size,
                 'certificate_of_appearance' => $ob_application->certificate_of_appearance,
                 'certificate_of_appearance_path' => $ob_application->certificate_of_appearance_path,
+                'certificate_of_appearance_size' => $ob_application->certificate_of_appearance_size,
                 'employee_id' => $ob_application->employee_profile_id,
                 'employee_name' => "{$first_name} {$last_name}" ,
                 'division_head' =>$chief_name,
@@ -289,18 +307,26 @@ class ObApplicationController extends Controller
                             }
                         $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
                         $last_name = optional($official_business_application->employeeProfile->personalInformation)->last_name ?? null;
+                        $startDate = Carbon::createFromFormat('Y-m-d', $official_business_application->date_from);
+                        $endDate = Carbon::createFromFormat('Y-m-d', $official_business_application->date_to);
+
+                        $numberOfDays = $startDate->diffInDays($endDate) + 1;
+
                         return [
                             'id' => $official_business_application->id,
                             'date_from' => $official_business_application->date_from,
                             'date_to' => $official_business_application->date_to,
                             'time_from' => $official_business_application->time_from,
                             'time_to' => $official_business_application->time_to,
+                            'total_days' => $numberOfDays,
                             'reason' => $official_business_application->reason,
                             'status' => $official_business_application->status,
                             'personal_order' => $official_business_application->personal_order,
                             'personal_order_path' => $official_business_application->personal_order_path,
+                            'personal_order_size' => $official_business_application->personal_order_size,
                             'certificate_of_appearance' => $official_business_application->certificate_of_appearance,
                             'certificate_of_appearance_path' => $official_business_application->certificate_of_appearance_path,
+                            'certificate_of_appearance_size' => $official_business_application->certificate_of_appearance_size,
                             'employee_id' => $official_business_application->employee_profile_id,
                             'employee_name' => "{$first_name} {$last_name}" ,
                             'division_head' =>$chief_name,
@@ -383,18 +409,26 @@ class ObApplicationController extends Controller
                         }
                         $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
                         $last_name = optional($official_business_application->employeeProfile->personalInformation)->last_name ?? null;
+                        $startDate = Carbon::createFromFormat('Y-m-d', $official_business_application->date_from);
+                        $endDate = Carbon::createFromFormat('Y-m-d', $official_business_application->date_to);
+
+                        $numberOfDays = $startDate->diffInDays($endDate) + 1;
+
                         return [
                             'id' => $official_business_application->id,
                             'date_from' => $official_business_application->date_from,
                             'date_to' => $official_business_application->date_to,
                             'time_from' => $official_business_application->time_from,
                             'time_to' => $official_business_application->time_to,
+                            'total_days' => $numberOfDays,
                             'reason' => $official_business_application->reason,
                             'status' => $official_business_application->status,
                             'personal_order' => $official_business_application->personal_order,
                             'personal_order_path' => $official_business_application->personal_order_path,
+                            'personal_order_size' => $official_business_application->personal_order_size,
                             'certificate_of_appearance' => $official_business_application->certificate_of_appearance,
                             'certificate_of_appearance_path' => $official_business_application->certificate_of_appearance_path,
+                            'certificate_of_appearance_size' => $official_business_application->certificate_of_appearance_size,
                             'employee_id' => $official_business_application->employee_profile_id,
                             'employee_name' => "{$first_name} {$last_name}" ,
                             'division_head' =>$chief_name,
@@ -476,18 +510,25 @@ class ObApplicationController extends Controller
                         }
                         $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
                         $last_name = optional($official_business_application->employeeProfile->personalInformation)->last_name ?? null;
+                        $startDate = Carbon::createFromFormat('Y-m-d', $official_business_application->date_from);
+                        $endDate = Carbon::createFromFormat('Y-m-d', $official_business_application->date_to);
+
+                        $numberOfDays = $startDate->diffInDays($endDate) + 1;
                         return [
                             'id' => $official_business_application->id,
                             'date_from' => $official_business_application->date_from,
                             'date_to' => $official_business_application->date_to,
                             'time_from' => $official_business_application->time_from,
                             'time_to' => $official_business_application->time_to,
+                            'total_days' => $numberOfDays,
                             'reason' => $official_business_application->reason,
                             'status' => $official_business_application->status,
                             'personal_order' => $official_business_application->personal_order,
                             'personal_order_path' => $official_business_application->personal_order_path,
+                            'personal_order_size' => $official_business_application->personal_order_size,
                             'certificate_of_appearance' => $official_business_application->certificate_of_appearance,
                             'certificate_of_appearance_path' => $official_business_application->certificate_of_appearance_path,
+                            'certificate_of_appearance_size' => $official_business_application->certificate_of_appearance_size,
                             'employee_id' => $official_business_application->employee_profile_id,
                             'employee_name' => "{$first_name} {$last_name}" ,
                             'division_head' =>$chief_name,
@@ -574,8 +615,10 @@ class ObApplicationController extends Controller
                             'status' => $official_business_application->status,
                             'personal_order' => $official_business_application->personal_order,
                             'personal_order_path' => $official_business_application->personal_order_path,
+                            'personal_order_size' => $official_business_application->personal_order_size,
                             'certificate_of_appearance' => $official_business_application->certificate_of_appearance,
                             'certificate_of_appearance_path' => $official_business_application->certificate_of_appearance_path,
+                            'certificate_of_appearance_size' => $official_business_application->certificate_of_appearance_size,
                             'logs' => $official_business_application->logs->map(function ($log) {
                                 $process_name=$log->action;
                                 $action ="";
@@ -772,8 +815,10 @@ class ObApplicationController extends Controller
                 $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
                 Storage::makeDirectory('public/' . $folderName);
                 $path = $request->file('personal_order')->storeAs('public/' . $folderName, $uniqueFileName);
+                $size = $request->file('personal_order')->getSize();
                 $official_business_application->personal_order = $fileName;
                 $official_business_application->personal_order_path = $path;
+                $official_business_application->personal_order_size = $size;
             }
             if ($request->hasFile('certificate_of_appearance')) {
                 $folderName = 'official_business';
@@ -782,8 +827,10 @@ class ObApplicationController extends Controller
                 $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
                 Storage::makeDirectory('public/' . $folderName);
                 $path = $request->file('certificate_of_appearance')->storeAs('public/' . $folderName, $uniqueFileName);
+                $size = $request->file('certificate_of_appearance')->getSize();
                 $official_business_application->certificate_of_appearance = $fileName;
                 $official_business_application->certificate_of_appearance_path = $path;
+                $official_business_application->certificate_of_appearance_size = $size;
             }
 
             $official_business_application->save();
@@ -828,18 +875,28 @@ class ObApplicationController extends Controller
                     }
                 $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
                 $last_name = optional($official_business_application->employeeProfile->personalInformation)->last_name ?? null;
+                $startDate = Carbon::createFromFormat('Y-m-d', $official_business_application->date_from);
+                $endDate = Carbon::createFromFormat('Y-m-d', $official_business_application->date_to);
+
+                $numberOfDays = $startDate->diffInDays($endDate) + 1;
+
+
+
                     return [
                         'id' => $official_business_application->id,
                         'date_from' => $official_business_application->date_from,
                         'date_to' => $official_business_application->date_to,
                         'time_from' => $official_business_application->time_from,
                         'time_to' => $official_business_application->time_to,
+                        'total_days' => $numberOfDays,
                         'reason' => $official_business_application->reason,
                         'status' => $official_business_application->status,
                         'personal_order' => $official_business_application->personal_order,
                         'personal_order_path' => $official_business_application->personal_order_path,
+                        'personal_order_size' => $official_business_application->personal_order_size,
                         'certificate_of_appearance' => $official_business_application->certificate_of_appearance,
                         'certificate_of_appearance_path' => $official_business_application->certificate_of_appearance_path,
+                        'certificate_of_appearance_size' => $official_business_application->certificate_of_appearance_size,
                         'employee_id' => $official_business_application->employee_profile_id,
                         'employee_name' => "{$first_name} {$last_name}" ,
                         'position' => $official_business_application->employeeProfile->assignedArea->designation->name ?? null,
@@ -871,7 +928,7 @@ class ObApplicationController extends Controller
                             $formatted_date=Carbon::parse($date)->format('M d,Y');
                             return [
                                 'id' => $log->id,
-                                'leave_application_id' => $log->ob_application_id,
+                                'ob_application_id' => $log->ob_application_id,
                                 'action_by' => "{$first_name} {$last_name}" ,
                                 'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
                                 'action' => $log->action,

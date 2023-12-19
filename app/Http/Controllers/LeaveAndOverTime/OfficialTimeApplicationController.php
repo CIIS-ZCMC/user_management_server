@@ -70,18 +70,26 @@ class OfficialTimeApplicationController extends Controller
                     }
                 $first_name = optional($official_time_application->employeeProfile->personalInformation)->first_name ?? null;
                 $last_name = optional($official_time_application->employeeProfile->personalInformation)->last_name ?? null;
+                $startDate = Carbon::createFromFormat('Y-m-d', $official_time_application->date_from);
+                $endDate = Carbon::createFromFormat('Y-m-d', $official_time_application->date_to);
+
+                $numberOfDays = $startDate->diffInDays($endDate) + 1;
+
                     return [
                         'id' => $official_time_application->id,
                         'date_from' => $official_time_application->date_from,
                         'date_to' => $official_time_application->date_to,
                         'time_from' => $official_time_application->time_from,
                         'time_to' => $official_time_application->time_to,
+                        'total_days' => $numberOfDays,
                         'reason' => $official_time_application->reason,
                         'status' => $official_time_application->status,
                         'personal_order' => $official_time_application->personal_order,
                         'personal_order_path' => $official_time_application->personal_order_path,
+                        'personal_order_size' => $official_time_application->personal_order_size,
                         'certificate_of_appearance' => $official_time_application->certificate_of_appearance,
                         'certificate_of_appearance_path' => $official_time_application->certificate_of_appearance_path,
+                        'certificate_of_appearance_size' => $official_time_application->certificate_of_appearance_size,
                         'employee_id' => $official_time_application->employee_profile_id,
                         'employee_name' => "{$first_name} {$last_name}" ,
                         'division_head' =>$chief_name,
@@ -183,18 +191,26 @@ class OfficialTimeApplicationController extends Controller
                             }
                         $first_name = optional($official_time_application->employeeProfile->personalInformation)->first_name ?? null;
                         $last_name = optional($official_time_application->employeeProfile->personalInformation)->last_name ?? null;
+                        $startDate = Carbon::createFromFormat('Y-m-d', $official_time_application->date_from);
+                        $endDate = Carbon::createFromFormat('Y-m-d', $official_time_application->date_to);
+
+                        $numberOfDays = $startDate->diffInDays($endDate) + 1;
+
                         return [
                             'id' => $official_time_application->id,
                             'date_from' => $official_time_application->date_from,
                             'date_to' => $official_time_application->date_to,
                             'time_from' => $official_time_application->time_from,
                             'time_to' => $official_time_application->time_to,
+                            'total_days' => $numberOfDays,
                             'reason' => $official_time_application->reason,
                             'status' => $official_time_application->status,
                             'personal_order' => $official_time_application->personal_order,
                             'personal_order_path' => $official_time_application->personal_order_path,
+                            'personal_order_size' => $official_time_application->personal_order_size,
                             'certificate_of_appearance' => $official_time_application->certificate_of_appearance,
                             'certificate_of_appearance_path' => $official_time_application->certificate_of_appearance_path,
+                            'certificate_of_appearance_size' => $official_time_application->certificate_of_appearance_size,
                             'employee_id' => $official_time_application->employee_profile_id,
                             'employee_name' => "{$first_name} {$last_name}" ,
                             'division_head' =>$chief_name,
@@ -286,18 +302,26 @@ class OfficialTimeApplicationController extends Controller
                         }
                         $first_name = optional($official_time_application->employeeProfile->personalInformation)->first_name ?? null;
                         $last_name = optional($official_time_application->employeeProfile->personalInformation)->last_name ?? null;
+                        $startDate = Carbon::createFromFormat('Y-m-d', $official_time_application->date_from);
+                        $endDate = Carbon::createFromFormat('Y-m-d', $official_time_application->date_to);
+
+                        $numberOfDays = $startDate->diffInDays($endDate) + 1;
+
                         return [
                             'id' => $official_time_application->id,
                             'date_from' => $official_time_application->date_from,
                             'date_to' => $official_time_application->date_to,
                             'time_from' => $official_time_application->time_from,
                             'time_to' => $official_time_application->time_to,
+                            'total_days' => $numberOfDays,
                             'reason' => $official_time_application->reason,
                             'status' => $official_time_application->status,
                             'personal_order' => $official_time_application->personal_order,
                             'personal_order_path' => $official_time_application->personal_order_path,
+                            'personal_order_size' => $official_time_application->personal_order_size,
                             'certificate_of_appearance' => $official_time_application->certificate_of_appearance,
                             'certificate_of_appearance_path' => $official_time_application->certificate_of_appearance_path,
+                            'certificate_of_appearance_size' => $official_time_application->certificate_of_appearance_size,
                             'employee_id' => $official_time_application->employee_profile_id,
                             'employee_name' => "{$first_name} {$last_name}" ,
                             'division_head' =>$chief_name,
@@ -390,18 +414,26 @@ class OfficialTimeApplicationController extends Controller
                         }
                         $first_name = optional($official_time_application->employeeProfile->personalInformation)->first_name ?? null;
                         $last_name = optional($official_time_application->employeeProfile->personalInformation)->last_name ?? null;
+                        $startDate = Carbon::createFromFormat('Y-m-d', $official_time_application->date_from);
+                        $endDate = Carbon::createFromFormat('Y-m-d', $official_time_application->date_to);
+
+                        $numberOfDays = $startDate->diffInDays($endDate) + 1;
+
                         return [
                             'id' => $official_time_application->id,
                             'date_from' => $official_time_application->date_from,
                             'date_to' => $official_time_application->date_to,
                             'time_from' => $official_time_application->time_from,
                             'time_to' => $official_time_application->time_to,
+                            'total_days' => $numberOfDays,
                             'reason' => $official_time_application->reason,
                             'status' => $official_time_application->status,
                             'personal_order' => $official_time_application->personal_order,
                             'personal_order_path' => $official_time_application->personal_order_path,
+                            'personal_order_size' => $official_time_application->personal_order_size,
                             'certificate_of_appearance' => $official_time_application->certificate_of_appearance,
                             'certificate_of_appearance_path' => $official_time_application->certificate_of_appearance_path,
+                            'certificate_of_appearance_size' => $official_time_application->certificate_of_appearance_size,
                             'employee_id' => $official_time_application->employee_profile_id,
                             'employee_name' => "{$first_name} {$last_name}" ,
                             'division_head' =>$chief_name,
@@ -572,18 +604,26 @@ class OfficialTimeApplicationController extends Controller
             }
             $first_name = optional($ot_application->employeeProfile->personalInformation)->first_name ?? null;
             $last_name = optional($ot_application->employeeProfile->personalInformation)->last_name ?? null;
+            $startDate = Carbon::createFromFormat('Y-m-d', $ot_application->date_from);
+            $endDate = Carbon::createFromFormat('Y-m-d', $ot_application->date_to);
+
+            $numberOfDays = $startDate->diffInDays($endDate) + 1;
+
             return [
                 'id' => $ot_application->id,
                 'date_from' => $ot_application->date_from,
                 'date_to' => $ot_application->date_to,
                 'time_from' => $ot_application->time_from,
                 'time_to' => $ot_application->time_to,
+                'total_days' => $numberOfDays,
                 'reason' => $ot_application->reason,
                 'status' => $ot_application->status,
                 'personal_order' => $ot_application->personal_order,
                 'personal_order_path' => $ot_application->personal_order_path,
+                'personal_order_size' => $ot_application->personal_order_size,
                 'certificate_of_appearance' => $ot_application->certificate_of_appearance,
                 'certificate_of_appearance_path' => $ot_application->certificate_of_appearance_path,
+                'certificate_of_appearance_size' => $ot_application->certificate_of_appearance_size,
                 'employee_id' => $ot_application->employee_profile_id,
                 'employee_name' => "{$first_name} {$last_name}" ,
                 'division_head' =>$chief_name,
@@ -668,8 +708,10 @@ class OfficialTimeApplicationController extends Controller
                 $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
                 Storage::makeDirectory('public/' . $folderName);
                 $path = $request->file('personal_order')->storeAs('public/' . $folderName, $uniqueFileName);
+                $size = $request->file('personal_order')->getSize();
                 $official_time_application->personal_order = $fileName;
                 $official_time_application->personal_order_path = $path;
+                $official_time_application->personal_order_size = $size;
             }
             if ($request->hasFile('certificate_of_appearance')) {
                 $folderName = 'official_business';
@@ -678,8 +720,10 @@ class OfficialTimeApplicationController extends Controller
                 $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
                 Storage::makeDirectory('public/' . $folderName);
                 $path = $request->file('certificate_of_appearance')->storeAs('public/' . $folderName, $uniqueFileName);
+                $size = $request->file('certificate_of_appearance')->getSize();
                 $official_time_application->certificate_of_appearance = $fileName;
                 $official_time_application->certificate_of_appearance_path = $path;
+                $official_time_application->certificate_of_appearance_size = $size;
             }
             $official_time_application->save();
             $ot_id=$official_time_application->id;
@@ -724,16 +768,23 @@ class OfficialTimeApplicationController extends Controller
                     }
                 $first_name = optional($official_time_application->employeeProfile->personalInformation)->first_name ?? null;
                 $last_name = optional($official_time_application->employeeProfile->personalInformation)->last_name ?? null;
+                $startDate = Carbon::createFromFormat('Y-m-d', $official_time_application->date_from);
+                $endDate = Carbon::createFromFormat('Y-m-d', $official_time_application->date_to);
+
+                $numberOfDays = $startDate->diffInDays($endDate) + 1;
+
                     return [
                         'id' => $official_time_application->id,
                         'date_from' => $official_time_application->date_from,
                         'date_to' => $official_time_application->date_to,
                         'time_from' => $official_time_application->time_from,
                         'time_to' => $official_time_application->time_to,
+                        'total_days' => $numberOfDays,
                         'reason' => $official_time_application->reason,
                         'status' => $official_time_application->status,
                         'personal_order' => $official_time_application->personal_order,
                         'personal_order_path' => $official_time_application->personal_order_path,
+                        'personal_order_size' => $official_time_application->personal_order_size,
                         'certificate_of_appearance' => $official_time_application->certificate_of_appearance,
                         'certificate_of_appearance_path' => $official_time_application->certificate_of_appearance_path,
                         'employee_id' => $official_time_application->employee_profile_id,
