@@ -1606,13 +1606,14 @@ class LeaveApplicationController extends Controller
                                             $folderName = 'requirements';
                                             Storage::makeDirectory('public/' . $folderName);
                                             $path = $file->storeAs('public/' . $folderName, $uniqueFileName);
-
+                                            $size = $request->file('requirements')->getSize();
                                             $name_array = $name[$key] ?? null;
                                                 LeaveApplicationRequirement::create([
                                                     'leave_application_id' => $leave_application->id,
                                                     'file_name' => $fileName,
                                                     'name' => $name_array,
                                                     'path' => $path,
+                                                    'size' => $size,
                                                 ]);
 
 

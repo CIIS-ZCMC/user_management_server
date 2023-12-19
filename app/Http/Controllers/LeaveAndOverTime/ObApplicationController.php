@@ -816,7 +816,7 @@ class ObApplicationController extends Controller
                 Storage::makeDirectory('public/' . $folderName);
                 $path = $request->file('personal_order')->storeAs('public/' . $folderName, $uniqueFileName);
                 $size = $request->file('personal_order')->getSize();
-                $official_business_application->personal_order = $fileName;
+                $official_business_application->personal_order = $uniqueFileName;
                 $official_business_application->personal_order_path = $path;
                 $official_business_application->personal_order_size = $size;
             }
@@ -828,7 +828,7 @@ class ObApplicationController extends Controller
                 Storage::makeDirectory('public/' . $folderName);
                 $path = $request->file('certificate_of_appearance')->storeAs('public/' . $folderName, $uniqueFileName);
                 $size = $request->file('certificate_of_appearance')->getSize();
-                $official_business_application->certificate_of_appearance = $fileName;
+                $official_business_application->certificate_of_appearance = $uniqueFileName;
                 $official_business_application->certificate_of_appearance_path = $path;
                 $official_business_application->certificate_of_appearance_size = $size;
             }
