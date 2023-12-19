@@ -171,6 +171,8 @@ class LeaveApplicationController extends Controller
                         'leave_application_id' => $requirement->leave_application_id,
                         'name' => $requirement->name,
                         'file_name' => $requirement->file_name,
+                        'path' => $requirement->path,
+                        'size' => $requirement->size,
                     ];
                 }),
                 'dates' => $leave_application->dates->map(function ($date) {
@@ -350,6 +352,8 @@ class LeaveApplicationController extends Controller
                         'leave_application_id' => $requirement->leave_application_id,
                         'name' => $requirement->name,
                         'file_name' => $requirement->file_name,
+                        'path' => $requirement->path,
+                        'size' => $requirement->size,
                     ];
                 }),
                 'dates' => $leave_application->dates->map(function ($date) {
@@ -502,6 +506,8 @@ class LeaveApplicationController extends Controller
                                 'leave_application_id' => $requirement->leave_application_id,
                                 'name' => $requirement->name,
                                 'file_name' => $requirement->file_name,
+                                'path' => $requirement->path,
+                                'size' => $requirement->size,
                             ];
                         }),
                         'dates' => $leave_application->dates->map(function ($date) {
@@ -627,6 +633,8 @@ class LeaveApplicationController extends Controller
                                     'leave_application_id' => $requirement->leave_application_id,
                                     'name' => $requirement->name,
                                     'file_name' => $requirement->file_name,
+                                    'path' => $requirement->path,
+                                    'size' => $requirement->size,
                                 ];
                             }),
                             'dates' => $leave_application->dates->map(function ($date) {
@@ -753,6 +761,8 @@ class LeaveApplicationController extends Controller
                                 'leave_application_id' => $requirement->leave_application_id,
                                 'name' => $requirement->name,
                                 'file_name' => $requirement->file_name,
+                                'path' => $requirement->path,
+                                'size' => $requirement->size,
                             ];
                         }),
                         'dates' => $leave_application->dates->map(function ($date) {
@@ -879,6 +889,8 @@ class LeaveApplicationController extends Controller
                                 'leave_application_id' => $requirement->leave_application_id,
                                 'name' => $requirement->name,
                                 'file_name' => $requirement->file_name,
+                                'path' => $requirement->path,
+                                'size' => $requirement->size,
                             ];
                         }),
                         'dates' => $leave_application->dates->map(function ($date) {
@@ -1002,6 +1014,8 @@ class LeaveApplicationController extends Controller
                                 'leave_application_id' => $requirement->leave_application_id,
                                 'name' => $requirement->name,
                                 'file_name' => $requirement->file_name,
+                                'path' => $requirement->path,
+                                'size' => $requirement->size,
                             ];
                         }),
                         'dates' => $leave_application->dates->map(function ($date) {
@@ -1610,7 +1624,7 @@ class LeaveApplicationController extends Controller
                                             $name_array = $name[$key] ?? null;
                                                 LeaveApplicationRequirement::create([
                                                     'leave_application_id' => $leave_application->id,
-                                                    'file_name' => $fileName,
+                                                    'file_name' => $uniqueFileName,
                                                     'name' => $name_array,
                                                     'path' => $path,
                                                     'size' => $size,
@@ -1729,6 +1743,7 @@ class LeaveApplicationController extends Controller
                                                 'name' => $requirement->name,
                                                 'file_name' => $requirement->file_name,
                                                 'path' => $requirement->path,
+                                                'size' => $requirement->size,
                                             ];
                                         }),
                                         'dates' => $leave_application->dates->map(function ($date) {
