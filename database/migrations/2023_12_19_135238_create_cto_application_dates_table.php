@@ -13,6 +13,12 @@ return new class extends Migration
     {
         Schema::create('cto_application_dates', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('cto_application_id')->unsigned()->nullable();
+            $table->foreign('cto_application_id')->references('id')->on('cto_applications')->onDelete('cascade')->nullable();
+            $table->string('time_from')->nullable();
+            $table->string('time_to')->nullable();
+            $table->string('date')->nullable();
+            $table->string('purpose')->nullable();
             $table->timestamps();
         });
     }

@@ -13,7 +13,8 @@ class CtoApplicationDate extends Model
         'cto_application_id',
         'time_from',
         'time_to',
-        'date'
+        'date',
+        'purpose'
 
     ];
 
