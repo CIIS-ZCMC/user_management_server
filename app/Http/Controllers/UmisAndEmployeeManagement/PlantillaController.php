@@ -15,6 +15,7 @@ use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\PlantillaRequest;
 use App\Http\Resources\DesignationEmployeesResource;
 use App\Http\Resources\PlantillaResource;
+use App\Http\Resources\PlantillaNumberAllResource;
 use App\Models\Plantilla;
 use App\Models\PlantillaNumber;
 use App\Models\PlantillaRequirement;
@@ -37,17 +38,13 @@ class PlantillaController extends Controller
         try{
             // $cacheExpiration = Carbon::now()->addDay();
 
-            // $plantillas = Cache::remember('plantillas', $cacheExpiration, function(){
-            //     return Plantilla::all();
-            // });
-               $plantillas = Plantilla::all();
-          
+            $plantillas = PlantillaNumber::all();
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
             
             return response()->json([
-                'data' => PlantillaResource::collection($plantillas),
-                'message' => 'Plantilla list retrieved.'    
+                'data' => PlantillaNumberAllResource::collection($plantillas),
+                'message' => 'Plantilla list retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
@@ -72,14 +69,15 @@ class PlantillaController extends Controller
         }
     }
     
-    public function store(PlantillaRequest $request)
+    public function store(Request $request)
     {
         try{
+
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
                 if($key === 'plantilla_number'){
-                    $cleanData[$key] = $value;
+                    $cleanData[$key] = json_decode($value);
                     continue;
                 }
                 $cleanData[$key] = strip_tags($value);
@@ -89,7 +87,11 @@ class PlantillaController extends Controller
 
             $cleanData['plantilla_id'] = $plantilla->id;
 
+            PlantillaRequirement::create($cleanData);
+
             $failed = [];
+
+            $plantilla_numbers = [];
 
             foreach($cleanData['plantilla_number'] as $value)
             {
@@ -105,10 +107,12 @@ class PlantillaController extends Controller
                         continue;
                     }
 
-                    PlantillaNumber::create([
+                    $plantilla_number_new = PlantillaNumber::create([
                         'number' => $value,
                         'plantilla_id' => $plantilla->id
                     ]);
+
+                    $plantilla_numbers[] = $plantilla_number_new;
                 }catch(\Throwable $th){
                     $failed_to_register = [
                         'plantilla_number' => $value,
@@ -119,7 +123,7 @@ class PlantillaController extends Controller
                 }
             }
 
-            $data = new PlantillaResource($plantilla);
+            $data = PlantillaNumberAllResource::collection($plantilla_numbers);
             $message = 'Plantilla created successfully.';
 
             if(count($failed) === count($cleanData['plantilla_number']))
@@ -131,7 +135,7 @@ class PlantillaController extends Controller
             if(count($failed) > 0)
             {
                 $data = [
-                    'new_plantilla' => new PlantillaResource($plantilla),
+                    'new_plantilla' => PlantillaNumberAllResource::collection($plantilla_numbers),
                     'failed' => $failed
                 ];
                 $message = 'Some plantilla number failed to register.';
@@ -139,7 +143,10 @@ class PlantillaController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json([$data, $message], Response::HTTP_OK);
+            return response() -> json([
+                'data' => $data,
+                'message' => $message
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -164,6 +171,28 @@ class PlantillaController extends Controller
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function showPlantillaNumber($id, Request $request)
+    {
+        try{
+            $plantilla_number = PlantillaNumber::find($id);
+
+            if(!$plantilla_number)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            
+            return response()->json([
+                'data' => new PlantillaNumberAllResource($plantilla_number),
+                'message' => 'Plantilla list retrieved.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

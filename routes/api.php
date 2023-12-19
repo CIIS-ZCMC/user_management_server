@@ -943,6 +943,10 @@ Route::middleware('auth.cookie')->group(function(){
             Route::get('plantilla/{id}', 'PlantillaController@show');
         });
 
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('plantilla-number/{id}', 'PlantillaController@showPlantillaNumber');
+        });
+
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
             Route::put('plantilla/{id}', 'PlantillaController@update');
         });
