@@ -2,11 +2,10 @@
 
 namespace App\Http\Resources;
 
-use App\Models\LegalInformationQuestion;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class LegalInformationQuestionResource extends JsonResource
+class PositionSystemRoleOnlyResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -15,13 +14,12 @@ class LegalInformationQuestionResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $sub_question = LegalInformationQuestion::where('legal_iq_id', $this->id)->get();
-
+        $system_role_data = $this->systemRole;
+        $role = $system_role_data->role;
+        
         return [
             'id' => $this->id,
-            'order_by' => $this->order_by,
-            'content_question' => $this->content_question,
-            'sub_question' => LegalInformationQuestionResource::collection($sub_question),
+            'name' => $role->name,
             'created_at' => $this->created_at
         ];
     }

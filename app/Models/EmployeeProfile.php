@@ -84,7 +84,7 @@ class EmployeeProfile extends Authenticatable
 
     public function loginTrails()
     {
-        return $this->hasMany(LoginTrails::class);
+        return $this->hasMany(LoginTrail::class);
     }
 
     public function plantillaNumber()

@@ -54,6 +54,16 @@ class PlantillaNumberAllResource extends JsonResource
             $requirement['competency'] = $requirementsData['competency'];
         }
 
+        $area_data = $this->assignedArea === null? null: $this->assignedArea->area();
+        $area = [];
+
+        if($area_data !== null){
+            $area['id'] = $area_data->id;
+            $area['name'] = $area_data->name;
+            $area['created_at'] = $area_data->created_at;
+            $area['updated_at'] = $area_data->updated_at;
+        } 
+
         return [
             'id' => $this->id,
             'number' => $this->number,
@@ -65,6 +75,7 @@ class PlantillaNumberAllResource extends JsonResource
             'requirement' => $requirement,
             'designation' => $designation,
             'salary' => $salary,
+            'area' => $area,
             'employee' => $this->employee
         ];
     }

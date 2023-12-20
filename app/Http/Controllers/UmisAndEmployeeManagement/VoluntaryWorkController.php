@@ -4,8 +4,11 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Http\Requests\PasswordApprovalRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 use App\Services\RequestLogger;
 use App\Http\Requests\VoluntaryWorkRequest;
 use App\Http\Resources\VoluntaryWorkResource;
@@ -155,9 +158,19 @@ class VoluntaryWorkController extends Controller
         }
     }
     
-    public function destroy($id, Request $request)
+    public function destroy($id, PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $voluntary_work = VoluntaryWork::findOrFail($id);
 
             if(!$voluntary_work)
@@ -176,9 +189,19 @@ class VoluntaryWorkController extends Controller
         }
     }
     
-    public function destroyByPersonalInformationID($id, Request $request)
+    public function destroyByPersonalInformationID($id, PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $voluntary_works = VoluntaryWork::where('personal_information_id', $id)->get();
 
             if(!$voluntary_works)
@@ -199,9 +222,19 @@ class VoluntaryWorkController extends Controller
         }
     }
     
-    public function destroyByEmployeeID(Request $request)
+    public function destroyByEmployeeID(PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $employee_profile = EmployeeProfile::where('employee_id',$request->input('employee_id'))->get();
 
             if(!$employee_profile)
