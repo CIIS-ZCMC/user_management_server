@@ -68,6 +68,8 @@ class LeaveApplicationController extends Controller
             $leave_applications=[];
             $leave_applications =LeaveApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','dates','logs', 'requirements','employeeProfile.leaveCredits.leaveType'])->get();
             $leave_applications_result = $leave_applications->map(function ($leave_application) {
+            $datesData = $leave_application->dates ? $leave_application->dates : collect();
+            $requirementsData = $leave_application->requirements ? $leave_application->requirements : collect();
             $add=EmployeeLeaveCredit::where('employee_profile_id',$leave_application->employee_profile_id)->where('leave_type_id',$leave_application->leave_type_id)
             ->where('operation', 'add')
             ->sum('credit_value');
@@ -186,7 +188,7 @@ class LeaveApplicationController extends Controller
                         'process' => $action
                     ];
                 }),
-                'requirements' => $leave_application->requirements->map(function ($requirement) {
+                'requirements' => $requirementsData->map(function ($requirement) {
                     return [
                         'id' => $requirement->id,
                         'leave_application_id' => $requirement->leave_application_id,
@@ -196,7 +198,7 @@ class LeaveApplicationController extends Controller
                         'size' => $requirement->size,
                     ];
                 }),
-                'dates' => $leave_application->dates->map(function ($date) {
+                'dates' => $datesData->map(function ($date) {
                     $formatted_date_from=Carbon::parse($date->date_from)->format('M d,Y');
                     $formatted_date_to=Carbon::parse($date->date_to)->format('M d,Y');
                     return [
@@ -222,57 +224,7 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], 500);
         }
     }
-    public function getUserLeaveCreditsLogs($id)
-    {
-        try{
 
-            $leaveCredits = EmployeeLeaveCredit::with('leaveType')
-            ->where('employee_profile_id', $id)
-            ->get();
-            $formattedLeaveCredits = [];
-
-            foreach ($leaveCredits as $credit) {
-                $leaveTypeName = $credit->leaveType->name;
-                if($credit->reason == 'Undertime')
-                {
-                    $name="Undertime_Total";
-                    $total=$credit->undertime_total;
-                }
-                else if($credit->reason == 'Absent')
-                {
-                    $name="Absent_total";
-                    $total=$credit->absent_total;
-                }
-                else if($credit->reason == 'Monthly Leave Credits')
-                {
-                    $name="Working_hours_total";
-                    $total=$credit->absent_total;
-                }
-                else{
-
-                }
-                $formattedLeaveCredits[] = [
-                    'leave_type_name' => $leaveTypeName,
-                    'credit_total' => $credit->credit_value,
-                    'operation' => $credit->operation,
-                    'reason' => $credit->reason,
-                    'date' => $credit->date,
-                    $name=> $total,
-
-
-                ];
-            }
-
-            // Now $formattedLeaveCredits contains the formatted data
-            return $formattedLeaveCredits;
-
-
-             return response()->json(['data' => $leaveCredits], Response::HTTP_OK);
-        }catch(\Throwable $th){
-
-            return response()->json(['message' => $th->getMessage()], 500);
-        }
-    }
     public function getUserLeaveApplication($id)
     {
         try{
@@ -280,6 +232,9 @@ class LeaveApplicationController extends Controller
         ->where('employee_profile_id', $id)
         ->get();
         $leave_applications_result = $leave_applications->map(function ($leave_application) {
+            $datesData = $leave_application->dates ? $leave_application->dates : collect();
+            $logsData = $leave_application->logs ? $leave_application->requirements : collect();
+            $requirementsData = $leave_application->requirements ? $leave_application->requirements : collect();
             $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
             $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
             $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
@@ -345,6 +300,7 @@ class LeaveApplicationController extends Controller
                 'with_pay' => $leave_application->with_pay ,
                 'employee_id' => $leave_application->employee_profile_id,
                 'employee_name' => "{$first_name} {$last_name}" ,
+                'position' => $leave_application->employeeProfile->assignedArea->designation->name ?? null,
                 'division_head' =>$chief_name,
                 'division_head_position'=> $chief_position,
                 'department_head' =>$head_name,
@@ -355,7 +311,7 @@ class LeaveApplicationController extends Controller
                 'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
                 'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,
                 'unit_name' => $leave_application->employeeProfile->assignedArea->unit->name ?? null,
-                'logs' => $leave_application->logs->map(function ($log) {
+                'logs' => $logsData->map(function ($log) {
                     $process_name=$log->action;
                     $action ="";
                     $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
@@ -383,7 +339,7 @@ class LeaveApplicationController extends Controller
                         'process' => $action
                     ];
                 }),
-                'requirements' => $leave_application->requirements->map(function ($requirement) {
+                'requirements' => $requirementsData->map(function ($requirement) {
                     return [
                         'id' => $requirement->id,
                         'leave_application_id' => $requirement->leave_application_id,
@@ -393,7 +349,7 @@ class LeaveApplicationController extends Controller
                         'size' => $requirement->size,
                     ];
                 }),
-                'dates' => $leave_application->dates->map(function ($date) {
+                'dates' => $datesData->map(function ($date) {
                     $formatted_date_from=Carbon::parse($date->date_from)->format('M d,Y');
                     $formatted_date_to=Carbon::parse($date->date_to)->format('M d,Y');
                     return [
@@ -517,6 +473,7 @@ class LeaveApplicationController extends Controller
                         'with_pay' => $leave_application->with_pay ,
                         'employee_id' => $leave_application->employee_profile_id,
                         'employee_name' => "{$first_name} {$last_name}" ,
+                        'position' => $leave_application->employeeProfile->assignedArea->designation->name ?? null,
                         'division_head' =>$chief_name,
                         'division_head_position'=> $chief_position,
                         'department_head' =>$head_name,
@@ -660,6 +617,7 @@ class LeaveApplicationController extends Controller
                             'with_pay' => $leave_application->with_pay ,
                             'employee_id' => $leave_application->employee_profile_id,
                             'employee_name' => "{$first_name} {$last_name}" ,
+                            'position' => $leave_application->employeeProfile->assignedArea->designation->name ?? null,
                             'division_head' =>$chief_name,
                             'division_head_position'=> $chief_position,
                             'department_head' =>$head_name,
@@ -807,6 +765,7 @@ class LeaveApplicationController extends Controller
                         'with_pay' => $leave_application->with_pay ,
                         'employee_id' => $leave_application->employee_profile_id,
                         'employee_name' => "{$first_name} {$last_name}" ,
+                        'position' => $leave_application->employeeProfile->assignedArea->designation->name ?? null,
                         'division_head' =>$chief_name,
                         'division_head_position'=> $chief_position,
                         'department_head' =>$head_name,
@@ -951,6 +910,7 @@ class LeaveApplicationController extends Controller
                         'with_pay' => $leave_application->with_pay ,
                         'employee_id' => $leave_application->employee_profile_id,
                         'employee_name' => "{$first_name} {$last_name}" ,
+                        'position' => $leave_application->employeeProfile->assignedArea->designation->name ?? null,
                         'division_head' =>$chief_name,
                         'division_head_position'=> $chief_position,
                         'department_head' =>$head_name,
@@ -1094,6 +1054,7 @@ class LeaveApplicationController extends Controller
                         'with_pay' => $leave_application->with_pay ,
                         'employee_id' => $leave_application->employee_profile_id,
                         'employee_name' => "{$first_name} {$last_name}" ,
+                        'position' => $leave_application->employeeProfile->assignedArea->designation->name ?? null,
                         'division_head' =>$chief_name,
                         'division_head_position'=> $chief_position,
                         'department_head' =>$head_name,

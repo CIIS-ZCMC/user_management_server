@@ -81,6 +81,11 @@ class RequirementController extends Controller
     public function store(Request $request)
     {
         try{
+            $request->validate([
+                'name' => 'required|string',
+                // 'is_special' => 'required|boolean',
+
+            ]);
             $requirement = new Requirement();
             $requirement->name = ucwords($request->name);
             $requirement->description = $request->description;
@@ -165,6 +170,11 @@ class RequirementController extends Controller
     public function update($id,Request $request)
     {
         try{
+            $request->validate([
+                'name' => 'required|string',
+                // 'is_special' => 'required|boolean',
+
+            ]);
             $requirement = Requirement::findOrFail($id);
             $requirement->name = ucwords($request->name);
             $requirement->description = $request->description;

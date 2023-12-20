@@ -79,6 +79,7 @@ class CtoApplicationController extends Controller
                 'total_days'=> $total_days,
                 'employee_id' => $cto_application->employee_profile_id,
                 'employee_name' => "{$first_name} {$last_name}" ,
+                'position' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
                 'division_head' =>$chief_name,
                 'division_head_position'=> $chief_position,
                 'department_head' =>$head_name,
@@ -217,8 +218,6 @@ class CtoApplicationController extends Controller
                                 $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
                                 $chief_position = $division->chief->assignedArea->designation->name ?? null;
                             }
-
-
                         }
                         if($department)
                         {
@@ -257,6 +256,7 @@ class CtoApplicationController extends Controller
                             'total_days'=>$total_days,
                             'employee_id' => $cto_application->employee_profile_id,
                             'employee_name' => "{$first_name} {$last_name}" ,
+                            'position' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
                             'division_head' =>$chief_name,
                             'division_head_position'=> $chief_position,
                             'department_head' =>$head_name,
@@ -478,6 +478,7 @@ class CtoApplicationController extends Controller
                             'total_days'=> $total_days,
                             'employee_id' => $cto_application->employee_profile_id,
                             'employee_name' => "{$first_name} {$last_name}" ,
+                            'position' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
                             'division_head' =>$chief_name,
                             'division_head_position'=> $chief_position,
                             'department_head' =>$head_name,
@@ -625,6 +626,7 @@ class CtoApplicationController extends Controller
                         'total_days'=> $total_days,
                         'employee_id' => $cto_application->employee_profile_id,
                         'employee_name' => "{$first_name} {$last_name}" ,
+                        'position' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
                         'division_head' =>$chief_name,
                         'division_head_position'=> $chief_position,
                         'department_head' =>$head_name,
@@ -752,6 +754,7 @@ class CtoApplicationController extends Controller
                             'total_days'=> $total_days,
                             'employee_id' => $cto_application->employee_profile_id,
                             'employee_name' => "{$first_name} {$last_name}" ,
+                            'position' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
                             'division_head' =>$chief_name,
                             'division_head_position'=> $chief_position,
                             'department_head' =>$head_name,
@@ -881,6 +884,7 @@ class CtoApplicationController extends Controller
                         'total_days'=> $total_days,
                         'employee_id' => $cto_application->employee_profile_id,
                         'employee_name' => "{$first_name} {$last_name}" ,
+                        'position' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
                         'division_head' =>$chief_name,
                         'division_head_position'=> $chief_position,
                         'department_head' =>$head_name,
@@ -1008,6 +1012,7 @@ class CtoApplicationController extends Controller
                         'total_days'=> $total_days,
                         'employee_id' => $cto_application->employee_profile_id,
                         'employee_name' => "{$first_name} {$last_name}" ,
+                        'position' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
                         'division_head' =>$chief_name,
                         'division_head_position'=> $chief_position,
                         'department_head' =>$head_name,
@@ -1130,6 +1135,7 @@ class CtoApplicationController extends Controller
                     'total_days'=> $total_days,
                     'employee_id' => $cto_application->employee_profile_id,
                     'employee_name' => "{$first_name} {$last_name}" ,
+                    'position' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
                     'division_head' =>$chief_name,
                     'division_head_position'=> $chief_position,
                     'department_head' =>$head_name,

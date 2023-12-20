@@ -30,6 +30,8 @@ class LeaveTypeController extends Controller
         // $leaveTypes = LeaveType::with('logs.employeeProfile.personalInformation','requirements.logs.employeeProfile')->get();
         $leave_types = LeaveType::with('logs.employeeProfile.personalInformation', 'requirements.logs.employeeProfile.personalInformation','attachments')->get();
         $leave_types_result = $leave_types->map(function ($leave_type) {
+            $attachmentsData = $leave_type->attachments ? $leave_type->attachments : collect();
+            $requirementsData = $leave_type->requirements ? $leave_type->requirements : collect();
                 return [
                     'id' => $leave_type->id,
                     'name' => $leave_type->name,
@@ -62,7 +64,7 @@ class LeaveTypeController extends Controller
 
                         ];
                     }),
-                    'requirements' => $leave_type->requirements->map(function ($requirement) {
+                    'requirements' => $requirementsData->map(function ($requirement) {
                         return [
                             'id' => $requirement->id,
                             'name' => $requirement->name,
@@ -80,7 +82,7 @@ class LeaveTypeController extends Controller
                             }),
                         ];
                     }),
-                    'attachments' => $leave_type->attachments->map(function ($attachment) {
+                    'attachments' => $attachmentsData->map(function ($attachment) {
                         return [
                             'id' => $attachment->id,
                             'name' => $attachment->file_name,
@@ -136,6 +138,19 @@ class LeaveTypeController extends Controller
     {
 
         try{
+
+            // $validatedData = $request->validate([
+            //     'field1' => 'required|string|max:255',
+            //     'field2' => 'required|numeric',
+            // ], [
+            //     'field1.required' => 'Field 1 is required.',
+            //     'field2.numeric' => 'Field 2 must be a numeric value.',
+            // ]);
+            $request->validate([
+                'name' => 'required|string',
+                // 'is_special' => 'required|boolean',
+
+            ]);
             $employee_id = $request->employee_id;
             $filename="";
             $process_name="Add";
@@ -189,7 +204,7 @@ class LeaveTypeController extends Controller
             $leave_type->requirements()->sync($selectedRequirements);
             $columnsString="";
             $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString);
-            
+
             return response()->json(['message' => 'Leave Type has been sucessfully saved','data' => $leave_type ], Response::HTTP_OK);
         }catch(\Throwable $th){
 
@@ -228,6 +243,11 @@ class LeaveTypeController extends Controller
     public function update($id,Request $request, LeaveType $leaveType)
     {
         try{
+            $request->validate([
+                'name' => 'name|string',
+                // 'is_special' => 'required|boolean',
+
+            ]);
             $leave_type = LeaveType::findOrFail($id);
             $originalValues = $leave_type->getOriginal();
             $columnsString="";
