@@ -4,8 +4,7 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
-use App\Http\Requests\PasswordApprovalRequest;
-use App\Http\Resources\EmployeeDTRList;
+use App\Models\AssignArea;
 use Carbon\Carbon;
 use Jenssegers\Agent\Agent;
 use Illuminate\Http\Request;
@@ -18,6 +17,10 @@ use App\Services\FileValidationAndUpload;
 use App\Http\Requests\SignInRequest;
 use App\Http\Requests\EmployeeProfileRequest;
 use App\Http\Resources\EmployeeProfileResource;
+use App\Http\Requests\EmployeesByAreaAssignedRequest;
+use App\Http\Resources\EmployeesByAreaAssignedResource;
+use App\Http\Requests\PasswordApprovalRequest;
+use App\Http\Resources\EmployeeDTRList;
 use App\Models\DefaultPassword;
 use App\Models\EmployeeProfile;
 use App\Models\LoginTrail;
@@ -463,7 +466,44 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+    
+    public function employeesByAreaAssigned(EmployeesByAreaAssignedRequest $request)
+    {
+        try{
+            $area = strip_tags($request->query('id'));
+            $sector = strip_tags($request->query('sector'));
+            $employees = [];
+            $key = '';
 
+            switch($sector){
+                case 'division':
+                    $key = 'division_id';
+                    break;
+                case 'department':
+                    $key = 'department_id';
+                    break;
+                case 'section':
+                    $key = 'section_id';
+                    break;
+                default:
+                    $key = 'unit_id';
+                    break;
+            }
+
+            $employees = AssignArea::with('employeeProfile')->where($key, $area)->get();
+
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching a '.$this->PLURAL_MODULE_NAME.'.');
+
+            return response()->json([
+                'data' => EmployeesByAreaAssignedResource::collection($employees), 
+                'message' => 'list of employees retrieved.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
     public function employeesDTRList(Request $request)
     {
         try{
