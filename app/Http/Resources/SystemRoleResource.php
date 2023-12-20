@@ -18,6 +18,7 @@ class SystemRoleResource extends JsonResource
     {
         $system_name = $this->system_id === null? 'NONE':$this->system->name;
         $role = $this->role;
+        $role_id = $this->role->id;
         $total_permission = $this->roleModulePermissions;
         
         $countAssignedAreas = AssignArea::leftJoin('designations as d', 'd.id', '=', 'assigned_areas.designation_id')
@@ -30,8 +31,10 @@ class SystemRoleResource extends JsonResource
 
         return [
             'id' => $this->id,
+            'role_id' => $role_id,
             'name' => $role->name,
             'code' => $role->code,
+            'system_id' =>  $this->system_id,
             'system_name' => $system_name,
             'total_permission' => count($total_permission),
             'total_user' => $countAssignedAreas,

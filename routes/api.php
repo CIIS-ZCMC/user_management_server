@@ -661,6 +661,10 @@ Route::middleware('auth.cookie')->group(function(){
         });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function(){
+            Route::get('employees-dtr-list', 'EmployeeProfileController@employeesDTRList');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function(){
             Route::get('employee-profile-all', 'EmployeeProfileController@index');
         });
         

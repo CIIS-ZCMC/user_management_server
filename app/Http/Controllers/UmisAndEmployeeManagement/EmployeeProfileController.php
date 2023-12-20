@@ -5,6 +5,7 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 use App\Http\Controllers\Controller;
 
 use App\Http\Requests\PasswordApprovalRequest;
+use App\Http\Resources\EmployeeDTRList;
 use Carbon\Carbon;
 use Jenssegers\Agent\Agent;
 use Illuminate\Http\Request;
@@ -464,6 +465,23 @@ class EmployeeProfileController extends Controller
         }
     }
 
+    public function employeesDTRList(Request $request)
+    {
+        try{
+            $employee_profiles = EmployeeProfile::all();
+
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching a '.$this->PLURAL_MODULE_NAME.'.');
+
+            return response()->json([
+                'data' => EmployeeDTRList::collection($employee_profiles), 
+                'message' => 'list of employees retrieved.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public function index(Request $request)
     {
         try{
@@ -475,7 +493,10 @@ class EmployeeProfileController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching a '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => EmployeeProfileResource::collection($employee_profiles), 'message' => 'list of employees retrieved.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => EmployeeProfileResource::collection($employee_profiles), 
+                'message' => 'list of employees retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
