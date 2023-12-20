@@ -4,8 +4,12 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Http\Requests\PasswordApprovalRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
+use League\Csv\Reader;
 use App\Services\RequestLogger;
 use App\Http\Requests\SalaryGradeRequest;
 use App\Http\Resources\SalaryGradeResource;
@@ -23,7 +27,68 @@ class SalaryGradeController extends Controller
     {
         $this->requestLogger = $requestLogger;
     }
+
+    public function importSalaryGrade(Request $request)
+    {
+        try{
+            $request->validate(['csv_file' => 'required|mimes:csv,txt']);
     
+            $file = $request->file('csv_file');
+
+            $csvData = $this->readCsv($file);
+
+            $this->insertData($csvData);
+
+            $salary_grades = SalaryGrade::all();
+
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+
+            return response()->json([
+                'data' => SalaryGradeResource::collection($salary_grades),
+                'message' => 'Salary grade list retrieved.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private function readCsv($file)
+    {
+        // Use Laravel's CsvReader for better CSV parsing
+        $csv = Reader::createFromPath($file->getRealPath(), 'r');
+        $csv->setHeaderOffset(0); // Assumes the first row is the header
+
+        return iterator_to_array($csv->getRecords());
+    }
+
+    private function insertData($data)
+    {
+        foreach ($data as $row) {
+            if (count($row) !== 10) {
+                continue;
+            }
+
+            try {
+                SalaryGrade::create([
+                    'salary_grade_number' => $row['salary_grade_number'] ?? null,
+                    'one' => $row['one'] ?? null,
+                    'two' => $row['two'] ?? null,
+                    'three' => $row['three'] ?? null,
+                    'four' => $row['four'] ?? null,
+                    'five' => $row['five'] ?? null,
+                    'six' => $row['six'] ?? null,
+                    'seven' => $row['seven'] ?? null,
+                    'eight' => $row['eight'] ?? null,
+                    'tranch' => $row['tranch'] ?? null,
+                    'effective_at' => now(),
+                ]);
+            } catch (\Exception $e) {
+                // Log or handle the error
+            }
+        }
+    }
+
     public function index(Request $request)
     {
         try{
@@ -116,9 +181,19 @@ class SalaryGradeController extends Controller
         }
     }
     
-    public function destroy($id, Request $request)
+    public function destroy($id, PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $salary_grade = SalaryGrade::find($id);
 
             if(!$salary_grade)

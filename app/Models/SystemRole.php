@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\UserSystemRole;
 
 class SystemRole extends Model
 {
@@ -29,18 +28,6 @@ class SystemRole extends Model
     {
         return $this->belongsTo(System::class);
     }
-
-    // public function roleModulePermission()
-    // {
-    //     return $this->hasOneThrough(
-    //         RoleModulePermission::class,
-    //         ModulePermission::class,
-    //         'module_permission_id',  
-    //         'id',                
-    //         'id',                    
-    //         'system_role_id',       
-    //     );
-    // }
 
     public function roleModulePermissions()
     {

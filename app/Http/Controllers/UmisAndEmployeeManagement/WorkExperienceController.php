@@ -4,8 +4,11 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Http\Requests\PasswordApprovalRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 use App\Services\RequestLogger;
 use App\Http\Requests\WorkExperienceRequest;
 use App\Http\Resources\WorkExperienceResource;
@@ -155,9 +158,19 @@ class WorkExperienceController extends Controller
         }
     }
     
-    public function destroy($id, Request $request)
+    public function destroy($id, PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $work_experience = WorkExperience::findOrFail($id);
 
             if(!$work_experience)
@@ -176,9 +189,19 @@ class WorkExperienceController extends Controller
         }
     }
     
-    public function destroyByPersonalInformationID($id, Request $request)
+    public function destroyByPersonalInformationID($id, PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $work_experience = WorkExperience::where('personal_information_id', $id)->get();
 
             if(!$work_experience || count($work_experience) === 0)
@@ -199,9 +222,19 @@ class WorkExperienceController extends Controller
         }
     }
     
-    public function destroyByEmployeeProfileID($id, Request $request)
+    public function destroyByEmployeeProfileID($id, PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $employee_profile = EmployeeProfile::find($id);
 
             if(!$employee_profile)

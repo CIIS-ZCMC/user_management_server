@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class DesignationResource extends JsonResource
+class DesignationWithSystemRoleResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -22,11 +22,14 @@ class DesignationResource extends JsonResource
             'tranch' => $salary_grade_data->tranch
         ];
 
+        $system_roles = count($this->positionSystemRoles) === 0? []:PositionSystemRoleOnlyResource::collection($this->positionSystemRoles);
+
         return [
             'id' => $this->id,
             'name' => $this->name,
             'code' => $this->code,
-            'salary_grade' => $salary_grade
+            'salary_grade' => $salary_grade,
+            'system_roles' => $system_roles
         ];
     }
 }

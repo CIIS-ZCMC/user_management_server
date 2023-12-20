@@ -192,6 +192,10 @@ Route::middleware('auth.cookie')->group(function(){
         Route::middleware(['auth.permission:UMIS-SM write'])->group(function(){
             Route::post('system-role-add-permission/{id}', 'SystemRoleController@addRolePermission');
         });
+
+        Route::middleware(['auth.permission:UMIS-SM write'])->group(function(){
+            Route::post('system-role/assign-special-access/{id}', 'SystemRoleController@addSpecialAccessRole');
+        });
         
         Route::middleware(['auth.permission:UMIS-SM write'])->group(function(){
             Route::post('system-role-new-role-permission/{id}', 'SystemRoleController@registerNewRoleAndItsPermission');
@@ -499,6 +503,10 @@ Route::middleware('auth.cookie')->group(function(){
         
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
             Route::post('designation', 'DesignationController@store');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('designation-assign-system-role', 'DesignationController@assignSystemRole');
         });
         
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
@@ -939,12 +947,20 @@ Route::middleware('auth.cookie')->group(function(){
             Route::post('plantilla', 'PlantillaController@store');
         });
 
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('plantilla-assign-area/{id}', 'PlantillaController@assignPlantillaToAreas');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('plantilla/areas-for-plantilla-assign', 'PlantillaController@areasForPlantillaAssign');
+        });
+
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
             Route::get('plantilla/{id}', 'PlantillaController@show');
         });
 
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
-            Route::get('plantilla-number/{id}', 'PlantillaController@showPlantillaNumber');
+            Route::get('plantilla-number-find/{id}', 'PlantillaController@showPlantillaNumber');
         });
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
@@ -1055,6 +1071,11 @@ Route::middleware('auth.cookie')->group(function(){
         /**
          * Salary Grade Module
          */
+        
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function(){
+            Route::post('salary-grade-import', 'SalaryGradeController@importSalaryGrade');
+        });
+
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function(){
             Route::get('salary-grade-all', 'SalaryGradeController@index');
         });

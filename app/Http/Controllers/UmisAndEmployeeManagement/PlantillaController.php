@@ -19,6 +19,11 @@ use App\Http\Resources\PlantillaNumberAllResource;
 use App\Models\Plantilla;
 use App\Models\PlantillaNumber;
 use App\Models\PlantillaRequirement;
+use App\Models\PlantillaAssignedArea;
+use App\Models\Division;
+use App\Models\Department;
+use App\Models\Section;
+use App\Models\Unit;
 
 class PlantillaController extends Controller
 {
@@ -69,7 +74,7 @@ class PlantillaController extends Controller
         }
     }
     
-    public function store(Request $request)
+    public function store(PlantillaRequest $request)
     {
         try{
 
@@ -152,7 +157,111 @@ class PlantillaController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    public function areasForPlantillaAssign(Request $request)
+    {
+        try{
+            $divisions = Division::all();
+            $departments = Department::all();
+            $sections = Section::all();
+            $units = Unit::all();
+
+            $all_areas = [];
+
+            foreach($divisions as $division){
+                $area = [
+                    'area' => $division->id,
+                    'name' => $division->name,
+                    'sector' => 'division'
+                ];
+                $all_areas[] = $area;
+            }
+            
+            foreach($departments as $department){
+                $area = [
+                    'area' => $department->id,
+                    'name' => $department->name,
+                    'sector' => 'department'
+                ];
+                $all_areas[] = $area;
+            }
+            
+            foreach($sections as $section){
+                $area = [
+                    'area' => $section->id,
+                    'name' => $section->name,
+                    'sector' => 'section'
+                ];
+                $all_areas[] = $area;
+            }
+            
+            foreach($units as $unit){
+                $area = [
+                    'area' => $unit->id,
+                    'name' => $unit->name,
+                    'sector' => 'section'
+                ];
+                $all_areas[] = $area;
+            }            
+
+            return response() -> json([
+                'data' => $all_areas,
+                'message' => 'List of areas'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'assignPlantillaToAreas', $th->getMessage());
+           return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
     
+    public function assignPlantillaToAreas($id, Request $request)
+    {
+        try{
+            $plantilla_number = PlantillaNumber::find($id);
+
+            if(!$plantilla_number)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $cleanData = [];
+
+            $cleanData['plantilla_number_id'] = $plantilla_number->id;
+            $key = '';
+            
+            switch($request->sector){
+                case 'division':
+                    $key = 'division_id';
+                    break;
+                case 'department':
+                    $key = 'department_id';
+                    break;
+                case 'section':
+                    $key = 'section_id';
+                    break;
+                default:
+                    $key = 'unit_id';
+                    break;
+
+            }
+            $cleanData[$key] =  strip_tags($request->area);
+
+            $plantilla_assign_area = PlantillaAssignedArea::create($cleanData);
+
+            if(!$plantilla_assign_area){
+                return response()->json(['message' => "Failed to assign plantilla number."], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+
+            return response() -> json([
+                'data' => new PlantillaNumberAllResource($plantilla_number),
+                'message' => 'Plantilla assign successfully.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'assignPlantillaToAreas', $th->getMessage());
+           return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public function show($id, Request $request)
     {
         try{
