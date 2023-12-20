@@ -55,14 +55,13 @@ class PlantillaNumberAllResource extends JsonResource
         }
 
         $area_data = $this->assignedArea === null? null: $this->assignedArea->area();
-        $area = [];
 
-        if($area_data !== null){
-            $area['id'] = $area_data->id;
-            $area['name'] = $area_data->name;
-            $area['created_at'] = $area_data->created_at;
-            $area['updated_at'] = $area_data->updated_at;
-        } 
+        $area = $area_data===null? []: [
+            'id' => $area_data->id,
+            'name' => $area_data->name,
+            'created_at' => $area_data['created_at'],
+            'updated_at' => $area_data['updated_at'],
+        ];
 
         return [
             'id' => $this->id,
