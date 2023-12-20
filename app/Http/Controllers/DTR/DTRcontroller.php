@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\DTR;
 
+use App\Models\Biometrics;
 use Illuminate\Http\Request;
 use App\Models\DailyTimeRecords;
 use App\Methods\Helpers;
@@ -15,6 +16,7 @@ use App\Models\Holidaylist;
 use App\Models\EmployeeProfile;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Log;
+
 
 class DTRcontroller extends Controller
 {
@@ -116,54 +118,122 @@ class DTRcontroller extends Controller
     public function fetchUserDTR(Request $request)
     {
         try {
-            $biometric_id = $request->biometric_id;
+            $bio = json_decode($request->biometric_id);
             $month_of = $request->monthof;
             $year_of = $request->yearof;
-            $dtr = DB::table('daily_time_records')
-                ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
-                ->where(function ($query) use ($biometric_id, $month_of, $year_of) {
-                    $query->where('biometric_id', $biometric_id)
-                        ->whereMonth(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
-                        ->whereYear(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
-                })
-                ->orWhere(function ($query) use ($biometric_id, $month_of, $year_of) {
-                    $query->where('biometric_id', $biometric_id)
-                        ->whereMonth(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
-                        ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
-                })
-                ->get();
-            $mdtr = [];
-            foreach ($dtr as $key => $value) {
-                $mdtr[] =   [
-                    'first_in' => $this->FormatDate($value->first_in),
-                    'first_out' => $this->FormatDate($value->first_out),
-                    'second_in' => $this->FormatDate($value->second_in),
-                    'second_out' => $this->FormatDate($value->second_out),
-                    'interval_req' => $value->interval_req,
-                    'required_working_hours' => $value->required_working_hours,
-                    'required_working_minutes' => $value->required_working_minutes,
-                    'total_working_hours' => $value->total_working_hours,
-                    'total_working_minutes' => $value->total_working_minutes,
-                    'overtime' => $value->overtime,
-                    'overtime_minutes' => $value->overtime_minutes,
-                    'undertime' => $value->undertime,
-                    'undertime_minutes' => $value->undertime_minutes,
-                    'overall_minutes_rendered' => $value->overall_minutes_rendered,
-                    'total_minutes_reg' => $value->total_minutes_reg,
-                    'day' => $value->day,
-                    'created_at' => $value->created_at,
-                ];
+            $udata = [];
+
+            if (count($bio) >= 1) {
+                foreach ($bio as $biometric_id) {
+                    if ($this->helper->isEmployee($biometric_id)) {
+                        $dtr = DB::table('daily_time_records')
+                            ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
+                            ->where(function ($query) use ($biometric_id, $month_of, $year_of) {
+                                $query->where('biometric_id', $biometric_id)
+                                    ->whereMonth(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
+                                    ->whereYear(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+                            })
+                            ->orWhere(function ($query) use ($biometric_id, $month_of, $year_of) {
+                                $query->where('biometric_id', $biometric_id)
+                                    ->whereMonth(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
+                                    ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+                            })
+                            ->get();
+                        $mdtr = [];
+                        foreach ($dtr as $key => $value) {
+                            $mdtr[] =   [
+                                'first_in' => $this->FormatDate($value->first_in),
+                                'first_out' => $this->FormatDate($value->first_out),
+                                'second_in' => $this->FormatDate($value->second_in),
+                                'second_out' => $this->FormatDate($value->second_out),
+                                'interval_req' => $value->interval_req,
+                                'required_working_hours' => $value->required_working_hours,
+                                'required_working_minutes' => $value->required_working_minutes,
+                                'total_working_hours' => $value->total_working_hours,
+                                'total_working_minutes' => $value->total_working_minutes,
+                                'overtime' => $value->overtime,
+                                'overtime_minutes' => $value->overtime_minutes,
+                                'undertime' => $value->undertime,
+                                'undertime_minutes' => $value->undertime_minutes,
+                                'overall_minutes_rendered' => $value->overall_minutes_rendered,
+                                'total_minutes_reg' => $value->total_minutes_reg,
+                                'day' => $value->day,
+                                'created_at' => $value->created_at,
+                            ];
+                        }
+
+                        $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
+                        $emp_name = $employee->name();
+
+                        $udata[] = [
+                            'biometric_id' => $biometric_id,
+                            'employee_id' => $employee->id, // replace with employee details
+                            'employeeName' =>  $emp_name,
+                            'sex' => $employee->GetPersonalInfo()->sex,
+                            'dateofbirth' => $employee->GetPersonalInfo()->date_of_birth,
+                            'date_hired' => $employee->date_hired,
+                            'dtr_records' => $mdtr
+                        ];
+                    }
+                }
+            } else {
+                $all_biometric = Biometrics::all();
+                foreach ($all_biometric as $bio) {
+                    $biometric_id = $bio->biometric_id;
+                    if ($this->helper->isEmployee($biometric_id)) {
+                        $dtr = DB::table('daily_time_records')
+                            ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
+                            ->where(function ($query) use ($biometric_id, $month_of, $year_of) {
+                                $query->where('biometric_id', $biometric_id)
+                                    ->whereMonth(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
+                                    ->whereYear(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+                            })
+                            ->orWhere(function ($query) use ($biometric_id, $month_of, $year_of) {
+                                $query->where('biometric_id', $biometric_id)
+                                    ->whereMonth(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
+                                    ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+                            })
+                            ->get();
+                        $mdtr = [];
+                        foreach ($dtr as $key => $value) {
+                            $mdtr[] =   [
+                                'first_in' => $this->FormatDate($value->first_in),
+                                'first_out' => $this->FormatDate($value->first_out),
+                                'second_in' => $this->FormatDate($value->second_in),
+                                'second_out' => $this->FormatDate($value->second_out),
+                                'interval_req' => $value->interval_req,
+                                'required_working_hours' => $value->required_working_hours,
+                                'required_working_minutes' => $value->required_working_minutes,
+                                'total_working_hours' => $value->total_working_hours,
+                                'total_working_minutes' => $value->total_working_minutes,
+                                'overtime' => $value->overtime,
+                                'overtime_minutes' => $value->overtime_minutes,
+                                'undertime' => $value->undertime,
+                                'undertime_minutes' => $value->undertime_minutes,
+                                'overall_minutes_rendered' => $value->overall_minutes_rendered,
+                                'total_minutes_reg' => $value->total_minutes_reg,
+                                'day' => $value->day,
+                                'created_at' => $value->created_at,
+                            ];
+                        }
+
+                        $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
+                        $emp_name = $employee->name();
+
+                        $udata[] = [
+                            'biometric_id' => $biometric_id,
+                            'employee_id' => $employee->id, // replace with employee details
+                            'employeeName' =>  $emp_name,
+                            'sex' => $employee->GetPersonalInfo()->sex,
+                            'dateofbirth' => $employee->GetPersonalInfo()->date_of_birth,
+                            'date_hired' => $employee->date_hired,
+                            'dtr_records' => $mdtr
+                        ];
+                    }
+                }
             }
-            $udata = [
-                'biometric_id' => $biometric_id,
-                'employee_id' => 0, // replace with employee details
-                'employeeName' => 'jhon legend',
-                'sex' => 'male',
-                'dateofbirth' => '05/05/2004',
-                'department' => 'MMS',
-                'date_hired' => '02/02/2023',
-                'dtr_records' => $mdtr
-            ];
+
+
 
             return response()->json(['data' => $udata]);
         } catch (\Throwable $th) {
@@ -804,185 +874,380 @@ class DTRcontroller extends Controller
     public function dtrUTOTReport(Request $request)
     {
         try {
-            $biometric_id = $request->biometric_id;
+            $bio = json_decode($request->biometric_id);
             $month_of = $request->monthof;
             $year_of = $request->yearof;
             $is_15th_days = $request->is15thdays;
             $dt_records = [];
             $is_Half_Schedule = false;
-            if ($is_15th_days) {
-                $first_half = $request->firsthalf;
-                $second_half = $request->secondhalf;
-                if ($first_half) {
-                    $dt_records = $this->GenerateFirstHalf($month_of, $year_of, $biometric_id);
-                } else {
-                    if ($second_half) {
-                        $dt_records = $this->GenerateSecondHalf($month_of, $year_of, $biometric_id);
+            $dtr = [];
+
+            if (count($bio) >= 1) {
+                foreach ($bio as $biometric_id) {
+                    if ($this->helper->isEmployee($biometric_id)) {
+
+                        if ($is_15th_days) {
+                            $first_half = $request->firsthalf;
+                            $second_half = $request->secondhalf;
+                            if ($first_half) {
+                                $dt_records = $this->GenerateFirstHalf($month_of, $year_of, $biometric_id);
+                            } else {
+                                if ($second_half) {
+                                    $dt_records = $this->GenerateSecondHalf($month_of, $year_of, $biometric_id);
+                                }
+                            }
+                        } else {
+                            $dt_records = $this->generateMonthly($month_of, $year_of, $biometric_id);
+                        }
+                        $mdtr = [];
+                        $no_Sched_dtr = [];
+                        $number_Of_Days = 0;
+                        $number_Of_all_Days_past = 0;
+                        $date_ranges = [];
+                        $entryf = '';
+                        foreach ($dt_records as $key => $value) {
+                            $schedule = $this->helper->getSchedule($value->biometric_id, $value->first_in);
+                            $is_Half_Schedule = $this->isHalfEntrySchedule($schedule);
+
+                            if (isset($schedule['date_start']) && isset($schedule['date_end'])) {
+                                $date_now = date('Y-m-d');
+                                $date_start =  $schedule['date_start'];
+                                $date_end =  $schedule['date_end'];
+                                $date_Range = array();
+                                $current_Date = strtotime($date_start);
+                                $end_Date = strtotime($date_end);
+
+                                while ($current_Date <= $end_Date) {
+                                    $date_Range[] = date('Y-m-d', $current_Date);
+                                    $current_Date = strtotime('+1 day', $current_Date);
+                                }
+                                $date_ranges = $date_Range;
+                                $number_Of_Days = $this->getDifferenceDate($date_start, $date_end) + 1;
+                                if ($date_end < $date_now) {
+                                    $number_Of_all_Days_past = $this->getDifferenceDate($date_start, $date_end) + 1;
+                                }
+                                if (isset($value->first_in)) {
+                                    $entryf = $value->first_in;
+                                } else
+                            if (isset($value->second_in)) {
+                                    $entryf = $value->second_in;
+                                }
+                                if ($entryf >= $date_start && $entryf <= $date_end) {
+                                    $mdtr[] = $this->mDTR($value);
+                                }
+                            } else {
+                                $no_Sched_dtr[] = $this->mDTR($value);
+                            }
+                        }
+
+
+                        $Records_with_Overtime = array_values(array_filter($mdtr, function ($res) {
+                            return $res['overtime_minutes'] >= 1;
+                        }));
+                        $Records_with_Undertime = array_values(array_filter($mdtr, function ($res) {
+                            return $res['undertime_minutes'] >= 1;
+                        }));
+                        $Time_Records = array_values(array_filter($mdtr, function ($res) {
+                            return $res['total_working_minutes'] >= 1;
+                        }));
+                        $overtime_Sum = 0;
+                        foreach ($Records_with_Overtime as $record) {
+                            $overtime_Sum += $record['overtime_minutes'];
+                        }
+                        $undertime_Sum = 0;
+                        foreach ($Records_with_Undertime as $record) {
+                            $undertime_Sum += $record['undertime_minutes'];
+                        }
+                        $total_Hours_of_Duty = 0;
+                        foreach ($Time_Records as $record) {
+                            $total_Hours_of_Duty += floor($record['total_working_minutes'] - $record['undertime_minutes']);
+                        }
+                        $total_Hours_of_Duty = floor($total_Hours_of_Duty / 60);
+                        $total_minutes_of_Duty = floor($total_Hours_of_Duty * 60);
+                        $days_In_Month = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
+                        $days_of_duty = 0;
+                        $days_Rendered = [];
+
+                        for ($i = 1; $i <= $days_In_Month; $i++) {
+                            $count = array_filter($mdtr, function ($res) use ($i) {
+                                return date('d', strtotime($res['first_in'])) == $i;
+                            });
+
+                            $days_of_duty += count($count);
+                            $days_Rendered[] = array_values($count);
+                        }
+
+
+                        $days = $days_Rendered;
+
+                        $present_days = [];
+                        foreach ($days as $entry) {
+
+                            if (is_array($entry)) {
+
+                                foreach ($entry as $nested_Entry) {
+                                    $present_days[] = $nested_Entry;
+                                }
+                            }
+                        }
+
+
+                        $days_absences = [];
+                        $days_present = [];
+
+                        foreach ($date_ranges as $key => $value) {
+                            $day_Entries = date('j', strtotime($value));
+                            $count = array_filter($present_days, function ($res) use ($day_Entries) {
+                                return $res['day'] == $day_Entries;
+                            });
+
+                            if (count($count) == 0) {
+                                if (date('Y-m-d') > date('Y-m-d', strtotime($value))) {
+                                    $days_absences[] = $value;
+                                }
+                            } else {
+                                $days_present[] = $value;
+                            }
+                        }
+
+                        $numeric_days = array_map(function ($res) {
+                            $timestamp = strtotime($res);
+                            $formatted_date = date('Y-m-d', $timestamp);
+                            $numerical_value = date('j', $timestamp);
+                            return $numerical_value + 1;
+                        }, $days_present);
+
+
+                        /**
+                         * IF Two schedules only
+                         */
+                        $absences = floor($days_of_duty - $number_Of_all_Days_past);
+                        if ($is_Half_Schedule) {
+                            $new_Days_Absences = [];
+                            foreach ($days_absences as $value) {
+                                $day_Entries = date('j', strtotime($value));
+                                $cnt = array_filter($numeric_days, function ($res) use ($day_Entries) {
+                                    return $res == $day_Entries;
+                                });
+                                if (count($cnt) == 0) {
+                                    if (date('Y-m-d') > date('Y-m-d', strtotime($value))) {
+                                        $new_Days_Absences[] = $value;
+                                    }
+                                }
+                            }
+                            $days_absences = $new_Days_Absences;
+                            $absences = count($days_absences);
+                        }
+
+                        $dtr[] = [
+                            'biometric_ID' => $biometric_id,
+                            'employeeName' => EmployeeProfile::where('biometric_id', $biometric_id)->first()->name(),
+                            'Total_Undertime' =>  $undertime_Sum,
+                            'Total_Overtime' =>   $overtime_Sum,
+                            'TotalHoursofDuty' => $total_Hours_of_Duty,
+                            'TotalMinutesofDuty' => $total_minutes_of_Duty,
+                            'TotalScheduleDays' => $number_Of_Days,
+                            'TotalDaysRendered' => $days_of_duty,
+                            'TotalAbsences' => count($days_absences),
+                            'TotalDayswLate' => count($Records_with_Undertime),
+                            'TotalDutywNosched' => count($no_Sched_dtr),
+                            'fortheMonth' => date('F', strtotime($year_of . '-' . $month_of . '-1')),
+                            'fortheYear' => $year_of,
+                            'Absences' => $days_absences,
+                            'AllRecords' => $mdtr,
+                            'RecordsWithOvertime' => $Records_with_Overtime,
+                            'RecordsWithUndertime' => $Records_with_Undertime,
+                            'NoschedDTR' => $no_Sched_dtr
+                        ];
                     }
                 }
             } else {
-                $dt_records = $this->generateMonthly($month_of, $year_of, $biometric_id);
-            }
-            $mdtr = [];
-            $no_Sched_dtr = [];
-            $number_Of_Days = 0;
-            $number_Of_all_Days_past = 0;
-            $date_ranges = [];
-            $entryf = '';
-            foreach ($dt_records as $key => $value) {
-                $schedule = $this->helper->getSchedule($value->biometric_id, $value->first_in);
-                $is_Half_Schedule = $this->isHalfEntrySchedule($schedule);
+                $all_biometric = Biometrics::all();
+                foreach ($all_biometric as $bio) {
+                    $biometric_id = $bio->biometric_id;
+                    if ($this->helper->isEmployee($biometric_id)) {
 
-                if (isset($schedule['date_start']) && isset($schedule['date_end'])) {
-                    $date_now = date('Y-m-d');
-                    $date_start =  $schedule['date_start'];
-                    $date_end =  $schedule['date_end'];
-                    $date_Range = array();
-                    $current_Date = strtotime($date_start);
-                    $end_Date = strtotime($date_end);
-
-                    while ($current_Date <= $end_Date) {
-                        $date_Range[] = date('Y-m-d', $current_Date);
-                        $current_Date = strtotime('+1 day', $current_Date);
-                    }
-                    $date_ranges = $date_Range;
-                    $number_Of_Days = $this->getDifferenceDate($date_start, $date_end) + 1;
-                    if ($date_end < $date_now) {
-                        $number_Of_all_Days_past = $this->getDifferenceDate($date_start, $date_end) + 1;
-                    }
-                    if (isset($value->first_in)) {
-                        $entryf = $value->first_in;
-                    } else
-                    if (isset($value->second_in)) {
-                        $entryf = $value->second_in;
-                    }
-                    if ($entryf >= $date_start && $entryf <= $date_end) {
-                        $mdtr[] = $this->mDTR($value);
-                    }
-                } else {
-                    $no_Sched_dtr[] = $this->mDTR($value);
-                }
-            }
-
-
-            $Records_with_Overtime = array_values(array_filter($mdtr, function ($res) {
-                return $res['overtime_minutes'] >= 1;
-            }));
-            $Records_with_Undertime = array_values(array_filter($mdtr, function ($res) {
-                return $res['undertime_minutes'] >= 1;
-            }));
-            $Time_Records = array_values(array_filter($mdtr, function ($res) {
-                return $res['total_working_minutes'] >= 1;
-            }));
-            $overtime_Sum = 0;
-            foreach ($Records_with_Overtime as $record) {
-                $overtime_Sum += $record['overtime_minutes'];
-            }
-            $undertime_Sum = 0;
-            foreach ($Records_with_Undertime as $record) {
-                $undertime_Sum += $record['undertime_minutes'];
-            }
-            $total_Hours_of_Duty = 0;
-            foreach ($Time_Records as $record) {
-                $total_Hours_of_Duty += floor($record['total_working_minutes'] - $record['undertime_minutes']);
-            }
-            $total_Hours_of_Duty = floor($total_Hours_of_Duty / 60);
-            $total_minutes_of_Duty = floor($total_Hours_of_Duty * 60);
-            $days_In_Month = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
-            $days_of_duty = 0;
-            $days_Rendered = [];
-
-            for ($i = 1; $i <= $days_In_Month; $i++) {
-                $count = array_filter($mdtr, function ($res) use ($i) {
-                    return date('d', strtotime($res['first_in'])) == $i;
-                });
-
-                $days_of_duty += count($count);
-                $days_Rendered[] = array_values($count);
-            }
-
-
-            $days = $days_Rendered;
-
-            $present_days = [];
-            foreach ($days as $entry) {
-
-                if (is_array($entry)) {
-
-                    foreach ($entry as $nested_Entry) {
-                        $present_days[] = $nested_Entry;
-                    }
-                }
-            }
-
-
-            $days_absences = [];
-            $days_present = [];
-
-            foreach ($date_ranges as $key => $value) {
-                $day_Entries = date('j', strtotime($value));
-                $count = array_filter($present_days, function ($res) use ($day_Entries) {
-                    return $res['day'] == $day_Entries;
-                });
-
-                if (count($count) == 0) {
-                    if (date('Y-m-d') > date('Y-m-d', strtotime($value))) {
-                        $days_absences[] = $value;
-                    }
-                } else {
-                    $days_present[] = $value;
-                }
-            }
-
-            $numeric_days = array_map(function ($res) {
-                $timestamp = strtotime($res);
-                $formatted_date = date('Y-m-d', $timestamp);
-                $numerical_value = date('j', $timestamp);
-                return $numerical_value + 1;
-            }, $days_present);
-
-
-            /**
-             * IF Two schedules only
-             */
-            $absences = floor($days_of_duty - $number_Of_all_Days_past);
-            if ($is_Half_Schedule) {
-                $new_Days_Absences = [];
-                foreach ($days_absences as $value) {
-                    $day_Entries = date('j', strtotime($value));
-                    $cnt = array_filter($numeric_days, function ($res) use ($day_Entries) {
-                        return $res == $day_Entries;
-                    });
-                    if (count($cnt) == 0) {
-                        if (date('Y-m-d') > date('Y-m-d', strtotime($value))) {
-                            $new_Days_Absences[] = $value;
+                        if ($is_15th_days) {
+                            $first_half = $request->firsthalf;
+                            $second_half = $request->secondhalf;
+                            if ($first_half) {
+                                $dt_records = $this->GenerateFirstHalf($month_of, $year_of, $biometric_id);
+                            } else {
+                                if ($second_half) {
+                                    $dt_records = $this->GenerateSecondHalf($month_of, $year_of, $biometric_id);
+                                }
+                            }
+                        } else {
+                            $dt_records = $this->generateMonthly($month_of, $year_of, $biometric_id);
                         }
+                        $mdtr = [];
+                        $no_Sched_dtr = [];
+                        $number_Of_Days = 0;
+                        $number_Of_all_Days_past = 0;
+                        $date_ranges = [];
+                        $entryf = '';
+                        foreach ($dt_records as $key => $value) {
+                            $schedule = $this->helper->getSchedule($value->biometric_id, $value->first_in);
+                            $is_Half_Schedule = $this->isHalfEntrySchedule($schedule);
+
+                            if (isset($schedule['date_start']) && isset($schedule['date_end'])) {
+                                $date_now = date('Y-m-d');
+                                $date_start =  $schedule['date_start'];
+                                $date_end =  $schedule['date_end'];
+                                $date_Range = array();
+                                $current_Date = strtotime($date_start);
+                                $end_Date = strtotime($date_end);
+
+                                while ($current_Date <= $end_Date) {
+                                    $date_Range[] = date('Y-m-d', $current_Date);
+                                    $current_Date = strtotime('+1 day', $current_Date);
+                                }
+                                $date_ranges = $date_Range;
+                                $number_Of_Days = $this->getDifferenceDate($date_start, $date_end) + 1;
+                                if ($date_end < $date_now) {
+                                    $number_Of_all_Days_past = $this->getDifferenceDate($date_start, $date_end) + 1;
+                                }
+                                if (isset($value->first_in)) {
+                                    $entryf = $value->first_in;
+                                } else
+                                if (isset($value->second_in)) {
+                                    $entryf = $value->second_in;
+                                }
+                                if ($entryf >= $date_start && $entryf <= $date_end) {
+                                    $mdtr[] = $this->mDTR($value);
+                                }
+                            } else {
+                                $no_Sched_dtr[] = $this->mDTR($value);
+                            }
+                        }
+
+
+                        $Records_with_Overtime = array_values(array_filter($mdtr, function ($res) {
+                            return $res['overtime_minutes'] >= 1;
+                        }));
+                        $Records_with_Undertime = array_values(array_filter($mdtr, function ($res) {
+                            return $res['undertime_minutes'] >= 1;
+                        }));
+                        $Time_Records = array_values(array_filter($mdtr, function ($res) {
+                            return $res['total_working_minutes'] >= 1;
+                        }));
+                        $overtime_Sum = 0;
+                        foreach ($Records_with_Overtime as $record) {
+                            $overtime_Sum += $record['overtime_minutes'];
+                        }
+                        $undertime_Sum = 0;
+                        foreach ($Records_with_Undertime as $record) {
+                            $undertime_Sum += $record['undertime_minutes'];
+                        }
+                        $total_Hours_of_Duty = 0;
+                        foreach ($Time_Records as $record) {
+                            $total_Hours_of_Duty += floor($record['total_working_minutes'] - $record['undertime_minutes']);
+                        }
+                        $total_Hours_of_Duty = floor($total_Hours_of_Duty / 60);
+                        $total_minutes_of_Duty = floor($total_Hours_of_Duty * 60);
+                        $days_In_Month = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
+                        $days_of_duty = 0;
+                        $days_Rendered = [];
+
+                        for ($i = 1; $i <= $days_In_Month; $i++) {
+                            $count = array_filter($mdtr, function ($res) use ($i) {
+                                return date('d', strtotime($res['first_in'])) == $i;
+                            });
+
+                            $days_of_duty += count($count);
+                            $days_Rendered[] = array_values($count);
+                        }
+
+
+                        $days = $days_Rendered;
+
+                        $present_days = [];
+                        foreach ($days as $entry) {
+
+                            if (is_array($entry)) {
+
+                                foreach ($entry as $nested_Entry) {
+                                    $present_days[] = $nested_Entry;
+                                }
+                            }
+                        }
+
+
+                        $days_absences = [];
+                        $days_present = [];
+
+                        foreach ($date_ranges as $key => $value) {
+                            $day_Entries = date('j', strtotime($value));
+                            $count = array_filter($present_days, function ($res) use ($day_Entries) {
+                                return $res['day'] == $day_Entries;
+                            });
+
+                            if (count($count) == 0) {
+                                if (date('Y-m-d') > date('Y-m-d', strtotime($value))) {
+                                    $days_absences[] = $value;
+                                }
+                            } else {
+                                $days_present[] = $value;
+                            }
+                        }
+
+                        $numeric_days = array_map(function ($res) {
+                            $timestamp = strtotime($res);
+                            $formatted_date = date('Y-m-d', $timestamp);
+                            $numerical_value = date('j', $timestamp);
+                            return $numerical_value + 1;
+                        }, $days_present);
+
+
+                        /**
+                         * IF Two schedules only
+                         */
+                        $absences = floor($days_of_duty - $number_Of_all_Days_past);
+                        if ($is_Half_Schedule) {
+                            $new_Days_Absences = [];
+                            foreach ($days_absences as $value) {
+                                $day_Entries = date('j', strtotime($value));
+                                $cnt = array_filter($numeric_days, function ($res) use ($day_Entries) {
+                                    return $res == $day_Entries;
+                                });
+                                if (count($cnt) == 0) {
+                                    if (date('Y-m-d') > date('Y-m-d', strtotime($value))) {
+                                        $new_Days_Absences[] = $value;
+                                    }
+                                }
+                            }
+                            $days_absences = $new_Days_Absences;
+                            $absences = count($days_absences);
+                        }
+
+                        $dtr[] = [
+                            'biometric_ID' => $biometric_id,
+                            'employeeName' => EmployeeProfile::where('biometric_id', $biometric_id)->first()->name(),
+                            'Total_Undertime' =>  $undertime_Sum,
+                            'Total_Overtime' =>   $overtime_Sum,
+                            'TotalHoursofDuty' => $total_Hours_of_Duty,
+                            'TotalMinutesofDuty' => $total_minutes_of_Duty,
+                            'TotalScheduleDays' => $number_Of_Days,
+                            'TotalDaysRendered' => $days_of_duty,
+                            'TotalAbsences' => count($days_absences),
+                            'TotalDayswLate' => count($Records_with_Undertime),
+                            'TotalDutywNosched' => count($no_Sched_dtr),
+                            'fortheMonth' => date('F', strtotime($year_of . '-' . $month_of . '-1')),
+                            'fortheYear' => $year_of,
+                            'Absences' => $days_absences,
+                            'AllRecords' => $mdtr,
+                            'RecordsWithOvertime' => $Records_with_Overtime,
+                            'RecordsWithUndertime' => $Records_with_Undertime,
+                            'NoschedDTR' => $no_Sched_dtr
+                        ];
                     }
                 }
-                $days_absences = $new_Days_Absences;
-                $absences = count($days_absences);
             }
 
-            $dtr = [
-                'biometric_ID' => $biometric_id,
-                'employeeName' => EmployeeProfile::where('biometric_id', $biometric_id)->first()->name(),
-                'Total_Undertime' =>  $undertime_Sum,
-                'Total_Overtime' =>   $overtime_Sum,
-                'TotalHoursofDuty' => $total_Hours_of_Duty,
-                'TotalMinutesofDuty' => $total_minutes_of_Duty,
-                'TotalScheduleDays' => $number_Of_Days,
-                'TotalDaysRendered' => $days_of_duty,
-                'TotalAbsences' => count($days_absences),
-                'TotalDayswLate' => count($Records_with_Undertime),
-                'TotalDutywNosched' => count($no_Sched_dtr),
-                'fortheMonth' => date('F', strtotime($year_of . '-' . $month_of . '-1')),
-                'fortheYear' => $year_of,
-                'Absences' => $days_absences,
-                'AllRecords' => $mdtr,
-                'RecordsWithOvertime' => $Records_with_Overtime,
-                'RecordsWithUndertime' => $Records_with_Undertime,
-                'NoschedDTR' => $no_Sched_dtr
-            ];
+
+
+
+
 
             return $dtr;
         } catch (\Throwable $th) {
