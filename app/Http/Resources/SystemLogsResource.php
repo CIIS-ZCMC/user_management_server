@@ -15,6 +15,7 @@ class SystemLogsResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'id' => $this->id,
             'action' => $this->action,
             'module_id' => $this->module_id,
             'status' => $this->status ? 'Complete': "Failed",

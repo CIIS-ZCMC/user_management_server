@@ -29,16 +29,87 @@ class OfficialTimeApplicationController extends Controller
     public function index()
     {
         try{ 
-            $official_time_applications=[];
+            $official_time_applications = OfficialTimeApplication::with(['employeeProfile.personalInformation','logs'])->get();
+            $official_time_applications_result = $official_time_applications->map(function ($official_time_application) {
+                    $division = AssignArea::where('employee_profile_id',$official_time_application->employee_profile_id)->value('division_id');
+                    $department = AssignArea::where('employee_profile_id',$official_time_application->employee_profile_id)->value('department_id');
+                    $section = AssignArea::where('employee_profile_id',$official_time_application->employee_profile_id)->value('section_id');
+                    $chief_name=null;
+                    $head_name=null;
+                    $supervisor_name=null;
+                    if ($division) {
+                        $division = Division::with('chief.personalInformation')->find($division);
+                        $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
+                    }
+                    if($department)
+                    {
+                        $department = Department::with('head.personalInformation')->find($department);
+                        $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                    }
+                    if($section)
+                    {
+                        $section = Section::with('supervisor.personalInformation')->find($section);
+                        $supervisor_name = optional($section->head->personalInformation)->first_name ?? null . '' . optional($division->head->personalInformation)->last_name ?? null;
+                    }
+                $first_name = optional($official_time_application->employeeProfile->personalInformation)->first_name ?? null;
+                $last_name = optional($official_time_application->employeeProfile->personalInformation)->last_name ?? null;
+                    return [
+                        'id' => $official_time_application->id,
+                        'date_from' => $official_time_application->date_from,
+                        'date_to' => $official_time_application->date_to,
+                        'time_from' => $official_time_application->time_from,
+                        'time_to' => $official_time_application->time_to,
+                        'reason' => $official_time_application->reason,
+                        'status' => $official_time_application->status,
+                        'employee_id' => $official_time_application->employee_profile_id,
+                        'employee_name' => "{$first_name} {$last_name}" ,
+                        'division_head' =>$chief_name,
+                        'department_head' =>$head_name,
+                        'section_head' =>$supervisor_name,
+                        'division_name' => $official_time_application->employeeProfile->assignedArea->division->name ?? null,
+                        'department_name' => $official_time_application->employeeProfile->assignedArea->department->name ?? null,
+                        'section_name' => $official_time_application->employeeProfile->assignedArea->section->name ?? null,
+                        'unit_name' => $official_time_application->employeeProfile->assignedArea->unit->name ?? null,
+                        'logs' => $official_time_application->logs->map(function ($log) {
+                            $process_name=$log->action;
+                            $action ="";
+                            $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
+                            $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
+                            if($log->action_by_id  === optional($log->employeeProfile->assignedArea->division)->chief_employee_profile_id ) 
+                            {
+                                $action =  $process_name . ' by ' . 'Division Head';
+                            }
+                            else if ($log->action_by_id === optional($log->employeeProfile->assignedArea->department)->head_employee_profile_id || optional($log->employeeProfile->assignedArea->section)->supervisor_employee_profile_id)
+                            {
+                                $action =  $process_name . ' by ' . 'Supervisor';
+                            }
+                            else{
+                                $action=  $process_name . ' by ' . $first_name .' '. $last_name;
+                            }
+                           
+                            $date=$log->date;
+                            $formatted_date=Carbon::parse($date)->format('M d,Y');
+                            return [
+                                'id' => $log->id,
+                                'leave_application_id' => $log->ob_application_id,
+                                'action_by' => "{$first_name} {$last_name}" ,
+                                'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                'action' => $log->action,
+                                'date' => $formatted_date,
+                                'time' => $log->time,
+                                'process' => $action
+                            ];
+                        }),
+                      
+                    ];
+                });
+                
+                 return response()->json(['data' => $official_time_applications_result], Response::HTTP_OK);
+            }catch(\Throwable $th){
             
-           $official_time_applications =OfficialTimeApplication::with(['logs', 'requirements'])->get();;
-        //    $official_time_application_resource=ResourcesOfficialTimeApplication::collection($official_time_applications);
-           
-             return response()->json(['data' => $official_time_applications], Response::HTTP_OK);
-        }catch(\Throwable $th){
-        
-            return response()->json(['message' => $th->getMessage()], 500);
-        }
+                return response()->json(['message' => $th->getMessage()], 500);
+            }
+       
     }
     public function getOtApplications(Request $request)
     {
@@ -78,8 +149,10 @@ class OfficialTimeApplicationController extends Controller
     public function store(Request $request)
     {
         try{
-
+            $user_id = Auth::user()->id;
+            $user = EmployeeProfile::where('id','=',$user_id)->first();
             $official_time_application = new OfficialTimeApplication();
+            $official_time_application->employee_profile_id = $user->id;
             $official_time_application->date_from = $request->date_from;
             $official_time_application->date_to = $request->date_to;
             $official_time_application->time_from = $request->time_from;
@@ -87,41 +160,20 @@ class OfficialTimeApplicationController extends Controller
             $official_time_application->status = "for-approval-supervisor";
             $official_time_application->reason = "for-approval-supervisor";
             $official_time_application->date = date('Y-m-d');
+            $official_time_application->time =  date('H:i:s');
+            if ($request->hasFile('personal_order')) {
+                $imagePath = $request->file('personal_order')->store('images', 'public');
+                $official_time_application->personal_order = $imagePath;
+            }
+            if ($request->hasFile('certificate_of_appearance')) {
+                $imagePath = $request->file('certificate_of_appearance')->store('images', 'public');
+                $official_time_application->certificate_of_appearance = $imagePath;
+            }
             $official_time_application->save();
          
-            if ($request->hasFile('requirements')) {
-                $requirements = $request->file('requirements');
-
-                if($requirements){
-
-                    $official_time_application_id = $official_time_application->id; 
-                    foreach ($requirements as $requirement) {
-                        $official_time_requirement = $this->storeOfficialTimeApplicationRequirement($official_time_application_id);
-                        $official_time_requirement_id = $official_time_requirement->id;
-
-                        if($official_time_requirement){
-                            $filename = config('enums.storage.leave') . '/' 
-                                        . $official_time_requirement_id ;
-
-                            $uploaded_image = $this->file_service->uploadRequirement($official_time_requirement_id->id, $requirement, $filename, "REQ");
-
-                            if ($uploaded_image) {                     
-                                $official_time_requirement_id = OtApplicationRequirement::where('id','=',$official_time_requirement->id)->first();  
-                                if($official_time_requirement  ){
-                                    $official_time_requirement_name = $requirement->getleaveOriginalName();
-                                    $official_time_requirement =  OtApplicationRequirement::findOrFail($official_time_requirement->id);
-                                    $official_time_requirement->name = $official_time_requirement_name;
-                                    $official_time_requirement->filename = $uploaded_image;
-                                    $official_time_requirement->update();
-                                }                                      
-                            }                           
-                        }
-                    }
-                        
-                }     
-            }
+          
             $process_name="Applied";
-            $official_time_logs = $this->storeOfficialTimeApplicationLog($official_time_application_id,$process_name);
+            $official_time_logs = $this->storeOfficialTimeApplicationLog($official_time_application->id,$process_name);
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
          
@@ -148,6 +200,7 @@ class OfficialTimeApplicationController extends Controller
                                 $ot_application_log->action = 'declined';
                                 $ot_application_log->ot_application_id = $ot_application_id;
                                 $ot_application_log->date = date('Y-m-d');
+                                $ot_application_log->time =  date('H:i:s');
                                 $ot_application_log->action_by = $user_id;
                                 $ot_application_log->save();
 
@@ -184,6 +237,7 @@ class OfficialTimeApplicationController extends Controller
                                 $ot_application_log->action = 'cancelled';
                                 $ot_application_log->ot_application_id = $ot_application_id;
                                 $ot_application_log->date = date('Y-m-d');
+                                $ot_application_log->time =  date('H:i:s');
                                 $ot_application_log->action_by = $user_id;
                                 $ot_application_log->save();
 
@@ -237,6 +291,7 @@ class OfficialTimeApplicationController extends Controller
                                 $ot_application_log->ot_application_id = $ot_application_id;
                                 $ot_application_log->action_by = $user_id;
                                 $ot_application_log->date = date('Y-m-d');
+                                $ot_application_log->time =  date('H:i:s');
                                 $ot_application_log->save();
 
                                 $ot_application = OfficialTimeApplication::findOrFail($ot_application_id);   
@@ -264,7 +319,6 @@ class OfficialTimeApplicationController extends Controller
             $official_time_application->date_to = $request->date_to;
             $official_time_application->time_from = $request->time_from;
             $official_time_application->time_to = $request->time_to;
-            $official_time_application->date = date('Y-m-d');
             $official_time_application->update();
          
             if ($request->hasFile('requirements')) {
@@ -323,13 +377,15 @@ class OfficialTimeApplicationController extends Controller
     public function storeOfficialTimeApplicationLog($official_time_application_id,$process_name)
     {
         try {
-            $user_id="1";
+            $user_id = Auth::user()->id;
+            $user = EmployeeProfile::where('id','=',$user_id)->first();
             $official_time_application_log = new ModelsOtApplicationLog();                       
             $official_time_application_log->official_time_application_id = $official_time_application_id;
             $official_time_application_log->action_by = $user_id;
             $official_time_application_log->process_name = $process_name;
             $official_time_application_log->status = "applied";
             $official_time_application_log->date = date('Y-m-d');
+            $official_time_application_log->time = date('H:i:s');
             $official_time_application_log->save();
 
             return $official_time_application_log;

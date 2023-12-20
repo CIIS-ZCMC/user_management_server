@@ -4,14 +4,17 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
-use App\Models\PersonalInformation;
+use App\Http\Requests\PasswordApprovalRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 use App\Services\RequestLogger;
 use App\Http\Requests\ChildRequest;
 use App\Http\Resources\ChildResource;
 use App\Models\Child;
 use App\Models\EmployeeProfile;
+use App\Models\PersonalInformation;
 
 class ChildController extends Controller
 {
@@ -51,7 +54,7 @@ class ChildController extends Controller
     public function findByEmployeeID(Request $request)
     {
         try{
-            $employee_profile = EmployeeProfile::where('employee_id',$request->input('employee_id'))->get();
+            $employee_profile = EmployeeProfile::where('employee_id',$request->employee_id)->get();
 
             if(!$employee_profile)
             {
@@ -61,8 +64,8 @@ class ChildController extends Controller
             $personal_information = $employee_profile->personalInformation;
             $children = $personal_information->children;
 
-            $this->requestLogger->registerSystemLogs($request, $children['id'], true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
-            
+            $this->requestLogger->registerSystemLogs($request, $request->employee_id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+
             return response()->json([
                 'data' => ChildResource::collection($children),
                 'message' => 'Employee children record retrieved.'
@@ -163,9 +166,19 @@ class ChildController extends Controller
         }
     }
     
-    public function destroy($id, Request $request)
+    public function destroy($id, PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $child = Child::findOrFail($id);
 
             if(!$child)
@@ -184,9 +197,19 @@ class ChildController extends Controller
         }
     }
     
-    public function destroyByPersonalInformationID($id, Request $request)
+    public function destroyByPersonalInformationID($id, PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $children = Child::where('personal_information_id', $id)->get();
 
             if(count($children) === 0)
@@ -207,9 +230,19 @@ class ChildController extends Controller
         }
     }
     
-    public function destroyByEmployeeID(Request $request)
+    public function destroyByEmployeeID(PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $employee_profile = EmployeeProfile::where('employee_id',$request->input('employee_id'))->get();
 
             if(!$employee_profile)

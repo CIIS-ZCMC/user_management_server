@@ -19,6 +19,7 @@ class AllUserResource extends JsonResource
         $email_verified = $this->isEmailVerified?'YES':'NO';
 
         return [
+            'id' => $this->id,
             'employee_id' => $this->employee_id,
             'deactivated' => $deactivated,
             'account_status' => $account_status,

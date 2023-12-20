@@ -15,6 +15,7 @@ class WorkExperienceResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'id' => $this->id,
             'date_from' => $this->date_from,
             'date_to' => $this->date_to,
             'position_title' => $this->position_title,

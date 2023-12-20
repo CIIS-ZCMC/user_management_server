@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('system_roles', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('code');
             $table->datetime('effective_at')->default(now());
+            $table->unsignedBigInteger('role_id');
+            $table->foreign('role_id')->references('id')->on('roles');
             $table->unsignedBigInteger('system_id');
             $table->foreign('system_id')->references('id')->on('systems');
             $table->softDeletes();

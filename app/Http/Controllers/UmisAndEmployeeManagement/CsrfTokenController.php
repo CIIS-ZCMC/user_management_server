@@ -40,7 +40,7 @@ class CsrfTokenController extends Controller
     {
         try{ 
             $ip_address = $request->ip();
-            $token = $request->input('token');
+            $token = $request->token;
             
             $csrf_token = Session::get($ip_address);
 

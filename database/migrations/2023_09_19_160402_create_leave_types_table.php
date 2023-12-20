@@ -19,10 +19,11 @@ return new class extends Migration
             $table->string('file_date');
             $table->string('code');
             $table->string('attachment')->nullable();
-            $table->string('status')->nullable();
+            $table->boolean('is_active')->default(false);
             $table->boolean('is_special')->default(false);
             $table->string('leave_credit_year')->nullable();
-            
+            $table->string('date')->nullable();
+            $table->string('time')->nullable();
             $table->timestamps();
             
         });

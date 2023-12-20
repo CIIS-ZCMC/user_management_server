@@ -28,6 +28,7 @@ class LegalInformationQuestionResource extends JsonResource
         }
 
         return [
+            'id' => $this->id,
             'order_by' => $this->order_by,
             'content_question' => $this->content_question,
             'sub_question' => [],

@@ -61,6 +61,7 @@ class EmployeeOfAssignAreaResource extends JsonResource
         }
 
         return [
+            'id' => $this->id,
             'name' => $name,
             'is_regular' => $is_regular,
             'area_type_assigned' => $area_type_assigned,

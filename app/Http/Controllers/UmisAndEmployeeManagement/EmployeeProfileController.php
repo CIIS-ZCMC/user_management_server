@@ -4,8 +4,7 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
-use App\Http\Resources\SignInResource;
-use App\Models\PlantillaNumber;
+use App\Http\Requests\PasswordApprovalRequest;
 use Carbon\Carbon;
 use Jenssegers\Agent\Agent;
 use Illuminate\Http\Request;
@@ -192,7 +191,7 @@ class EmployeeProfileController extends Controller
                         'roleModulePermissions' => function($query){
                             $query->with([
                                 'modulePermission' => function($query){
-                                    $query->with(['systemModule', 'permission']);
+                                    $query->with(['module', 'permission']);
                                 }
                             ]);
                         },
@@ -256,7 +255,7 @@ class EmployeeProfileController extends Controller
                     $query->with([
                         'system',
                         'roleModulePermissions' => function ($query) {
-                            $query->with(['systemModule', 'permission']);
+                            $query->with(['module', 'permission']);
                         }
                     ]);
                 }
@@ -307,7 +306,7 @@ class EmployeeProfileController extends Controller
         // return $role_module_permissions;
     
         foreach ($role_module_permissions as $role_module_permission) {
-            $module_name = $role_module_permission->modulePermission->systemModule->name;
+            $module_name = $role_module_permission->modulePermission->module->name;
             $permission_action = $role_module_permission->modulePermission->permission->action;
     
             if (!isset($modules[$module_name])) {
@@ -394,7 +393,7 @@ class EmployeeProfileController extends Controller
             ]);
 
             return response()
-                ->json([$data, 'message' => "Success signout to other device you are now login."], Response::HTTP_OK)
+                ->json(['data' => $data, 'message' => "Success signout to other device you are now login."], Response::HTTP_OK)
                 ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), true);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'signOutFromOtherDevice', $th->getMessage());
@@ -724,7 +723,7 @@ class EmployeeProfileController extends Controller
     }
     
 
-    public function destroy($id, Request $request)
+    public function destroy($id, PasswordApprovalRequest $request)
     {
         try{
             $user = $request->user;

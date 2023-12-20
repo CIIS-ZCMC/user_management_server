@@ -15,13 +15,20 @@ class SignInResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $employee_profile = $this->employeeProfile;
+        $position = $employee_profile->employmentPosition->name;
+        $department = $employee_profile->department->name;
+
         $legal_informations = LegalInformation::with(['legalInformationQuestion' => function ($query) {
                 $query->orderBy('order_by', 'asc');
             }])->where('personal_information_id', $this->personalInformation->id)->get();
 
         return [
+            'id' => $this->id,
             'employee_id' => $this->employee_id,
-            'name' => $this->personalInformation->employeeName(),
+            'name' => $this->personalInformation->name(),
+            'department' => $department,
+            'position' => $position,
             'personal_information' => [
                 'personal_information' => new PersonalInformationResource($this->personalInformation),
                 'contact' => new ContactResource($this->personalInformation->contact),

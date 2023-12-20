@@ -45,6 +45,7 @@ class HeadToSupervisorTrailResource extends JsonResource
         }
 
         return [
+            'id' => $this->id,
             'employee_id' => $employee_id,
             'name' => $name,
             'position_title' => $this->position_title,

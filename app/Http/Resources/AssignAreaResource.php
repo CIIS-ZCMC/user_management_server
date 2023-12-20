@@ -45,6 +45,7 @@ class AssignAreaResource extends JsonResource
 
 
         return [
+            'id' => $this->id,
             'employee_id' => $employee_id,
             'area_code' => $area_code,
             'area_name' => $area_name,

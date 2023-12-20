@@ -19,6 +19,7 @@ class InActiveEmployeeResource extends JsonResource
         $employment_type = $this->employementType->name;
 
         return [
+            'id' => $this->id,
             'name' => $name,
             'profile_url' => $this->profile_url,
             'date_hired' => $this->date_hired,

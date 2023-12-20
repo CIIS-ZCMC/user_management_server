@@ -4,13 +4,15 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
-use App\Models\PersonalInformation;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 use App\Services\RequestLogger;
+use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\FamilyBackgroundRequest;
 use App\Http\Resources\FamilyBackgroundResource;
+use App\Models\PersonalInformation;
 use App\Models\FamilyBackground;
 use App\Models\EmployeeProfile;
 
@@ -162,9 +164,19 @@ class FamilyBackgroundController extends Controller
         }
     }
     
-    public function destroy($id, Request $request)
+    public function destroy($id, PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $family_background = FamilyBackground::findOrFail($id);
 
             if(!$family_background)
@@ -183,9 +195,19 @@ class FamilyBackgroundController extends Controller
         }
     }
     
-    public function destroyByPersonalInformationID($id, Request $request)
+    public function destroyByPersonalInformationID($id, PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $family_background = FamilyBackground::where('personal_information_id',$id)->first();
 
             if(!$family_background)
@@ -204,9 +226,19 @@ class FamilyBackgroundController extends Controller
         }
     }
     
-    public function destroyByEmployeeID($id, Request $request)
+    public function destroyByEmployeeID($id, PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $employee = EmployeeProfile::find($id);
 
             if(!$employee)

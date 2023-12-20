@@ -19,7 +19,6 @@ class Unit extends Model
         'code',
         'unit_attachment_url',
         'head_attachment_url',
-        'job_specification',
         'head_effective_at',
         'oic_attachment_url',
         'oic_effective_at',
@@ -39,11 +38,6 @@ class Unit extends Model
     public function oic()
     {
         return $this->belongsTo(EmployeeProfile::class, 'id', 'oic_employee_profile_id');
-    }
-
-    public function headJobSpecification()
-    {
-        return Designation::where('code', $this->job_specification)->first();
     }
 
     public function section()

@@ -4,8 +4,11 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Http\Requests\PasswordApprovalRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 use App\Services\RequestLogger;
 use App\Http\Requests\AddressRequest;
 use App\Http\Resources\AddressResource;
@@ -204,9 +207,19 @@ class AddressController extends Controller
         }
     }
     
-    public function destroyByEmployeeID($id, Request $request)
+    public function destroyByEmployeeID($id, PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $employee_profile = EmployeeProfile::find($id);
 
             if(!$employee_profile)

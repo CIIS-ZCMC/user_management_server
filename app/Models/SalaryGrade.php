@@ -13,8 +13,15 @@ class SalaryGrade extends Model
 
     public $fillable = [
         'salary_grade_number',
-        'step',
-        'amount',
+        'one',
+        'two',
+        'three',
+        'four',
+        'five',
+        'six',
+        'seven',
+        'eight',
+        'tranch',
         'effective_at'
     ];
 

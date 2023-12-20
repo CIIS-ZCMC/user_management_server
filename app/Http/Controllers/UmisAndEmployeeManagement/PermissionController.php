@@ -4,12 +4,15 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Http\Requests\PasswordApprovalRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Services\RequestLogger;
 use App\Models\Permission;
 use App\Http\Requests\PermissionRequest;
 use App\Http\Resources\PermissionResource;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 
 
 class PermissionController extends Controller
@@ -57,7 +60,7 @@ class PermissionController extends Controller
 
             return response()->json([
                 'data' => new PermissionResource($permission),
-                'message' => 'New permission registered.'], Response::HTTP_OK);
+                'message' => 'Permission created successfully.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -89,6 +92,16 @@ class PermissionController extends Controller
     public function update($id, PermissionRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $permission = Permission::find($id);
 
             if(!$permission)
@@ -108,7 +121,7 @@ class PermissionController extends Controller
 
             return response()->json([
                 'data' => new PermissionResource($permission),
-                'message' => 'Permission record updated.'
+                'message' => 'Permission updated successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
@@ -116,9 +129,19 @@ class PermissionController extends Controller
         }
     }
     
-    public function activate($id, Request $request)
+    public function activate($id, PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $permission = Permission::find($id);
 
             if(!$permission)
@@ -132,7 +155,7 @@ class PermissionController extends Controller
 
             return response()->json([
                 'data' => new PermissionResource($permission),
-                'message' => 'Permission record updated.'
+                'message' => 'Permission actived.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
@@ -140,9 +163,19 @@ class PermissionController extends Controller
         }
     }
     
-    public function deactivate($id, Request $request)
+    public function deactivate($id, PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $permission = Permission::find($id);
 
             if(!$permission)
@@ -156,7 +189,7 @@ class PermissionController extends Controller
 
             return response()->json([
                 'data' => new PermissionResource($permission),
-                'message' => 'Permission record updated.'
+                'message' => 'Permission deactivated.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
@@ -164,9 +197,19 @@ class PermissionController extends Controller
         }
     }
     
-    public function destroy($id, Request $request)
+    public function destroy($id, PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $permission = Permission::findOrFail($id);
 
             if(!$permission)
@@ -178,7 +221,7 @@ class PermissionController extends Controller
             
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['message' => 'Permission record deleted.'], Response::HTTP_OK);
+            return response()->json(['message' => 'Permission deleted successfully.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
