@@ -85,8 +85,8 @@ class OfficialTimeApplicationController extends Controller
                         'id' => $official_time_application->id,
                         'date_from' => $official_time_application->date_from,
                         'date_to' => $official_time_application->date_to,
-                        'time_from' => $official_time_application->time_from,
-                        'time_to' => $official_time_application->time_to,
+                        // 'time_from' => $official_time_application->time_from,
+                        // 'time_to' => $official_time_application->time_to,
                         'total_days' => $numberOfDays,
                         'reason' => $official_time_application->reason,
                         'status' => $official_time_application->status,
@@ -215,8 +215,8 @@ class OfficialTimeApplicationController extends Controller
                             'id' => $official_time_application->id,
                             'date_from' => $official_time_application->date_from,
                             'date_to' => $official_time_application->date_to,
-                            'time_from' => $official_time_application->time_from,
-                            'time_to' => $official_time_application->time_to,
+                            // 'time_from' => $official_time_application->time_from,
+                            // 'time_to' => $official_time_application->time_to,
                             'total_days' => $numberOfDays,
                             'reason' => $official_time_application->reason,
                             'status' => $official_time_application->status,
@@ -337,8 +337,8 @@ class OfficialTimeApplicationController extends Controller
                             'id' => $official_time_application->id,
                             'date_from' => $official_time_application->date_from,
                             'date_to' => $official_time_application->date_to,
-                            'time_from' => $official_time_application->time_from,
-                            'time_to' => $official_time_application->time_to,
+                            // 'time_from' => $official_time_application->time_from,
+                            // 'time_to' => $official_time_application->time_to,
                             'total_days' => $numberOfDays,
                             'reason' => $official_time_application->reason,
                             'status' => $official_time_application->status,
@@ -458,8 +458,8 @@ class OfficialTimeApplicationController extends Controller
                             'id' => $official_time_application->id,
                             'date_from' => $official_time_application->date_from,
                             'date_to' => $official_time_application->date_to,
-                            'time_from' => $official_time_application->time_from,
-                            'time_to' => $official_time_application->time_to,
+                            // 'time_from' => $official_time_application->time_from,
+                            // 'time_to' => $official_time_application->time_to,
                             'total_days' => $numberOfDays,
                             'reason' => $official_time_application->reason,
                             'status' => $official_time_application->status,
@@ -573,8 +573,8 @@ class OfficialTimeApplicationController extends Controller
                             'id' => $official_time_application->id,
                             'date_from' => $official_time_application->date_from,
                             'date_to' => $official_time_application->date_to,
-                            'time_from' => $official_time_application->time_from,
-                            'time_to' => $official_time_application->time_to,
+                            // 'time_from' => $official_time_application->time_from,
+                            // 'time_to' => $official_time_application->time_to,
                             'total_days' => $numberOfDays,
                             'reason' => $official_time_application->reason,
                             'status' => $official_time_application->status,
@@ -697,8 +697,8 @@ class OfficialTimeApplicationController extends Controller
                 'id' => $ot_application->id,
                 'date_from' => $ot_application->date_from,
                 'date_to' => $ot_application->date_to,
-                'time_from' => $ot_application->time_from,
-                'time_to' => $ot_application->time_to,
+                // 'time_from' => $ot_application->time_from,
+                // 'time_to' => $ot_application->time_to,
                 'total_days' => $numberOfDays,
                 'reason' => $ot_application->reason,
                 'status' => $ot_application->status,
@@ -774,8 +774,8 @@ class OfficialTimeApplicationController extends Controller
             $official_time_application->employee_profile_id = '1';
             $official_time_application->date_from = $request->date_from;
             $official_time_application->date_to = $request->date_to;
-            $official_time_application->time_from = $request->time_from;
-            $official_time_application->time_to = $request->time_to;
+            // $official_time_application->time_from = $request->time_from;
+            // $official_time_application->time_to = $request->time_to;
             if($division === true)
             {
                 $status='for-approval-department-head';
@@ -872,8 +872,8 @@ class OfficialTimeApplicationController extends Controller
                         'id' => $official_time_application->id,
                         'date_from' => $official_time_application->date_from,
                         'date_to' => $official_time_application->date_to,
-                        'time_from' => $official_time_application->time_from,
-                        'time_to' => $official_time_application->time_to,
+                        // 'time_from' => $official_time_application->time_from,
+                        // 'time_to' => $official_time_application->time_to,
                         'total_days' => $numberOfDays,
                         'reason' => $official_time_application->reason,
                         'status' => $official_time_application->status,

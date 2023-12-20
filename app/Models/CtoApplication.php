@@ -15,7 +15,6 @@ class CtoApplication extends Model
         'status',
         'remarks',
         'purpose',
-
     ];
 
     public function dates()

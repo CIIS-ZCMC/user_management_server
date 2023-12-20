@@ -16,9 +16,6 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 class CtoApplicationController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
         try{
@@ -167,12 +164,11 @@ class CtoApplicationController extends Controller
             // $user = EmployeeProfile::where('id','=',$user_id)->first();
             // $area = AssignArea::where('employee_profile_id',$employee_id)->value('division_id');
             // $division = Division::where('id',$area)->value('is_medical');
-
             $division=true;
             $cto_application = new CtoApplication();
             $cto_application->employee_profile_id = '1';
             $cto_application->remarks = $request->remarks;
-            $cto_application->purpose = $request->purpose;
+            // $cto_application->purpose = $request->purpose;
             if($division === true)
             {
                 $status='for-approval-department-head';
@@ -205,8 +201,9 @@ class CtoApplicationController extends Controller
             $process_name="Applied";
 
             $this->storeCTOApplicationLog($cto_id,$process_name,$columnsString);
-            $cto_applications = CtoApplication::with(['employeeProfile.personalInformation','logs'])
+            $cto_applications = CtoApplication::with(['employeeProfile.personalInformation','dates','logs'])
             ->where('id',$cto_application->id)->get();
+
             $cto_applications_result = $cto_applications->map(function ($cto_application) {
                 $datesData = $cto_application->dates ? $cto_application->dates : collect();
                 $logsData = $cto_application->logs ? $cto_application->logs : collect();
@@ -322,6 +319,7 @@ class CtoApplicationController extends Controller
                 ];
                 });
                 $singleArray = array_merge(...$cto_applications_result);
+
             return response()->json(['message' => 'Compensatory Time Off Application has been sucessfully saved','data' => $singleArray ], Response::HTTP_OK);
         }catch(\Throwable $th){
 
