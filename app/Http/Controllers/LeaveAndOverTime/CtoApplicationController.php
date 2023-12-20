@@ -10,6 +10,7 @@ use App\Models\CtoApplicationLog;
 use App\Models\Department;
 use App\Models\Division;
 use App\Models\EmployeeOvertimeCredit;
+use App\Models\OvtApplicationDatetime;
 use App\Models\Section;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -61,14 +62,12 @@ class CtoApplicationController extends Controller
                         $supervisor_position = $section->supervisor->assignedArea->designation->name ?? null;
                         }
                     }
-                    $total_days=0;
-                    foreach($cto_application->dates as $date)
+                    $overtimeRecord = CtoApplicationDate::where('cto_application_id',$cto_application->id);
+                    if($overtimeRecord)
                     {
-                        $startDate = Carbon::createFromFormat('Y-m-d', $date->date_from);
-                        $endDate = Carbon::createFromFormat('Y-m-d', $date->date_to);
+                        $dates = $overtimeRecord->pluck('date')->toArray();
+                        $total_days = count(array_unique($dates));
 
-                        $numberOfDays = $startDate->diffInDays($endDate) + 1;
-                        $total_days += $numberOfDays;
                     }
             $first_name = optional($cto_application->employeeProfile->personalInformation)->first_name ?? null;
             $last_name = optional($cto_application->employeeProfile->personalInformation)->last_name ?? null;
@@ -146,17 +145,12 @@ class CtoApplicationController extends Controller
         }
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
+
     public function create()
     {
-        //
+
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         try{
@@ -205,8 +199,8 @@ class CtoApplicationController extends Controller
             ->where('id',$cto_application->id)->get();
 
             $cto_applications_result = $cto_applications->map(function ($cto_application) {
-                $datesData = $cto_application->dates ? $cto_application->dates : collect();
-                $logsData = $cto_application->logs ? $cto_application->logs : collect();
+                // $datesData = $cto_application->dates ? $cto_application->dates : collect();
+                // $logsData = $cto_application->logs ? $cto_application->logs : collect();
                 $division = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('division_id');
                 $department = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('department_id');
                 $section = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('section_id');
@@ -244,80 +238,80 @@ class CtoApplicationController extends Controller
                             $supervisor_position = $section->supervisor->assignedArea->designation->name ?? null;
                             }
                         }
-                        $total_days=0;
-                        foreach($cto_application->dates as $date)
-                        {
-                            $startDate = Carbon::createFromFormat('Y-m-d', $date->date_from);
-                            $endDate = Carbon::createFromFormat('Y-m-d', $date->date_to);
 
-                            $numberOfDays = $startDate->diffInDays($endDate) + 1;
-                            $total_days += $numberOfDays;
-                        }
-                $first_name = optional($cto_application->employeeProfile->personalInformation)->first_name ?? null;
-                $last_name = optional($cto_application->employeeProfile->personalInformation)->last_name ?? null;
-                return [
-                    'id' => $cto_application->id,
-                    'remarks' => $cto_application->remarks,
-                    'purpose' => $cto_application->purpose,
-                    'status' => $cto_application->status,
-                    'total_days'=>$total_days,
-                    'employee_id' => $cto_application->employee_profile_id,
-                    'employee_name' => "{$first_name} {$last_name}" ,
-                    'division_head' =>$chief_name,
-                    'division_head_position'=> $chief_position,
-                    'department_head' =>$head_name,
-                    'department_head_position' =>$head_position,
-                    'section_head' =>$supervisor_name,
-                    'section_head_position' =>$supervisor_position,
-                    'division_name' => $cto_application->employeeProfile->assignedArea->division->name ?? null,
-                    'department_name' => $cto_application->employeeProfile->assignedArea->department->name ?? null,
-                    'section_name' => $cto_application->employeeProfile->assignedArea->section->name ?? null,
-                    'unit_name' => $cto_application->employeeProfile->assignedArea->unit->name ?? null,
-                    'date' => $cto_application->date,
-                    'time' => $cto_application->time,
-                    'logs' => $logsData ->map(function ($log) {
-                        $process_name=$log->action;
-                        $action ="";
-                        $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
-                        $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
-                        if($log->action_by_id  === optional($log->employeeProfile->assignedArea->division)->chief_employee_profile_id )
+                        $overtimeRecord = CtoApplicationDate::where('cto_application_id',$cto_application->id);
+                        if($overtimeRecord)
                         {
-                            $action =  $process_name . ' by ' . 'Division Head';
-                        }
-                        else if ($log->action_by_id === optional($log->employeeProfile->assignedArea->department)->head_employee_profile_id || optional($log->employeeProfile->assignedArea->section)->supervisor_employee_profile_id)
-                        {
-                            $action =  $process_name . ' by ' . 'Supervisor';
-                        }
-                        else{
-                            $action=  $process_name . ' by ' . $first_name .' '. $last_name;
+                            $dates = $overtimeRecord->pluck('date')->toArray();
+                            $total_days = count(array_unique($dates));
+
                         }
 
-                        $date=$log->date;
-                        $formatted_date=Carbon::parse($date)->format('M d,Y');
+                        $first_name = optional($cto_application->employeeProfile->personalInformation)->first_name ?? null;
+                        $last_name = optional($cto_application->employeeProfile->personalInformation)->last_name ?? null;
                         return [
-                            'id' => $log->id,
-                            'cto_application_id ' => $log->cto_application_id ,
-                            'action_by' => "{$first_name} {$last_name}" ,
-                            'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
-                            'action' => $log->action,
-                            'date' => $formatted_date,
-                            'time' => $log->time,
-                            'process' => $action
-                        ];
-                    }),
-                    'dates' => $datesData->map(function ($date) {
-                        return [
-                                    'id' => $date->id,
-                                    'cto_application_id' =>$date->cto_application_id,
-                                    'time_from' => $date->time_from,
-                                    'time_to' => $date->time_to,
-                                    'date' => $date->date,
+                            'id' => $cto_application->id,
+                            'remarks' => $cto_application->remarks,
+                            'purpose' => $cto_application->purpose,
+                            'status' => $cto_application->status,
+                            'total_days'=>$total_days,
+                            'employee_id' => $cto_application->employee_profile_id,
+                            'employee_name' => "{$first_name} {$last_name}" ,
+                            'division_head' =>$chief_name,
+                            'division_head_position'=> $chief_position,
+                            'department_head' =>$head_name,
+                            'department_head_position' =>$head_position,
+                            'section_head' =>$supervisor_name,
+                            'section_head_position' =>$supervisor_position,
+                            'division_name' => $cto_application->employeeProfile->assignedArea->division->name ?? null,
+                            'department_name' => $cto_application->employeeProfile->assignedArea->department->name ?? null,
+                            'section_name' => $cto_application->employeeProfile->assignedArea->section->name ?? null,
+                            'unit_name' => $cto_application->employeeProfile->assignedArea->unit->name ?? null,
+                            'date' => $cto_application->date,
+                            'time' => $cto_application->time,
+                            'logs' => $cto_application->logs ->map(function ($log) {
+                                $process_name=$log->action;
+                                $action ="";
+                                $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
+                                $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
+                                if($log->action_by_id  === optional($log->employeeProfile->assignedArea->division)->chief_employee_profile_id )
+                                {
+                                    $action =  $process_name . ' by ' . 'Division Head';
+                                }
+                                else if ($log->action_by_id === optional($log->employeeProfile->assignedArea->department)->head_employee_profile_id || optional($log->employeeProfile->assignedArea->section)->supervisor_employee_profile_id)
+                                {
+                                    $action =  $process_name . ' by ' . 'Supervisor';
+                                }
+                                else{
+                                    $action=  $process_name . ' by ' . $first_name .' '. $last_name;
+                                }
+
+                                $date=$log->date;
+                                $formatted_date=Carbon::parse($date)->format('M d,Y');
+                                return [
+                                    'id' => $log->id,
+                                    'cto_application_id ' => $log->cto_application_id ,
+                                    'action_by' => "{$first_name} {$last_name}" ,
+                                    'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                    'action' => $log->action,
+                                    'date' => $formatted_date,
+                                    'time' => $log->time,
+                                    'process' => $action
+                                ];
+                            }),
+                            'dates' => $cto_application->dates->map(function ($date) {
+                                return [
+                                            'id' => $date->id,
+                                            'cto_application_id' =>$date->cto_application_id,
+                                            'time_from' => $date->time_from,
+                                            'time_to' => $date->time_to,
+                                            'date' => $date->date,
+
+                                ];
+                            }),
 
                         ];
-                    }),
-
-                ];
-                });
+                        });
                 $singleArray = array_merge(...$cto_applications_result);
 
             return response()->json(['message' => 'Compensatory Time Off Application has been sucessfully saved','data' => $singleArray ], Response::HTTP_OK);
@@ -467,83 +461,78 @@ class CtoApplicationController extends Controller
                         $supervisor_position = $section->supervisor->assignedArea->designation->name ?? null;
                         }
                     }
-                    $total_days=0;
-                    foreach($cto_application->dates as $date)
+                    $overtimeRecord = CtoApplicationDate::where('cto_application_id',$cto_application->id);
+                    if($overtimeRecord)
                     {
-                        $startDate = Carbon::createFromFormat('Y-m-d', $date->date_from);
-                        $endDate = Carbon::createFromFormat('Y-m-d', $date->date_to);
+                        $dates = $overtimeRecord->pluck('date')->toArray();
+                        $total_days = count(array_unique($dates));
 
-                        $numberOfDays = $startDate->diffInDays($endDate) + 1;
-                        $total_days += $numberOfDays;
                     }
-            $first_name = optional($cto_application->employeeProfile->personalInformation)->first_name ?? null;
-            $last_name = optional($cto_application->employeeProfile->personalInformation)->last_name ?? null;
-            return [
-                'id' => $cto_application->id,
-                'remarks' => $cto_application->remarks,
-                'purpose' => $cto_application->purpose,
-                'status' => $cto_application->status,
-                'total_days'=> $total_days,
-                'employee_id' => $cto_application->employee_profile_id,
-                'employee_name' => "{$first_name} {$last_name}" ,
-                'division_head' =>$chief_name,
-                'division_head_position'=> $chief_position,
-                'department_head' =>$head_name,
-                'department_head_position' =>$head_position,
-                'section_head' =>$supervisor_name,
-                'section_head_position' =>$supervisor_position,
-                'division_name' => $cto_application->employeeProfile->assignedArea->division->name ?? null,
-                'department_name' => $cto_application->employeeProfile->assignedArea->department->name ?? null,
-                'section_name' => $cto_application->employeeProfile->assignedArea->section->name ?? null,
-                'unit_name' => $cto_application->employeeProfile->assignedArea->unit->name ?? null,
-                'date' => $cto_application->date,
-                'time' => $cto_application->time,
-                'logs' => $logsData ->map(function ($log) {
-                    $process_name=$log->action;
-                    $action ="";
-                    $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
-                    $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
-                    if($log->action_by_id  === optional($log->employeeProfile->assignedArea->division)->chief_employee_profile_id )
-                    {
-                        $action =  $process_name . ' by ' . 'Division Head';
-                    }
-                    else if ($log->action_by_id === optional($log->employeeProfile->assignedArea->department)->head_employee_profile_id || optional($log->employeeProfile->assignedArea->section)->supervisor_employee_profile_id)
-                    {
-                        $action =  $process_name . ' by ' . 'Supervisor';
-                    }
-                    else{
-                        $action=  $process_name . ' by ' . $first_name .' '. $last_name;
-                    }
+                        $first_name = optional($cto_application->employeeProfile->personalInformation)->first_name ?? null;
+                        $last_name = optional($cto_application->employeeProfile->personalInformation)->last_name ?? null;
+                        return [
+                            'id' => $cto_application->id,
+                            'remarks' => $cto_application->remarks,
+                            'purpose' => $cto_application->purpose,
+                            'status' => $cto_application->status,
+                            'total_days'=> $total_days,
+                            'employee_id' => $cto_application->employee_profile_id,
+                            'employee_name' => "{$first_name} {$last_name}" ,
+                            'division_head' =>$chief_name,
+                            'division_head_position'=> $chief_position,
+                            'department_head' =>$head_name,
+                            'department_head_position' =>$head_position,
+                            'section_head' =>$supervisor_name,
+                            'section_head_position' =>$supervisor_position,
+                            'division_name' => $cto_application->employeeProfile->assignedArea->division->name ?? null,
+                            'department_name' => $cto_application->employeeProfile->assignedArea->department->name ?? null,
+                            'section_name' => $cto_application->employeeProfile->assignedArea->section->name ?? null,
+                            'unit_name' => $cto_application->employeeProfile->assignedArea->unit->name ?? null,
+                            'date' => $cto_application->date,
+                            'time' => $cto_application->time,
+                            'logs' => $logsData ->map(function ($log) {
+                                $process_name=$log->action;
+                                $action ="";
+                                $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
+                                $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
+                                if($log->action_by_id  === optional($log->employeeProfile->assignedArea->division)->chief_employee_profile_id )
+                                {
+                                    $action =  $process_name . ' by ' . 'Division Head';
+                                }
+                                else if ($log->action_by_id === optional($log->employeeProfile->assignedArea->department)->head_employee_profile_id || optional($log->employeeProfile->assignedArea->section)->supervisor_employee_profile_id)
+                                {
+                                    $action =  $process_name . ' by ' . 'Supervisor';
+                                }
+                                else{
+                                    $action=  $process_name . ' by ' . $first_name .' '. $last_name;
+                                }
 
-                    $date=$log->date;
-                    $formatted_date=Carbon::parse($date)->format('M d,Y');
-                    return [
-                        'id' => $log->id,
-                        'cto_application_id ' => $log->cto_application_id ,
-                        'action_by' => "{$first_name} {$last_name}" ,
-                        'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
-                        'action' => $log->action,
-                        'date' => $formatted_date,
-                        'time' => $log->time,
-                        'process' => $action
-                    ];
-                }),
-                'dates' => $datesData->map(function ($date) {
-                    return [
-                                'id' => $date->id,
-                                'cto_application_id' =>$date->cto_application_id,
-                                'time_from' => $date->time_from,
-                                'time_to' => $date->time_to,
-                                'date' => $date->date,
+                                $date=$log->date;
+                                $formatted_date=Carbon::parse($date)->format('M d,Y');
+                                return [
+                                    'id' => $log->id,
+                                    'cto_application_id ' => $log->cto_application_id ,
+                                    'action_by' => "{$first_name} {$last_name}" ,
+                                    'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                    'action' => $log->action,
+                                    'date' => $formatted_date,
+                                    'time' => $log->time,
+                                    'process' => $action
+                                ];
+                            }),
+                            'dates' => $datesData->map(function ($date) {
+                                return [
+                                            'id' => $date->id,
+                                            'cto_application_id' =>$date->cto_application_id,
+                                            'time_from' => $date->time_from,
+                                            'time_to' => $date->time_to,
+                                            'date' => $date->date,
 
-                    ];
-                }),
+                                ];
+                            }),
 
-            ];
-        });
-
-
-
+                        ];
+                    });
         $OvertimeCredits = EmployeeOvertimeCredit::where('employee_profile_id', $id)
         ->get();
 
@@ -559,7 +548,6 @@ class CtoApplicationController extends Controller
                 $totalOvertimeCredits -= $creditTotal;
             }
         }
-
 
              return response()->json(['data' => $cto_applications_result,'balance' => $totalOvertimeCredits], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -620,6 +608,13 @@ class CtoApplicationController extends Controller
                                 $supervisor_position = $section->supervisor->assignedArea->designation->name ?? null;
                                 }
                             }
+                            $overtimeRecord = CtoApplicationDate::where('cto_application_id',$cto_application->id);
+                            if($overtimeRecord)
+                            {
+                                $dates = $overtimeRecord->pluck('date')->toArray();
+                                $total_days = count(array_unique($dates));
+
+                            }
                     $first_name = optional($cto_application->employeeProfile->personalInformation)->first_name ?? null;
                     $last_name = optional($cto_application->employeeProfile->personalInformation)->last_name ?? null;
                     return [
@@ -627,6 +622,7 @@ class CtoApplicationController extends Controller
                         'remarks' => $cto_application->remarks,
                         'purpose' => $cto_application->purpose,
                         'status' => $cto_application->status,
+                        'total_days'=> $total_days,
                         'employee_id' => $cto_application->employee_profile_id,
                         'employee_name' => "{$first_name} {$last_name}" ,
                         'division_head' =>$chief_name,
@@ -739,6 +735,13 @@ class CtoApplicationController extends Controller
                                     $supervisor_position = $section->supervisor->assignedArea->designation->name ?? null;
                                     }
                                 }
+                                $overtimeRecord = CtoApplicationDate::where('cto_application_id',$cto_application->id);
+                                if($overtimeRecord)
+                                {
+                                    $dates = $overtimeRecord->pluck('date')->toArray();
+                                    $total_days = count(array_unique($dates));
+
+                                }
                         $first_name = optional($cto_application->employeeProfile->personalInformation)->first_name ?? null;
                         $last_name = optional($cto_application->employeeProfile->personalInformation)->last_name ?? null;
                         return [
@@ -746,6 +749,7 @@ class CtoApplicationController extends Controller
                             'remarks' => $cto_application->remarks,
                             'purpose' => $cto_application->purpose,
                             'status' => $cto_application->status,
+                            'total_days'=> $total_days,
                             'employee_id' => $cto_application->employee_profile_id,
                             'employee_name' => "{$first_name} {$last_name}" ,
                             'division_head' =>$chief_name,
@@ -860,6 +864,13 @@ class CtoApplicationController extends Controller
                                 $supervisor_position = $section->supervisor->assignedArea->designation->name ?? null;
                                 }
                             }
+                            $overtimeRecord = CtoApplicationDate::where('cto_application_id',$cto_application->id);
+                            if($overtimeRecord)
+                            {
+                                $dates = $overtimeRecord->pluck('date')->toArray();
+                                $total_days = count(array_unique($dates));
+
+                            }
                     $first_name = optional($cto_application->employeeProfile->personalInformation)->first_name ?? null;
                     $last_name = optional($cto_application->employeeProfile->personalInformation)->last_name ?? null;
                     return [
@@ -867,6 +878,7 @@ class CtoApplicationController extends Controller
                         'remarks' => $cto_application->remarks,
                         'purpose' => $cto_application->purpose,
                         'status' => $cto_application->status,
+                        'total_days'=> $total_days,
                         'employee_id' => $cto_application->employee_profile_id,
                         'employee_name' => "{$first_name} {$last_name}" ,
                         'division_head' =>$chief_name,
@@ -979,6 +991,13 @@ class CtoApplicationController extends Controller
                                 $supervisor_position = $section->supervisor->assignedArea->designation->name ?? null;
                                 }
                             }
+                            $overtimeRecord = CtoApplicationDate::where('cto_application_id',$cto_application->id);
+                            if($overtimeRecord)
+                            {
+                                $dates = $overtimeRecord->pluck('date')->toArray();
+                                $total_days = count(array_unique($dates));
+
+                            }
                     $first_name = optional($cto_application->employeeProfile->personalInformation)->first_name ?? null;
                     $last_name = optional($cto_application->employeeProfile->personalInformation)->last_name ?? null;
                     return [
@@ -986,6 +1005,7 @@ class CtoApplicationController extends Controller
                         'remarks' => $cto_application->remarks,
                         'purpose' => $cto_application->purpose,
                         'status' => $cto_application->status,
+                        'total_days'=> $total_days,
                         'employee_id' => $cto_application->employee_profile_id,
                         'employee_name' => "{$first_name} {$last_name}" ,
                         'division_head' =>$chief_name,
@@ -1093,6 +1113,13 @@ class CtoApplicationController extends Controller
                             $supervisor_position = $section->supervisor->assignedArea->designation->name ?? null;
                             }
                         }
+                        $overtimeRecord = CtoApplicationDate::where('cto_application_id',$cto_application->id);
+                        if($overtimeRecord)
+                        {
+                            $dates = $overtimeRecord->pluck('date')->toArray();
+                            $total_days = count(array_unique($dates));
+
+                        }
                 $first_name = optional($cto_application->employeeProfile->personalInformation)->first_name ?? null;
                 $last_name = optional($cto_application->employeeProfile->personalInformation)->last_name ?? null;
                 return [
@@ -1100,6 +1127,7 @@ class CtoApplicationController extends Controller
                     'remarks' => $cto_application->remarks,
                     'purpose' => $cto_application->purpose,
                     'status' => $cto_application->status,
+                    'total_days'=> $total_days,
                     'employee_id' => $cto_application->employee_profile_id,
                     'employee_name' => "{$first_name} {$last_name}" ,
                     'division_head' =>$chief_name,
@@ -1172,11 +1200,104 @@ class CtoApplicationController extends Controller
         // }
         // return ResourcesLeaveApplication::collection($leave_applications->paginate(50));
     }
+
+    public function updateStatus($id,$status,Request $request)
+    {
+        try {
+                // $employee_id = $request->employee_id;
+                // $user_id = Auth::user()->id;
+                // $user = EmployeeProfile::where('id','=',$user_id)->first();
+                // $division = AssignArea::where('employee_profile_id',$employee_id)->value('is_medical');
+                // $user_password=$user->password;
+                // $password=$request->password;
+                // if($user_password==$password)
+                // {
+                            $division= true;
+                            $message_action = '';
+                            $action = '';
+                            $new_status = '';
+
+
+                            if($status == 'for-approval-section-head' ){
+                                $action = 'Aprroved by Supervisor';
+                                $new_status='for-approval-division-head';
+                                $message_action="Approved";
+                            }
+                            else if($status == 'for-approval-department-head'){
+                                $action = 'Aprroved by Supervisor';
+                                $new_status='for-approval-division-head';
+                                $message_action="Approved";
+                            }
+                            else if($status == 'for-approval-division-head'){
+                                $action = 'Aprroved by Division Head';
+                                $new_status='approved';
+                                $message_action="Approved";
+                            }
+                            else if($status == 'applied'){
+                                $action = 'Verified by HRMO';
+                                if($division === true)
+                                {
+                                    $new_status='for-approval-department-head';
+                                    $message_action="verified";
+                                }
+                                else
+                                {
+                                    $new_status='for-approval-section-head';
+                                    $message_action="verified";
+                                }
+
+                            }
+
+                            $cto_applications = CtoApplication::where('id','=', $id)
+                                                                    ->first();
+                            if($cto_applications){
+                                $cto_application_log = new CtoApplicationLog();
+                                $cto_application_log->action = $action;
+                                $cto_application_log->cto_application_id = $id;
+                                $cto_application_log->action_by_id = '1';
+                                $cto_application_log->date = date('Y-m-d');
+                                $cto_application_log->time = date('h-i-s');
+                                $cto_application_log->save();
+
+                                $cto_application = CtoApplication::findOrFail($id);
+                                $cto_application->status = $new_status;
+                                $cto_application->update();
+
+                                if($new_status=="approved")
+                                {
+                                    $cto_application_date_times=CtoApplicationDate::where('cto_application_id',$id)->get();
+                                    $totalHours = 0;
+                                    foreach ($cto_application_date_times as $cto_application_date_time) {
+                                        $timeFrom = Carbon::parse($cto_application_date_time->time_from);
+                                        $timeTo = Carbon::parse($cto_application_date_time->time_to);
+                                        $totalHours += $timeTo->diffInHours($timeFrom);
+                                    }
+
+
+                                    $employee_cto_credits = new EmployeeOvertimeCredit();
+                                    $employee_cto_credits->employee_profile_id = '1';
+                                    $employee_cto_credits->cto_application_id = $id;
+                                    $employee_cto_credits->operation = "deduct";
+                                    // $employee_cto_credits->reason = "cto";
+                                    $employee_cto_credits->overtime_hours = $totalHours;
+                                    $employee_cto_credits->credit_value = $totalHours;
+                                    $employee_cto_credits->date = date('Y-m-d');
+                                    $employee_cto_credits->save();
+
+                                }
+                                return response(['message' => 'Application has been sucessfully '.$message_action, 'data' => $cto_applications], Response::HTTP_CREATED);
+                            // }
+                }
+            }
+         catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage(),'error'=>true]);
+        }
+
+    }
     public function show(CtoApplication $ctoApplication)
     {
         //
     }
-
     /**
      * Show the form for editing the specified resource.
      */

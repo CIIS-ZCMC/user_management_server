@@ -1552,7 +1552,7 @@ class LeaveApplicationController extends Controller
 
                                 if($new_status=="approved")
                                 {
-                                    $leave_application_date_time=LeaveApplicationDateTime::findOrFail($id);
+                                    $leave_application_date_time=LeaveApplicationDateTime::where('leave_application_id',$id)->get();
                                     $total_days = 0;
 
                                     foreach ($leave_application_date_time as $leave_date_time) {
