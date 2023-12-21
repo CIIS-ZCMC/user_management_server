@@ -16,7 +16,6 @@ class ObApplicationLog extends Model
         'action',
         'date',
         'time',
-        'fields'
 
     ];
         public function ob_application(){
