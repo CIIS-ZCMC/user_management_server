@@ -260,7 +260,11 @@ class EmployeeProfileController extends Controller
                     $query->with([
                         'system',
                         'roleModulePermissions' => function ($query) {
-                            $query->with(['module', 'permission']);
+                            $query->with([
+                                'modulePermission' => function($query){
+                                    $query->with(['module', 'permission']);
+                                }
+                            ]);
                         }
                     ]);
                 }
@@ -268,7 +272,7 @@ class EmployeeProfileController extends Controller
         
             if(count($special_access_permissions) > 0)
             {
-                foreach($special_access_permissions['systemRole'] as $key => $special_access_permission)
+                foreach($special_access_permissions as $key => $special_access_permission)
                 {
                     $system_exist = false;
                     $system_role = $special_access_permission['systemRole'];
