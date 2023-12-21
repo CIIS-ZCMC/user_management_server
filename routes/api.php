@@ -184,6 +184,14 @@ Route::middleware('auth.cookie')->group(function(){
         Route::middleware(['auth.permission:UMIS-SM view-all'])->group(function(){
             Route::get('system-role-all', 'SystemRoleController@index');
         });
+        
+        Route::middleware(['auth.permission:UMIS-SM view-all'])->group(function(){
+            Route::get('system-role/employees-with-special-access', 'SystemRoleController@employeesWithSpecialAccess');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-SM view-all'])->group(function(){
+            Route::get('system-role/designation-with-system-roles', 'SystemRoleController@designationsWithSystemRoles');
+        });
 
         Route::middleware(['auth.permission:UMIS-SM write'])->group(function(){
             Route::post('system-role/{id}', 'SystemRoleController@store');
@@ -658,6 +666,10 @@ Route::middleware('auth.cookie')->group(function(){
         
         Route::middleware(['auth.permission:UMIS-EM put'])->group(function(){
             Route::get('employee-profile/validate-access-token', 'EmployeeProfileController@revalidateAccessToken');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function(){
+            Route::get('employees-by-area-assigned', 'EmployeeProfileController@employeesByAreaAssigned');
         });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function(){

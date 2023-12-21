@@ -31,6 +31,17 @@ class Section extends Model
 
     public $timestamps = TRUE;
 
+    public function employees()
+    {
+        return $this->belongsToMany(AssignArea::class, EmployeeProfile::class, 'employee_profile_id', 'id', 'section_id', 'id');
+    }
+    
+    public function assignArea()
+    {
+        return $this->hasMany(AssignArea::class);
+    }
+
+
     public function division()
     {
         return $this->belongsTo(Division::class);

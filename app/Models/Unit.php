@@ -29,6 +29,11 @@ class Unit extends Model
     ];
 
     public $timestamps = TRUE;
+    
+    public function assignArea()
+    {
+        return $this->hasMany(AssignArea::class);
+    }
 
     public function head()
     {
