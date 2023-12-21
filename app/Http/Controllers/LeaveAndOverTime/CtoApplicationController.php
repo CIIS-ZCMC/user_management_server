@@ -79,7 +79,9 @@ class CtoApplicationController extends Controller
                         'total_days'=> $total_days,
                         'employee_id' => $cto_application->employee_profile_id,
                         'employee_name' => "{$first_name} {$last_name}" ,
-                        'position' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
+                        'position_code' => $cto_application->employeeProfile->assignedArea->designation->code ?? null,
+                        'position_name' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
+                        'date_created' => $cto_application->date,
                         'division_head' =>$chief_name,
                         'division_head_position'=> $chief_position,
                         'department_head' =>$head_name,
@@ -250,7 +252,9 @@ class CtoApplicationController extends Controller
                             'total_days'=>$total_days,
                             'employee_id' => $cto_application->employee_profile_id,
                             'employee_name' => "{$first_name} {$last_name}" ,
-                            'position' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
+                            'position_code' => $cto_application->employeeProfile->assignedArea->designation->code ?? null,
+                            'position_name' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
+                            'date_created' => $cto_application->date,
                             'division_head' =>$chief_name,
                             'division_head_position'=> $chief_position,
                             'department_head' =>$head_name,
@@ -471,7 +475,9 @@ class CtoApplicationController extends Controller
                                     'total_days'=> $total_days,
                                     'employee_id' => $cto_application->employee_profile_id,
                                     'employee_name' => "{$first_name} {$last_name}" ,
-                                    'position' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
+                                    'position_code' => $cto_application->employeeProfile->assignedArea->designation->code ?? null,
+                                    'position_name' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
+                                    'date_created' => $cto_application->date,
                                     'division_head' =>$chief_name,
                                     'division_head_position'=> $chief_position,
                                     'department_head' =>$head_name,
@@ -562,7 +568,7 @@ class CtoApplicationController extends Controller
 
         $cto_applications = [];
         $division = AssignArea::where('employee_profile_id',$id)->value('division_id');
-      if($status == 'for-approval-division-head'){
+        if($status == 'for-approval-division-head'){
                 $divisionHeadId = Division::where('id', $division)->value('chief_employee_profile_id');
                 if($divisionHeadId == $id) {
                     $cto_applications = CtoApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','logs'])
@@ -1116,8 +1122,6 @@ class CtoApplicationController extends Controller
                                             $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
                                             $chief_position = $division->chief->assignedArea->designation->name ?? null;
                                         }
-
-
                                     }
                                     if($department)
                                     {
@@ -1154,7 +1158,9 @@ class CtoApplicationController extends Controller
                                 'total_days'=> $total_days,
                                 'employee_id' => $cto_application->employee_profile_id,
                                 'employee_name' => "{$first_name} {$last_name}" ,
-                                'position' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
+                                'position_code' => $cto_application->employeeProfile->assignedArea->designation->code ?? null,
+                                'position_name' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
+                                'date_created' => $cto_application->date,
                                 'division_head' =>$chief_name,
                                 'division_head_position'=> $chief_position,
                                 'department_head' =>$head_name,
@@ -1299,7 +1305,9 @@ class CtoApplicationController extends Controller
                             'total_days'=> $total_days,
                             'employee_id' => $cto_application->employee_profile_id,
                             'employee_name' => "{$first_name} {$last_name}" ,
-                            'position' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
+                            'position_code' => $cto_application->employeeProfile->assignedArea->designation->code ?? null,
+                            'position_name' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
+                            'date_created' => $cto_application->date,
                             'division_head' =>$chief_name,
                             'division_head_position'=> $chief_position,
                             'department_head' =>$head_name,
@@ -1356,7 +1364,6 @@ class CtoApplicationController extends Controller
                         ];
                     });
                     return response()->json(['cto_applications' => $cto_applications_result ]);
-
                 }
                 else
                 {
@@ -1377,7 +1384,6 @@ class CtoApplicationController extends Controller
             $section = AssignArea::where('employee_profile_id',$id)->value('section_id');
             $sectionHeadId = Section::where('id', $section)->value('supervisor_employee_profile_id');
             if($sectionHeadId == $id) {
-
                 $cto_applications = ctoApplication::with(['employeeProfile.assignedArea.section','employeeProfile.personalInformation','logs'])
                 ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
                     $query->where('id', $section);
@@ -1405,8 +1411,6 @@ class CtoApplicationController extends Controller
                                         $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
                                         $chief_position = $division->chief->assignedArea->designation->name ?? null;
                                     }
-
-
                                 }
                                 if($department)
                                 {
@@ -1443,7 +1447,9 @@ class CtoApplicationController extends Controller
                             'total_days'=> $total_days,
                             'employee_id' => $cto_application->employee_profile_id,
                             'employee_name' => "{$first_name} {$last_name}" ,
-                            'position' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
+                            'position_code' => $cto_application->employeeProfile->assignedArea->designation->code ?? null,
+                            'position_name' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
+                            'date_created' => $cto_application->date,
                             'division_head' =>$chief_name,
                             'division_head_position'=> $chief_position,
                             'department_head' =>$head_name,
@@ -1541,8 +1547,6 @@ class CtoApplicationController extends Controller
                                     $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
                                     $chief_position = $division->chief->assignedArea->designation->name ?? null;
                                 }
-
-
                             }
                             if($department)
                             {
@@ -1579,7 +1583,9 @@ class CtoApplicationController extends Controller
                         'total_days'=> $total_days,
                         'employee_id' => $cto_application->employee_profile_id,
                         'employee_name' => "{$first_name} {$last_name}" ,
-                        'position' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
+                        'position_code' => $cto_application->employeeProfile->assignedArea->designation->code ?? null,
+                        'position_name' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
+                        'date_created' => $cto_application->date,
                         'division_head' =>$chief_name,
                         'division_head_position'=> $chief_position,
                         'department_head' =>$head_name,
@@ -1608,7 +1614,6 @@ class CtoApplicationController extends Controller
                             else{
                                 $action=  $process_name . ' by ' . $first_name .' '. $last_name;
                             }
-
                             $date=$log->date;
                             $formatted_date=Carbon::parse($date)->format('M d,Y');
                             return [
@@ -1629,7 +1634,6 @@ class CtoApplicationController extends Controller
                                         'time_from' => $date->time_from,
                                         'time_to' => $date->time_to,
                                         'date' => $date->date,
-
                             ];
                         }),
 
@@ -1723,31 +1727,4 @@ class CtoApplicationController extends Controller
 
     }
 
-    public function show(CtoApplication $ctoApplication)
-    {
-        //
-    }
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(CtoApplication $ctoApplication)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, CtoApplication $ctoApplication)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(CtoApplication $ctoApplication)
-    {
-        //
-    }
 }
