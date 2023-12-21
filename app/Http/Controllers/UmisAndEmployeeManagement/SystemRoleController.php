@@ -5,7 +5,9 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 use App\Http\Controllers\Controller;
 
 use App\Http\Requests\NewRolePermissionRequest;
+use App\Http\Resources\EmployeeWithSpecialAccessResource;
 use App\Http\Resources\SpecialAccessRoleAssignResource;
+use App\Models\EmployeeProfile;
 use App\Models\Role;
 use App\Models\SpecialAccessRole;
 use Carbon\Carbon;
@@ -58,6 +60,23 @@ class SystemRoleController extends Controller
         }
     }
     
+    public function employeesWithSpecialAccess(Request $request)
+    {
+        try{
+            $employees = EmployeeProfile::all();
+
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in assigning special access role.'.$this->PLURAL_MODULE_NAME.'.');
+            
+            return response() -> json([
+                'data' => EmployeeWithSpecialAccessResource::collection($employees),
+                'message' => 'Special access role assign successfully.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'addSpecialAccessRole', $th->getMessage());
+            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
     public function store($id, SystemRoleRequest $request)
     {
         try{  
@@ -92,27 +111,40 @@ class SystemRoleController extends Controller
     public function addSpecialAccessRole($id, Request $request)
     {
         try{
+            $failed = [];
+            $special_access_roles = [];
             $system_role = SystemRole::find($id);
 
             if(!$system_role){
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $employee_profile_id = strip_tags($request->employee_profile_id); 
+            foreach($request->employees as $employee_id){
+                $employee_profile_id = strip_tags($employee_id); 
 
-            $special_access_role = SpecialAccessRole::create([
-                'system_role_id' => $system_role->id,
-                'employee_profile_id' => $employee_profile_id 
-            ]);
+                $special_access_role = SpecialAccessRole::create([
+                    'system_role_id' => $system_role->id,
+                    'employee_profile_id' => $employee_profile_id 
+                ]);
 
-            if(!$special_access_role){
-                return response()->json(['message' => "Assigning special access role fails"], Response::HTTP_UNPROCESSABLE_ENTITY);
+                if(!$special_access_role){
+                    $failed[] = $employee_id;
+                    continue;
+                }
+                $special_access_roles[] = $special_access_role;
+            }            
+
+            if(count($failed) !== 0){
+                return response()->json([
+                    'data' => SpecialAccessRoleAssignResource::collection($special_access_roles),
+                    'message' => "Some employee failed to assign special access."
+                ], Response::HTTP_UNPROCESSABLE_ENTITY);
             }
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in assigning special access role.'.$this->PLURAL_MODULE_NAME.'.');
             
             return response() -> json([
-                'data' => new SpecialAccessRoleAssignResource($special_access_role),
+                'data' => SpecialAccessRoleAssignResource::collection($special_access_roles),
                 'message' => 'Special access role assign successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
