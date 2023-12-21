@@ -1195,7 +1195,7 @@ class OvertimeApplicationController extends Controller
 
                         ];
                         });
-                        return response()->json(['OvertimeApplication' => $overtime_applications_result]);
+                        return response()->json(['data' => $overtime_applications_result]);
                 }
                 else
                 {
@@ -1372,7 +1372,7 @@ class OvertimeApplicationController extends Controller
                             }),
                         ];
                         });
-                    return response()->json(['OvertimeApplication' => $overtime_applications_result]);
+                    return response()->json(['data' => $overtime_applications_result]);
                 }
                 else
                 {
@@ -1546,7 +1546,7 @@ class OvertimeApplicationController extends Controller
 
                                 ];
                             });
-                            return response()->json(['overtime_applications' => $overtime_applications_result]);
+                            return response()->json(['data' => $overtime_applications_result]);
                         }
                         else
                         {

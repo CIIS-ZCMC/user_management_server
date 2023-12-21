@@ -778,7 +778,6 @@ class ObApplicationController extends Controller
     }
     public function getDivisionObApplications(Request $request)
     {
-
         try{
             $id='1';
             $official_business_applications = [];
@@ -897,7 +896,7 @@ class ObApplicationController extends Controller
 
                             ];
                             });
-                            return response()->json(['official_business_applications' => $official_business_applications_result]);
+                            return response()->json(['data' => $official_business_applications_result]);
                         }
                         else
                         {
@@ -1031,7 +1030,7 @@ class ObApplicationController extends Controller
 
                         ];
                         });
-                    return response()->json(['official_business_applications' => $official_business_applications_result]);
+                    return response()->json(['data' => $official_business_applications_result]);
                 }
                 else
                 {
@@ -1165,7 +1164,7 @@ class ObApplicationController extends Controller
                             }),
                         ];
                     });
-                    return response()->json(['official_business_applications' => $official_business_applications_result]);
+                    return response()->json(['data' => $official_business_applications_result]);
                 }
                 else
                 {
@@ -1292,7 +1291,7 @@ class ObApplicationController extends Controller
 
                     ];
                 });
-                return response()->json(['official_business_applications' => $official_business_applications_result]);
+                return response()->json(['data' => $official_business_applications_result]);
             }
         }catch(\Throwable $th){
 

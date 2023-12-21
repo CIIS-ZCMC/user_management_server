@@ -1218,7 +1218,7 @@ class CtoApplicationController extends Controller
                         });
 
 
-                        return response()->json(['cto_applications' => $cto_applications_result ]);
+                        return response()->json(['data' => $cto_applications_result ]);
                     }
                     else
                     {
@@ -1363,7 +1363,7 @@ class CtoApplicationController extends Controller
 
                         ];
                     });
-                    return response()->json(['cto_applications' => $cto_applications_result ]);
+                    return response()->json(['data' => $cto_applications_result ]);
                 }
                 else
                 {
@@ -1505,7 +1505,7 @@ class CtoApplicationController extends Controller
 
                         ];
                     });
-                    return response()->json(['cto_applications' => $cto_applications_result ]);
+                    return response()->json(['data' => $cto_applications_result ]);
                 }
                 else
                 {
@@ -1639,7 +1639,7 @@ class CtoApplicationController extends Controller
 
                     ];
                 });
-                return response()->json(['cto_applications' => $cto_applications_result ]);
+                return response()->json(['data' => $cto_applications_result ]);
             }
             else
             {

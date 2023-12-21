@@ -1291,7 +1291,7 @@ class LeaveApplicationController extends Controller
                             }),
                         ];
                     });
-                    return response()->json(['leave_applications' => $leave_applications_result]);
+                    return response()->json(['data' => $leave_applications_result]);
                 }
                 else
                 {
@@ -1454,7 +1454,7 @@ class LeaveApplicationController extends Controller
                             }),
                         ];
                     });
-                    return response()->json(['leave_applications' => $leave_applications_result]);
+                    return response()->json(['data' => $leave_applications_result]);
                 }
                 else
                 {
@@ -1620,7 +1620,7 @@ class LeaveApplicationController extends Controller
                             }),
                         ];
                     });
-                    return response()->json(['leave_applications' => $leave_applications_result]);
+                    return response()->json(['data' => $leave_applications_result]);
                 }
                 else
                 {
@@ -1782,7 +1782,7 @@ class LeaveApplicationController extends Controller
                             }),
                         ];
                     });
-                    return response()->json(['leave_applications' => $leave_applications_result]);
+                    return response()->json(['data' => $leave_applications_result]);
                 }
                 else
                 {
@@ -1940,7 +1940,7 @@ class LeaveApplicationController extends Controller
                             }),
                         ];
                     });
-                    return response()->json(['leave_applications' => $leave_applications_result]);
+                    return response()->json(['data' => $leave_applications_result]);
             }
             else
             {

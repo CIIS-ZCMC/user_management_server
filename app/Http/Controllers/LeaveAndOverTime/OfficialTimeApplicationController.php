@@ -1194,7 +1194,7 @@ class OfficialTimeApplicationController extends Controller
 
                     ];
                     });
-                    return response()->json(['OfficialTimeApplication' => $official_time_applications_result]);
+                    return response()->json(['data' => $official_time_applications_result]);
                 }
                 else
                 {
@@ -1327,7 +1327,7 @@ class OfficialTimeApplicationController extends Controller
 
                         ];
                         });
-                    return response()->json(['OfficialTimeApplication' => $official_time_applications_result]);
+                    return response()->json(['data' => $official_time_applications_result]);
                 }
                 else
                 {
@@ -1458,7 +1458,7 @@ class OfficialTimeApplicationController extends Controller
                                 }),
                             ];
                         });
-                        return response()->json(['official_time_applications' => $official_time_applications_result]);
+                        return response()->json(['data' => $official_time_applications_result]);
                     }
                     else
                     {
@@ -1585,7 +1585,7 @@ class OfficialTimeApplicationController extends Controller
 
                     ];
                 });
-                return response()->json(['official_business_applications' => $official_time_applications_result]);
+                return response()->json(['data' => $official_time_applications_result]);
             }
             else
             {
