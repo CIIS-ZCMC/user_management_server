@@ -188,6 +188,10 @@ Route::middleware('auth.cookie')->group(function(){
         Route::middleware(['auth.permission:UMIS-SM view-all'])->group(function(){
             Route::get('system-role/employees-with-special-access', 'SystemRoleController@employeesWithSpecialAccess');
         });
+        
+        Route::middleware(['auth.permission:UMIS-SM view-all'])->group(function(){
+            Route::get('system-role/designation-with-system-roles', 'SystemRoleController@designationsWithSystemRoles');
+        });
 
         Route::middleware(['auth.permission:UMIS-SM write'])->group(function(){
             Route::post('system-role/{id}', 'SystemRoleController@store');

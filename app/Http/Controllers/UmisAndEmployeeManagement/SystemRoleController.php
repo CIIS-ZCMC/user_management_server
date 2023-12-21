@@ -5,8 +5,11 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 use App\Http\Controllers\Controller;
 
 use App\Http\Requests\NewRolePermissionRequest;
+use App\Http\Resources\DesignationAssignedSystemRolesResource;
+use App\Http\Resources\DesignationWithSystemRoleResource;
 use App\Http\Resources\EmployeeWithSpecialAccessResource;
 use App\Http\Resources\SpecialAccessRoleAssignResource;
+use App\Models\Designation;
 use App\Models\EmployeeProfile;
 use App\Models\Role;
 use App\Models\SpecialAccessRole;
@@ -65,7 +68,7 @@ class SystemRoleController extends Controller
         try{
             $employees = EmployeeProfile::all();
 
-            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in assigning special access role.'.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching employees with special access role.'.$this->PLURAL_MODULE_NAME.'.');
             
             return response() -> json([
                 'data' => EmployeeWithSpecialAccessResource::collection($employees),
@@ -76,6 +79,24 @@ class SystemRoleController extends Controller
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+    
+    public function designationsWithSystemRoles(Request $request)
+    {
+        try{
+            $employees = Designation::find(125);
+
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in assigning special access role.'.$this->PLURAL_MODULE_NAME.'.');
+            
+            return response() -> json([
+                'data' => new DesignationAssignedSystemRolesResource($employees),
+                'message' => 'Special access role assign successfully.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'addSpecialAccessRole', $th->getMessage());
+            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
     
     public function store($id, SystemRoleRequest $request)
     {
