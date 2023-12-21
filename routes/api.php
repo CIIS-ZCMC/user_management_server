@@ -51,6 +51,11 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
     Route::post('leave-application-update/{id}/{status}', 'LeaveApplicationController@updateLeaveApplicationStatus');
     Route::post('user-leave-application/{id}', 'LeaveApplicationController@getUserLeaveApplication');
     Route::post('user-leave-credit-logs/{id}', 'LeaveApplicationController@getUserLeaveCreditsLogs');
+    Route::get('leave-application-hr', 'LeaveApplicationController@getHRLeaveApplications');
+    Route::get('leave-application-division', 'LeaveApplicationController@getDivisionLeaveApplications');
+    Route::get('leave-application-department', 'LeaveApplicationController@getDepartmentLeaveApplications');
+    Route::get('leave-application-section', 'LeaveApplicationController@getSectionLeaveApplications');
+    Route::get('leave-application-declined', 'LeaveApplicationController@getDeclinedLeaveApplications');
     Route::post('access-level-leave-application/{id}/{status}', 'LeaveApplicationController@getLeaveApplications');
 
     Route::get('ob-application-all', 'ObApplicationController@index');
