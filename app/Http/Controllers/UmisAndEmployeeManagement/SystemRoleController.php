@@ -83,12 +83,12 @@ class SystemRoleController extends Controller
     public function designationsWithSystemRoles(Request $request)
     {
         try{
-            $employees = Designation::find(125);
+            $employees = Designation::all();
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in assigning special access role.'.$this->PLURAL_MODULE_NAME.'.');
             
             return response() -> json([
-                'data' => new DesignationAssignedSystemRolesResource($employees),
+                'data' => DesignationAssignedSystemRolesResource::collection($employees),
                 'message' => 'Special access role assign successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
