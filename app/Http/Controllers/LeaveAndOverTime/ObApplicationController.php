@@ -922,6 +922,7 @@ class ObApplicationController extends Controller
                     $query->where('id', $department);
                 })
                 ->where('status', 'for-approval-department-head')
+                ->orWhere('status', 'for-approval-division-head')
                 ->get();
                 if($official_business_applications->isNotEmpty())
                 {
