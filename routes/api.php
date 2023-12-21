@@ -65,6 +65,10 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
     Route::post('ob-application-cancel/{id}', 'ObApplicationController@cancelObApplication');
     Route::post('ob-application-update/{id}/{status}', 'ObApplicationController@updateObApplicationStatus');
     Route::post('user-ob-application/{id}', 'ObApplicationController@getUserObApplication');
+    Route::get('ob-application-division', 'ObApplicationController@getDivisionObApplications');
+    Route::get('ob-application-department', 'ObApplicationController@getDepartmentObApplications');
+    Route::get('ob-application-section', 'ObApplicationController@getSectionObApplications');
+    Route::get('ob-application-declined', 'ObApplicationController@getDeclinedObApplications');
     Route::post('access-level-ob-application/{id}/{status}', 'ObApplicationController@getObApplications');
 
     Route::get('ot-application-all', 'OfficialTimeApplicationController@index');
@@ -75,6 +79,10 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
     Route::post('ot-application-cancel/{id}', 'OfficialTimeApplicationController@cancelOtApplication');
     Route::post('ot-application-update/{id}/{status}', 'OfficialTimeApplicationController@updateStatus');
     Route::post('user-ot-application/{id}', 'OfficialTimeApplicationController@getUserOtApplication');
+    Route::get('ot-application-division', 'OtApplicationController@getDivisionOtApplications');
+    Route::get('ot-application-department', 'OtApplicationController@getDepartmentOtApplications');
+    Route::get('ot-application-section', 'OtApplicationController@getSectionOtApplications');
+    Route::get('ot-application-declined', 'OtApplicationController@getDeclinedOtApplications');
     Route::post('access-level-ot-application/{id}/{status}', 'OfficialTimeApplicationController@getOtApplications');
 
     Route::get('ovt-application-all', 'OvertimeApplicationController@index');
@@ -87,6 +95,10 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
     Route::post('ovt-application-cancel/{id}', 'OvertimeApplicationController@cancelOtApplication');
     Route::post('ovt-application-update/{id}/{status}', 'OvertimeApplicationController@updateOvertimeApplicationStatus');
     Route::post('user-ovt-application/{id}', 'OvertimeApplicationController@getUserOvertimeApplication');
+    Route::get('ovt-application-division', 'OvertimeApplicationController@getDivisionOvtApplications');
+    Route::get('ovt-application-department', 'OvertimeApplicationController@getDepartmentOvtApplications');
+    Route::get('ovt-application-section', 'OvertimeApplicationController@getSectionOvtApplications');
+    Route::get('ovt-application-declined', 'OvertimeApplicationController@getDeclinedOvtApplications');
     Route::post('access-level-ovt-application/{id}/{status}', 'OvertimeApplicationController@getOvertimeApplications');
     Route::post('add-monthly-overtime', 'EmployeeOvertimeCreditController@store');
 
@@ -98,6 +110,10 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
     Route::post('cto-application-cancel/{id}', 'CtoApplicationController@cancelCtoApplication');
     Route::post('cto-application-update/{id}/{status}', 'CtoApplicationController@updateStatus');
     Route::post('user-cto-application/{id}', 'CtoApplicationController@getUserCtoApplication');
+    Route::get('cto-application-division', 'CtoApplicationController@getDivisionCtoApplications');
+    Route::get('cto-application-department', 'CtoApplicationController@getDepartmentCtoApplications');
+    Route::get('cto-application-section', 'CtoApplicationController@getSectionCtoApplications');
+    Route::get('cto-application-declined', 'CtoApplicationController@getDeclinedCtoApplications');
     Route::post('access-level-cto-application/{id}/{status}', 'CtoApplicationController@getCtoApplications');
 
 
