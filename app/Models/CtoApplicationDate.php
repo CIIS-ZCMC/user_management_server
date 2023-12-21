@@ -10,6 +10,7 @@ class CtoApplicationDate extends Model
     use HasFactory;
     protected $table = 'cto_application_dates';
     public $fillable = [
+        
         'cto_application_id',
         'time_from',
         'time_to',
