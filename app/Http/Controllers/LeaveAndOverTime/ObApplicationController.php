@@ -788,7 +788,7 @@ class ObApplicationController extends Controller
                         ->whereHas('employeeProfile.assignedArea', function ($query) use ($division) {
                             $query->where('id', $division);
                         })
-                        ->where('status', 'for-approval-division-head')
+                        // ->where('status', 'for-approval-division-head')
                         ->get();
                         if($official_business_applications->isNotEmpty())
                         {
@@ -921,8 +921,8 @@ class ObApplicationController extends Controller
                 ->whereHas('employeeProfile.assignedArea', function ($query) use ($department) {
                     $query->where('id', $department);
                 })
-                ->where('status', 'for-approval-department-head')
-                ->orWhere('status', 'for-approval-division-head')
+                // ->where('status', 'for-approval-department-head')
+                // ->orWhere('status', 'for-approval-division-head')
                 ->get();
                 if($official_business_applications->isNotEmpty())
                 {
@@ -1056,7 +1056,7 @@ class ObApplicationController extends Controller
                 ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
                     $query->where('id', $section);
                 })
-                ->where('status', 'for-approval-section-head')
+                // ->where('status', 'for-approval-section-head')
                 ->get();
                 if($official_business_applications->isNotEmpty())
                 {
@@ -1183,7 +1183,7 @@ class ObApplicationController extends Controller
             $id='1';
             $official_business_applications = [];
             $official_business_applications = ObApplication::with(['employeeProfile.personalInformation','logs'])
-            ->where('status', 'declined')
+            // ->where('status', 'declined')
             ->get();
             if($official_business_applications->isNotEmpty())
             {
