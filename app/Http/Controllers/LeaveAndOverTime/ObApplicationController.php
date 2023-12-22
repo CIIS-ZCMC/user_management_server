@@ -157,7 +157,7 @@ class ObApplicationController extends Controller
 
 
     }
-    public function getUserObApplication($id)
+    public function getUserObApplication()
     {
         try{
             $id='1';

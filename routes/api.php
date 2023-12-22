@@ -64,7 +64,7 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
     Route::post('ob-application-decline/{id}', 'ObApplicationController@declineObApplication');
     Route::post('ob-application-cancel/{id}', 'ObApplicationController@cancelObApplication');
     Route::post('ob-application-update/{id}/{status}', 'ObApplicationController@updateObApplicationStatus');
-    Route::post('user-ob-application/{id}', 'ObApplicationController@getUserObApplication');
+    Route::post('user-ob-application', 'ObApplicationController@getUserObApplication');
     Route::get('ob-application-division', 'ObApplicationController@getDivisionObApplications');
     Route::get('ob-application-department', 'ObApplicationController@getDepartmentObApplications');
     Route::get('ob-application-section', 'ObApplicationController@getSectionObApplications');
