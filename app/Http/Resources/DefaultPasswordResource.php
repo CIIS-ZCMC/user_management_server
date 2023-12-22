@@ -18,6 +18,7 @@ class DefaultPasswordResource extends JsonResource
         $end_at = $this->end_at === null?'NONE':$this->end_at;
 
         return [
+            'id'=> $this->id,
             'password' => $this->password,
             'status' => $status,
             'effective_at' => $this->effective_at,

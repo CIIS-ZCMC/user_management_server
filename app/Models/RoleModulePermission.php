@@ -23,6 +23,6 @@ class RoleModulePermission extends Model
     }
 
     public function systemRole(){
-        return $this->belongsToMany(SystemRole::class);
+        return $this->belongsTo(SystemRole::class);
     }
 }

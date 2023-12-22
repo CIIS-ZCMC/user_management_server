@@ -18,6 +18,7 @@ class AddressResource extends JsonResource
         $telephone_no = $this->telephone_no===null?'NONE': $this->telephone_no;
         
         return [
+            'id' => $this->id,
             'street' => $this->street,
             'barangay' => $this->barangay,
             'city' => $this->city,

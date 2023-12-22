@@ -21,4 +21,9 @@ class EmploymentType extends Model
     {
         return $this->hasMany(InActiveEmployee::class);
     }
+
+    public function employees()
+    {
+        return $this->hasMany(EmployeeProfile::class);
+    }
 }

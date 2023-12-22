@@ -17,11 +17,11 @@ class SystemModuleResource extends JsonResource
         $system = $this->system->name;
 
         return [
+            'id' => $this->id,
             'name' => $this->name,
             'code' => $this->code,
             'system' => $system,
-            'description' => $this->description,
-            'created_at' => $this->created_at
+            'description' => $this->description
         ];
     }
 }

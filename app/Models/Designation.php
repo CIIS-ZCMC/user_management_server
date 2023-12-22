@@ -27,11 +27,16 @@ class Designation extends Model
 
     public function plantilla()
     {
-        return $this->belongsTo(Plantilla::class);
+        return $this->hasMany(Plantilla::class);
     }
 
     public function positionSystemRoles()
     {
         return $this->hasMany(PositionSystemRole::class);
+    }
+
+    public function assignAreas()
+    {
+        return $this->hasMany(AssignArea::class);
     }
 }

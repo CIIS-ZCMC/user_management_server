@@ -5,6 +5,8 @@ namespace App\Http\Controllers\DTR;
 use App\Models\Biometrics;
 use Illuminate\Http\Request;
 use App\Models\DailyTimeRecords;
+use Illuminate\Http\Response;
+use App\Models\daily_time_records;
 use App\Methods\Helpers;
 use App\Methods\BioControl;
 use App\Models\DtrAnomalies;

@@ -29,6 +29,7 @@ class FamilyBackGroundResource extends JsonResource
         $employee_id = $employee['employee_id'];
 
         return [
+            'id' => $this->id,
             'spouse' => $spouse,
             'address' => $address,
             'zip_code'=> $zip_code,

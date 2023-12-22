@@ -18,7 +18,7 @@ class EmployeeProfileResource extends JsonResource
         $nameExtension = $personal_information === null?'':' '.$personal_information->name_extension.' ';
         $nameTitle = $personal_information===null?'': ' '.$personal_information->name_title;
 
-        $name = $personal_information->first_name.' '.$personal_information->last_name.$nameExtension.$nameTitle;
+        $name = $personal_information->name;
         $assigned_area = $this->assignedArea;
         $area_details = $assigned_area->findDetails();
         $area_code = $area_details['code'];
@@ -33,9 +33,10 @@ class EmployeeProfileResource extends JsonResource
         $account_status = $this->deactivated_at === null? 'Active':$this->deactivated_at;
 
         return [
+            'id' => $this->id,
             'employee_id' => $this->employee_id,
             'name' => $name,
-            'profile_url' => $profile_url,
+            'profile_url' => $this->profile_url,
             'area_code' => $area_code,
             'area_name' => $area_name,
             'is_regular_employee' => $is_regular_employee,

@@ -23,7 +23,8 @@ class PermissionRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
-            'action' => 'required|string|max:255'
+            'action' => 'required|string|max:255',
+            'password' => 'nullable|string|max:255'
         ];
     }
 }

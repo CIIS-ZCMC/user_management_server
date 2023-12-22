@@ -11,6 +11,7 @@ class EmployeeLeaveCredit extends JsonResource
     public function toArray($request)
     {
         return [
+            "id"=> $this->id,
             'employee_profile' => $this->employee_profile ? new EmployeeProfile( $this->EmployeeProfile) : null,
             'leave_application' => $this->leave_application ? new LeaveApplication( $this->leave_application) : null,
             'leave_type' => $this->leave_type ? new LeaveType( $this->leave_type) : null,

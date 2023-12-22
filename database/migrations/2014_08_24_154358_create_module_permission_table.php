@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('module_permissions', function (Blueprint $table) {
             $table->id();
             $table->string('code');
-            $table->boolean('deactivated')->default(FALSE);
+            $table->boolean('active')->default(TRUE);
             $table->unsignedBigInteger('permission_id');
             $table->foreign('permission_id')->references('id')->on('permissions');
             $table->unsignedBigInteger('system_module_id');

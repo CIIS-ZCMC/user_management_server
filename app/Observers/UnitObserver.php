@@ -7,7 +7,7 @@ use App\Models\Unit;
 
 class UnitObserver
 {
-    private $CACHE_KEY = 'sections';
+    private $CACHE_KEY = 'units';
 
     /**
      * Handle the Unit "created" event.

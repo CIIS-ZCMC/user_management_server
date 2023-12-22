@@ -24,6 +24,7 @@ class IdentificationNumberResource extends JsonResource
         $bank_no = $this->bank_account_no===null?'NONE':$this->decryptData("bank_account_no");
 
         return [
+            'id' => $this->id,
             'gsis' => $gsis,
             'pag_ibig' => $pag_ibig,
             'philhealth' => $philhealth,

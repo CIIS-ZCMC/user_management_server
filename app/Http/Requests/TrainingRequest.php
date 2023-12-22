@@ -24,7 +24,7 @@ class TrainingRequest extends FormRequest
         return [
             'title' => 'required|string|max:255',
             'inclusive_date' => "required|date:Y-m-d",
-            'hours' => "nullable|float",
+            'hours' => "nullable|numeric",
             'type_of_ld' => "required|boolean",
             'conducted_by' => "nullable|string|max:255",
             'personal_information_id' => "required|string|size:36"

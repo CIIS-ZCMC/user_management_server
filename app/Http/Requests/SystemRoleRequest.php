@@ -22,9 +22,9 @@ class SystemRoleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:255',
-            'code' => 'required|string',
-            'system_id' => 'required|string|size:36'
+            'role_id' => 'required|integer',
+            'system_id' => 'required|integer',
+            'password' => 'nullable|string|max:255'
         ];
     }
 }

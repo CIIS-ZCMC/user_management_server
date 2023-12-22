@@ -22,6 +22,7 @@ class SpecialAccessRoleResource extends JsonResource
 
 
         return [
+            'id' => $this->id,
             'system_role_id' => $this->system_role_id,
             'name' => $name,
             'system' => $system,

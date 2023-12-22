@@ -16,12 +16,12 @@ class ModulePermission extends Model
         'permission_id',
         'code',
         'role_module_permission_id',
-        'deactivated'
+        'active'
     ];
 
-    public function systemModule()
+    public function module()
     {
-        return $this->belongsTo(SystemModule::class);
+        return $this->belongsTo(SystemModule::class,'system_module_id' ,'id');
     }
     
     public function permission()

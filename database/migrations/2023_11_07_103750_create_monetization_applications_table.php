@@ -19,7 +19,10 @@ return new class extends Migration
             $table->foreign('leave_type_id')->references('id')->on('leave_types')->onDelete('cascade');;
             $table->string('reason')->nullable();
             $table->string('credit_value');
+            $table->string('status')->nullable();
             $table->string('date')->nullable();
+            $table->string('time')->nullable();
+            $table->string('attachment')->nullable();
             $table->timestamps();
         });
     }

@@ -11,7 +11,7 @@ class UnitRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,11 @@ class UnitRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'name' => 'required|string|max:255',
+            'code' => 'required|string|max:255',
+            'section_id' => 'required|integer',
+            'attachment' => 'nullable|file|mimes:jpeg,png,pdf,doc,docx',
+            'password' => 'nullable|string|max:255'
         ];
     }
 }

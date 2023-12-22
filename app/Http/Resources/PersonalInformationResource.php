@@ -18,6 +18,7 @@ class PersonalInformationResource extends JsonResource
         $employee_id = $employee['employee_id'];
 
         return [
+            'id' => $this->id,
             'first_name' => $this->first_name,
             'middle_name' => $this->middle_name,
             'last_name' => $this->last_name,
@@ -34,7 +35,7 @@ class PersonalInformationResource extends JsonResource
             'height' => $this->height,
             'weight' => $this->weight,
             'blood_type' => $this->blood_type,
-            'employee_id' => $this->employee_id
+            'employee_id' => $employee_id
         ];
     }
 }

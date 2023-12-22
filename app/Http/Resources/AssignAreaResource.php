@@ -20,22 +20,22 @@ class AssignAreaResource extends JsonResource
         $employee_profile = $this->employeeProfile;
         $employee_id = $employee_profile['employee_id'];
 
-        if($division_id !== null){
+        if($this->division_id !== null){
             $area_code = 'Division';
             $area_name = $this->division->name;
         }
         
-        if($department_id !== null){
+        if($this->department_id !== null){
             $area_code = 'Department';
             $area_name = $this->department->name;
         }
         
-        if($section_id !== null){
+        if($this->section_id !== null){
             $area_code = 'Section';
             $area_name = $this->section->name;
         }
         
-        if($unit_id !== null){
+        if($this->unit_id !== null){
             $area_code = 'Unit';
             $area_name = $this->unit->name;
         }
@@ -45,6 +45,7 @@ class AssignAreaResource extends JsonResource
 
 
         return [
+            'id' => $this->id,
             'employee_id' => $employee_id,
             'area_code' => $area_code,
             'area_name' => $area_name,

@@ -18,7 +18,7 @@ class DesignationTotalPlantillaResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'code' => $this->code,
-            'plantillas_count' => $this->plantillas_count,
+            'plantillas_count' => $this->plantilla_count,
         ];
     }
 }

@@ -15,23 +15,26 @@ class OtherInformationResource extends JsonResource
     public function toArray(Request $request): array
     {
 
-        if($skills_hobbies)
+        if($this->skills_hobbies)
         {
             return [
+                'id' => $this->id,
                 'title' => $this->title,
                 'description' => 'Skill/Hobbies'
             ];
         }
 
-        if($recognition)
+        if($this->recognition)
         {
             return [
+                'id' => $this->id,
                 'title' => $this->title,
                 'description' => 'Recognation'
             ];
         }
 
         return [
+            'id' => $this->id,
             'title' => $this->title,
             'description' => 'Organization'
         ];

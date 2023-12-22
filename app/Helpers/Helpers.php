@@ -24,5 +24,6 @@ class Helpers {
             'ip_address' => $ip
         ]);
     }
+    
 
 }

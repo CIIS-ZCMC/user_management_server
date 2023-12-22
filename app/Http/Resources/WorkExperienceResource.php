@@ -18,6 +18,7 @@ class WorkExperienceResource extends JsonResource
         $salary_grade_and_step = $this->salary_grade_and_step===null?'NONE':$this->salary_grade_and_step;
 
         return [
+            'id' => $this->id,
             'date_from' => $this->date_from,
             'date_to' => $this->date_to,
             'position_title' => $this->position_title,

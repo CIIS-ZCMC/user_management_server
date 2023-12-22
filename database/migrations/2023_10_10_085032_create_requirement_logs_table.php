@@ -15,10 +15,11 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('requirement_id')->unsigned();
             $table->foreign('requirement_id')->references('id')->on('requirements')->onDelete('cascade');
-            $table->unsignedBigInteger('action_by')->unsigned();
-            $table->foreign('action_by')->references('id')->on('employee_profiles')->onDelete('cascade');
+            $table->unsignedBigInteger('action_by_id')->unsigned();
+            $table->foreign('action_by_id')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->string('action')->nullable();
             $table->string('date');
+            $table->string('time')->nullable();
             $table->timestamps();
         });
     }

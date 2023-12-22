@@ -22,8 +22,8 @@ class LegalInformationQuestionRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'order_by' => 'required|integer',
             'content_question' => 'required|string|max:255',
-            'has_sub_question' => 'required|boolean',
             'legal_iq_id' => 'nullable|string|size:36',
         ];
     }

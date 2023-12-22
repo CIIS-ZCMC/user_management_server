@@ -18,18 +18,13 @@ class DepartmentResource extends JsonResource
         {
             $name = $this->name;
             $code = $this->code;
-            $head_designation = $this->headJobSpecification;
-            $head_job_specification = $head_designation['name'];
             $head_status = $this->head_status? 'On Site':'On Leave';
             $approving_officer = $this->head_status? 'Head':'OIC';
 
-            $to_job_specification = $this->trainingOfficerJobSpecification;
-            $training_officer_job_specification = $to_job_specification['name'];
-
 
             $head = $this->head;
-            $head_personal_information = $chief->personalInformation;
-            $head = $chief_personal_information->name;
+            $head_personal_information = $head->personalInformation;
+            $head = $head_personal_information->name;
 
             $officer_in_charge = 'NONE';
             $training_officer = 'NONE';
@@ -52,29 +47,20 @@ class DepartmentResource extends JsonResource
             return [
                 'name' => $name,
                 'code' => $code,
-                'head_job_specification' => $head_job_specification,
                 'head' => $head,
                 'head_status' => $head_status,
-                'training_officer_job_specification' => $this->training_officer_job_specification,
                 'training_officer' => $training_officer,
                 'approving_officer' => $approving_officer,
                 'officer_in_charge' => $officer_in_charge
             ];
         }
 
-        $head_designation = $this->headJobSpecification;
-        $head_job_specification = $head_designation['name'];
-
-        $to_job_specification = $this->trainingOfficerJobSpecification;
-        $training_officer_job_specification = $to_job_specification['name'];
-
         return [
-            'name' => $name,
-            'code' => $code,
-            'head_job_specification' => $head_job_specification,
+            'id' => $this->id,
+            'name' => $this->name,
+            'code' => $this->code,
             'head' => 'NONE',
             'head_status' => 'NONE',
-            'training_officer_job_specification' => $this->training_officer_job_specification,
             'training_officer' => 'NONE',
             'approving_officer' => 'NO RECORD',
             'officer_in_charge' => 'NONE'

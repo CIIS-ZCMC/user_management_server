@@ -18,7 +18,7 @@ class DesignationTotalEmployeeResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'code' => $this->code,
-            'assigned_areas_count' => $this->assigned_areas_count,
+            'assign_areas_count' => $this->assign_areas_count,
         ];
     }
 }

@@ -32,7 +32,8 @@ class EmployeeProfile extends Authenticatable
         'deactivated_at',
         'agency_employee_no',
         'allow_time_adjustment',
-        'employee_type_id'
+        'employee_type_id',
+        'plantilla_number_id'
     ];
 
     public $timestamps = TRUE;
@@ -84,7 +85,12 @@ class EmployeeProfile extends Authenticatable
 
     public function loginTrails()
     {
-        return $this->hasMany(LoginTrails::class);
+        return $this->hasMany(LoginTrail::class);
+    }
+
+    public function plantillaNumber()
+    {
+        return $this->hasOne(PlantillaNumber::class);
     }
 
     public function isDeactivated()
@@ -130,5 +136,43 @@ class EmployeeProfile extends Authenticatable
     public function GetPersonalInfo()
     {
         return $this->personalInformation;
+    }
+    public function leaveCredits()
+    {
+        return $this->hasMany(EmployeeLeaveCredit::class);
+    }
+    public function leaveLogs() {
+        return $this->hasMany(LeaveTypeLog::class);
+    }
+
+    public function overtimeCredits()
+    {
+        return $this->hasMany(EmployeeOvertimeCredit::class);
+    }
+
+    public function leaveApplications() {
+        return $this->hasMany(LeaveApplication::class);
+    }
+
+    public function leaveApplicationLogs() {
+        return $this->hasMany(LeaveApplicationLog::class);
+    }
+   
+    public function obApplications() {
+        return $this->hasMany(ObApplication::class);
+    }
+    
+    public function obApplicationLogs() {
+        return $this->hasMany(ObApplicationLog::class);
+    }
+   
+
+    public function findDesignation()
+    {
+        $assign_area = $this->assignedArea; 
+
+        $designation = $assign_area->plantilla_id  === null?$assign_area->designation:$assign_area->plantilla->designation;
+        
+        return $designation;
     }
 }

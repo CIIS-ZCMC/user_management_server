@@ -21,6 +21,7 @@ class SignInResource extends JsonResource
         $department = $employee_profile->department->name;
 
         return [
+            'id' => $this->id,
             'name' => $name,
             'department' => $department,
             'position' => $position

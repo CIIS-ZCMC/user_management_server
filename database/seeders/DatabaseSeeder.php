@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
         $this->call([LegalInformationQuestionSeeder::class]);
         $this->call([DefaultPasswordSeeder::class]);
         $this->call([SystemSeeder::class]);
+        $this->call([RoleSeeder::class]);
         $this->call([SystemModuleSeeder::class]);
         $this->call([PermissionSeeder::class]);
         $this->call([ModulePermissionSeeder::class]);

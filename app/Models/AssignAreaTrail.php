@@ -11,7 +11,8 @@ class AssignAreaTrail extends Model
 
     protected $table = 'assigned_area_trails';
 
-    public $fillable = [ 
+    public $fillable = [
+        'salary_grade_step',
         'employee_profile_id',
         'division_id',
         'department_id',
@@ -19,6 +20,7 @@ class AssignAreaTrail extends Model
         'unit_id',
         'designation_id',
         'plantilla_id',
+        'plantilla_number_id',
         'started_at',
         'end_at'
     ];
@@ -58,5 +60,10 @@ class AssignAreaTrail extends Model
     public function plantilla()
     {
         return $this->belongsTo(Plantilla::class);
+    }
+
+    public function plantillaNumber()
+    {
+        return $this->belongsTo(PlantillaNumber::class);
     }
 }

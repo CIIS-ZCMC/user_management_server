@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Models\Unit;
 
 class HeadUnitTrailResource extends JsonResource
 {
@@ -23,6 +24,7 @@ class HeadUnitTrailResource extends JsonResource
         $attachment = $this->attachment_url;
 
         return [
+            'id' => $this->id,
             'head' => $head,
             'unit_name' => $unit_name,
             'unit_code' => $unit_code,
