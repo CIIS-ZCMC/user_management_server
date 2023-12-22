@@ -221,9 +221,10 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], 500);
         }
     }
-    public function getUserLeaveApplication($id)
+    public function getUserLeaveApplication()
     {
         try{
+                $id='1';
                 $leave_applications = LeaveApplication::with(['employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
                 ->where('employee_profile_id', $id)
                 ->get();
@@ -1153,7 +1154,7 @@ class LeaveApplicationController extends Controller
             $hr_head_id = Section::where('id', $section)->value('supervisor_employee_profile_id');
             if($hr_head_id == $id) {
                 $leave_applications = LeaveApplication::with(['employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
-                ->where('status', 'applied')
+                // ->where('status', 'applied')
                 ->get();
                 if($leave_applications->isNotEmpty())
                 {
@@ -1319,7 +1320,7 @@ class LeaveApplicationController extends Controller
                 ->whereHas('employeeProfile.assignedArea', function ($query) use ($division) {
                     $query->where('id', $division);
                 })
-                ->where('status', 'for-approval-division-head')
+                // ->where('status', 'for-approval-division-head')
                 ->get();
                 if($leave_applications->isNotEmpty())
                 {
@@ -1483,7 +1484,7 @@ class LeaveApplicationController extends Controller
                 ->whereHas('employeeProfile.assignedArea', function ($query) use ($department) {
                     $query->where('id', $department);
                 })
-                ->where('status', 'for-approval-department-head')
+                // ->where('status', 'for-approval-department-head')
                 ->get();
                 if($leave_applications->isNotEmpty())
                 {
@@ -1647,7 +1648,7 @@ class LeaveApplicationController extends Controller
                 ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
                     $query->where('id', $section);
                 })
-                ->where('status', 'for-approval-section-head')
+                // ->where('status', 'for-approval-section-head')
                 ->get();
                 if($leave_applications->isNotEmpty())
                 {
@@ -1806,7 +1807,7 @@ class LeaveApplicationController extends Controller
             ->whereHas('logs', function ($query) use ($id) {
                 $query->where('action_by_id', $id);
             })
-                ->where('status', 'declined')
+                // ->where('status', 'declined')
                 ->get();
             if($leave_applications->isNotEmpty())
             {

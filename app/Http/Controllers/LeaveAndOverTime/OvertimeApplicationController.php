@@ -191,9 +191,10 @@ class OvertimeApplicationController extends Controller
 
     }
 
-    public function getUserOvertimeApplication($id)
+    public function getUserOvertimeApplication()
     {
         try{
+            $id='1';
             $overtime_applications=[];
             $overtime_applications =OvertimeApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','logs','activities'])
             ->where('employee_profile_id', $id)->get();
@@ -1042,7 +1043,7 @@ class OvertimeApplicationController extends Controller
                 ->whereHas('employeeProfile.assignedArea', function ($query) use ($division) {
                     $query->where('id', $division);
                 })
-                ->where('status', 'for-approval-division-head')
+                // ->where('status', 'for-approval-division-head')
                 ->get();
                 if($OvertimeApplication->isNotEmpty())
                 {
@@ -1222,7 +1223,7 @@ class OvertimeApplicationController extends Controller
                 ->whereHas('employeeProfile.assignedArea', function ($query) use ($department) {
                     $query->where('id', $department);
                 })
-                ->where('status', 'for-approval-department-head')
+                // ->where('status', 'for-approval-department-head')
                 ->get();
                 if($OvertimeApplication->isNotEmpty())
                 {
@@ -1396,7 +1397,7 @@ class OvertimeApplicationController extends Controller
                         ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
                             $query->where('id', $section);
                         })
-                        ->where('status', 'for-approval-section-head')
+                        // ->where('status', 'for-approval-section-head')
                         ->get();
                         if($overtime_applications->isNotEmpty())
                         {
@@ -1564,7 +1565,7 @@ class OvertimeApplicationController extends Controller
         try{
             $id='1';
             $overtime_applications = OvertimeApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','logs','activities'])
-            ->where('status', 'declined')
+            // ->where('status', 'declined')
             ->get();
             if($overtime_applications->isNotEmpty())
             {

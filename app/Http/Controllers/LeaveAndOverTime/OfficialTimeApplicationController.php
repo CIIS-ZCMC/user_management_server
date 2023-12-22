@@ -652,9 +652,10 @@ class OfficialTimeApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], 500);
         }
     }
-    public function getUserOtApplication($id)
+    public function getUserOtApplication()
     {
         try{
+            $id='1';
             $ot_applications = OfficialTimeApplication::with(['employeeProfile.personalInformation','logs'])
             ->where('employee_profile_id', $id)
             ->get();
@@ -1085,7 +1086,7 @@ class OfficialTimeApplicationController extends Controller
                         ->whereHas('employeeProfile.assignedArea', function ($query) use ($division) {
                             $query->where('id', $division);
                         })
-                        ->where('status', 'for-approval-division-head')
+                        // ->where('status', 'for-approval-division-head')
                         ->get();
                 if($OfficialTimeApplication->isNotEmpty())
                 {
@@ -1218,7 +1219,7 @@ class OfficialTimeApplicationController extends Controller
                 ->whereHas('employeeProfile.assignedArea', function ($query) use ($department) {
                     $query->where('id', $department);
                 })
-                ->where('status', 'for-approval-department-head')
+                // ->where('status', 'for-approval-department-head')
                 ->get();
                 if($OfficialTimeApplication->isNotEmpty())
                 {
@@ -1350,7 +1351,7 @@ class OfficialTimeApplicationController extends Controller
                     ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
                         $query->where('id', $section);
                     })
-                    ->where('status', 'for-approval-section-head')
+                    // ->where('status', 'for-approval-section-head')
                     ->get();
                     if($official_time_applications->isNotEmpty())
                     {
@@ -1475,7 +1476,7 @@ class OfficialTimeApplicationController extends Controller
         try{
             $id='1';
             $official_time_applications = OfficialTimeApplication::with(['employeeProfile.personalInformation','logs'])
-            ->where('status', 'declined')
+            // ->where('status', 'declined')
             ->get();
             if($official_time_applications->isNotEmpty())
             {

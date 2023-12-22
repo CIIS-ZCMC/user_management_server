@@ -412,9 +412,10 @@ class CtoApplicationController extends Controller
         }
     }
 
-    public function getUserCtoApplication($id)
+    public function getUserCtoApplication()
     {
         try{
+            $id='1';
             $cto_applications = CtoApplication::with(['employeeProfile.personalInformation','logs'])
             ->where('employee_profile_id', $id)
             ->get();
@@ -1099,7 +1100,7 @@ class CtoApplicationController extends Controller
                     ->whereHas('employeeProfile.assignedArea', function ($query) use ($division) {
                         $query->where('id', $division);
                     })
-                    ->where('status', 'for-approval-division-head')
+                    // ->where('status', 'for-approval-division-head')
                     ->get();
                     if($cto_applications->isNotEmpty())
                     {
@@ -1244,7 +1245,7 @@ class CtoApplicationController extends Controller
                 ->whereHas('employeeProfile.assignedArea', function ($query) use ($department) {
                     $query->where('id', $department);
                 })
-                ->where('status', 'for-approval-department-head')
+                // ->where('status', 'for-approval-department-head')
                 ->get();
                 if($cto_applications->isNotEmpty())
                 {
@@ -1388,7 +1389,7 @@ class CtoApplicationController extends Controller
                 ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
                     $query->where('id', $section);
                 })
-                ->where('status', 'for-approval-section-head')
+                // ->where('status', 'for-approval-section-head')
                 ->get();
                 if($cto_applications->isNotEmpty())
                 {
@@ -1524,7 +1525,7 @@ class CtoApplicationController extends Controller
         try{
             $id='1';
             $cto_applications = ctoApplication::with(['employeeProfile.assignedArea.section','employeeProfile.personalInformation','logs'])
-            ->where('status', 'declined')
+            // ->where('status', 'declined')
             ->get();
             if($cto_applications->isNotEmpty())
             {
