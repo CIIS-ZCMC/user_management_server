@@ -201,13 +201,10 @@ class EmployeeOvertimeCreditController extends Controller
     {
 
             $carbonDate = Carbon::parse($date);
-
-            // Check if the day is a weekend (Saturday or Sunday)
-            if ($carbonDate->isWeekend()) {
-                // Apply a multiplier of 1.5 for weekends
+            if ($carbonDate->isWeekend() || $carbonDate->isHoliday()) {
                 return 1.5;
-            } else {
-                // Apply a multiplier of 1 for weekdays
+            }
+            else {
                 return 1;
             }
     }

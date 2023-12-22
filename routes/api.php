@@ -79,10 +79,10 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
     Route::post('ot-application-cancel/{id}', 'OfficialTimeApplicationController@cancelOtApplication');
     Route::post('ot-application-update/{id}/{status}', 'OfficialTimeApplicationController@updateStatus');
     Route::get('user-ot-application', 'OfficialTimeApplicationController@getUserOtApplication');
-    Route::get('ot-application-division', 'OtApplicationController@getDivisionOtApplications');
-    Route::get('ot-application-department', 'OtApplicationController@getDepartmentOtApplications');
-    Route::get('ot-application-section', 'OtApplicationController@getSectionOtApplications');
-    Route::get('ot-application-declined', 'OtApplicationController@getDeclinedOtApplications');
+    Route::get('ot-application-division', 'OfficialTimeApplicationController@getDivisionOtApplications');
+    Route::get('ot-application-department', 'OfficialTimeApplicationController@getDepartmentOtApplications');
+    Route::get('ot-application-section', 'OfficialTimeApplicationController@getSectionOtApplications');
+    Route::get('ot-application-declined', 'OfficialTimeApplicationController@getDeclinedOtApplications');
     Route::post('access-level-ot-application/{id}/{status}', 'OfficialTimeApplicationController@getOtApplications');
 
     Route::get('ovt-application-all', 'OvertimeApplicationController@index');
