@@ -148,7 +148,8 @@ class EmployeeProfileController extends Controller
             $area_assigned = $employee_profile->assignedArea->findDetails(); 
 
             $data = [
-                'employee' => new SignInResource($employee_profile),
+                'employee_id' => $employee_profile['employee_id'],
+                'name' => $name,
                 'designation'=> $designation['name'],
                 'area_assigned' => $area_assigned['details']->name,
                 'area_sector' => $area_assigned['sector'],
