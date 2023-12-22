@@ -2352,6 +2352,7 @@ class OvertimeApplicationController extends Controller
 
                                 $overtime_application = overtimeApplication::findOrFail($id);
                                 $overtime_application->status = 'declined';
+                                $overtime_application->decline_reason = $request->decline_reason;
                                 $overtime_application->update();
                                 return response(['message' => 'Application has been sucessfully declined', 'data' => $overtime_application], Response::HTTP_CREATED);
 

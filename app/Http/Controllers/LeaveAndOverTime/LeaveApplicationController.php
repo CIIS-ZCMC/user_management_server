@@ -2096,6 +2096,7 @@ class LeaveApplicationController extends Controller
 
                                 $leave_application = LeaveApplication::findOrFail($id);
                                 $leave_application->status = 'declined';
+                                $leave_application->decline_reason = $request->decline_reason;
                                 $leave_application->update();
                                 return response(['message' => 'Application has been sucessfully declined', 'data' => $leave_application], Response::HTTP_CREATED);
 

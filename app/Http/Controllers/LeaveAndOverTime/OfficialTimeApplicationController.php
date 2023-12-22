@@ -980,6 +980,7 @@ class OfficialTimeApplicationController extends Controller
 
                                 $ot_application = OfficialTimeApplication::findOrFail($id);
                                 $ot_application->status = 'declined';
+                                $ot_application->decline_reason = $request->decline_reason;
                                 $ot_application->update();
                                 return response(['message' => 'Application has been sucessfully declined', 'data' => $ot_application], Response::HTTP_CREATED);
 

@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('status');
             $table->string('date')->nullable();
             $table->string('time')->nullable();
+            $table->string('decline_reason')->nullable();
             $table->string('personal_order')->nullable();
             $table->string('personal_order_path')->nullable();
             $table->string('personal_order_size')->nullable();

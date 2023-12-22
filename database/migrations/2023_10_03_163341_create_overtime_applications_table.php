@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('path')->nullable();
             $table->string('date');
             $table->string('time')->nullable();
+            $table->string('decline_reason')->nullable();
             $table->timestamps();
         });
     }

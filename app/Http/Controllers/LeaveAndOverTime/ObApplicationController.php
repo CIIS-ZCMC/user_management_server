@@ -1623,6 +1623,7 @@ class ObApplicationController extends Controller
 
                                 $ob_application = ObApplication::findOrFail($id);
                                 $ob_application->status = 'declined';
+                                $ob_application->decline_reason = $request->decline_reason;
                                 $ob_application->update();
                                 return response(['message' => 'Application has been sucessfully declined', 'data' => $ob_application], Response::HTTP_CREATED);
 

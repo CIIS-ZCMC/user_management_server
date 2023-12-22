@@ -30,7 +30,7 @@ return new class extends Migration
             $table->string('certificate_of_appearance_path')->nullable();
             $table->string('certificate_of_appearance_size')->nullable();
             $table->string('reference_number')->nullable();
-
+            $table->string('decline_reason')->nullable();
             $table->timestamps();
         });
     }

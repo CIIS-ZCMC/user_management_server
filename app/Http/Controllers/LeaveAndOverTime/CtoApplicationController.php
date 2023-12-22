@@ -370,6 +370,7 @@ class CtoApplicationController extends Controller
 
                                 $cto_application = CtoApplication::findOrFail($id);
                                 $cto_application->status = 'declined';
+                                $cto_application->decline_reason = $request->decline_reason;
                                 $cto_application->update();
                                 return response(['message' => 'Application has been sucessfully declined', 'data' => $cto_application], Response::HTTP_CREATED);
 
