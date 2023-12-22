@@ -14,20 +14,20 @@ return new class extends Migration
         Schema::create('exchange_duties', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('schedule_id');
-            $table->foreign('schedule_id')->references('id')->on('schedules')->onUpdate('cascade');
+            $table->foreign('schedule_id')->references('id')->on('schedules');
 
             $table->unsignedBigInteger('requested_employee_id');
-            $table->foreign('requested_employee_id')->references('id')->on('employee_profiles')->onUpdate('cascade');
+            $table->foreign('requested_employee_id')->references('id')->on('employee_profiles');
             
             $table->unsignedBigInteger('reliever_employee_id');
-            $table->foreign('reliever_employee_id')->references('id')->on('employee_profiles')->onUpdate('cascade');
+            $table->foreign('reliever_employee_id')->references('id')->on('employee_profiles');
 
             // $table->unsignedBigInteger('section_head_id');
-            // $table->foreign('section_head_id')->references('id')->on('employee_profiles')->onUpdate('cascade');
+            // $table->foreign('section_head_id')->references('id')->on('employee_profiles');
             // $table->boolean('supervisor_approval');
                         
             // $table->unsignedBigInteger('department_head_id');
-            // $table->foreign('department_head_id')->references('id')->on('employee_profiles')->onUpdate('cascade');
+            // $table->foreign('department_head_id')->references('id')->on('employee_profiles');
             // $table->boolean('department_head_approval');
 
             $table->boolean('status')->default(false);

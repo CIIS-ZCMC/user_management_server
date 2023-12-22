@@ -80,7 +80,6 @@ class Helpers {
                     $dates[] = $date->format('Y-m-d D');
                     break;
             }
-            
         }
 
         return $dates;

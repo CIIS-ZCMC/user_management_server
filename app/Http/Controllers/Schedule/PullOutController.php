@@ -64,7 +64,7 @@ class PullOutController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(PullOutRequest  $request)
+    public function store(PullOutRequest $request)
     {
         try {
             $cleanData = [];
