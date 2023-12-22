@@ -39,10 +39,10 @@ class Department extends Model
     {
         return $this->belongsTo(Division::class);
     }
-    
+
     public function head()
     {
-        return $this->belongsTo(EmployeeProfile::class, 'head_employee_profile_id');
+        return $this->belongsTo(EmployeeProfile::class,'head_employee_profile_id');
     }
 
     public function headJobSpecification()
@@ -52,7 +52,7 @@ class Department extends Model
 
     public function trainingOfficer()
     {
-        return $this->belongsTo(EmployeeProfile::class, 'training_officer_employee_profile_id');
+        return $this->belongsTo(EmployeeProfile::class,'training_officer_employee_profile_id');
     }
 
     public function trainingOfficerJobSpecification()

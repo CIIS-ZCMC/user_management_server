@@ -90,28 +90,31 @@ class LeaveApplicationController extends Controller
                     $supervisor_position=null;
                     if($division) {
                         $division_name = Division::with('chief.personalInformation')->find($division);
-                        if($division_name && $division_name->chief  && $division_name->personalInformation != null)
+
+                        if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
                         {
-                            $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
-                            $chief_position = $division->chief->assignedArea->designation->name ?? null;
+                            $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
+
+                            $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
                         }
                     }
                     if($department)
                     {
                         $department_name = Department::with('head.personalInformation')->find($department);
-                        if($department_name && $department_name->head  && $department_name->personalInformation != null)
+                        if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
                         {
-                         $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
-                         $head_position = $department->head->assignedArea->designation->name ?? null;
+
+                        $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                        $head_position = $department_name->head->assignedArea->designation->name ?? null;
                         }
                     }
                     if($section)
                     {
                         $section_name = Section::with('supervisor.personalInformation')->find($section);
-                        if($section_name && $section_name->supervisor  && $section_name->personalInformation != null)
+                        if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
                         {
-                        $supervisor_name = optional($section->supervisor->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
-                        $supervisor_position = $section->supervisor->assignedArea->designation->name ?? null;
+                        $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                        $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
                         }
                     }
                     $total_days=0;
@@ -245,28 +248,31 @@ class LeaveApplicationController extends Controller
                         $supervisor_position=null;
                         if($division) {
                             $division_name = Division::with('chief.personalInformation')->find($division);
-                            if($division_name && $division_name->chief  && $division_name->personalInformation != null)
+
+                            if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
                             {
-                                $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
-                                $chief_position = $division->chief->assignedArea->designation->name ?? null;
+                                $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
+
+                                $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
                             }
                         }
                         if($department)
                         {
                             $department_name = Department::with('head.personalInformation')->find($department);
-                            if($department_name && $department_name->head  && $department_name->personalInformation != null)
+                            if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
                             {
-                            $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
-                            $head_position = $department->head->assignedArea->designation->name ?? null;
+
+                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                            $head_position = $department_name->head->assignedArea->designation->name ?? null;
                             }
                         }
                         if($section)
                         {
                             $section_name = Section::with('supervisor.personalInformation')->find($section);
-                            if($section_name && $section_name->supervisor  && $section_name->personalInformation != null)
+                            if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
                             {
-                            $supervisor_name = optional($section->supervisor->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
-                            $supervisor_position = $section->supervisor->assignedArea->designation->name ?? null;
+                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                            $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
                             }
                         }
                         $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
@@ -1173,28 +1179,31 @@ class LeaveApplicationController extends Controller
                         $supervisor_position=null;
                         if($division) {
                             $division_name = Division::with('chief.personalInformation')->find($division);
-                            if($division_name && $division_name->chief  && $division_name->personalInformation != null)
+
+                            if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
                             {
-                                $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
-                                $chief_position = $division->chief->assignedArea->designation->name ?? null;
+                                $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
+
+                                $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
                             }
                         }
                         if($department)
                         {
                             $department_name = Department::with('head.personalInformation')->find($department);
-                            if($department_name && $department_name->head  && $department_name->personalInformation != null)
+                            if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
                             {
-                             $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
-                             $head_position = $department->head->assignedArea->designation->name ?? null;
+
+                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                            $head_position = $department_name->head->assignedArea->designation->name ?? null;
                             }
                         }
                         if($section)
                         {
                             $section_name = Section::with('supervisor.personalInformation')->find($section);
-                            if($section_name && $section_name->supervisor  && $section_name->personalInformation != null)
+                            if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
                             {
-                            $supervisor_name = optional($section->supervisor->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
-                            $supervisor_position = $section->supervisor->assignedArea->designation->name ?? null;
+                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                            $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
                             }
                         }
                         $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
@@ -1339,28 +1348,31 @@ class LeaveApplicationController extends Controller
                         $supervisor_position=null;
                         if($division) {
                             $division_name = Division::with('chief.personalInformation')->find($division);
-                            if($division_name && $division_name->chief  && $division_name->personalInformation != null)
+
+                            if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
                             {
-                                $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
-                                $chief_position = $division->chief->assignedArea->designation->name ?? null;
+                                $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
+
+                                $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
                             }
                         }
                         if($department)
                         {
                             $department_name = Department::with('head.personalInformation')->find($department);
-                            if($department_name && $department_name->head  && $department_name->personalInformation != null)
+                            if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
                             {
-                            $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
-                            $head_position = $department->head->assignedArea->designation->name ?? null;
+
+                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                            $head_position = $department_name->head->assignedArea->designation->name ?? null;
                             }
                         }
                         if($section)
                         {
                             $section_name = Section::with('supervisor.personalInformation')->find($section);
-                            if($section_name && $section_name->supervisor  && $section_name->personalInformation != null)
+                            if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
                             {
-                            $supervisor_name = optional($section->supervisor->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
-                            $supervisor_position = $section->supervisor->assignedArea->designation->name ?? null;
+                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                            $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
                             }
                         }
                         $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
@@ -1503,28 +1515,31 @@ class LeaveApplicationController extends Controller
                         $supervisor_position=null;
                         if($division) {
                             $division_name = Division::with('chief.personalInformation')->find($division);
-                            if($division_name && $division_name->chief  && $division_name->personalInformation != null)
+
+                            if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
                             {
-                                $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
-                                $chief_position = $division->chief->assignedArea->designation->name ?? null;
+                                $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
+
+                                $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
                             }
                         }
                         if($department)
                         {
                             $department_name = Department::with('head.personalInformation')->find($department);
-                            if($department_name && $department_name->head  && $department_name->personalInformation != null)
+                            if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
                             {
-                             $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
-                             $head_position = $department->head->assignedArea->designation->name ?? null;
+
+                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                            $head_position = $department_name->head->assignedArea->designation->name ?? null;
                             }
                         }
                         if($section)
                         {
                             $section_name = Section::with('supervisor.personalInformation')->find($section);
-                            if($section_name && $section_name->supervisor  && $section_name->personalInformation != null)
+                            if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
                             {
-                            $supervisor_name = optional($section->supervisor->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
-                            $supervisor_position = $section->supervisor->assignedArea->designation->name ?? null;
+                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                            $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
                             }
                         }
                         $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
@@ -1667,28 +1682,31 @@ class LeaveApplicationController extends Controller
                         $supervisor_position=null;
                         if($division) {
                             $division_name = Division::with('chief.personalInformation')->find($division);
-                            if($division_name && $division_name->chief  && $division_name->personalInformation != null)
+
+                            if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
                             {
-                                $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
-                                $chief_position = $division->chief->assignedArea->designation->name ?? null;
+                                $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
+
+                                $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
                             }
                         }
                         if($department)
                         {
                             $department_name = Department::with('head.personalInformation')->find($department);
-                            if($department_name && $department_name->head  && $department_name->personalInformation != null)
+                            if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
                             {
-                            $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
-                            $head_position = $department->head->assignedArea->designation->name ?? null;
+
+                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                            $head_position = $department_name->head->assignedArea->designation->name ?? null;
                             }
                         }
                         if($section)
                         {
                             $section_name = Section::with('supervisor.personalInformation')->find($section);
-                            if($section_name && $section_name->supervisor  && $section_name->personalInformation != null)
+                            if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
                             {
-                            $supervisor_name = optional($section->supervisor->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
-                            $supervisor_position = $section->supervisor->assignedArea->designation->name ?? null;
+                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                            $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
                             }
                         }
                         $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
@@ -1826,28 +1844,31 @@ class LeaveApplicationController extends Controller
                         $supervisor_position=null;
                         if($division) {
                             $division_name = Division::with('chief.personalInformation')->find($division);
-                            if($division_name && $division_name->chief  && $division_name->personalInformation != null)
+
+                            if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
                             {
-                                $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
-                                $chief_position = $division->chief->assignedArea->designation->name ?? null;
+                                $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
+
+                                $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
                             }
                         }
                         if($department)
                         {
                             $department_name = Department::with('head.personalInformation')->find($department);
-                            if($department_name && $department_name->head  && $department_name->personalInformation != null)
+                            if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
                             {
-                             $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
-                             $head_position = $department->head->assignedArea->designation->name ?? null;
+
+                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                            $head_position = $department_name->head->assignedArea->designation->name ?? null;
                             }
                         }
                         if($section)
                         {
                             $section_name = Section::with('supervisor.personalInformation')->find($section);
-                            if($section_name && $section_name->supervisor  && $section_name->personalInformation != null)
+                            if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
                             {
-                            $supervisor_name = optional($section->supervisor->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
-                            $supervisor_position = $section->supervisor->assignedArea->designation->name ?? null;
+                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                            $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
                             }
                         }
                         $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
@@ -2243,28 +2264,31 @@ class LeaveApplicationController extends Controller
                                         $supervisor_position=null;
                                         if($division) {
                                             $division_name = Division::with('chief.personalInformation')->find($division);
-                                            if($division_name && $division_name->chief  && $division_name->personalInformation != null)
+
+                                            if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
                                             {
-                                                $chief_name = optional($division->chief->personalInformation)->first_name . '' . optional($division->chief->personalInformation)->last_name;
-                                                $chief_position = $division->chief->assignedArea->designation->name ?? null;
+                                                $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
+
+                                                $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
                                             }
                                         }
                                         if($department)
                                         {
                                             $department_name = Department::with('head.personalInformation')->find($department);
-                                            if($department_name && $department_name->head  && $department_name->personalInformation != null)
+                                            if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
                                             {
-                                            $head_name = optional($department->head->personalInformation)->first_name ?? null . '' . optional($department->head->personalInformation)->last_name ?? null;
-                                            $head_position = $department->head->assignedArea->designation->name ?? null;
+
+                                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                                            $head_position = $department_name->head->assignedArea->designation->name ?? null;
                                             }
                                         }
                                         if($section)
                                         {
                                             $section_name = Section::with('supervisor.personalInformation')->find($section);
-                                            if($section_name && $section_name->supervisor  && $section_name->personalInformation != null)
+                                            if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
                                             {
-                                            $supervisor_name = optional($section->supervisor->personalInformation)->first_name ?? null . '' . optional($section->head->personalInformation)->last_name ?? null;
-                                            $supervisor_position = $section->supervisor->assignedArea->designation->name ?? null;
+                                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                                            $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
                                             }
                                         }
                                         $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
@@ -2302,8 +2326,11 @@ class LeaveApplicationController extends Controller
                                             'position_name' => $leave_application->employeeProfile->assignedArea->designation->name ?? null,
                                             'date_created' => $leave_application->date,
                                             'division_head' =>$chief_name,
+                                            'division_head_position'=> $chief_position,
                                             'department_head' =>$head_name,
+                                            'department_head_position' =>$head_position,
                                             'section_head' =>$supervisor_name,
+                                            'section_head_position' =>$supervisor_position,
                                             'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
                                             'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
                                             'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,
