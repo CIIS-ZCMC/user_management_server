@@ -4,7 +4,7 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
-use App\Models\AssignArea;
+use App\Models\PlantillaNumber;
 use Carbon\Carbon;
 use Jenssegers\Agent\Agent;
 use Illuminate\Http\Request;
@@ -19,8 +19,10 @@ use App\Http\Requests\EmployeeProfileRequest;
 use App\Http\Resources\EmployeeProfileResource;
 use App\Http\Requests\EmployeesByAreaAssignedRequest;
 use App\Http\Resources\EmployeesByAreaAssignedResource;
+use App\Http\Resources\SignInResource;
 use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Resources\EmployeeDTRList;
+use App\Models\AssignArea;
 use App\Models\DefaultPassword;
 use App\Models\EmployeeProfile;
 use App\Models\LoginTrail;

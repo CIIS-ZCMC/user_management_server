@@ -4,6 +4,8 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Http\Resources\ChildResource;
+use App\Models\Child;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
@@ -77,9 +79,14 @@ class FamilyBackgroundController extends Controller
         }
     }
     
+    /**
+     * Family background registration and Children registration
+     */
     public function store(FamilyBackgroundRequest $request)
     {
         try{
+            $failed = [];
+            $success = [];
             $cleanData = [];
 
             $personal_information = PersonalInformation::find($request->input('personal_information_id'));
@@ -102,11 +109,42 @@ class FamilyBackgroundController extends Controller
             }
 
             $family_background = FamilyBackground::create($cleanData);
+
+            foreach($request->children as $child){
+                $child_data = [];
+                foreach($child as $key => $value) {
+                    if($value === null){
+                        $child_data[$key] = $value;
+                        continue;
+                    }
+                    $child_data[$key] = strip_tags($value);
+                }
+                $child_store = Child::create($child_data);
+
+                if(!$child_store) {
+                    $failed[] = $child;
+                    continue;
+                }
+
+                $success[] = $child_store;
+            }
+
+            if(count($failed) > 0){
+                return response()->json([
+                    'data' => [
+                        'family' => new FamilyBackgroundResource($family_background),
+                        'children' => ChildResource::collection($success)
+                    ]
+                ], Response::HTTP_OK);
+            }
             
             $this->requestLogger->registerSystemLogs($request, $family_background['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([
-                'data' => new FamilyBackgroundResource($family_background) ,
+                'data' => [
+                    'family' => new FamilyBackgroundResource($family_background),
+                    'children' => ChildResource::collection($success)
+                ],
                 'message' => 'New family background registered.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
