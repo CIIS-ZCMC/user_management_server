@@ -1367,7 +1367,117 @@ class ObApplicationController extends Controller
                                 $ob_application->status = $new_status;
                                 $ob_application->update();
 
-                                return response(['message' => 'Application has been sucessfully '.$message_action, 'data' => $ob_application], Response::HTTP_CREATED);
+                                $official_business_applications =ObApplication::with(['employeeProfile.personalInformation','logs'])
+                                ->where('id',$ob_application->id)->get();
+                                $official_business_applications_result = $official_business_applications->map(function ($official_business_application) {
+                                        $division = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('division_id');
+                                        $department = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('department_id');
+                                        $section = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('section_id');
+                                        $chief_name=null;
+                                        $chief_position=null;
+                                        $head_name=null;
+                                        $head_position=null;
+                                        $supervisor_name=null;
+                                        $supervisor_position=null;
+                                        if($division) {
+                                            $division_name = Division::with('chief.personalInformation')->find($division);
+
+                                            if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
+                                            {
+                                                $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
+
+                                                $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                            }
+                                        }
+                                        if($department)
+                                        {
+                                            $department_name = Department::with('head.personalInformation')->find($department);
+                                            if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
+                                            {
+
+                                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                                            $head_position = $department_name->head->assignedArea->designation->name ?? null;
+                                            }
+                                        }
+                                        if($section)
+                                        {
+                                            $section_name = Section::with('supervisor.personalInformation')->find($section);
+                                            if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
+                                            {
+                                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                                            $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                                            }
+                                        }
+                                    $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
+                                    $last_name = optional($official_business_application->employeeProfile->personalInformation)->last_name ?? null;
+                                    $startDate = Carbon::createFromFormat('Y-m-d', $official_business_application->date_from);
+                                    $endDate = Carbon::createFromFormat('Y-m-d', $official_business_application->date_to);
+                                    $numberOfDays = $startDate->diffInDays($endDate) + 1;
+                                        return [
+                                            'id' => $official_business_application->id,
+                                            'date_from' => $official_business_application->date_from,
+                                            'date_to' => $official_business_application->date_to,
+                                            'time_from' => $official_business_application->time_from,
+                                            'time_to' => $official_business_application->time_to,
+                                            'total_days' => $numberOfDays,
+                                            'reason' => $official_business_application->reason,
+                                            'status' => $official_business_application->status,
+                                            'personal_order' => $official_business_application->personal_order,
+                                            'personal_order_path' => $official_business_application->personal_order_path,
+                                            'personal_order_size' => $official_business_application->personal_order_size,
+                                            'certificate_of_appearance' => $official_business_application->certificate_of_appearance,
+                                            'certificate_of_appearance_path' => $official_business_application->certificate_of_appearance_path,
+                                            'certificate_of_appearance_size' => $official_business_application->certificate_of_appearance_size,
+                                            'employee_id' => $official_business_application->employee_profile_id,
+                                            'employee_name' => "{$first_name} {$last_name}" ,
+                                            'position_code' => $official_business_application->employeeProfile->assignedArea->designation->code ?? null,
+                                            'position_name' => $official_business_application->employeeProfile->assignedArea->designation->name ?? null,
+                                            'date_created' => $official_business_application->date,
+                                            'division_head' =>$chief_name,
+                                            'division_head_position'=> $chief_position,
+                                            'department_head' =>$head_name,
+                                            'department_head_position' =>$head_position,
+                                            'section_head' =>$supervisor_name,
+                                            'section_head_position' =>$supervisor_position,
+                                            'division_name' => $official_business_application->employeeProfile->assignedArea->division->name ?? null,
+                                            'department_name' => $official_business_application->employeeProfile->assignedArea->department->name ?? null,
+                                            'section_name' => $official_business_application->employeeProfile->assignedArea->section->name ?? null,
+                                            'unit_name' => $official_business_application->employeeProfile->assignedArea->unit->name ?? null,
+                                            'logs' => $official_business_application->logs->map(function ($log) {
+                                                $process_name=$log->action;
+                                                $action ="";
+                                                $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
+                                                $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
+                                                if($log->action_by_id  === optional($log->employeeProfile->assignedArea->division)->chief_employee_profile_id )
+                                                {
+                                                    $action =  $process_name . ' by ' . 'Division Head';
+                                                }
+                                                else if ($log->action_by_id === optional($log->employeeProfile->assignedArea->department)->head_employee_profile_id || optional($log->employeeProfile->assignedArea->section)->supervisor_employee_profile_id)
+                                                {
+                                                    $action =  $process_name . ' by ' . 'Supervisor';
+                                                }
+                                                else{
+                                                    $action=  $process_name . ' by ' . $first_name .' '. $last_name;
+                                                }
+
+                                                $date=$log->date;
+                                                $formatted_date=Carbon::parse($date)->format('M d,Y');
+                                                return [
+                                                    'id' => $log->id,
+                                                    'ob_application_id' => $log->ob_application_id,
+                                                    'action_by' => "{$first_name} {$last_name}" ,
+                                                    'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                                    'action' => $log->action,
+                                                    'date' => $formatted_date,
+                                                    'time' => $log->time,
+                                                    'process' => $action
+                                                ];
+                                            }),
+
+                                        ];
+                                    });
+                                    $singleArray = array_merge(...$official_business_applications_result);
+                                return response(['message' => 'Application has been sucessfully '.$message_action, 'data' => $singleArray], Response::HTTP_CREATED);
                                 }
                 // }
             }
@@ -1625,7 +1735,118 @@ class ObApplicationController extends Controller
                                 $ob_application->status = 'declined';
                                 $ob_application->decline_reason = $request->decline_reason;
                                 $ob_application->update();
-                                return response(['message' => 'Application has been sucessfully declined', 'data' => $ob_application], Response::HTTP_CREATED);
+
+                                $official_business_applications =ObApplication::with(['employeeProfile.personalInformation','logs'])
+                                ->where('id',$ob_application->id)->get();
+                                $official_business_applications_result = $official_business_applications->map(function ($official_business_application) {
+                                        $division = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('division_id');
+                                        $department = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('department_id');
+                                        $section = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('section_id');
+                                        $chief_name=null;
+                                        $chief_position=null;
+                                        $head_name=null;
+                                        $head_position=null;
+                                        $supervisor_name=null;
+                                        $supervisor_position=null;
+                                        if($division) {
+                                            $division_name = Division::with('chief.personalInformation')->find($division);
+
+                                            if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
+                                            {
+                                                $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
+
+                                                $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                            }
+                                        }
+                                        if($department)
+                                        {
+                                            $department_name = Department::with('head.personalInformation')->find($department);
+                                            if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
+                                            {
+
+                                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                                            $head_position = $department_name->head->assignedArea->designation->name ?? null;
+                                            }
+                                        }
+                                        if($section)
+                                        {
+                                            $section_name = Section::with('supervisor.personalInformation')->find($section);
+                                            if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
+                                            {
+                                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                                            $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                                            }
+                                        }
+                                    $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
+                                    $last_name = optional($official_business_application->employeeProfile->personalInformation)->last_name ?? null;
+                                    $startDate = Carbon::createFromFormat('Y-m-d', $official_business_application->date_from);
+                                    $endDate = Carbon::createFromFormat('Y-m-d', $official_business_application->date_to);
+                                    $numberOfDays = $startDate->diffInDays($endDate) + 1;
+                                        return [
+                                            'id' => $official_business_application->id,
+                                            'date_from' => $official_business_application->date_from,
+                                            'date_to' => $official_business_application->date_to,
+                                            'time_from' => $official_business_application->time_from,
+                                            'time_to' => $official_business_application->time_to,
+                                            'total_days' => $numberOfDays,
+                                            'reason' => $official_business_application->reason,
+                                            'status' => $official_business_application->status,
+                                            'personal_order' => $official_business_application->personal_order,
+                                            'personal_order_path' => $official_business_application->personal_order_path,
+                                            'personal_order_size' => $official_business_application->personal_order_size,
+                                            'certificate_of_appearance' => $official_business_application->certificate_of_appearance,
+                                            'certificate_of_appearance_path' => $official_business_application->certificate_of_appearance_path,
+                                            'certificate_of_appearance_size' => $official_business_application->certificate_of_appearance_size,
+                                            'employee_id' => $official_business_application->employee_profile_id,
+                                            'employee_name' => "{$first_name} {$last_name}" ,
+                                            'position_code' => $official_business_application->employeeProfile->assignedArea->designation->code ?? null,
+                                            'position_name' => $official_business_application->employeeProfile->assignedArea->designation->name ?? null,
+                                            'date_created' => $official_business_application->date,
+                                            'division_head' =>$chief_name,
+                                            'division_head_position'=> $chief_position,
+                                            'department_head' =>$head_name,
+                                            'department_head_position' =>$head_position,
+                                            'section_head' =>$supervisor_name,
+                                            'section_head_position' =>$supervisor_position,
+                                            'division_name' => $official_business_application->employeeProfile->assignedArea->division->name ?? null,
+                                            'department_name' => $official_business_application->employeeProfile->assignedArea->department->name ?? null,
+                                            'section_name' => $official_business_application->employeeProfile->assignedArea->section->name ?? null,
+                                            'unit_name' => $official_business_application->employeeProfile->assignedArea->unit->name ?? null,
+                                            'logs' => $official_business_application->logs->map(function ($log) {
+                                                $process_name=$log->action;
+                                                $action ="";
+                                                $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
+                                                $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
+                                                if($log->action_by_id  === optional($log->employeeProfile->assignedArea->division)->chief_employee_profile_id )
+                                                {
+                                                    $action =  $process_name . ' by ' . 'Division Head';
+                                                }
+                                                else if ($log->action_by_id === optional($log->employeeProfile->assignedArea->department)->head_employee_profile_id || optional($log->employeeProfile->assignedArea->section)->supervisor_employee_profile_id)
+                                                {
+                                                    $action =  $process_name . ' by ' . 'Supervisor';
+                                                }
+                                                else{
+                                                    $action=  $process_name . ' by ' . $first_name .' '. $last_name;
+                                                }
+
+                                                $date=$log->date;
+                                                $formatted_date=Carbon::parse($date)->format('M d,Y');
+                                                return [
+                                                    'id' => $log->id,
+                                                    'ob_application_id' => $log->ob_application_id,
+                                                    'action_by' => "{$first_name} {$last_name}" ,
+                                                    'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                                    'action' => $log->action,
+                                                    'date' => $formatted_date,
+                                                    'time' => $log->time,
+                                                    'process' => $action
+                                                ];
+                                            }),
+
+                                        ];
+                                    });
+                                    $singleArray = array_merge(...$official_business_applications_result);
+                                return response(['message' => 'Application has been sucessfully declined', 'data' => $singleArray], Response::HTTP_CREATED);
 
                         //     }
                         //  }
@@ -1696,7 +1917,119 @@ class ObApplicationController extends Controller
                                 $ob_application = ObApplication::findOrFail($id);
                                 $ob_application->status = 'cancelled';
                                 $ob_application->update();
-                                return response(['message' => 'Application has been sucessfully cancelled', 'data' => $ob_application], Response::HTTP_CREATED);
+
+                                $official_business_applications =ObApplication::with(['employeeProfile.personalInformation','logs'])
+                                ->where('id',$ob_application->id)->get();
+                                $official_business_applications_result = $official_business_applications->map(function ($official_business_application) {
+                                        $division = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('division_id');
+                                        $department = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('department_id');
+                                        $section = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('section_id');
+                                        $chief_name=null;
+                                        $chief_position=null;
+                                        $head_name=null;
+                                        $head_position=null;
+                                        $supervisor_name=null;
+                                        $supervisor_position=null;
+                                        if($division) {
+                                            $division_name = Division::with('chief.personalInformation')->find($division);
+
+                                            if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
+                                            {
+                                                $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
+
+                                                $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                            }
+                                        }
+                                        if($department)
+                                        {
+                                            $department_name = Department::with('head.personalInformation')->find($department);
+                                            if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
+                                            {
+
+                                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                                            $head_position = $department_name->head->assignedArea->designation->name ?? null;
+                                            }
+                                        }
+                                        if($section)
+                                        {
+                                            $section_name = Section::with('supervisor.personalInformation')->find($section);
+                                            if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
+                                            {
+                                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                                            $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                                            }
+                                        }
+                                    $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
+                                    $last_name = optional($official_business_application->employeeProfile->personalInformation)->last_name ?? null;
+                                    $startDate = Carbon::createFromFormat('Y-m-d', $official_business_application->date_from);
+                                    $endDate = Carbon::createFromFormat('Y-m-d', $official_business_application->date_to);
+                                    $numberOfDays = $startDate->diffInDays($endDate) + 1;
+                                        return [
+                                            'id' => $official_business_application->id,
+                                            'date_from' => $official_business_application->date_from,
+                                            'date_to' => $official_business_application->date_to,
+                                            'time_from' => $official_business_application->time_from,
+                                            'time_to' => $official_business_application->time_to,
+                                            'total_days' => $numberOfDays,
+                                            'reason' => $official_business_application->reason,
+                                            'status' => $official_business_application->status,
+                                            'personal_order' => $official_business_application->personal_order,
+                                            'personal_order_path' => $official_business_application->personal_order_path,
+                                            'personal_order_size' => $official_business_application->personal_order_size,
+                                            'certificate_of_appearance' => $official_business_application->certificate_of_appearance,
+                                            'certificate_of_appearance_path' => $official_business_application->certificate_of_appearance_path,
+                                            'certificate_of_appearance_size' => $official_business_application->certificate_of_appearance_size,
+                                            'employee_id' => $official_business_application->employee_profile_id,
+                                            'employee_name' => "{$first_name} {$last_name}" ,
+                                            'position_code' => $official_business_application->employeeProfile->assignedArea->designation->code ?? null,
+                                            'position_name' => $official_business_application->employeeProfile->assignedArea->designation->name ?? null,
+                                            'date_created' => $official_business_application->date,
+                                            'division_head' =>$chief_name,
+                                            'division_head_position'=> $chief_position,
+                                            'department_head' =>$head_name,
+                                            'department_head_position' =>$head_position,
+                                            'section_head' =>$supervisor_name,
+                                            'section_head_position' =>$supervisor_position,
+                                            'division_name' => $official_business_application->employeeProfile->assignedArea->division->name ?? null,
+                                            'department_name' => $official_business_application->employeeProfile->assignedArea->department->name ?? null,
+                                            'section_name' => $official_business_application->employeeProfile->assignedArea->section->name ?? null,
+                                            'unit_name' => $official_business_application->employeeProfile->assignedArea->unit->name ?? null,
+                                            'logs' => $official_business_application->logs->map(function ($log) {
+                                                $process_name=$log->action;
+                                                $action ="";
+                                                $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
+                                                $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
+                                                if($log->action_by_id  === optional($log->employeeProfile->assignedArea->division)->chief_employee_profile_id )
+                                                {
+                                                    $action =  $process_name . ' by ' . 'Division Head';
+                                                }
+                                                else if ($log->action_by_id === optional($log->employeeProfile->assignedArea->department)->head_employee_profile_id || optional($log->employeeProfile->assignedArea->section)->supervisor_employee_profile_id)
+                                                {
+                                                    $action =  $process_name . ' by ' . 'Supervisor';
+                                                }
+                                                else{
+                                                    $action=  $process_name . ' by ' . $first_name .' '. $last_name;
+                                                }
+
+                                                $date=$log->date;
+                                                $formatted_date=Carbon::parse($date)->format('M d,Y');
+                                                return [
+                                                    'id' => $log->id,
+                                                    'ob_application_id' => $log->ob_application_id,
+                                                    'action_by' => "{$first_name} {$last_name}" ,
+                                                    'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                                    'action' => $log->action,
+                                                    'date' => $formatted_date,
+                                                    'time' => $log->time,
+                                                    'process' => $action
+                                                ];
+                                            }),
+
+                                        ];
+                                    });
+                                    $singleArray = array_merge(...$official_business_applications_result);
+
+                                return response(['message' => 'Application has been sucessfully cancelled', 'data' => $singleArray], Response::HTTP_CREATED);
 
                         //     }
                         //  }

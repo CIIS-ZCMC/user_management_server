@@ -135,7 +135,7 @@ class OfficialTimeApplicationController extends Controller
                             $formatted_date=Carbon::parse($date)->format('M d,Y');
                             return [
                                 'id' => $log->id,
-                                'leave_application_id' => $log->ob_application_id,
+                                'official_time_id' => $log->official_time_application_id,
                                 'action_by' => "{$first_name} {$last_name}" ,
                                 'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
                                 'action' => $log->action,
@@ -760,7 +760,7 @@ class OfficialTimeApplicationController extends Controller
                             $formatted_date=Carbon::parse($date)->format('M d,Y');
                             return [
                                 'id' => $log->id,
-                                'leave_application_id' => $log->ob_application_id,
+                                'official_time_id' => $log->official_time_application_id,
                                 'action_by' => "{$first_name} {$last_name}" ,
                                 'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
                                 'action' => $log->action,
@@ -936,7 +936,7 @@ class OfficialTimeApplicationController extends Controller
                             $formatted_date=Carbon::parse($date)->format('M d,Y');
                             return [
                                 'id' => $log->id,
-                                'leave_application_id' => $log->ob_application_id,
+                                'official_time_id' => $log->official_time_application_id,
                                 'action_by' => "{$first_name} {$last_name}" ,
                                 'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
                                 'action' => $log->action,
@@ -982,7 +982,118 @@ class OfficialTimeApplicationController extends Controller
                                 $ot_application->status = 'declined';
                                 $ot_application->decline_reason = $request->decline_reason;
                                 $ot_application->update();
-                                return response(['message' => 'Application has been sucessfully declined', 'data' => $ot_application], Response::HTTP_CREATED);
+
+                                $official_time_applications = OfficialTimeApplication::with(['employeeProfile.personalInformation','logs'])
+                                ->where('id',$ot_application->id)->get();
+                                $official_time_applications_result = $official_time_applications->map(function ($official_time_application) {
+                                    $logsData = $official_time_application->logs ? $official_time_application->logs : collect();
+                                     $division = AssignArea::where('employee_profile_id',$official_time_application->employee_profile_id)->value('division_id');
+                                        $department = AssignArea::where('employee_profile_id',$official_time_application->employee_profile_id)->value('department_id');
+                                        $section = AssignArea::where('employee_profile_id',$official_time_application->employee_profile_id)->value('section_id');
+                                        $chief_name=null;
+                                        $chief_position=null;
+                                        $head_name=null;
+                                        $head_position=null;
+                                        $supervisor_name=null;
+                                        $supervisor_position=null;
+                                        if($division) {
+                                            $division_name = Division::with('chief.personalInformation')->find($division);
+
+                                            if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
+                                            {
+                                                $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
+
+                                                $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                            }
+                                        }
+                                        if($department)
+                                        {
+                                            $department_name = Department::with('head.personalInformation')->find($department);
+                                            if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
+                                            {
+
+                                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                                            $head_position = $department_name->head->assignedArea->designation->name ?? null;
+                                            }
+                                        }
+                                        if($section)
+                                        {
+                                            $section_name = Section::with('supervisor.personalInformation')->find($section);
+                                            if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
+                                            {
+                                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                                            $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                                            }
+                                        }
+                                    $first_name = optional($official_time_application->employeeProfile->personalInformation)->first_name ?? null;
+                                    $last_name = optional($official_time_application->employeeProfile->personalInformation)->last_name ?? null;
+                                    $startDate = Carbon::createFromFormat('Y-m-d', $official_time_application->date_from);
+                                    $endDate = Carbon::createFromFormat('Y-m-d', $official_time_application->date_to);
+                                    $numberOfDays = $startDate->diffInDays($endDate) + 1;
+                                        return [
+                                            'id' => $official_time_application->id,
+                                            'date_from' => $official_time_application->date_from,
+                                            'date_to' => $official_time_application->date_to,
+                                            // 'time_from' => $official_time_application->time_from,
+                                            // 'time_to' => $official_time_application->time_to,
+                                            'total_days' => $numberOfDays,
+                                            'reason' => $official_time_application->reason,
+                                            'status' => $official_time_application->status,
+                                            'personal_order' => $official_time_application->personal_order,
+                                            'personal_order_path' => $official_time_application->personal_order_path,
+                                            'personal_order_size' => $official_time_application->personal_order_size,
+                                            'certificate_of_appearance' => $official_time_application->certificate_of_appearance,
+                                            'certificate_of_appearance_path' => $official_time_application->certificate_of_appearance_path,
+                                            'employee_id' => $official_time_application->employee_profile_id,
+                                            'employee_name' => "{$first_name} {$last_name}" ,
+                                            'position_code' => $official_time_application->employeeProfile->assignedArea->designation->code ?? null,
+                                            'position_name' => $official_time_application->employeeProfile->assignedArea->designation->name ?? null,
+                                            'date_created' => $official_time_application->date,
+                                            'division_head' =>$chief_name,
+                                            'division_head_position'=> $chief_position,
+                                            'department_head' =>$head_name,
+                                            'department_head_position' =>$head_position,
+                                            'section_head' =>$supervisor_name,
+                                            'section_head_position' =>$supervisor_position,
+                                            'division_name' => $official_time_application->employeeProfile->assignedArea->division->name ?? null,
+                                            'department_name' => $official_time_application->employeeProfile->assignedArea->department->name ?? null,
+                                            'section_name' => $official_time_application->employeeProfile->assignedArea->section->name ?? null,
+                                            'unit_name' => $official_time_application->employeeProfile->assignedArea->unit->name ?? null,
+                                            'logs' => $logsData->map(function ($log) {
+                                                $process_name=$log->action;
+                                                $action ="";
+                                                $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
+                                                $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
+                                                if($log->action_by_id  === optional($log->employeeProfile->assignedArea->division)->chief_employee_profile_id )
+                                                {
+                                                    $action =  $process_name . ' by ' . 'Division Head';
+                                                }
+                                                else if ($log->action_by_id === optional($log->employeeProfile->assignedArea->department)->head_employee_profile_id || optional($log->employeeProfile->assignedArea->section)->supervisor_employee_profile_id)
+                                                {
+                                                    $action =  $process_name . ' by ' . 'Supervisor';
+                                                }
+                                                else{
+                                                    $action=  $process_name . ' by ' . $first_name .' '. $last_name;
+                                                }
+
+                                                $date=$log->date;
+                                                $formatted_date=Carbon::parse($date)->format('M d,Y');
+                                                return [
+                                                    'id' => $log->id,
+                                                    'official_time_id' => $log->official_time_application_id,
+                                                    'action_by' => "{$first_name} {$last_name}" ,
+                                                    'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                                    'action' => $log->action,
+                                                    'date' => $formatted_date,
+                                                    'time' => $log->time,
+                                                    'process' => $action
+                                                ];
+                                            }),
+
+                                        ];
+                                    });
+                                    $singleArray = array_merge(...$official_time_applications_result);
+                                return response(['message' => 'Application has been sucessfully declined', 'data' => $singleArray], Response::HTTP_CREATED);
 
                         //     }
                         //  }
@@ -1017,7 +1128,118 @@ class OfficialTimeApplicationController extends Controller
                                 $ot_application = OfficialTimeApplication::findOrFail($id);
                                 $ot_application->status = 'cancelled';
                                 $ot_application->update();
-                                return response(['message' => 'Application has been sucessfully cancelled', 'data' => $ot_application], Response::HTTP_CREATED);
+
+                                $official_time_applications = OfficialTimeApplication::with(['employeeProfile.personalInformation','logs'])
+                                ->where('id',$ot_application->id)->get();
+                                $official_time_applications_result = $official_time_applications->map(function ($official_time_application) {
+                                    $logsData = $official_time_application->logs ? $official_time_application->logs : collect();
+                                     $division = AssignArea::where('employee_profile_id',$official_time_application->employee_profile_id)->value('division_id');
+                                        $department = AssignArea::where('employee_profile_id',$official_time_application->employee_profile_id)->value('department_id');
+                                        $section = AssignArea::where('employee_profile_id',$official_time_application->employee_profile_id)->value('section_id');
+                                        $chief_name=null;
+                                        $chief_position=null;
+                                        $head_name=null;
+                                        $head_position=null;
+                                        $supervisor_name=null;
+                                        $supervisor_position=null;
+                                        if($division) {
+                                            $division_name = Division::with('chief.personalInformation')->find($division);
+
+                                            if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
+                                            {
+                                                $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
+
+                                                $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                            }
+                                        }
+                                        if($department)
+                                        {
+                                            $department_name = Department::with('head.personalInformation')->find($department);
+                                            if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
+                                            {
+
+                                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                                            $head_position = $department_name->head->assignedArea->designation->name ?? null;
+                                            }
+                                        }
+                                        if($section)
+                                        {
+                                            $section_name = Section::with('supervisor.personalInformation')->find($section);
+                                            if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
+                                            {
+                                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                                            $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                                            }
+                                        }
+                                    $first_name = optional($official_time_application->employeeProfile->personalInformation)->first_name ?? null;
+                                    $last_name = optional($official_time_application->employeeProfile->personalInformation)->last_name ?? null;
+                                    $startDate = Carbon::createFromFormat('Y-m-d', $official_time_application->date_from);
+                                    $endDate = Carbon::createFromFormat('Y-m-d', $official_time_application->date_to);
+                                    $numberOfDays = $startDate->diffInDays($endDate) + 1;
+                                        return [
+                                            'id' => $official_time_application->id,
+                                            'date_from' => $official_time_application->date_from,
+                                            'date_to' => $official_time_application->date_to,
+                                            // 'time_from' => $official_time_application->time_from,
+                                            // 'time_to' => $official_time_application->time_to,
+                                            'total_days' => $numberOfDays,
+                                            'reason' => $official_time_application->reason,
+                                            'status' => $official_time_application->status,
+                                            'personal_order' => $official_time_application->personal_order,
+                                            'personal_order_path' => $official_time_application->personal_order_path,
+                                            'personal_order_size' => $official_time_application->personal_order_size,
+                                            'certificate_of_appearance' => $official_time_application->certificate_of_appearance,
+                                            'certificate_of_appearance_path' => $official_time_application->certificate_of_appearance_path,
+                                            'employee_id' => $official_time_application->employee_profile_id,
+                                            'employee_name' => "{$first_name} {$last_name}" ,
+                                            'position_code' => $official_time_application->employeeProfile->assignedArea->designation->code ?? null,
+                                            'position_name' => $official_time_application->employeeProfile->assignedArea->designation->name ?? null,
+                                            'date_created' => $official_time_application->date,
+                                            'division_head' =>$chief_name,
+                                            'division_head_position'=> $chief_position,
+                                            'department_head' =>$head_name,
+                                            'department_head_position' =>$head_position,
+                                            'section_head' =>$supervisor_name,
+                                            'section_head_position' =>$supervisor_position,
+                                            'division_name' => $official_time_application->employeeProfile->assignedArea->division->name ?? null,
+                                            'department_name' => $official_time_application->employeeProfile->assignedArea->department->name ?? null,
+                                            'section_name' => $official_time_application->employeeProfile->assignedArea->section->name ?? null,
+                                            'unit_name' => $official_time_application->employeeProfile->assignedArea->unit->name ?? null,
+                                            'logs' => $logsData->map(function ($log) {
+                                                $process_name=$log->action;
+                                                $action ="";
+                                                $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
+                                                $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
+                                                if($log->action_by_id  === optional($log->employeeProfile->assignedArea->division)->chief_employee_profile_id )
+                                                {
+                                                    $action =  $process_name . ' by ' . 'Division Head';
+                                                }
+                                                else if ($log->action_by_id === optional($log->employeeProfile->assignedArea->department)->head_employee_profile_id || optional($log->employeeProfile->assignedArea->section)->supervisor_employee_profile_id)
+                                                {
+                                                    $action =  $process_name . ' by ' . 'Supervisor';
+                                                }
+                                                else{
+                                                    $action=  $process_name . ' by ' . $first_name .' '. $last_name;
+                                                }
+
+                                                $date=$log->date;
+                                                $formatted_date=Carbon::parse($date)->format('M d,Y');
+                                                return [
+                                                    'id' => $log->id,
+                                                    'official_time_id' => $log->official_time_application_id,
+                                                    'action_by' => "{$first_name} {$last_name}" ,
+                                                    'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                                    'action' => $log->action,
+                                                    'date' => $formatted_date,
+                                                    'time' => $log->time,
+                                                    'process' => $action
+                                                ];
+                                            }),
+
+                                        ];
+                                    });
+                                    $singleArray = array_merge(...$official_time_applications_result);
+                                return response(['message' => 'Application has been sucessfully cancelled', 'data' => $singleArray], Response::HTTP_CREATED);
 
                         //     }
                         //  }
@@ -1074,7 +1296,117 @@ class OfficialTimeApplicationController extends Controller
                                 $ot_application->status = $new_status;
                                 $ot_application->update();
 
-                                return response(['message' => 'Application has been sucessfully '.$message_action, 'data' => $ot_application], Response::HTTP_CREATED);
+                                $official_time_applications = OfficialTimeApplication::with(['employeeProfile.personalInformation','logs'])
+                                ->where('id',$ot_application->id)->get();
+                                $official_time_applications_result = $official_time_applications->map(function ($official_time_application) {
+                                    $logsData = $official_time_application->logs ? $official_time_application->logs : collect();
+                                     $division = AssignArea::where('employee_profile_id',$official_time_application->employee_profile_id)->value('division_id');
+                                        $department = AssignArea::where('employee_profile_id',$official_time_application->employee_profile_id)->value('department_id');
+                                        $section = AssignArea::where('employee_profile_id',$official_time_application->employee_profile_id)->value('section_id');
+                                        $chief_name=null;
+                                        $chief_position=null;
+                                        $head_name=null;
+                                        $head_position=null;
+                                        $supervisor_name=null;
+                                        $supervisor_position=null;
+                                        if($division) {
+                                            $division_name = Division::with('chief.personalInformation')->find($division);
+
+                                            if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
+                                            {
+                                                $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
+
+                                                $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                            }
+                                        }
+                                        if($department)
+                                        {
+                                            $department_name = Department::with('head.personalInformation')->find($department);
+                                            if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
+                                            {
+
+                                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                                            $head_position = $department_name->head->assignedArea->designation->name ?? null;
+                                            }
+                                        }
+                                        if($section)
+                                        {
+                                            $section_name = Section::with('supervisor.personalInformation')->find($section);
+                                            if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
+                                            {
+                                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                                            $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                                            }
+                                        }
+                                    $first_name = optional($official_time_application->employeeProfile->personalInformation)->first_name ?? null;
+                                    $last_name = optional($official_time_application->employeeProfile->personalInformation)->last_name ?? null;
+                                    $startDate = Carbon::createFromFormat('Y-m-d', $official_time_application->date_from);
+                                    $endDate = Carbon::createFromFormat('Y-m-d', $official_time_application->date_to);
+                                    $numberOfDays = $startDate->diffInDays($endDate) + 1;
+                                        return [
+                                            'id' => $official_time_application->id,
+                                            'date_from' => $official_time_application->date_from,
+                                            'date_to' => $official_time_application->date_to,
+                                            // 'time_from' => $official_time_application->time_from,
+                                            // 'time_to' => $official_time_application->time_to,
+                                            'total_days' => $numberOfDays,
+                                            'reason' => $official_time_application->reason,
+                                            'status' => $official_time_application->status,
+                                            'personal_order' => $official_time_application->personal_order,
+                                            'personal_order_path' => $official_time_application->personal_order_path,
+                                            'personal_order_size' => $official_time_application->personal_order_size,
+                                            'certificate_of_appearance' => $official_time_application->certificate_of_appearance,
+                                            'certificate_of_appearance_path' => $official_time_application->certificate_of_appearance_path,
+                                            'employee_id' => $official_time_application->employee_profile_id,
+                                            'employee_name' => "{$first_name} {$last_name}" ,
+                                            'position_code' => $official_time_application->employeeProfile->assignedArea->designation->code ?? null,
+                                            'position_name' => $official_time_application->employeeProfile->assignedArea->designation->name ?? null,
+                                            'date_created' => $official_time_application->date,
+                                            'division_head' =>$chief_name,
+                                            'division_head_position'=> $chief_position,
+                                            'department_head' =>$head_name,
+                                            'department_head_position' =>$head_position,
+                                            'section_head' =>$supervisor_name,
+                                            'section_head_position' =>$supervisor_position,
+                                            'division_name' => $official_time_application->employeeProfile->assignedArea->division->name ?? null,
+                                            'department_name' => $official_time_application->employeeProfile->assignedArea->department->name ?? null,
+                                            'section_name' => $official_time_application->employeeProfile->assignedArea->section->name ?? null,
+                                            'unit_name' => $official_time_application->employeeProfile->assignedArea->unit->name ?? null,
+                                            'logs' => $logsData->map(function ($log) {
+                                                $process_name=$log->action;
+                                                $action ="";
+                                                $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
+                                                $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
+                                                if($log->action_by_id  === optional($log->employeeProfile->assignedArea->division)->chief_employee_profile_id )
+                                                {
+                                                    $action =  $process_name . ' by ' . 'Division Head';
+                                                }
+                                                else if ($log->action_by_id === optional($log->employeeProfile->assignedArea->department)->head_employee_profile_id || optional($log->employeeProfile->assignedArea->section)->supervisor_employee_profile_id)
+                                                {
+                                                    $action =  $process_name . ' by ' . 'Supervisor';
+                                                }
+                                                else{
+                                                    $action=  $process_name . ' by ' . $first_name .' '. $last_name;
+                                                }
+
+                                                $date=$log->date;
+                                                $formatted_date=Carbon::parse($date)->format('M d,Y');
+                                                return [
+                                                    'id' => $log->id,
+                                                    'official_time_id' => $log->official_time_application_id,
+                                                    'action_by' => "{$first_name} {$last_name}" ,
+                                                    'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                                    'action' => $log->action,
+                                                    'date' => $formatted_date,
+                                                    'time' => $log->time,
+                                                    'process' => $action
+                                                ];
+                                            }),
+
+                                        ];
+                                    });
+                                    $singleArray = array_merge(...$official_time_applications_result);
+                                return response(['message' => 'Application has been sucessfully '.$message_action, 'data' => $singleArray], Response::HTTP_CREATED);
                                 }
             //     }
             }
@@ -1196,7 +1528,7 @@ class OfficialTimeApplicationController extends Controller
                             $formatted_date=Carbon::parse($date)->format('M d,Y');
                             return [
                                 'id' => $log->id,
-                                'leave_application_id' => $log->ob_application_id,
+                                'official_time_id' => $log->official_time_application_id,
                                 'action_by' => "{$first_name} {$last_name}" ,
                                 'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
                                 'action' => $log->action,
@@ -1332,7 +1664,7 @@ class OfficialTimeApplicationController extends Controller
                                 $formatted_date=Carbon::parse($date)->format('M d,Y');
                                 return [
                                     'id' => $log->id,
-                                    'leave_application_id' => $log->ob_application_id,
+                                    'official_time_id' => $log->official_time_application_id,
                                     'action_by' => "{$first_name} {$last_name}" ,
                                     'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
                                     'action' => $log->action,
@@ -1467,7 +1799,7 @@ class OfficialTimeApplicationController extends Controller
                                     $formatted_date=Carbon::parse($date)->format('M d,Y');
                                     return [
                                         'id' => $log->id,
-                                        'leave_application_id' => $log->ob_application_id,
+                                        'official_time_id' => $log->official_time_application_id,
                                         'action_by' => "{$first_name} {$last_name}" ,
                                         'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
                                         'action' => $log->action,
@@ -1596,7 +1928,7 @@ class OfficialTimeApplicationController extends Controller
                             $formatted_date=Carbon::parse($date)->format('M d,Y');
                             return [
                                 'id' => $log->id,
-                                'leave_application_id' => $log->ob_application_id,
+                                'official_time_id' => $log->official_time_application_id,
                                 'action_by' => "{$first_name} {$last_name}" ,
                                 'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
                                 'action' => $log->action,
