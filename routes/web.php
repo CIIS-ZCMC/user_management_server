@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\LeaveAndOverTime\LeaveApplicationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -25,8 +26,11 @@ Route::controller(App\Http\Controllers\DTR\DTRcontroller::class)->group(
         Route::get('/viewdtr', 'ViewDTR')->name('viewdtr');
         Route::get('/dtrutotreport', 'DTR_UTOT_Report')->name('dtrutotreport');
         Route::get('/testtest', 'test')->name('testtest');
+
+        Route::get('/setHolidays', 'Set_Holidays')->name('setHolidays');
     }
 );
+
 
 
 Route::controller(App\Http\Controllers\DTR\BioController::class)->group(
@@ -69,3 +73,5 @@ Route::controller(App\Http\Controllers\DTR\MailController::class)->group(
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::post('print-leave-form/{id}', [LeaveApplicationController::class, 'storprintLeaveForme']);

@@ -1,491 +1,147 @@
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Onest:wght@200&display=swap');
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application for Leave</title>
+    {{-- <link rel="stylesheet" href="style.css"> --}}
+    <style>
     body {
-        display: flex;
-        justify-content: center;
-        font-family: 'Onest', sans-serif;
-        user-select: none;
+        font-family: Arial, sans-serif;
+        margin: 20px;
     }
 
-    #po {
-
-
-        width: 395px;
-        padding: 5px;
-
-
-
-    }
-
-    #titleBar {
+    header {
         text-align: center;
-        font-size: 10px;
-        font-weight: 350;
+        margin-bottom: 20px;
+    }
+
+    section {
+        border: 1px solid black;
+        padding: 20px;
+    }
+
+    .row {
+        margin-bottom: 10px;
+    }
+
+    label {
+        display: block;
         margin-bottom: 5px;
     }
 
-
-
-    #zcmc {
-        font-size: 13px;
-        font-weight: 450;
-    }
-
-    #addr {
-        font-size: 10px;
-        font-weight: 350;
-    }
-
-    #header {
-        text-align: center;
-        margin-top: -10px;
-    }
-
-    #header h6 {
-        font-size: 15px;
-        letter-spacing: 1px;
-    }
-
-    #userName {
-        text-align: center;
-        text-transform: uppercase;
-        margin-top: -20px;
-        font-size: 15px;
-        font-weight: 500;
-
-    }
-
-    #userName div {
-
-        height: 1.5px;
+    input[type="text"],
+    input[type="radio"] {
         width: 100%;
-        background-color: gray;
+        padding: 5px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-sizing: border-box;
     }
 
-    #userName span {
-        font-size: 13px;
-        font-weight: 520;
-    }
-
-    .ftmo {
-
-        display: flex;
-
-        width: 100%;
-        font-weight: normal;
-
-
-    }
-
-    .ftmo>* {
-        flex-grow: 1;
-        /* Makes all items expand equally */
-        flex-basis: 0;
-        /* Distributes available space equally among items */
-        max-width: 100%;
-        /* Ensure that items don't exceed the container width */
-    }
-
-    .ftmo span {
-        font-size: 13px;
-        text-transform: uppercase;
-
-    }
-
-    #f1 {
-        margin-top: 2px;
-    }
-
-    #f2 {
-
-        text-align: center !important;
-
-    }
-
-    #f2 div {
-        height: 1.5px;
-
-        background-color: gray;
-
-    }
-
-    .tit {
-        font-weight: 500;
-        font-size: 13px
-    }
-
-    .ot {
-        font-size: 12px
-    }
-
-    #zcmclogo {
-        width: 45px;
-        float: left;
-
-    }
-
-
-    #dohlogo {
-        width: 60px;
-        float: right;
-    }
-
-    /* Apply styling to the entire table */
-    #tabledate {
-        width: 98%;
-        margin-left: 1%;
-        border-collapse: collapse;
-        /* Combine adjacent borders into a single border */
-
-    }
-
-    /* Style table rows */
-    #tabledate tr {
-        border: 1px solid gray;
-
-    }
-
-    /* Style table headers (th) */
-    #tabledate th {
-        background-color: #f2f2f2;
-        /* Background color for header cells */
-        font-size: 9px;
-        font-weight: 520;
+    /* Styling for specific sections */
+    .application-form h2 {
         text-align: center;
-        padding: 2px;
-        text-transform: uppercase;
-
-        /* Add padding to headers for spacing */
-
+        margin-bottom: 20px;
     }
 
-    /* Style table data cells (td) */
-    #tabledate td {
-        text-align: center;
-
-        /* Add padding to data cells for spacing */
-        font-size: 12px;
-        border: 1px solid black;
-        text-transform: uppercase;
-
-
+    .personal-information {
+        margin-bottom: 20px;
     }
 
-    /* Alternate row background color for better readability */
-    #tabledate tr:nth-child(even) {
-        /* background-color: #e0e0e0; */
-    }
-
-
-    .certification {
-        text-align: left;
-        margin-top: -10px;
-    }
-
-    .certification p {
-        font-size: 13px;
-        line-height: 1;
+    .details-of-application {
+        margin-bottom: 20px;
     }
 
     .signature {
-
         text-align: center;
-        margin-top: 15px;
-
     }
 
-    .signature .line {
-        height: 2px;
-        background-color: gray;
-        width: 60%;
-
-        margin-left: 20%;
-
-
+    .signature img {
+        width: 150px;
+        height: 50px;
+        margin-bottom: 10px;
     }
 
-    .signature span {
-        font-size: 13px
-    }
-
-    .footer {
+    footer {
+        text-align: center;
         margin-top: 20px;
     }
-
-    .footer span {
-        font-size: 12px;
-
-
-    }
-
-    #lfooter {
-        font-size: 11px;
-        width: 100% !important;
-
-    }
-
-    #f1 {
-        float: left;
-    }
-
-    #f2 {
-
-        text-align: right;
-    }
-
-    #f3 {
-        text-align: right;
-    }
-
-    .fentry {
-        color: #12486B;
-        font-weight: bold
-    }
-
-    #tblheader {
-        border-collapse: collapse;
-    }
-
-    #tblheader tr td {
-        padding: 5px;
-        border: 1px solid gray;
-
-        text-transform: capitalize;
-    }
-</style>
-
-<div id="po">
-    {{--  d:\ciisDTR\dtr\storage\app\public\logo\doh.jpeg d:\ciisDTR\dtr\storage\app\public\logo\zcmc.jpeg resources/views/logo/zcmc.jpeg  --}}
-    @if ($print_view)
-    <img id="zcmclogo" src="{{ asset('storage/logo/zcmc.jpeg') }}" alt="zcmcLogo">
-    <img id="dohlogo" src="{{ asset('storage/logo/doh.jpeg')}}" alt="dohLogo">
-    @else
-    <img id="zcmclogo" src="{{ base_path() . '\public\storage\logo/zcmc.jpeg'}}" alt="zcmcLogo">
-    <img id="dohlogo" src="{{ base_path() . '\public\storage\logo/doh.jpeg'}}" alt="dohLogo">
-    @endif
-
-
-    <div id="titleBar">
-
-
-        <span id="rotp">
-            Republic of the Philippines
+    </style>
+    </head>
+    <body>
+    <header>
+        <h1>Republic of the Philippines</h1>
+        <h2>Department of Health</h2>
+        <h3>ZAMBOANGA CITY MEDICAL CENTER</h3>
+    </header>
+    <section class="application-form">
+        <h2>APPLICATION FOR LEAVE</h2>
+        <div class="personal-information">
+        <div class="row">
+            <label for="office-agency">Office/Agency:</label>
+            <input type="text" id="office-agency" value="Zamboanga City Medical Center">
+        </div>
+        <div class="row">
+            <label for="name">Name:</label>
+            <input type="text" id="name" value="Agcaoill, Adrian Asa">
+        </div>
+        <div class="row">
+            <label for="date-of-filing">Date of Filing:</label>
+            <input type="text" id="date-of-filing" value="May 29, 2023">
+        </div>
+        <div class="row">
+            <label for="position">Position:</label>
+            <input type="text" id="position" value="Nursing Attendant l">
+        </div>
+        <div class="row">
+            <label for="salary">Salary:</label>
+            <input type="text" id="salary" value="">
+        </div>
+        </div>
+        <div class="details-of-application">
+        <h3>Details of Application</h3>
+        <div class="type-of-leave">
+            <label for="type-of-leave">Type of Leave to be Availed Of:</label>
             <br>
-            Department of Health
-        </span>
-        <br>
-        <span id="zcmc">
-            ZAMBOANGA CITY MEDICAL CENTER
-        </span>
-        <br>
-        <span id="addr">
-            DR. EVANGELISTA ST., STA. CATALINA, ZAMBOANGA CITY
-        </span>
-
-    </div>
-
-
-
-    <div id="header">
-        <h6>DAILY TIME RECORD</h6>
-    </div>
-
-    <div id="userName">
-        {{$Employee_Name}}
-        <div></div>
-        <span>NAME</span>
-    </div>
-
-
-    <table style="width:100% !important;">
-        <tr>
-            <td class="tit">
-                <span>
-                    For the month of
-                </span>
-            </td>
-            <td class="ot">
-
-                <div id="f2">
-                    <span>{{date('F',strtotime($year.'-'.$month.'-1'))}} 1 to {{$daysInMonth}} {{$year}}</span>
-                    <div></div>
-
-                    <span>Regular Days</span>
-                </div>
-
-            </td>
-        </tr>
-
-        <tr>
-            <td class="tit">
-                <span>
-                    Official hours for
-                </span>
-            </td>
-            <td class="ot">
-                : {{$OHF}}
-            </td>
-        </tr>
-
-        <tr>
-            <td class="tit">
-                <span>
-                    Arrival and Departure
-                </span>
-            </td>
-            <td class="ot">
-                : {{$Arrival_Departure}}
-            </td>
-        </tr>
-
-
-    </table>
-    <hr>
-
-
-    <table id="tabledate">
-        <tr>
-            <th>
-
-            </th>
-            <th>
-
-            </th>
-            <th>Arrival</th>
-            <th>Departure</th>
-            <th>Arrival</th>
-            <th>Departure</th>
-            <th>
-                UNDERTIME
-                <table id="tblheader">
-                    <tr>
-                        <td>Hours</td>
-                        <td>Minutes</td>
-                    </tr>
-                </table>
-            </th>
-        </tr>
-
-        {{-- {{print_r($dtrRecords)}} --}}
-        <tbody>
-            @php
-                $isExcept = false;
-            @endphp
-            @for($i = 1; $i <= $daysInMonth; $i++)
-
-            @php
-            $checkIn = array_filter($dtrRecords, function ($res) use ($i) {
-                return date('d', strtotime($res['first_in'])) == $i
-                    && date('d', strtotime($res['first_out'])) == $i + 1;
-            });
-
-            $val = 0;
-            $outdd = array_map(function($res) {
-                return [
-                    'first_out' => $res['first_out']
-                ];
-            }, $checkIn);
-            @endphp
-
-            <tr>
-                <td>{{$i}}</td>
-                <td style="text-transform: capitalize; color:#05171f; font-size:10px">
-                    {{date('D', strtotime(date('Y-m-d', strtotime($year.'-'.$month.'-'.$i))))}}
-                </td>
-
-                @php $rowspan = count($outdd) > 0 ? 2 : 1; @endphp
-
-                @if ($rowspan > 1)
-                    @php
-                        $isExcept = true;
-                    @endphp
-
-                 {{-- @include('generate_dtr.tableDtr_datespan') --}}
-                @else
-                    @if ($isExcept == true)
-
-                        @php
-                            $isExcept = false;
-                        @endphp
-                    @else
-                      {{-- @include('generate_dtr.tableDtr_date') --}}
-                    @endif
-                @endif
-
-                @if (count($checkIn) >= 1)
-                    @php $val = $i; @endphp
-                @endif
-            </tr>
-        @endfor
-        </tbody>
-    </table>
-    <div class="certification">
-        <p>I certify on my honor that the above is a true and correct report of the hours of work performed, recorded daily at the time of arrival and departure from the office.</p>
-    </div>
-    <br>
-    <div class="signature">
-        <div>
-
+            <input type="radio" id="sick-leave" name="type-of-leave" value="Sick Leave">
+            <label for="sick-leave">Sick Leave (Sec. 43, Title XV, Omnibus Rules Implementing EO No. 292)</label>
+            <br>
+            <input type="radio" id="vacation-leave" name="type-of-leave" value="Vacation Leave">
+            <label for="vacation-leave">Vacation Leave (RA No. 8187/CSC MC No. 71, s. 1968 as amended)</label>
+            <br>
+            <input type="radio" id="others" name="type-of-leave" value="Others">
+            <label for="others">Others:</label>
+            <input type="text" id="others-type" placeholder="Specify">
         </div>
-        <div class="line"></div>
-        <span> Verified as to prescribed hours</span>
-    </div>
-    <br><br>
-    <div class="signature">
-        <div>
-
+        <div class="number-of-days">
+            <label for="number-of-days">Number of Working Days Applied For:</label>
+            <input type="text" id="number-of-days" value="1.0 day(s)">
         </div>
-        <div class="line"></div>
-        <span> In Charge</span>
-    </div>
-
-
-
-
-    <div class="footer">
-        <span>Adopted from CSC FORM NO. 48</span>
-        <br><br>
-        <table id="lfooter">
-            <tr>
-                <td id="f1">ZCMC-F-HRMO-01</td>
-                <td id="f2">ReV.0</td>
-                <td id="f3">Effectivity Date: June 2, 2014</td>
-            </tr>
-        </table>
-
-    </div>
-
-</div>
-
-<script>
-    document.addEventListener("keydown", function (event) {
-  // Check if the pressed key is F11 (key code 122)
-  if (event.keyCode === 123) {
-    event.preventDefault(); // Prevent the default action (toggling full-screen)
-  }
-});
-
-// Listen for the contextmenu event (right-click) to prevent opening the context menu
-document.addEventListener("contextmenu", function (e) {
-  e.preventDefault();
-});
-
-// Listen for the keyboard shortcuts that open the developer tools (F12, Ctrl+Shift+I, Ctrl+Shift+J)
-document.addEventListener("keydown", function (e) {
-  if (e.key === "F12" || (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J"))) {
-    e.preventDefault();
-  }
-});
-
-// Attempt to close the developer tools if they are open
-function closeDeveloperTools() {
-  if (typeof window !== "undefined") {
-    // This will only work in some browsers (not guaranteed)
-    window.close();
-  }
-}
-
-// Call the function to close the developer tools
-closeDeveloperTools();
-
-</script>
+        <div class="commutation">
+            <label for="commutation">Commutation:</label>
+            <br>
+            <input type="radio" id="commutation-requested" name="commutation" value="Requested">
+            <label for="commutation-requested">Requested</label>
+            <br>
+            <input type="radio" id="commutation-not-requested" name="commutation" value="Not Requested" checked>
+            <label for="commutation-not-requested">Not Requested</label>
+        </div>
+        <div class="inclusive-dates">
+            <label for="inclusive-dates">Inclusive Dates:</label>
+            <input type="text" id="inclusive-dates" value="May 25, 2023">
+        </div>
+        </div>
+        <div class="signature">
+        <p>Signature of Applicant:</p>
+        <img src="signature.png" alt="Applicant Signature">
+        <p>ADRIAN A. AGCAOILI</p>
+        </div>
+    </section>
+    <footer>
+        <p>ZAMBOANGA CITY MEDICAL CENTER</p>
+        <p>EVANGELISTA ST. STA CATALINA, ZAM</p>
+        <p>BOANGA CITY TELEFAX NO. (062) 991-2064</p>
+    </footer>
+    </body>
+</html>
