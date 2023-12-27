@@ -18,6 +18,7 @@ class LegalInformationQuestionResource extends JsonResource
         $sub_question = LegalInformationQuestion::where('legal_iq_id', $this->id)->get();
 
         return [
+            'id' => $this->id,
             'order_by' => $this->order_by,
             'content_question' => $this->content_question,
             'sub_question' => LegalInformationQuestionResource::collection($sub_question),

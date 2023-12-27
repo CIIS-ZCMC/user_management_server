@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('remarks')->nullable();
             $table->string('purpose')->nullable();
             $table->string('date');
+            $table->string('time')->nullable();
             $table->timestamps();
         });
     }

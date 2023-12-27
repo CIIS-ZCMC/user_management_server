@@ -86,7 +86,7 @@ class EmployeeProfile extends Authenticatable
 
     public function loginTrails()
     {
-        return $this->hasMany(LoginTrails::class);
+        return $this->hasMany(LoginTrail::class);
     }
 
     public function plantillaNumber()
@@ -133,6 +133,36 @@ class EmployeeProfile extends Authenticatable
 
         return $fullName;
     }
+
+    public function leaveCredits()
+    {
+        return $this->hasMany(EmployeeLeaveCredit::class);
+    }
+    public function leaveLogs() {
+        return $this->hasMany(LeaveTypeLog::class);
+    }
+
+    public function overtimeCredits()
+    {
+        return $this->hasMany(EmployeeOvertimeCredit::class);
+    }
+
+    public function leaveApplications() {
+        return $this->hasMany(LeaveApplication::class);
+    }
+
+    public function leaveApplicationLogs() {
+        return $this->hasMany(LeaveApplicationLog::class);
+    }
+   
+    public function obApplications() {
+        return $this->hasMany(ObApplication::class);
+    }
+    
+    public function obApplicationLogs() {
+        return $this->hasMany(ObApplicationLog::class);
+    }
+   
 
     public function findDesignation()
     {

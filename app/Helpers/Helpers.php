@@ -30,6 +30,7 @@ class Helpers {
             'ip_address' => $ip
         ]);
     }
+    
 
     public static function randomHexColor()
     {

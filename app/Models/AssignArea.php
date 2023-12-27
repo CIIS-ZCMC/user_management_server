@@ -17,6 +17,7 @@ class AssignArea extends Model
     protected $table = 'assigned_areas';
 
     public $fillable = [ 
+        'salary_grade_step',
         'employee_profile_id',
         'division_id',
         'department_id',

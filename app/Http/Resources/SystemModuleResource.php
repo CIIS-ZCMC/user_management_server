@@ -17,6 +17,7 @@ class SystemModuleResource extends JsonResource
         $system = $this->system->name;
 
         return [
+            'id' => $this->id,
             'name' => $this->name,
             'code' => $this->code,
             'system' => $system,

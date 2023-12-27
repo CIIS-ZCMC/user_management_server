@@ -24,7 +24,8 @@ class SystemRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'domain' => 'required|string|max:255',
-            'code' => "required|string|max:255"
+            'code' => "required|string|max:255",
+            'password' => 'nullable|string|max:255'
         ];
     }
 }

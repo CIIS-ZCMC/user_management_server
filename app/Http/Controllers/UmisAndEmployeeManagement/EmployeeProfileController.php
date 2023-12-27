@@ -4,6 +4,7 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Models\AssignArea;
 use Carbon\Carbon;
 use Jenssegers\Agent\Agent;
 use Illuminate\Http\Request;
@@ -16,6 +17,10 @@ use App\Services\FileValidationAndUpload;
 use App\Http\Requests\SignInRequest;
 use App\Http\Requests\EmployeeProfileRequest;
 use App\Http\Resources\EmployeeProfileResource;
+use App\Http\Requests\EmployeesByAreaAssignedRequest;
+use App\Http\Resources\EmployeesByAreaAssignedResource;
+use App\Http\Requests\PasswordApprovalRequest;
+use App\Http\Resources\EmployeeDTRList;
 use App\Models\DefaultPassword;
 use App\Models\EmployeeProfile;
 use App\Models\LoginTrail;
@@ -160,7 +165,7 @@ class EmployeeProfileController extends Controller
             ]);
 
             return response()
-                ->json([$data, 'message' => "Success login."], Response::HTTP_OK)
+                ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
                 ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), true);
         } catch (\Throwable $th) {
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'signIn', $th->getMessage());
@@ -191,7 +196,7 @@ class EmployeeProfileController extends Controller
                         'roleModulePermissions' => function($query){
                             $query->with([
                                 'modulePermission' => function($query){
-                                    $query->with(['systemModule', 'permission']);
+                                    $query->with(['module', 'permission']);
                                 }
                             ]);
                         },
@@ -255,7 +260,11 @@ class EmployeeProfileController extends Controller
                     $query->with([
                         'system',
                         'roleModulePermissions' => function ($query) {
-                            $query->with(['systemModule', 'permission']);
+                            $query->with([
+                                'modulePermission' => function($query){
+                                    $query->with(['module', 'permission']);
+                                }
+                            ]);
                         }
                     ]);
                 }
@@ -263,7 +272,7 @@ class EmployeeProfileController extends Controller
         
             if(count($special_access_permissions) > 0)
             {
-                foreach($special_access_permissions['systemRole'] as $key => $special_access_permission)
+                foreach($special_access_permissions as $key => $special_access_permission)
                 {
                     $system_exist = false;
                     $system_role = $special_access_permission['systemRole'];
@@ -304,7 +313,7 @@ class EmployeeProfileController extends Controller
         // return $role_module_permissions;
     
         foreach ($role_module_permissions as $role_module_permission) {
-            $module_name = $role_module_permission->modulePermission->systemModule->name;
+            $module_name = $role_module_permission->modulePermission->module->name;
             $permission_action = $role_module_permission->modulePermission->permission->action;
     
             if (!isset($modules[$module_name])) {
@@ -391,7 +400,7 @@ class EmployeeProfileController extends Controller
             ]);
 
             return response()
-                ->json([$data, 'message' => "Success signout to other device you are now login."], Response::HTTP_OK)
+                ->json(['data' => $data, 'message' => "Success signout to other device you are now login."], Response::HTTP_OK)
                 ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), true);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'signOutFromOtherDevice', $th->getMessage());
@@ -461,6 +470,60 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+    
+    public function employeesByAreaAssigned(EmployeesByAreaAssignedRequest $request)
+    {
+        try{
+            $area = strip_tags($request->query('id'));
+            $sector = strip_tags($request->query('sector'));
+            $employees = [];
+            $key = '';
+
+            switch($sector){
+                case 'division':
+                    $key = 'division_id';
+                    break;
+                case 'department':
+                    $key = 'department_id';
+                    break;
+                case 'section':
+                    $key = 'section_id';
+                    break;
+                default:
+                    $key = 'unit_id';
+                    break;
+            }
+
+            $employees = AssignArea::with('employeeProfile')->where($key, $area)->get();
+
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching a '.$this->PLURAL_MODULE_NAME.'.');
+
+            return response()->json([
+                'data' => EmployeesByAreaAssignedResource::collection($employees), 
+                'message' => 'list of employees retrieved.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function employeesDTRList(Request $request)
+    {
+        try{
+            $employee_profiles = EmployeeProfile::all();
+
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching a '.$this->PLURAL_MODULE_NAME.'.');
+
+            return response()->json([
+                'data' => EmployeeDTRList::collection($employee_profiles), 
+                'message' => 'list of employees retrieved.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 
     public function index(Request $request)
     {
@@ -473,7 +536,10 @@ class EmployeeProfileController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching a '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => EmployeeProfileResource::collection($employee_profiles), 'message' => 'list of employees retrieved.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => EmployeeProfileResource::collection($employee_profiles), 
+                'message' => 'list of employees retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -707,7 +773,7 @@ class EmployeeProfileController extends Controller
     }
     
 
-    public function destroy($id, Request $request)
+    public function destroy($id, PasswordApprovalRequest $request)
     {
         try{
             $user = $request->user;

@@ -19,6 +19,7 @@ class SystemModulePermissionResource extends JsonResource
         $module_permissions = ModulePermissionResource::collection($this->modulePermissions);
 
         return [
+            'id' => $this->id,
             'name' => $this->name,
             'code' => $this->code,
             'description' => $this->description,

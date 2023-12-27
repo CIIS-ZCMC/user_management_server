@@ -20,7 +20,6 @@ class SectionSeeder extends Seeder
         Section::create([
             'name' => 'Material Management Section',
             'code' => 'MMS',
-            'job_specification' => 'SC II',
             'division_id' => $division->id
         ]);
     }

@@ -20,9 +20,46 @@ class RequirementController extends Controller
     public function index()
     {
         try{
-            
-           $requirements =Requirement::all(); 
-             return response()->json(['data' => $requirements ], Response::HTTP_OK);
+
+    $requirements = Requirement::with('logs.employeeProfile.personalInformation') // Eager load relationships
+        ->get();
+    
+    $result = $requirements->map(function ($requirement) {
+        // Access requirement details
+        $requirementDetails = $requirement->toArray();
+    
+        // Access logs for the current requirement
+        $logs = $requirement->logs->map(function ($log) {
+            // Check if the employeeProfile relation is present
+            if ($log->employeeProfile) {
+                // Access employee name for the current log
+                $first_name = optional($log->employeeProfile->personalInformation)->first_name ;
+                $last_name = optional($log->employeeProfile->personalInformation)->last_name;
+                $date=$log->date;
+                $formatted_date=Carbon::parse($date)->format('M d,Y');
+                return [
+                    'id' => $log->id,
+                    'action_by' => "{$first_name} {$last_name}" ,
+                    'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                    'action' => $log->action,
+                    'date' => $formatted_date,
+                    'time' => $log->time,
+                    'process' => $action
+                ];
+            }
+    
+            return null; // or handle this case according to your logic
+        })->filter(); // Remove null values from the result
+    
+        return [
+            'id' => $requirementDetails['id'],
+            'label' => $requirementDetails['name'],
+            'description' => $requirementDetails['description'],
+            'logs' => $logs,
+        ];
+    });
+    
+             return response()->json(['data' => $result ], Response::HTTP_OK);
         }catch(\Throwable $th){
         
             return response()->json(['message' => $th->getMessage()], 500);
@@ -119,55 +156,7 @@ class RequirementController extends Controller
         //
     }
 
-    public function deactivateLeaveType(Request $request,$leave_type_id)
-    {
-        try{
-            $user_id = Auth::user()->id;
-            $user = EmployeeProfile::where('id','=',$user_id)->first();
-            $user_password=$user->password;
-            $password=$request->password;
-            if($user_password==$password)
-            {
-                $deactivate_leave_type = ModelsLeaveType::findOrFail($leave_type_id);
-                $deactivate_leave_type->status="deactivated";
-                $deactivate_leave_type->reason=$request->reason;
-                $deactivate_leave_type->update();
-                $process_name="Deactivate";
-                $leave_type_logs = $this->storeLeaveTypeLog($leave_type_id,$process_name);
-                return response()->json(['data' => 'Success'], Response::HTTP_OK);
-            }
-           
-            
-        }catch(\Throwable $th){
-         
-            return response()->json(['message' => $th->getMessage()], 500);
-        }
-        
-    }
+   
 
-    public function reactivateLeaveType(Request $request,$leave_type_id)
-    {
-        try{
-            $user_id = Auth::user()->id;
-            $user = EmployeeProfile::where('id','=',$user_id)->first();
-            $user_password=$user->password;
-            $password=$request->password;
-            if($user_password==$password)
-            {
-                $deactivate_leave_type = LeaveType::findOrFail($leave_type_id);
-                $deactivate_leave_type->status="active";
-                $deactivate_leave_type->reason=$request->reason;
-                $deactivate_leave_type->update();
-                $process_name="Reactivate";
-                $leave_type_logs = $this->storeLeaveTypeLog($leave_type_id,$process_name);
-                return response()->json(['data' => 'Success'], Response::HTTP_OK);
-            }
-           
-            
-        }catch(\Throwable $th){
-         
-            return response()->json(['message' => $th->getMessage()], 500);
-        }
-        
-    }
+   
 }

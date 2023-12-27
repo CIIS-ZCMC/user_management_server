@@ -18,7 +18,6 @@ class Section extends Model
         'name',
         'code',
         'section_attachment_url',
-        'job_specification',
         'supervisor_attachment_url',
         'supervisor_effective_at',
         'oic_attachment_url',
@@ -31,6 +30,17 @@ class Section extends Model
     ];
 
     public $timestamps = TRUE;
+
+    public function employees()
+    {
+        return $this->belongsToMany(AssignArea::class, EmployeeProfile::class, 'employee_profile_id', 'id', 'section_id', 'id');
+    }
+    
+    public function assignArea()
+    {
+        return $this->hasMany(AssignArea::class);
+    }
+
 
     public function division()
     {
@@ -45,11 +55,6 @@ class Section extends Model
     public function supervisor()
     {
         return $this->belongsTo(EmployeeProfile::class, 'id', 'supervisor_employee_profile_id');
-    }
-
-    public function supervisorJobSpecification()
-    {
-        return Designation::where('code', $this->job_specification)->first();
     }
 
     public function oic()

@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('assigned_area_trails', function (Blueprint $table) {
             $table->id();
+            $table->integer('salary_grade-step');
             $table->unsignedBigInteger('employee_profile_id')->nullable();
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles');
             $table->unsignedBigInteger('division_id')->nullable();
