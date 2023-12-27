@@ -223,4 +223,65 @@ class PullOutController extends Controller
 
         }
     }
+
+    /**
+     * Update Approval of Request
+     */
+    public function approve(Request $request, $id) {
+        try {
+            
+            $cleanData = [];
+
+            foreach ($request->all() as $key => $value) {
+                if(empty($value)){
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                if (DateTime::createFromFormat('Y-m-d', $value)) {
+                    $cleanData[$key] = Carbon::parse($value);
+                    continue;
+                }
+
+                if (is_int($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                if(is_array($value)) {
+                    $section_data = [];
+
+                    foreach ($request->all() as $key => $value) {
+                        $section_data[$key] = $value;
+                    }        
+                    $cleanData[$key] = $section_data;
+                    continue;
+                }
+
+                $cleanData[$key] = strip_tags($value);
+            }
+
+            
+            $data = TimeAdjusment::findOrFail($id);
+
+            if(!$data) {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $query = TimeAdjusment::where('id', $data->id)->update([
+                'status'            => $cleanData['status'],
+                'approval_date'     => now(),
+                'updated_at'        => now()
+            ]);
+
+            Helpers::registerSystemLogs($request, $id, true, 'Success in approve '.$this->SINGULAR_MODULE_NAME.'.');
+            return response()->json(['data' => $query, 'message' => 'Success'], Response::HTTP_OK);
+
+        } catch (\Throwable $th) {
+
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'approve', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }
+  
