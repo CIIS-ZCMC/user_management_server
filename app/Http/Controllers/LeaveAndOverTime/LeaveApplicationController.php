@@ -2420,12 +2420,12 @@ class LeaveApplicationController extends Controller
                         //     if($user_id){
                                 $leave_application_log = new LeaveApplicationLog();
                                 $leave_application_log->action = 'cancel';
-                                $leave_application_log->leave_application_id = $leave_application_id;
+                                $leave_application_log->leave_application_id = $id;
                                 $leave_application_log->date = date('Y-m-d');
                                 $leave_application_log->action_by_id = '1';
                                 $leave_application_log->save();
 
-                                $leave_application = LeaveApplication::findOrFail($leave_application_id);
+                                $leave_application = LeaveApplication::findOrFail($id);
                                 $leave_application->status = 'cancelled';
                                 $leave_application->update();
 
@@ -3084,8 +3084,8 @@ class LeaveApplicationController extends Controller
     public function printLeaveForm($id)
     {
         try {
-                    $leave_application_id = '1';
-                    $leave_applications = LeaveApplication::where('id','=', $leave_application_id)
+
+                    $leave_applications = LeaveApplication::where('id','=', $id)
                     ->first();
                 if($leave_applications)
                 {
@@ -3234,7 +3234,7 @@ class LeaveApplicationController extends Controller
                                     ];
                                 });
                                 $singleArray = array_merge(...$leave_applications_result);
-                                return view('leave_form.leave_application_form', $singleArray);
+                             return view('leave_from.leave_application_form', $singleArray);
                 }
             } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage(),  'error'=>true]);

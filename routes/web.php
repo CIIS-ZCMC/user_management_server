@@ -74,4 +74,4 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::post('print-leave-form/{id}', [LeaveApplicationController::class, 'storprintLeaveForme']);
+Route::get('print-leave-form/{id}', [LeaveApplicationController::class, 'printLeaveForm']);
