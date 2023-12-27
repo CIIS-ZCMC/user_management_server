@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -14,33 +15,34 @@ class DepartmentResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        if($this->chief_employee_profile_id !== null)
+        if($this->head_employee_profile_id !== null)
         {
             $name = $this->name;
             $code = $this->code;
             $head_status = $this->head_status? 'On Site':'On Leave';
-            $approving_officer = $this->head_status? 'Head':'OIC';
+            $approving_officer = 'Head';
 
-
-            $head = $this->head;
-            $head_personal_information = $head->personalInformation;
-            $head = $head_personal_information->name;
+            $head = $this->head->personalInformation->name();
 
             $officer_in_charge = 'NONE';
             $training_officer = 'NONE';
 
             if($this->oic_employee_profile_id !== null)
             {
-                $oic = $this->oic();
+                $oic = $this->oic;
                 $oic_personal_information = $oic->personalInformation;
-                $officer_in_charge = $oic_personal_information->name;
+                $officer_in_charge = $oic_personal_information->name();
+
+                if(Carbon::parse($this->oic_effective_at)->lte(Carbon::now())){
+                    $approving_officer = 'officer in charge';
+                }
             }
 
             if($this->training_officer_employee_profile_id !== null)
             {
-                $training_officer_employee = $this->trainingOfficer();
+                $training_officer_employee = $this->trainingOfficer;
                 $to_personal_information = $training_officer_employee->personalInformation;
-                $training_officer_employee = $to_personal_information->name;
+                $training_officer_employee = $to_personal_information->name();
                 $training_officer = $training_officer_employee;
             }
 

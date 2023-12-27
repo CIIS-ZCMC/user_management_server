@@ -25,7 +25,6 @@ class DepartmentRequest extends FormRequest
             'name' => 'required|string|max:255',
             'code' => 'required|string|max:255',
             'attachment' => 'nullable|file|mimes:jpeg,png,pdf,doc,docx',
-            'training_officer_job_specification' => 'required|string|max:255',
             'division_id' => 'required|integer'
         ];
     }

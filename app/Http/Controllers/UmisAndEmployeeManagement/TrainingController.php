@@ -102,6 +102,53 @@ class TrainingController extends Controller
         }
     }
     
+    public function storeMany(Request $request)
+    {
+        try{
+            $success = [];
+            $failed = [];
+            $cleanData = [];
+
+
+            foreach($request->children as $child){
+                foreach ($child as $key => $value) {
+                    if($value === null || $key === 'type_is_lnd'){
+                        $cleanData[$key] = $value;
+                        continue;
+                    }
+                }
+                $cleanData[$key] = strip_tags($value);
+
+                $training = Training::create($cleanData);
+
+                if(!$child){
+                    $failed[] = $cleanData;
+                    continue;
+                }
+
+                $success = $training;
+            }
+
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            
+            if(count($failed) > 0){
+                return response()->json([
+                    'data' => TrainingResource::collection($success),
+                    'failed' => $failed,
+                    'message' => 'Some data failed to registere.'
+                ], Response::HTTP_OK);
+            }
+
+            return response()->json([
+                'data' => TrainingResource::collection($success),
+                'message' => 'New training record retrived.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
     public function show($id, Request $request)
     {
         try{

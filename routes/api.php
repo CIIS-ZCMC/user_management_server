@@ -63,6 +63,14 @@ Route::middleware('auth.cookie')->group(function(){
         Route::middleware('auth.permission:user view')->group(function(){
             Route::get('login-trail/{id}', 'LoginTrailController@show');
         });
+        
+        /**
+         * Freedomwall
+         */
+        Route::get('freedom-wall-messages', 'FreedomWallMessagesController@index');
+        Route::post('freedom-wall-message', 'FreedomWallMessagesController@store');
+        Route::put('freedom-wall-messages/{id}', 'FreedomWallMessagesController@update');
+        Route::delete('freedom-wall-messages/{id}', 'FreedomWallMessagesController@destroy');
     });
     
     /**
@@ -489,16 +497,16 @@ Route::middleware('auth.cookie')->group(function(){
             Route::get('department-all', 'DepartmentController@index');
         });
         
-        Route::middleware(['auth.permission:UMIS-EM put'])->group(function(){
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
             Route::post('department-assign-head-employee/{id}', 'DepartmentController@assignHeadByEmployeeID');
         });
         
-        Route::middleware(['auth.permission:UMIS-EM put'])->group(function(){
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
             Route::post('department-assign-to-employee/{id}', 'DepartmentController@assignTrainingOfficerByEmployeeID');
         });
         
-        Route::middleware(['auth.permission:UMIS-EM put'])->group(function(){
-            Route::put('department-assign-oic-employee/{id}', 'DepartmentController@assignOICByEmployeeID');
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
+            Route::post('department-assign-oic-employee/{id}', 'DepartmentController@assignOICByEmployeeID');
         });
         
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
@@ -564,11 +572,11 @@ Route::middleware('auth.cookie')->group(function(){
         });
         
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
-            Route::put('division-assign-chief-employee/{id}', 'DivisionController@assignChiefByEmployeeID');
+            Route::post('division-assign-chief-employee/{id}', 'DivisionController@assignChiefByEmployeeID');
         });
         
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
-            Route::put('division-assign-oic-employee/{id}', 'DivisionController@assignOICByEmployeeID');
+            Route::post('division-assign-oic-employee/{id}', 'DivisionController@assignOICByEmployeeID');
         });
         
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
@@ -1232,7 +1240,7 @@ Route::middleware('auth.cookie')->group(function(){
         });
 
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
-            Route::post('unit/assign-oic-employee{id}', 'UnitController@assignOICByEmployeeID');
+            Route::post('unit/assign-oic-employee/{id}', 'UnitController@assignOICByEmployeeID');
         });
 
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
