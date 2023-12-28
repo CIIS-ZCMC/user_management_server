@@ -77,14 +77,14 @@ class CtoApplicationController extends Controller
                     return [
                         'id' => $cto_application->id,
                         'remarks' => $cto_application->remarks,
-                        'purpose' => $cto_application->purpose,
+                        // 'purpose' => $cto_application->purpose,
                         'status' => $cto_application->status,
                         'total_days'=> $total_days,
                         'employee_id' => $cto_application->employee_profile_id,
                         'employee_name' => "{$first_name} {$last_name}" ,
                         'position_code' => $cto_application->employeeProfile->assignedArea->designation->code ?? null,
                         'position_name' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
-                        'date_created' => $cto_application->date,
+                        'date_created' => $cto_application->created_at,
                         'division_head' =>$chief_name,
                         'division_head_position'=> $chief_position,
                         'department_head' =>$head_name,
@@ -121,6 +121,7 @@ class CtoApplicationController extends Controller
                                 'cto_application_id ' => $log->cto_application_id ,
                                 'action_by' => "{$first_name} {$last_name}" ,
                                 'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                'position_code' => $log->employeeProfile->assignedArea->designation->code ?? null,
                                 'action' => $log->action,
                                 'date' => $formatted_date,
                                 'time' => $log->time,
@@ -128,12 +129,18 @@ class CtoApplicationController extends Controller
                             ];
                         }),
                         'dates' => $datesData->map(function ($date) {
+                            $timeFrom = Carbon::parse($date->time_from);
+                            $timeTo = Carbon::parse($date->time_to);
+                            $totalHours = $timeTo->diffInHours($timeFrom);
                             return [
                                         'id' => $date->id,
                                         'cto_application_id' =>$date->cto_application_id,
                                         'time_from' => $date->time_from,
                                         'time_to' => $date->time_to,
+                                        'total_hours'=> $totalHours,
                                         'date' => $date->date,
+                                        'purpose' => $date->purpose,
+
 
                             ];
                         }),
@@ -251,14 +258,14 @@ class CtoApplicationController extends Controller
                         return [
                             'id' => $cto_application->id,
                             'remarks' => $cto_application->remarks,
-                            'purpose' => $cto_application->purpose,
+                            // 'purpose' => $cto_application->purpose,
                             'status' => $cto_application->status,
                             'total_days'=>$total_days,
                             'employee_id' => $cto_application->employee_profile_id,
                             'employee_name' => "{$first_name} {$last_name}" ,
                             'position_code' => $cto_application->employeeProfile->assignedArea->designation->code ?? null,
                             'position_name' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
-                            'date_created' => $cto_application->date,
+                            'date_created' => $cto_application->created_at,
                             'division_head' =>$chief_name,
                             'division_head_position'=> $chief_position,
                             'department_head' =>$head_name,
@@ -295,10 +302,12 @@ class CtoApplicationController extends Controller
                                     'cto_application_id ' => $log->cto_application_id ,
                                     'action_by' => "{$first_name} {$last_name}" ,
                                     'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                    'position_code' => $log->employeeProfile->assignedArea->designation->code ?? null,
                                     'action' => $log->action,
                                     'date' => $formatted_date,
                                     'time' => $log->time,
                                     'process' => $action
+
                                 ];
                             }),
                             'dates' => $datesData->map(function ($date) {
@@ -308,7 +317,7 @@ class CtoApplicationController extends Controller
                                             'time_from' => $date->time_from,
                                             'time_to' => $date->time_to,
                                             'date' => $date->date,
-
+                                            'purpose' => $date->purpose,
                                 ];
                             }),
 
@@ -428,14 +437,14 @@ class CtoApplicationController extends Controller
                                             return [
                                                 'id' => $cto_application->id,
                                                 'remarks' => $cto_application->remarks,
-                                                'purpose' => $cto_application->purpose,
+                                                // 'purpose' => $cto_application->purpose,
                                                 'status' => $cto_application->status,
                                                 'total_days'=>$total_days,
                                                 'employee_id' => $cto_application->employee_profile_id,
                                                 'employee_name' => "{$first_name} {$last_name}" ,
                                                 'position_code' => $cto_application->employeeProfile->assignedArea->designation->code ?? null,
                                                 'position_name' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
-                                                'date_created' => $cto_application->date,
+                                                'date_created' => $cto_application->created_at,
                                                 'division_head' =>$chief_name,
                                                 'division_head_position'=> $chief_position,
                                                 'department_head' =>$head_name,
@@ -472,6 +481,7 @@ class CtoApplicationController extends Controller
                                                         'cto_application_id ' => $log->cto_application_id ,
                                                         'action_by' => "{$first_name} {$last_name}" ,
                                                         'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                                        'position_code' => $log->employeeProfile->assignedArea->designation->code ?? null,
                                                         'action' => $log->action,
                                                         'date' => $formatted_date,
                                                         'time' => $log->time,
@@ -485,7 +495,7 @@ class CtoApplicationController extends Controller
                                                                 'time_from' => $date->time_from,
                                                                 'time_to' => $date->time_to,
                                                                 'date' => $date->date,
-
+                                                                'purpose' => $date->purpose,
                                                     ];
                                                 }),
 
@@ -582,14 +592,14 @@ class CtoApplicationController extends Controller
                                             return [
                                                 'id' => $cto_application->id,
                                                 'remarks' => $cto_application->remarks,
-                                                'purpose' => $cto_application->purpose,
+                                                // 'purpose' => $cto_application->purpose,
                                                 'status' => $cto_application->status,
                                                 'total_days'=>$total_days,
                                                 'employee_id' => $cto_application->employee_profile_id,
                                                 'employee_name' => "{$first_name} {$last_name}" ,
                                                 'position_code' => $cto_application->employeeProfile->assignedArea->designation->code ?? null,
                                                 'position_name' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
-                                                'date_created' => $cto_application->date,
+                                                'date_created' => $cto_application->created_at,
                                                 'division_head' =>$chief_name,
                                                 'division_head_position'=> $chief_position,
                                                 'department_head' =>$head_name,
@@ -626,6 +636,7 @@ class CtoApplicationController extends Controller
                                                         'cto_application_id ' => $log->cto_application_id ,
                                                         'action_by' => "{$first_name} {$last_name}" ,
                                                         'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                                        'position_code' => $log->employeeProfile->assignedArea->designation->code ?? null,
                                                         'action' => $log->action,
                                                         'date' => $formatted_date,
                                                         'time' => $log->time,
@@ -639,7 +650,7 @@ class CtoApplicationController extends Controller
                                                                 'time_from' => $date->time_from,
                                                                 'time_to' => $date->time_to,
                                                                 'date' => $date->date,
-
+                                                                'purpose' => $date->purpose,
                                                     ];
                                                 }),
 
@@ -718,14 +729,14 @@ class CtoApplicationController extends Controller
                                 return [
                                     'id' => $cto_application->id,
                                     'remarks' => $cto_application->remarks,
-                                    'purpose' => $cto_application->purpose,
+                                    // 'purpose' => $cto_application->purpose,
                                     'status' => $cto_application->status,
                                     'total_days'=> $total_days,
                                     'employee_id' => $cto_application->employee_profile_id,
                                     'employee_name' => "{$first_name} {$last_name}" ,
                                     'position_code' => $cto_application->employeeProfile->assignedArea->designation->code ?? null,
                                     'position_name' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
-                                    'date_created' => $cto_application->date,
+                                    'date_created' => $cto_application->created_at,
                                     'division_head' =>$chief_name,
                                     'division_head_position'=> $chief_position,
                                     'department_head' =>$head_name,
@@ -762,6 +773,7 @@ class CtoApplicationController extends Controller
                                             'cto_application_id ' => $log->cto_application_id ,
                                             'action_by' => "{$first_name} {$last_name}" ,
                                             'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                            'position_code' => $log->employeeProfile->assignedArea->designation->code ?? null,
                                             'action' => $log->action,
                                             'date' => $formatted_date,
                                             'time' => $log->time,
@@ -775,7 +787,7 @@ class CtoApplicationController extends Controller
                                                     'time_from' => $date->time_from,
                                                     'time_to' => $date->time_to,
                                                     'date' => $date->date,
-
+                                                    'purpose' => $date->purpose,
                                         ];
                                     }),
 
@@ -1404,14 +1416,14 @@ class CtoApplicationController extends Controller
                             return [
                                 'id' => $cto_application->id,
                                 'remarks' => $cto_application->remarks,
-                                'purpose' => $cto_application->purpose,
+                                // 'purpose' => $cto_application->purpose,
                                 'status' => $cto_application->status,
                                 'total_days'=> $total_days,
                                 'employee_id' => $cto_application->employee_profile_id,
                                 'employee_name' => "{$first_name} {$last_name}" ,
                                 'position_code' => $cto_application->employeeProfile->assignedArea->designation->code ?? null,
                                 'position_name' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
-                                'date_created' => $cto_application->date,
+                                'date_created' => $cto_application->created_at,
                                 'division_head' =>$chief_name,
                                 'division_head_position'=> $chief_position,
                                 'department_head' =>$head_name,
@@ -1448,6 +1460,7 @@ class CtoApplicationController extends Controller
                                         'cto_application_id ' => $log->cto_application_id ,
                                         'action_by' => "{$first_name} {$last_name}" ,
                                         'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                        'position_code' => $log->employeeProfile->assignedArea->designation->code ?? null,
                                         'action' => $log->action,
                                         'date' => $formatted_date,
                                         'time' => $log->time,
@@ -1461,7 +1474,7 @@ class CtoApplicationController extends Controller
                                                 'time_from' => $date->time_from,
                                                 'time_to' => $date->time_to,
                                                 'date' => $date->date,
-
+                                                'purpose' => $date->purpose,
                                     ];
                                 }),
 
@@ -1552,14 +1565,14 @@ class CtoApplicationController extends Controller
                         return [
                             'id' => $cto_application->id,
                             'remarks' => $cto_application->remarks,
-                            'purpose' => $cto_application->purpose,
+                            // 'purpose' => $cto_application->purpose,
                             'status' => $cto_application->status,
                             'total_days'=> $total_days,
                             'employee_id' => $cto_application->employee_profile_id,
                             'employee_name' => "{$first_name} {$last_name}" ,
                             'position_code' => $cto_application->employeeProfile->assignedArea->designation->code ?? null,
                             'position_name' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
-                            'date_created' => $cto_application->date,
+                            'date_created' => $cto_application->created_at,
                             'division_head' =>$chief_name,
                             'division_head_position'=> $chief_position,
                             'department_head' =>$head_name,
@@ -1596,6 +1609,7 @@ class CtoApplicationController extends Controller
                                     'cto_application_id ' => $log->cto_application_id ,
                                     'action_by' => "{$first_name} {$last_name}" ,
                                     'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                    'position_code' => $log->employeeProfile->assignedArea->designation->code ?? null,
                                     'action' => $log->action,
                                     'date' => $formatted_date,
                                     'time' => $log->time,
@@ -1609,7 +1623,7 @@ class CtoApplicationController extends Controller
                                             'time_from' => $date->time_from,
                                             'time_to' => $date->time_to,
                                             'date' => $date->date,
-
+                                            'purpose' => $date->purpose,
                                 ];
                             }),
 
@@ -1697,14 +1711,14 @@ class CtoApplicationController extends Controller
                         return [
                             'id' => $cto_application->id,
                             'remarks' => $cto_application->remarks,
-                            'purpose' => $cto_application->purpose,
+                            // 'purpose' => $cto_application->purpose,
                             'status' => $cto_application->status,
                             'total_days'=> $total_days,
                             'employee_id' => $cto_application->employee_profile_id,
                             'employee_name' => "{$first_name} {$last_name}" ,
                             'position_code' => $cto_application->employeeProfile->assignedArea->designation->code ?? null,
                             'position_name' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
-                            'date_created' => $cto_application->date,
+                            'date_created' => $cto_application->created_at,
                             'division_head' =>$chief_name,
                             'division_head_position'=> $chief_position,
                             'department_head' =>$head_name,
@@ -1741,6 +1755,7 @@ class CtoApplicationController extends Controller
                                     'cto_application_id ' => $log->cto_application_id ,
                                     'action_by' => "{$first_name} {$last_name}" ,
                                     'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                    'position_code' => $log->employeeProfile->assignedArea->designation->code ?? null,
                                     'action' => $log->action,
                                     'date' => $formatted_date,
                                     'time' => $log->time,
@@ -1754,7 +1769,7 @@ class CtoApplicationController extends Controller
                                             'time_from' => $date->time_from,
                                             'time_to' => $date->time_to,
                                             'date' => $date->date,
-
+                                            'purpose' => $date->purpose,
                                 ];
                             }),
 
@@ -1836,14 +1851,14 @@ class CtoApplicationController extends Controller
                     return [
                         'id' => $cto_application->id,
                         'remarks' => $cto_application->remarks,
-                        'purpose' => $cto_application->purpose,
+                        // 'purpose' => $cto_application->purpose,
                         'status' => $cto_application->status,
                         'total_days'=> $total_days,
                         'employee_id' => $cto_application->employee_profile_id,
                         'employee_name' => "{$first_name} {$last_name}" ,
                         'position_code' => $cto_application->employeeProfile->assignedArea->designation->code ?? null,
                         'position_name' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
-                        'date_created' => $cto_application->date,
+                        'date_created' => $cto_application->created_at,
                         'division_head' =>$chief_name,
                         'division_head_position'=> $chief_position,
                         'department_head' =>$head_name,
@@ -1879,6 +1894,7 @@ class CtoApplicationController extends Controller
                                 'cto_application_id ' => $log->cto_application_id ,
                                 'action_by' => "{$first_name} {$last_name}" ,
                                 'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                'position_code' => $log->employeeProfile->assignedArea->designation->code ?? null,
                                 'action' => $log->action,
                                 'date' => $formatted_date,
                                 'time' => $log->time,
@@ -1892,6 +1908,7 @@ class CtoApplicationController extends Controller
                                         'time_from' => $date->time_from,
                                         'time_to' => $date->time_to,
                                         'date' => $date->date,
+                                        'purpose' => $date->purpose,
                             ];
                         }),
 
@@ -2029,14 +2046,14 @@ class CtoApplicationController extends Controller
                                                 return [
                                                     'id' => $cto_application->id,
                                                     'remarks' => $cto_application->remarks,
-                                                    'purpose' => $cto_application->purpose,
+                                                    // 'purpose' => $cto_application->purpose,
                                                     'status' => $cto_application->status,
                                                     'total_days'=>$total_days,
                                                     'employee_id' => $cto_application->employee_profile_id,
                                                     'employee_name' => "{$first_name} {$last_name}" ,
                                                     'position_code' => $cto_application->employeeProfile->assignedArea->designation->code ?? null,
                                                     'position_name' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
-                                                    'date_created' => $cto_application->date,
+                                                    'date_created' => $cto_application->created_at,
                                                     'division_head' =>$chief_name,
                                                     'division_head_position'=> $chief_position,
                                                     'department_head' =>$head_name,
@@ -2073,6 +2090,7 @@ class CtoApplicationController extends Controller
                                                             'cto_application_id ' => $log->cto_application_id ,
                                                             'action_by' => "{$first_name} {$last_name}" ,
                                                             'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                                            'position_code' => $log->employeeProfile->assignedArea->designation->code ?? null,
                                                             'action' => $log->action,
                                                             'date' => $formatted_date,
                                                             'time' => $log->time,
@@ -2086,16 +2104,15 @@ class CtoApplicationController extends Controller
                                                                     'time_from' => $date->time_from,
                                                                     'time_to' => $date->time_to,
                                                                     'date' => $date->date,
-
+                                                                    'purpose' => $date->purpose,
                                                         ];
                                                     }),
 
                                                 ];
                                                 });
                                         $singleArray = array_merge(...$cto_applications_result);
-
+                                        return response(['message' => 'Application has been sucessfully '.$message_action, 'data' => $singleArray], Response::HTTP_CREATED);
                                 }
-                                return response(['message' => 'Application has been sucessfully '.$message_action, 'data' => $singleArray], Response::HTTP_OK);
                             // }
                 }
             }

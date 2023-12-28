@@ -133,26 +133,23 @@
     APPLICATION FOR LEAVE
 </div>
 
-<style>
-    .table-body {
-        border-collapse: collapse;
-        width: 100%;
-    }
-
-    .table-body td {
-        border: 1px solid black;
-        padding: 10px;
-    }
-</style>
-
-<table class="table-body">
+<!-- Table with borders and different column widths -->
+<table class="styled-table">
     <tr>
-      <td colspan="">Alfreds Futterkiste</td>
-      <td colspan="2">Maria Anders</td>
-      <td colspan="">Alfreds Futterkiste</td>
-      <td colspan="2">Maria Anders</td>
+        <th class="first-column" colspan="2">1. OFFICE / AGENCY<br>Zamboanga City Medical Center</th>
+        <th class="second-column">
+            2. NAME (First) (Middle) (Last) <br>
+            <span style="text-align: justify;">Ricah&nbsp;&nbsp;&nbsp;Mae&nbsp;&nbsp;&nbsp;Maque</span>
+        </th>
     </tr>
-  </table>
+</table>
+
+<!-- Leave application form -->
+<form>
+    <!-- Your form fields go here -->
+</form>
+
+<!-- ... (remaining HTML code) ... -->
 
 <style>
     /* CSS styles for the table */
@@ -166,6 +163,25 @@
         border: 1px solid black;
         padding: 8px;
         text-align: left;
+        vertical-align: top; /* Align content to the top */
+    }
+
+    /* Remove bottom border for the header row */
+    .styled-table th.first-column, .styled-table th.second-column {
+        border-bottom: none;
+    }
+
+    /* Adjust widths for better alignment */
+    .styled-table th.first-column, .styled-table td.first-column {
+        width: 30%;
+    }
+
+    .styled-table th.second-column, .styled-table td.second-column {
+        width: 70%;
+    }
+
+    .styled-table span {
+        text-align: justify;
     }
 </style>
 </body>
