@@ -4,12 +4,12 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
-use App\Http\Requests\PasswordApprovalRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use App\Services\RequestLogger;
+use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\LegalInformationArrayStoreRequest;
 use App\Http\Requests\LegalInformationRequest;
 use App\Http\Resources\LegalInformationResource;
@@ -75,32 +75,42 @@ class LegalInformationController extends Controller
     public function storeMany(LegalInformationArrayStoreRequest $request)
     {
         try{
-            $cleanData = [];
+            $success = [];
+            $failed = [];
 
-            $legal_informations = [];
+            foreach($request->legal_information as $legal_info){
+                $cleanData = [];
 
-            foreach ($request->input("legal_information") as $legalInformation) {
-                $legal_data = [];
-                $legal_data['personal_information_id'] = $request->input('personal_information_id');
-                foreach($legalInformation as $key => $value){
+                foreach ($legal_info as $key => $value) {
                     if($value === null){
-                        $legal_data[$key] = $value;
+                        $cleanData[$key] = $value;
                         continue;
                     }
-                    $legal_data[$key] = strip_tags($value);
+                    $cleanData[$key] = strip_tags($value);
                 }
-                $cleanData[] = $legal_data;
-            }
 
-            foreach($cleanData as $value)
-            {
-                $legal_informations[] = LegalInformation::create($value);
+                $training = LegalInformation::create($cleanData);
+
+                if(!$legal_info){
+                    $failed[] = $cleanData;
+                    continue;
+                }
+
+                $success = $training;
             }
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+                        
+            if(count($failed) > 0){
+                return response()->json([
+                    'data' => LegalInformationResource::collection($success),
+                    'failed' => $failed,
+                    'message' => 'Some data failed to registere.'
+                ], Response::HTTP_OK);
+            }
             
             return response()->json([
-                'data' => LegalInformationResource::collection($legal_informations) ,
+                'data' => LegalInformationResource::collection($success) ,
                 'message' => 'New employee legal information registered.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){

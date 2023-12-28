@@ -107,16 +107,18 @@ class VoluntaryWorkController extends Controller
         try{
             $success = [];
             $failed = [];
-            $cleanData = [];
+            $personal_information_id = strip_tags($request->personal_information_id);
 
             foreach($request->voluntary_works as $voluntary_work){
+                $cleanData = [];
+                $cleanData['personal_information_id'] = $personal_information_id;
                 foreach ($voluntary_work as $key => $value) {
                     if ($value === null) {
                         $cleanData[$key] = $value;
                         continue;
                     }
+                    $cleanData[$key] = strip_tags($value);
                 }
-                $cleanData[$key] = strip_tags($value);
                 $voluntary_work = VoluntaryWork::create($cleanData);
 
                 if(!$voluntary_work){
@@ -124,10 +126,8 @@ class VoluntaryWorkController extends Controller
                     continue;
                 }
 
-                $success = $voluntary_work;
+                $success[] = $voluntary_work;
             };
-
-            $voluntary_work = VoluntaryWork::create($cleanData);
 
             $this->requestLogger->registerSystemLogs($request, $voluntary_work['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 

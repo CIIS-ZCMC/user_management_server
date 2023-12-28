@@ -14,7 +14,7 @@ class Address extends Model
     public $fillable = [
         'address',
         'zip_code',
-        'country',
+        'is_residential_and_permanent',
         'is_residential',
         'telephone_no',
         'personal_information_id'

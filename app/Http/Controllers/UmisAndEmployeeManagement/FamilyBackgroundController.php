@@ -89,7 +89,9 @@ class FamilyBackgroundController extends Controller
             $success = [];
             $cleanData = [];
 
-            $personal_information = PersonalInformation::find($request->input('personal_information_id'));
+            $personal_information_id = strip_tags($request->input('personal_information_id'));
+
+            $personal_information = PersonalInformation::find($personal_information_id);
 
             if(!$personal_information)
             {
@@ -97,6 +99,7 @@ class FamilyBackgroundController extends Controller
             }
 
             foreach ($request->all() as $key => $value) {
+                if($key === 'user' || $key === 'children') continue;
                 if($value === null){
                     $cleanData[$key] = $value;
                     continue;
@@ -112,6 +115,7 @@ class FamilyBackgroundController extends Controller
 
             foreach($request->children as $child){
                 $child_data = [];
+                $child_data['personal_information_id'] = $personal_information_id;
                 foreach($child as $key => $value) {
                     if($value === null){
                         $child_data[$key] = $value;

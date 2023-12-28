@@ -47,17 +47,8 @@ class PersonalInformationSeeder extends Seeder
 
         Address::create([
             'address' => 'San Roque, Zamboanga City',
-            'zip_code' => '7000',
-            'country' => 'Philippines',
+            'is_residential_and_permanent' => true,
             'is_residential' => true,
-            'personal_information_id' => $personal_information->id,
-        ]);
-
-        Address::create([
-            'address' => 'San Roque, Zamboanga City',
-            'zip_code' => '7000',
-            'country' => 'Philippines',
-            'is_residential' => false,
             'personal_information_id' => $personal_information->id,
         ]);
 

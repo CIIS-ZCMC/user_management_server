@@ -116,7 +116,6 @@ class ChildController extends Controller
         try{
             $success = [];
             $failed = [];
-            $cleanData = [];
 
             $personal_information = PersonalInformation::find($request->input('personal_information_id'));
 
@@ -126,13 +125,14 @@ class ChildController extends Controller
             }
 
             foreach($request->children as $child){
+                $cleanData = [];
                 foreach ($child as $key => $value) {
                     if ($value === null) {
                         $cleanData[$key] = $value;
                         continue;
                     }
+                    $cleanData[$key] = strip_tags($value);
                 }
-                $cleanData[$key] = strip_tags($value);
                 $child = Child::create($cleanData);
 
                 if(!$child){

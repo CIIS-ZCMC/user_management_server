@@ -35,7 +35,6 @@ class PersonalInformationRequest extends FormRequest
             'civil_status' => 'required|string|max:255',
             'date_of_marriage' => 'nullable|date:Y-m-d',
             'citizenship' => 'required|string|max:255',
-            'country' => 'required|string|max:255',
             'height' => 'required|integer',
             'weight' => 'required|integer',
             'blood_type' => 'nullable|string|max:255',
@@ -43,9 +42,10 @@ class PersonalInformationRequest extends FormRequest
             'r_address' => 'required|string|max:255',
             'r_telephone' => 'nullable|string|max:255',
             'r_zip_code' => 'required|string|max:255',
-            'p_address' => 'required|string|max:255',
+            'is_res_per' => 'nullable|integer',
+            'p_address' => 'nullable|string|max:255',
             'p_telephone' => 'nullable|string|max:255',
-            'p_zip_code' => 'required|string|max:255'
+            'p_zip_code' => 'required|string|max:255',
         ];
     }
 }

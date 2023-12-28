@@ -100,17 +100,19 @@ class OtherInformationController extends Controller
         try{
             $success = [];
             $failed = [];
-            $cleanData = [];
+            $personal_information_id = strip_tags($request->personal_information_id);
 
-            foreach($request->others as $other){
+            foreach($request->other_informations as $other){
+                $cleanData = [];
+                $cleanData['personal_information_id'] = $personal_information_id;
                 foreach ($other as $key => $value) {
                     if ($value === null) {
                         $cleanData[$key] = $value;
                         continue;
                     }
+                    $cleanData[$key] = strip_tags($value);
                 }
 
-                $cleanData[$key] = strip_tags($value);
                 $other_information = OtherInformation::create($cleanData);
 
                 if(!$other){
@@ -118,7 +120,7 @@ class OtherInformationController extends Controller
                     continue;
                 }
 
-                $success = $other_information;
+                $success[] = $other_information;
             }
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');

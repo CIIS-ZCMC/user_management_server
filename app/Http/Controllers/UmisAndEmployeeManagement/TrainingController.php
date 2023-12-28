@@ -107,26 +107,27 @@ class TrainingController extends Controller
         try{
             $success = [];
             $failed = [];
-            $cleanData = [];
+            $personal_information_id = strip_tags($request->personal_information_id);
 
-
-            foreach($request->children as $child){
-                foreach ($child as $key => $value) {
+            foreach($request->trainings as $training){
+                $cleanData = [];
+                $cleanData['personal_information_id'] = $personal_information_id;
+                foreach ($training as $key => $value) {
                     if($value === null || $key === 'type_is_lnd'){
                         $cleanData[$key] = $value;
                         continue;
                     }
+                    $cleanData[$key] = strip_tags($value);
                 }
-                $cleanData[$key] = strip_tags($value);
 
                 $training = Training::create($cleanData);
 
-                if(!$child){
+                if(!$training){
                     $failed[] = $cleanData;
                     continue;
                 }
 
-                $success = $training;
+                $success[] = $training;
             }
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');

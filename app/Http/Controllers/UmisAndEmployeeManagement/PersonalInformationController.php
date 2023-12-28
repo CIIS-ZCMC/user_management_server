@@ -53,6 +53,7 @@ class PersonalInformationController extends Controller
     public function store(PersonalInformationRequest $request)
     {
         try{
+            $is_res_per = $request->is_res_per === 1? true:false;
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
@@ -69,21 +70,37 @@ class PersonalInformationController extends Controller
 
             $personal_information = PersonalInformation::create($cleanData);
 
-            $residential = Address::create([
-                'address' => $request->input('r_address'),
-                'telephone' => $request->input('r_telephone'),
-                'zip_code' => $request->input('r_zip_code'),
+            $residential_address = [
+                'address' => strip_tags($request->r_address),
+                'telephone' => strip_tags($request->r_telephone),
+                'zip_code' => strip_tags($request->r_zip_code),
+                'is_res_per' => $is_res_per,
                 'type' => 'residential',
                 'personal_information_id' => $personal_information->id
-            ]);
+            ];
 
-            $permanent = Address::create([
-                'address' => $request->input('r_address'),
-                'telephone' => $request->input('r_telephone'),
-                'zip_code' => $request->input('r_zip_code'),
+            $residential = Address::create($residential_address);
+
+            if($is_res_per !== null && $is_res_per){
+                $data = [
+                    'personal_information' => $personal_information,
+                    'residential' => $residential,
+                    'permanent' => $residential
+                ];
+
+                return response()->json($data, Response::HTTP_OK);
+            }
+
+            $permanent_address =  [
+                'address' => strip_tags($request->p_address),
+                'telephone' => strip_tags($request->p_telephone),
+                'zip_code' => strip_tags($request->p_zip_code),
+                'is_res_per' => $is_res_per,
                 'type' => 'permanent',
                 'personal_information_id' => $personal_information->id
-            ]);
+            ];
+
+            $permanent = Address::create($permanent_address);
 
             $data = [
                 'personal_information' => $personal_information,

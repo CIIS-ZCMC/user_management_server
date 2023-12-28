@@ -107,17 +107,16 @@ class EducationalBackgroundController extends Controller
         try{
             $success = [];
             $failed = [];
-            $cleanData = [];
-
 
             foreach($request->educations as $education){
+                $cleanData = [];
                 foreach ($education as $key => $value) {
                     if ($value === null) {
                         $cleanData[$key] = $value;
                         continue;
                     }
+                    $cleanData[$key] = strip_tags($value);
                 }
-                $cleanData[$key] = strip_tags($value);
                 $educational_background = EducationalBackground::create($cleanData);
                 
                 if(!$educational_background){
@@ -125,7 +124,7 @@ class EducationalBackgroundController extends Controller
                     continue;
                 }
 
-                $success = $educational_background;
+                $success[] = $educational_background;
             }
 
 
@@ -140,7 +139,7 @@ class EducationalBackgroundController extends Controller
             }
             
             return response()->json([
-                'data' => new EducationalBackgroundResource($educational_background),
+                'data' =>  EducationalBackgroundResource::collection($success),
                 'message' => 'New employee education background registered.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){

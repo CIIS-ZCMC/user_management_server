@@ -4,12 +4,12 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
-use App\Http\Requests\PasswordApprovalRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use App\Services\RequestLogger;
+use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\CivilServiceEligibilityRequest;
 use App\Http\Resources\CivilServiceEligibilityResource;
 use App\Models\CivilServiceEligibility;
@@ -105,17 +105,20 @@ class CivilServiceEligibilityController extends Controller
         try{
             $success = [];
             $failed = [];
-            $cleanData = [];
+
+            $personal_information_id = strip_tags($request->personal_information_id);
 
             foreach($request->civilserviceeligibilities as $civil_service_eligibility){
-                foreach ($request->all() as $key => $value) {
+                $cleanData = [];
+                $cleanData['personal_information_id'] = $personal_information_id;
+                foreach ($civil_service_eligibility as $key => $value) {
                     if($value === null)
                     {
                         $cleanData[$key] = $value;
                         continue;
                     }
+                    $cleanData[$key] = strip_tags($value);
                 }
-                $cleanData[$key] = strip_tags($value);
                 $civil_service_eligibility = CivilServiceEligibility::create($cleanData);
 
                 if(!$civil_service_eligibility){
@@ -123,7 +126,7 @@ class CivilServiceEligibilityController extends Controller
                     continue;
                 }
 
-                $success = $civil_service_eligibility;
+                $success[] = $civil_service_eligibility;
             }
 
             $this->requestLogger->registerSystemLogs($request, $civil_service_eligibility['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');

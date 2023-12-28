@@ -107,24 +107,27 @@ class WorkExperienceController extends Controller
         try{
             $success = [];
             $failed = [];
-            $cleanData = [];
 
-            foreach($request->children as $child){
-                foreach ($request->all() as $key => $value) {
+            $personal_information_id = strip_tags($request->personal_information_id);
+
+            foreach($request->work_experiences as $work_experience){
+                $cleanData = [];
+                $cleanData['personal_information_id'] = $personal_information_id;
+                foreach ($work_experience as $key => $value) {
                     if($value===null){
                         $cleanData[$key] = $value;
                         continue;
                     }
+                    $cleanData[$key] = strip_tags($value);
                 }
-                $cleanData[$key] = strip_tags($value);
                 $work_experience = WorkExperience::create($cleanData);
                 
-                if(!$child){
+                if(!$work_experience){
                     $failed[] = $cleanData;
                     continue;
                 }
 
-                $success = $work_experience;
+                $success[] = $work_experience;
             }
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');

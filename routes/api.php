@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Route;
 | Here is where you can register API routes for your application. These
 | routes are loaded by the RouteServiceProvider and all of them will
 | be assigned to the "api" middleware group. Make something great!
-| sd,fg;'sdklf;dlsf'ldsflsdfl;'sdl;'sdl;'sdlf'dsl;'sdlf;'sdl'
 */
 
 // Attach CSP in response
@@ -400,10 +399,15 @@ Route::middleware('auth.cookie')->group(function(){
             Route::get('child-all-by-personal-info/{id}', 'ChildController@findByPersonalInformationID');
         });
         
+        
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('child-many', 'ChildController@storeMany');
+        });
+
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function(){
             Route::get('child-all-by-employee/{id}', 'ChildController@findByEmployeeID');
         });
-        
+
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
             Route::post('child', 'ChildController@store');
         });
@@ -476,6 +480,10 @@ Route::middleware('auth.cookie')->group(function(){
         
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
             Route::post('civil-service-eligibility', 'CivilServiceEligibilityController@store');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('civil-service-eligibility-many', 'CivilServiceEligibilityController@storeMany');
         });
         
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
@@ -606,6 +614,10 @@ Route::middleware('auth.cookie')->group(function(){
             Route::put('educational-background-by-employee/{id}', 'EducationalBackgroundController@findByEmployeeID');
         });
         
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('educational-background-many', 'EducationalBackgroundController@storeMany');
+        });
+
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
             Route::post('educational-background', 'EducationalBackgroundController@store');
         });
@@ -948,6 +960,10 @@ Route::middleware('auth.cookie')->group(function(){
             Route::post('other-information', 'OtherInformationController@store');
         });
 
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('other-information-many', 'OtherInformationController@storeMany');
+        });
+
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
             Route::get('other-information/{id}', 'OtherInformationController@show');
         });
@@ -1103,6 +1119,10 @@ Route::middleware('auth.cookie')->group(function(){
             Route::post('reference', 'ReferencesController@store');
         });
 
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('reference-many', 'ReferencesController@storeMany');
+        });
+
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
             Route::get('reference/{id}', 'ReferencesController@show');
         });
@@ -1216,6 +1236,10 @@ Route::middleware('auth.cookie')->group(function(){
             Route::post('training', 'TrainingController@store');
         });
 
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('training-many', 'TrainingController@storeMany');
+        });
+
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
             Route::get('training/{id}', 'TrainingController@show');
         });
@@ -1274,6 +1298,10 @@ Route::middleware('auth.cookie')->group(function(){
             Route::post('voluntary-work', 'VoluntaryWorkController@store');
         });
 
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('voluntary-work-many', 'VoluntaryWorkController@storeMany');
+        });
+
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
             Route::get('voluntary-work/{id}', 'VoluntaryWorkController@show');
         });
@@ -1307,6 +1335,10 @@ Route::middleware('auth.cookie')->group(function(){
 
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
             Route::post('work-experience', 'WorkExperienceController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('work-experience-many', 'WorkExperienceController@storeMany');
         });
 
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
