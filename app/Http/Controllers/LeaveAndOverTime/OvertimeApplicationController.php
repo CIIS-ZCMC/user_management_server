@@ -2525,7 +2525,7 @@ class OvertimeApplicationController extends Controller
                                         }),
                                     ];
                                 });
-                                return response(['message' => 'Application has been sucessfully declined', 'data' => $overtime_applications_result], Response::HTTP_CREATED);
+                                return response(['message' => 'Application has been sucessfully declined', 'data' => $overtime_applications_result], Response::HTTP_OK);
 
                             // }
                         //  }
@@ -2715,7 +2715,7 @@ class OvertimeApplicationController extends Controller
                                         }),
                                     ];
                                 });
-                                return response(['message' => 'Application has been sucessfully cancelled', 'data' => $overtime_applications_result], Response::HTTP_CREATED);
+                                return response(['message' => 'Application has been sucessfully cancelled', 'data' => $overtime_applications_result], Response::HTTP_OK);
 
                         //     }
                         //  }

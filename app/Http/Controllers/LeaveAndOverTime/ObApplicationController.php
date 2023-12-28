@@ -57,8 +57,8 @@ class ObApplicationController extends Controller
                                 if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
                                 {
                                     $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
-
                                     $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                    $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
                                 }
                             }
                             if($department)
@@ -66,9 +66,9 @@ class ObApplicationController extends Controller
                                 $department_name = Department::with('head.personalInformation')->find($department);
                                 if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
                                 {
-
-                                $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
-                                $head_position = $department_name->head->assignedArea->designation->name ?? null;
+                                    $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                                    $head_position = $department_name->head->assignedArea->designation->name ?? null;
+                                    $head_code = $department_name->head->assignedArea->designation->code ?? null;
                                 }
                             }
                             if($section)
@@ -76,8 +76,9 @@ class ObApplicationController extends Controller
                                 $section_name = Section::with('supervisor.personalInformation')->find($section);
                                 if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
                                 {
-                                $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
-                                $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                                    $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                                    $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                                    $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
                                 }
                             }
                         $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
@@ -182,34 +183,35 @@ class ObApplicationController extends Controller
                     $supervisor_name=null;
                     $supervisor_position=null;
                     if($division) {
-                        $division_name = Division::with('chief.personalInformation')->find($division);
+                                $division_name = Division::with('chief.personalInformation')->find($division);
 
-                        if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
-                        {
-                            $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
-
-                            $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
-                        }
-                    }
-                    if($department)
-                    {
-                        $department_name = Department::with('head.personalInformation')->find($department);
-                        if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
-                        {
-
-                        $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
-                        $head_position = $department_name->head->assignedArea->designation->name ?? null;
-                        }
-                    }
-                    if($section)
-                    {
-                        $section_name = Section::with('supervisor.personalInformation')->find($section);
-                        if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
-                        {
-                        $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
-                        $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
-                        }
-                    }
+                                if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
+                                {
+                                    $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
+                                    $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                    $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
+                                }
+                            }
+                            if($department)
+                            {
+                                $department_name = Department::with('head.personalInformation')->find($department);
+                                if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
+                                {
+                                    $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                                    $head_position = $department_name->head->assignedArea->designation->name ?? null;
+                                    $head_code = $department_name->head->assignedArea->designation->code ?? null;
+                                }
+                            }
+                            if($section)
+                            {
+                                $section_name = Section::with('supervisor.personalInformation')->find($section);
+                                if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
+                                {
+                                    $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                                    $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                                    $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
+                                }
+                            }
                     $first_name = optional($ob_application->employeeProfile->personalInformation)->first_name ?? null;
                     $last_name = optional($ob_application->employeeProfile->personalInformation)->last_name ?? null;
                     $startDate = Carbon::createFromFormat('Y-m-d', $ob_application->date_from);
@@ -818,8 +820,8 @@ class ObApplicationController extends Controller
                                 if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
                                 {
                                     $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
-
                                     $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                    $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
                                 }
                             }
                             if($department)
@@ -827,9 +829,9 @@ class ObApplicationController extends Controller
                                 $department_name = Department::with('head.personalInformation')->find($department);
                                 if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
                                 {
-
-                                $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
-                                $head_position = $department_name->head->assignedArea->designation->name ?? null;
+                                    $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                                    $head_position = $department_name->head->assignedArea->designation->name ?? null;
+                                    $head_code = $department_name->head->assignedArea->designation->code ?? null;
                                 }
                             }
                             if($section)
@@ -837,8 +839,9 @@ class ObApplicationController extends Controller
                                 $section_name = Section::with('supervisor.personalInformation')->find($section);
                                 if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
                                 {
-                                $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
-                                $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                                    $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                                    $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                                    $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
                                 }
                             }
                             $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
@@ -956,8 +959,8 @@ class ObApplicationController extends Controller
                             if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
                             {
                                 $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
-
                                 $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
                             }
                         }
                         if($department)
@@ -965,9 +968,9 @@ class ObApplicationController extends Controller
                             $department_name = Department::with('head.personalInformation')->find($department);
                             if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
                             {
-
-                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
-                            $head_position = $department_name->head->assignedArea->designation->name ?? null;
+                                $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                                $head_position = $department_name->head->assignedArea->designation->name ?? null;
+                                $head_code = $department_name->head->assignedArea->designation->code ?? null;
                             }
                         }
                         if($section)
@@ -975,8 +978,9 @@ class ObApplicationController extends Controller
                             $section_name = Section::with('supervisor.personalInformation')->find($section);
                             if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
                             {
-                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
-                            $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                                $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                                $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                                $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
                             }
                         }
                         $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
@@ -1094,8 +1098,8 @@ class ObApplicationController extends Controller
                             if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
                             {
                                 $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
-
                                 $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
                             }
                         }
                         if($department)
@@ -1103,9 +1107,9 @@ class ObApplicationController extends Controller
                             $department_name = Department::with('head.personalInformation')->find($department);
                             if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
                             {
-
-                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
-                            $head_position = $department_name->head->assignedArea->designation->name ?? null;
+                                $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                                $head_position = $department_name->head->assignedArea->designation->name ?? null;
+                                $head_code = $department_name->head->assignedArea->designation->code ?? null;
                             }
                         }
                         if($section)
@@ -1113,8 +1117,9 @@ class ObApplicationController extends Controller
                             $section_name = Section::with('supervisor.personalInformation')->find($section);
                             if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
                             {
-                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
-                            $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                                $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                                $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                                $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
                             }
                         }
                         $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
@@ -1225,8 +1230,8 @@ class ObApplicationController extends Controller
                         if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
                         {
                             $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
-
                             $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
+                            $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
                         }
                     }
                     if($department)
@@ -1234,9 +1239,9 @@ class ObApplicationController extends Controller
                         $department_name = Department::with('head.personalInformation')->find($department);
                         if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
                         {
-
-                        $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
-                        $head_position = $department_name->head->assignedArea->designation->name ?? null;
+                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                            $head_position = $department_name->head->assignedArea->designation->name ?? null;
+                            $head_code = $department_name->head->assignedArea->designation->code ?? null;
                         }
                     }
                     if($section)
@@ -1244,8 +1249,9 @@ class ObApplicationController extends Controller
                         $section_name = Section::with('supervisor.personalInformation')->find($section);
                         if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
                         {
-                        $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
-                        $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                            $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                            $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
                         }
                     }
                     $startDate = Carbon::createFromFormat('Y-m-d', $official_business_application->date_from);
@@ -1391,8 +1397,8 @@ class ObApplicationController extends Controller
                                             if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
                                             {
                                                 $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
-
                                                 $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                                $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
                                             }
                                         }
                                         if($department)
@@ -1400,9 +1406,9 @@ class ObApplicationController extends Controller
                                             $department_name = Department::with('head.personalInformation')->find($department);
                                             if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
                                             {
-
-                                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
-                                            $head_position = $department_name->head->assignedArea->designation->name ?? null;
+                                                $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                                                $head_position = $department_name->head->assignedArea->designation->name ?? null;
+                                                $head_code = $department_name->head->assignedArea->designation->code ?? null;
                                             }
                                         }
                                         if($section)
@@ -1410,8 +1416,9 @@ class ObApplicationController extends Controller
                                             $section_name = Section::with('supervisor.personalInformation')->find($section);
                                             if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
                                             {
-                                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
-                                            $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                                                $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                                                $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                                                $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
                                             }
                                         }
                                     $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
@@ -1484,7 +1491,7 @@ class ObApplicationController extends Controller
                                         ];
                                     });
                                     $singleArray = array_merge(...$official_business_applications_result);
-                                return response(['message' => 'Application has been sucessfully '.$message_action, 'data' => $singleArray],200);
+                                return response(['message' => 'Application has been sucessfully '.$message_action, 'data' => $singleArray],Response::HTTP_OK);
                                 }
                 // }
             }
@@ -1615,8 +1622,8 @@ class ObApplicationController extends Controller
                         if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
                         {
                             $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
-
                             $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
+                            $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
                         }
                     }
                     if($department)
@@ -1624,9 +1631,9 @@ class ObApplicationController extends Controller
                         $department_name = Department::with('head.personalInformation')->find($department);
                         if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
                         {
-
-                        $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
-                        $head_position = $department_name->head->assignedArea->designation->name ?? null;
+                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                            $head_position = $department_name->head->assignedArea->designation->name ?? null;
+                            $head_code = $department_name->head->assignedArea->designation->code ?? null;
                         }
                     }
                     if($section)
@@ -1634,8 +1641,9 @@ class ObApplicationController extends Controller
                         $section_name = Section::with('supervisor.personalInformation')->find($section);
                         if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
                         {
-                        $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
-                        $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                            $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                            $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
                         }
                     }
                 $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
@@ -1761,8 +1769,8 @@ class ObApplicationController extends Controller
                                             if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
                                             {
                                                 $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
-
                                                 $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                                $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
                                             }
                                         }
                                         if($department)
@@ -1770,9 +1778,9 @@ class ObApplicationController extends Controller
                                             $department_name = Department::with('head.personalInformation')->find($department);
                                             if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
                                             {
-
-                                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
-                                            $head_position = $department_name->head->assignedArea->designation->name ?? null;
+                                                $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                                                $head_position = $department_name->head->assignedArea->designation->name ?? null;
+                                                $head_code = $department_name->head->assignedArea->designation->code ?? null;
                                             }
                                         }
                                         if($section)
@@ -1780,8 +1788,9 @@ class ObApplicationController extends Controller
                                             $section_name = Section::with('supervisor.personalInformation')->find($section);
                                             if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
                                             {
-                                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
-                                            $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                                                $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                                                $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                                                $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
                                             }
                                         }
                                     $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
@@ -1854,7 +1863,7 @@ class ObApplicationController extends Controller
                                         ];
                                     });
                                     $singleArray = array_merge(...$official_business_applications_result);
-                                return response(['message' => 'Application has been sucessfully declined', 'data' => $singleArray],200);
+                                return response(['message' => 'Application has been sucessfully declined', 'data' => $singleArray],Response::HTTP_OK);
 
                         //     }
                         //  }
@@ -1944,8 +1953,8 @@ class ObApplicationController extends Controller
                                             if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
                                             {
                                                 $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
-
                                                 $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                                $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
                                             }
                                         }
                                         if($department)
@@ -1953,9 +1962,9 @@ class ObApplicationController extends Controller
                                             $department_name = Department::with('head.personalInformation')->find($department);
                                             if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
                                             {
-
-                                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
-                                            $head_position = $department_name->head->assignedArea->designation->name ?? null;
+                                                $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                                                $head_position = $department_name->head->assignedArea->designation->name ?? null;
+                                                $head_code = $department_name->head->assignedArea->designation->code ?? null;
                                             }
                                         }
                                         if($section)
@@ -1963,8 +1972,9 @@ class ObApplicationController extends Controller
                                             $section_name = Section::with('supervisor.personalInformation')->find($section);
                                             if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
                                             {
-                                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
-                                            $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                                                $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                                                $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                                                $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
                                             }
                                         }
                                     $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
@@ -2038,7 +2048,7 @@ class ObApplicationController extends Controller
                                     });
                                     $singleArray = array_merge(...$official_business_applications_result);
 
-                                return response(['message' => 'Application has been sucessfully cancelled', 'data' => $singleArray], 200);
+                                return response(['message' => 'Application has been sucessfully cancelled', 'data' => $singleArray], Response::HTTP_OK);
 
                         //     }
                         //  }
