@@ -1097,7 +1097,7 @@ class OfficialTimeApplicationController extends Controller
                                         ];
                                     });
                                     $singleArray = array_merge(...$official_time_applications_result);
-                                return response(['message' => 'Application has been sucessfully declined', 'data' => $singleArray], 200);
+                                return response(['message' => 'Application has been sucessfully declined', 'data' => $singleArray], Response::HTTP_OK);
 
                         //     }
                         //  }
@@ -1244,7 +1244,7 @@ class OfficialTimeApplicationController extends Controller
                                         ];
                                     });
                                     $singleArray = array_merge(...$official_time_applications_result);
-                                return response(['message' => 'Application has been sucessfully cancelled', 'data' => $singleArray], 200);
+                                return response(['message' => 'Application has been sucessfully cancelled', 'data' => $singleArray], Response::HTTP_OK);
 
                         //     }
                         //  }
@@ -1412,7 +1412,7 @@ class OfficialTimeApplicationController extends Controller
                                         ];
                                     });
                                     $singleArray = array_merge(...$official_time_applications_result);
-                                return response(['message' => 'Application has been sucessfully '.$message_action, 'data' => $singleArray], 200);
+                                return response(['message' => 'Application has been sucessfully '.$message_action, 'data' => $singleArray], Response::HTTP_OK);
                                 }
             //     }
             }
