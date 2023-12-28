@@ -86,7 +86,7 @@ class OvertimeApplicationController extends Controller
                         'employee_name' => "{$first_name} {$last_name}" ,
                         'position_code' => $overtime_application->employeeProfile->assignedArea->designation->code ?? null,
                         'position_name' => $overtime_application->employeeProfile->assignedArea->designation->name ?? null,
-                        'date_created' => $overtime_application->date,
+                        'date_created' => $overtime_application->created_at,
                         'division_head' =>$chief_name,
                         'division_head_position'=> $chief_position,
                         'department_head' =>$head_name,
@@ -122,6 +122,7 @@ class OvertimeApplicationController extends Controller
                                 'overtime_application_id' => $log->overtime_application_id,
                                 'action_by' => "{$first_name} {$last_name}" ,
                                 'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                'position_code' => $log->employeeProfile->assignedArea->designation->code ?? null,
                                 'action' => $log->action,
                                 'date' => $formatted_date,
                                 'time' => $log->time,
@@ -258,7 +259,7 @@ class OvertimeApplicationController extends Controller
                         'employee_name' => "{$first_name} {$last_name}" ,
                         'position_code' => $overtime_application->employeeProfile->assignedArea->designation->code ?? null,
                         'position_name' => $overtime_application->employeeProfile->assignedArea->designation->name ?? null,
-                        'date_created' => $overtime_application->date,
+                        'date_created' => $overtime_application->created_at,
                         'division_head' =>$chief_name,
                         'division_head_position'=> $chief_position,
                         'department_head' =>$head_name,
@@ -294,6 +295,7 @@ class OvertimeApplicationController extends Controller
                                 'overtime_application_id' => $log->overtime_application_id,
                                 'action_by' => "{$first_name} {$last_name}" ,
                                 'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                'position_code' => $log->employeeProfile->assignedArea->designation->code ?? null,
                                 'action' => $log->action,
                                 'date' => $formatted_date,
                                 'time' => $log->time,
@@ -367,7 +369,7 @@ class OvertimeApplicationController extends Controller
     }
 
     public function getOvertimeApplications($id,$status,Request $request)
-        {
+    {
             try{
 
                 $OvertimeApplication = [];
@@ -1108,7 +1110,7 @@ class OvertimeApplicationController extends Controller
                             'employee_name' => "{$first_name} {$last_name}" ,
                             'position_code' => $overtime_application->employeeProfile->assignedArea->designation->code ?? null,
                             'position_name' => $overtime_application->employeeProfile->assignedArea->designation->name ?? null,
-                            'date_created' => $overtime_application->date,
+                            'date_created' => $overtime_application->created_at,
                             'division_head' =>$chief_name,
                             'division_head_position'=> $chief_position,
                             'department_head' =>$head_name,
@@ -1145,6 +1147,7 @@ class OvertimeApplicationController extends Controller
                                     'overtime_application_id' => $log->overtime_application_id,
                                     'action_by' => "{$first_name} {$last_name}" ,
                                     'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                    'position_code' => $log->employeeProfile->assignedArea->designation->code ?? null,
                                     'action' => $log->action,
                                     'date' => $formatted_date,
                                     'time' => $log->time,
@@ -1219,6 +1222,7 @@ class OvertimeApplicationController extends Controller
         }
 
     }
+
     public function getDepartmentOvertimeApplications(Request $request)
     {
         try{
@@ -1291,7 +1295,7 @@ class OvertimeApplicationController extends Controller
                             'employee_name' => "{$first_name} {$last_name}" ,
                             'position_code' => $overtime_application->employeeProfile->assignedArea->designation->code ?? null,
                             'position_name' => $overtime_application->employeeProfile->assignedArea->designation->name ?? null,
-                            'date_created' => $overtime_application->date,
+                            'date_created' => $overtime_application->created_at,
                             'division_head' =>$chief_name,
                             'division_head_position'=> $chief_position,
                             'department_head' =>$head_name,
@@ -1328,6 +1332,7 @@ class OvertimeApplicationController extends Controller
                                     'overtime_application_id' => $log->overtime_application_id,
                                     'action_by' => "{$first_name} {$last_name}" ,
                                     'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                    'position_code' => $log->employeeProfile->assignedArea->designation->code ?? null,
                                     'action' => $log->action,
                                     'date' => $formatted_date,
                                     'time' => $log->time,
@@ -1397,6 +1402,7 @@ class OvertimeApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], 500);
         }
     }
+
     public function getSectionOvertimeApplications(Request $request)
     {
         try{
@@ -1468,7 +1474,7 @@ class OvertimeApplicationController extends Controller
                                     'employee_name' => "{$first_name} {$last_name}" ,
                                     'position_code' => $overtime_application->employeeProfile->assignedArea->designation->code ?? null,
                                     'position_name' => $overtime_application->employeeProfile->assignedArea->designation->name ?? null,
-                                    'date_created' => $overtime_application->date,
+                                    'date_created' => $overtime_application->created_at,
                                     'division_head' =>$chief_name,
                                     'division_head_position'=> $chief_position,
                                     'department_head' =>$head_name,
@@ -1504,6 +1510,7 @@ class OvertimeApplicationController extends Controller
                                             'overtime_application_id' => $log->overtime_application_id,
                                             'action_by' => "{$first_name} {$last_name}" ,
                                             'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                            'position_code' => $log->employeeProfile->assignedArea->designation->code ?? null,
                                             'action' => $log->action,
                                             'date' => $formatted_date,
                                             'time' => $log->time,
@@ -1575,6 +1582,7 @@ class OvertimeApplicationController extends Controller
         return response()->json(['message' => $th->getMessage()], 500);
         }
     }
+
     public function getDeclinedOvertimeApplications(Request $request)
     {
         try{
@@ -1639,7 +1647,7 @@ class OvertimeApplicationController extends Controller
                         'employee_name' => "{$first_name} {$last_name}" ,
                         'position_code' => $overtime_application->employeeProfile->assignedArea->designation->code ?? null,
                         'position_name' => $overtime_application->employeeProfile->assignedArea->designation->name ?? null,
-                        'date_created' => $overtime_application->date,
+                        'date_created' => $overtime_application->created_at,
                         'division_head' =>$chief_name,
                         'division_head_position'=> $chief_position,
                         'department_head' =>$head_name,
@@ -1676,6 +1684,7 @@ class OvertimeApplicationController extends Controller
                                 'overtime_application_id' => $log->overtime_application_id,
                                 'action_by' => "{$first_name} {$last_name}" ,
                                 'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                'position_code' => $log->employeeProfile->assignedArea->designation->code ?? null,
                                 'action' => $log->action,
                                 'date' => $formatted_date,
                                 'time' => $log->time,
@@ -1750,6 +1759,7 @@ class OvertimeApplicationController extends Controller
         return response()->json(['message' => $th->getMessage()], 500);
         }
     }
+
     public function getEmployeeOvertimeTotal()
     {
         $employeeProfiles = EmployeeProfile::with(['overtimeCredits', 'personalInformation'])
@@ -1767,6 +1777,7 @@ class OvertimeApplicationController extends Controller
 
         return response()->json(['data' => $employeeOvertimeTotals], Response::HTTP_OK);
     }
+
     public function getEmployees()
     {
         $currentMonth = date('m');
@@ -1797,6 +1808,7 @@ class OvertimeApplicationController extends Controller
             return response()->json(['data' => $filteredEmployees], Response::HTTP_OK);
 
     }
+
     public function computeEmployees()
     {
         $currentMonth = date('m'); // Current month as two digits
@@ -1860,6 +1872,7 @@ class OvertimeApplicationController extends Controller
         return $results;
 
     }
+
     public function store(Request $request)
     {
         try{
@@ -1995,7 +2008,7 @@ class OvertimeApplicationController extends Controller
                     'employee_name' => "{$first_name} {$last_name}" ,
                     'position_code' => $overtime_application->employeeProfile->assignedArea->designation->code ?? null,
                     'position_name' => $overtime_application->employeeProfile->assignedArea->designation->name ?? null,
-                    'date_created' => $overtime_application->date,
+                    'date_created' => $overtime_application->created_at,
                     'division_head' =>$chief_name,
                     'division_head_position'=> $chief_position,
                     'department_head' =>$head_name,
@@ -2032,6 +2045,7 @@ class OvertimeApplicationController extends Controller
                             'overtime_application_id' => $log->overtime_application_id,
                             'action_by' => "{$first_name} {$last_name}" ,
                             'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                            'position_code' => $log->employeeProfile->assignedArea->designation->code ?? null,
                             'action' => $log->action,
                             'date' => $formatted_date,
                             'time' => $log->time,
@@ -2096,6 +2110,7 @@ class OvertimeApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], 500);
         }
     }
+
     public function storePast(Request $request)
     {
         try{
@@ -2203,7 +2218,7 @@ class OvertimeApplicationController extends Controller
                     'employee_name' => "{$first_name} {$last_name}" ,
                     'position_code' => $overtime_application->employeeProfile->assignedArea->designation->code ?? null,
                     'position_name' => $overtime_application->employeeProfile->assignedArea->designation->name ?? null,
-                    'date_created' => $overtime_application->date,
+                    'date_created' => $overtime_application->created_at,
                     'division_head' =>$chief_name,
                     'division_head_position'=> $chief_position,
                     'department_head' =>$head_name,
@@ -2240,6 +2255,7 @@ class OvertimeApplicationController extends Controller
                             'overtime_application_id' => $log->overtime_application_id,
                             'action_by' => "{$first_name} {$last_name}" ,
                             'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                            'position_code' => $log->employeeProfile->assignedArea->designation->code ?? null,
                             'action' => $log->action,
                             'date' => $formatted_date,
                             'time' => $log->time,
@@ -2305,6 +2321,7 @@ class OvertimeApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], 500);
         }
     }
+
     public function storeOvertimeApplicationLog($overtime_application_id,$process_name,$changedfields)
     {
         try {
@@ -2412,7 +2429,7 @@ class OvertimeApplicationController extends Controller
                                         'employee_name' => "{$first_name} {$last_name}" ,
                                         'position_code' => $overtime_application->employeeProfile->assignedArea->designation->code ?? null,
                                         'position_name' => $overtime_application->employeeProfile->assignedArea->designation->name ?? null,
-                                        'date_created' => $overtime_application->date,
+                                        'date_created' => $overtime_application->created_at,
                                         'division_head' =>$chief_name,
                                         'division_head_position'=> $chief_position,
                                         'department_head' =>$head_name,
@@ -2449,6 +2466,7 @@ class OvertimeApplicationController extends Controller
                                                 'overtime_application_id' => $log->overtime_application_id,
                                                 'action_by' => "{$first_name} {$last_name}" ,
                                                 'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                                'position_code' => $log->employeeProfile->assignedArea->designation->code ?? null,
                                                 'action' => $log->action,
                                                 'date' => $formatted_date,
                                                 'time' => $log->time,
@@ -2601,7 +2619,7 @@ class OvertimeApplicationController extends Controller
                                         'employee_name' => "{$first_name} {$last_name}" ,
                                         'position_code' => $overtime_application->employeeProfile->assignedArea->designation->code ?? null,
                                         'position_name' => $overtime_application->employeeProfile->assignedArea->designation->name ?? null,
-                                        'date_created' => $overtime_application->date,
+                                        'date_created' => $overtime_application->created_at,
                                         'division_head' =>$chief_name,
                                         'division_head_position'=> $chief_position,
                                         'department_head' =>$head_name,
@@ -2638,6 +2656,7 @@ class OvertimeApplicationController extends Controller
                                                 'overtime_application_id' => $log->overtime_application_id,
                                                 'action_by' => "{$first_name} {$last_name}" ,
                                                 'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                                'position_code' => $log->employeeProfile->assignedArea->designation->code ?? null,
                                                 'action' => $log->action,
                                                 'date' => $formatted_date,
                                                 'time' => $log->time,
@@ -2809,7 +2828,7 @@ class OvertimeApplicationController extends Controller
                                     'employee_name' => "{$first_name} {$last_name}" ,
                                     'position_code' => $overtime_application->employeeProfile->assignedArea->designation->code ?? null,
                                     'position_name' => $overtime_application->employeeProfile->assignedArea->designation->name ?? null,
-                                    'date_created' => $overtime_application->date,
+                                    'date_created' => $overtime_application->created_at,
                                     'division_head' =>$chief_name,
                                     'division_head_position'=> $chief_position,
                                     'department_head' =>$head_name,
@@ -2846,6 +2865,7 @@ class OvertimeApplicationController extends Controller
                                             'overtime_application_id' => $log->overtime_application_id,
                                             'action_by' => "{$first_name} {$last_name}" ,
                                             'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                            'position_code' => $log->employeeProfile->assignedArea->designation->code ?? null,
                                             'action' => $log->action,
                                             'date' => $formatted_date,
                                             'time' => $log->time,
@@ -2914,4 +2934,33 @@ class OvertimeApplicationController extends Controller
         }
 
     }
+
+    Public function resetYearlyOvertimeCredit(Request $request)
+    {
+        $employees = EmployeeProfile::get();
+        if($employees)
+        {
+            foreach ($employees as $employee) {
+                    $employee_overtime_credits= EmployeeOvertimeCredit::where('employee_profile_id', '=', $employee->id)->get();
+                    $totalLeaveCredits = $employee_overtime_credits->mapToGroups(function ($credit) {
+                        return [$credit->operation => $credit->credit_value];
+                    })->map(function ($operationCredits, $operation) {
+                        return $operation === 'add' ? $operationCredits->sum() : -$operationCredits->sum();
+                    })->sum();
+
+                    $employeeCredit = new EmployeeOvertimeCredit();
+                    $employeeCredit->employee_profile_id = $employee->id;
+                    $employeeCredit->operation = "deduct";
+                    $employeeCredit->reason = "Yearly Leave Credits";
+                    $employeeCredit->credit_value = $totalLeaveCredits;
+                    $employeeCredit->date = date('Y-m-d');
+                    $employeeCredit->save();
+
+            }
+        }
+        return response()->json(['data' => $employeeCredit], Response::HTTP_OK);
+
+    }
+
+
 }

@@ -57,6 +57,7 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
     Route::get('leave-application-section', 'LeaveApplicationController@getSectionLeaveApplications');
     Route::get('leave-application-declined', 'LeaveApplicationController@getDeclinedLeaveApplications');
     Route::post('access-level-leave-application/{id}/{status}', 'LeaveApplicationController@getLeaveApplications');
+    Route::post('reset-leave-credit', 'LeaveApplicationController@resetYearlyLeaveCredit');
     Route::post('print-leave-form/{id}', 'LeaveApplicationController@printLeaveForm');
 
     Route::get('ob-application-all', 'ObApplicationController@index');

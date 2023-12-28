@@ -225,8 +225,7 @@ class LeaveCreditController extends Controller
 
     Public function resetYearlyLeaveCredit(Request $request)
     {
-        $employees = ModelsEmployeeProfile::with('biometric.dtr')
-        ->get();
+        $employees = ModelsEmployeeProfile::get();
         if($employees)
         {
             foreach ($employees as $employee) {
@@ -234,7 +233,7 @@ class LeaveCreditController extends Controller
                 $fl_leave = LeaveType::where('name', '=', 'Forced Leave')->orwhere('code', '=', 'FL')->first();
                 if($spl_leave)
                 {
-                    $employee_leave_credits= ModelsEmployeeLeaveCredit::where('employee_profile_id', '=','1')
+                    $employee_leave_credits= ModelsEmployeeLeaveCredit::where('employee_profile_id', '=',$employee->id)
                     ->where('leave_type_id', '=',$spl_leave->id)->get();
 
                     $totalLeaveCredits = $employee_leave_credits->mapToGroups(function ($credit) {
@@ -247,7 +246,7 @@ class LeaveCreditController extends Controller
                     $employeeCredit->leave_type_id = $spl_leave->id;
                     $employeeCredit->employee_profile_id = $employee->id;
                     $employeeCredit->operation = "deduct";
-                    $employeeCredit->reason = "Yearly Leave Credits";
+                    $employeeCredit->reason = "Reset SPL Credits";
                     $employeeCredit->credit_value = $totalLeaveCredits;
                     $employeeCredit->date = date('Y-m-d');
                     $employeeCredit->save();
@@ -257,7 +256,7 @@ class LeaveCreditController extends Controller
 
                 if($fl_leave)
                 {
-                    $employee_leave_credits= ModelsEmployeeLeaveCredit::where('employee_profile_id', '=','1')
+                    $employee_leave_credits= ModelsEmployeeLeaveCredit::where('employee_profile_id', '=',$employee->id)
                     ->where('leave_type_id', '=',$fl_leave->id)->get();
 
                     $totalLeaveCredits = $employee_leave_credits->mapToGroups(function ($credit) {
@@ -270,13 +269,11 @@ class LeaveCreditController extends Controller
                     $employeeCredit->leave_type_id = $fl_leave->id;
                     $employeeCredit->employee_profile_id = $employee->id;
                     $employeeCredit->operation = "deduct";
-                    $employeeCredit->reason = $totalLeaveCredits;
-                    $employeeCredit->credit_value = '5';
+                    $employeeCredit->reason ='Reset FL Credit';
+                    $employeeCredit->credit_value = $totalLeaveCredits;
                     $employeeCredit->date = date('Y-m-d');
                     $employeeCredit->save();
                 }
-
-
 
             }
         }
