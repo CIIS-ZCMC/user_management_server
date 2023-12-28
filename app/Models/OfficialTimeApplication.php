@@ -14,8 +14,6 @@ class OfficialTimeApplication extends Model
         'employee_profile_id',
         'date_from',
         'date_to',
-        'time_from',
-        'time_to',
         'reason',
         'status',
     ];
