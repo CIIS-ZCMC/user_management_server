@@ -32,10 +32,13 @@ class CtoApplicationController extends Controller
                     $section = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('section_id');
                             $chief_name=null;
                             $chief_position=null;
+                            $chief_code=null;
                             $head_name=null;
                             $head_position=null;
+                            $head_code=null;
                             $supervisor_name=null;
                             $supervisor_position=null;
+                            $supervisor_code=null;
                             if($division) {
                                 $division_name = Division::with('chief.personalInformation')->find($division);
 
@@ -63,7 +66,7 @@ class CtoApplicationController extends Controller
                                 {
                                     $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
                                     $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
-                                    $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
+                                    $supervisor_code =$section_name->supervisor->assignedArea->designation->code ?? null;
                                 }
                             }
                             $overtimeRecord = CtoApplicationDate::where('cto_application_id',$cto_application->id);
@@ -214,12 +217,15 @@ class CtoApplicationController extends Controller
                 $division = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('division_id');
                 $department = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('department_id');
                 $section = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('section_id');
-                        $chief_name=null;
-                        $chief_position=null;
-                        $head_name=null;
-                        $head_position=null;
-                        $supervisor_name=null;
-                        $supervisor_position=null;
+                $chief_name=null;
+                $chief_position=null;
+                $chief_code=null;
+                $head_name=null;
+                $head_position=null;
+                $head_code=null;
+                $supervisor_name=null;
+                $supervisor_position=null;
+                $supervisor_code=null;
                         if($division) {
                             $division_name = Division::with('chief.personalInformation')->find($division);
 
@@ -402,12 +408,15 @@ class CtoApplicationController extends Controller
                                     $division = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('division_id');
                                     $department = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('department_id');
                                     $section = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('section_id');
-                                            $chief_name=null;
-                                            $chief_position=null;
-                                            $head_name=null;
-                                            $head_position=null;
-                                            $supervisor_name=null;
-                                            $supervisor_position=null;
+                                    $chief_name=null;
+                                    $chief_position=null;
+                                    $chief_code=null;
+                                    $head_name=null;
+                                    $head_position=null;
+                                    $head_code=null;
+                                    $supervisor_name=null;
+                                    $supervisor_position=null;
+                                    $supervisor_code=null;
                                             if($division) {
                                                 $division_name = Division::with('chief.personalInformation')->find($division);
 
@@ -566,12 +575,15 @@ class CtoApplicationController extends Controller
                                     $division = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('division_id');
                                     $department = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('department_id');
                                     $section = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('section_id');
-                                            $chief_name=null;
-                                            $chief_position=null;
-                                            $head_name=null;
-                                            $head_position=null;
-                                            $supervisor_name=null;
-                                            $supervisor_position=null;
+                                    $chief_name=null;
+                                    $chief_position=null;
+                                    $chief_code=null;
+                                    $head_name=null;
+                                    $head_position=null;
+                                    $head_code=null;
+                                    $supervisor_name=null;
+                                    $supervisor_position=null;
+                                    $supervisor_code=null;
                                             if($division) {
                                                 $division_name = Division::with('chief.personalInformation')->find($division);
 
@@ -712,12 +724,15 @@ class CtoApplicationController extends Controller
                     $division = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('division_id');
                     $department = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('department_id');
                     $section = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('section_id');
-                            $chief_name=null;
-                            $chief_position=null;
-                            $head_name=null;
-                            $head_position=null;
-                            $supervisor_name=null;
-                            $supervisor_position=null;
+                    $chief_name=null;
+                    $chief_position=null;
+                    $chief_code=null;
+                    $head_name=null;
+                    $head_position=null;
+                    $head_code=null;
+                    $supervisor_name=null;
+                    $supervisor_position=null;
+                    $supervisor_code=null;
                             if($division) {
                                 $division_name = Division::with('chief.personalInformation')->find($division);
 
@@ -1408,12 +1423,15 @@ class CtoApplicationController extends Controller
                             $division = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('division_id');
                             $department = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('department_id');
                             $section = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('section_id');
-                                    $chief_name=null;
-                                    $chief_position=null;
-                                    $head_name=null;
-                                    $head_position=null;
-                                    $supervisor_name=null;
-                                    $supervisor_position=null;
+                            $chief_name=null;
+                            $chief_position=null;
+                            $chief_code=null;
+                            $head_name=null;
+                            $head_position=null;
+                            $head_code=null;
+                            $supervisor_name=null;
+                            $supervisor_position=null;
+                            $supervisor_code=null;
                                     if($division) {
                                         $division_name = Division::with('chief.personalInformation')->find($division);
 
@@ -1566,12 +1584,15 @@ class CtoApplicationController extends Controller
                         $division = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('division_id');
                         $department = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('department_id');
                         $section = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('section_id');
-                                $chief_name=null;
-                                $chief_position=null;
-                                $head_name=null;
-                                $head_position=null;
-                                $supervisor_name=null;
-                                $supervisor_position=null;
+                        $chief_name=null;
+                        $chief_position=null;
+                        $chief_code=null;
+                        $head_name=null;
+                        $head_position=null;
+                        $head_code=null;
+                        $supervisor_name=null;
+                        $supervisor_position=null;
+                        $supervisor_code=null;
                                 if($division) {
                                     $division_name = Division::with('chief.personalInformation')->find($division);
 
@@ -1720,12 +1741,15 @@ class CtoApplicationController extends Controller
                         $division = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('division_id');
                         $department = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('department_id');
                         $section = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('section_id');
-                                $chief_name=null;
-                                $chief_position=null;
-                                $head_name=null;
-                                $head_position=null;
-                                $supervisor_name=null;
-                                $supervisor_position=null;
+                        $chief_name=null;
+                        $chief_position=null;
+                        $chief_code=null;
+                        $head_name=null;
+                        $head_position=null;
+                        $head_code=null;
+                        $supervisor_name=null;
+                        $supervisor_position=null;
+                        $supervisor_code=null;
                                 if($division) {
                                     $division_name = Division::with('chief.personalInformation')->find($division);
 
@@ -1869,12 +1893,15 @@ class CtoApplicationController extends Controller
                     $division = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('division_id');
                     $department = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('department_id');
                     $section = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('section_id');
-                            $chief_name=null;
-                            $chief_position=null;
-                            $head_name=null;
-                            $head_position=null;
-                            $supervisor_name=null;
-                            $supervisor_position=null;
+                    $chief_name=null;
+                    $chief_position=null;
+                    $chief_code=null;
+                    $head_name=null;
+                    $head_position=null;
+                    $head_code=null;
+                    $supervisor_name=null;
+                    $supervisor_position=null;
+                    $supervisor_code=null;
                             if($division) {
                                 $division_name = Division::with('chief.personalInformation')->find($division);
 
@@ -2073,12 +2100,15 @@ class CtoApplicationController extends Controller
                                     $division = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('division_id');
                                     $department = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('department_id');
                                     $section = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('section_id');
-                                            $chief_name=null;
-                                            $chief_position=null;
-                                            $head_name=null;
-                                            $head_position=null;
-                                            $supervisor_name=null;
-                                            $supervisor_position=null;
+                                    $chief_name=null;
+                                    $chief_position=null;
+                                    $chief_code=null;
+                                    $head_name=null;
+                                    $head_position=null;
+                                    $head_code=null;
+                                    $supervisor_name=null;
+                                    $supervisor_position=null;
+                                    $supervisor_code=null;
                                             if($division) {
                                                 $division_name = Division::with('chief.personalInformation')->find($division);
 

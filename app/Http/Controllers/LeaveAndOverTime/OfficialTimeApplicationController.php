@@ -46,10 +46,13 @@ class OfficialTimeApplicationController extends Controller
                     $section = AssignArea::where('employee_profile_id',$official_time_application->employee_profile_id)->value('section_id');
                     $chief_name=null;
                     $chief_position=null;
+                    $chief_code=null;
                     $head_name=null;
                     $head_position=null;
+                    $head_code=null;
                     $supervisor_name=null;
                     $supervisor_position=null;
+                    $supervisor_code=null;
                     if($division) {
                         $division_name = Division::with('chief.personalInformation')->find($division);
 
@@ -107,10 +110,13 @@ class OfficialTimeApplicationController extends Controller
                         'date_created' => $official_time_application->created_at,
                         'division_head' =>$chief_name,
                         'division_head_position'=> $chief_position,
+                        'division_head_code'=> $chief_code,
                         'department_head' =>$head_name,
                         'department_head_position' =>$head_position,
+                        'department_head_code' =>$head_code,
                         'section_head' =>$supervisor_name,
                         'section_head_position' =>$supervisor_position,
+                        'section_head_code' =>$supervisor_code,
                         'division_name' => $official_time_application->employeeProfile->assignedArea->division->name ?? null,
                         'department_name' => $official_time_application->employeeProfile->assignedArea->department->name ?? null,
                         'section_name' => $official_time_application->employeeProfile->assignedArea->section->name ?? null,
@@ -673,10 +679,13 @@ class OfficialTimeApplicationController extends Controller
                     $section = AssignArea::where('employee_profile_id',$ot_application->employee_profile_id)->value('section_id');
                     $chief_name=null;
                     $chief_position=null;
+                    $chief_code=null;
                     $head_name=null;
                     $head_position=null;
+                    $head_code=null;
                     $supervisor_name=null;
                     $supervisor_position=null;
+                    $supervisor_code=null;
                     if($division) {
                         $division_name = Division::with('chief.personalInformation')->find($division);
 
@@ -734,10 +743,13 @@ class OfficialTimeApplicationController extends Controller
                         'date_created' => $ot_application->created_at,
                         'division_head' =>$chief_name,
                         'division_head_position'=> $chief_position,
+                        'division_head_code'=> $chief_code,
                         'department_head' =>$head_name,
                         'department_head_position' =>$head_position,
+                        'department_head_code' =>$head_code,
                         'section_head' =>$supervisor_name,
                         'section_head_position' =>$supervisor_position,
+                        'section_head_code' =>$supervisor_code,
                         'division_name' => $ot_application->employeeProfile->assignedArea->division->name ?? null,
                         'department_name' => $ot_application->employeeProfile->assignedArea->department->name ?? null,
                         'section_name' => $ot_application->employeeProfile->assignedArea->section->name ?? null,
@@ -852,10 +864,13 @@ class OfficialTimeApplicationController extends Controller
                     $section = AssignArea::where('employee_profile_id',$official_time_application->employee_profile_id)->value('section_id');
                     $chief_name=null;
                     $chief_position=null;
+                    $chief_code=null;
                     $head_name=null;
                     $head_position=null;
+                    $head_code=null;
                     $supervisor_name=null;
                     $supervisor_position=null;
+                    $supervisor_code=null;
                     if($division) {
                         $division_name = Division::with('chief.personalInformation')->find($division);
 
@@ -912,10 +927,13 @@ class OfficialTimeApplicationController extends Controller
                         'date_created' => $official_time_application->created_at,
                         'division_head' =>$chief_name,
                         'division_head_position'=> $chief_position,
+                        'division_head_code'=> $chief_code,
                         'department_head' =>$head_name,
                         'department_head_position' =>$head_position,
+                        'department_head_code' =>$head_code,
                         'section_head' =>$supervisor_name,
                         'section_head_position' =>$supervisor_position,
+                        'section_head_code' =>$supervisor_code,
                         'division_name' => $official_time_application->employeeProfile->assignedArea->division->name ?? null,
                         'department_name' => $official_time_application->employeeProfile->assignedArea->department->name ?? null,
                         'section_name' => $official_time_application->employeeProfile->assignedArea->section->name ?? null,
@@ -998,10 +1016,13 @@ class OfficialTimeApplicationController extends Controller
                                         $section = AssignArea::where('employee_profile_id',$official_time_application->employee_profile_id)->value('section_id');
                                         $chief_name=null;
                                         $chief_position=null;
+                                        $chief_code=null;
                                         $head_name=null;
                                         $head_position=null;
+                                        $head_code=null;
                                         $supervisor_name=null;
                                         $supervisor_position=null;
+                                        $supervisor_code=null;
                                         if($division) {
                                             $division_name = Division::with('chief.personalInformation')->find($division);
 
@@ -1057,11 +1078,15 @@ class OfficialTimeApplicationController extends Controller
                                             'position_name' => $official_time_application->employeeProfile->assignedArea->designation->name ?? null,
                                             'date_created' => $official_time_application->created_at,
                                             'division_head' =>$chief_name,
+                                            'division_head' =>$chief_name,
                                             'division_head_position'=> $chief_position,
+                                            'division_head_code'=> $chief_code,
                                             'department_head' =>$head_name,
                                             'department_head_position' =>$head_position,
+                                            'department_head_code' =>$head_code,
                                             'section_head' =>$supervisor_name,
                                             'section_head_position' =>$supervisor_position,
+                                            'section_head_code' =>$supervisor_code,
                                             'division_name' => $official_time_application->employeeProfile->assignedArea->division->name ?? null,
                                             'department_name' => $official_time_application->employeeProfile->assignedArea->department->name ?? null,
                                             'section_name' => $official_time_application->employeeProfile->assignedArea->section->name ?? null,
@@ -1146,10 +1171,13 @@ class OfficialTimeApplicationController extends Controller
                                         $section = AssignArea::where('employee_profile_id',$official_time_application->employee_profile_id)->value('section_id');
                                         $chief_name=null;
                                         $chief_position=null;
+                                        $chief_code=null;
                                         $head_name=null;
                                         $head_position=null;
+                                        $head_code=null;
                                         $supervisor_name=null;
                                         $supervisor_position=null;
+                                        $supervisor_code=null;
                                         if($division) {
                                             $division_name = Division::with('chief.personalInformation')->find($division);
 
@@ -1206,10 +1234,13 @@ class OfficialTimeApplicationController extends Controller
                                             'date_created' => $official_time_application->created_at,
                                             'division_head' =>$chief_name,
                                             'division_head_position'=> $chief_position,
+                                            'division_head_code'=> $chief_code,
                                             'department_head' =>$head_name,
                                             'department_head_position' =>$head_position,
+                                            'department_head_code' =>$head_code,
                                             'section_head' =>$supervisor_name,
                                             'section_head_position' =>$supervisor_position,
+                                            'section_head_code' =>$supervisor_code,
                                             'division_name' => $official_time_application->employeeProfile->assignedArea->division->name ?? null,
                                             'department_name' => $official_time_application->employeeProfile->assignedArea->department->name ?? null,
                                             'section_name' => $official_time_application->employeeProfile->assignedArea->section->name ?? null,
@@ -1315,10 +1346,13 @@ class OfficialTimeApplicationController extends Controller
                                         $section = AssignArea::where('employee_profile_id',$official_time_application->employee_profile_id)->value('section_id');
                                         $chief_name=null;
                                         $chief_position=null;
+                                        $chief_code=null;
                                         $head_name=null;
                                         $head_position=null;
+                                        $head_code=null;
                                         $supervisor_name=null;
                                         $supervisor_position=null;
+                                        $supervisor_code=null;
                                         if($division) {
                                             $division_name = Division::with('chief.personalInformation')->find($division);
 
@@ -1375,10 +1409,13 @@ class OfficialTimeApplicationController extends Controller
                                             'date_created' => $official_time_application->created_at,
                                             'division_head' =>$chief_name,
                                             'division_head_position'=> $chief_position,
+                                            'division_head_code'=> $chief_code,
                                             'department_head' =>$head_name,
                                             'department_head_position' =>$head_position,
+                                            'department_head_code' =>$head_code,
                                             'section_head' =>$supervisor_name,
                                             'section_head_position' =>$supervisor_position,
+                                            'section_head_code' =>$supervisor_code,
                                             'division_name' => $official_time_application->employeeProfile->assignedArea->division->name ?? null,
                                             'department_name' => $official_time_application->employeeProfile->assignedArea->department->name ?? null,
                                             'section_name' => $official_time_application->employeeProfile->assignedArea->section->name ?? null,
@@ -1451,10 +1488,13 @@ class OfficialTimeApplicationController extends Controller
                         $section = AssignArea::where('employee_profile_id',$official_time_application->employee_profile_id)->value('section_id');
                         $chief_name=null;
                         $chief_position=null;
+                        $chief_code=null;
                         $head_name=null;
                         $head_position=null;
+                        $head_code=null;
                         $supervisor_name=null;
                         $supervisor_position=null;
+                        $supervisor_code=null;
                         if($division) {
                             $division_name = Division::with('chief.personalInformation')->find($division);
 
@@ -1512,10 +1552,13 @@ class OfficialTimeApplicationController extends Controller
                         'date_created' => $official_time_application->created_at,
                         'division_head' =>$chief_name,
                         'division_head_position'=> $chief_position,
+                        'division_head_code'=> $chief_code,
                         'department_head' =>$head_name,
                         'department_head_position' =>$head_position,
+                        'department_head_code' =>$head_code,
                         'section_head' =>$supervisor_name,
                         'section_head_position' =>$supervisor_position,
+                        'section_head_code' =>$supervisor_code,
                         'division_name' => $official_time_application->employeeProfile->assignedArea->division->name ?? null,
                         'department_name' => $official_time_application->employeeProfile->assignedArea->department->name ?? null,
                         'section_name' => $official_time_application->employeeProfile->assignedArea->section->name ?? null,
@@ -1589,10 +1632,13 @@ class OfficialTimeApplicationController extends Controller
                         $section = AssignArea::where('employee_profile_id',$official_time_application->employee_profile_id)->value('section_id');
                         $chief_name=null;
                         $chief_position=null;
+                        $chief_code=null;
                         $head_name=null;
                         $head_position=null;
+                        $head_code=null;
                         $supervisor_name=null;
                         $supervisor_position=null;
+                        $supervisor_code=null;
                         if($division) {
                             $division_name = Division::with('chief.personalInformation')->find($division);
 
@@ -1650,10 +1696,13 @@ class OfficialTimeApplicationController extends Controller
                             'date_created' => $official_time_application->created_at,
                             'division_head' =>$chief_name,
                             'division_head_position'=> $chief_position,
+                            'division_head_code'=> $chief_code,
                             'department_head' =>$head_name,
                             'department_head_position' =>$head_position,
+                            'department_head_code' =>$head_code,
                             'section_head' =>$supervisor_name,
                             'section_head_position' =>$supervisor_position,
+                            'section_head_code' =>$supervisor_code,
                             'division_name' => $official_time_application->employeeProfile->assignedArea->division->name ?? null,
                             'department_name' => $official_time_application->employeeProfile->assignedArea->department->name ?? null,
                             'section_name' => $official_time_application->employeeProfile->assignedArea->section->name ?? null,
@@ -1726,10 +1775,13 @@ class OfficialTimeApplicationController extends Controller
                             $section = AssignArea::where('employee_profile_id',$official_time_application->employee_profile_id)->value('section_id');
                             $chief_name=null;
                             $chief_position=null;
+                            $chief_code=null;
                             $head_name=null;
                             $head_position=null;
+                            $head_code=null;
                             $supervisor_name=null;
                             $supervisor_position=null;
+                            $supervisor_code=null;
                             if($division) {
                                 $division_name = Division::with('chief.personalInformation')->find($division);
 
@@ -1787,10 +1839,13 @@ class OfficialTimeApplicationController extends Controller
                                 'date_created' => $official_time_application->created_at,
                                 'division_head' =>$chief_name,
                                 'division_head_position'=> $chief_position,
+                                'division_head_code'=> $chief_code,
                                 'department_head' =>$head_name,
                                 'department_head_position' =>$head_position,
+                                'department_head_code' =>$head_code,
                                 'section_head' =>$supervisor_name,
                                 'section_head_position' =>$supervisor_position,
+                                'section_head_code' =>$supervisor_code,
                                 'division_name' => $official_time_application->employeeProfile->assignedArea->division->name ?? null,
                                 'department_name' => $official_time_application->employeeProfile->assignedArea->department->name ?? null,
                                 'section_name' => $official_time_application->employeeProfile->assignedArea->section->name ?? null,
@@ -1856,10 +1911,13 @@ class OfficialTimeApplicationController extends Controller
                     $section = AssignArea::where('employee_profile_id',$official_time_application->employee_profile_id)->value('section_id');
                     $chief_name=null;
                     $chief_position=null;
+                    $chief_code=null;
                     $head_name=null;
                     $head_position=null;
+                    $head_code=null;
                     $supervisor_name=null;
                     $supervisor_position=null;
+                    $supervisor_code=null;
                     if($division) {
                         $division_name = Division::with('chief.personalInformation')->find($division);
 
@@ -1918,10 +1976,13 @@ class OfficialTimeApplicationController extends Controller
                         'date_created' => $official_time_application->created_at,
                         'division_head' =>$chief_name,
                         'division_head_position'=> $chief_position,
+                        'division_head_code'=> $chief_code,
                         'department_head' =>$head_name,
                         'department_head_position' =>$head_position,
+                        'department_head_code' =>$head_code,
                         'section_head' =>$supervisor_name,
                         'section_head_position' =>$supervisor_position,
+                        'section_head_code' =>$supervisor_code,
                         'division_name' => $official_time_application->employeeProfile->assignedArea->division->name ?? null,
                         'department_name' => $official_time_application->employeeProfile->assignedArea->department->name ?? null,
                         'section_name' => $official_time_application->employeeProfile->assignedArea->section->name ?? null,

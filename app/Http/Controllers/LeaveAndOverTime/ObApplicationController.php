@@ -45,12 +45,15 @@ class ObApplicationController extends Controller
                             $division = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('division_id');
                             $department = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('department_id');
                             $section = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('section_id');
-                            $chief_name=null;
-                            $chief_position=null;
-                            $head_name=null;
-                            $head_position=null;
-                            $supervisor_name=null;
-                            $supervisor_position=null;
+                                $chief_name=null;
+                                $chief_position=null;
+                                $chief_code=null;
+                                $head_name=null;
+                                $head_position=null;
+                                $head_code=null;
+                                $supervisor_name=null;
+                                $supervisor_position=null;
+                                $supervisor_code=null;
                             if($division) {
                                 $division_name = Division::with('chief.personalInformation')->find($division);
 
@@ -181,10 +184,13 @@ class ObApplicationController extends Controller
                     $section = AssignArea::where('employee_profile_id',$ob_application->employee_profile_id)->value('section_id');
                     $chief_name=null;
                     $chief_position=null;
+                    $chief_code=null;
                     $head_name=null;
                     $head_position=null;
+                    $head_code=null;
                     $supervisor_name=null;
                     $supervisor_position=null;
+                    $supervisor_code=null;
                     if($division) {
                                 $division_name = Division::with('chief.personalInformation')->find($division);
 
@@ -815,11 +821,14 @@ class ObApplicationController extends Controller
                                 $department = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('department_id');
                                 $section = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('section_id');
                                 $chief_name=null;
-                            $chief_position=null;
-                            $head_name=null;
-                            $head_position=null;
-                            $supervisor_name=null;
-                            $supervisor_position=null;
+                                $chief_position=null;
+                                $chief_code=null;
+                                $head_name=null;
+                                $head_position=null;
+                                $head_code=null;
+                                $supervisor_name=null;
+                                $supervisor_position=null;
+                                $supervisor_code=null;
                             if($division) {
                                 $division_name = Division::with('chief.personalInformation')->find($division);
 
@@ -958,10 +967,13 @@ class ObApplicationController extends Controller
                         $section = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('section_id');
                         $chief_name=null;
                         $chief_position=null;
+                        $chief_code=null;
                         $head_name=null;
                         $head_position=null;
+                        $head_code=null;
                         $supervisor_name=null;
                         $supervisor_position=null;
+                        $supervisor_code=null;
                         if($division) {
                             $division_name = Division::with('chief.personalInformation')->find($division);
 
@@ -1100,10 +1112,13 @@ class ObApplicationController extends Controller
                         $section = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('section_id');
                         $chief_name=null;
                         $chief_position=null;
+                        $chief_code=null;
                         $head_name=null;
                         $head_position=null;
+                        $head_code=null;
                         $supervisor_name=null;
                         $supervisor_position=null;
+                        $supervisor_code=null;
                         if($division) {
                             $division_name = Division::with('chief.personalInformation')->find($division);
 
@@ -1233,12 +1248,15 @@ class ObApplicationController extends Controller
                     $division = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('division_id');
                     $department = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('department_id');
                     $section = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('section_id');
-                                $chief_name=null;
+                    $chief_name=null;
                     $chief_position=null;
+                    $chief_code=null;
                     $head_name=null;
                     $head_position=null;
+                    $head_code=null;
                     $supervisor_name=null;
                     $supervisor_position=null;
+                    $supervisor_code=null;
                     if($division) {
                         $division_name = Division::with('chief.personalInformation')->find($division);
 
@@ -1405,10 +1423,13 @@ class ObApplicationController extends Controller
                                         $section = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('section_id');
                                         $chief_name=null;
                                         $chief_position=null;
+                                        $chief_code=null;
                                         $head_name=null;
                                         $head_position=null;
+                                        $head_code=null;
                                         $supervisor_name=null;
                                         $supervisor_position=null;
+                                        $supervisor_code=null;
                                         if($division) {
                                             $division_name = Division::with('chief.personalInformation')->find($division);
 
@@ -1633,10 +1654,13 @@ class ObApplicationController extends Controller
                     $section = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('section_id');
                     $chief_name=null;
                     $chief_position=null;
+                    $chief_code=null;
                     $head_name=null;
                     $head_position=null;
+                    $head_code=null;
                     $supervisor_name=null;
                     $supervisor_position=null;
+                    $supervisor_code=null;
                     if($division) {
                         $division_name = Division::with('chief.personalInformation')->find($division);
 
@@ -1783,10 +1807,13 @@ class ObApplicationController extends Controller
                                         $section = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('section_id');
                                         $chief_name=null;
                                         $chief_position=null;
+                                        $chief_code=null;
                                         $head_name=null;
                                         $head_position=null;
+                                        $head_code=null;
                                         $supervisor_name=null;
                                         $supervisor_position=null;
+                                        $supervisor_code=null;
                                         if($division) {
                                             $division_name = Division::with('chief.personalInformation')->find($division);
 
@@ -1970,10 +1997,13 @@ class ObApplicationController extends Controller
                                         $section = AssignArea::where('employee_profile_id',$official_business_application->employee_profile_id)->value('section_id');
                                         $chief_name=null;
                                         $chief_position=null;
+                                        $chief_code=null;
                                         $head_name=null;
                                         $head_position=null;
+                                        $head_code=null;
                                         $supervisor_name=null;
                                         $supervisor_position=null;
+                                        $supervisor_code=null;
                                         if($division) {
                                             $division_name = Division::with('chief.personalInformation')->find($division);
 
