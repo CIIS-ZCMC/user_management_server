@@ -77,7 +77,7 @@ class CtoApplicationController extends Controller
                     return [
                         'id' => $cto_application->id,
                         'remarks' => $cto_application->remarks,
-                        'purpose' => $cto_application->purpose,
+                        // 'purpose' => $cto_application->purpose,
                         'status' => $cto_application->status,
                         'total_days'=> $total_days,
                         'employee_id' => $cto_application->employee_profile_id,
@@ -129,12 +129,18 @@ class CtoApplicationController extends Controller
                             ];
                         }),
                         'dates' => $datesData->map(function ($date) {
+                            $timeFrom = Carbon::parse($date->time_from);
+                            $timeTo = Carbon::parse($date->time_to);
+                            $totalHours = $timeTo->diffInHours($timeFrom);
                             return [
                                         'id' => $date->id,
                                         'cto_application_id' =>$date->cto_application_id,
                                         'time_from' => $date->time_from,
                                         'time_to' => $date->time_to,
+                                        'total_hours'=> $totalHours,
                                         'date' => $date->date,
+                                        'purpose' => $date->purpose,
+
 
                             ];
                         }),
@@ -252,7 +258,7 @@ class CtoApplicationController extends Controller
                         return [
                             'id' => $cto_application->id,
                             'remarks' => $cto_application->remarks,
-                            'purpose' => $cto_application->purpose,
+                            // 'purpose' => $cto_application->purpose,
                             'status' => $cto_application->status,
                             'total_days'=>$total_days,
                             'employee_id' => $cto_application->employee_profile_id,
@@ -301,6 +307,7 @@ class CtoApplicationController extends Controller
                                     'date' => $formatted_date,
                                     'time' => $log->time,
                                     'process' => $action
+
                                 ];
                             }),
                             'dates' => $datesData->map(function ($date) {
@@ -310,7 +317,7 @@ class CtoApplicationController extends Controller
                                             'time_from' => $date->time_from,
                                             'time_to' => $date->time_to,
                                             'date' => $date->date,
-
+                                            'purpose' => $date->purpose,
                                 ];
                             }),
 
@@ -430,7 +437,7 @@ class CtoApplicationController extends Controller
                                             return [
                                                 'id' => $cto_application->id,
                                                 'remarks' => $cto_application->remarks,
-                                                'purpose' => $cto_application->purpose,
+                                                // 'purpose' => $cto_application->purpose,
                                                 'status' => $cto_application->status,
                                                 'total_days'=>$total_days,
                                                 'employee_id' => $cto_application->employee_profile_id,
@@ -488,7 +495,7 @@ class CtoApplicationController extends Controller
                                                                 'time_from' => $date->time_from,
                                                                 'time_to' => $date->time_to,
                                                                 'date' => $date->date,
-
+                                                                'purpose' => $date->purpose,
                                                     ];
                                                 }),
 
@@ -585,7 +592,7 @@ class CtoApplicationController extends Controller
                                             return [
                                                 'id' => $cto_application->id,
                                                 'remarks' => $cto_application->remarks,
-                                                'purpose' => $cto_application->purpose,
+                                                // 'purpose' => $cto_application->purpose,
                                                 'status' => $cto_application->status,
                                                 'total_days'=>$total_days,
                                                 'employee_id' => $cto_application->employee_profile_id,
@@ -643,7 +650,7 @@ class CtoApplicationController extends Controller
                                                                 'time_from' => $date->time_from,
                                                                 'time_to' => $date->time_to,
                                                                 'date' => $date->date,
-
+                                                                'purpose' => $date->purpose,
                                                     ];
                                                 }),
 
@@ -722,7 +729,7 @@ class CtoApplicationController extends Controller
                                 return [
                                     'id' => $cto_application->id,
                                     'remarks' => $cto_application->remarks,
-                                    'purpose' => $cto_application->purpose,
+                                    // 'purpose' => $cto_application->purpose,
                                     'status' => $cto_application->status,
                                     'total_days'=> $total_days,
                                     'employee_id' => $cto_application->employee_profile_id,
@@ -780,7 +787,7 @@ class CtoApplicationController extends Controller
                                                     'time_from' => $date->time_from,
                                                     'time_to' => $date->time_to,
                                                     'date' => $date->date,
-
+                                                    'purpose' => $date->purpose,
                                         ];
                                     }),
 
@@ -1409,7 +1416,7 @@ class CtoApplicationController extends Controller
                             return [
                                 'id' => $cto_application->id,
                                 'remarks' => $cto_application->remarks,
-                                'purpose' => $cto_application->purpose,
+                                // 'purpose' => $cto_application->purpose,
                                 'status' => $cto_application->status,
                                 'total_days'=> $total_days,
                                 'employee_id' => $cto_application->employee_profile_id,
@@ -1467,7 +1474,7 @@ class CtoApplicationController extends Controller
                                                 'time_from' => $date->time_from,
                                                 'time_to' => $date->time_to,
                                                 'date' => $date->date,
-
+                                                'purpose' => $date->purpose,
                                     ];
                                 }),
 
@@ -1558,7 +1565,7 @@ class CtoApplicationController extends Controller
                         return [
                             'id' => $cto_application->id,
                             'remarks' => $cto_application->remarks,
-                            'purpose' => $cto_application->purpose,
+                            // 'purpose' => $cto_application->purpose,
                             'status' => $cto_application->status,
                             'total_days'=> $total_days,
                             'employee_id' => $cto_application->employee_profile_id,
@@ -1616,7 +1623,7 @@ class CtoApplicationController extends Controller
                                             'time_from' => $date->time_from,
                                             'time_to' => $date->time_to,
                                             'date' => $date->date,
-
+                                            'purpose' => $date->purpose,
                                 ];
                             }),
 
@@ -1704,7 +1711,7 @@ class CtoApplicationController extends Controller
                         return [
                             'id' => $cto_application->id,
                             'remarks' => $cto_application->remarks,
-                            'purpose' => $cto_application->purpose,
+                            // 'purpose' => $cto_application->purpose,
                             'status' => $cto_application->status,
                             'total_days'=> $total_days,
                             'employee_id' => $cto_application->employee_profile_id,
@@ -1762,7 +1769,7 @@ class CtoApplicationController extends Controller
                                             'time_from' => $date->time_from,
                                             'time_to' => $date->time_to,
                                             'date' => $date->date,
-
+                                            'purpose' => $date->purpose,
                                 ];
                             }),
 
@@ -1844,7 +1851,7 @@ class CtoApplicationController extends Controller
                     return [
                         'id' => $cto_application->id,
                         'remarks' => $cto_application->remarks,
-                        'purpose' => $cto_application->purpose,
+                        // 'purpose' => $cto_application->purpose,
                         'status' => $cto_application->status,
                         'total_days'=> $total_days,
                         'employee_id' => $cto_application->employee_profile_id,
@@ -1901,6 +1908,7 @@ class CtoApplicationController extends Controller
                                         'time_from' => $date->time_from,
                                         'time_to' => $date->time_to,
                                         'date' => $date->date,
+                                        'purpose' => $date->purpose,
                             ];
                         }),
 
@@ -2038,7 +2046,7 @@ class CtoApplicationController extends Controller
                                                 return [
                                                     'id' => $cto_application->id,
                                                     'remarks' => $cto_application->remarks,
-                                                    'purpose' => $cto_application->purpose,
+                                                    // 'purpose' => $cto_application->purpose,
                                                     'status' => $cto_application->status,
                                                     'total_days'=>$total_days,
                                                     'employee_id' => $cto_application->employee_profile_id,
@@ -2096,16 +2104,16 @@ class CtoApplicationController extends Controller
                                                                     'time_from' => $date->time_from,
                                                                     'time_to' => $date->time_to,
                                                                     'date' => $date->date,
-
+                                                                    'purpose' => $date->purpose,
                                                         ];
                                                     }),
 
                                                 ];
                                                 });
                                         $singleArray = array_merge(...$cto_applications_result);
-
+                                        return response(['message' => 'Application has been sucessfully '.$message_action, 'data' => $singleArray], Response::HTTP_CREATED);
                                 }
-                                return response(['message' => 'Application has been sucessfully '.$message_action, 'data' => $singleArray], Response::HTTP_CREATED);
+
                             // }
                 }
             }
