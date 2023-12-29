@@ -74,7 +74,7 @@
     </style>
     @endif
     <script>
-   window.print()
+  // window.print()
     </script>
 </head>
 

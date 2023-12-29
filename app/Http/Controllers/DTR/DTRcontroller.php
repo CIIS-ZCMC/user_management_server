@@ -883,11 +883,10 @@ class DTRcontroller extends Controller
             $dt_records = [];
             $is_Half_Schedule = false;
             $dtr = [];
-
             if (count($bio) >= 1) {
                 foreach ($bio as $biometric_id) {
                     if ($this->helper->isEmployee($biometric_id)) {
-
+                       
                         if ($is_15th_days) {
                             $first_half = $request->firsthalf;
                             $second_half = $request->secondhalf;
@@ -1381,7 +1380,7 @@ class DTRcontroller extends Controller
                 $secondout = date('H:i:s', strtotime('today') + rand(59400, 77400));
 
                 DailyTimeRecords::create([
-                    'biometric_id' => 5182,
+                    'biometric_id' => 5335,
                     'dtr_date' => $date,
                     'first_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin)),
                     'first_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstout)),
