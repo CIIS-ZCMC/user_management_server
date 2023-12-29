@@ -74,3 +74,13 @@ Route::get('/welcome', function () {
 Route::namespace('App\Http\Controllers\Schedule')->group(function(){
     Route::get('/generate', 'ScheduleController@generate');
 });
+
+Route::get('/ot', function () {
+    return view('overtime_authority');
+});
+
+
+
+Route::get('/lr', function () {
+    return view('leave_report');
+});
