@@ -15,7 +15,8 @@ class LegalInformation extends Model
         'legal_iq_id',
         'personal_information_id',
         'answer',
-        'details'
+        'details',
+        'date'
     ];
 
     public $timestamps = TRUE;

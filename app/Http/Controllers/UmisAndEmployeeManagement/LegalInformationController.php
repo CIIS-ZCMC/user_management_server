@@ -72,31 +72,40 @@ class LegalInformationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    public function storeMany(LegalInformationArrayStoreRequest $request)
+    
+    public function storeMany(Request $request)
     {
         try{
             $success = [];
             $failed = [];
+            $personal_information_id = strip_tags($request->personal_information_id);
 
-            foreach($request->legal_information as $legal_info){
+            foreach($request->legal_informations as $legal_info){
                 $cleanData = [];
-
+                $cleanData['personal_information_id'] = intval($personal_information_id);
                 foreach ($legal_info as $key => $value) {
                     if($value === null){
                         $cleanData[$key] = $value;
                         continue;
                     }
+                    if($key === 'legal_iq_id') {
+                        $cleanData[$key] = intval(strip_tags($value));
+                        continue;
+                    }
+                    if($key === 'answer') {
+                        $cleanData[$key] = intval(strip_tags($value)) === 1?true:false;
+                        continue;
+                    }
                     $cleanData[$key] = strip_tags($value);
                 }
-
-                $training = LegalInformation::create($cleanData);
+                $legal_info = LegalInformation::create($cleanData);
 
                 if(!$legal_info){
                     $failed[] = $cleanData;
                     continue;
                 }
 
-                $success = $training;
+                $success[] = $legal_info;
             }
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
