@@ -26,6 +26,7 @@ class AssignArea extends Model
         'designation_id',
         'plantilla_id',
         'plantilla_number_id',
+        'effective_at'
     ];
 
     public $timestamps = TRUE;

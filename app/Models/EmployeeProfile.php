@@ -31,7 +31,7 @@ class EmployeeProfile extends Authenticatable
         'allow_time_adjustment',
         'is_2fa',
         'employee_type_id',
-        'plantilla_number_id'
+        'employment_type_id'
     ];
 
     public $timestamps = TRUE;
@@ -86,11 +86,6 @@ class EmployeeProfile extends Authenticatable
         return $this->hasMany(LoginTrail::class);
     }
 
-    public function plantillaNumber()
-    {
-        return $this->hasOne(PlantillaNumber::class);
-    }
-
     public function isDeactivated()
     {
         return $this->deactivated_at === null;
@@ -99,6 +94,11 @@ class EmployeeProfile extends Authenticatable
     public function isEmailVerified()
     {
         return $this->email_verified_at === null;
+    }
+
+    public function employmentType()
+    {
+        return $this->belongsTo(EmploymentType::class);
     }
     
     public function createToken()

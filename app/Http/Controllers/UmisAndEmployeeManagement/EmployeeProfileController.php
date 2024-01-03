@@ -586,6 +586,7 @@ class EmployeeProfileController extends Controller
             $cleanData['salary_grade_step'] = strip_tags($request->salary_grade_step);
             $cleanData['date_hired'] = $request->date_hired;
             $cleanData['designation_id'] = $request->designation_id;
+            $cleanData['effective_at'] = $request->date_hired;
 
             $plantilla_number_id = $request->plantilla_number_id;
             $sector_key = '';
@@ -625,6 +626,7 @@ class EmployeeProfileController extends Controller
                 $plantilla = $plantilla_number->plantilla;
                 $designation = $plantilla->designation;
                 $cleanData['designation_id'] = $designation->id;
+                $cleanData['plantilla_number_id'] = $plantilla_number->id;
             }
             
             $employee_profile = EmployeeProfile::create($cleanData);
@@ -632,6 +634,13 @@ class EmployeeProfileController extends Controller
             $cleanData['employee_profile_id'] = $employee_profile->id;
             AssignArea::create($cleanData);
             
+            if($plantilla_number_id !== null)
+            {
+                $plantilla_number = PlantillaNumber::find($plantilla_number_id);
+                $plantilla_number->update(['employee_profile_id' => $employee_profile->id, 'is_vacant' => false, 'assigned_at' => now()]);
+            }
+            
+
             $this->requestLogger->registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([

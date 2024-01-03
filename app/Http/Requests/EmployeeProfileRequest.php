@@ -22,12 +22,16 @@ class EmployeeProfileRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'employment_type_id' => 'required|integer',
             'personal_information_id' => 'required|integer',
+            'employment_type_id' => 'required|integer',
             'attachment' => 'nullable|file|mimes:jpeg,png,pdf,doc,docx',
             'date_hired' => 'required|date:Y-m-d',
             'allow_time_adjustment' => 'required|integer',
-            'plantilla_number_id' => 'nullable|integer'
+            'plantilla_number_id' => 'nullable|integer',
+            'sector' => 'required|string|max:255',
+            'sector_id' => 'required|integer',
+            'salary_grade_step' => 'required|integer',
+            'designation_id' => 'nullable|integer'
         ];
     }
 }
