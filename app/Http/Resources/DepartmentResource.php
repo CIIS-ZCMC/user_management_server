@@ -23,15 +23,19 @@ class DepartmentResource extends JsonResource
 
 
             $head = $this->head;
+            $head_designation = $head->assignArea->designation;
             $head_personal_information = $head->personalInformation;
             $head = $head_personal_information->name;
 
             $officer_in_charge = 'NONE';
+            $oic_designation = 'NONE';
             $training_officer = 'NONE';
+            $toe_designation = 'NONE';  
 
             if($this->oic_employee_profile_id !== null)
             {
                 $oic = $this->oic();
+                $oic_designation = $oic->assignArea->designation;
                 $oic_personal_information = $oic->personalInformation;
                 $officer_in_charge = $oic_personal_information->name;
             }
@@ -39,6 +43,7 @@ class DepartmentResource extends JsonResource
             if($this->training_officer_employee_profile_id !== null)
             {
                 $training_officer_employee = $this->trainingOfficer();
+                $toe_designation = $training_officer_employee->assignArea->designation;
                 $to_personal_information = $training_officer_employee->personalInformation;
                 $training_officer_employee = $to_personal_information->name;
                 $training_officer = $training_officer_employee;
@@ -48,10 +53,16 @@ class DepartmentResource extends JsonResource
                 'name' => $name,
                 'code' => $code,
                 'head' => $head,
+                'head_designation' => $head_designation,
                 'head_status' => $head_status,
                 'training_officer' => $training_officer,
+                'training_officer_designation' => $toe_designation,
                 'approving_officer' => $approving_officer,
-                'officer_in_charge' => $officer_in_charge
+                'officer_in_charge' => $officer_in_charge,
+                'oic_designation' => $oic_designation,
+                'division'=> new DivisionResource($this->division),
+                'created_at' => $this->created_at,
+                'updated_at' => $this->updated_at
             ];
         }
 
@@ -60,10 +71,16 @@ class DepartmentResource extends JsonResource
             'name' => $this->name,
             'code' => $this->code,
             'head' => 'NONE',
+            'head_designation' => 'NONE',
             'head_status' => 'NONE',
             'training_officer' => 'NONE',
+            'training_officer_designation' => 'NONE',
             'approving_officer' => 'NO RECORD',
-            'officer_in_charge' => 'NONE'
+            'officer_in_charge' => 'NONE',
+            'oic_designation' => 'NONE',
+            'division'=> new DivisionResource($this->division),
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at
         ];
     }
 }

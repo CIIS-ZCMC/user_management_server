@@ -254,21 +254,24 @@ class EmployeeProfileController extends Controller
          */
         if(!empty($special_access_roles))
         {
-
             $special_access_permissions = SpecialAccessRole::with([
                 'systemRole' => function ($query) {
                     $query->with([
                         'system',
                         'roleModulePermissions' => function ($query) {
-                            $query->with(['module', 'permission']);
+                            $query->with([
+                                'modulePermission' => function($query){
+                                    $query->with(['module', 'permission']);
+                                }
+                            ]);
                         }
                     ]);
                 }
             ])->where('employee_profile_id', $employee_profile['id'])->get();
-        
+                
             if(count($special_access_permissions) > 0)
             {
-                foreach($special_access_permissions['systemRole'] as $key => $special_access_permission)
+                foreach($special_access_permissions as $key => $special_access_permission)
                 {
                     $system_exist = false;
                     $system_role = $special_access_permission['systemRole'];
@@ -466,7 +469,7 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function employeesByAreaAssigned(EmployeesByAreaAssignedRequest $request)
     {
         try{
