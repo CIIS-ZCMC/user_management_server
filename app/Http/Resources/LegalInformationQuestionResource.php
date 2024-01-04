@@ -23,7 +23,10 @@ class LegalInformationQuestionResource extends JsonResource
                 'order_by' => $this->order_by,
                 'content_question' => $this->content_question,
                 'sub_question' => LegalInformationQuestionResource::collection($sub_question),
-                'created_at' => $this->created_at
+                'created_at' => $this->created_at,
+                'has_detail' => $this->has_detail,
+                'has_yes_no' => $this->has_yes_no,
+                'has_date' => $this->has_date
             ];
         }
 
@@ -32,7 +35,10 @@ class LegalInformationQuestionResource extends JsonResource
             'order_by' => $this->order_by,
             'content_question' => $this->content_question,
             'sub_question' => [],
-            'created_at' => $this->created_at
+            'created_at' => $this->created_at,
+            'has_detail' => $this->has_detail,
+            'has_yes_no' => $this->has_yes_no,
+            'has_date' => $this->has_date
         ];
     }
 }
