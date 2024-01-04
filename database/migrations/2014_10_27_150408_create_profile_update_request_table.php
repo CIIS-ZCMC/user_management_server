@@ -19,6 +19,7 @@ return new class extends Migration
             $table->foreign('approved_by')->references('id')->on('employee_profiles');
             $table->string('table_name');
             $table->unsignedBigInteger('data_id');
+            $table->unsignedBigInteger('target_id');
             $table->boolean('type_new_or_replace')->default(FALSE);
             $table->timestamps();
         });

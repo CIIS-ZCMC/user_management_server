@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('place_of_examination');
             $table->string('license_number')->nullable();
             $table->date('license_release_at')->nullable();
-            $table->unsignedBigInteger('personal_information_id');
+            $table->unsignedBigInteger('personal_information_id')->nullable();
             $table->foreign('personal_information_id')->references('id')->on('personal_informations');
             $table->timestamps();
         });

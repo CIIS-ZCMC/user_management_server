@@ -18,7 +18,7 @@ return new class extends Migration
             $table->boolean('is_residential_and_permanent')->default(FALSE);
             $table->boolean('is_residential')->default(FALSE);
             $table->string('telephone_no')->nullable();
-            $table->unsignedBigInteger('personal_information_id');
+            $table->unsignedBigInteger('personal_information_id')->nullable();
             $table->foreign('personal_information_id')->references('id')->on('personal_informations');
             $table->timestamps();
         });
