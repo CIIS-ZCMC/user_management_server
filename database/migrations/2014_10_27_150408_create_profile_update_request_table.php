@@ -17,8 +17,9 @@ return new class extends Migration
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles');
             $table->unsignedBigInteger('approved_by');
             $table->foreign('approved_by')->references('id')->on('employee_profiles');
-            $table->datetime('request_at');
-            $table->datetime('approved_at');
+            $table->string('table_name');
+            $table->unsignedBigInteger('data_id');
+            $table->boolean('type_new_or_replace')->default(FALSE);
             $table->timestamps();
         });
     }
