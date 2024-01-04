@@ -1081,31 +1081,23 @@ Route::middleware('auth.cookie')->group(function(){
          * Profile Update Module
          */
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
-            Route::get('profile-update/find-by-personal-info/{id}', 'ProfileUpdateController@findByPersonalInformationID');
+            Route::get('profile-update-request', 'ProfileUpdateRequestController@index');
         });
 
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
-            Route::get('profile-update/find-by-employee/{id}', 'ProfileUpdateController@findByEmployeeID');
+            Route::get('profile-update-pending', 'ProfileUpdateRequestController@pending');
         });
 
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
-            Route::post('profile-update', 'ProfileUpdateController@store');
-        });
-
-        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
-            Route::get('profile-update/{id}', 'ProfileUpdateController@show');
+            Route::post('profile-update-request', 'ProfileUpdateRequestController@approveRequest');
         });
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
-            Route::put('profile-update/{id}', 'ProfileUpdateController@update');
+            Route::put('profile-update-request', 'ProfileUpdateRequestController@approveRequest');
         });
         
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
-            Route::delete('profile-update/{id}', 'ProfileUpdateController@destroy');
-        });
-        
-        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
-            Route::delete('profile-update-personal-info/{id}', 'ProfileUpdateController@destroyByPersonalInformationID');
+            Route::delete('profile-update-personal-info/{id}', 'ProfileUpdateRequestController@destroyByPersonalInformationID');
         });
 
         /**

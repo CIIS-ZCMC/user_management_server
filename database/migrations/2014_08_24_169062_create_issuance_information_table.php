@@ -18,9 +18,9 @@ return new class extends Migration
             $table->datetime('ctc_issued_date')->nullable();
             $table->string('ctc_issued_at')->nullable();
             $table->string('person_administrative_oath')->nullable();
-            $table->unsignedBigInteger('employee_profile_id');
+            $table->unsignedBigInteger('employee_profile_id')->nullable();
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles');
-            $table->unsignedBigInteger('in_active_employee_id');
+            $table->unsignedBigInteger('in_active_employee_id')->nullable();
             $table->foreign('in_active_employee_id')->references('id')->on('in_active_employees');
             $table->timestamps();
         });

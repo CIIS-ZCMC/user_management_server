@@ -65,6 +65,52 @@ class ProfileUpdateRequestController extends Controller
         }
     }
 
+    public function request(Request $request)
+    {
+        $table = strip_tags($request->table_name);
+
+        switch($table){
+            case 'Profile Information':
+                $new_profile_information = $this->updateEmployeePersonalInformation($profile_update_request);
+                break;
+            case 'Educational Background':
+                $educational_background = $this->updateEducationalBackgrounds($profile_update_request);
+                break;
+            case 'Child':
+                $child = $this->updateChild($profile_update_request);
+                break;
+            case 'Address':
+                $address = $this->updateAddress($profile_update_request);
+                break;
+            case 'Contact':
+                $contact = $this->updateContact($profile_update_request);
+                break;
+            case 'Family Background':
+                $family_background = $this->updateFamilyBackground($profile_update_request);
+                break;
+            case 'Identication':
+                $identication = $this->updateIdentification($profile_update_request);
+                break;
+            case 'Eligibility':
+                $eligibility = $this->updateCivilServiceEligibilities($profile_update_request);
+                break;
+            case 'Training':
+                $training = $this->updateTraining($profile_update_request);
+                break;
+            case 'Work Experience':
+                $work_experience = $this->updateWorkExperience($profile_update_request);
+                break;
+            case 'Voluntary Work';
+                $voluntary_work = $this->updateVoluntaryWork($profile_update_request);
+                break;
+            case 'Other':
+                $other = $this->updateOtherInformation($profile_update_request);
+                break;
+            default: 
+                return response()->json(['message' => 'Table name is not found.'], Response::HTTP_BAD_REQUEST);
+        }
+    }
+
     public function approveRequest($id, PasswordApprovalRequest $request)
     {
         try{
