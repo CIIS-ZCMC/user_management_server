@@ -4,12 +4,12 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
-use App\Http\Requests\PasswordApprovalRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use App\Services\RequestLogger;
+use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\CivilServiceEligibilityRequest;
 use App\Http\Resources\CivilServiceEligibilityResource;
 use App\Models\CivilServiceEligibility;
@@ -93,6 +93,55 @@ class CivilServiceEligibilityController extends Controller
             return response()->json([
                 'data' => new CivilServiceEligibilityResource($civil_service_eligibility), 
                 'message' => 'New civil service record added.',
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function storeMany(Request $request)
+    {
+        try{
+            $success = [];
+            $failed = [];
+
+            $personal_information_id = strip_tags($request->personal_information_id);
+
+            foreach($request->civilserviceeligibilities as $civil_service_eligibility){
+                $cleanData = [];
+                $cleanData['personal_information_id'] = $personal_information_id;
+                foreach ($civil_service_eligibility as $key => $value) {
+                    if($value === null)
+                    {
+                        $cleanData[$key] = $value;
+                        continue;
+                    }
+                    $cleanData[$key] = strip_tags($value);
+                }
+                $civil_service_eligibility = CivilServiceEligibility::create($cleanData);
+
+                if(!$civil_service_eligibility){
+                    $failed[] = $cleanData;
+                    continue;
+                }
+
+                $success[] = $civil_service_eligibility;
+            }
+
+            $this->requestLogger->registerSystemLogs($request, $civil_service_eligibility['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+
+            if(count($failed) > 0){
+                return response()->json([
+                    'data' => CivilServiceEligibilityResource::collection($success),
+                    'failed' => $failed,
+                    'message' => 'Some data failed to registere.'
+                ], Response::HTTP_OK);
+            }
+
+            return response()->json([
+                'data' => CivilServiceEligibilityResource::collection($success),
+                'message' => 'New records created successfully.',
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());

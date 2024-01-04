@@ -40,11 +40,9 @@ class DivisionController extends Controller
         try{
             $cacheExpiration = Carbon::now()->addDay();
 
-            $divisions = Division::all();
-
-            // $divisions = Cache::remember('divisions', $cacheExpiration, function(){
-            //     return Division::all();
-            // });
+            $divisions = Cache::remember('divisions', $cacheExpiration, function(){
+                return Division::all();
+            });
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in deleting '.$this->PLURAL_MODULE_NAME.'.');
 
@@ -91,14 +89,17 @@ class DivisionController extends Controller
 
             $cleanData = [];
             $cleanData['chief_employee_profile_id'] = $employee_profile->id;
-            $cleanData['chief_attachment_url'] = $request->input('attachment')===null?'NONE': $this->file_validation_and_upload->check_save_file($request->input('attachment'), 'division\files');
+            $cleanData['chief_attachment_url'] = $request->input('attachment')===null?'NONE': $this->file_validation_and_upload->check_save_file($request, 'division/files');
             $cleanData['chief_effective_at'] = Carbon::now();
 
             $division->update($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in assigning chief '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in assigning division chief '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => new DivisionResource($division), 'message' => 'New chief assigned in department.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new DivisionResource($division), 
+                'message' => 'New chief assigned in department.'], 
+                Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'assignChiefByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -127,6 +128,10 @@ class DivisionController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             } 
 
+            if($employee_profile->id !== $division->chief_employee_profile_id){
+                return response()->json(['message' => 'UnAuthorized.'], Response::HTTP_UNAUTHORIZED);
+            }
+
             $user = $request->user;
             $cleanData['password'] = strip_tags($request->password);
 
@@ -138,7 +143,7 @@ class DivisionController extends Controller
 
             $cleanData = [];
             $cleanData['oic_employee_profile_id'] = $employee_profile->id;
-            $cleanData['oic_attachment_url'] = $request->input('attachment')===null?'NONE': $this->file_validation_and_upload->check_save_file($request->input('attachment'), 'division\files');
+            $cleanData['oic_attachment_url'] = $request->input('attachment')===null?'NONE': $this->file_validation_and_upload->check_save_file($request, 'division/files');
             $cleanData['oic_effective_at'] = strip_tags($request->input('effective_at'));
             $cleanData['oic_end_at'] = strip_tags($request->input('end_at'));
 
@@ -170,7 +175,7 @@ class DivisionController extends Controller
 
                 if($key === 'attachment')
                 {
-                    $cleanData['division_attachment_url'] = $this->file_validation_and_upload->check_save_file($request, 'division\files');
+                    $cleanData['division_attachment_url'] = $this->file_validation_and_upload->check_save_file($request, 'division/files');
                     continue;
                 }
                 $cleanData[$key] = strip_tags($value);

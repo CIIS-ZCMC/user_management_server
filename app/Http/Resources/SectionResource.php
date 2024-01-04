@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -19,19 +20,19 @@ class SectionResource extends JsonResource
             $name = $this->name;
             $code = $this->code;
             $supervisor_status = $this->supervisor_status? 'On Site':'On Leave';
-            $approving_officer = $this->supervisor_status? 'Chief':'OIC';
-
-            $supervisor = $this->supervisor;
-            $supervisor_personal_information = $supervisor->personalInformation;
-            $supervisor = $supervisor_personal_information->name;
-
+            $approving_officer = 'Chief';
+            $supervisor = $this->supervisor->personalInformation->name();
             $officer_in_charge = 'NONE';
 
             if($this->oic_employee_profile_id !== null)
             {
-                $oic = $this->oic();
+                $oic = $this->oic;
                 $oic_personal_information = $oic->personalInformation;
-                $officer_in_charge = $oic_personal_information->name;
+                $officer_in_charge = $oic_personal_information->name();
+
+                if(Carbon::parse($this->oic_effective_at)->lte(Carbon::now())){
+                    $approving_officer = 'officer in charge';
+                }
             }
            
             return [

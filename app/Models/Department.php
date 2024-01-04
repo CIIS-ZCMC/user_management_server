@@ -55,7 +55,7 @@ class Department extends Model
 
     public function oic()
     {
-        return $this->belongsTo(EmployeeProfile::class, 'id', 'oic_employee_profile_id');
+        return $this->belongsTo(EmployeeProfile::class, 'oic_employee_profile_id');
     }
 
     public function headTrails()

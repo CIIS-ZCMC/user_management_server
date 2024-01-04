@@ -22,13 +22,15 @@ class AssignAreaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'employee_profile_id' => 'required|string|size:36',
-            'division_id' => 'nullable|string|size:36',
-            'department_id' => 'nullable|string|size:36',
-            'section_id' => 'nullable|string|size:36',
-            'unit_id' => 'nullable|string|size:36',
-            'designation_id' => 'nullable|string|size:36',
-            'plantilla_id' => 'nullable|string|size:36',
+            'employee_profile_id' => 'required|integer',
+            'division_id' => 'nullable|integer',
+            'department_id' => 'nullable|integer',
+            'section_id' => 'nullable|integer',
+            'unit_id' => 'nullable|integer',
+            'designation_id' => 'nullable|integer',
+            'plantilla_number' => 'nullable|integer',
+            'salary_grade_step' => 'required|integer',
+            'effective_at' => 'required|date:Y-m-d'
         ];
     }
 }

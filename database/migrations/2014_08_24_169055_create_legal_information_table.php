@@ -13,12 +13,13 @@ return new class extends Migration
     {
         Schema::create('legal_informations', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('legal_iq_id');
+            $table->unsignedBigInteger('legal_iq_id')->nullable();
             $table->foreign('legal_iq_id')->references('id')->on('legal_information_questions');
             $table->unsignedBigInteger('personal_information_id');
             $table->foreign('personal_information_id')->references('id')->on('personal_informations');    
-            $table->boolean('answer')->default(FALSE);     
+            $table->boolean('answer')->nullable();     
             $table->text('details')->nullable();
+            $table->date('date')->nullable();
             $table->timestamps();
         });
     }

@@ -13,12 +13,9 @@ return new class extends Migration
     {
         Schema::create('addresses', function (Blueprint $table) {
             $table->id();
-            $table->string('street');
-            $table->string('barangay');
-            $table->string('city');
-            $table->string('province');
-            $table->string('zip_code');
-            $table->string('country')->default('Philippines');
+            $table->string('address');
+            $table->string('zip_code')->default(7000);
+            $table->boolean('is_residential_and_permanent')->default(FALSE);
             $table->boolean('is_residential')->default(FALSE);
             $table->string('telephone_no')->nullable();
             $table->unsignedBigInteger('personal_information_id');

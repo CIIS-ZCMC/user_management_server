@@ -40,7 +40,10 @@ class EducationalBackgroundController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, $educational_backgrounds['id'], true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => EducationalBackgroundResource::collection($educational_backgrounds), 'message' => 'Employee educational record found.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => EducationalBackgroundResource::collection($educational_backgrounds), 
+                'message' => 'Employee educational record found.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByPersonalInformationID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -62,7 +65,10 @@ class EducationalBackgroundController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, $educational_backgrounds['id'], true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => EducationalBackgroundResource::collection($educational_backgrounds), 'message' => 'Employee educational record found.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => EducationalBackgroundResource::collection($educational_backgrounds), 
+                'message' => 'Employee educational record found.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -85,8 +91,57 @@ class EducationalBackgroundController extends Controller
             $educational_background = EducationalBackground::create($cleanData);
 
             $this->requestLogger->registerSystemLogs($request, $educational_background['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+           
+            return response()->json([
+                'data' => new EducationalBackgroundResource($educational_background),
+                'message' => 'New employee education background registered.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function storeMany(Request $request)
+    {
+        try{
+            $success = [];
+            $failed = [];
 
-            return response()->json(['data' => new EducationalBackground($educational_background) ,'message' => 'New employee education background registered.'], Response::HTTP_OK);
+            foreach($request->educations as $education){
+                $cleanData = [];
+                foreach ($education as $key => $value) {
+                    if ($value === null) {
+                        $cleanData[$key] = $value;
+                        continue;
+                    }
+                    $cleanData[$key] = strip_tags($value);
+                }
+                $educational_background = EducationalBackground::create($cleanData);
+                
+                if(!$educational_background){
+                    $failed[] = $cleanData;
+                    continue;
+                }
+
+                $success[] = $educational_background;
+            }
+
+
+            $this->requestLogger->registerSystemLogs($request, $educational_background['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+           
+            if(count($failed) > 0){
+                return response()->json([
+                    'data' => EducationalBackgroundResource::collection($success),
+                    'failed' => $failed,
+                    'message' => 'Some data failed to registere.'
+                ], Response::HTTP_OK);
+            }
+            
+            return response()->json([
+                'data' =>  EducationalBackgroundResource::collection($success),
+                'message' => 'New employee education background registered.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

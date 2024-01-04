@@ -78,7 +78,7 @@ class ReferencesController extends Controller
     {
         try{
             $cleanData = [];
-
+            
             foreach ($request->all() as $key => $value) {
                 $cleanData[$key] = strip_tags($value);
             }
@@ -89,6 +89,49 @@ class ReferencesController extends Controller
             
             return response()->json([
                 'data' => new ReferenceResource($reference),
+                'message' => 'New reference registerd.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function storeMany(Request $request)
+    {
+        try{
+            $success = [];
+            $failed = [];
+            $personal_information_id = strip_tags($request->personal_information_id);
+
+            foreach($request->references as $reference){
+                $cleanData = [];
+                $cleanData['personal_information_id'] = $personal_information_id;
+                foreach ($reference as $key => $value) {
+                    $cleanData[$key] = strip_tags($value);
+                }
+                $reference = Reference::create($cleanData);
+
+                if(!$reference){
+                    $failed[] = $cleanData;
+                    continue;
+                }
+
+                $success[] = $reference;
+            }
+            
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            
+            if(count($failed) > 0){
+                return response()->json([
+                    'data' => ReferenceResource::collection($success),
+                    'failed' => $failed,
+                    'message' => 'Some data failed to registere.'
+                ], Response::HTTP_OK);
+            }
+
+            return response()->json([
+                'data' => ReferenceResource::collection($success),
                 'message' => 'New reference registerd.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){

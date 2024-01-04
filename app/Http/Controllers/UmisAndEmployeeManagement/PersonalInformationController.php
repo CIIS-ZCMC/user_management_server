@@ -4,12 +4,14 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Models\Address;
 use App\Http\Requests\PasswordApprovalRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use App\Services\RequestLogger;
+use App\Services\FileValidationAndUpload;
 use App\Http\Requests\PersonalInformationRequest;
 use App\Http\Resources\PersonalInformationResource;
 use App\Models\PersonalInformation;
@@ -21,13 +23,15 @@ class PersonalInformationController extends Controller
     private $SINGULAR_MODULE_NAME = 'personal information';
 
     protected $requestLogger;
+    protected $fileValidateAndUpload;
 
-    public function __construct(RequestLogger $requestLogger)
+    public function __construct(RequestLogger $requestLogger, FileValidationAndUpload $fileValidateAndUpload)
     {
         $this->requestLogger = $requestLogger;
+        $this->fileValidateAndUpload = $fileValidateAndUpload;
     }
     
-    public function index(PersonalInformationRequest $request)
+    public function index(Request $request)
     {
         try{
             $personal_informations = PersonalInformation::all();
@@ -41,20 +45,72 @@ class PersonalInformationController extends Controller
         }
     }
     
-    public function store(Request $request)
+    /**
+     * Employee PDS Registration
+     * This must have registration of employee information such as name, height, weight, etc
+     * contacts and addresses
+     */
+    public function store(PersonalInformationRequest $request)
     {
         try{
+            $is_res_per = $request->is_res_per === 1? true:false;
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
+                if($value === null){
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+                if($key === 'attachment'){
+                    $cleanData[$key] = $this->fileValidateAndUpload->check_save_file($request, 'employee/profiles');
+                    continue;
+                }
                 $cleanData[$key] = strip_tags($value);
             }
 
             $personal_information = PersonalInformation::create($cleanData);
+
+            $residential_address = [
+                'address' => strip_tags($request->r_address),
+                'telephone' => strip_tags($request->r_telephone),
+                'zip_code' => strip_tags($request->r_zip_code),
+                'is_res_per' => $is_res_per,
+                'type' => 'residential',
+                'personal_information_id' => $personal_information->id
+            ];
+
+            $residential = Address::create($residential_address);
+
+            if($is_res_per !== null && $is_res_per){
+                $data = [
+                    'personal_information' => $personal_information,
+                    'residential' => $residential,
+                    'permanent' => $residential
+                ];
+
+                return response()->json($data, Response::HTTP_OK);
+            }
+
+            $permanent_address =  [
+                'address' => strip_tags($request->p_address),
+                'telephone' => strip_tags($request->p_telephone),
+                'zip_code' => strip_tags($request->p_zip_code),
+                'is_res_per' => $is_res_per,
+                'type' => 'permanent',
+                'personal_information_id' => $personal_information->id
+            ];
+
+            $permanent = Address::create($permanent_address);
+
+            $data = [
+                'personal_information' => $personal_information,
+                'residential' => $residential,
+                'permanent' => $permanent
+            ];
             
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['data' => new PersonalInformationResource($personal_information)], Response::HTTP_OK);
+            return response()->json($data, Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
