@@ -1010,6 +1010,10 @@ Route::middleware('auth.cookie')->group(function(){
             Route::get('plantilla-all', 'PlantillaController@index');
         });
         
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function(){
+            Route::get('plantilla-with-designation/{id}', 'PlantillaController@plantillaWithDesignation');
+        });
+        
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
             Route::get('plantilla/find-by-designation/{id}', 'PlantillaController@findByDesignationID');
         });
