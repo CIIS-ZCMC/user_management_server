@@ -24,7 +24,7 @@ class DivisionRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'code' => 'required|string|max:255',
-            'designation_id' => 'required|integer',
+            // 'designation_id' => 'required|integer',
             'attachment' => 'nullable|file|mimes:jpeg,png,pdf,doc,docx',
         ];
     }

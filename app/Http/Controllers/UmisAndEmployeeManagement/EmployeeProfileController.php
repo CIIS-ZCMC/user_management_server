@@ -256,7 +256,6 @@ class EmployeeProfileController extends Controller
          */
         if(!empty($special_access_roles))
         {
-
             $special_access_permissions = SpecialAccessRole::with([
                 'systemRole' => function ($query) {
                     $query->with([
@@ -271,7 +270,7 @@ class EmployeeProfileController extends Controller
                     ]);
                 }
             ])->where('employee_profile_id', $employee_profile['id'])->get();
-        
+                
             if(count($special_access_permissions) > 0)
             {
                 foreach($special_access_permissions as $key => $special_access_permission)
@@ -474,7 +473,7 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function employeesByAreaAssigned(EmployeesByAreaAssignedRequest $request)
     {
         try{

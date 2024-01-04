@@ -18,6 +18,7 @@ class DesignationResource extends JsonResource
         $salary_grade = [
             'id' => $salary_grade_data->id,
             'salary_grade_number' => $salary_grade_data->salary_grade_number,
+            'amount' => $salary_grade_data->one,
             'effective_at' => $salary_grade_data->effective_at,
             'tranch' => $salary_grade_data->tranch
         ];
