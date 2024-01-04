@@ -20,6 +20,8 @@ return new class extends Migration
             $table->string('person_administrative_oath')->nullable();
             $table->unsignedBigInteger('employee_profile_id');
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles');
+            $table->unsignedBigInteger('in_active_employee_id');
+            $table->foreign('in_active_employee_id')->references('id')->on('in_active_employees');
             $table->timestamps();
         });
     }

@@ -4,6 +4,8 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Models\AssignAreaTrail;
+use App\Models\InActiveEmployee;
 use App\Models\PlantillaNumber;
 use Carbon\Carbon;
 use Jenssegers\Agent\Agent;
@@ -19,7 +21,6 @@ use App\Http\Requests\EmployeeProfileRequest;
 use App\Http\Resources\EmployeeProfileResource;
 use App\Http\Requests\EmployeesByAreaAssignedRequest;
 use App\Http\Resources\EmployeesByAreaAssignedResource;
-use App\Http\Resources\SignInResource;
 use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Resources\EmployeeDTRList;
 use App\Models\AssignArea;
@@ -718,6 +719,71 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => 'Employee account created.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'createEmployeeAccount', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function updateEmployeeToInActiveEmployees($id, Request $request)
+    {
+        try{
+            $user = $request->user;
+            $cleanData['password'] = strip_tags($request->input('password'));
+
+            $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
+
+            if (!Hash::check($cleanData['password'].env("SALT_VALUE"), $decryptedPassword)) {
+                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $employee_profile = EmployeeProfile::find($id);
+
+            if(!$employee_profile)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+            
+            $in_active_employee = InActiveEmployee::create([
+                'personal_information_id' => $employee_profile->personal_information_id,
+                'employment_type_id' => $request->employment_type_id,
+                'employee_id' => $employee_profile->employee_id,
+                'profile_url' => $employee_profile->profile_url,
+                'date_hired' => $employee_profile->date_hired,
+                'biometric_id' => $employee_profile->biometric_id,
+                'employment_end_at' => now()
+            ]);
+
+            $employee_profile->issuanceInformation->update([
+                'employee_profile_id' => null,
+                'in_active_employee_id' => $in_active_employee->id
+            ]);
+
+            $assign_area = $employee_profile->assignedArea;
+            $assign_area_trail = AssignAreaTrail::create([
+                'employee_profile_id' => null,
+                'in_active_employee_id' => $in_active_employee->id,
+                'designation_id' => $assign_area->designation_id,
+                'plantilla_id' => $assign_area->plantilla_id,
+                'division_id' => $assign_area->division_id,
+                'department_id' => $assign_area->department_id,
+                'section_id' => $assign_area->section_id,
+                'unit_id' => $assign_area->unit_id,
+                'plantilla_number_id' => $assign_area->plantilla_number_id,
+                'salary_grade_step' => $assign_area->salary_grade_step,
+                'started_at' => $assign_area->effective_at,
+                'end_at' => now()
+            ]);
+
+            $assign_area->delete();
+            $employee_profile->delete();
+
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching a '.$this->SINGULAR_MODULE_NAME.'.');
+
+            return response()->json([
+                'data' => $in_active_employee, 
+                'message' => 'Employee record transfer to in active employees.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'updateEmployeeToInActiveEmployees', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
