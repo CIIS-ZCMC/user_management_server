@@ -4,7 +4,10 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Http\Controllers\DTR\TwoFactorAuthController;
+use App\Methods\MailConfig;
 use App\Models\AssignAreaTrail;
+use App\Models\Contact;
 use App\Models\InActiveEmployee;
 use App\Models\PlantillaNumber;
 use Carbon\Carbon;
@@ -39,10 +42,16 @@ class EmployeeProfileController extends Controller
     protected $requestLogger;
     protected $file_validation_and_upload;
 
+    
+    private $mail;
+    private $two_auth;
+
     public function __construct(RequestLogger $requestLogger, FileValidationAndUpload $file_validation_and_upload)
     {
         $this->requestLogger = $requestLogger;
         $this->file_validation_and_upload = $file_validation_and_upload;
+        $this->mail = new MailConfig();
+        $this->two_auth = new TwoFactorAuthController();
     }
 
     /**
@@ -468,7 +477,42 @@ class EmployeeProfileController extends Controller
                 $token->delete();
             }
 
-            return response()->json(['message' => 'User signout.'], Response::HTTP_OK)->cookie(env('COOKIE_NAME'), '', -1);;
+            return response()->json(['message' => 'User signout.'], Response::HTTP_OK)->cookie(env('COOKIE_NAME'), '', -1);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'signOut', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function verifyEmailAndSendOTP(Request $request)
+    {
+        try{
+            $email = strip_tags($request->email);
+            $contact = Contact::where('email_address', $email)->get();
+
+            if(!$contact){
+                return response()->json(['message' => "Email doesn't exist."], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $employee = $contact->personalInformation->employeeProfile;
+
+            $data = $request->data;
+
+            $body = view('mail.otp', ['otpcode' => $this->two_auth->getOTP($employee)]);
+            $data = [
+                'Subject' => 'ONE TIME PIN',
+                'To_receiver' => $email,
+                'Receiver_Name' => $employee->personalInformation->name(),
+                'Body' => $body
+            ];
+            
+            if ($this->mail->send($data)) {
+                return response()->json(['message' => 'Please check your email address for OTP.'], Response::HTTP_OK);
+            }
+
+            return response()->json([
+                'message' => 'Failed to send OTP to your email.'
+            ], Response::HTTP_BAD_REQUEST);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'signOut', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
