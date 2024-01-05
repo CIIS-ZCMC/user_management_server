@@ -19,7 +19,7 @@ class TimeAdjusment extends Model
         'employee_profile_id',
         'daily_time_record_id',
         'recommended_by',
-        'approval_by',
+        'approve_by',
         'approval_date',
         'first_in',
         'first_out',

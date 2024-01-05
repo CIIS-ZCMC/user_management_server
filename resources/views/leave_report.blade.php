@@ -8,9 +8,19 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
     <style>
         body {
+            /* font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0; */
             font-family: 'Arial', sans-serif;
             margin: 0;
             padding: 0;
+            width: 8.5in; /* Width of a standard long bond paper in inches */
+            height: 14in; /* Height of a standard long bond paper in inches */
+            margin-left: auto;
+            margin-right: auto;
+            /* display: flex; */
+            flex-direction: column;
+            justify-content: center;
         }
         header {
             padding: 10px;
@@ -37,7 +47,7 @@
         }
         tr, td {
             border: 2px solid #000000;
-            padding: 8px;
+            padding: 2px;
             text-align: center;
         }
         footer {
@@ -57,14 +67,60 @@
         }
 
         .topleft {
+            font-size: 10px;
+            font-weight: bold;
             vertical-align: top;
             text-align: left;"
+        }
+
+        .topcenter {
+            font-size: 13px;
+            font-weight: lighter;
+            vertical-align: center;
+            text-align: center;"
+        }
+
+        .text-end {
+            text-align: right;"
+        }
+
+        .rigthside-font {
+            font-size: 10px;
+            font-weight: bolder;
         }
 
         .small {
             font-size: 12px;
         }
 
+        ul , li, span {
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .small-underline {
+            border-bottom: 1px solid #000; 
+            display: inline-block; 
+            width: 15px;
+            text-align: center;
+        }
+
+        .small-table {
+            width: 90%;
+            margin: auto;
+            text-align: center;
+        }
+        .small-table, th, td {
+            font-size: 13px;
+            border: 1px solid #000000;
+            padding: 2px;
+            text-align: center;
+        }
+        .small-table, tr, td {
+            font-size: 10px;
+            border: 1px solid #000000;
+            padding: 2px;
+        }
     </style>
 </head>
 <body>
@@ -95,9 +151,9 @@
         <table class="table-bordered" border="1" cellspacing="0" cellpadding="10">
             <tbody>
                 <tr>
-                    <td class="topleft" colspan="1" style="width: 35%"> 1. OFFICE/AGENCY
-                        <div class="mb-3 text-center">
-                            <label class="form-check-label" for="inlineCheckbox1">
+                    <td class="topleft" colspan="1" style="width: 35%;"> 1. OFFICE/AGENCY
+                        <div class="mb-3 topcenter">
+                            <label>
                                  Zamboanga City Medical Center
                             </label>
                         </div>
@@ -111,17 +167,17 @@
 
                             <div class="col">
                                 (Last) <br>
-                                Last Name
+                                <span class="topcenter"> Last Name </span>
                             </div>
 
                             <div class="col">
                                 (First) <br>
-                                First Name
+                                <span class="topcenter"> First Name </span>
                             </div>
 
                             <div class="col">
                                 (Middle) <br>
-                                Middle Name
+                                <span class="topcenter"> Middle Name </span>
                             </div>
                         </div>
                     </td>
@@ -129,39 +185,39 @@
 
                 <tr>
                     <td class="topleft" colspan="1"> 3. DATE OF FILING
-                        <div class="mb-3 text-center">
-                            <label class="form-check-label" for="inlineCheckbox1">
+                        <div class="mb-3 topcenter">
+                            <label>
                                 December 29, 2023
                             </label>
                         </div>
                     </td>
 
                     <td class="topleft" colspan="3" style="width: 33%"> 4. POSITION
-                        <div class="mb-3 text-center">
-                            <label class="form-check-label" for="inlineCheckbox1">
+                        <div class="mb-3 topcenter">
+                            <label>
                                 Nursing Attendant II
                             </label>
                         </div>
                     </td>
 
                     <td class="topleft" colspan="2"> 5. SALARY
-                        <div class="mb-3 text-center">
-                            <label class="form-check-label" for="inlineCheckbox1">
-
+                        <div class="mb-3 topcenter">
+                            <label>
+                                
                             </label>
                         </div>
                     </td>
                 </tr>
 
                 <tr>
-                    <td colspan="6"> DETAILS OF APPLICATION </td>
+                    <td colspan="6" ><small><b> DETAILS OF APPLICATION </b></small></td>
                 </tr>
 
                 <tr>
                     <td class="topleft" colspan="4"> 6. A.) TYPE OF LEAVE TO BE AVAILED OF
                         <div class="mb-3 text-start">
                             <div> ( )
-                                <label class="form-check-label small" for="inlineCheckbox1">
+                                <label class="small">
                                     Ex. Vacation Leave (Sec. 51, Rule XVI, Omnibus Rules Implementing E.O. No. 292)
                                 </label>
                             </div>
@@ -169,105 +225,178 @@
                     
                     <td class="topleft" colspan="1"> 6. B.) DETAILS OF LEAVE <br>
                         <div class="mb-3 text-start small">
-                            <label class="form-check-label">
-                                <small><strong> In case of Vacation/Special Privilege Leave: </strong></small>
-                            
+                            <label class="rigthside-font">In case of Vacation/Special Privilege Leave:</label>
                             <ul class="list-unstyled">
-                                <li>__ Within the Philippines ________</li>
-                                <li>__ Abroad (Specify) ________</li>
+                                <li>
+                                    <span class="small-underline">√</span>
+                                    <span>Within the Philippines</span>    
+                                    <span style="border-bottom: 1px solid #000; display: inline-block; width: 84px;"></span>
+                                </li>
+                                
+                                <li>
+                                    <span class="small-underline">√</span>
+                                    <span style="padding-right: 25px">Abroad (Specify)</span>    
+                                    <span style="border-bottom: 1px solid #000; display: inline-block; width: 84px;"></span>
+                                </li>
                               </ul>
-                            </label>
                             
-                            <br>
-
-                            <label class="form-check-label">
-                                <small><strong> In case of Sick Leave: </strong></small>
-
+                            <label class="rigthside-font">In case of Sick Leave:</label>
                             <ul class="list-unstyled">
-                                <li>__ In Hospital (Specify Illness) ________</li>
-                                <li>__ Out Patient (Specify Illness) ________</li>
+                                <li>
+                                    <span class="small-underline">√</span>
+                                    <span style="padding-right: 4px">In Hospital (Specify Illness)</span>    
+                                    <span style="border-bottom: 1px solid #000; display: inline-block; width: 55px;"></span>
+                                </li>
+                                <li>
+                                    <span class="small-underline">√</span>
+                                    <span style="padding-right: 2px">Out Patient (Specify Illness)</span>
+                                    <span style="border-bottom: 1px solid #000; display: inline-block; width: 55px;"></span>
+                                </li>
                               </ul>
-                            </label>
 
-                            <hr style="">
+                            <hr>
 
-                            <label class="form-check-label">
-                                <small><strong> In case of Special Leave Benefits for Women: </strong></small>
-                            
-                                <ul class="list-unstyled">
-                                    <li>(Specify Illness) ________</li>
-                                    <li>_____________________</li>
-                                </ul>
-                            </label> 
+                            <label class="rigthside-font">In case of Special Leave Benefits for Women:</label>
+                            <ul class="list-unstyled">
+                                <li>
+                                    <span>(Specify Illness)</span>
+                                    <span style="border-bottom: 1px solid #000; display: inline-block; width: 135px;"></span>
+                                </li>
+                            </ul>
 
-                            <br>
+                            <hr>
 
-                            <label class="form-check-label">
-                                <small><strong> In case of Study Leave: </strong></small>
-                            
-                                <ul class="list-unstyled">
-                                    <li>__ Completion of Master's Degree</li>
-                                    <li>__ BAR/Board Examination Review</li>
-                                </ul>
-                            </label>
+                            <label class="rigthside-font">In case of Study Leave:</label>
+                            <ul class="list-unstyled">
+                                <li> 
+                                    <span class="small-underline">√</span>
+                                    <span style="padding-right: 2px">Completion of Master's Degree</span>
+                                </li>
+                                <li>
+                                    <span class="small-underline">√</span>
+                                    <span style="padding-right: 2px">BAR/Board Examination Review</span>
+                                </li>
+                            </ul>
 
-                            <br>
-
-                            <label class="form-check-label">
-                                <small><strong> Other Purpose:  </strong></small>
-                            
-                                <ul class="list-unstyled">
-                                    <li>__ Monetization of Leave Credits</li>
-                                    <li>__ Terminal Leave</li>
-                                </ul>
-                            </label>
+                            <label class="rigthside-font">Other Purpose:</label>
+                            <ul class="list-unstyled">
+                                <li>
+                                    <span class="small-underline">√</span>
+                                    <span style="padding-right: 2px">Monetization of Leave Credits</span>
+                                </li>
+                                <li>
+                                    <span class="small-underline">√</span>
+                                    <span style="padding-right: 2px">Terminal Leave</span>
+                                </li>
+                            </ul>
                         </div>
                     </td>
                 </tr>
 
                 <tr>
                     <small> <td class="topleft" colspan="2" style="width: 50%"> 6. C.) NUMBER OF WORKING DAY APPLIED FOR:
-                        <p class="text-center">_________________________________</p>
+                        <p class="text-center">
+                            <span style="border-bottom: 1px solid #000; display: inline-block; width: 300px;"></span>
+                        </p>
 
-                        <div class="text-center">
+                        <div style="padding-left: 40px">
                             Inclusive Dates
                         </div>
+                        <p class="text-center">
+                            <span style="border-bottom: 1px solid #000; display: inline-block; width: 300px;"></span>
+                        </p>
 
-                        <p class="text-center">_________________________________</p>
                     </td>
 
                     <td class="topleft" colspan="4"> 6. D.) COMMUTATION
                         <div class="mb-3 text-center">
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="checkbox" id="inlineCheckbox1" value="option1">
-                                <label class="form-check-label" for="inlineCheckbox1">Requested</label>
+                                <label>Requested</label>
                             </div>
 
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="checkbox" id="inlineCheckbox2" value="option2">
-                                <label class="form-check-label" for="inlineCheckbox2">Not Requested</label>
+                                <label for="inlineCheckbox2">Not Requested</label>
                             </div>
 
-                            <p class="text-center text-underline"> <br> <u> ADRIAN A. AGCAOLI </u> <br> Signature of Applicant</p>
+                            <div style="margin-top: 20px;">
+                                <span style="border-bottom: 1px solid #000; display: inline-block; width: 250px;"></span>
+                                <br> 
+                                <label style="text-align: center; display: block;">Signature of Applicant</label>
+                            </div>
                         </div>
                     </td>
                     </small>
                 </tr>
 
                 <tr>
-                    <td colspan="6">DETAILS OF ACTION ON APPLICATION</td>
+                    <td colspan="6" ><small><b> DETAILS OF APPLICATION </b></small></td>
                  </tr>
 
                  <tr>
                     <td class="topleft" colspan="3"> 7. A) CERTIFICATION OF LEAVE CREDITS
                         <div class="mb-3">
-                            
+                            <label style="padding-left: 40px">As of</label>
+                            <span style="border-bottom: 1px solid #000; display: inline-block; width: 100px;"></span>
+
+                            <table class="small-table">
+                                <thead>
+                                  <tr>
+                                    <th scope="col">Vacation</th>
+                                    <th scope="col">Sick</th>
+                                    <th scope="col">TOTAL</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr>
+                                    <td>D</td>
+                                    <td>D</td>
+                                    <td>D</td>
+                                  </tr>
+                                  <tr>
+                                    <td>D</td>
+                                    <td>D</td>
+                                    <td>D</td>
+                                  </tr>
+                                  <tr>
+                                    <td class="text-end">DAYS</td>
+                                    <td class="text-end">DAYS</td>
+                                    <td class="text-end">DAYS</td>
+                                  </tr>
+                                </tbody>
+                            </table>
+
+                            <div class="text-center" style="padding-top: 20px;">
+                                <span style="border-bottom: 1px solid #000; display: inline-block; width: 250px;"></span>
+                                <br> 
+                                <label style="text-align: center; display: block;">Supervising Administrative Officer-HRMO</label>
+                            </div>
                         </div>
                     </td>
 
                     <td class="topleft" colspan="3"> 7. B) RECOMMENDATION
                         <div class="mb-3">
-                           
+                            <div style="padding-left: 40px">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="inlineCheckbox1">
+                                    <label class="form-check-label" for="defaultCheck1"> Approved </label>
+                                </div>
+                                <br>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="inlineCheckbox2">
+                                    <label class="form-check-label" for="defaultCheck2"> Disapproval due to</label>
+                                    <br>
+                                    <span style="border-bottom: 1px solid #000; display: inline-block; width: 220px;"></span>
+                                </div>
+                            </div>
+
+                            <div style="padding-top: 64px;" class="text-center">
+                                <span style="border-bottom: 1px solid #000; display: inline-block; width: 220px;"></span>
+                                <br> 
+                                <label style="display: block;">Unit/Section/Department Head</label>
+                                <label style="display: block;">(Signature over printed name)</label>
+                            </div>
                         </div>
                     </td>
                  </tr>

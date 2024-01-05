@@ -31,6 +31,7 @@ return new class extends Migration
             $table->date('approval_date')->nullable();
             $table->string('remarks')->nullable();
             $table->boolean('status')->default(false);
+            $table->softDeletes();
             $table->timestamps();
         });
     }
