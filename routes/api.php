@@ -1089,15 +1089,15 @@ Route::middleware('auth.cookie')->group(function(){
         });
 
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
-            Route::post('profile-update-request', 'ProfileUpdateRequestController@approveRequest');
+            Route::post('profile-update-request', 'ProfileUpdateRequestController@request');
         });
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
-            Route::put('profile-update-request', 'ProfileUpdateRequestController@approveRequest');
+            Route::put('profile-update-approve', 'ProfileUpdateRequestController@approveRequest');
         });
         
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
-            Route::delete('profile-update-personal-info/{id}', 'ProfileUpdateRequestController@destroyByPersonalInformationID');
+            Route::delete('profile-update-request/{id}', 'ProfileUpdateRequestController@destroy');
         });
 
         /**
