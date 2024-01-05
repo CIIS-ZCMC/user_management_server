@@ -15,8 +15,8 @@ class ProfileUpdateRequestResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'employee_id' => $this->employee->employee_id,
-            'approved_by' => $this->approved_by === null? 'Pending': $this->approved_by->employee_id,
+            'employee_id' => $this->employeeProfile->employee_id,
+            'approved_by' => $this->approved_by === null? 'Pending': $this->approveBy->employee_id,
             'table_name' => $this->table_name,
             'data_id' => $this->data_id,
             'type_new_or_replace' => $this->type_new_or_replace

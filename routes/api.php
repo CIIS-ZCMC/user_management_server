@@ -1093,7 +1093,7 @@ Route::middleware('auth.cookie')->group(function(){
         });
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
-            Route::put('profile-update-approve', 'ProfileUpdateRequestController@approveRequest');
+            Route::put('profile-update-approve/{id}', 'ProfileUpdateRequestController@approveRequest');
         });
         
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){

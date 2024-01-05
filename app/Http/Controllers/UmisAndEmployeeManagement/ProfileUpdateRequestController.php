@@ -4,7 +4,6 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
-use App\Http\Requests\PersonalInformationRequest;
 use App\Models\Address;
 use App\Models\Child;
 use App\Models\CivilServiceEligibility;
@@ -77,8 +76,8 @@ class ProfileUpdateRequestController extends Controller
         $table = strip_tags($request->table_name);
 
         switch($table){
-            case 'Profile Information':
-                $new_profile_information = $this->updateEmployeePersonalInformation($request);
+            case 'Personal Information':
+                $new_profile_information = $this->requestUpdatePersonalInformation($request);
                 break;
             case 'Educational Background':
                 $educational_background = $this->requestUpdateEducationalBackground($request);
@@ -123,9 +122,11 @@ class ProfileUpdateRequestController extends Controller
     public function requestUpdatePersonalInformation(Request $request)
     {
         try{
+            $employee = $request->user;
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
+                if($key === 'user' || $key === 'permission') continue;
                 if($value === null){
                     $cleanData[$key] = $value;
                     continue;
@@ -140,12 +141,12 @@ class ProfileUpdateRequestController extends Controller
             $personal_information = PersonalInformation::create($cleanData);
 
             $profile_update_request = ProfileUpdateRequest::create([
-                'employee_profile_id' => strip_tags($request->employee_profile_id),
+                'employee_profile_id' => $employee['id'],
                 'approved_by' => null,
-                'table_name' => 'Personal Information',
+                'table_name' => strip_tags($request->table_name),
                 'data_id' => $personal_information->id,
                 'target_id' => null,
-                'type_new_or_replace' => strip_tags($request->type_new_or_replace)
+                'type_new_or_replace' => $request->type_new_or_replace === 1? true:false
             ]);
             
             $this->requestLogger->registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
@@ -160,9 +161,11 @@ class ProfileUpdateRequestController extends Controller
     public function requestUpdateEducationalBackground(Request $request)
     {
         try{
+            $employee = $request->user;
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
+                if($key === 'user' || $key === 'permission') continue;
                 if ($value === null) {
                     $cleanData[$key] = $value;
                     continue;
@@ -173,12 +176,12 @@ class ProfileUpdateRequestController extends Controller
             $educational_background = EducationalBackground::create($cleanData);
 
             $profile_update_request = ProfileUpdateRequest::create([
-                'employee_profile_id' => strip_tags($request->employee_profile_id),
+                'employee_profile_id' => $employee['id'],
                 'approved_by' => null,
-                'table_name' => 'Educational Background',
+                'table_name' => strip_tags($request->table_name),
                 'data_id' => $educational_background->id,
-                'target_id' => strip_tags($request->target_id),
-                'type_new_or_replace' => strip_tags($request->type_new_or_replace)
+                'target_id' => $request->target_id ===null?null: strip_tags($request->target_id),
+                'type_new_or_replace' => $request->type_new_or_replace
             ]);
             
             $this->requestLogger->registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
@@ -193,9 +196,11 @@ class ProfileUpdateRequestController extends Controller
     public function requestUpdateChildInformation(Request $request)
     {
         try{
+            $employee = $request->user;
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
+                if($key === 'user' || $key === 'permission') continue;
                 if ($value === null) {
                     $cleanData[$key] = $value;
                     continue;
@@ -206,12 +211,12 @@ class ProfileUpdateRequestController extends Controller
             $child = Child::create($cleanData);
 
             $profile_update_request = ProfileUpdateRequest::create([
-                'employee_profile_id' => strip_tags($request->employee_profile_id),
+                'employee_profile_id' => $employee['id'],
                 'approved_by' => null,
-                'table_name' => 'Educational Background',
+                'table_name' => strip_tags($request->table_name),
                 'data_id' => $child->id,
-                'target_id' => strip_tags($request->target_id),
-                'type_new_or_replace' => strip_tags($request->type_new_or_replace)
+                'target_id' => $request->target_id ===null?null: strip_tags($request->target_id),
+                'type_new_or_replace' => $request->type_new_or_replace
             ]);
 
             $this->requestLogger->registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
@@ -226,9 +231,11 @@ class ProfileUpdateRequestController extends Controller
     public function requestUpdateAddressInformation(Request $request)
     {
         try{
+            $employee = $request->user;
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
+                if($key === 'user' || $key === 'permission') continue;
                 if (is_bool($value) || $value === null) {
                     $cleanData[$key] = $value;
                 } else {
@@ -239,12 +246,12 @@ class ProfileUpdateRequestController extends Controller
             $address = Address::create($cleanData);
 
             $profile_update_request = ProfileUpdateRequest::create([
-                'employee_profile_id' => strip_tags($request->employee_profile_id),
+                'employee_profile_id' => $employee['id'],
                 'approved_by' => null,
-                'table_name' => 'Educational Background',
+                'table_name' => strip_tags($request->table_name),
                 'data_id' => $address->id,
-                'target_id' => strip_tags($request->target_id),
-                'type_new_or_replace' => strip_tags($request->type_new_or_replace)
+                'target_id' => $request->target_id ===null?null: strip_tags($request->target_id),
+                'type_new_or_replace' => $request->type_new_or_replace
             ]);
 
             $this->requestLogger->registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
@@ -259,21 +266,27 @@ class ProfileUpdateRequestController extends Controller
     public function requestUpdateContactInformation(Request $request)
     {
         try{ 
+            $employee = $request->user;
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
+                if($key === 'user' || $key === 'permission') continue;
+                if($key === 'email' || $value === null){
+                    $cleanData[$key] = $value;
+                    continue;
+                }
                 $cleanData[$key] = strip_tags($value);
             }
 
             $contact = Contact::create($cleanData);
 
             $profile_update_request = ProfileUpdateRequest::create([
-                'employee_profile_id' => strip_tags($request->employee_profile_id),
+                'employee_profile_id' => $employee['id'],
                 'approved_by' => null,
-                'table_name' => 'Educational Background',
+                'table_name' => strip_tags($request->table_name),
                 'data_id' => $contact->id,
-                'target_id' => strip_tags($request->target_id),
-                'type_new_or_replace' => strip_tags($request->type_new_or_replace)
+                'target_id' => $request->target_id ===null?null: strip_tags($request->target_id),
+                'type_new_or_replace' => $request->type_new_or_replace
             ]);
 
             $this->requestLogger->registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
@@ -288,10 +301,11 @@ class ProfileUpdateRequestController extends Controller
     public function requestUpdateFamilyBackgroundInformation(Request $request)
     {
         try{
+            $employee = $request->user;
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if($key === 'user') continue;
+                if($key === 'user' || $key === 'permission') continue;
                 if($value === null){
                     $cleanData[$key] = $value;
                     continue;
@@ -308,12 +322,12 @@ class ProfileUpdateRequestController extends Controller
             $cleanData['$personal_information_id'] = null;
 
             $profile_update_request = ProfileUpdateRequest::create([
-                'employee_profile_id' => strip_tags($request->employee_profile_id),
+                'employee_profile_id' => $employee['id'],
                 'approved_by' => null,
-                'table_name' => 'Educational Background',
+                'table_name' => strip_tags($request->table_name),
                 'data_id' => $family_background->id,
-                'target_id' => strip_tags($request->target_id),
-                'type_new_or_replace' => strip_tags($request->type_new_or_replace)
+                'target_id' => $request->target_id ===null?null: strip_tags($request->target_id),
+                'type_new_or_replace' => $request->type_new_or_replace
             ]);
 
             $this->requestLogger->registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
@@ -328,6 +342,7 @@ class ProfileUpdateRequestController extends Controller
     public function requestUpdateIdentificationInformation(Request $request)
     {
         try{
+            $employee = $request->user;
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
@@ -341,12 +356,12 @@ class ProfileUpdateRequestController extends Controller
             $identification = IdentificationNumber::create($cleanData);
 
             $profile_update_request = ProfileUpdateRequest::create([
-                'employee_profile_id' => strip_tags($request->employee_profile_id),
+                'employee_profile_id' => $employee['id'],
                 'approved_by' => null,
-                'table_name' => 'Educational Background',
+                'table_name' => strip_tags($request->table_name),
                 'data_id' => $identification->id,
-                'target_id' => strip_tags($request->target_id),
-                'type_new_or_replace' => strip_tags($request->type_new_or_replace)
+                'target_id' => $request->target_id ===null?null: strip_tags($request->target_id),
+                'type_new_or_replace' => $request->type_new_or_replace
             ]);
             
             $this->requestLogger->registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
@@ -361,6 +376,7 @@ class ProfileUpdateRequestController extends Controller
     public function requestUpdateEligibilityInformation(Request $request)
     {
         try{
+            $employee = $request->user;
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
@@ -375,12 +391,12 @@ class ProfileUpdateRequestController extends Controller
             $civil_service_eligibility = CivilServiceEligibility::create($cleanData);
 
             $profile_update_request = ProfileUpdateRequest::create([
-                'employee_profile_id' => strip_tags($request->employee_profile_id),
+                'employee_profile_id' => $employee['id'],
                 'approved_by' => null,
-                'table_name' => 'Educational Background',
+                'table_name' => strip_tags($request->table_name),
                 'data_id' => $civil_service_eligibility->id,
-                'target_id' => strip_tags($request->target_id),
-                'type_new_or_replace' => strip_tags($request->type_new_or_replace)
+                'target_id' => $request->target_id ===null?null: strip_tags($request->target_id),
+                'type_new_or_replace' => $request->type_new_or_replace
             ]);
 
             $this->requestLogger->registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
@@ -395,6 +411,7 @@ class ProfileUpdateRequestController extends Controller
     public function requestUpdateTrainingInformation(Request $request)
     {
         try{
+            $employee = $request->user;
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
@@ -408,12 +425,12 @@ class ProfileUpdateRequestController extends Controller
             $training = Training::create($cleanData);
 
             $profile_update_request = ProfileUpdateRequest::create([
-                'employee_profile_id' => strip_tags($request->employee_profile_id),
+                'employee_profile_id' => $employee['id'],
                 'approved_by' => null,
-                'table_name' => 'Educational Background',
+                'table_name' => strip_tags($request->table_name),
                 'data_id' => $training->id,
-                'target_id' => strip_tags($request->target_id),
-                'type_new_or_replace' => strip_tags($request->type_new_or_replace)
+                'target_id' => $request->target_id ===null?null: strip_tags($request->target_id),
+                'type_new_or_replace' => $request->type_new_or_replace
             ]);
 
             $this->requestLogger->registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
@@ -428,6 +445,7 @@ class ProfileUpdateRequestController extends Controller
     public function requestUpdateVoluntaryWorkInformation(Request $request)
     {
         try{
+            $employee = $request->user;
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
@@ -441,12 +459,12 @@ class ProfileUpdateRequestController extends Controller
             $voluntary_work = VoluntaryWork::create($cleanData);
 
             $profile_update_request = ProfileUpdateRequest::create([
-                'employee_profile_id' => strip_tags($request->employee_profile_id),
+                'employee_profile_id' => $employee['id'],
                 'approved_by' => null,
-                'table_name' => 'Educational Background',
+                'table_name' => strip_tags($request->table_name),
                 'data_id' => $voluntary_work->id,
-                'target_id' => strip_tags($request->target_id),
-                'type_new_or_replace' => strip_tags($request->type_new_or_replace)
+                'target_id' => $request->target_id ===null?null: strip_tags($request->target_id),
+                'type_new_or_replace' => $request->type_new_or_replace
             ]);
 
             $this->requestLogger->registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
@@ -461,6 +479,7 @@ class ProfileUpdateRequestController extends Controller
     public function requestUpdateWorkExperienceInformation(Request $request)
     {
         try{
+            $employee = $request->user;
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
@@ -474,12 +493,12 @@ class ProfileUpdateRequestController extends Controller
             $work_experience = WorkExperience::create($cleanData);
 
             $profile_update_request = ProfileUpdateRequest::create([
-                'employee_profile_id' => strip_tags($request->employee_profile_id),
+                'employee_profile_id' => $employee['id'],
                 'approved_by' => null,
-                'table_name' => 'Educational Background',
+                'table_name' => strip_tags($request->table_name),
                 'data_id' => $work_experience->id,
-                'target_id' => strip_tags($request->target_id),
-                'type_new_or_replace' => strip_tags($request->type_new_or_replace)
+                'target_id' => $request->target_id ===null?null: strip_tags($request->target_id),
+                'type_new_or_replace' => $request->type_new_or_replace
             ]);
 
             $this->requestLogger->registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
@@ -493,21 +512,26 @@ class ProfileUpdateRequestController extends Controller
     public function requestUpdateOtherInformation(Request $request)
     {
         try{
+            $employee = $request->user;
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
+                if($value === null){
+                    $cleanData[$key] = $value;
+                    continue;
+                }
                 $cleanData[$key] = strip_tags($value);
             }
 
             $other_information = OtherInformation::create($cleanData);
 
             $profile_update_request = ProfileUpdateRequest::create([
-                'employee_profile_id' => strip_tags($request->employee_profile_id),
+                'employee_profile_id' => $employee['id'],
                 'approved_by' => null,
-                'table_name' => 'Educational Background',
+                'table_name' => strip_tags($request->table_name),
                 'data_id' => $other_information->id,
-                'target_id' => strip_tags($request->target_id),
-                'type_new_or_replace' => strip_tags($request->type_new_or_replace)
+                'target_id' => $request->target_id ===null?null: strip_tags($request->target_id),
+                'type_new_or_replace' => $request->type_new_or_replace
             ]);
 
             $this->requestLogger->registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
@@ -534,12 +558,12 @@ class ProfileUpdateRequestController extends Controller
 
             $profile_update_request = ProfileUpdateRequest::find($id);
 
-            if($profile_update_request){
+            if(!$profile_update_request){
                 return response()->json(['message' => 'No existing request with id '.$id], Response::HTTP_NOT_FOUND);
             }
 
             switch($profile_update_request->table_name){
-                case 'Profile Information':
+                case 'Personal Information':
                     $new_profile_information = $this->updateEmployeePersonalInformation($profile_update_request);
                     break;
                 case 'Educational Background':
@@ -590,207 +614,158 @@ class ProfileUpdateRequestController extends Controller
 
     protected function updateEmployeePersonalInformation($profile_update_request)
     {
-        $employee = $profile_update_request->employee;
+        $employee = $profile_update_request->employeeProfile;
         $personal_information = $employee->personalInformation;
 
         $requested_personal_information = PersonalInformation::find($profile_update_request->data_id);
+        unset($requested_personal_information['id']);
 
-        $new_data = [];
-
-        foreach($requested_personal_information as $key => $value){
-            $new_data[$key] = $value;
-        }
-
-        $personal_information->update($new_data);
+        $personal_information->update($requested_personal_information->toArray());
         
         return $personal_information;
     }
 
     protected function updateEducationalBackgrounds($profile_update_request)
     {
-        $requested_personal_information = EducationalBackground::find($profile_update_request->data_id);
-        $new_data = [];
-
-        foreach($requested_personal_information as $key => $value){
-            $new_data[$key] = $value;
-        }
+        $educational_background = EducationalBackground::find($profile_update_request->data_id);
+        unset($educational_background['id']);
 
         if($profile_update_request->type_new_or_replace){
-            $new_data['personal_information_id'] = $profile_update_request->employee->personalInformation->id;
-            return EducationalBackground::create($new_data);
+            $educational_background['personal_information_id'] = $profile_update_request->employeeProfile->personalInformation->id;
+            return EducationalBackground::create($educational_background->toArray());
         }
 
-        return EducationalBackground::find($profile_update_request->target_id)->update($new_data);
+        return EducationalBackground::find($profile_update_request->target_id)->update($educational_background->toArray());
     }
     
     protected function updateChild($profile_update_request)
     {
-        $requested_personal_information = Child::find($profile_update_request->data_id);
-        $new_data = [];
-
-        foreach($requested_personal_information as $key => $value){
-            $new_data[$key] = $value;
-        }
+        $child = Child::find($profile_update_request->data_id);
+        unset($child['id']);
 
         if($profile_update_request->type_new_or_replace){
-            $new_data['personal_information_id'] = $profile_update_request->employee->personalInformation->id;
-            return Child::create($new_data);
+            $child['personal_information_id'] = $profile_update_request->employeeProfile->personalInformation->id;
+            return Child::create($child->toArray());
         }
 
-        return Child::find($profile_update_request->target_id)->update($new_data);
+        return Child::find($profile_update_request->target_id)->update($child->toArray());
     }
 
     protected function updateAddress($profile_update_request)
     {
-        $requested_personal_information = Address::find($profile_update_request->data_id);
-        $new_data = [];
-
-        foreach($requested_personal_information as $key => $value){
-            $new_data[$key] = $value;
-        }
+        $address = Address::find($profile_update_request->data_id);
+        unset($address['id']);
 
         if($profile_update_request->type_new_or_replace){
-            $new_data['personal_information_id'] = $profile_update_request->employee->personalInformation->id;
-            return Address::create($new_data);
+            $address['personal_information_id'] = $profile_update_request->employeeProfile->personalInformation->id;
+            return Address::create($address->toArray());
         }
 
-        return Address::find($profile_update_request->target_id)->update($new_data);
+        return Address::find($profile_update_request->target_id)->update($address->toArray());
     }
 
     protected function updateContact($profile_update_request)
     {
-        $requested_personal_information = Contact::find($profile_update_request->data_id);
-        $new_data = [];
-
-        foreach($requested_personal_information as $key => $value){
-            $new_data[$key] = $value;
-        }
+        $contact = Contact::find($profile_update_request->data_id);
+        unset($contact['id']);
 
         if($profile_update_request->type_new_or_replace){
-            $new_data['personal_information_id'] = $profile_update_request->employee->personalInformation->id;
-            return Contact::create($new_data);
+            $contact['personal_information_id'] = $profile_update_request->employeeProfile->personalInformation->id;
+            return Contact::create($contact->toArray());
         }
 
-        return Contact::find($profile_update_request->target_id)->update($new_data);
+        return Contact::find($profile_update_request->target_id)->update($contact->toArray());
     }
 
     protected function updateFamilyBackground($profile_update_request)
     {
-        $requested_personal_information = FamilyBackground::find($profile_update_request->data_id);
-        $new_data = [];
-
-        foreach($requested_personal_information as $key => $value){
-            $new_data[$key] = $value;
-        }
+        $family_background = FamilyBackground::find($profile_update_request->data_id);
+        unset($family_background['id']);
 
         if($profile_update_request->type_new_or_replace){
-            $new_data['personal_information_id'] = $profile_update_request->employee->personalInformation->id;
-            return FamilyBackground::create($new_data);
+            $family_background['personal_information_id'] = $profile_update_request->employeeProfile->personalInformation->id;
+            return FamilyBackground::create($family_background->toArray());
         }
 
-        return FamilyBackground::find($profile_update_request->target_id)->update($new_data);
+        return FamilyBackground::find($profile_update_request->target_id)->update($family_background->toArray());
     }
 
     protected function updateIdentification($profile_update_request)
     {
-        $requested_personal_information = IdentificationNumber::find($profile_update_request->data_id);
-        $new_data = [];
-
-        foreach($requested_personal_information as $key => $value){
-            $new_data[$key] = openssl_encrypt($value, env("ENCRYPT_DECRYPT_ALGORITHM"), env("DATA_KEY_ENCRYPTION"), 0, substr(md5(env("DATA_KEY_ENCRYPTION")), 0, 16));
-        }
+        $identification = IdentificationNumber::find($profile_update_request->data_id);
+        unset($identification['id']);
 
         if($profile_update_request->type_new_or_replace){
-            $new_data['personal_information_id'] = $profile_update_request->employee->personalInformation->id;
-            return IdentificationNumber::create($new_data);
+            $identification['personal_information_id'] = $profile_update_request->employeeProfile->personalInformation->id;
+            return IdentificationNumber::create($identification->toArray());
         }
 
-        return IdentificationNumber::find($profile_update_request->target_id)->update($new_data);
+        return IdentificationNumber::find($profile_update_request->target_id)->update($identification->toArray());
     }
 
     protected function updateCivilServiceEligibilities($profile_update_request)
     {
-        $requested_personal_information = CivilServiceEligibility::find($profile_update_request->data_id);
-        $new_data = [];
-
-        foreach($requested_personal_information as $key => $value){
-            $new_data[$key] = $value;
-        }
+        $civil_service_eligibility = CivilServiceEligibility::find($profile_update_request->data_id);
+        unset($civil_service_eligibility['id']);
 
         if($profile_update_request->type_new_or_replace){
-            $new_data['personal_information_id'] = $profile_update_request->employee->personalInformation->id;
-            return CivilServiceEligibility::create($new_data);
+            $civil_service_eligibility['personal_information_id'] = $profile_update_request->employeeProfile->personalInformation->id;
+            return CivilServiceEligibility::create($civil_service_eligibility->toArray());
         }
 
-        return CivilServiceEligibility::find($profile_update_request->target_id)->update($new_data);
+        return CivilServiceEligibility::find($profile_update_request->target_id)->update($civil_service_eligibility->toArray());
     }
 
     protected function updateTraining($profile_update_request)
     {
-        $requested_personal_information = Training::find($profile_update_request->data_id);
-        $new_data = [];
-
-        foreach($requested_personal_information as $key => $value){
-            $new_data[$key] = $value;
-        }
+        $training = Training::find($profile_update_request->data_id);
+        unset($training['id']);
 
         if($profile_update_request->type_new_or_replace){
-            $new_data['personal_information_id'] = $profile_update_request->employee->personalInformation->id;
-            return Training::create($new_data);
+            $training['personal_information_id'] = $profile_update_request->employeeProfile->personalInformation->id;
+            return Training::create($training->toArray());
         }
 
-        return Training::find($profile_update_request->target_id)->update($new_data);
+        return Training::find($profile_update_request->target_id)->update($training->toArray());
     }
 
     protected function updateWorkExperience($profile_update_request)
     {
-        $requested_personal_information = WorkExperience::find($profile_update_request->data_id);
-        $new_data = [];
-
-        foreach($requested_personal_information as $key => $value){
-            $new_data[$key] = $value;
-        }
+        $work_experience = WorkExperience::find($profile_update_request->data_id);
+        unset($work_experience['id']);
 
         if($profile_update_request->type_new_or_replace){
-            $new_data['personal_information_id'] = $profile_update_request->employee->personalInformation->id;
-            return WorkExperience::create($new_data);
+            $work_experience['personal_information_id'] = $profile_update_request->employeeProfile->personalInformation->id;
+            return WorkExperience::create($work_experience->toArray());
         }
 
-        return WorkExperience::find($profile_update_request->target_id)->update($new_data);
+        return WorkExperience::find($profile_update_request->target_id)->update($work_experience->toArray());
     }
 
     protected function updateVoluntaryWork($profile_update_request)
     {
-        $requested_personal_information = VoluntaryWork::find($profile_update_request->data_id);
-        $new_data = [];
-
-        foreach($requested_personal_information as $key => $value){
-            $new_data[$key] = $value;
-        }
+        $voluntary_work = VoluntaryWork::find($profile_update_request->data_id);
+        unset($voluntary_work['id']);
 
         if($profile_update_request->type_new_or_replace){
-            $new_data['personal_information_id'] = $profile_update_request->employee->personalInformation->id;
-            return VoluntaryWork::create($new_data);
+            $voluntary_work['personal_information_id'] = $profile_update_request->employeeProfile->personalInformation->id;
+            return VoluntaryWork::create($voluntary_work->toArray());
         }
 
-        return VoluntaryWork::find($profile_update_request->target_id)->update($new_data);
+        return VoluntaryWork::find($profile_update_request->target_id)->update($voluntary_work->toArray());
     }
 
     protected function updateOtherInformation($profile_update_request)
     {
-        $requested_personal_information = OtherInformation::find($profile_update_request->data_id);
-        $new_data = [];
-
-        foreach($requested_personal_information as $key => $value){
-            $new_data[$key] = $value;
-        }
+        $other_information = OtherInformation::find($profile_update_request->data_id);
+        unset($other_information['id']);
 
         if($profile_update_request->type_new_or_replace){
-            $new_data['personal_information_id'] = $profile_update_request->employee->personalInformation->id;
-            return OtherInformation::create($new_data);
+            $other_information['personal_information_id'] = $profile_update_request->employeeProfile->personalInformation->id;
+            return OtherInformation::create($other_information->toArray());
         }
 
-        return OtherInformation::find($profile_update_request->target_id)->update($new_data);
+        return OtherInformation::find($profile_update_request->target_id)->update($other_information->toArray());
     }
     
     public function destroy($id, PasswordApprovalRequest $request)
@@ -817,10 +792,15 @@ class ProfileUpdateRequestController extends Controller
             
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['message' => 'Employee child record deleted.'], Response::HTTP_OK);
+            return response()->json(['message' => 'Profile update record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+    
+    protected function encryptData($dataToEncrypt)
+    {
+        return openssl_encrypt($dataToEncrypt, env("ENCRYPT_DECRYPT_ALGORITHM"), env("DATA_KEY_ENCRYPTION"), 0, substr(md5(env("DATA_KEY_ENCRYPTION")), 0, 16));
     }
 }

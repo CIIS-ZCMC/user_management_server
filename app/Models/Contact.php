@@ -13,7 +13,7 @@ class Contact extends Model
 
     public $fillable = [
         'phone_number',
-        'email',
+        'email_address',
         'personal_information_id'
     ];
 

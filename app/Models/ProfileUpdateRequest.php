@@ -29,6 +29,6 @@ class ProfileUpdateRequest extends Model
 
     public function approveBy()
     {
-        return $this->belongsTo(EmployeeProfile::class, 'id', 'approved_by');
+        return $this->belongsTo(EmployeeProfile::class, 'approved_by');
     }
 }
