@@ -60,7 +60,6 @@ class LeaveCreditController extends Controller
         if($employees)
         {
             foreach ($employees as $employee) {
-
                 $month = $currentMonth;
                 // $firstController = new FirstController();
                 // $employee_records = $firstController->DTR_UTOT_Report($request);;
@@ -151,7 +150,6 @@ class LeaveCreditController extends Controller
 
                         }
 
-
                         foreach ($leaveTypes as $leaveType) {
 
                             if($leaveType->is_special == '1')
@@ -178,6 +176,7 @@ class LeaveCreditController extends Controller
 
     Public function addYearlyLeaveCredit(Request $request)
     {
+
         $employees = ModelsEmployeeProfile::with('biometric.dtr')
         ->get();
         if($employees)
@@ -192,16 +191,6 @@ class LeaveCreditController extends Controller
                 })->map(function ($operationCredits, $operation) {
                     return $operation === 'add' ? $operationCredits->sum() : -$operationCredits->sum();
                 })->sum();
-
-                $spl_leave = LeaveType::where('name', '=', 'Special Leave Privilege')->orwhere('code', '=', 'SPL')->first();
-                $employeeCredit = new ModelsEmployeeLeaveCredit();
-                $employeeCredit->leave_type_id = $spl_leave->id;
-                $employeeCredit->employee_profile_id = $employee->id;
-                $employeeCredit->operation = "add";
-                $employeeCredit->reason = "Yearly SPL Credits";
-                $employeeCredit->credit_value = '3';
-                $employeeCredit->date = date('Y-m-d');
-                $employeeCredit->save();
 
                 if($totalLeaveCredits >= 10)
                 {
@@ -219,8 +208,31 @@ class LeaveCreditController extends Controller
             }
         }
 
-
         return response()->json(['data' => $employee_leave_credits], Response::HTTP_OK);
+
+    }
+
+    Public function addSpLeaveCredit(Request $request)
+    {
+        $employees = ModelsEmployeeProfile::with('biometric.dtr')
+        ->get();
+
+        if($employees)
+        {
+            foreach ($employees as $employee) {
+                    $spl_leave = LeaveType::where('name', '=', 'Special Leave Privilege')->orwhere('code', '=', 'SPL')->first();
+                    $employeeCredit = new ModelsEmployeeLeaveCredit();
+                    $employeeCredit->leave_type_id = $spl_leave->id;
+                    $employeeCredit->employee_profile_id = $employee->id;
+                    $employeeCredit->operation = "add";
+                    $employeeCredit->reason = "Biannual SPL Credits";
+                    $employeeCredit->credit_value = '3';
+                    $employeeCredit->date = date('Y-m-d');
+                    $employeeCredit->save();
+                }
+            return response()->json(['data' => $employeeCredit], Response::HTTP_OK);
+        }
+
     }
 
     Public function resetYearlyLeaveCredit(Request $request)
@@ -293,12 +305,6 @@ class LeaveCreditController extends Controller
         ];
     }
 
-    public function create()
-    {
-
-    }
-
-
     public function store(Request $request)
     {
         try{
@@ -314,25 +320,6 @@ class LeaveCreditController extends Controller
         }
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(LeaveCredit $leaveCredit)
-    {
-
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(LeaveCredit $leaveCredit)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
     public function update($id,Request $request)
     {
         try{
@@ -349,13 +336,7 @@ class LeaveCreditController extends Controller
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(LeaveCredit $leaveCredit)
-    {
-        //
-    }
+
 
 
 }

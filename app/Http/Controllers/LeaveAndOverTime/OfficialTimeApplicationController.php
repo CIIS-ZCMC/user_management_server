@@ -21,6 +21,7 @@ use Illuminate\Http\Request;
 use App\Services\FileService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 class OfficialTimeApplicationController extends Controller
 {
     protected $file_service;
@@ -801,60 +802,73 @@ class OfficialTimeApplicationController extends Controller
     public function store(Request $request)
     {
         try{
+            $validatedData = $request->validate([
+                'date_from' => 'required|date_format:Y-m-d',
+                'date_to' => 'required_with:date_from|date_format:Y-m-d|after:date_from',
+                'certificate_of_appearance' => 'required|image|mimes:jpeg,png,jpg,pdf|max:2048',
+                'personal_order' => 'required|image|mimes:jpeg,png,jpg,pdf|max:2048',
+                'reason' => 'required|string|max:512',
+            ]);
+
             // $user_id = Auth::user()->id;
             // $user = EmployeeProfile::where('id','=',$user_id)->first();
             // $area = AssignArea::where('employee_profile_id',$employee_id)->value('division_id');
             // $division = Division::where('id',$area)->value('is_medical');
             $division=true;
-            $official_time_application = new OfficialTimeApplication();
-            $official_time_application->employee_profile_id = '1';
-            $official_time_application->date_from = $request->date_from;
-            $official_time_application->date_to = $request->date_to;
-            // $official_time_application->time_from = $request->time_from;
-            // $official_time_application->time_to = $request->time_to;
-            if($division === true)
-            {
-                $status='for-approval-department-head';
-            }
-            else
-            {
-                $status='for-approval-section-head';
-            }
-            $official_time_application->status = $status;
-            $official_time_application->reason =$request->reason;
-            $official_time_application->date = date('Y-m-d');
-            $official_time_application->time =  date('H:i:s');
-            if ($request->hasFile('personal_order')) {
-                $folderName = 'official_time';
-                $fileName=pathinfo($request->file('personal_order')->getClientOriginalName(), PATHINFO_FILENAME);
-                $extension  = $request->file('personal_order')->getClientOriginalName();
-                $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
-                Storage::makeDirectory('public/' . $folderName);
-                $request->file('personal_order')->storeAs('public/' . $folderName, $uniqueFileName);
-                $path = $folderName .'/'. $uniqueFileName;
-                $size = $request->file('personal_order')->getSize();
-                $official_time_application->personal_order = $uniqueFileName;
-                $official_time_application->personal_order_path = $path;
-                $official_time_application->personal_order_size = $size;
-            }
-            if ($request->hasFile('certificate_of_appearance')) {
-                $folderName = 'official_time';
-                $fileName=pathinfo($request->file('certificate_of_appearance')->getClientOriginalName(), PATHINFO_FILENAME);
-                $extension  = $request->file('certificate_of_appearance')->getClientOriginalName();
-                $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
-                Storage::makeDirectory('public/' . $folderName);
-                $request->file('certificate_of_appearance')->storeAs('public/' . $folderName, $uniqueFileName);
-                $path = $folderName .'/'. $uniqueFileName;
-                $size = $request->file('certificate_of_appearance')->getSize();
-                $official_time_application->certificate_of_appearance = $uniqueFileName;
-                $official_time_application->certificate_of_appearance_path = $path;
-                $official_time_application->certificate_of_appearance_size = $size;
-            }
-            $official_time_application->save();
-            $ot_id=$official_time_application->id;
-            $columnsString="";
-            $process_name="Applied";
-            $this->storeOfficialTimeApplicationLog($ot_id,$process_name,$columnsString);
+            DB::beginTransaction();
+                $official_time_application = new OfficialTimeApplication();
+                $official_time_application->employee_profile_id = '1';
+                $official_time_application->date_from = $request->date_from;
+                $official_time_application->date_to = $request->date_to;
+                // $official_time_application->time_from = $request->time_from;
+                // $official_time_application->time_to = $request->time_to;
+                if($division === true)
+                {
+                    $status='for-approval-department-head';
+                }
+                else
+                {
+                    $status='for-approval-section-head';
+                }
+                $official_time_application->status = $status;
+                $official_time_application->reason =$request->reason;
+                $official_time_application->date = date('Y-m-d');
+                $official_time_application->time =  date('H:i:s');
+
+                if ($request->hasFile('personal_order')) {
+                    $folderName = 'official_time';
+                    $fileName=pathinfo($request->file('personal_order')->getClientOriginalName(), PATHINFO_FILENAME);
+                    $extension  = $request->file('personal_order')->getClientOriginalName();
+                    $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
+                    Storage::makeDirectory('public/' . $folderName);
+                    $request->file('personal_order')->storeAs('public/' . $folderName, $uniqueFileName);
+                    $path = $folderName .'/'. $uniqueFileName;
+                    $size = $request->file('personal_order')->getSize();
+                    $official_time_application->personal_order = $uniqueFileName;
+                    $official_time_application->personal_order_path = $path;
+                    $official_time_application->personal_order_size = $size;
+                }
+                if ($request->hasFile('certificate_of_appearance')) {
+                    $folderName = 'official_time';
+                    $fileName=pathinfo($request->file('certificate_of_appearance')->getClientOriginalName(), PATHINFO_FILENAME);
+                    $extension  = $request->file('certificate_of_appearance')->getClientOriginalName();
+                    $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
+                    Storage::makeDirectory('public/' . $folderName);
+                    $request->file('certificate_of_appearance')->storeAs('public/' . $folderName, $uniqueFileName);
+                    $path = $folderName .'/'. $uniqueFileName;
+                    $size = $request->file('certificate_of_appearance')->getSize();
+                    $official_time_application->certificate_of_appearance = $uniqueFileName;
+                    $official_time_application->certificate_of_appearance_path = $path;
+                    $official_time_application->certificate_of_appearance_size = $size;
+                }
+
+                $official_time_application->save();
+                $ot_id=$official_time_application->id;
+                $columnsString="";
+                $process_name="Applied";
+                $this->storeOfficialTimeApplicationLog($ot_id,$process_name,$columnsString);
+            DB::commit();
+
             $official_time_applications = OfficialTimeApplication::with(['employeeProfile.personalInformation','logs'])
             ->where('id',$official_time_application->id)->get();
             $official_time_applications_result = $official_time_applications->map(function ($official_time_application) {
@@ -975,7 +989,7 @@ class OfficialTimeApplicationController extends Controller
                 $singleArray = array_merge(...$official_time_applications_result);
             return response()->json(['message' => 'Official Business Application has been sucessfully saved','data' => $singleArray ], Response::HTTP_OK);
         }catch(\Throwable $th){
-
+            DB::rollBack();
             return response()->json(['message' => $th->getMessage()], 500);
         }
     }
@@ -994,6 +1008,7 @@ class OfficialTimeApplicationController extends Controller
                         // if($user_password==$password)
                         // {
                         //     if($user_id){
+                            DB::beginTransaction();
                                 $ot_application_log = new ModelsOtApplicationLog();
                                 $ot_application_log->action = 'declined';
                                 $ot_application_log->official_time_application_id = $id;
@@ -1006,6 +1021,7 @@ class OfficialTimeApplicationController extends Controller
                                 $ot_application->status = 'declined';
                                 $ot_application->decline_reason = $request->decline_reason;
                                 $ot_application->update();
+                            DB::commit();
 
                                 $official_time_applications = OfficialTimeApplication::with(['employeeProfile.personalInformation','logs'])
                                 ->where('id',$ot_application->id)->get();
@@ -1132,7 +1148,8 @@ class OfficialTimeApplicationController extends Controller
                         //  }
                 }
             } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage(),  'error'=>true]);
+                DB::rollBack();
+                return response()->json(['message' => $e->getMessage(),  'error'=>true]);
         }
     }
     public function cancelOtApplication($id,Request $request)
@@ -1150,6 +1167,7 @@ class OfficialTimeApplicationController extends Controller
                 //         if($user_password==$password)
                 //         {
                 //             if($user_id){
+                            DB::beginTransaction();
                                 $ot_application_log = new ModelsOtApplicationLog();
                                 $ot_application_log->action = 'cancelled';
                                 $ot_application_log->official_time_application_id = $id;
@@ -1161,6 +1179,7 @@ class OfficialTimeApplicationController extends Controller
                                 $ot_application = OfficialTimeApplication::findOrFail($id);
                                 $ot_application->status = 'cancelled';
                                 $ot_application->update();
+                            DB::commit();
 
                                 $official_time_applications = OfficialTimeApplication::with(['employeeProfile.personalInformation','logs'])
                                 ->where('id',$ot_application->id)->get();
@@ -1286,6 +1305,7 @@ class OfficialTimeApplicationController extends Controller
                         //  }
                 }
             } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json(['message' => $e->getMessage(),  'error'=>true]);
         }
     }
@@ -1324,18 +1344,19 @@ class OfficialTimeApplicationController extends Controller
                             $ot_applications = OfficialTimeApplication::where('id','=', $id)
                                                                     ->first();
                             if($ot_applications){
+                                DB::beginTransaction();
+                                    $ot_application_log = new ModelsOtApplicationLog();
+                                    $ot_application_log->action = $action;
+                                    $ot_application_log->official_time_application_id = $id;
+                                    $ot_application_log->action_by_id = '1';
+                                    $ot_application_log->date = date('Y-m-d');
+                                    $ot_application_log->time =  date('H:i:s');
+                                    $ot_application_log->save();
 
-                                $ot_application_log = new ModelsOtApplicationLog();
-                                $ot_application_log->action = $action;
-                                $ot_application_log->official_time_application_id = $id;
-                                $ot_application_log->action_by_id = '1';
-                                $ot_application_log->date = date('Y-m-d');
-                                $ot_application_log->time =  date('H:i:s');
-                                $ot_application_log->save();
-
-                                $ot_application = OfficialTimeApplication::findOrFail($id);
-                                $ot_application->status = $new_status;
-                                $ot_application->update();
+                                    $ot_application = OfficialTimeApplication::findOrFail($id);
+                                    $ot_application->status = $new_status;
+                                    $ot_application->update();
+                                DB::commit();
 
                                 $official_time_applications = OfficialTimeApplication::with(['employeeProfile.personalInformation','logs'])
                                 ->where('id',$ot_application->id)->get();
@@ -1462,6 +1483,7 @@ class OfficialTimeApplicationController extends Controller
 
 
          catch (\Exception $e) {
+            DB::rollBack();
             return response()->json(['message' => $e->getMessage(),'error'=>true]);
         }
     }

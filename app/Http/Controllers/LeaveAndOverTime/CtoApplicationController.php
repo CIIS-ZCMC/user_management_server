@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\LeaveAndOverTime;
-
+use Illuminate\Support\Facades\DB;
 use App\Models\CtoApplication;
 use App\Http\Controllers\Controller;
 use App\Models\AssignArea;
@@ -173,42 +173,52 @@ class CtoApplicationController extends Controller
             // $area = AssignArea::where('employee_profile_id',$employee_id)->value('division_id');
             // $division = Division::where('id',$area)->value('is_medical');
             $division=true;
-            $cto_application = new CtoApplication();
-            $cto_application->employee_profile_id = '1';
-            $cto_application->remarks = $request->remarks;
-            // $cto_application->purpose = $request->purpose;
-            if($division === true)
-            {
-                $status='for-approval-department-head';
-            }
-            else
-            {
-                $status='for-approval-section-head';
-            }
-            $cto_application->status = $status;
-            $cto_application->date = date('Y-m-d');
-            $cto_application->time =  date('H:i:s');
-            $cto_application->save();
+            $validatedData = $request->validate([
+                'time_from.*' => 'required|date_format:H:i',
+                'time_to.*' => 'required|date_format:H:i|after_or_equal:time_from.*',
+                'date.*' => 'required|date_format:Y-m-d',
+                'purpose.*' => 'required|string|max:512',
+            ]);
+            DB::beginTransaction();
+                $cto_application = new CtoApplication();
+                $cto_application->employee_profile_id = '1';
+                $cto_application->remarks = $request->remarks;
+                // $cto_application->purpose = $request->purpose;
+                if($division === true)
+                {
+                    $status='for-approval-department-head';
+                }
+                else
+                {
+                    $status='for-approval-section-head';
+                }
+                $cto_application->status = $status;
+                $cto_application->date = date('Y-m-d');
+                $cto_application->time =  date('H:i:s');
+                $cto_application->save();
 
-            $cto_id=$cto_application->id;
-            $time_from = $request->input('time_from');
-            $time_to = $request->input('time_to');
-            $date = $request->input('dates');
-            $purpose = $request->input('purpose');
-            for ($i = 0; $i < count($date); $i++) {
-               $date_application = CtoApplicationDate::create([
-                    'cto_application_id' => $cto_id,
-                    'time_from' => $time_from[$i],
-                    'time_to' => $time_to[$i],
-                    'date' => $date[$i],
-                    'purpose' => $purpose[$i],
-                ]);
-            }
-            $cto_id=$cto_application->id;
-            $columnsString="";
-            $process_name="Applied";
+                $cto_id=$cto_application->id;
+                $time_from = $request->input('time_from');
+                $time_to = $request->input('time_to');
+                $date = $request->input('dates');
+                $purpose = $request->input('purpose');
+                for ($i = 0; $i < count($date); $i++) {
+                $date_application = CtoApplicationDate::create([
+                        'cto_application_id' => $cto_id,
+                        'time_from' => $time_from[$i],
+                        'time_to' => $time_to[$i],
+                        'date' => $date[$i],
+                        'purpose' => $purpose[$i],
+                    ]);
+                }
+                $cto_id=$cto_application->id;
+                $columnsString="";
+                $process_name="Applied";
+                $this->storeCTOApplicationLog($cto_id,$process_name,$columnsString);
 
-            $this->storeCTOApplicationLog($cto_id,$process_name,$columnsString);
+                DB::commit();
+
+
             $cto_applications = CtoApplication::with(['employeeProfile.personalInformation','dates','logs'])
             ->where('id',$cto_application->id)->get();
             $cto_applications_result = $cto_applications->map(function ($cto_application) {
@@ -345,7 +355,7 @@ class CtoApplicationController extends Controller
 
             return response()->json(['message' => 'Compensatory Time Off Application has been sucessfully saved','data' => $singleArray ], Response::HTTP_OK);
         }catch(\Throwable $th){
-
+            DB::rollBack();
             return response()->json(['message' => $th->getMessage()], 500);
         }
     }
@@ -387,6 +397,7 @@ class CtoApplicationController extends Controller
                         // if($user_password==$password)
                         // {
                         //     if($user_id){
+                            DB::beginTransaction();
                                 $cto_application_log = new CtoApplicationLog();
                                 $cto_application_log->action = 'declined';
                                 $cto_application_log->cto_application_id  = $id;
@@ -399,6 +410,8 @@ class CtoApplicationController extends Controller
                                 $cto_application->status = 'declined';
                                 $cto_application->decline_reason = $request->decline_reason;
                                 $cto_application->update();
+
+                            DB::commit();
 
                                 $cto_applications = CtoApplication::with(['employeeProfile.personalInformation','dates','logs'])
                                 ->where('id',$cto_application->id)->get();
@@ -538,7 +551,8 @@ class CtoApplicationController extends Controller
                         //  }
                 }
             } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage(),  'error'=>true]);
+                DB::rollBack();
+                return response()->json(['message' => $e->getMessage(),  'error'=>true]);
         }
     }
 
@@ -556,6 +570,7 @@ class CtoApplicationController extends Controller
                 //         if($user_password==$password)
                 //         {
                 //             if($user_id){
+                            DB::beginTransaction();
                                 $cto_application_log = new CtoApplicationLog();
                                 $cto_application_log->action = 'cancelled';
                                 $cto_application_log->cto_application_id  = $id;
@@ -567,6 +582,8 @@ class CtoApplicationController extends Controller
                                 $cto_application = CtoApplication::findOrFail($id);
                                 $cto_application->status = 'cancelled';
                                 $cto_application->update();
+                            DB::commit();
+
                                 $cto_applications = CtoApplication::with(['employeeProfile.personalInformation','dates','logs'])
                                 ->where('id',$cto_application->id)->get();
                                 $cto_applications_result = $cto_applications->map(function ($cto_application) {
@@ -705,7 +722,8 @@ class CtoApplicationController extends Controller
                         //  }
                 }
             } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage(),  'error'=>true]);
+                DB::rollBack();
+                return response()->json(['message' => $e->getMessage(),  'error'=>true]);
         }
     }
 
@@ -2061,37 +2079,40 @@ class CtoApplicationController extends Controller
                             $cto_applications = CtoApplication::where('id','=', $id)
                                                                     ->first();
                             if($cto_applications){
-                                $cto_application_log = new CtoApplicationLog();
-                                $cto_application_log->action = $action;
-                                $cto_application_log->cto_application_id = $id;
-                                $cto_application_log->action_by_id = '1';
-                                $cto_application_log->date = date('Y-m-d');
-                                $cto_application_log->time = date('h-i-s');
-                                $cto_application_log->save();
 
-                                $cto_application = CtoApplication::findOrFail($id);
-                                $cto_application->status = $new_status;
-                                $cto_application->update();
+                                DB::beginTransaction();
+                                    $cto_application_log = new CtoApplicationLog();
+                                    $cto_application_log->action = $action;
+                                    $cto_application_log->cto_application_id = $id;
+                                    $cto_application_log->action_by_id = '1';
+                                    $cto_application_log->date = date('Y-m-d');
+                                    $cto_application_log->time = date('h-i-s');
+                                    $cto_application_log->save();
 
-                                if($new_status=="approved")
-                                {
-                                    $cto_application_date_times=CtoApplicationDate::where('cto_application_id',$id)->get();
-                                    $totalHours = 0;
-                                    foreach ($cto_application_date_times as $cto_application_date_time) {
-                                        $timeFrom = Carbon::parse($cto_application_date_time->time_from);
-                                        $timeTo = Carbon::parse($cto_application_date_time->time_to);
-                                        $totalHours += $timeTo->diffInHours($timeFrom);
+                                    $cto_application = CtoApplication::findOrFail($id);
+                                    $cto_application->status = $new_status;
+                                    $cto_application->update();
+
+                                    if($new_status=="approved")
+                                    {
+                                        $cto_application_date_times=CtoApplicationDate::where('cto_application_id',$id)->get();
+                                        $totalHours = 0;
+                                        foreach ($cto_application_date_times as $cto_application_date_time) {
+                                            $timeFrom = Carbon::parse($cto_application_date_time->time_from);
+                                            $timeTo = Carbon::parse($cto_application_date_time->time_to);
+                                            $totalHours += $timeTo->diffInHours($timeFrom);
+                                        }
+                                        $employee_cto_credits = new EmployeeOvertimeCredit();
+                                        $employee_cto_credits->employee_profile_id = '1';
+                                        $employee_cto_credits->cto_application_id = $id;
+                                        $employee_cto_credits->operation = "deduct";
+                                        // $employee_cto_credits->reason = "cto";
+                                        $employee_cto_credits->overtime_hours = $totalHours;
+                                        $employee_cto_credits->credit_value = $totalHours;
+                                        $employee_cto_credits->date = date('Y-m-d');
+                                        $employee_cto_credits->save();
                                     }
-                                    $employee_cto_credits = new EmployeeOvertimeCredit();
-                                    $employee_cto_credits->employee_profile_id = '1';
-                                    $employee_cto_credits->cto_application_id = $id;
-                                    $employee_cto_credits->operation = "deduct";
-                                    // $employee_cto_credits->reason = "cto";
-                                    $employee_cto_credits->overtime_hours = $totalHours;
-                                    $employee_cto_credits->credit_value = $totalHours;
-                                    $employee_cto_credits->date = date('Y-m-d');
-                                    $employee_cto_credits->save();
-                                }
+                                DB::commit();
                                 $cto_applications = CtoApplication::with(['employeeProfile.personalInformation','dates','logs'])
                                 ->where('id',$cto_application->id)->get();
                                 $cto_applications_result = $cto_applications->map(function ($cto_application) {
@@ -2229,6 +2250,7 @@ class CtoApplicationController extends Controller
                 }
             }
          catch (\Exception $e) {
+            DB::rollBack();
             return response()->json(['message' => $e->getMessage(),'error'=>true]);
         }
 

@@ -12,7 +12,7 @@ class OvtApplicationActivity extends Model
 
     public $fillable = [
         'overtime_application_id',
-        'activity_name',
+        'name',
         'quantity',
         'man_hour',
         'period_covered'

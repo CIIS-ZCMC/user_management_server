@@ -31,6 +31,8 @@ class ResetLeaveCredits extends Command
     protected function schedule(Schedule $schedule)
         {
             $schedule->call('App\Http\Controllers\LeaveCreditsController@addYearlyLeaveCredit')->yearlyOn(1, 1);
+            $schedule->call('App\Http\Controllers\LeaveCreditsController@addSpLeaveCredit')->yearlyOn(1, 1, '00:00');
+            $schedule->call('App\Http\Controllers\LeaveCreditsController@addSpLeaveCredit')->yearlyOn(7, 1, '00:00');
             $schedule->call('App\Http\Controllers\LeaveCreditsController@resetYearlyLeaveCredit')->yearlyOn(1, 1);
             $schedule->call('App\Http\Controllers\LeaveCreditsController@addMonthlyLeaveCredit')->monthlyOn(1, '00:00');
 
