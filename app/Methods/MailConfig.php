@@ -16,6 +16,7 @@ class MailConfig
     private $provider;
     private $sysemail;
     private $fromSystem;
+    
     public function __construct()
     {
         $this->client_id = env('GOOGLE_API_CLIENT_ID');
@@ -28,6 +29,7 @@ class MailConfig
             'clientSecret' => $this->client_secret,
         ]);
     }
+    
     public function Send($data)
     {
         $mail = new PHPMailer(true);

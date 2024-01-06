@@ -9,6 +9,7 @@ use App\Methods\MailConfig;
 use App\Models\AssignAreaTrail;
 use App\Models\Contact;
 use App\Models\InActiveEmployee;
+use App\Models\PasswordTrail;
 use App\Models\PlantillaNumber;
 use Carbon\Carbon;
 use Jenssegers\Agent\Agent;
@@ -488,7 +489,7 @@ class EmployeeProfileController extends Controller
     {
         try{
             $email = strip_tags($request->email);
-            $contact = Contact::where('email_address', $email)->get();
+            $contact = Contact::where('email_address', $email)->first();
 
             if(!$contact){
                 return response()->json(['message' => "Email doesn't exist."], Response::HTTP_UNAUTHORIZED);
@@ -505,9 +506,10 @@ class EmployeeProfileController extends Controller
                 'Receiver_Name' => $employee->personalInformation->name(),
                 'Body' => $body
             ];
-            
+
             if ($this->mail->send($data)) {
-                return response()->json(['message' => 'Please check your email address for OTP.'], Response::HTTP_OK);
+                return response()->json(['message' => 'Please check your email address for OTP.'], Response::HTTP_OK)
+                    ->cookie('employee_details', json_encode(['email' => $email, 'employee_id', $employee->employee_id]), 60, '/', env('SESSION_DOMAIN'), true);
             }
 
             return response()->json([
@@ -516,6 +518,150 @@ class EmployeeProfileController extends Controller
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'signOut', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function verifyOTP(Request $request)
+    {
+        try{
+            $otp = strip_tags($request->otp);
+            $employee_details = json_decode($request->cookie('employee_details'));
+
+            $employee = EmployeeProfile::where('employee_id', $employee_details->employee_id)->first();
+
+            $otpExpirationMinutes = 5;
+            $currentDateTime = Carbon::now();
+            $otp_expiration = Carbon::parse($employee->otp_expiration);
+
+            if ($currentDateTime->diffInMinutes($otp_expiration) > $otpExpirationMinutes) {
+                return response()->json(['message' => 'OTP has expired.'], Response::HTTP_BAD_REQUEST);
+            }
+
+            if($otp !== $employee->otp){
+                return response()->json(['message' => 'Invalid OTP.'], Response::HTTP_BAD_REQUEST);
+            }
+
+            $employee->update([
+                'otp' => null,
+                'otp_expiration' => null
+            ]);
+
+            return response()->json(['message' => "Save new password."], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'signOut', $th->getMessage());
+        }
+    }
+    public function newPassword(Request $request)
+    {
+        try{
+            $employee_details = json_decode($request->cookie('employee_details'));
+
+            $employee_profile = EmployeeProfile::where('employee_id', $employee_details->employee_id)->first();
+
+            $new_password = strip_tags($request->new_password);
+
+            $hashPassword = Hash::make($new_password.env('SALT_VALUE'));
+            $encryptedPassword = Crypt::encryptString($hashPassword);
+
+            $now = Carbon::now();
+            $fortyDaysFromNow = $now->addDays(40);
+            $fortyDaysExpiration = $fortyDaysFromNow->toDateTimeString();
+
+            $old_password = PasswordTrail::create([
+                'old_password' => $employee_profile->password_encrypted,
+                'password_created_at' => $employee_profile->password_created_at,
+                'expired_at' => $employee_profile->password_expiration_at,
+                'employee_profile_id' => $employee_profile->id
+            ]);
+
+            if(!$old_password){
+                return response()->json(['message' => "A problem encounter while trying to register new password."], Response::HTTP_BAD_REQUEST);
+            }
+
+            $employee_profile->update([
+                'password_encrypted' => $encryptedPassword,
+                'password_created_at' => now(),
+                'password_expiration_at' => $fortyDaysExpiration
+            ]);
+
+
+            $agent = new Agent();
+            $device = [
+                'is_desktop' => $agent->isDesktop(),
+                'is_mobile' => $agent->isMobile(),
+                'platform' => $agent->platform(),
+                'browser' => $agent->browser(),
+                'version' => $agent->version($agent->browser())
+            ];
+            
+            $access_token = $employee_profile->accessToken;
+
+            if(!$access_token)
+            {
+                $ip = $request->ip();
+                $created_at = Carbon::parse($access_token['created_at']);
+                $current_time = Carbon::now();
+
+                $difference_in_minutes = $current_time->diffInMinutes($created_at);
+                
+                $login_trail = LoginTrail::where('employee_profile_id', $employee_profile['id'])->first();
+
+                if($difference_in_minutes < 5 && $login_trail['ip_address'] != $ip)
+                {
+                    return response()->json(['data' => $employee_profile['id'],'message' => "You are currently login to different Device."], Response::HTTP_OK);
+                }
+            }
+
+            $token = $employee_profile->createToken();
+
+            $personal_information = $employee_profile->personalInformation;
+            $name = $personal_information->employeeName();
+
+            $assigned_area = $employee_profile->assignedArea;
+            $plantilla = null;
+            $designation = null;
+
+            if($assigned_area['plantilla_id'] === null)
+            {
+                $designation = $assigned_area->designation;
+            }else{
+                //Employment is plantilla retrieve the plantilla and its designation.
+                $plantilla = $assigned_area->plantilla;
+                $designation = $plantilla->designation;
+            }
+
+            $special_access_roles = $employee_profile->specialAccessRole;
+
+            //Retrieve Sidebar Details for the employee base on designation.
+            $side_bar_details = $this->buildSidebarDetails($employee_profile, $designation, $special_access_roles);  
+
+            $area_assigned = $employee_profile->assignedArea->findDetails(); 
+
+            $data = [
+                'employee_id' => $employee_profile['employee_id'],
+                'name' => $name,
+                'designation'=> $designation['name'],
+                'area_assigned' => $area_assigned['details']->name,
+                'area_sector' => $area_assigned['sector'],
+                'side_bar_details' => $side_bar_details
+            ];
+
+            LoginTrail::create([
+                'signin_at' => now(),
+                'ip_address' => $request->ip(),
+                'device' => ($device['is_desktop'] ? 'Desktop': $device['is_mobile']) ?'Mobile':'Unknown', 
+                'platform' => is_bool($device['platform'])?'Postman':$device['platform'],
+                'browser' => is_bool( $device['browser'])?'Postman':$device['browser'],
+                'browser_version' => is_bool($device['version'])?'Postman':$device['version'],
+                'employee_profile_id' => $employee_profile['id']
+            ]);
+
+            return response()
+                ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
+                ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), true);
+            return response()->json(['message' => "Save new password."], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'signOut', $th->getMessage());
         }
     }
 
