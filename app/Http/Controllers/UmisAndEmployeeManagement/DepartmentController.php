@@ -65,6 +65,16 @@ class DepartmentController extends Controller
     public function assignHeadByEmployeeID($id, DepartmentAssignHeadRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $department = Department::find($id);
 
             if(!$department)
@@ -73,23 +83,16 @@ class DepartmentController extends Controller
             }  
 
             $employee_profile = EmployeeProfile::where('employee_id', $request['employee_id'])->first();
-            $assigned_area = $employee_profile->assignedArea;
-            $employee_designation = $assigned_area->plantilla_id === null?$assigned_area->designation:$assigned_area->plantilla->designation;
 
             if(!$employee_profile)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             } 
 
-            if(!$employee_designation['code'].include($department['head_job_specification']))
-            {
-                return response()->json(['message' => 'Invalid job specification.'], Response::HTTP_BAD_REQUEST);
-            }
-
             $cleanData = [];
-            $cleanData['supervisor_employee_profile_id'] = $employee_profile->id;
-            $cleanData['supervisor_attachment_url'] = $request->input('attachment')===null?'NONE': $this->file_validation_and_upload->check_save_file($request->input('attachment'),"department/file");
-            $cleanData['supervisor_effective_at'] = Carbon::now();
+            $cleanData['head_employee_profile_id'] = $employee_profile->id;
+            $cleanData['head_attachment_url'] = $request->input('attachment')===null?'NONE': $this->file_validation_and_upload->check_save_file($request, 'department/files');
+            $cleanData['head_effective_at'] = Carbon::now();
 
             $department->update($cleanData);
 
@@ -110,9 +113,19 @@ class DepartmentController extends Controller
      * Assign Training officer
      * This must be in department
      */
-    public function assignTrainingOfficerByEmployeeID($id, DepartmentAssignHeadRequest $request)
+    public function assignTrainingOfficerByEmployeeID($id, DepartmentAssignTrainingOfficerRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $department = Department::find($id);
 
             if(!$department)
@@ -121,22 +134,15 @@ class DepartmentController extends Controller
             }  
 
             $employee_profile = EmployeeProfile::where('employee_id', $request['employee_id'])->first();
-            $assigned_area = $employee_profile->assignedArea;
-            $employee_designation = $assigned_area->plantilla_id === null?$assigned_area->designation:$assigned_area->plantilla->designation;
 
             if(!$employee_profile)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             } 
 
-            if(!$employee_designation['code'].include($department['training_officer_job_specification']))
-            {
-                return response()->json(['message' => 'Invalid job specification.'], Response::HTTP_BAD_REQUEST);
-            }
-
             $cleanData = [];
             $cleanData['training_officer_employee_profile_id'] = $employee_profile->id;
-            $cleanData['training_officer_attachment_url'] = $request->input('attachment')===null?'NONE':  $this->file_validation_and_upload->check_save_file($request->input('attachment'),"department/file");
+            $cleanData['training_officer_attachment_url'] = $request->input('attachment')===null?'NONE':  $this->file_validation_and_upload->check_save_file($request, 'department/files');
             $cleanData['training_officer_effective_at'] = Carbon::now();
 
             $department->update($cleanData);
@@ -144,7 +150,7 @@ class DepartmentController extends Controller
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in assigning head'.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
-                'data' => new DepartmentAssignTrainingOfficerRequest($department), 
+                'data' => new DepartmentResource($department), 
                 'message' => 'New training officer assigned.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -161,6 +167,16 @@ class DepartmentController extends Controller
     public function assignOICByEmployeeID($id, DepartmentAssignOICRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $department = Department::find($id);
 
             if(!$department)
@@ -175,8 +191,12 @@ class DepartmentController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             } 
 
+            if($employee_profile->id !== $department->head_employee_profile_id){
+                return response()->json(['message' => 'Unauthorized.'], Response::HTTP_UNAUTHORIZED);
+            }
+
             $user = $request->user;
-            $cleanData['password'] = strip_tags($request->input('password'));
+            $cleanData['password'] = strip_tags($request->password);
 
             $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
 
@@ -186,7 +206,7 @@ class DepartmentController extends Controller
 
             $cleanData = [];
             $cleanData['oic_employee_profile_id'] = $employee_profile->id;
-            $cleanData['oic_attachment_url'] = $request->input('attachment')===null?'NONE': $this->file_validation_and_upload->check_save_file($request->input('attachment'),"department/file");
+            $cleanData['oic_attachment_url'] = $request->input('attachment')===null?'NONE': $this->file_validation_and_upload->check_save_file($request,'department/files');
             $cleanData['oic_effective_at'] = strip_tags($request->input('effective_at'));
             $cleanData['oic_end_at'] = strip_tags($request->input('end_at'));
 
@@ -206,7 +226,7 @@ class DepartmentController extends Controller
     public function store(DepartmentRequest $request)
     {
         try{
-            $division_id = $request->input('division_id');
+            $division_id = $request->division_id;
             $division = Division::find($division_id);
 
             if(!$division)
@@ -236,7 +256,7 @@ class DepartmentController extends Controller
 
             return response()->json([
                 'data' =>  new DepartmentResource($department),
-                'message' => 'Newly added department.'
+                'message' => 'Department created successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
@@ -305,7 +325,7 @@ class DepartmentController extends Controller
 
             return response()->json([
                 'data' =>  new DepartmentResource($department),
-                'message' => 'Update department details.'
+                'message' => 'Department updated successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
@@ -316,7 +336,7 @@ class DepartmentController extends Controller
     public function destroy($id, PasswordApprovalRequest $request)
     {
         try{
-            $password = strip_tags($request->input('password'));
+            $password = strip_tags($request->password);
 
             $employee_profile = $request->user;
 
@@ -337,7 +357,7 @@ class DepartmentController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['message' => 'Department record deleted.'], Response::HTTP_OK);
+            return response()->json(['message' => 'Department deleted successfully.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

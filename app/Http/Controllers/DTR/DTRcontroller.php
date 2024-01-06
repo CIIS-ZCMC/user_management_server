@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\DTR;
 
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use App\Models\daily_time_records;
 use App\Methods\Helpers;
 use App\Methods\Bio_contr;
@@ -304,8 +305,7 @@ class DTRcontroller extends Controller
                 } // End Checking if Connected to Device
             }
         } catch (\Throwable $th) {
-            return $th;
-            return response()->json(['message' => 'Unable to connect to device']);
+            return response()->json(['message' => 'Unable to connect to device'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 

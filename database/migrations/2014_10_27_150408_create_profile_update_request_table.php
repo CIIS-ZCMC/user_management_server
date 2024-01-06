@@ -15,10 +15,12 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('employee_profile_id');
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles');
-            $table->unsignedBigInteger('approved_by');
+            $table->unsignedBigInteger('approved_by')->nullable();
             $table->foreign('approved_by')->references('id')->on('employee_profiles');
-            $table->datetime('request_at');
-            $table->datetime('approved_at');
+            $table->string('table_name');
+            $table->unsignedBigInteger('data_id');
+            $table->unsignedBigInteger('target_id')->nullable();
+            $table->boolean('type_new_or_replace')->default(FALSE);
             $table->timestamps();
         });
     }

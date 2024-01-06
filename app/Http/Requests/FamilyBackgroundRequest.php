@@ -40,7 +40,7 @@ class FamilyBackgroundRequest extends FormRequest
             'mother_middle_name' => 'nullable|string|max:255',
             'mother_last_name' => 'required|string|max:255',
             'mother_ext_name' => 'nullable|string|max:255',
-            'personal_information_id' => 'required|string|size:36'
+            'personal_information_id' => 'required|integer'
         ];
     }
 }

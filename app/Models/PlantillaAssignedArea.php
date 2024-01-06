@@ -20,12 +20,17 @@ class PlantillaAssignedArea extends Model
         'effective_at'
     ];
 
+   
+
+#0 {main}
+
     public $timestamps = TRUE;
 
     public function plantillaNumber()
     {
         return $this->belongsTo(PlantillaNumber::class);
     }
+
 
     public function division()
     {

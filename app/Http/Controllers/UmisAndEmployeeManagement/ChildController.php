@@ -4,13 +4,17 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Http\Requests\PasswordApprovalRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 use App\Services\RequestLogger;
 use App\Http\Requests\ChildRequest;
 use App\Http\Resources\ChildResource;
 use App\Models\Child;
 use App\Models\EmployeeProfile;
+use App\Models\PersonalInformation;
 
 class ChildController extends Controller
 {
@@ -50,7 +54,7 @@ class ChildController extends Controller
     public function findByEmployeeID(Request $request)
     {
         try{
-            $employee_profile = EmployeeProfile::where('employee_id',$request->input('employee_id'))->get();
+            $employee_profile = EmployeeProfile::where('employee_id',$request->employee_id)->get();
 
             if(!$employee_profile)
             {
@@ -60,9 +64,9 @@ class ChildController extends Controller
             $personal_information = $employee_profile->personalInformation;
             $children = $personal_information->children;
 
-            $this->requestLogger->registerSystemLogs($request, $children['id'], true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            $this->requestLogger->registerSystemLogs($request, $request->employee_id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json([,
+            return response()->json([
                 'data' => ChildResource::collection($children),
                 'message' => 'Employee children record retrieved.'
             ], Response::HTTP_OK);
@@ -76,6 +80,13 @@ class ChildController extends Controller
     {
         try{
             $cleanData = [];
+
+            $personal_information = PersonalInformation::find($request->input('personal_information_id'));
+
+            if(!$personal_information)
+            {
+                return response()->json(['message'=> 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
 
             foreach ($request->all() as $key => $value) {
                 if ($value === null) {
@@ -91,6 +102,59 @@ class ChildController extends Controller
 
             return response()->json([
                 'data' => new ChildResource($child),
+                'message' => 'New employee child record added.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    
+    public function storeMany(Request $request)
+    {
+        try{
+            $success = [];
+            $failed = [];
+
+            $personal_information = PersonalInformation::find($request->input('personal_information_id'));
+
+            if(!$personal_information)
+            {
+                return response()->json(['message'=> 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            foreach($request->children as $child){
+                $cleanData = [];
+                foreach ($child as $key => $value) {
+                    if ($value === null) {
+                        $cleanData[$key] = $value;
+                        continue;
+                    }
+                    $cleanData[$key] = strip_tags($value);
+                }
+                $child = Child::create($cleanData);
+
+                if(!$child){
+                    $failed[] = $cleanData;
+                    continue;
+                }
+
+                $success = $child;
+            }
+
+            $this->requestLogger->registerSystemLogs($request, $child['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+
+            if(count($failed) > 0){
+                return response()->json([
+                    'data' => ChildResource::collection($success),
+                    'failed' => $failed,
+                    'message' => 'Some data failed to registere.'
+                ], Response::HTTP_OK);
+            }
+
+            return response()->json([
+                'data' => ChildResource::collection($success),
                 'message' => 'New employee child record added.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -155,9 +219,19 @@ class ChildController extends Controller
         }
     }
     
-    public function destroy($id, Request $request)
+    public function destroy($id, PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $child = Child::findOrFail($id);
 
             if(!$child)
@@ -176,9 +250,19 @@ class ChildController extends Controller
         }
     }
     
-    public function destroyByPersonalInformationID($id, Request $request)
+    public function destroyByPersonalInformationID($id, PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $children = Child::where('personal_information_id', $id)->get();
 
             if(count($children) === 0)
@@ -199,9 +283,19 @@ class ChildController extends Controller
         }
     }
     
-    public function destroyByEmployeeID(Request $request)
+    public function destroyByEmployeeID(PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $employee_profile = EmployeeProfile::where('employee_id',$request->input('employee_id'))->get();
 
             if(!$employee_profile)

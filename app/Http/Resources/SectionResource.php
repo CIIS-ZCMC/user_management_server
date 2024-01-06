@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -18,46 +19,48 @@ class SectionResource extends JsonResource
         {
             $name = $this->name;
             $code = $this->code;
-            $designation = $this->supervisorJobSpecification();
-            $job_specification = $designation['name'];
             $supervisor_status = $this->supervisor_status? 'On Site':'On Leave';
-            $approving_officer = $this->supervisor_status? 'Chief':'OIC';
-
-            $supervisor = $this->supervisor;
-            $supervisor_personal_information = $supervisor->personalInformation;
-            $supervisor = $supervisor_personal_information->name;
-
+            $approving_officer = 'Chief';
+            $supervisor = $this->supervisor->personalInformation->name();
             $officer_in_charge = 'NONE';
 
             if($this->oic_employee_profile_id !== null)
             {
-                $oic = $this->oic();
+                $oic = $this->oic;
                 $oic_personal_information = $oic->personalInformation;
-                $officer_in_charge = $oic_personal_information->name;
-            }
+                $officer_in_charge = $oic_personal_information->name();
 
+                if(Carbon::parse($this->oic_effective_at)->lte(Carbon::now())){
+                    $approving_officer = 'officer in charge';
+                }
+            }
+           
             return [
+                'id' => $this->id,
                 'name' => $name,
                 'code' => $code,
-                'job_specification' => $job_specification,
+                'division'=> new DivisionResource($this->division),
+                'department'=> new DepartmentResource($this->department),
                 'supervisor' => $supervisor,
                 'supervisor_status' => $supervisor_status,
                 'approving_officer' => $approving_officer,
-                'officer_in_charge' => $officer_in_charge
+                'officer_in_charge' => $officer_in_charge,
+                'created_at' => $this->created_at,
+                'updated_at' => $this->updated_at
             ];
         }
-
-        $designation = $this->supervisorJobSpecification();
-        $job_specification = $designation['name'];
-
         return [
+            'id' => $this->id,
+            'name' => $this->name,  
             'code' => $this->code,
-            'name' => $this->name,
-            'job_specification' => $job_specification,
+            'division'=> new DivisionResource($this->division),
+            'department'=>  new DepartmentResource($this->department),
             'supervisor' => 'NONE',
             'supervisor_status' => 'NONE',
             'approving_officer' => 'NONE',
-            'officer_in_charge' => 'NONE'
+            'officer_in_charge' => 'NONE',
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at
         ];
     }
 }

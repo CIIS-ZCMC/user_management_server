@@ -4,8 +4,12 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Http\Requests\PasswordApprovalRequest;
+use App\Models\PlantillaNumber;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 use App\Services\RequestLogger;
 use App\Http\Requests\AssignAreaRequest;
 use App\Http\Resources\AssignAreaResource;
@@ -77,11 +81,38 @@ class AssignAreaController extends Controller
         try{
             $cleanData = [];
 
+            $employee_profile_id = strip_tags($request->employee_profile_id);
+
+            $employee = EmployeeProfile::find($employee_profile_id);
+
+            if(!$employee){
+                return response()->json(['message' => "No record found for employee profile."], Response::HTTP_NOT_FOUND);
+            }
+
+            $plantilla_number = strip_tags($request->plantilla_number);
+            $plantilla_number = PlantillaNumber::where('number', $plantilla_number)->first();
+
+            if(!$plantilla_number){
+                return response()->json(['message' => "Plantilla number ". $request->plantilla_number." doesn't exist"], Response::HTTP_BAD_REQUEST);
+            }
+
+            $cleanData['plantilla_id'] = $plantilla_number->plantilla->id;
+
+            $division_id = strip_tags($request->division_id);
+            $department_id = strip_tags($request->department_id);
+            $section_id = strip_tags($request->section_id);
+            $unit_id = strip_tags($request->unit_id);
+
+            if($division_id === null && $department_id === null && $section_id === null && $unit_id === null){
+                return response()->json(['message' => 'Please select area for employee to assign.'], Response::HTTP_BAD_REQUEST);
+            }
+
             foreach ($request->all() as $key => $value) {
+                if($key === 'user') continue;
                 if ($value === null) {
                     $cleanData[$key] = $value;
                     continue;
-                } 
+                }
                 $cleanData[$key] = strip_tags($value);
             }
 
@@ -155,9 +186,19 @@ class AssignAreaController extends Controller
         }
     }
     
-    public function destroy($id, Request $request)
+    public function destroy($id, PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $assigned_area = AssignArea::findOrFail($id);
 
             if(!$assigned_area)

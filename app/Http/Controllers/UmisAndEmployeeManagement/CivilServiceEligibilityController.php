@@ -6,7 +6,10 @@ use App\Http\Controllers\Controller;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 use App\Services\RequestLogger;
+use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\CivilServiceEligibilityRequest;
 use App\Http\Resources\CivilServiceEligibilityResource;
 use App\Models\CivilServiceEligibility;
@@ -97,6 +100,55 @@ class CivilServiceEligibilityController extends Controller
         }
     }
     
+    public function storeMany(Request $request)
+    {
+        try{
+            $success = [];
+            $failed = [];
+
+            $personal_information_id = strip_tags($request->personal_information_id);
+
+            foreach($request->civilserviceeligibilities as $civil_service_eligibility){
+                $cleanData = [];
+                $cleanData['personal_information_id'] = $personal_information_id;
+                foreach ($civil_service_eligibility as $key => $value) {
+                    if($value === null)
+                    {
+                        $cleanData[$key] = $value;
+                        continue;
+                    }
+                    $cleanData[$key] = strip_tags($value);
+                }
+                $civil_service_eligibility = CivilServiceEligibility::create($cleanData);
+
+                if(!$civil_service_eligibility){
+                    $failed[] = $cleanData;
+                    continue;
+                }
+
+                $success[] = $civil_service_eligibility;
+            }
+
+            $this->requestLogger->registerSystemLogs($request, $civil_service_eligibility['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+
+            if(count($failed) > 0){
+                return response()->json([
+                    'data' => CivilServiceEligibilityResource::collection($success),
+                    'failed' => $failed,
+                    'message' => 'Some data failed to registere.'
+                ], Response::HTTP_OK);
+            }
+
+            return response()->json([
+                'data' => CivilServiceEligibilityResource::collection($success),
+                'message' => 'New records created successfully.',
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
     public function show($id, Request $request)
     {
         try{
@@ -154,9 +206,19 @@ class CivilServiceEligibilityController extends Controller
         }
     }
     
-    public function destroy($id, Request $request)
+    public function destroy($id, PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $civil_service_eligibility = CivilServiceEligibility::findOrFail($id);
 
             if(!$civil_service_eligibility)
@@ -175,9 +237,19 @@ class CivilServiceEligibilityController extends Controller
         }
     }
     
-    public function destroyByPersonalInformationID($id, Request $request)
+    public function destroyByPersonalInformationID($id, PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $civil_service_eligibilities = CivilServiceEligibility::where('personal_information_id',$id)->get();
 
             if(count($civil_service_eligibilities) === 0)
@@ -199,9 +271,19 @@ class CivilServiceEligibilityController extends Controller
         }
     }
     
-    public function destroyByEmployeeID($id, Request $request)
+    public function destroyByEmployeeID($id, PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $employee_profile = EmployeeProfile::find($id);
 
             if(!$employee_profile)

@@ -26,7 +26,7 @@ class WorkExperienceRequest extends FormRequest
             'date_to' => 'required|date:Y-m-d',
             'position_title' => "required|string|max:255",
             'appointment_status' => "required|string|max:255",
-            'salary' => "required|float",
+            'salary' => "required|numeric",
             'salary_grade_and_step' => "nullable|string|max:255",
             'company' => "required|string|max:255",
             'government_office' => "required|string|max:255",

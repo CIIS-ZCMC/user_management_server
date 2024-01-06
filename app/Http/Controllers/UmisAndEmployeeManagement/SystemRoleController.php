@@ -4,11 +4,23 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Http\Requests\NewRolePermissionRequest;
+use App\Http\Resources\DesignationAssignedSystemRolesResource;
+use App\Http\Resources\DesignationWithSystemRoleResource;
+use App\Http\Resources\EmployeeWithSpecialAccessResource;
+use App\Http\Resources\SpecialAccessRoleAssignResource;
+use App\Models\Designation;
+use App\Models\EmployeeProfile;
+use App\Models\Role;
+use App\Models\SpecialAccessRole;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Services\RequestLogger;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
+use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\SystemRoleRequest;
 use App\Http\Resources\SystemRoleResource;
 use App\Http\Resources\SystemRolePermissionsResource;
@@ -35,9 +47,7 @@ class SystemRoleController extends Controller
         try{
             $cacheExpiration = Carbon::now()->addDay();
 
-            $systemRoles = Cache::remember('system_roles', $cacheExpiration, function(){
-                return SystemRole::all();
-            });
+            $systemRoles = SystemRole::all();
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
             
@@ -50,6 +60,41 @@ class SystemRoleController extends Controller
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+    
+    public function employeesWithSpecialAccess(Request $request)
+    {
+        try{
+            $employees = EmployeeProfile::all();
+
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching employees with special access role.'.$this->PLURAL_MODULE_NAME.'.');
+            
+            return response() -> json([
+                'data' => EmployeeWithSpecialAccessResource::collection($employees),
+                'message' => 'Special access role assign successfully.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'addSpecialAccessRole', $th->getMessage());
+            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function designationsWithSystemRoles(Request $request)
+    {
+        try{
+            $employees = Designation::all();
+
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in assigning special access role.'.$this->PLURAL_MODULE_NAME.'.');
+            
+            return response() -> json([
+                'data' => DesignationAssignedSystemRolesResource::collection($employees),
+                'message' => 'Special access role assign successfully.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'addSpecialAccessRole', $th->getMessage());
+            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
     
     public function store($id, SystemRoleRequest $request)
     {
@@ -75,6 +120,107 @@ class SystemRoleController extends Controller
             return response() -> json([
                 'data' => new SystemRoleResource($systemRole),
                 "message" => 'New system role added'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function addSpecialAccessRole($id, Request $request)
+    {
+        try{
+            $failed = [];
+            $special_access_roles = [];
+            $system_role = SystemRole::find($id);
+
+            if(!$system_role){
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            foreach($request->employees as $employee_id){
+                $employee_profile_id = strip_tags($employee_id); 
+
+                $special_access_role = SpecialAccessRole::create([
+                    'system_role_id' => $system_role->id,
+                    'employee_profile_id' => $employee_profile_id 
+                ]);
+
+                if(!$special_access_role){
+                    $failed[] = $employee_id;
+                    continue;
+                }
+                $special_access_roles[] = $special_access_role;
+            }            
+
+            if(count($failed) !== 0){
+                return response()->json([
+                    'data' => SpecialAccessRoleAssignResource::collection($special_access_roles),
+                    'message' => "Some employee failed to assign special access."
+                ], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in assigning special access role.'.$this->PLURAL_MODULE_NAME.'.');
+            
+            return response() -> json([
+                'data' => SpecialAccessRoleAssignResource::collection($special_access_roles),
+                'message' => 'Special access role assign successfully.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'addSpecialAccessRole', $th->getMessage());
+            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    
+    public function registerNewRoleAndItsPermission($id, NewRolePermissionRequest $request)
+    {
+        try{
+            $success_data = [];
+
+            $system = System::find($id);
+
+            if(!$system)
+            {
+                return response()->json(['message' => 'No record found for system id '.$id." ."], Response::HTTP_NOT_FOUND);
+            }
+
+            foreach($request->roles as $role_value){
+                $role = Role::find($role_value['role_id']);
+
+                if(!$role) continue;
+
+                $system_role = SystemRole::create([
+                    'system_id' => $system->id,
+                    'role_id' => $role->id
+                ]);
+
+                $result['system_role'] = $system_role;
+                $result['permissions'] = [];
+                
+                foreach($role_value['modules'] as $module_value){
+                    foreach($module_value['permissions'] as $permission_value){
+                        $module_permission = ModulePermission::where('system_module_id', $module_value['module_id'])
+                            ->where('permission_id', $permission_value)->first();
+
+                        if(!$module_permission) break;
+
+                        $role_module_permission = RoleModulePermission::create([
+                            'module_permission_id' => $module_permission->id,
+                            'system_role_id' => $system_role->id 
+                        ]);
+
+                        $result['permissions'][] = $role_module_permission;
+                    }
+                }
+                $success_data[] = $result;
+            }
+
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in creating system role, attaching permissions '.$this->SINGULAR_MODULE_NAME.'.');
+            
+            return response() -> json([
+                'data' => $success_data,
+                "message" => 'System roles and access rights registered successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
@@ -207,6 +353,16 @@ class SystemRoleController extends Controller
     public function update($id, SystemRoleRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $systemRole = SystemRole::find($id);
 
             $cleanData = [];
@@ -228,9 +384,19 @@ class SystemRoleController extends Controller
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    public function destroy($id, Request $request)
+    public function destroy($id, PasswordApprovalRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $systemRole = SystemRole::findOrFail($id);
 
             if(!$systemRole){

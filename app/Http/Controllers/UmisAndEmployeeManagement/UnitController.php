@@ -45,8 +45,6 @@ class UnitController extends Controller
                 return Unit::all();
             });
 
-            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => UnitResource::collection($units),
                 'message' => 'Unit list retrieved.'
@@ -64,6 +62,15 @@ class UnitController extends Controller
     public function assignHeadByEmployeeID($id, UnitAssignHeadRequest $request)
     {
         try{
+            $user = $request->user;
+            $cleanData['password'] = strip_tags($request->password);
+
+            $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
+
+            if (!Hash::check($cleanData['password'].env("SALT_VALUE"), $decryptedPassword)) {
+                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $unit = Unit::find($id);
 
             if(!$unit)
@@ -72,29 +79,25 @@ class UnitController extends Controller
             }  
 
             $employee_profile = EmployeeProfile::where('employee_id', $request['employee_id'])->first();
-            $assigned_area = $employee_profile->assignedArea;
-            $employee_designation = $assigned_area->plantilla_id === null?$assigned_area->designation:$assigned_area->plantilla->designation;
 
             if(!$employee_profile)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             } 
 
-            if(!$employee_designation['code'].include($unit['job_specification']))
-            {
-                return response()->json(['message' => 'Invalid job specification.'], Response::HTTP_BAD_REQUEST);
-            }
-
             $cleanData = [];
             $cleanData['head_employee_profile_id'] = $employee_profile->id;
-            $cleanData['head_attachment_url'] = $request->input('attachment')===null?'NONE': $this->file_validation_and_upload->check_save_file($request->input('attachment'), "unit/files");
+            $cleanData['head_attachment_url'] = $request->attachment===null?'NONE': $this->file_validation_and_upload->check_save_file($request, "unit/files");
             $cleanData['head_effective_at'] = Carbon::now();
 
             $unit->update($cleanData);
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in assigning head '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => new UnitResource($unit), 'message' => 'New unit head assigned.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new UnitResource($unit), 
+                'message' => 'New unit head assigned.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'assignHeadByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -109,6 +112,15 @@ class UnitController extends Controller
     public function assignOICByEmployeeID($id, UnitAssignOICRequest $request)
     {
         try{
+            $user = $request->user;
+            $cleanData['password'] = strip_tags($request->password);
+
+            $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
+
+            if (!Hash::check($cleanData['password'].env("SALT_VALUE"), $decryptedPassword)) {
+                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $unit = Unit::find($id);
 
             if(!$unit)
@@ -123,20 +135,11 @@ class UnitController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             } 
 
-            $user = $request->user;
-            $cleanData['password'] = strip_tags($request->input('password'));
-
-            $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
-
-            if (!Hash::check($cleanData['password'].env("SALT_VALUE"), $decryptedPassword)) {
-                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
-            }
-
             $cleanData = [];
             $cleanData['oic_employee_profile_id'] = $employee_profile->id;
-            $cleanData['oic_attachment_url'] = $request->input('attachment')===null?'NONE': $this->file_validation_and_upload->check_save_file($request->input('attachment'), "unit/files");
-            $cleanData['oic_effective_at'] = strip_tags($request->input('effective_at'));
-            $cleanData['oic_end_at'] = strip_tags($request->input('end_at'));
+            $cleanData['oic_attachment_url'] = $request->attachment===null?'NONE': $this->file_validation_and_upload->check_save_file($request, "unit/files");
+            $cleanData['oic_effective_at'] = strip_tags($request->effective_at);
+            $cleanData['oic_end_at'] = strip_tags($request->end_at);
 
             $unit->update($cleanData);
 
@@ -157,7 +160,7 @@ class UnitController extends Controller
         try{
             $cleanData = [];
 
-            $section = Section::find($request->input('section_id'));
+            $section = Section::find($request->section_id);
 
             if(!$section){
                 return response()->json(['message' => 'Section is required.'], Response::HTTP_BAD_REQUEST);
@@ -183,7 +186,7 @@ class UnitController extends Controller
 
             return response()->json([
                 'data' =>  new UnitResource($unit),
-                'message' => 'New unit added.'
+                'message' => 'Unit created successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
@@ -213,6 +216,16 @@ class UnitController extends Controller
     public function update($id, UnitRequest $request)
     {
         try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $unit = Unit::find($id);
 
             if(!$unit)
@@ -220,7 +233,7 @@ class UnitController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $section = Section::find($request->input('section_id'));
+            $section = Section::find($request->section_id);
 
             if(!$section){
                 return response()->json(['message' => 'Section is required.'], Response::HTTP_BAD_REQUEST);
@@ -248,7 +261,7 @@ class UnitController extends Controller
 
             return response()->json([
                 'data' =>  new UnitResource($unit),
-                'message' => 'Updated unit details.'
+                'message' => 'Unit updated successfully'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
@@ -259,7 +272,7 @@ class UnitController extends Controller
     public function destroy($id, PasswordApprovalRequest $request)
     {
         try{
-            $password = strip_tags($request->input('password'));
+            $password = strip_tags($request->password);
 
             $employee_profile = $request->user;
 
@@ -280,7 +293,7 @@ class UnitController extends Controller
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['message' => 'Unit record deleted.'], Response::HTTP_OK);
+            return response()->json(['message' => 'Unit deleted successfully.'], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

@@ -5,9 +5,6 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -32,8 +29,9 @@ class EmployeeProfile extends Authenticatable
         'deactivated_at',
         'agency_employee_no',
         'allow_time_adjustment',
+        'is_2fa',
         'employee_type_id',
-        'plantilla_number_id'
+        'employment_type_id'
     ];
 
     public $timestamps = TRUE;
@@ -78,18 +76,14 @@ class EmployeeProfile extends Authenticatable
         return $this->hasMany(AccessToken::class);
     }
 
-    public function specialAccessRole(){
+    public function specialAccessRole()
+    {
         return $this->hasMany(SpecialAccessRole::class);
     }
 
     public function loginTrails()
     {
-        return $this->hasMany(LoginTrails::class);
-    }
-
-    public function plantillaNumber()
-    {
-        return $this->hasOne(PlantillaNumber::class);
+        return $this->hasMany(LoginTrail::class);
     }
 
     public function isDeactivated()
@@ -100,6 +94,11 @@ class EmployeeProfile extends Authenticatable
     public function isEmailVerified()
     {
         return $this->email_verified_at === null;
+    }
+
+    public function employmentType()
+    {
+        return $this->belongsTo(EmploymentType::class);
     }
 
     public function createToken()
@@ -186,5 +185,10 @@ class EmployeeProfile extends Authenticatable
         $designation = $assign_area->plantilla_id  === null?$assign_area->designation:$assign_area->plantilla->designation;
 
         return $designation;
+    }
+
+    public function issuanceInformation()
+    {
+        return $this->hasOne(IssuanceInformation::class);
     }
 }

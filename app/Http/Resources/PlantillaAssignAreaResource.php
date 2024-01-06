@@ -22,6 +22,7 @@ class PlantillaAssignAreaResource extends JsonResource
             $area_type_name = 'Division';
             $division = $this->division;
             $area = [
+                'id' => $this->id,
                 'name' => $division->name,
                 'code' => $division->code,
             ];
@@ -32,6 +33,7 @@ class PlantillaAssignAreaResource extends JsonResource
             $area_type_name = 'Department';
             $department = $this->department;
             $area = [
+                'id' => $this->id,
                 'name' => $department->name,
                 'code' => $department->code,
             ];
@@ -42,6 +44,7 @@ class PlantillaAssignAreaResource extends JsonResource
             $area_type_name = 'Section';
             $section = $this->section;
             $area = [
+                'id' => $this->id,
                 'name' => $section->name,
                 'code' => $section->code,
             ];
@@ -52,6 +55,7 @@ class PlantillaAssignAreaResource extends JsonResource
             $area_type_name = 'Unit';
             $unit = $this->unit;
             $area = [
+                'id' => $this->id,
                 'name' => $unit->name,
                 'code' => $unit->code,
             ];
@@ -60,6 +64,7 @@ class PlantillaAssignAreaResource extends JsonResource
 
 
         return [
+            'id' => $this->id,
             'area_type_name' => $area_type_name,
             'area' => $area,
             'effective_at' => $this->effective_at

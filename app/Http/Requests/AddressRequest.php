@@ -22,15 +22,11 @@ class AddressRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'street' => 'required|string|max:255',
-            'barangay' => 'required|string|max:255',
-            'city' => 'required|string|max:255',
-            'province' => 'required|string|max:255',
-            'zip_code' => 'required|string|max:255',
-            'country' => 'required|string|max:255',
+            'address' => 'required|string|max:255',
+            'is_residential_and_permanent' => 'required|boolean',
             'is_residential' => 'required|boolean',
             'telephone_no' => 'nullable|string|max:255',
-            'personal_information_id' => 'nullable|string|size:36'
+            'personal_information_id' => 'nullable|integer'
         ];
     }
 }

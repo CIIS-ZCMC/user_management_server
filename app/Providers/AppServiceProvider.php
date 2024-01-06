@@ -5,11 +5,11 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
 
-// use App\Models\PositionSystemRole;
-// use App\Observers\PositionSystemRoleObserver;
-
 use App\Services\RequestLogger;
 use App\Services\FileValidationAndUpload;
+
+use App\Models\SystemLogs;
+use App\Observers\SystemLogsObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -25,6 +25,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(FileValidationAndUpload::class, function ($app) {
             return new FileValidationAndUpload();
         });
+
+        SystemLogs::observe(SystemLogsObserver::class);
     }
 
     /**

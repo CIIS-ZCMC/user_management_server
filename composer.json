@@ -9,13 +9,14 @@
     "license": "MIT",
     "require": {
         "php": "^8.1",
-        "guzzlehttp/guzzle": "^7.2",
         "batang-it/tad-php": "^0.4.3",
+        "guzzlehttp/guzzle": "^7.2",
         "hkvstore/dompdf": "^2.0",
         "jenssegers/agent": "^2.6",
         "laravel/framework": "^10.10",
         "laravel/sanctum": "^3.2",
         "laravel/tinker": "^2.8",
+        "league/csv": "^9.12",
         "league/oauth2-google": "^4.0",
         "phpmailer/phpmailer": "^6.8"
     },

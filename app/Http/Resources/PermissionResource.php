@@ -14,12 +14,14 @@ class PermissionResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $status = $this->active?"ACTIVE":"DEACTIVED";
+      
 
         return [
+            'id' => $this->id,
             'name' => $this->name,
             'action' => $this->action,
-            'status' => $status
+            'status' => $this->active,
+            'total_assign' => count($this->modulePermission)
         ];
     }
 }

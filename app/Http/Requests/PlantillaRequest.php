@@ -27,10 +27,10 @@ class PlantillaRequest extends FormRequest
             'effective_at' => 'required|date:Y-m-d',
             'education' => 'required|string|max:255',
             'training' => 'nullable|string|max:255',
-            'experience' => 'nullable|numeric',
+            'experience' => 'nullable|string|max:255',
             'eligibility' => 'nullable|string|max:255',
             'competency' => 'nullable|string|max:255',
-            'plantilla_number' => 'nullable|array'
+            'plantilla_number' => 'nullable|string'
         ];
     }
 }

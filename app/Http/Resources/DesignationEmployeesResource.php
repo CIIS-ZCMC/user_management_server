@@ -14,8 +14,6 @@ class DesignationEmployeesResource extends JsonResource
      */
     public function toArray(Request $request): array
     {   
-        $assign_areas = $this->assignAreas;
-
         return [
             "designation_id" => $this->id,
             "designation_name" => $this->name,

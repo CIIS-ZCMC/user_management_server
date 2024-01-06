@@ -23,8 +23,15 @@ class SalaryGradeRequest extends FormRequest
     {
         return [
             'salary_grade_number' => 'required|integer',
-            'step' => 'required|integer',
-            'amount' => 'required|numeric',
+            'one' => 'required|numeric',
+            "two" => 'required|numeric',
+            "three" => 'required|numeric',
+            "four" => 'required|numeric',
+            "five" => 'required|numeric',
+            "six" => 'required|numeric',
+            "seven" => 'required|numeric',
+            "eight" => 'required|numeric',
+            'tranch' => 'required|string|max:2555',
             'effective_at' => 'required|date:Y-m-d',
         ];
     }

@@ -18,6 +18,7 @@ class OtherInformationResource extends JsonResource
         if($this->skills_hobbies)
         {
             return [
+                'id' => $this->id,
                 'title' => $this->title,
                 'description' => 'Skill/Hobbies'
             ];
@@ -26,12 +27,14 @@ class OtherInformationResource extends JsonResource
         if($this->recognition)
         {
             return [
+                'id' => $this->id,
                 'title' => $this->title,
                 'description' => 'Recognation'
             ];
         }
 
         return [
+            'id' => $this->id,
             'title' => $this->title,
             'description' => 'Organization'
         ];

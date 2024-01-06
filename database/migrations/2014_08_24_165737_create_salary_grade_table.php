@@ -14,8 +14,15 @@ return new class extends Migration
         Schema::create('salary_grades', function (Blueprint $table) {
             $table->id();
             $table->integer('salary_grade_number');
-            $table->integer('step');
-            $table->double('amount');
+            $table->integer('one')->nullable();
+            $table->integer('two')->nullable();
+            $table->integer('three')->nullable();
+            $table->integer('four')->nullable();
+            $table->integer('five')->nullable();
+            $table->integer('six')->nullable();
+            $table->integer('seven')->nullable();
+            $table->integer('eight')->nullable();
+            $table->string('tranch');
             $table->datetime('effective_at');
             $table->timestamps();
         });
