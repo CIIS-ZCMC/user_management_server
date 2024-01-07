@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 
 use App\Http\Controllers\DTR\TwoFactorAuthController;
 use App\Methods\MailConfig;
+use App\Models\AccessToken;
 use App\Models\AssignAreaTrail;
 use App\Models\Contact;
 use App\Models\InActiveEmployee;
@@ -85,21 +86,6 @@ class EmployeeProfileController extends Controller
                 return response()->json(['message' => "Account is deactivated."], Response::HTTP_FORBIDDEN);
             }
 
-            /**
-             * Validate for 2FA
-             * if 2FA is activated send OTP to email to validate ownership
-             */
-
-            /**
-             * If account is login to other device
-             * notify user for that and allow user to choose to cancel or proceed to signout account to other device
-             * return employee profile id when user choose to proceed signout in other device
-             * for server to be able to determine which account it want to sign out.
-             * If account is singin with in the same machine like ip and device and platform continue
-             * signin without signout to current signined of account.
-             * Reuse the created token of first instance of signin to have single access token.
-             */
-
             $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
 
             if (!Hash::check($cleanData['password'].env("SALT_VALUE"), $decryptedPassword)) {
@@ -115,6 +101,17 @@ class EmployeeProfileController extends Controller
                 'version' => $agent->version($agent->browser())
             ];
             
+
+            /**
+             * If account is login to other device
+             * notify user for that and allow user to choose to cancel or proceed to signout account to other device
+             * return employee profile id when user choose to proceed signout in other device
+             * for server to be able to determine which account it want to sign out.
+             * If account is singin with in the same machine like ip and device and platform continue
+             * signin without signout to current signined of account.
+             * Reuse the created token of first instance of signin to have single access token.
+             */
+
             $access_token = $employee_profile->accessToken;
 
             if(!$access_token)
@@ -129,7 +126,45 @@ class EmployeeProfileController extends Controller
 
                 if($difference_in_minutes < 5 && $login_trail['ip_address'] != $ip)
                 {
-                    return response()->json(['data' => $employee_profile['id'],'message' => "You are currently login to different Device."], Response::HTTP_OK);
+
+                    $body = view('mail.otp', ['otpcode' => $this->two_auth->getOTP($employee_profile)]);
+                    $data = [
+                        'Subject' => 'ONE TIME PIN',
+                        'To_receiver' => $employee_profile->personalinformation->contact->email,
+                        'Receiver_Name' => $employee_profile->personalInformation->name(),
+                        'Body' => $body
+                    ];
+        
+                    if ($this->mail->send($data)) {
+                        return response()->json(['message' => "You're account is currently signined to other device. A OTP has sent to your email if you want to signout from other device submit the OTP."], Response::HTTP_OK)
+                            ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', env('SESSION_DOMAIN'), true);
+                    }
+
+                    return response()->json(['message' => "Your account is currently signined to other device, sending otp to your email has failed please try again later."], Response::HTTP_INTERNAL_SERVER_ERROR);                    
+                }
+
+                AccessToken::where('employee_profile_id', $employee_profile->id)->delete();
+            }
+            
+
+            /**
+             * Validate for 2FA
+             * if 2FA is activated send OTP to email to validate ownership
+             */
+
+            if($employee_profile->is_2fa){
+                $body = view('mail.otp', ['otpcode' => $this->two_auth->getOTP($employee_profile)]);
+                $data = [
+                    'Subject' => 'ONE TIME PIN',
+                    'To_receiver' => $employee_profile->personalinformation->contact->email,
+                    'Receiver_Name' => $employee_profile->personalInformation->name(),
+                    'Body' => $body
+                ];
+                
+        
+                if ($this->mail->send($data)) {
+                    return response()->json(['message' => "OTP has sent to your email, submit the OTP to verify that this is your account."], Response::HTTP_OK)
+                        ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', env('SESSION_DOMAIN'), true);
                 }
             }
 
@@ -314,6 +349,7 @@ class EmployeeProfileController extends Controller
         return [
             'id' => $system_role->system['id'],
             'name' => $system_role->system['name'],
+            'code' => $system_role->system['code'],
             'roles' => [$this->buildRoleDetails($system_role)],
         ];
     }
@@ -323,15 +359,14 @@ class EmployeeProfileController extends Controller
         $modules = [];
 
         $role_module_permissions = $system_role->roleModulePermissions;
-
-        // return $role_module_permissions;
     
         foreach ($role_module_permissions as $role_module_permission) {
             $module_name = $role_module_permission->modulePermission->module->name;
+            $module_code = $role_module_permission->modulePermission->module->code;
             $permission_action = $role_module_permission->modulePermission->permission->action;
     
             if (!isset($modules[$module_name])) {
-                $modules[$module_name] = ['name' => $module_name, 'permissions' => []];
+                $modules[$module_name] = ['name' => $module_name, 'code' => $module_code,'permissions' => []];
             }
     
             if (!in_array($permission_action, $modules[$module_name]['permissions'])) {
@@ -346,7 +381,7 @@ class EmployeeProfileController extends Controller
         ];
     }
     
-    //**Require employee id */
+    //**Require employee id *
     public function signOutFromOtherDevice($id, Request $request)
     {
         try{
@@ -430,6 +465,15 @@ class EmployeeProfileController extends Controller
             $personal_information = $employee_profile->personalInformation;
             $name = $personal_information->employeeName();
 
+            $agent = new Agent();
+            $device = [
+                'is_desktop' => $agent->isDesktop(),
+                'is_mobile' => $agent->isMobile(),
+                'platform' => $agent->platform(),
+                'browser' => $agent->browser(),
+                'version' => $agent->version($agent->browser())
+            ];
+
             $assigned_area = $employee_profile->assignedArea;
             $plantilla = null;
             $designation = null;
@@ -444,23 +488,33 @@ class EmployeeProfileController extends Controller
             }
 
             $special_access_roles = $employee_profile->specialAccessRole;
-            
+
             //Retrieve Sidebar Details for the employee base on designation.
             $side_bar_details = $this->buildSidebarDetails($employee_profile, $designation, $special_access_roles);  
 
-            $area_assigned = $employee_profile->assignArea->findDetails; 
+            $area_assigned = $employee_profile->assignedArea->findDetails(); 
 
             $data = [
                 'employee_id' => $employee_profile['employee_id'],
                 'name' => $name,
                 'designation'=> $designation['name'],
-                'area_assigned' => $area_assigned['name'],
+                'area_assigned' => $area_assigned['details']->name,
                 'area_sector' => $area_assigned['sector'],
                 'side_bar_details' => $side_bar_details
             ];
 
+            LoginTrail::create([
+                'signin_at' => now(),
+                'ip_address' => $request->ip(),
+                'device' => ($device['is_desktop'] ? 'Desktop': $device['is_mobile']) ?'Mobile':'Unknown', 
+                'platform' => is_bool($device['platform'])?'Postman':$device['platform'],
+                'browser' => is_bool( $device['browser'])?'Postman':$device['browser'],
+                'browser_version' => is_bool($device['version'])?'Postman':$device['version'],
+                'employee_profile_id' => $employee_profile['id']
+            ]);
+
             return response()
-                ->json([$data, 'message' => "Success login."], Response::HTTP_OK);
+                ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'revalidateAccessToken', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -509,7 +563,7 @@ class EmployeeProfileController extends Controller
 
             if ($this->mail->send($data)) {
                 return response()->json(['message' => 'Please check your email address for OTP.'], Response::HTTP_OK)
-                    ->cookie('employee_details', json_encode(['email' => $email, 'employee_id', $employee->employee_id]), 60, '/', env('SESSION_DOMAIN'), true);
+                    ->cookie('employee_details', json_encode(['email' => $email, 'employee_id' => $employee->employee_id]), 60, '/', env('SESSION_DOMAIN'), true);
             }
 
             return response()->json([
@@ -537,7 +591,7 @@ class EmployeeProfileController extends Controller
                 return response()->json(['message' => 'OTP has expired.'], Response::HTTP_BAD_REQUEST);
             }
 
-            if($otp !== $employee->otp){
+            if((int)$otp !== $employee->otp){
                 return response()->json(['message' => 'Invalid OTP.'], Response::HTTP_BAD_REQUEST);
             }
 
@@ -546,11 +600,13 @@ class EmployeeProfileController extends Controller
                 'otp_expiration' => null
             ]);
 
-            return response()->json(['message' => "Save new password."], Response::HTTP_OK);
+            return response()->json(['message' => "Valid OTP, redirecting to new password form."], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'signOut', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
     public function newPassword(Request $request)
     {
         try{
@@ -659,7 +715,6 @@ class EmployeeProfileController extends Controller
             return response()
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
                 ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), true);
-            return response()->json(['message' => "Save new password."], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'signOut', $th->getMessage());
         }

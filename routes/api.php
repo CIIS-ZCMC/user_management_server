@@ -53,7 +53,7 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
 Route::middleware('auth.cookie')->group(function(){
     
     Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function(){
-        Route::post('authenticity-check', 'EmployeeProfileController@isAuthenticated');
+        Route::post('re-authenticate', 'EmployeeProfileController@revalidateAccessToken');
         Route::delete('signout', 'EmployeeProfileController@signOut');
 
         /**

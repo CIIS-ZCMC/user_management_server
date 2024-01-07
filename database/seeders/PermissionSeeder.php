@@ -55,5 +55,17 @@ class PermissionSeeder extends Seeder
             'name' => 'Request',
             'action' => 'request',
         ]);
+        
+        //id 7
+        Permission::create([
+            'name' => 'Import',
+            'action' => 'import',
+        ]);
+        
+        //id 8
+        Permission::create([
+            'name' => 'Download',
+            'action' => 'download',
+        ]);
     }
 }

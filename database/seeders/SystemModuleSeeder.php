@@ -48,5 +48,12 @@ class SystemModuleSeeder extends Seeder
             'description' => 'Creation and Approve of schedules, Dynamic data for time shifting, apply schedule to employee(s) and many more.',
             'system_id' => 1
         ]);
+
+        SystemModule::create([
+            'name' => 'Personal Account Management',
+            'code' => 'UMIS-PAM',
+            'description' => 'General feature for employees.',
+            'system_id' => 1
+        ]);
     }
 }
