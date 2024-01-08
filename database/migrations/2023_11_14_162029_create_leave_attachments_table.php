@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreign('leave_type_id')->references('id')->on('leave_types')->onDelete('cascade');
             $table->string('file_name')->nullable();
             $table->string('path')->nullable();
+            $table->string('size')->nullable();
             $table->timestamps();
         });
     }

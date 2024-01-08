@@ -13,5 +13,6 @@ class LeaveAttachment extends Model
         'leave_type_id',
         'file_name',
         'path',
+        'size',
     ];
 }

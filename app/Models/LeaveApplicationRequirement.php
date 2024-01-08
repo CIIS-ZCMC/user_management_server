@@ -16,7 +16,6 @@ class LeaveApplicationRequirement extends Model
         'file_name',
         'path',
         'size'
-
     ];
         public function leave_application(){
             return $this->belongsTo(LeaveApplication::class);

@@ -55,7 +55,7 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
     Route::get('leave-application-department', 'LeaveApplicationController@getDepartmentLeaveApplications');
     Route::get('leave-application-section', 'LeaveApplicationController@getSectionLeaveApplications');
     Route::get('leave-application-declined', 'LeaveApplicationController@getDeclinedLeaveApplications');
-    Route::post('access-level-leave-application', 'LeaveApplicationController@getLeaveApplications');
+    Route::get('access-level-leave-application', 'LeaveApplicationController@getLeaveApplications');
     Route::post('reset-leave-credit', 'LeaveApplicationController@resetYearlyLeaveCredit');
     Route::post('print-leave-form/{id}', 'LeaveApplicationController@printLeaveForm');
 
@@ -70,7 +70,7 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
     Route::get('ob-application-department', 'ObApplicationController@getDepartmentObApplications');
     Route::get('ob-application-section', 'ObApplicationController@getSectionObApplications');
     Route::get('ob-application-declined', 'ObApplicationController@getDeclinedObApplications');
-    Route::post('access-level-ob-application', 'ObApplicationController@getObApplications');
+    Route::get('access-level-ob-application', 'ObApplicationController@getObApplications');
 
     Route::get('ot-application-all', 'OfficialTimeApplicationController@index');
     Route::post('ot-application', 'OfficialTimeApplicationController@store');
@@ -84,7 +84,7 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
     Route::get('ot-application-department', 'OfficialTimeApplicationController@getDepartmentOtApplications');
     Route::get('ot-application-section', 'OfficialTimeApplicationController@getSectionOtApplications');
     Route::get('ot-application-declined', 'OfficialTimeApplicationController@getDeclinedOtApplications');
-    Route::post('access-level-ot-application', 'OfficialTimeApplicationController@getOtApplications');
+    Route::get('access-level-ot-application', 'OfficialTimeApplicationController@getOtApplications');
 
     Route::get('ovt-application-all', 'OvertimeApplicationController@index');
     Route::post('ovt-application', 'OvertimeApplicationController@store');
@@ -100,7 +100,7 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
     Route::get('ovt-application-department', 'OvertimeApplicationController@getDepartmentOvertimeApplications');
     Route::get('ovt-application-section', 'OvertimeApplicationController@getSectionOvertimeApplications');
     Route::get('ovt-application-declined', 'OvertimeApplicationController@getDeclinedOvertimeApplications');
-    Route::post('access-level-ovt-application', 'OvertimeApplicationController@getOvertimeApplications');
+    Route::get('access-level-ovt-application', 'OvertimeApplicationController@getOvertimeApplications');
     Route::post('add-monthly-overtime', 'EmployeeOvertimeCreditController@store');
 
     Route::get('cto-application-all', 'CtoApplicationController@index');
@@ -115,7 +115,7 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
     Route::get('cto-application-department', 'CtoApplicationController@getDepartmentCtoApplications');
     Route::get('cto-application-section', 'CtoApplicationController@getSectionCtoApplications');
     Route::get('cto-application-declined', 'CtoApplicationController@getDeclinedCtoApplications');
-    Route::post('access-level-cto-application', 'CtoApplicationController@getCtoApplications');
+    Route::get('access-level-cto-application', 'CtoApplicationController@getCtoApplications');
 
 
     Route::get('division', 'LeaveApplicationController@getDivisionLeaveApplications');
@@ -1435,13 +1435,73 @@ Route::middleware('auth.cookie')->group(function(){
      */
     Route::namespace('App\Http\Controllers\LeaveApplication')->group(function(){
 
-        Route::middleware(['auth.permission:UMIS-LA view-all'])->group(function(){
-            Route::get('time-shift', 'TimeShiftController@index');
+        Route::middleware(['auth.permission:UMIS-LR view-all'])->group(function(){
+            Route::get('requirements', 'RequirementController@index');
         });
 
+        Route::middleware(['auth.permission:UMIS-LR write'])->group(function(){
+            Route::post('requirement', 'RequirementController@store');
+        });
 
+        Route::middleware(['auth.permission:UMIS-LR update'])->group(function(){
+            Route::post('requirement/{id}', 'RequirementController@update');
+        });
 
+        Route::middleware(['auth.permission:UMIS-LT view-all'])->group(function(){
+            Route::get('leave-type-all', 'LeaveTypeController@index');
+        });
 
+        Route::middleware(['auth.permission:UMIS-LT update'])->group(function(){
+            Route::post('leave-type', 'LeaveTypeController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-LT update'])->group(function(){
+            Route::post('leave-type/{id}', 'LeaveTypeController@update');
+        });
+
+        Route::middleware(['auth.permission:UMIS-LT view'])->group(function(){
+            Route::get('leave-type-select', 'LeaveTypeController@select');
+        });
+
+        Route::middleware(['auth.permission:UMIS-LT update'])->group(function(){
+            Route::post('leave-type-deactivate-password/{id}', 'LeaveTypeController@deactivateLeaveType');
+        });
+
+        Route::middleware(['auth.permission:UMIS-LT update'])->group(function(){
+            Route::post('leave-type-activate-password/{id}', 'LeaveTypeController@reactivateLeaveType');
+        });
+
+        Route::middleware(['auth.permission:UMIS-LA view-all'])->group(function(){
+            Route::get('leave-application-all', 'LeaveApplicationController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-LA request'])->group(function(){
+            Route::post('leave-application', 'LeaveApplicationController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-LA approve'])->group(function(){
+            Route::post('leave-application-decline/{id}', 'LeaveApplicationController@declineLeaveApplication');
+        });
+
+        Route::middleware(['auth.permission:UMIS-LA approve'])->group(function(){
+            Route::post('leave-application-cancel/{id}', 'LeaveApplicationController@cancelLeaveApplication');
+        });
+
+        Route::middleware(['auth.permission:UMIS-LA approve'])->group(function(){
+            Route::post('leave-application-update/{id}/{status}', 'LeaveApplicationController@updateLeaveApplicationStatus');
+        });
+
+        Route::middleware(['auth.permission:UMIS-LA view'])->group(function(){
+            Route::get('user-leave-application', 'LeaveApplicationController@getUserLeaveApplication');
+        });
+
+        Route::middleware(['auth.permission:UMIS-LA view'])->group(function(){
+            Route::post('access-level-leave-application', 'LeaveApplicationController@getLeaveApplications');
+        });
+
+        Route::middleware(['auth.permission:UMIS-LA download'])->group(function(){
+            Route::post('print-leave-form/{id}', 'LeaveApplicationController@printLeaveForm');
+        });
 
     });
 

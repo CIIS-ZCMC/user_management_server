@@ -130,10 +130,6 @@ class RequirementController extends Controller
                 ];
             });
             $single_array = array_merge(...$requirement_types_result);
-
-
-
-
             return response()->json(['message' => 'Requirement has been sucessfully saved','data' => $single_array ], Response::HTTP_OK);
         }catch(\Throwable $th){
 
