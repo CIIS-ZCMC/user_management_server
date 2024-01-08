@@ -205,6 +205,8 @@ class EmployeeProfileController extends Controller
 
             $position = $employee_profile->position();
             
+            $last_login = LoginTrail::where('employee_profile_id', $employee_profile->id)->orderByDesc('created_at')->first();
+
             $employee = [
                 'profile_url' => $employee_profile->profile_url,
                 'employee_id' => $employee_profile->employee_id,
@@ -214,7 +216,7 @@ class EmployeeProfileController extends Controller
                 'date_hired' => $employee_profile->date_hired,
                 'job_type' => $employee_profile->employmentType->name,
                 'years_of_service' => $employee_profile->personalInformation->years_of_service,
-                'last_login' => LoginTrail::where('employee_profile_id', $employee_profile->id)->orderByDesc('created_at')->first()->created_at
+                'last_login' => $last_login === null? null: $last_login->created_at
             ];
 
             $data = [

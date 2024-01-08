@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers\Schedule;
 
-use App\Models\PullOut;
-use App\Models\EmployeeProfile;
 
-use App\Http\Resources\PullOutResource;
-use App\Http\Requests\PullOutRequest;
+use App\Models\TimeAdjusment;
+use App\Models\daily_time_records;
+
+use App\Http\Resources\TimeAdjustmentResource;
+use App\Http\Requests\TimeAdjustmentRequest;
 use App\Services\RequestLogger;
 use App\Helpers\Helpers;
 
@@ -16,18 +17,16 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
-
 use Carbon\Carbon;
-use DateTime;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
-class PullOutController extends Controller
+class TimeAdjusmentController extends Controller
 {
-    private $CONTROLLER_NAME = 'Pull Out';
-    private $PLURAL_MODULE_NAME = 'pull outs';
-    private $SINGULAR_MODULE_NAME = 'pull out';
+    private $CONTROLLER_NAME = 'Time Shift';
+    private $PLURAL_MODULE_NAME = 'time shifts';
+    private $SINGULAR_MODULE_NAME = 'time shift';
 
     protected $requestLogger;
 
@@ -44,13 +43,13 @@ class PullOutController extends Controller
         try {
             
             Helpers::registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
-            return response()->json(['data' => PullOutResource::collection(PullOut::all())], Response::HTTP_OK);
+            return response()->json(['data' => TimeAdjustmentResource::collection(TimeAdjusment::all())], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }//
+        }
     }
 
     /**
@@ -64,7 +63,7 @@ class PullOutController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(PullOutRequest $request)
+    public function store(TimeAdjustmentRequest $request)
     {
         try {
             $cleanData = [];
@@ -75,13 +74,17 @@ class PullOutController extends Controller
                     continue;
                 }
 
+                if (DateTime::createFromFormat('Y-m-d', $value)) {
+                    $cleanData[$key] = Carbon::parse($value);
+                    continue;
+                }
+
                 if (is_int($value)) {
                     $cleanData[$key] = $value;
                     continue;
                 }
 
-                if(is_array($value))
-                {
+                if(is_array($value)) {
                     $section_data = [];
 
                     foreach ($request->all() as $key => $value) {
@@ -94,27 +97,20 @@ class PullOutController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $data = PullOut::create($cleanData);
+            $dates = $cleanData['dates'];
+            foreach ($dates as $key => $date) {
+                $find = daily_time_records::where([
+                    ['dtr_date',    '=', $date['dtr_date']],
+                    ['first_in', '=', $date['first_in']],
+                    ['first_out', '=', $date['first_out']],
+                    ['second_in', '=', $date['second_in']],
+                    ['second_out', '=', $date['second_out']],
+                ])->first();
 
-            $variable = $request['employee'];
-            foreach ($variable as $key => $value) {
-                $employee = EmployeeProfile::select('id')->where('id', $value['employee_id'])->first();
-
-                if ($employee != null) {
-                    $query = DB::table('pull_out_employee')->where([
-                        ['pull_out_id', '=', $data->id],
-                        ['employee_profile_id', '=', $employee->id],
-                    ])->first();
-
-                    if ($query) {
-                        $msg = 'pull out request already exist';
-
-                    } else {    
-                        $data->employee()->attach($employee);
-                        $msg = 'New pull out requested.';
-                    }
-                }
+                $data = TimeAdjusment::create($date);
             }
+
+            // $data = TimeAdjusment::create($cleanData);
 
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             return response()->json(['data' => $data ,'message' => $msg], Response::HTTP_OK);
@@ -132,7 +128,7 @@ class PullOutController extends Controller
     public function show(Request $request, $id)
     {
         try {
-            $data = new PullOutResource(PullOut::findOrFail($id));
+            $data = new TimeAdjustmentResource(TimeAdjusment::findOrFail($id));
 
             if(!$data)
             {
@@ -152,7 +148,7 @@ class PullOutController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(PullOut $pullOut)
+    public function edit(TimeAdjusment $timeAdjusment)
     {
         //
     }
@@ -160,11 +156,10 @@ class PullOutController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(PullOutRequest $request, $id)
+    public function update(Request $request, $id)
     {
         try {
-            
-            $data = PullOut::findOrFail($id);
+            $data = TimeAdjusment::findOrFail($id);
 
             if(!$data) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
@@ -178,8 +173,23 @@ class PullOutController extends Controller
                     continue;
                 }
 
+                if (DateTime::createFromFormat('Y-m-d', $value)) {
+                    $cleanData[$key] = Carbon::parse($value);
+                    continue;
+                }
+
                 if (is_int($value)) {
                     $cleanData[$key] = $value;
+                    continue;
+                }
+
+                if(is_array($value)) {
+                    $section_data = [];
+
+                    foreach ($request->all() as $key => $value) {
+                        $section_data[$key] = $value;
+                    }        
+                    $cleanData[$key] = $section_data;
                     continue;
                 }
 
@@ -195,7 +205,6 @@ class PullOutController extends Controller
 
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-
         }
     }
 
@@ -205,7 +214,8 @@ class PullOutController extends Controller
     public function destroy(Request $request, $id)
     {
         try {
-            $data = PullOut::withTrashed()->findOrFail($id);
+            $data = TimeAdjusment::withTrashed()->findOrFail($id);
+            $data->section()->detach($data->id);
          
             if ($data->deleted_at != null) {
                 $data->forceDelete();
@@ -284,4 +294,3 @@ class PullOutController extends Controller
         }
     }
 }
-  

@@ -8,6 +8,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
+use App\Models\Schedule;
+
 class EmployeeProfile extends Authenticatable
 {
     use HasFactory;
@@ -268,5 +270,9 @@ class EmployeeProfile extends Authenticatable
         }
 
         return null;
+    }
+    
+    public function schedule() {
+        return $this->belongsToMany(Schedule::class, 'employee_profile_schedule')->withPivot('employee_profile_id');
     }
 }

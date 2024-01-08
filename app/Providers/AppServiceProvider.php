@@ -35,5 +35,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Schema::defaultStringLength(191);
+
+        $this->app->singleton('Helpers', function () {
+            return new Helpers();
+        });
     }
 }

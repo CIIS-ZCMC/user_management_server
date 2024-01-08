@@ -199,7 +199,7 @@ class PersonalInformationSeeder extends Seeder
             'password_encrypted' => $encryptedPassword,
             'password_created_at' => now(),
             'password_expiration_at' => $fortyDaysExpiration,
-            'biometric_id' => 5335,
+            'biometric_id' => 3553,
             'allow_time_adjustment' => TRUE,
             'employment_type_id' => EmploymentType::find(3)->id,
             'personal_information_id' => $personal_information->id
@@ -221,13 +221,11 @@ class PersonalInformationSeeder extends Seeder
             'effective_at' => now()
         ]);
 
-        
         $designations = Designation::all();
 
         foreach($designations as $designation){
             Cache::forget($designation['name']);
         }
-
     }
 
     protected function encryptData($dataToEncrypt)

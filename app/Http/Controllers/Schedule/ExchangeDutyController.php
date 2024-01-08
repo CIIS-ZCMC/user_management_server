@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers\Schedule;
 
-use App\Models\PullOut;
+use App\Models\ExchangeDuty;
+use App\Models\Schedule;
 use App\Models\EmployeeProfile;
 
-use App\Http\Resources\PullOutResource;
-use App\Http\Requests\PullOutRequest;
+use App\Http\Resources\ExchangeDutyResource;
+use App\Http\Requests\ExchangeDutyRequest;
 use App\Services\RequestLogger;
 use App\Helpers\Helpers;
 
@@ -23,11 +24,12 @@ use DateTime;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
-class PullOutController extends Controller
+
+class ExchangeDutyController extends Controller
 {
-    private $CONTROLLER_NAME = 'Pull Out';
-    private $PLURAL_MODULE_NAME = 'pull outs';
-    private $SINGULAR_MODULE_NAME = 'pull out';
+    private $CONTROLLER_NAME = 'Exchange Duty';
+    private $PLURAL_MODULE_NAME = 'exchange duties';
+    private $SINGULAR_MODULE_NAME = 'exchange duty';
 
     protected $requestLogger;
 
@@ -35,42 +37,47 @@ class PullOutController extends Controller
     {
         $this->requestLogger = $requestLogger;
     }
-
+    
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index()
     {
         try {
             
             Helpers::registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
-            return response()->json(['data' => PullOutResource::collection(PullOut::all())], Response::HTTP_OK);
+            return response()->json(['data' => ExchangeDutyResource::collection(ExchangeDuty::all())], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }//
+        }
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
+    public function create(Request $request) {
+        try {
+            //code...
+        } catch (\Throwable $th) {
+            //throw $th;
+        }
     }
-
+    
     /**
      * Store a newly created resource in storage.
      */
-    public function store(PullOutRequest $request)
+    public function store(ExchangeDutyRequest $request)
     {
         try {
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if(empty($value)){
+                if (empty($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                if (is_array($value)) {
                     $cleanData[$key] = $value;
                     continue;
                 }
@@ -80,47 +87,50 @@ class PullOutController extends Controller
                     continue;
                 }
 
-                if(is_array($value))
-                {
-                    $section_data = [];
-
-                    foreach ($request->all() as $key => $value) {
-                        $section_data[$key] = $value;
-                    }        
-                    $cleanData[$key] = $section_data;
-                    continue;
-                }
-
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $data = PullOut::create($cleanData);
+            $schedule = Schedule::where('id', $cleanData['schedule_id'])->first();
 
-            $variable = $request['employee'];
-            foreach ($variable as $key => $value) {
-                $employee = EmployeeProfile::select('id')->where('id', $value['employee_id'])->first();
+            if ($schedule) {
+                $reliever = EmployeeProfile::where('id', $cleanData['reliever_employee_id'])->first();
 
-                if ($employee != null) {
-                    $query = DB::table('pull_out_employee')->where([
-                        ['pull_out_id', '=', $data->id],
-                        ['employee_profile_id', '=', $employee->id],
+                if ($reliever) {
+                    $query = DB::table('employee_profile_schedule')->where([
+                        ['employee_profile_id', '=', $reliever->id],
+                        ['schedule_id', '=', $schedule->id],
                     ])->first();
 
                     if ($query) {
-                        $msg = 'pull out request already exist';
+                        $data = ExchangeDuty::create($cleanData);
 
-                    } else {    
-                        $data->employee()->attach($employee);
-                        $msg = 'New pull out requested.';
+                        $variable = $cleanData['approve_by'];
+                        foreach ($variable as $key => $value) {
+                            $approve_by = EmployeeProfile::select('id')->where('id', $value['employee_id'])->first();
+
+                            if (!$approve_by) {
+                                $msg = 'No Employee Found (Approve By)';
+
+                            } else { 
+
+                                $data->approval()->attach($approve_by);
+                                $msg = 'New exchange duty requested.';
+                            }
+                        }
                     }
+                    
+                } else {
+                    return response()->json(['message' => 'No employee found.'], Response::HTTP_NOT_FOUND);
                 }
+            } else {
+                return response()->json(['message' => 'No schedule found.'], Response::HTTP_NOT_FOUND);
             }
-
-            Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+           
+            Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating.'.$this->SINGULAR_MODULE_NAME.'.');
             return response()->json(['data' => $data ,'message' => $msg], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-
+            
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -132,7 +142,7 @@ class PullOutController extends Controller
     public function show(Request $request, $id)
     {
         try {
-            $data = new PullOutResource(PullOut::findOrFail($id));
+            $data = new ExchangeDutyResource(ExchangeDuty::findOrFail($id));
 
             if(!$data)
             {
@@ -150,21 +160,12 @@ class PullOutController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(PullOut $pullOut)
-    {
-        //
-    }
-
-    /**
      * Update the specified resource in storage.
      */
-    public function update(PullOutRequest $request, $id)
+    public function update(Request $request, $id)
     {
         try {
-            
-            $data = PullOut::findOrFail($id);
+            $data = ExchangeDuty::findOrFail($id);
 
             if(!$data) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
@@ -173,7 +174,12 @@ class PullOutController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if(empty($value)){
+                if (empty($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                if (is_array($value)) {
                     $cleanData[$key] = $value;
                     continue;
                 }
@@ -188,12 +194,12 @@ class PullOutController extends Controller
 
             $data->update($cleanData);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
-            return response()->json(['data' => $data], Response::HTTP_OK);
+            Helpers::registerSystemLogs($request, $data->id, true, 'Success in updating.'.$this->SINGULAR_MODULE_NAME.'.');
+            return response()->json(['data' => $approve_by ,'message' => 'Success'], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+                        
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
 
         }
@@ -204,23 +210,25 @@ class PullOutController extends Controller
      */
     public function destroy(Request $request, $id)
     {
-        try {
-            $data = PullOut::withTrashed()->findOrFail($id);
-         
+          try {
+            $data = ExchangeDuty::withTrashed()->findOrFail($id);
+
+            if (!$data) {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
             if ($data->deleted_at != null) {
                 $data->forceDelete();
             } else {
                 $data->delete();
             }
             
-            Helpers::registerSystemLogs($request, $id, true, 'Success in delete '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in delete.'.$this->SINGULAR_MODULE_NAME.'.');
             return response()->json(['data' => $data], Response::HTTP_OK);
-
         } catch (\Throwable $th) {
 
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-
         }
     }
 
@@ -229,17 +237,16 @@ class PullOutController extends Controller
      */
     public function approve(Request $request, $id) {
         try {
-            
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if(empty($value)){
+                if (empty($value)) {
                     $cleanData[$key] = $value;
                     continue;
                 }
 
-                if (DateTime::createFromFormat('Y-m-d', $value)) {
-                    $cleanData[$key] = Carbon::parse($value);
+                if (is_array($value)) {
+                    $cleanData[$key] = $value;
                     continue;
                 }
 
@@ -247,31 +254,26 @@ class PullOutController extends Controller
                     $cleanData[$key] = $value;
                     continue;
                 }
-
-                if(is_array($value)) {
-                    $section_data = [];
-
-                    foreach ($request->all() as $key => $value) {
-                        $section_data[$key] = $value;
-                    }        
-                    $cleanData[$key] = $section_data;
+                
+                if (is_bool($value)) {
+                    $cleanData[$key] = $value;
                     continue;
                 }
 
                 $cleanData[$key] = strip_tags($value);
             }
-
             
-            $data = TimeAdjusment::findOrFail($id);
+            $data = DB::table('exchange_duty_approval')->where([
+                ['exchange_duty_id',    '=', $id],
+                ['employee_profile_id', '=', $cleanData['user']],
+            ])->first();
 
             if(!$data) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $query = TimeAdjusment::where('id', $data->id)->update([
-                'status'            => $cleanData['status'],
-                'approval_date'     => now(),
-                'updated_at'        => now()
+            $query = DB::table('exchange_duty_approval')->where('id', $data->id)->update([
+                'approval_status' => $cleanData['approval_status']
             ]);
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in approve '.$this->SINGULAR_MODULE_NAME.'.');
@@ -284,4 +286,3 @@ class PullOutController extends Controller
         }
     }
 }
-  
