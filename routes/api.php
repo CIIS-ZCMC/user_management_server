@@ -148,7 +148,6 @@ Route::middleware('auth.cookie')->group(function(){
         Route::put('freedom-wall-messages/{id}', 'FreedomWallMessagesController@update');
         Route::delete('freedom-wall-messages/{id}', 'FreedomWallMessagesController@destroy');
     });
-
     /**
      * User Management Information System
      */
@@ -1520,4 +1519,5 @@ Route::middleware('auth.cookie')->group(function(){
             Route::delete('time-shift/{id}', 'TimeShiftController@destroy');
         });
     });
+});
 });
