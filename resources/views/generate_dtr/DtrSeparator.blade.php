@@ -21,12 +21,15 @@
     @php
     $countin = 0;
     @endphp
-
-    @foreach($firstin as $f1)
+    
+    @foreach($firstin as $key=> $f1)
+    @if($biometric_ID  == $f1['biometric_ID'])
     @if($f1['first_in'])
     @if(date('d',strtotime($f1['first_in'])) == $i)
     <span class="fentry">
-        {{date('h:i a',strtotime($f1['first_in']))}}
+
+        {{date('h:i a',strtotime($f1['first_in']))}} 
+      
     </span>
 
 
@@ -35,6 +38,7 @@
     @endphp
 
 
+    @endif
     @endif
     @endif
     @endforeach
@@ -108,9 +112,11 @@
             }
         @endphp
         @foreach($firstout as $f2)
+        @if($biometric_ID  == $f2['biometric_ID'])
         @if($f2['first_out'])
         @if(date('d',strtotime($f2['first_out'])) == $fo)
-        {{date('h:i a',strtotime($f2['first_out']))}}
+        {{date('h:i a',strtotime($f2['first_out']))}} 
+        @endif
         @endif
         @endif
         @endforeach
@@ -121,13 +127,14 @@
         <span class="fentry">
             <!-- SECOND IN -->
             @foreach($secondin as $f3)
-
+            @if($biometric_ID  == $f3['biometric_ID'])
             @if($f3['second_in'])
 
             @if(date('d',strtotime($f3['second_in'])) == $i)
 
             {{date('h:i a',strtotime($f3['second_in']))}}
 
+            @endif
             @endif
             @endif
             @endforeach
@@ -137,11 +144,13 @@
         <span class="fentry">
             <!-- SECOND OUT -->
             @foreach($secondout as $f4)
+            @if($biometric_ID  == $f4['biometric_ID'])
             @if($f4['second_out'])
             @if(date('d',strtotime($f4['second_out'])) == $i)
             {{date('h:i a',strtotime($f4['second_out']))}}
             @endif
 
+            @endif
             @endif
             @endforeach
         </span>
@@ -175,7 +184,7 @@
                 }else {
                 $minutes = '-';
                 }
-
+               
                 @endphp
 
                 @endif

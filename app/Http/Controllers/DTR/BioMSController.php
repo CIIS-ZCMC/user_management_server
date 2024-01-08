@@ -3,28 +3,28 @@
 namespace App\Http\Controllers\DTR;
 
 use Illuminate\Http\Request;
-use App\Models\devices;
-use App\Methods\Bio_contr;
+use App\Models\Devices;
+use App\Methods\BioControl;
 use App\Http\Controllers\Controller;
 
 class BioMSController extends Controller
 {
-    protected $Device;
+    protected $device;
 
     public function __construct()
     {
-        $this->Device = new Bio_contr();
+        $this->device = new BioControl();
     }
     public function index()
     {
 
         try {
-            $bios = devices::all();
+            $bios = Devices::all();
             $data = [];
             $status = "Offline";
             foreach ($bios as $row) {
 
-                if (!$this->Device->BIO($row)) {
+                if (!$this->device->BIO($row)) {
                     $status = "Offline";
                 } else {
                     $status = "Online";
@@ -53,11 +53,11 @@ class BioMSController extends Controller
         }
     }
 
-    public function operating_device()
+    public function operatingDevice()
     {
 
         try {
-            $data = devices::where('is_registration', 0)->get();
+            $data = Devices::where('is_registration', 0)->get();
 
             return response()->json([
                 'data' => $data
@@ -67,11 +67,11 @@ class BioMSController extends Controller
         }
     }
 
-    public function registration_device()
+    public function registrationDevice()
     {
 
         try {
-            $data = devices::where('is_registration', 1)->get();
+            $data = Devices::where('is_registration', 1)->get();
 
             return response()->json([
                 'data' => $data
@@ -82,7 +82,7 @@ class BioMSController extends Controller
     }
 
 
-    public function add_device(Request $request)
+    public function addDevice(Request $request)
     {
 
         try {
@@ -106,19 +106,19 @@ class BioMSController extends Controller
                 $is_registration = 0;
             }
 
-            $validation = devices::where('ip_address', $ip_address)->get();
+            $validation = Devices::where('ip_address', $ip_address)->get();
             if (count($validation) == 0) {
                 /* **
                 * here we only allow 1 registration device
                 
                 */
                 if ($is_registration) {
-                    $checkifregistrationexist = devices::where('is_registration', 1)->get();
-                    if (count($checkifregistrationexist) >= 1) {
+                    $check_if_registration_exist = Devices::where('is_registration', 1)->get();
+                    if (count($check_if_registration_exist) >= 1) {
                         return response()->json(['message' => 'Registration Device Already Exist']);
                     }
                 }
-                devices::create([
+                Devices::create([
                     'device_name' => $device_name,
                     'ip_address' => $ip_address,
                     'com_key'    => $com_key,
@@ -134,13 +134,13 @@ class BioMSController extends Controller
         }
     }
 
-    public function test_device_connection(Request $request)
+    public function testDeviceConnection(Request $request)
     {
         try {
             $device_id = $request->device_id;
-            $device = devices::find($device_id);
+            $device = Devices::find($device_id);
 
-            if ($this->Device->BIO($device)) {
+            if ($this->device->bIO($device)) {
                 return response()->json(['message' => 'Connection Successful']);
             }
             return response()->json(['message' => 'Connection Failed']);
@@ -149,7 +149,7 @@ class BioMSController extends Controller
         }
     }
 
-    public function Update_device(Request $request)
+    public function updateDevice(Request $request)
     {
         try {
             $device_id = $request->device_id;
@@ -170,12 +170,12 @@ class BioMSController extends Controller
             }
 
             if ($is_registration) {
-                $validate =  devices::where('is_registration', 1)->get();
+                $validate =  Devices::where('is_registration', 1)->get();
 
                 if (count($validate) >= 1) {
                     if ($validate[0]->id == $device_id) {
 
-                        devices::findorFail($device_id)
+                        Devices::findorFail($device_id)
                             ->update([
                                 'device_name' => $device_name,
                                 'ip_address' => $ip_address,
@@ -189,7 +189,7 @@ class BioMSController extends Controller
                 }
             }
 
-            devices::findorFail($device_id)
+            Devices::findorFail($device_id)
                 ->update([
                     'device_name' => $device_name,
                     'ip_address' => $ip_address,
@@ -205,11 +205,11 @@ class BioMSController extends Controller
     }
 
 
-    public function Delete_device(Request $request)
+    public function deleteDevice(Request $request)
     {
         try {
             $device_id = $request->device_id;
-            devices::findorFail($device_id)->delete();
+            Devices::findorFail($device_id)->delete();
             return response()->json(['message' => 'Device Deleted Successfully!']);
         } catch (\Throwable $th) {
             return response()->json(['message' =>  $th->getMessage()]);

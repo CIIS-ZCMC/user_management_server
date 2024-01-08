@@ -5,12 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class daily_time_records extends Model
+class DailyTimeRecords extends Model
 {
     use HasFactory;
 
+    protected $table = "daily_time_records";
     protected $fillable = [
         'biometric_id',
+        'dtr_date',
         'first_in',
         'first_out',
         'second_in',

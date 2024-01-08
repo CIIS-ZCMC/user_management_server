@@ -17,6 +17,7 @@ return new class extends Migration
             $table->integer('dtr_id');
             $table->text('json_logs');
             $table->integer('validated')->default(1);
+            $table->date('dtr_date');
             $table->timestamps();
         });
     }

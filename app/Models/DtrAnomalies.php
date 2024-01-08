@@ -5,14 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class holiday_list extends Model
+class DtrAnomalies extends Model
 {
     use HasFactory;
 
+    protected $table = "dtr_anomalies";
     protected $fillable = [
-        'description',
-        'month_day',
-        'isspecial',
-        'effectiveDate',
+        'employee_id',
+        'name',
+        'dtr_entry',
+        'status',
+        'status_desc'
     ];
 }

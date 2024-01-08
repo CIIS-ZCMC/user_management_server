@@ -128,7 +128,7 @@ class EmployeeProfile extends Authenticatable
     public function name()
     {
         $personal_information = $this->personalInformation;
-        $fullName = $personal_information['first_name'].' '.$personal_information['last_name'];
+        $fullName = $personal_information['first_name'] . ' ' . $personal_information['last_name'];
 
         return $fullName;
     }
@@ -274,5 +274,9 @@ class EmployeeProfile extends Authenticatable
     
     public function schedule() {
         return $this->belongsToMany(Schedule::class, 'employee_profile_schedule')->withPivot('employee_profile_id');
+    }
+    public function GetPersonalInfo()
+    {
+        return $this->personalInformation;
     }
 }
