@@ -1433,7 +1433,7 @@ Route::middleware('auth.cookie')->group(function(){
     /**
      * Leave and Overtime Management
      */
-    Route::namespace('App\Http\Controllers\LeaveandOvertime')->group(function(){
+    Route::namespace('App\Http\Controllers\LeaveAndOvertime')->group(function(){
 
         Route::middleware(['auth.permission:UMIS-LOM view-all'])->group(function(){
             Route::get('requirements', 'RequirementController@index');
