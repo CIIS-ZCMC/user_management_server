@@ -24,6 +24,7 @@ return new class extends Migration
             $table->string('undertime_total')->nullable();
             $table->string('working_hours_total')->nullable();
             $table->string('credit_value');
+            $table->string('true_credit_value')->nullable();
             $table->string('reason');
             $table->string('date');
             $table->string('time')->nullable();

@@ -114,7 +114,7 @@ class LeaveCreditController extends Controller
                                         }
                                         else
                                         {
-                                            if($absent_credit_value !=0)
+                                            if($absent_credit_value != 0 && $absent_credit_value < $totalLeaveCredits)
                                             {
                                                 $employeeCredit = new ModelsEmployeeLeaveCredit();
                                                 $employeeCredit->leave_type_id = $vl_leave->id;
@@ -127,6 +127,20 @@ class LeaveCreditController extends Controller
                                                 $employeeCredit->save();
 
                                             }
+                                            else if($absent_credit_value > $totalLeaveCredits)
+                                            {
+
+                                                $employeeCredit = new ModelsEmployeeLeaveCredit();
+                                                $employeeCredit->leave_type_id = $vl_leave->id;
+                                                $employeeCredit->employee_profile_id = $employee->id;
+                                                $employeeCredit->operation = "deduct";
+                                                $employeeCredit->reason = "Absent";
+                                                $employeeCredit->absent_total =$total_absences;
+                                                $employeeCredit->credit_value = $totalLeaveCredits;
+                                                $employeeCredit->true_credit_value = $absent_credit_value;
+                                                $employeeCredit->date = date('Y-m-d');
+                                                $employeeCredit->save();
+                                            }
 
 
                                         }
@@ -134,8 +148,8 @@ class LeaveCreditController extends Controller
                                 }
                             }
 
-                            if($undertime_credit_value !=0)
-                                                {
+                            if($undertime_credit_value !=0 && $undertime_credit_value < $totalLeaveCredits)
+                            {
                                 $employeeCredit = new ModelsEmployeeLeaveCredit();
                                 $employeeCredit->leave_type_id = $vl_leave->id;
                                 $employeeCredit->employee_profile_id = '1';
@@ -145,6 +159,19 @@ class LeaveCreditController extends Controller
                                 $employeeCredit->credit_value = $undertime_credit_value;
                                 $employeeCredit->date = date('Y-m-d');
                                 $employeeCredit->time =  date('H:i:s');
+                                $employeeCredit->save();
+                            }
+                            else if($undertime_credit_value > $totalLeaveCredits)
+                            {
+                                $employeeCredit = new ModelsEmployeeLeaveCredit();
+                                $employeeCredit->leave_type_id = $vl_leave->id;
+                                $employeeCredit->employee_profile_id = $employee->id;
+                                $employeeCredit->operation = "deduct";
+                                $employeeCredit->reason = "Undertime";
+                                $employeeCredit->undertime_total = $total_undertime;
+                                $employeeCredit->credit_value = $totalLeaveCredits;
+                                $employeeCredit->true_credit_value = $undertime_credit_value;
+                                $employeeCredit->date = date('Y-m-d');
                                 $employeeCredit->save();
                             }
 
