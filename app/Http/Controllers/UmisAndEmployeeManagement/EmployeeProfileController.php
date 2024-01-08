@@ -5,6 +5,17 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 use App\Http\Controllers\Controller;
 
 use App\Http\Controllers\DTR\TwoFactorAuthController;
+use App\Http\Resources\AddressResource;
+use App\Http\Resources\ChildResource;
+use App\Http\Resources\CivilServiceEligibilityResource;
+use App\Http\Resources\ContactResource;
+use App\Http\Resources\EducationalBackgroundResource;
+use App\Http\Resources\FamilyBackGroundResource;
+use App\Http\Resources\OtherInformationResource;
+use App\Http\Resources\PersonalInformationResource;
+use App\Http\Resources\TrainingResource;
+use App\Http\Resources\VoluntaryWorkResource;
+use App\Http\Resources\WorkExperienceResource;
 use App\Methods\MailConfig;
 use App\Models\AccessToken;
 use App\Models\AssignAreaTrail;
@@ -171,7 +182,6 @@ class EmployeeProfileController extends Controller
             $token = $employee_profile->createToken();
 
             $personal_information = $employee_profile->personalInformation;
-            $name = $personal_information->employeeName();
 
             $assigned_area = $employee_profile->assignedArea;
             $plantilla = null;
@@ -193,10 +203,40 @@ class EmployeeProfileController extends Controller
 
             $area_assigned = $employee_profile->assignedArea->findDetails(); 
 
+            $position = $employee_profile->position();
+            
+            $employee = [
+                'profile_url' => $employee_profile->profile_url,
+                'employee_id' => $employee_profile->employee_id,
+                'name' => $employee_profile->personalInformation->name(),
+                'position' => $position,
+                'job_position' => $designation->name,
+                'date_hired' => $employee_profile->date_hired,
+                'job_type' => $employee_profile->employmentType->name,
+                'years_of_service' => $employee_profile->personalInformation->years_of_service,
+                'last_login' => LoginTrail::where('employee_profile_id', $employee_profile->id)->orderByDesc('created_at')->first()->created_at
+            ];
+
             $data = [
                 'employee_id' => $employee_profile['employee_id'],
-                'name' => $name,
+                'name' => $personal_information->employeeName(),
                 'designation'=> $designation['name'],
+                'employee_details' => [
+                    'employee' => $employee,
+                    'personal_information' => new PersonalInformationResource( $personal_information),
+                    'contact' => new ContactResource($personal_information->contact),
+                    'address' => AddressResource::collection($personal_information->addresses),
+                    'family_background' => new FamilyBackGroundResource($personal_information->familyBackground),
+                    'children' => ChildResource::collection($personal_information->children),
+                    'education' => EducationalBackgroundResource::collection($personal_information->educationalBackground),
+                    'affiliations_and_others' => [
+                        'civil_service_eligibility' => CivilServiceEligibilityResource::collection($personal_information->civilServiceEligibility),
+                        'work_experience' => WorkExperienceResource::collection($personal_information->workExperience),
+                        'voluntary_work_or_involvement' => VoluntaryWorkResource::collection($personal_information->voluntaryWork),
+                        'training' => TrainingResource::collection($personal_information->training),
+                        'other' => $personal_information->other
+                    ]
+                ],
                 'area_assigned' => $area_assigned['details']->name,
                 'area_sector' => $area_assigned['sector'],
                 'side_bar_details' => $side_bar_details
@@ -429,10 +469,40 @@ class EmployeeProfileController extends Controller
 
             $area_assigned = $employee_profile->assignArea->findDetails; 
 
+            $position = $employee_profile->position();
+
+            $employee = [
+                'profile_url' => $employee_profile->profile_url,
+                'employee_id' => $employee_profile->employee_id,
+                'name' => $employee_profile->personalInformation->name(),
+                'position' => $position,
+                'job_position' => $designation,
+                'date_hired' => $employee_profile->date_hired,
+                'job_type' => $employee_profile->employmentType->name,
+                'years_of_service' => $employee_profile->personalInformation->years_of_service,
+                'last_login' => LoginTrail::where('employee_profile_id', $employee_profile->id)->orderByDesc('created_at')->first()
+            ];
+
             $data = [
                 'employee_id' => $employee_profile['employee_id'],
                 'name' => $name,
                 'designation'=> $designation['name'],
+                'employee_details' => [
+                    'employee' => $employee,
+                    'personal_information' => $personal_information,
+                    'contact' => $personal_information->contact,
+                    'address' => $personal_information->addresses,
+                    'family_background' => new FamilyBackGroundResource($personal_information->familyBackground),
+                    'children' => $personal_information->children,
+                    'education' => $personal_information->educationalBackground,
+                    'affiliations_and_others' => [
+                        'civil_service_eligibility' => $personal_information->civilServiceEligibility,
+                        'work_experience' => $personal_information->workExperience,
+                        'voluntary_work_or_involvement' => $personal_information->voluntaryWork,
+                        'training' => $personal_information->training,
+                        'other' => $personal_information->other
+                    ]
+                ],
                 'area_assigned' => $area_assigned['name'],
                 'area_sector' => $area_assigned['sector'],
                 'side_bar_details' => $side_bar_details
