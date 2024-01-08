@@ -23,8 +23,8 @@ Route::get('/initialize-storage', function () {
 Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
     Route::post('sign-in', 'EmployeeProfileController@signIn');
     Route::post('verify-email-and-send-otp', 'EmployeeProfileController@verifyEmailAndSendOTP');
-    Route::post('validate-otp', 'EmployeeProfileController@validateOTP');
-    Route::post('reset-password', 'EmployeeProfileController@resetPassword');
+    Route::post('verify-otp', 'EmployeeProfileController@verifyOTP');
+    Route::post('new-password', 'EmployeeProfileController@newPassword');
     Route::get('retrieve-token', 'CsrfTokenController@generateCsrfToken');
     Route::get('validate-token', 'CsrfTokenController@validateToken');
 });
@@ -130,7 +130,7 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
 Route::middleware('auth.cookie')->group(function(){
 
     Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function(){
-        Route::post('authenticity-check', 'EmployeeProfileController@isAuthenticated');
+        Route::post('re-authenticate', 'EmployeeProfileController@revalidateAccessToken');
         Route::delete('signout', 'EmployeeProfileController@signOut');
 
         /**

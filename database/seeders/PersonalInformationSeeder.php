@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
@@ -219,6 +220,14 @@ class PersonalInformationSeeder extends Seeder
             'designation_id' => Designation::where('code', 'CP III')->first()->id,
             'effective_at' => now()
         ]);
+
+        
+        $designations = Designation::all();
+
+        foreach($designations as $designation){
+            Cache::forget($designation['name']);
+        }
+
     }
 
     protected function encryptData($dataToEncrypt)

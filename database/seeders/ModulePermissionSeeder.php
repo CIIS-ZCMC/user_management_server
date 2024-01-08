@@ -23,6 +23,8 @@ class ModulePermissionSeeder extends Seeder
         $permission_delete = Permission::where('action', 'delete')->first();
         $permission_approve = Permission::where('action', 'approve')->first();
         $permission_request = Permission::where('action', 'request')->first();
+        $permission_import = Permission::where('action', 'import')->first();
+        $permission_download = Permission::where('action', 'download')->first();
 
         /**
          * Umis Module Registration
@@ -71,6 +73,18 @@ class ModulePermissionSeeder extends Seeder
             'system_module_id' => $system_module_umis['id']
         ]);
         
+        ModulePermission::create([
+            'code' => $system_module_umis['code'].' '.$permission_import['action'],
+            'permission_id' => $permission_import['id'],
+            'system_module_id' => $system_module_umis['id']
+        ]);
+        
+        ModulePermission::create([
+            'code' => $system_module_umis['code'].' '.$permission_download['action'],
+            'permission_id' => $permission_download['id'],
+            'system_module_id' => $system_module_umis['id']
+        ]);
+        
         /**
          * Employee Management Registration
          */
@@ -115,6 +129,18 @@ class ModulePermissionSeeder extends Seeder
         ModulePermission::create([
             'code' => $system_module_employee_registration['code'].' '.$permission_request['action'],
             'permission_id' => $permission_request['id'],
+            'system_module_id' => $system_module_employee_registration['id']
+        ]);
+        
+        ModulePermission::create([
+            'code' => $system_module_employee_registration['code'].' '.$permission_import['action'],
+            'permission_id' => $permission_import['id'],
+            'system_module_id' => $system_module_employee_registration['id']
+        ]);
+        
+        ModulePermission::create([
+            'code' => $system_module_employee_registration['code'].' '.$permission_download['action'],
+            'permission_id' => $permission_download['id'],
             'system_module_id' => $system_module_employee_registration['id']
         ]);
         
@@ -257,6 +283,41 @@ class ModulePermissionSeeder extends Seeder
             'code' => $system_module_schedule['code'].' '.$permission_request['action'],
             'permission_id' => $permission_request['id'],
             'system_module_id' => $system_module_schedule['id']
+        ]);
+        
+        /**
+         * Personal Information Management
+         */
+        $system_module_personal_account_management = SystemModule::find(6);
+
+        ModulePermission::create([
+            'code' => $system_module_personal_account_management['code'].' '.$permission_read_all['action'],
+            'permission_id' => $permission_read_all['id'],
+            'system_module_id' => $system_module_personal_account_management['id']
+        ]);
+
+        ModulePermission::create([
+            'code' => $system_module_personal_account_management['code'].' '.$permission_write['action'],
+            'permission_id' => $permission_write['id'],
+            'system_module_id' => $system_module_personal_account_management['id']
+        ]);
+        
+        ModulePermission::create([
+            'code' => $system_module_personal_account_management['code'].' '.$permission_read['action'],
+            'permission_id' => $permission_read['id'],
+            'system_module_id' => $system_module_personal_account_management['id']
+        ]);
+        
+        ModulePermission::create([
+            'code' => $system_module_personal_account_management['code'].' '.$permission_update['action'],
+            'permission_id' => $permission_update['id'],
+            'system_module_id' => $system_module_personal_account_management['id']
+        ]);
+        
+        ModulePermission::create([
+            'code' => $system_module_personal_account_management['code'].' '.$permission_request['action'],
+            'permission_id' => $permission_request['id'],
+            'system_module_id' => $system_module_personal_account_management['id']
         ]);
     }
 }
