@@ -477,7 +477,775 @@ class LeaveApplicationController extends Controller
         $status = $request->status;
         $leave_applications = [];
         $division = AssignArea::where('employee_profile_id',$id)->value('division_id');
-     
+        $id='1';
+        $status = $request->status;
+        $leave_applications = [];
+        $section = AssignArea::where('employee_profile_id',$id)->value('section_id');
+        $hr_head_id = Section::where('id', $section)->value('supervisor_employee_profile_id');
+        $division = AssignArea::where('employee_profile_id',$id)->value('division_id');
+        $divisionHeadId = Division::where('id', $division)->value('chief_employee_profile_id');
+        $department = AssignArea::where('employee_profile_id',$id)->value('department_id');
+        $departmentHeadId = Department::where('id', $department)->value('head_employee_profile_id');
+        $training_officer_id = Department::where('id', $department)->value('training_officer_employee_profile_id');
+        $section = AssignArea::where('employee_profile_id',$id)->value('section_id');
+        $sectionHeadId = Section::where('id', $section)->value('supervisor_employee_profile_id');
+        if($hr_head_id == $id) {
+            $leave_applications = LeaveApplication::with(['employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
+            // ->where('status', 'applied')
+            ->get();
+            if($leave_applications->isNotEmpty())
+            {
+                $leave_applications_result = $leave_applications->map(function ($leave_application) {
+                    $datesData = $leave_application->dates ? $leave_application->dates : collect();
+                    $logsData = $leave_application->logs ? $leave_application->logs : collect();
+                    $requirementsData = $leave_application->requirements ? $leave_application->requirements : collect();
+                    $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
+                    $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
+                    $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
+                    $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
+                    $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
+                    $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
+                    $hr = Section::with('supervisor.personalInformation')->where('name','HR')->orWhere('name','Human Resource')->first();
+                    $add=EmployeeLeaveCredit::where('employee_profile_id',$leave_application->employee_profile_id)->where('leave_type_id',$leave_application->leave_type_id)
+                    ->where('operation', 'add')
+                    ->sum('credit_value');
+                    $deduct=EmployeeLeaveCredit::where('employee_profile_id',$leave_application->employee_profile_id)->where('leave_type_id',$leave_application->leave_type_id)
+                    ->where('operation', 'deduct')
+                    ->sum('credit_value');
+                    $chief_name=null;
+                    $chief_position=null;
+                    $chief_code=null;
+                    $head_name=null;
+                    $head_position=null;
+                    $head_code=null;
+                    $supervisor_name=null;
+                    $supervisor_position=null;
+                    $supervisor_code=null;
+                    $hr_name=null;
+                    $hr_position=null;
+                    $hr_code=null;
+                    if($division) {
+                        $division_name = Division::with('chief.personalInformation')->find($division);
+                        if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
+                        {
+                            $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
+                            $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
+                            $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
+                        }
+                    }
+                    if($department)
+                    {
+                        $department_name = Department::with('head.personalInformation')->find($department);
+                        if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
+                        {
+                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                            $head_position = $department_name->head->assignedArea->designation->name ?? null;
+                            $head_code = $department_name->head->assignedArea->designation->code ?? null;
+                        }
+                    }
+                    if($section)
+                    {
+                        $section_name = Section::with('supervisor.personalInformation')->find($section);
+                        if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
+                        {
+                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                            $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                            $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
+                        }
+                    }
+                    if($hr)
+                    {
+
+                        if($hr && $hr->supervisor  && $hr->supervisor->personalInformation != null)
+                        {
+                            $hr_name = optional($hr->supervisor->personalInformation)->first_name . ' ' . optional($hr->supervisor->personalInformation)->last_name;
+                            $hr_position = $hr->supervisor->assignedArea->designation->name ?? null;
+                            $hr_code = $hr->supervisor->assignedArea->designation->code ?? null;
+                        }
+                    }
+
+                    $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
+                    $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
+                    $total_days=0;
+                    foreach($leave_application->dates as $date)
+                    {
+                        $startDate = Carbon::createFromFormat('Y-m-d', $date->date_from);
+                        $endDate = Carbon::createFromFormat('Y-m-d', $date->date_to);
+
+                        $numberOfDays = $startDate->diffInDays($endDate) + 1;
+                        $total_days += $numberOfDays;
+                    }
+                    return [
+                        'id' => $leave_application->id,
+                        'leave_type_name' => $leave_application->leaveType->name,
+                        'is_special' => $leave_application->leaveType->is_special,
+                        'reference_number' => $leave_application->reference_number,
+                        'country' => $leave_application->country,
+                        'city' => $leave_application->city,
+                        'zip_code' => $leave_application->zip_code,
+                        'patient_type' => $leave_application->patient_type,
+                        'illness' => $leave_application->illness,
+                        'reason' => $leave_application->reason,
+                        'leave_credit_total' => $leave_application->leave_credit_total ,
+                        'leave_credit_balance' => $add - $deduct,
+                        'days_total' =>$total_days ,
+                        'status' => $leave_application->status ,
+                        'remarks' => $leave_application->remarks ,
+                        'date' => $leave_application->created_at ,
+                        'with_pay' => $leave_application->with_pay ,
+                        'employee_id' => $leave_application->employee_profile_id,
+                        'employee_name' => "{$first_name} {$last_name}" ,
+                        'position_code' => $leave_application->employeeProfile->assignedArea->designation->code ?? null,
+                        'position_name' => $leave_application->employeeProfile->assignedArea->designation->name ?? null,
+                        'date_created' => $leave_application->date,
+                        'division_head' =>$chief_name,
+                        'division_head_position'=> $chief_position,
+                        'division_head_code'=> $chief_code,
+                        'department_head' =>$head_name,
+                        'department_head_position' =>$head_position,
+                        'department_head_code' =>$head_code,
+                        'section_head' =>$supervisor_name,
+                        'section_head_position' =>$supervisor_position,
+                        'section_head_code' =>$supervisor_code,
+                        'hr_head' =>$hr_name,
+                        'hr_head_position' =>$hr_position,
+                        'hr_head_code' =>$hr_code,
+                        'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
+                        'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
+                        'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,
+                        'unit_name' => $leave_application->employeeProfile->assignedArea->unit->name ?? null,
+                        'logs' => $logsData->map(function ($log) {
+                            $process_name=$log->action;
+                            $action ="";
+                            $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
+                            $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
+                            if($process_name === 'applied')
+                            {
+                                $action=  $process_name . ' by ' . $first_name .' '. $last_name;
+                            }
+                            else
+                            {
+                                $action = $process_name;
+
+                            }
+
+                            $date=$log->date;
+                            $formatted_date=Carbon::parse($date)->format('M d,Y');
+                            return [
+                                'id' => $log->id,
+                                'leave_application_id' => $log->leave_application_id,
+                                'action_by' => "{$first_name} {$last_name}" ,
+                                'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                'position_code' => $log->employeeProfile->assignedArea->designation->code ?? null,
+                                'action' => $log->action,
+                                'date' => $formatted_date,
+                                'time' => $log->time,
+                                'process' => $action
+                            ];
+                        }),
+                        'requirements' => $requirementsData->map(function ($requirement) {
+                            return [
+                                'id' => $requirement->id,
+                                'leave_application_id' => $requirement->leave_application_id,
+                                'name' => $requirement->name,
+                                'file_name' => $requirement->file_name,
+                                'path' => $requirement->path,
+                                'size' => $requirement->size,
+                            ];
+                        }),
+                        'dates' => $datesData->map(function ($date) {
+                            $formatted_date_from=Carbon::parse($date->date_from)->format('M d,Y');
+                            $formatted_date_to=Carbon::parse($date->date_to)->format('M d,Y');
+                            return [
+
+                                'id' => $date->id,
+                                'leave_application_id' => $date->leave_application_id,
+                                'date_from' => $formatted_date_from,
+                                'date_to' => $formatted_date_to,
+
+                            ];
+                        }),
+                    ];
+                });
+                return response()->json(['data' => $leave_applications_result]);
+            }
+            else
+            {
+                return response()->json(['message' => 'No records available'], Response::HTTP_OK);
+            }
+
+        }
+        else if($divisionHeadId == $id)
+        {
+            $leave_applications = LeaveApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
+            ->whereHas('employeeProfile.assignedArea', function ($query) use ($division) {
+                $query->where('id', $division);
+            })
+            ->where('status', 'for-approval-division-head')
+            ->orwhere('status', 'approved')
+            ->orwhere('status', 'declined')
+            ->get();
+            if($leave_applications->isNotEmpty())
+            {
+                $leave_applications_result = $leave_applications->map(function ($leave_application) {
+                    $datesData = $leave_application->dates ? $leave_application->dates : collect();
+                    $logsData = $leave_application->logs ? $leave_application->logs : collect();
+                    $requirementsData = $leave_application->requirements ? $leave_application->requirements : collect();
+                    $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
+                    $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
+                    $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
+                    $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
+                    $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
+                    $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
+                    $hr = Section::with('supervisor.personalInformation')->where('name','HR')->orWhere('name','Human Resource')->first();
+                    $add=EmployeeLeaveCredit::where('employee_profile_id',$leave_application->employee_profile_id)->where('leave_type_id',$leave_application->leave_type_id)
+                    ->where('operation', 'add')
+                    ->sum('credit_value');
+                    $deduct=EmployeeLeaveCredit::where('employee_profile_id',$leave_application->employee_profile_id)->where('leave_type_id',$leave_application->leave_type_id)
+                    ->where('operation', 'deduct')
+                    ->sum('credit_value');
+                    $chief_name=null;
+                    $chief_position=null;
+                    $chief_code=null;
+                    $head_name=null;
+                    $head_position=null;
+                    $head_code=null;
+                    $supervisor_name=null;
+                    $supervisor_position=null;
+                    $supervisor_code=null;
+                    $hr_name=null;
+                    $hr_position=null;
+                    $hr_code=null;
+                    if($division) {
+                        $division_name = Division::with('chief.personalInformation')->find($division);
+
+                        if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
+                        {
+                            $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
+                            $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
+                            $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
+                        }
+                    }
+                    if($department)
+                    {
+                        $department_name = Department::with('head.personalInformation')->find($department);
+                        if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
+                        {
+                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                            $head_position = $department_name->head->assignedArea->designation->name ?? null;
+                            $head_code = $department_name->head->assignedArea->designation->code ?? null;
+                        }
+                    }
+                    if($section)
+                    {
+                        $section_name = Section::with('supervisor.personalInformation')->find($section);
+                        if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
+                        {
+                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                            $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                            $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
+                        }
+                    }
+                    if($hr)
+                    {
+
+                        if($hr && $hr->supervisor  && $hr->supervisor->personalInformation != null)
+                        {
+                            $hr_name = optional($hr->supervisor->personalInformation)->first_name . ' ' . optional($hr->supervisor->personalInformation)->last_name;
+                            $hr_position = $hr->supervisor->assignedArea->designation->name ?? null;
+                            $hr_code = $hr->supervisor->assignedArea->designation->code ?? null;
+                        }
+                    }
+
+                    $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
+                    $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
+                    $total_days=0;
+                    foreach($leave_application->dates as $date)
+                    {
+                        $startDate = Carbon::createFromFormat('Y-m-d', $date->date_from);
+                        $endDate = Carbon::createFromFormat('Y-m-d', $date->date_to);
+
+                        $numberOfDays = $startDate->diffInDays($endDate) + 1;
+                        $total_days += $numberOfDays;
+                    }
+                    return [
+                        'id' => $leave_application->id,
+                        'leave_type_name' => $leave_application->leaveType->name,
+                        'is_special' => $leave_application->leaveType->is_special,
+                        'reference_number' => $leave_application->reference_number,
+                        'country' => $leave_application->country,
+                        'city' => $leave_application->city,
+                        'zip_code' => $leave_application->zip_code,
+                        'patient_type' => $leave_application->patient_type,
+                        'illness' => $leave_application->illness,
+                        'reason' => $leave_application->reason,
+                        'leave_credit_total' => $leave_application->leave_credit_total ,
+                        'leave_credit_balance' => $add - $deduct,
+                        'days_total' => $total_days,
+                        'status' => $leave_application->status ,
+                        'remarks' => $leave_application->remarks ,
+                        'date' => $leave_application->created_at ,
+                        'with_pay' => $leave_application->with_pay ,
+                        'employee_id' => $leave_application->employee_profile_id,
+                        'employee_name' => "{$first_name} {$last_name}" ,
+                        'position_code' => $leave_application->employeeProfile->assignedArea->designation->code ?? null,
+                        'position_name' => $leave_application->employeeProfile->assignedArea->designation->name ?? null,
+                        'date_created' => $leave_application->date,
+                        'division_head' =>$chief_name,
+                        'division_head_position'=> $chief_position,
+                        'division_head_code'=> $chief_code,
+                        'department_head' =>$head_name,
+                        'department_head_position' =>$head_position,
+                        'department_head_code' =>$head_code,
+                        'section_head' =>$supervisor_name,
+                        'section_head_position' =>$supervisor_position,
+                        'section_head_code' =>$supervisor_code,
+                        'hr_head' =>$hr_name,
+                        'hr_head_position' =>$hr_position,
+                        'hr_head_code' =>$hr_code,
+                        'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
+                        'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
+                        'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,
+                        'unit_name' => $leave_application->employeeProfile->assignedArea->unit->name ?? null,
+                        'logs' => $logsData->map(function ($log) {
+                            $process_name=$log->action;
+                            $action ="";
+                            $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
+                            $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
+                            if($process_name === 'applied')
+                            {
+                                $action=  $process_name . ' by ' . $first_name .' '. $last_name;
+                            }
+                            else
+                            {
+                                $action = $process_name;
+                            }
+                            $date=$log->date;
+                            $formatted_date=Carbon::parse($date)->format('M d,Y');
+                            return [
+                                'id' => $log->id,
+                                'leave_application_id' => $log->leave_application_id,
+                                'action_by' => "{$first_name} {$last_name}" ,
+                                'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                'position_code' => $log->employeeProfile->assignedArea->designation->code ?? null,
+                                'action' => $log->action,
+                                'date' => $formatted_date,
+                                'time' => $log->time,
+                                'process' => $action
+                            ];
+                        }),
+                        'requirements' => $requirementsData->map(function ($requirement) {
+                            return [
+                                'id' => $requirement->id,
+                                'leave_application_id' => $requirement->leave_application_id,
+                                'name' => $requirement->name,
+                                'file_name' => $requirement->file_name,
+                                'path' => $requirement->path,
+                                'size' => $requirement->size,
+                            ];
+                        }),
+                        'dates' => $datesData->map(function ($date) {
+                            $formatted_date_from=Carbon::parse($date->date_from)->format('M d,Y');
+                            $formatted_date_to=Carbon::parse($date->date_to)->format('M d,Y');
+                            return [
+
+                                'id' => $date->id,
+                                'leave_application_id' => $date->leave_application_id,
+                                'date_from' => $formatted_date_from,
+                                'date_to' => $formatted_date_to,
+                            ];
+                        }),
+                    ];
+                });
+                return response()->json(['data' => $leave_applications_result]);
+            }
+            else
+            {
+                return response()->json(['message' => 'No records available'], Response::HTTP_OK);
+            }
+
+        }
+        else  if($departmentHeadId == $id || $training_officer_id == $id) {
+            $leave_applications = LeaveApplication::with(['employeeProfile.assignedArea.department','employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
+            ->whereHas('employeeProfile.assignedArea', function ($query) use ($department) {
+                $query->where('id', $department);
+            })
+            ->where('status', 'for-approval-department-head')
+            ->orwhere('status', 'for-approval-division-head')
+            ->orwhere('status', 'declined')
+            ->get();
+            if($leave_applications->isNotEmpty())
+            {
+                $leave_applications_result = $leave_applications->map(function ($leave_application) {
+                    $datesData = $leave_application->dates ? $leave_application->dates : collect();
+                    $logsData = $leave_application->logs ? $leave_application->logs : collect();
+                    $requirementsData = $leave_application->requirements ? $leave_application->requirements : collect();
+                    $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
+                    $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
+                    $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
+                    $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
+                    $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
+                    $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
+                    $hr = Section::with('supervisor.personalInformation')->where('name','HR')->orWhere('name','Human Resource')->first();
+                    $add=EmployeeLeaveCredit::where('employee_profile_id',$leave_application->employee_profile_id)->where('leave_type_id',$leave_application->leave_type_id)
+                    ->where('operation', 'add')
+                    ->sum('credit_value');
+                    $deduct=EmployeeLeaveCredit::where('employee_profile_id',$leave_application->employee_profile_id)->where('leave_type_id',$leave_application->leave_type_id)
+                    ->where('operation', 'deduct')
+                    ->sum('credit_value');
+                    $chief_name=null;
+                    $chief_position=null;
+                    $chief_code=null;
+                    $head_name=null;
+                    $head_position=null;
+                    $head_code=null;
+                    $supervisor_name=null;
+                    $supervisor_position=null;
+                    $supervisor_code=null;
+                    $hr_name=null;
+                    $hr_position=null;
+                    $hr_code=null;
+                    if($division) {
+                        $division_name = Division::with('chief.personalInformation')->find($division);
+
+                        if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
+                        {
+                            $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
+                            $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
+                            $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
+                        }
+                    }
+                    if($department)
+                    {
+                        $department_name = Department::with('head.personalInformation')->find($department);
+                        if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
+                        {
+                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                            $head_position = $department_name->head->assignedArea->designation->name ?? null;
+                            $head_code = $department_name->head->assignedArea->designation->code ?? null;
+                        }
+                    }
+                    if($section)
+                    {
+                        $section_name = Section::with('supervisor.personalInformation')->find($section);
+                        if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
+                        {
+                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                            $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                            $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
+                        }
+                    }
+                    if($hr)
+                    {
+
+                        if($hr && $hr->supervisor  && $hr->supervisor->personalInformation != null)
+                        {
+                            $hr_name = optional($hr->supervisor->personalInformation)->first_name . ' ' . optional($hr->supervisor->personalInformation)->last_name;
+                            $hr_position = $hr->supervisor->assignedArea->designation->name ?? null;
+                            $hr_code = $hr->supervisor->assignedArea->designation->code ?? null;
+                        }
+                    }
+
+                    $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
+                    $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
+                    $total_days=0;
+                    foreach($leave_application->dates as $date)
+                    {
+                        $startDate = Carbon::createFromFormat('Y-m-d', $date->date_from);
+                        $endDate = Carbon::createFromFormat('Y-m-d', $date->date_to);
+
+                        $numberOfDays = $startDate->diffInDays($endDate) + 1;
+                        $total_days += $numberOfDays;
+                    }
+                    return [
+                        'id' => $leave_application->id,
+                        'leave_type_name' => $leave_application->leaveType->name,
+                        'is_special' => $leave_application->leaveType->is_special,
+                        'reference_number' => $leave_application->reference_number,
+                        'country' => $leave_application->country,
+                        'city' => $leave_application->city,
+                        'zip_code' => $leave_application->zip_code,
+                        'patient_type' => $leave_application->patient_type,
+                        'illness' => $leave_application->illness,
+                        'reason' => $leave_application->reason,
+                        'leave_credit_total' => $leave_application->leave_credit_total ,
+                        'leave_credit_balance' => $add - $deduct,
+                        'days_total' => $total_days ,
+                        'status' => $leave_application->status ,
+                        'remarks' => $leave_application->remarks ,
+                        'date' => $leave_application->created_at ,
+                        'with_pay' => $leave_application->with_pay ,
+                        'employee_id' => $leave_application->employee_profile_id,
+                        'employee_name' => "{$first_name} {$last_name}" ,
+                        'position_code' => $leave_application->employeeProfile->assignedArea->designation->code ?? null,
+                        'position_name' => $leave_application->employeeProfile->assignedArea->designation->name ?? null,
+                        'date_created' => $leave_application->date,
+                        'division_head' =>$chief_name,
+                        'division_head_position'=> $chief_position,
+                        'division_head_code'=> $chief_code,
+                        'department_head' =>$head_name,
+                        'department_head_position' =>$head_position,
+                        'department_head_code' =>$head_code,
+                        'section_head' =>$supervisor_name,
+                        'section_head_position' =>$supervisor_position,
+                        'section_head_code' =>$supervisor_code,
+                        'hr_head' =>$hr_name,
+                        'hr_head_position' =>$hr_position,
+                        'hr_head_code' =>$hr_code,
+                        'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
+                        'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
+                        'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,
+                        'unit_name' => $leave_application->employeeProfile->assignedArea->unit->name ?? null,
+                        'logs' => $logsData->map(function ($log) {
+                            $process_name=$log->action;
+                            $action ="";
+                            $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
+                            $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
+                            if($process_name === 'applied')
+                            {
+                                $action=  $process_name . ' by ' . $first_name .' '. $last_name;
+                            }
+                            else
+                            {
+                                $action = $process_name;
+
+                            }
+                            $date=$log->date;
+                            $formatted_date=Carbon::parse($date)->format('M d,Y');
+                            return [
+                                'id' => $log->id,
+                                'leave_application_id' => $log->leave_application_id,
+                                'action_by' => "{$first_name} {$last_name}" ,
+                                'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                'position_code' => $log->employeeProfile->assignedArea->designation->code ?? null,
+                                'action' => $log->action,
+                                'date' => $formatted_date,
+                                'time' => $log->time,
+                                'process' => $action
+                            ];
+                        }),
+                        'requirements' => $requirementsData->map(function ($requirement) {
+                            return [
+                                'id' => $requirement->id,
+                                'leave_application_id' => $requirement->leave_application_id,
+                                'name' => $requirement->name,
+                                'file_name' => $requirement->file_name,
+                                'path' => $requirement->path,
+                                'size' => $requirement->size,
+                            ];
+                        }),
+                        'dates' => $datesData->map(function ($date) {
+                            $formatted_date_from=Carbon::parse($date->date_from)->format('M d,Y');
+                            $formatted_date_to=Carbon::parse($date->date_to)->format('M d,Y');
+                            return [
+
+                                'id' => $date->id,
+                                'leave_application_id' => $date->leave_application_id,
+                                'date_from' => $formatted_date_from,
+                                'date_to' => $formatted_date_to,
+
+                            ];
+                        }),
+                    ];
+                });
+                return response()->json(['data' => $leave_applications_result]);
+            }
+            else
+            {
+                return response()->json(['message' => 'No records available'], Response::HTTP_OK);
+            }
+        }
+        else   if($sectionHeadId == $id) {
+
+            $leave_applications = LeaveApplication::with(['employeeProfile.assignedArea.section','employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
+            ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
+                $query->where('id', $section);
+            })
+            ->where('status', 'for-approval-section-head')
+            ->orwhere('status', 'for-approval-division-head')
+            ->orwhere('status', 'declined')
+            ->get();
+            if($leave_applications->isNotEmpty())
+            {
+                $leave_applications_result = $leave_applications->map(function ($leave_application) {
+                    $datesData = $leave_application->dates ? $leave_application->dates : collect();
+                    $logsData = $leave_application->logs ? $leave_application->logs : collect();
+                    $requirementsData = $leave_application->requirements ? $leave_application->requirements : collect();
+                    $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
+                    $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
+                    $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
+                    $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
+                    $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
+                    $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
+                    $hr = Section::with('supervisor.personalInformation')->where('name','HR')->orWhere('name','Human Resource')->first();
+                    $add=EmployeeLeaveCredit::where('employee_profile_id',$leave_application->employee_profile_id)->where('leave_type_id',$leave_application->leave_type_id)
+                    ->where('operation', 'add')
+                    ->sum('credit_value');
+                    $deduct=EmployeeLeaveCredit::where('employee_profile_id',$leave_application->employee_profile_id)->where('leave_type_id',$leave_application->leave_type_id)
+                    ->where('operation', 'deduct')
+                    ->sum('credit_value');
+                    $chief_name=null;
+                    $chief_position=null;
+                    $chief_code=null;
+                    $head_name=null;
+                    $head_position=null;
+                    $head_code=null;
+                    $supervisor_name=null;
+                    $supervisor_position=null;
+                    $supervisor_code=null;
+                    $hr_name=null;
+                    $hr_position=null;
+                    $hr_code=null;
+                    if($division) {
+                        $division_name = Division::with('chief.personalInformation')->find($division);
+
+                        if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
+                        {
+                            $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
+                            $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
+                            $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
+                        }
+                    }
+                    if($department)
+                    {
+                        $department_name = Department::with('head.personalInformation')->find($department);
+                        if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
+                        {
+                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                            $head_position = $department_name->head->assignedArea->designation->name ?? null;
+                            $head_code = $department_name->head->assignedArea->designation->code ?? null;
+                        }
+                    }
+                    if($section)
+                    {
+                        $section_name = Section::with('supervisor.personalInformation')->find($section);
+                        if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
+                        {
+                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                            $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                            $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
+                        }
+                    }
+                    if($hr)
+                    {
+
+                        if($hr && $hr->supervisor  && $hr->supervisor->personalInformation != null)
+                        {
+                            $hr_name = optional($hr->supervisor->personalInformation)->first_name . ' ' . optional($hr->supervisor->personalInformation)->last_name;
+                            $hr_position = $hr->supervisor->assignedArea->designation->name ?? null;
+                            $hr_code = $hr->supervisor->assignedArea->designation->code ?? null;
+                        }
+                    }
+
+                    $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
+                    $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
+                    $total_days=0;
+                    foreach($leave_application->dates as $date)
+                    {
+                        $startDate = Carbon::createFromFormat('Y-m-d', $date->date_from);
+                        $endDate = Carbon::createFromFormat('Y-m-d', $date->date_to);
+
+                        $numberOfDays = $startDate->diffInDays($endDate) + 1;
+                        $total_days += $numberOfDays;
+                    }
+                    return [
+                        'id' => $leave_application->id,
+                        'leave_type_name' => $leave_application->leaveType->name,
+                        'is_special' => $leave_application->leaveType->is_special,
+                        'reference_number' => $leave_application->reference_number,
+                        'country' => $leave_application->country,
+                        'city' => $leave_application->city,
+                        'zip_code' => $leave_application->zip_code,
+                        'patient_type' => $leave_application->patient_type,
+                        'illness' => $leave_application->illness,
+                        'reason' => $leave_application->reason,
+                        'leave_credit_total' => $leave_application->leave_credit_total ,
+                        'leave_credit_balance' => $add - $deduct,
+                        'days_total' => $total_days ,
+                        'status' => $leave_application->status ,
+                        'remarks' => $leave_application->remarks ,
+                        'date' => $leave_application->created_at ,
+                        'with_pay' => $leave_application->with_pay ,
+                        'employee_id' => $leave_application->employee_profile_id,
+                        'employee_name' => "{$first_name} {$last_name}" ,
+                        'position_code' => $leave_application->employeeProfile->assignedArea->designation->code ?? null,
+                        'position_name' => $leave_application->employeeProfile->assignedArea->designation->name ?? null,
+                        'date_created' => $leave_application->date,
+                        'division_head' =>$chief_name,
+                        'division_head_position'=> $chief_position,
+                        'division_head_code'=> $chief_code,
+                        'department_head' =>$head_name,
+                        'department_head_position' =>$head_position,
+                        'department_head_code' =>$head_code,
+                        'section_head' =>$supervisor_name,
+                        'section_head_position' =>$supervisor_position,
+                        'section_head_code' =>$supervisor_code,
+                        'hr_head' =>$hr_name,
+                        'hr_head_position' =>$hr_position,
+                        'hr_head_code' =>$hr_code,
+                        'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
+                        'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
+                        'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,
+                        'unit_name' => $leave_application->employeeProfile->assignedArea->unit->name ?? null,
+                        'logs' => $logsData->map(function ($log) {
+                            $process_name=$log->action;
+                            $action ="";
+                            $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
+                            $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
+                            if($process_name === 'applied')
+                            {
+                                $action=  $process_name . ' by ' . $first_name .' '. $last_name;
+                            }
+                            else
+                            {
+                                $action = $process_name;
+
+                            }
+                            $date=$log->date;
+                            $formatted_date=Carbon::parse($date)->format('M d,Y');
+                            return [
+                                'id' => $log->id,
+                                'leave_application_id' => $log->leave_application_id,
+                                'action_by' => "{$first_name} {$last_name}" ,
+                                'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                'position_code' => $log->employeeProfile->assignedArea->designation->code ?? null,
+                                'action' => $log->action,
+                                'date' => $formatted_date,
+                                'time' => $log->time,
+                                'process' => $action
+                            ];
+                        }),
+                        'requirements' => $requirementsData->map(function ($requirement) {
+                            return [
+                                'id' => $requirement->id,
+                                'leave_application_id' => $requirement->leave_application_id,
+                                'name' => $requirement->name,
+                                'file_name' => $requirement->file_name,
+                                'path' => $requirement->path,
+                                'size' => $requirement->size,
+                            ];
+                        }),
+                        'dates' => $datesData->map(function ($date) {
+                            $formatted_date_from=Carbon::parse($date->date_from)->format('M d,Y');
+                            $formatted_date_to=Carbon::parse($date->date_to)->format('M d,Y');
+                            return [
+                                'id' => $date->id,
+                                'leave_application_id' => $date->leave_application_id,
+                                'date_from' => $formatted_date_from,
+                                'date_to' => $formatted_date_to,
+                            ];
+                        }),
+                    ];
+                });
+                return response()->json(['data' => $leave_applications_result]);
+            }
+            else
+            {
+                return response()->json(['message' => 'No records available'], Response::HTTP_OK);
+            }
+
+        }
+
     }
 
     public function getHRLeaveApplications(Request $request)
@@ -674,6 +1442,7 @@ class LeaveApplicationController extends Controller
                 }
 
             }
+
         }
         catch(\Throwable $th){
 
