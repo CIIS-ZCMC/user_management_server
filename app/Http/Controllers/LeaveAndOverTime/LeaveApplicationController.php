@@ -472,13 +472,11 @@ class LeaveApplicationController extends Controller
         }
     }
 
-    public function getLeaveApplications($id,$status,Request $request)
+    public function getLeaveApplications()
     {
-        $status = $request->status;
+
         $leave_applications = [];
-        $division = AssignArea::where('employee_profile_id',$id)->value('division_id');
         $id='1';
-        $status = $request->status;
         $leave_applications = [];
         $section = AssignArea::where('employee_profile_id',$id)->value('section_id');
         $hr_head_id = Section::where('id', $section)->value('supervisor_employee_profile_id');
@@ -2522,7 +2520,10 @@ class LeaveApplicationController extends Controller
                                 });
                                 $singleArray = array_merge(...$leave_applications_result);
                                 return response(['message' => 'Application has been sucessfully '.$message_action, 'data' => $singleArray], Response::HTTP_OK);
-                            // }
+                // }
+                // else{
+                    // return response()->json(['message' => 'Incorrect Password'], Response::HTTP_OK);
+                // }
                 }
             }
          catch (\Exception $e) {
@@ -2984,7 +2985,7 @@ class LeaveApplicationController extends Controller
                         }
                     },
                 ],
-                'requirements.*' => 'required|jnmimes:jpeg,png,jpg,pdf|max:2048',
+                'requirements.*' => 'required|mimes:jpeg,png,jpg,pdf|max:2048',
             ]);
                  $leave_type_id = $request->leave_type_id;
                 // $user_id = Auth::user()->id;

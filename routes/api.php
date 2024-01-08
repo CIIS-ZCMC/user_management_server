@@ -55,7 +55,7 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
     Route::get('leave-application-department', 'LeaveApplicationController@getDepartmentLeaveApplications');
     Route::get('leave-application-section', 'LeaveApplicationController@getSectionLeaveApplications');
     Route::get('leave-application-declined', 'LeaveApplicationController@getDeclinedLeaveApplications');
-    Route::post('access-level-leave-application/{id}/{status}', 'LeaveApplicationController@getLeaveApplications');
+    Route::post('access-level-leave-application', 'LeaveApplicationController@getLeaveApplications');
     Route::post('reset-leave-credit', 'LeaveApplicationController@resetYearlyLeaveCredit');
     Route::post('print-leave-form/{id}', 'LeaveApplicationController@printLeaveForm');
 
@@ -70,7 +70,7 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
     Route::get('ob-application-department', 'ObApplicationController@getDepartmentObApplications');
     Route::get('ob-application-section', 'ObApplicationController@getSectionObApplications');
     Route::get('ob-application-declined', 'ObApplicationController@getDeclinedObApplications');
-    Route::post('access-level-ob-application/{id}/{status}', 'ObApplicationController@getObApplications');
+    Route::post('access-level-ob-application', 'ObApplicationController@getObApplications');
 
     Route::get('ot-application-all', 'OfficialTimeApplicationController@index');
     Route::post('ot-application', 'OfficialTimeApplicationController@store');
@@ -84,7 +84,7 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
     Route::get('ot-application-department', 'OfficialTimeApplicationController@getDepartmentOtApplications');
     Route::get('ot-application-section', 'OfficialTimeApplicationController@getSectionOtApplications');
     Route::get('ot-application-declined', 'OfficialTimeApplicationController@getDeclinedOtApplications');
-    Route::post('access-level-ot-application/{id}/{status}', 'OfficialTimeApplicationController@getOtApplications');
+    Route::post('access-level-ot-application', 'OfficialTimeApplicationController@getOtApplications');
 
     Route::get('ovt-application-all', 'OvertimeApplicationController@index');
     Route::post('ovt-application', 'OvertimeApplicationController@store');
@@ -100,7 +100,7 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
     Route::get('ovt-application-department', 'OvertimeApplicationController@getDepartmentOvertimeApplications');
     Route::get('ovt-application-section', 'OvertimeApplicationController@getSectionOvertimeApplications');
     Route::get('ovt-application-declined', 'OvertimeApplicationController@getDeclinedOvertimeApplications');
-    Route::post('access-level-ovt-application/{id}/{status}', 'OvertimeApplicationController@getOvertimeApplications');
+    Route::post('access-level-ovt-application', 'OvertimeApplicationController@getOvertimeApplications');
     Route::post('add-monthly-overtime', 'EmployeeOvertimeCreditController@store');
 
     Route::get('cto-application-all', 'CtoApplicationController@index');
@@ -115,7 +115,7 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
     Route::get('cto-application-department', 'CtoApplicationController@getDepartmentCtoApplications');
     Route::get('cto-application-section', 'CtoApplicationController@getSectionCtoApplications');
     Route::get('cto-application-declined', 'CtoApplicationController@getDeclinedCtoApplications');
-    Route::post('access-level-cto-application/{id}/{status}', 'CtoApplicationController@getCtoApplications');
+    Route::post('access-level-cto-application', 'CtoApplicationController@getCtoApplications');
 
 
     Route::get('division', 'LeaveApplicationController@getDivisionLeaveApplications');
@@ -126,6 +126,8 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
     Route::post('add-monthly', 'LeaveCreditController@addMonthlyLeaveCredit');
     Route::get('ob-application-all', 'ObApplicationController@index');
 });
+
+
 
 Route::middleware('auth.cookie')->group(function(){
 
@@ -1431,58 +1433,9 @@ Route::middleware('auth.cookie')->group(function(){
     /**
      * Leave and Overtime Management
      */
-    Route::namespace('App\Http\Controllers')->group(function(){
+    Route::namespace('App\Http\Controllers\LeaveApplication')->group(function(){
 
-        //leave types
-        // Route::get('leave_types', 'LeaveTypeController@index');
-        Route::post('store_leave_types', 'LeaveTypeController@store');
-        Route::post('update_leave_types/{id}', 'LeaveTypeController@update');
-        Route::post('deactivate_leave_type/{id}', 'LeaveTypeController@deactivateLeaveType');
-        Route::post('reactivate_leave_type/{id}', 'LeaveTypeController@reactivateLeaveType');
-
-        //requirements
-        // Route::get('requirements', 'RequirementController@index');
-        Route::post('store_requirements', 'RequirementController@store');
-        Route::post('update_requirements/{id}', 'RequirementController@update');
-
-        //leave applications
-        // Route::get('leave_applications', 'LeaveApplicationController@index');
-        Route::get('user_leave_applications', 'LeaveApplicationController@getUserLeaveApplication');
-        Route::post('store_leave_applications', 'LeaveApplicationController@store');
-        Route::post('decline_leave_applications/{id}', 'LeaveApplicationController@declineLeaveApplication');
-        Route::post('cancel_leave_applications/{id}', 'LeaveApplicationController@cancelLeaveApplication');
-        Route::post('update_leave_applications_status/{id}', 'LeaveApplicationController@updateLeaveApplicationStatus');
-
-        //leave credits
-        Route::get('employee_leave_credit', 'LeaveApplicationController@getEmployeeLeaveCredit');
-        Route::get('employee_leave_credit_logs', 'LeaveApplicationController@getEmployeeLeaveCreditLogs');
-        Route::get('user_leave_credit_logs', 'LeaveApplicationController@getUserLeaveCreditsLogs');
-        Route::get('add_monthly_leave_credit', 'LeaveCreditController@addMonthlyLeaveCredit');
-        Route::get('check_user_leave_credit', 'LeaveCreditController@checkUserLeaveCredit');
-        Route::get('get_employee_leave_credit', 'LeaveCreditController@getEmployeeLeaveCredit');
-        Route::get('get_employee_leave_credit_logs', 'LeaveCreditController@getEmployeeLeaveCreditLogs');
-
-
-        //official time applications
-        Route::get('official_time_applications', 'OfficialTimeApplicationController@index');
-        Route::get('user_official_time_applications', 'OfficialTimeApplicationController@getOtApplications');
-        Route::post('store_official_time_applications', 'OfficialTimeApplicationController@store');
-        Route::post('decline_official_time_applications/{id}', 'OfficialTimeApplicationController@declineOtApplication');
-        Route::post('cancel_official_time_applications/{id}', 'OfficialTimeApplicationController@cancelOtApplication');
-        Route::post('update_official_time_application_status/{id}', 'OfficialTimeApplicationController@updateStatus');
-        Route::post('update_official_time_application/{id}', 'OfficialTimeApplicationController@updateOtApplication');
-
-
-        //official business applications
-        // Route::get('official_business_applications', 'OfficialBusinessApplicationController@index');
-        // Route::get('user_official_business_applications', 'OfficialBusinessApplicationController@getObApplications');
-        // Route::post('store_official_business_applications', 'OfficialBusinessApplicationController@store');
-        // Route::post('decline_official_business_applications/{id}', 'OfficialBusinessApplicationController@declineObApplication');
-        // Route::post('cancel_official_business_applications/{id}', 'OfficialBusinessApplicationController@cancelObApplication');
-        // Route::post('update_official_business_application_status/{id}', 'OfficialBusinessApplicationController@updateStatus');
-        // Route::post('update_official_business_application/{id}', 'OfficialBusinessApplicationController@updateObApplication');
-
-        Route::middleware(['auth.permission:UMIS-LOM view-all'])->group(function(){
+        Route::middleware(['auth.permission:UMIS-LA view-all'])->group(function(){
             Route::get('time-shift', 'TimeShiftController@index');
         });
 
