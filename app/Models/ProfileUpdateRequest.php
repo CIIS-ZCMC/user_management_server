@@ -14,8 +14,10 @@ class ProfileUpdateRequest extends Model
     public $fillable = [
         'employee_profile_id',
         'approved_by',
-        'request_at',
-        'approved_at'
+        'table_name',
+        'data_id',
+        'target_id',
+        'type_new_or_replace'
     ];
 
     public $timestamps = TRUE;
@@ -27,11 +29,6 @@ class ProfileUpdateRequest extends Model
 
     public function approveBy()
     {
-        return $this->belongsTo(EmployeeProfile::class, 'id', 'approved_by');
-    }
-
-    public function requestDetails()
-    {
-        return $this->hasMany(RequestDetail::class);
+        return $this->belongsTo(EmployeeProfile::class, 'approved_by');
     }
 }

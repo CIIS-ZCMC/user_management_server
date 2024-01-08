@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\DTR;
 
+use App\Models\Contact;
+use App\Models\EmployeeProfile;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\EmployeeProfile;

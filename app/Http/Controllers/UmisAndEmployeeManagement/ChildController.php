@@ -14,6 +14,7 @@ use App\Http\Requests\ChildRequest;
 use App\Http\Resources\ChildResource;
 use App\Models\Child;
 use App\Models\EmployeeProfile;
+use App\Models\PersonalInformation;
 
 class ChildController extends Controller
 {
@@ -80,6 +81,13 @@ class ChildController extends Controller
         try{
             $cleanData = [];
 
+            $personal_information = PersonalInformation::find($request->input('personal_information_id'));
+
+            if(!$personal_information)
+            {
+                return response()->json(['message'=> 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
             foreach ($request->all() as $key => $value) {
                 if ($value === null) {
                     $cleanData[$key] = $value;
@@ -94,6 +102,59 @@ class ChildController extends Controller
 
             return response()->json([
                 'data' => new ChildResource($child),
+                'message' => 'New employee child record added.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    
+    public function storeMany(Request $request)
+    {
+        try{
+            $success = [];
+            $failed = [];
+
+            $personal_information = PersonalInformation::find($request->input('personal_information_id'));
+
+            if(!$personal_information)
+            {
+                return response()->json(['message'=> 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            foreach($request->children as $child){
+                $cleanData = [];
+                foreach ($child as $key => $value) {
+                    if ($value === null) {
+                        $cleanData[$key] = $value;
+                        continue;
+                    }
+                    $cleanData[$key] = strip_tags($value);
+                }
+                $child = Child::create($cleanData);
+
+                if(!$child){
+                    $failed[] = $cleanData;
+                    continue;
+                }
+
+                $success = $child;
+            }
+
+            $this->requestLogger->registerSystemLogs($request, $child['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+
+            if(count($failed) > 0){
+                return response()->json([
+                    'data' => ChildResource::collection($success),
+                    'failed' => $failed,
+                    'message' => 'Some data failed to registere.'
+                ], Response::HTTP_OK);
+            }
+
+            return response()->json([
+                'data' => ChildResource::collection($success),
                 'message' => 'New employee child record added.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){

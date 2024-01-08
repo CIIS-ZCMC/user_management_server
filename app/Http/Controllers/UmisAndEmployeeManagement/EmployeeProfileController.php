@@ -4,7 +4,12 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
-use App\Models\AssignArea;
+use App\Http\Controllers\DTR\TwoFactorAuthController;
+use App\Methods\MailConfig;
+use App\Models\AssignAreaTrail;
+use App\Models\Contact;
+use App\Models\InActiveEmployee;
+use App\Models\PlantillaNumber;
 use Carbon\Carbon;
 use Jenssegers\Agent\Agent;
 use Illuminate\Http\Request;
@@ -21,6 +26,7 @@ use App\Http\Requests\EmployeesByAreaAssignedRequest;
 use App\Http\Resources\EmployeesByAreaAssignedResource;
 use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Resources\EmployeeDTRList;
+use App\Models\AssignArea;
 use App\Models\DefaultPassword;
 use App\Models\EmployeeProfile;
 use App\Models\LoginTrail;
@@ -36,10 +42,16 @@ class EmployeeProfileController extends Controller
     protected $requestLogger;
     protected $file_validation_and_upload;
 
+    
+    private $mail;
+    private $two_auth;
+
     public function __construct(RequestLogger $requestLogger, FileValidationAndUpload $file_validation_and_upload)
     {
         $this->requestLogger = $requestLogger;
         $this->file_validation_and_upload = $file_validation_and_upload;
+        $this->mail = new MailConfig();
+        $this->two_auth = new TwoFactorAuthController();
     }
 
     /**
@@ -254,7 +266,6 @@ class EmployeeProfileController extends Controller
          */
         if(!empty($special_access_roles))
         {
-
             $special_access_permissions = SpecialAccessRole::with([
                 'systemRole' => function ($query) {
                     $query->with([
@@ -269,7 +280,7 @@ class EmployeeProfileController extends Controller
                     ]);
                 }
             ])->where('employee_profile_id', $employee_profile['id'])->get();
-        
+                
             if(count($special_access_permissions) > 0)
             {
                 foreach($special_access_permissions as $key => $special_access_permission)
@@ -297,7 +308,8 @@ class EmployeeProfileController extends Controller
         return $side_bar_details;
     }
 
-    private function buildSystemDetails($system_role) {
+    private function buildSystemDetails($system_role) 
+    {
         return [
             'id' => $system_role->system['id'],
             'name' => $system_role->system['name'],
@@ -305,7 +317,8 @@ class EmployeeProfileController extends Controller
         ];
     }
     
-    private function buildRoleDetails($system_role) {
+    private function buildRoleDetails($system_role) 
+    {
         $modules = [];
 
         $role_module_permissions = $system_role->roleModulePermissions;
@@ -464,13 +477,48 @@ class EmployeeProfileController extends Controller
                 $token->delete();
             }
 
-            return response()->json(['message' => 'User signout.'], Response::HTTP_OK)->cookie(env('COOKIE_NAME'), '', -1);;
+            return response()->json(['message' => 'User signout.'], Response::HTTP_OK)->cookie(env('COOKIE_NAME'), '', -1);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'signOut', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
+    public function verifyEmailAndSendOTP(Request $request)
+    {
+        try{
+            $email = strip_tags($request->email);
+            $contact = Contact::where('email_address', $email)->get();
+
+            if(!$contact){
+                return response()->json(['message' => "Email doesn't exist."], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $employee = $contact->personalInformation->employeeProfile;
+
+            $data = $request->data;
+
+            $body = view('mail.otp', ['otpcode' => $this->two_auth->getOTP($employee)]);
+            $data = [
+                'Subject' => 'ONE TIME PIN',
+                'To_receiver' => $email,
+                'Receiver_Name' => $employee->personalInformation->name(),
+                'Body' => $body
+            ];
+            
+            if ($this->mail->send($data)) {
+                return response()->json(['message' => 'Please check your email address for OTP.'], Response::HTTP_OK);
+            }
+
+            return response()->json([
+                'message' => 'Failed to send OTP to your email.'
+            ], Response::HTTP_BAD_REQUEST);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'signOut', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public function employeesByAreaAssigned(EmployeesByAreaAssignedRequest $request)
     {
         try{
@@ -550,34 +598,99 @@ class EmployeeProfileController extends Controller
     {
         try{
             $cleanData = [];
+            $dateString = $request->date_hired;
+            $carbonDate = Carbon::parse($dateString);
+            $date_hired_string = $carbonDate->format('Ymd');
 
-            foreach ($request->all() as $key => $value) {
-                if($key === 'profile_url' && $value === null){
-                    $cleanData[$key] = $value;
-                    continue;
-                }
-                if($key === 'profile_url')
-                {
-                    $cleanData[$key] = $this->file_validation_and_upload->check_save_file($request, "employee/profiles");
-                    continue;
+            $total_registered_this_day = EmployeeProfile::whereDate('date_hired', $carbonDate)->get();
+            $employee_id_random_digit = 50 + count($total_registered_this_day);
+
+            $last_registered_employee = EmployeeProfile::orderBy('biometric_id', 'desc')->first();
+            $last_password = DefaultPassword::orderBy('effective_at', 'desc')->first();
+
+            $hashPassword = Hash::make($last_password.env('SALT_VALUE'));
+            $encryptedPassword = Crypt::encryptString($hashPassword);
+
+            $now = Carbon::now();
+            $fortyDaysFromNow = $now->addDays(40);
+            $fortyDaysExpiration = $fortyDaysFromNow->toDateTimeString();
+
+            $new_biometric_id = $last_registered_employee->biometric_id + 1;
+            $new_employee_id = $date_hired_string.$employee_id_random_digit;
+
+            $cleanData['employee_id'] = $new_employee_id;
+            $cleanData['biomentric_id'] = $new_biometric_id;
+            $cleanData['employment_type_id'] = strip_tags($request->employment_type_id);
+            $cleanData['personal_information_id'] = strip_tags($request->personal_information_id);
+            $cleanData['profile_url'] = $request->attachment === null?null:$this->file_validation_and_upload->check_save_file($request, 'employee/profiles');
+            $cleanData['allow_time_adjustment'] = strip_tags($request->allow_time_adjustment) === 1? true: false;
+            $cleanData['password_encrypted'] = $encryptedPassword;
+            $cleanData['password_created_at'] = now();
+            $cleanData['password_expiration_at'] = $fortyDaysExpiration;
+            $cleanData['salary_grade_step'] = strip_tags($request->salary_grade_step);
+            $cleanData['date_hired'] = $request->date_hired;
+            $cleanData['designation_id'] = $request->designation_id;
+            $cleanData['effective_at'] = $request->date_hired;
+
+            $plantilla_number_id = $request->plantilla_number_id;
+            $sector_key = '';
+
+            switch(strip_tags($request->sector))
+            {
+                case "division":
+                    $sector_key = 'division_id';
+                    break;
+                case "department":
+                    $sector_key = 'department_id';
+                    break;
+                case "section":
+                    $sector_key = 'section_id';
+                    break;
+                case "unit":
+                    $sector_key = 'unit_id';
+                    break;
+                default: 
+                    $sector_key = null;
+            }
+
+            if($sector_key === null){
+                return response()->json(['message' => 'Invalid sector area.'], Response::HTTP_BAD_REQUEST);
+            }
+
+            $cleanData[$sector_key] = strip_tags($request->sector_id);
+
+            if($plantilla_number_id !== null)
+            {
+                $plantilla_number = PlantillaNumber::find($plantilla_number_id);
+
+                if(!$plantilla_number){
+                    return response()->json(['message' => 'No record found for plantilla number '.$plantilla_number_id], Response::HTTP_NOT_FOUND);
                 }
 
-                $cleanData[$key] = strip_tags($value);
+                $plantilla = $plantilla_number->plantilla;
+                $designation = $plantilla->designation;
+                $cleanData['designation_id'] = $designation->id;
+                $cleanData['plantilla_number_id'] = $plantilla_number->id;
             }
             
-            /**
-             * Retrieve total registered employee to use for biometric ID  since biometric id is base on employee count.
-             */
-            $total_employee = EmployeeProfile::all()->count();
-            $biomentric_id = $total_employee++;
-
-            $cleanData['biometric_id'] = $biomentric_id;
-
             $employee_profile = EmployeeProfile::create($cleanData);
+
+            $cleanData['employee_profile_id'] = $employee_profile->id;
+            AssignArea::create($cleanData);
             
+            if($plantilla_number_id !== null)
+            {
+                $plantilla_number = PlantillaNumber::find($plantilla_number_id);
+                $plantilla_number->update(['employee_profile_id' => $employee_profile->id, 'is_vacant' => false, 'assigned_at' => now()]);
+            }
+            
+
             $this->requestLogger->registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => new EmployeeProfileResource($employee_profile), 'message' => 'Newly employee registered.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new EmployeeProfileResource($employee_profile), 
+                'message' => 'Newly employee registered.'], 
+            Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -650,6 +763,71 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => 'Employee account created.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'createEmployeeAccount', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function updateEmployeeToInActiveEmployees($id, Request $request)
+    {
+        try{
+            $user = $request->user;
+            $cleanData['password'] = strip_tags($request->input('password'));
+
+            $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
+
+            if (!Hash::check($cleanData['password'].env("SALT_VALUE"), $decryptedPassword)) {
+                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $employee_profile = EmployeeProfile::find($id);
+
+            if(!$employee_profile)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+            
+            $in_active_employee = InActiveEmployee::create([
+                'personal_information_id' => $employee_profile->personal_information_id,
+                'employment_type_id' => $request->employment_type_id,
+                'employee_id' => $employee_profile->employee_id,
+                'profile_url' => $employee_profile->profile_url,
+                'date_hired' => $employee_profile->date_hired,
+                'biometric_id' => $employee_profile->biometric_id,
+                'employment_end_at' => now()
+            ]);
+
+            $employee_profile->issuanceInformation->update([
+                'employee_profile_id' => null,
+                'in_active_employee_id' => $in_active_employee->id
+            ]);
+
+            $assign_area = $employee_profile->assignedArea;
+            $assign_area_trail = AssignAreaTrail::create([
+                'employee_profile_id' => null,
+                'in_active_employee_id' => $in_active_employee->id,
+                'designation_id' => $assign_area->designation_id,
+                'plantilla_id' => $assign_area->plantilla_id,
+                'division_id' => $assign_area->division_id,
+                'department_id' => $assign_area->department_id,
+                'section_id' => $assign_area->section_id,
+                'unit_id' => $assign_area->unit_id,
+                'plantilla_number_id' => $assign_area->plantilla_number_id,
+                'salary_grade_step' => $assign_area->salary_grade_step,
+                'started_at' => $assign_area->effective_at,
+                'end_at' => now()
+            ]);
+
+            $assign_area->delete();
+            $employee_profile->delete();
+
+            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching a '.$this->SINGULAR_MODULE_NAME.'.');
+
+            return response()->json([
+                'data' => $in_active_employee, 
+                'message' => 'Employee record transfer to in active employees.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'updateEmployeeToInActiveEmployees', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

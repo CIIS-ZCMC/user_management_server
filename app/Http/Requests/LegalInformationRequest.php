@@ -21,19 +21,11 @@ class LegalInformationRequest extends FormRequest
      */
     public function rules(): array
     {
-        if($this->employee_profile_id===null){
-            return [
-                'details' => 'nullable|text',
-                'answer' => 'required|boolean',
-                'legal_iq_id' => 'required|string|size:36',
-            ];
-        }
-
         return [
-            'employee_profile_id' => 'required|string|size:36',
+            'personal_information_id' => 'required|integer',
             'details' => 'nullable|text',
-            'answer' => 'required|boolean',
-            'legal_iq_id' => 'required|string|size:36',
+            'answer' => 'nullable|boolean',
+            'legal_iq_id' => 'required|integer',
         ];
     }
 }

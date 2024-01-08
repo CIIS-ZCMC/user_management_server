@@ -15,14 +15,11 @@ class EmployeeProfileResource extends JsonResource
     public function toArray(Request $request): array
     {
         $personal_information = $this->personalInformation;
-        $nameExtension = $personal_information === null?'':' '.$personal_information->name_extension.' ';
-        $nameTitle = $personal_information===null?'': ' '.$personal_information->name_title;
 
-        $name = $personal_information->name;
+        $name = $personal_information->name();
         $assigned_area = $this->assignedArea;
         $area_details = $assigned_area->findDetails();
-        $area_code = $area_details['code'];
-        $area_name = $area_details['name'];
+        $area = $area_details;
         $is_regular_employee = $assigned_area->plantilla_id === null? false: true;
         $designation = $assigned_area->plantilla_id===null?$assigned_area->designation:$assigned_area->plantilla->designation;
         $designation = $designation->name;
@@ -37,8 +34,7 @@ class EmployeeProfileResource extends JsonResource
             'employee_id' => $this->employee_id,
             'name' => $name,
             'profile_url' => $this->profile_url,
-            'area_code' => $area_code,
-            'area_name' => $area_name,
+            'area' => $area,
             'is_regular_employee' => $is_regular_employee,
             'designation' => $designation,
             'date_hired' => $this->date_hired,

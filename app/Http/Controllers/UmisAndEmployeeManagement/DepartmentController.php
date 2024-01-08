@@ -83,23 +83,16 @@ class DepartmentController extends Controller
             }  
 
             $employee_profile = EmployeeProfile::where('employee_id', $request['employee_id'])->first();
-            $assigned_area = $employee_profile->assignedArea;
-            $employee_designation = $assigned_area->plantilla_id === null?$assigned_area->designation:$assigned_area->plantilla->designation;
 
             if(!$employee_profile)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             } 
 
-            if(!$employee_designation['code'].include($department['head_job_specification']))
-            {
-                return response()->json(['message' => 'Invalid job specification.'], Response::HTTP_BAD_REQUEST);
-            }
-
             $cleanData = [];
-            $cleanData['supervisor_employee_profile_id'] = $employee_profile->id;
-            $cleanData['supervisor_attachment_url'] = $request->input('attachment')===null?'NONE': $this->file_validation_and_upload->check_save_file($request->input('attachment'),"department/file");
-            $cleanData['supervisor_effective_at'] = Carbon::now();
+            $cleanData['head_employee_profile_id'] = $employee_profile->id;
+            $cleanData['head_attachment_url'] = $request->input('attachment')===null?'NONE': $this->file_validation_and_upload->check_save_file($request, 'department/files');
+            $cleanData['head_effective_at'] = Carbon::now();
 
             $department->update($cleanData);
 
@@ -120,7 +113,7 @@ class DepartmentController extends Controller
      * Assign Training officer
      * This must be in department
      */
-    public function assignTrainingOfficerByEmployeeID($id, DepartmentAssignHeadRequest $request)
+    public function assignTrainingOfficerByEmployeeID($id, DepartmentAssignTrainingOfficerRequest $request)
     {
         try{
             $password = strip_tags($request->password);
@@ -141,22 +134,15 @@ class DepartmentController extends Controller
             }  
 
             $employee_profile = EmployeeProfile::where('employee_id', $request['employee_id'])->first();
-            $assigned_area = $employee_profile->assignedArea;
-            $employee_designation = $assigned_area->plantilla_id === null?$assigned_area->designation:$assigned_area->plantilla->designation;
 
             if(!$employee_profile)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             } 
 
-            if(!$employee_designation['code'].include($department['training_officer_job_specification']))
-            {
-                return response()->json(['message' => 'Invalid job specification.'], Response::HTTP_BAD_REQUEST);
-            }
-
             $cleanData = [];
             $cleanData['training_officer_employee_profile_id'] = $employee_profile->id;
-            $cleanData['training_officer_attachment_url'] = $request->input('attachment')===null?'NONE':  $this->file_validation_and_upload->check_save_file($request->input('attachment'),"department/file");
+            $cleanData['training_officer_attachment_url'] = $request->input('attachment')===null?'NONE':  $this->file_validation_and_upload->check_save_file($request, 'department/files');
             $cleanData['training_officer_effective_at'] = Carbon::now();
 
             $department->update($cleanData);
@@ -164,7 +150,7 @@ class DepartmentController extends Controller
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in assigning head'.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
-                'data' => new DepartmentAssignTrainingOfficerRequest($department), 
+                'data' => new DepartmentResource($department), 
                 'message' => 'New training officer assigned.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -205,6 +191,10 @@ class DepartmentController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             } 
 
+            if($employee_profile->id !== $department->head_employee_profile_id){
+                return response()->json(['message' => 'Unauthorized.'], Response::HTTP_UNAUTHORIZED);
+            }
+
             $user = $request->user;
             $cleanData['password'] = strip_tags($request->password);
 
@@ -216,7 +206,7 @@ class DepartmentController extends Controller
 
             $cleanData = [];
             $cleanData['oic_employee_profile_id'] = $employee_profile->id;
-            $cleanData['oic_attachment_url'] = $request->input('attachment')===null?'NONE': $this->file_validation_and_upload->check_save_file($request->input('attachment'),"department/file");
+            $cleanData['oic_attachment_url'] = $request->input('attachment')===null?'NONE': $this->file_validation_and_upload->check_save_file($request,'department/files');
             $cleanData['oic_effective_at'] = strip_tags($request->input('effective_at'));
             $cleanData['oic_end_at'] = strip_tags($request->input('end_at'));
 

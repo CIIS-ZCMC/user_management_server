@@ -14,7 +14,6 @@ use App\Http\Requests\OtherInformationRequest;
 use App\Http\Resources\OtherInformationResource;
 use App\Models\OtherInformation;
 use App\Models\EmployeeProfile;
-use App\Models\SystemLogs;
 
 class OtherInformationController extends Controller
 {
@@ -88,6 +87,54 @@ class OtherInformationController extends Controller
 
             return response()->json([
                 'data' => new OtherInformationResource($other_information),
+                'message' => 'New employee other information registered.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function storeMany(Request $request)
+    {
+        try{
+            $success = [];
+            $failed = [];
+            $personal_information_id = strip_tags($request->personal_information_id);
+
+            foreach($request->other_informations as $other){
+                $cleanData = [];
+                $cleanData['personal_information_id'] = $personal_information_id;
+                foreach ($other as $key => $value) {
+                    if ($value === null) {
+                        $cleanData[$key] = $value;
+                        continue;
+                    }
+                    $cleanData[$key] = strip_tags($value);
+                }
+
+                $other_information = OtherInformation::create($cleanData);
+
+                if(!$other){
+                    $failed[] = $cleanData;
+                    continue;
+                }
+
+                $success[] = $other_information;
+            }
+
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+
+            if(count($failed) > 0){
+                return response()->json([
+                    'data' => OtherInformationResource::collection($success),
+                    'failed' => $failed,
+                    'message' => 'Some data failed to registere.'
+                ], Response::HTTP_OK);
+            }
+
+            return response()->json([
+                'data' => OtherInformationResource::collection($success),
                 'message' => 'New employee other information registered.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){

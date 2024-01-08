@@ -54,12 +54,12 @@ class Section extends Model
 
     public function supervisor()
     {
-        return $this->belongsTo(EmployeeProfile::class, 'id', 'supervisor_employee_profile_id');
+        return $this->belongsTo(EmployeeProfile::class,'supervisor_employee_profile_id');
     }
 
     public function oic()
     {
-        return $this->belongsTo(EmployeeProfile::class, 'id', 'oic_employee_profile_id');
+        return $this->belongsTo(EmployeeProfile::class,'oic_employee_profile_id');
     }
 
     public function supervisorTrails()

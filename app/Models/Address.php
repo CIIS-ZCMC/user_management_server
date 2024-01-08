@@ -12,12 +12,9 @@ class Address extends Model
     protected $table = 'addresses';
 
     public $fillable = [
-        'street',
-        'barangay',
-        'city',
-        'province',
+        'address',
         'zip_code',
-        'country',
+        'is_residential_and_permanent',
         'is_residential',
         'telephone_no',
         'personal_information_id'

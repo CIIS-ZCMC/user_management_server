@@ -4,9 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response as Res;
 use Symfony\Component\HttpFoundation\Response;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 
 use App\Models\Designation;
@@ -55,7 +53,7 @@ class Authorization
 
         if(!$has_rights)
         {
-            return response()->json(['message'=>'Un-Authorized.'], Res.Response::HTTP_UN_AUTHORIZED);
+            return response()->json(['message'=>'Un-Authorized.'], 401);
         }
 
         $request->merge(['permission' => $routePermission]);

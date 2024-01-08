@@ -31,7 +31,7 @@ return new class extends Migration
             $table->string('mother_middle_name')->nullable();
             $table->string('mother_last_name');
             $table->string('mother_ext_name')->nullable();
-            $table->unsignedBigInteger('personal_information_id');
+            $table->unsignedBigInteger('personal_information_id')->nullable();
             $table->foreign('personal_information_id')->references('id')->on('personal_informations');
             $table->timestamps();
         });

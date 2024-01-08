@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('hours')->nullable();
             $table->boolean('type_of_ld')->default(FALSE);
             $table->string('conducted_by')->nullable();
-            $table->unsignedBigInteger('personal_information_id');
+            $table->unsignedBigInteger('personal_information_id')->nullable();
             $table->foreign('personal_information_id')->references('id')->on('personal_informations');
             $table->timestamps();
         });

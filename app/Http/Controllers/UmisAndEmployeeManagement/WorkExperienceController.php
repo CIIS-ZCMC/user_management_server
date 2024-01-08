@@ -102,6 +102,54 @@ class WorkExperienceController extends Controller
         }
     }
     
+    public function storeMany(Request $request)
+    {
+        try{
+            $success = [];
+            $failed = [];
+
+            $personal_information_id = strip_tags($request->personal_information_id);
+
+            foreach($request->work_experiences as $work_experience){
+                $cleanData = [];
+                $cleanData['personal_information_id'] = $personal_information_id;
+                foreach ($work_experience as $key => $value) {
+                    if($value===null){
+                        $cleanData[$key] = $value;
+                        continue;
+                    }
+                    $cleanData[$key] = strip_tags($value);
+                }
+                $work_experience = WorkExperience::create($cleanData);
+                
+                if(!$work_experience){
+                    $failed[] = $cleanData;
+                    continue;
+                }
+
+                $success[] = $work_experience;
+            }
+
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            
+            if(count($failed) > 0){
+                return response()->json([
+                    'data' => WorkExperienceResource::collection($success),
+                    'failed' => $failed,
+                    'message' => 'Some data failed to registere.'
+                ], Response::HTTP_OK);
+            }
+
+            return response()->json([
+                'data' => WorkExperienceResource::collection($success),
+                'message' => 'New work experience added.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
     public function show($id, Request $request)
     {
         try{

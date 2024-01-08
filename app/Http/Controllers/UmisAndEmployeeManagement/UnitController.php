@@ -42,10 +42,8 @@ class UnitController extends Controller
             $cacheExpiration = Carbon::now()->addDay();
 
             $units = Cache::remember('units', $cacheExpiration, function(){
-                return ;
+                return Unit::all();
             });
-
-            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => UnitResource::collection($units),
@@ -89,14 +87,17 @@ class UnitController extends Controller
 
             $cleanData = [];
             $cleanData['head_employee_profile_id'] = $employee_profile->id;
-            $cleanData['head_attachment_url'] = $request->attachment===null?'NONE': $this->file_validation_and_upload->check_save_file($request->attachment, "unit/files");
+            $cleanData['head_attachment_url'] = $request->attachment===null?'NONE': $this->file_validation_and_upload->check_save_file($request, "unit/files");
             $cleanData['head_effective_at'] = Carbon::now();
 
             $unit->update($cleanData);
 
             $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in assigning head '.$this->PLURAL_MODULE_NAME.'.');
 
-            return response()->json(['data' => new UnitResource($unit), 'message' => 'New unit head assigned.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new UnitResource($unit), 
+                'message' => 'New unit head assigned.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'assignHeadByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -136,7 +137,7 @@ class UnitController extends Controller
 
             $cleanData = [];
             $cleanData['oic_employee_profile_id'] = $employee_profile->id;
-            $cleanData['oic_attachment_url'] = $request->attachment===null?'NONE': $this->file_validation_and_upload->check_save_file($request->attachment, "unit/files");
+            $cleanData['oic_attachment_url'] = $request->attachment===null?'NONE': $this->file_validation_and_upload->check_save_file($request, "unit/files");
             $cleanData['oic_effective_at'] = strip_tags($request->effective_at);
             $cleanData['oic_end_at'] = strip_tags($request->end_at);
 

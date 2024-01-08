@@ -27,7 +27,7 @@ class TrainingRequest extends FormRequest
             'hours' => "nullable|numeric",
             'type_of_ld' => "required|boolean",
             'conducted_by' => "nullable|string|max:255",
-            'personal_information_id' => "required|string|size:36"
+            'personal_information_id' => "required|integer"
         ];
     }
 }

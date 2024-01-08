@@ -22,11 +22,11 @@ class OtherInformationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'hobbies' => 'required|string|max:255',
-            'skills_hobbies' => 'required|booelan',
-            'recognition' => 'required|booelan',
-            'organization' => 'required|booelan',
-            'personal_information_id' => 'required|string|size:36'
+            'title' => 'required|string|max:255',
+            'skills_hobbies' => 'nullable|boolean',
+            'recognition' => 'nullable|boolean',
+            'organization' => 'nullable|boolean',
+            'personal_information_id' => 'required|integer'
         ];
     }
 }

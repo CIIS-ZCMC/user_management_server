@@ -26,6 +26,7 @@ return new class extends Migration
             $table->datetime('deactivated_at')->nullable();
             $table->string('agency_employee_no')->nullable();
             $table->boolean('allow_time_adjustment')->default(FALSE);
+            $table->boolean('is_2fa')->default(FALSE);
             $table->unsignedBigInteger('employment_type_id');
             $table->foreign('employment_type_id')->references('id')->on('employment_types');
             $table->unsignedBigInteger('personal_information_id');

@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('unit_attachment_url')->nullable();
             $table->boolean('head_status')->default(FALSE);
             $table->datetime('head_effective_at')->nullable();
+            $table->string('head_attachment_url')->nullable();
             $table->string('oic_attachment_url')->nullable();
             $table->datetime('oic_effective_at')->nullable();
             $table->datetime('oic_end_at')->nullable();
