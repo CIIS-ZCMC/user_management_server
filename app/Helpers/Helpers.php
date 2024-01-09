@@ -9,6 +9,8 @@ use App\Models\TimeShift;
 use DateTime;
 use DateInterval;
 use DatePeriod;
+use Carbon\Carbon;
+
 
 
 class Helpers {
@@ -78,12 +80,12 @@ class Helpers {
                     break;
 
                 default:
-                    $dates[] = $date->format('Y-m-d D');
+                    $dates[] = $date->format('Y-m-d');
                     break;
             }
         }
 
         return $dates;
-    }
+    }    
     
 }

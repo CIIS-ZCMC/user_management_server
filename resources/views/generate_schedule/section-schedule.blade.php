@@ -8,22 +8,24 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
     <style>
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
         }
+        
         header {
             padding: 10px;
             text-align: center;
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between;
         }
-        header img {
-            max-height: 50px;
-            margin-right: 10px;
+        
+        .container {
+            max-width: 100%;
+            overflow-x: auto;
         }
-        main {
-            max-width: 800px;
-            margin: 20px auto;
-        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -48,44 +50,72 @@
         }
 
         .signature {
-            margin-top: 20px;
+            padding-top: 40px;
+            border-bottom: 1px solid #000;
+            display: inline-block;
+            width: 350px;
+        }
+
+        .underline {
+            border-bottom: 1px solid #000;
+            display: inline-block;
+            width: 100px;
+        }
+
+        @media print {
+            @page {
+                size: landscape;
+            }
+
+            body {
+                font-size: 10pt;
+            }
+
+            .container {
+                margin: 20px;
+            }
         }
     </style>
 </head>
 <body>
-    {{-- @php
-        $month  = $request->month;   // Replace with the desired month (1 to 12)
-        $year   = $request->year;     // Replace with the desired year
-        $days   = app('Helpers')->getDatesInMonth($year, $month, "Day");
-        $weeks  = app('Helpers')->getDatesInMonth($year, $month, "Week");
-        $dates  = app('Helpers')->getDatesInMonth($year, $month, "");
-    @endphp --}}
 
-    <header>
-        <img src="{{ asset('storage/zcmc.png') }}" alt="Logo Left">
-
-        <h6>Republic of the Philippines</h6>
-        <h3 style="margin: 0">  ZAMBOANGA CITY MEDICAL CENTER </h3>
-        <h6>Dr. Evangelista Street, Sta. Catalina, Zamboanga City</h6>
-
-        <img src="{{ asset('storage/doh.png') }}" alt="Logo Right">
     
-        <!-- Add any other header content as needed -->
+    <header style="display: flex; align-items: center; justify-content: space-between;">
+        <div>
+            <img src="{{ asset('storage/zcmc.png') }}" alt="Logo Left">
+        </div>
+
+        <div style="text-align: center;">
+
+            <span>Republic of the Philippines</h6>
+            <h6 style="margin: 0">  ZAMBOANGA CITY MEDICAL CENTER </h3>
+            <span>Dr. Evangelista Street, Sta. Catalina, Zamboanga City</h6>
+        </div>
+
+        <div>
+            <img src="{{ asset('storage/doh.png') }}" alt="Logo Right">
+        </div>
     </header>
 
-    <div class="container-fluid">
-
+    <div class="container">
         <div class="row" style="margin-bottom: 10px">
-            <div class="col-6 text-start">
-            Department : 
+            <div class="col-6">
+                <span class="float-start">Department :
+                    <span class="underline">  </span>
+                </span>
             </div>
             
-            <div class="col-6 text-end">
-            For The Month of :  {{ $month }}
+            <div class="col-6 ">
+                <span class="float-end">For The Month of :
+                    <span class="underline"> {{ $month }} </span>
+                </span>
             </div>
             
             <div class="col">
-            Section :
+          
+                <span class="float-start">Section :
+                    <span class="underline">  </span>
+                </span>
             </div>
         </div>
 
@@ -143,31 +173,6 @@
                             <td> {{ $resource->schedule->first()->timeShift->total_hours ?? '' }} </td>
                         </tr>
                 @endforeach
-
-                {{-- @foreach ($data as $key => $resource)
-                    @foreach ($resource->employee as $employee)
-                    <tr>
-                        <td> {{ ++$key }} </td>
-                        <td style="text-align: left"> {{ $employee->last_name }}, {{ $employee->first_name }} </td>
-
-                        @foreach($dates as $date)
-                            <td olspan="1" style="font-size: 12px">
-                                @if($resource->date_start = $date)
-                                    {{ date('h A', strtotime(substr($resource->timeShift->first_in, 0, 2) . ':00')) }} <br>
-
-                                    @if ($resource->timeShift->second_out != null)
-                                        {{ date('h A', strtotime(substr($resource->timeShift->second_out, 0, 2) . ':00')) }}
-                                    @else
-                                        {{ date('h A', strtotime(substr($resource->timeShift->first_out, 0, 2) . ':00')) }}
-                                    @endif
-                                @endif
-                            </td>
-                        @endforeach
-
-                        <td> {{ $resource->timeShift->total_hours }} </td>
-                    </tr>
-                    @endforeach
-                @endforeach --}}
             </tbody>
         </table>
     </div>
@@ -177,17 +182,28 @@
         <span style="padding-left: 10px">Station/Department Contact No: </span>
 
         <div class="signatures">
-            <div class="signature">
-                <p>Signature 1</p>
-                <!-- Add space for signature -->
+            <div class="text-center">
+                <span class="float-start">Prepared By:</span>
+                <br>
+                <span class="signature"></span>
+                <br>
+                <span>Position</span>
             </div>
-            <div class="signature">
-                <p>Signature 2</p>
-                <!-- Add space for signature -->
+
+            <div class="text-center">
+                <span class="float-start">Approved By:</span>
+                <br>
+                <span class="signature"></span>
+                <br>
+                <span>Position</span>
             </div>
-            <div class="signature">
-                <p>Signature 3</p>
-                <!-- Add space for signature -->
+
+            <div class="text-center">
+                <span class="float-start">Noted By:</span>
+                <br>
+                <span class="signature"></span>
+                <br>
+                <span>Position</span>
             </div>
         </div>
     </footer>

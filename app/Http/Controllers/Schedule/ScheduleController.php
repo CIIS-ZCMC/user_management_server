@@ -86,22 +86,46 @@ class ScheduleController extends Controller
             $month  = $cleanData['month'];  // Replace with the desired month (1 to 12)
             $year   = $cleanData['year'];   // Replace with the desired year
 
-            $date = Helpers::getDatesInMonth($year, $month, "");
+            $dates = Helpers::getDatesInMonth($year, $month, "");
 
-            $data = EmployeeProfile::join('personal_informations as PI', 'employee_profiles.personal_information_id', '=', 'PI.id')
+            $array = EmployeeProfile::join('personal_informations as PI', 'employee_profiles.personal_information_id', '=', 'PI.id')
             ->select('employee_profiles.id','employee_id','biometric_id', 'PI.first_name','PI.middle_name', 'PI.last_name')
             ->with(['assignedArea', 'schedule' => function ($query) use ($year, $month) {
                 $query->with(['timeShift', 'holiday'])->whereYear('date_start', '=', $year)->whereMonth('date_start', '=', $month);
             }])->whereHas('assignedArea', function ($query) use ($cleanData) {
                 $query->where('section_id', $cleanData['section']);
-            })->get();
+            })->get()->toArray();
 
-            Helpers::registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
-            return response()->json(['data' => $data, 'date'=> $date], Response::HTTP_OK);
+            $data = [];
+            
+            foreach ($array as $key => $value) {
+                foreach ($dates as $date) {
+                    foreach ($value['schedule'] as $schedule) {
+                        if ($schedule['date_start'] === $date) {
+                            $data[] = [
+                                'date'          => $date,
+                                'id'            => $value['id'],
+                                'employee_id'   => $value['employee_id'],
+                                'biometric_id'  => $value['biometric_id'],
+                                'first_name'    => $value['first_name'],
+                                'middle_name'   => $value['middle_name'],
+                                'last_name'     => $value['last_name'],
+                                'assigned_area' => $value['assigned_area'],
+                                'schedule'      => $schedule,
+                            ];
+                        }
+                    }
+                }
+            }
+        
+            return response()->json(['data' => $data]);
+
+            // Helpers::registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            // return response()->json(['data' => $data, 'date'=> $date], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            // $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -389,23 +413,25 @@ class ScheduleController extends Controller
             $dates  = Helpers::getDatesInMonth($year, $month, "");
 
             $data = EmployeeProfile::join('personal_informations as PI', 'employee_profiles.personal_information_id', '=', 'PI.id')
-            ->select('employee_profiles.id','employee_id','biometric_id', 'PI.first_name','PI.middle_name', 'PI.last_name')
             ->with(['assignedArea', 'schedule' => function ($query) use ($year, $month) {
                 $query->with(['timeShift', 'holiday'])->whereYear('date_start', '=', $year)->whereMonth('date_start', '=', $month);
-            }])->whereHas('assignedArea', function ($query) use ($cleanData) {
+            }])
+            ->whereHas('assignedArea', function ($query) use ($cleanData) {
                 $query->where('section_id', $cleanData['section']);
-            })->get();
+            })
+            ->select('employee_profiles.id','employee_id','biometric_id', 'PI.first_name','PI.middle_name', 'PI.last_name')
+            ->get();
             
             $holiday = Holiday::all();
 
             $pull_out = PullOut::all();
 
-            Helpers::registerSystemLogs($request, $data->id, true, 'Success in delete '.$this->SINGULAR_MODULE_NAME.'.');
+            // Helpers::registerSystemLogs($request, $data->id, true, 'Success in delete '.$this->SINGULAR_MODULE_NAME.'.');
             return view('generate_schedule/section-schedule', compact('data', 'holiday', 'pull_out', 'month', 'year', 'days', 'weeks', 'dates'));
 
         } catch (\Throwable $th) {
 
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            // $this->requestLogger->errorLog($this->CONTROLLER_NAME,'de    stroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

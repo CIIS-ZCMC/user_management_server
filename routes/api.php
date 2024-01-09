@@ -1505,4 +1505,5 @@ Route::middleware('auth.cookie')->group(function(){
 Route::namespace('App\Http\Controllers\Schedule')->group(function(){
     Route::post('time-adjustment', 'TimeAdjusmentController@store');
     Route::get('generate', 'ScheduleController@generate');
+    Route::get('schedules', 'ScheduleController@create');
 });
