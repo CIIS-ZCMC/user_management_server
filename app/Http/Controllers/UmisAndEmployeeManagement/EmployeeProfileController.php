@@ -236,6 +236,40 @@ class EmployeeProfileController extends Controller
                 'weight' => $personal_information->weight,
             ];
 
+            $address = [
+                'residential_address' => null,
+                'residential_zip_code' => null,
+                'residential_telephone_no' => null,
+                'permanent_address' => null,
+                'permanent_zip_code' => null,
+                'permanent_telephone_no' => null
+            ];
+
+            $addresses = $personal_information->addresses;
+
+            foreach($addresses as $value){
+
+                if($value->is_residential_and_permanent){
+                    $address['residential_address'] = $value->address;
+                    $address['residential_zip_code'] = $value->zip_code;
+                    $address['residential_telephone_no'] = $value->telephone_no===null?'NONE': $value->telephone_no;
+                    $address['permanent_address'] = $value->address;
+                    $address['permanent_zip_code'] = $value->zip_code;
+                    $address['permanent_telephone_no'] = $value->telephone_no===null?'NONE': $value->telephone_no; 
+                    break;
+                }
+
+                if($value->is_residential){
+                    $address['residential_address'] = $value->address;
+                    $address['residential_zip_code'] = $value->zip_code;
+                    $address['residential_telephone_no'] = $value->telephone_no===null?'NONE': $value->telephone_no;
+                }else{
+                    $address['permanent_address'] = $value->address;
+                    $address['permanent_zip_code'] = $value->zip_code;
+                    $address['permanent_telephone_no'] = $value->telephone_no===null?'NONE': $value->telephone_no; 
+                }
+            }
+
             $data = [
                 'employee_id' => $employee_profile['employee_id'],
                 'name' => $personal_information->employeeName(),
@@ -244,7 +278,7 @@ class EmployeeProfileController extends Controller
                     'employee' => $employee,
                     'personal_information' => $personal_information_data,
                     'contact' => new ContactResource($personal_information->contact),
-                    'address' => AddressResource::collection($personal_information->addresses),
+                    'address' => $address,
                     'family_background' => new FamilyBackGroundResource($personal_information->familyBackground),
                     'children' => ChildResource::collection($personal_information->children),
                     'education' => EducationalBackgroundResource::collection($personal_information->educationalBackground),
@@ -487,7 +521,7 @@ class EmployeeProfileController extends Controller
             $side_bar_details = $this->buildSidebarDetails($employee_profile, $designation, $special_access_roles);  
 
             $area_assigned = $employee_profile->assignArea->findDetails; 
-
+            
             $position = $employee_profile->position();
             
             $last_login = LoginTrail::where('employee_profile_id', $employee_profile->id)->orderByDesc('created_at')->first();
@@ -495,7 +529,6 @@ class EmployeeProfileController extends Controller
             $employee = [
                 'profile_url' => $employee_profile->profile_url,
                 'employee_id' => $employee_profile->employee_id,
-                'full_name' => $employee_profile->personalInformation->nameWithSurnameFirst(),
                 'position' => $position,
                 'job_position' => $designation->name,
                 'date_hired' => $employee_profile->date_hired,
@@ -504,15 +537,68 @@ class EmployeeProfileController extends Controller
                 'last_login' => $last_login === null? null: $last_login->created_at
             ];
 
+            $personal_information_data = [
+                'full_name' => $personal_information->nameWithSurnameFirst(),
+                'name_extension' => $personal_information->name_extension === null? 'NONE':$personal_information->name_extension,
+                'employee_id' => $employee_profile->employee_id,
+                'years_of_service' => $employee_profile->personalInformation->years_of_service === null? 'NONE':$personal_information->years_of_service,
+                'name_title' => $personal_information->name_title === null? 'NONE':$personal_information->name_title,
+                'sex' => $personal_information->sex,
+                'date_of_birth' => $personal_information->date_of_birth,
+                'date_hired' => $employee_profile->date_hired,
+                'place_of_birth' => $personal_information->place_of_birth,
+                'civil_status' => $personal_information->civil_status,
+                'citizenship' => $personal_information->citizenship,
+                'date_of_marriage' => $personal_information->date_of_marriage === null? 'NONE':$personal_information->date_of_marriage,
+                'agency_employee_no' => $employee_profile->agency_employee_no === null? 'NONE':$personal_information->agency_employee_no,
+                'blood_type' => $personal_information->blood_type === null? 'NONE':$personal_information->blood_type,
+                'height' => $personal_information->height,
+                'weight' => $personal_information->weight,
+            ];
+
+            $address = [
+                'residential_address' => null,
+                'residential_zip_code' => null,
+                'residential_telephone_no' => null,
+                'permanent_address' => null,
+                'permanent_zip_code' => null,
+                'permanent_telephone_no' => null
+            ];
+
+            $addresses = $personal_information->addresses;
+
+            foreach($addresses as $value){
+
+                if($value->is_residential_and_permanent){
+                    $address['residential_address'] = $value->address;
+                    $address['residential_zip_code'] = $value->zip_code;
+                    $address['residential_telephone_no'] = $value->telephone_no===null?'NONE': $value->telephone_no;
+                    $address['permanent_address'] = $value->address;
+                    $address['permanent_zip_code'] = $value->zip_code;
+                    $address['permanent_telephone_no'] = $value->telephone_no===null?'NONE': $value->telephone_no; 
+                    break;
+                }
+
+                if($value->is_residential){
+                    $address['residential_address'] = $value->address;
+                    $address['residential_zip_code'] = $value->zip_code;
+                    $address['residential_telephone_no'] = $value->telephone_no===null?'NONE': $value->telephone_no;
+                }else{
+                    $address['permanent_address'] = $value->address;
+                    $address['permanent_zip_code'] = $value->zip_code;
+                    $address['permanent_telephone_no'] = $value->telephone_no===null?'NONE': $value->telephone_no; 
+                }
+            }
+
             $data = [
                 'employee_id' => $employee_profile['employee_id'],
                 'name' => $personal_information->employeeName(),
                 'designation'=> $designation['name'],
                 'employee_details' => [
                     'employee' => $employee,
-                    'personal_information' => new PersonalInformationResource( $personal_information),
+                    'personal_information' => $personal_information_data,
                     'contact' => new ContactResource($personal_information->contact),
-                    'address' => AddressResource::collection($personal_information->addresses),
+                    'address' => $address,
                     'family_background' => new FamilyBackGroundResource($personal_information->familyBackground),
                     'children' => ChildResource::collection($personal_information->children),
                     'education' => EducationalBackgroundResource::collection($personal_information->educationalBackground),
@@ -592,7 +678,6 @@ class EmployeeProfileController extends Controller
             $employee = [
                 'profile_url' => $employee_profile->profile_url,
                 'employee_id' => $employee_profile->employee_id,
-                'full_name' => $employee_profile->personalInformation->nameWithSurnameFirst(),
                 'position' => $position,
                 'job_position' => $designation->name,
                 'date_hired' => $employee_profile->date_hired,
@@ -601,15 +686,68 @@ class EmployeeProfileController extends Controller
                 'last_login' => $last_login === null? null: $last_login->created_at
             ];
 
+            $personal_information_data = [
+                'full_name' => $personal_information->nameWithSurnameFirst(),
+                'name_extension' => $personal_information->name_extension === null? 'NONE':$personal_information->name_extension,
+                'employee_id' => $employee_profile->employee_id,
+                'years_of_service' => $employee_profile->personalInformation->years_of_service === null? 'NONE':$personal_information->years_of_service,
+                'name_title' => $personal_information->name_title === null? 'NONE':$personal_information->name_title,
+                'sex' => $personal_information->sex,
+                'date_of_birth' => $personal_information->date_of_birth,
+                'date_hired' => $employee_profile->date_hired,
+                'place_of_birth' => $personal_information->place_of_birth,
+                'civil_status' => $personal_information->civil_status,
+                'citizenship' => $personal_information->citizenship,
+                'date_of_marriage' => $personal_information->date_of_marriage === null? 'NONE':$personal_information->date_of_marriage,
+                'agency_employee_no' => $employee_profile->agency_employee_no === null? 'NONE':$personal_information->agency_employee_no,
+                'blood_type' => $personal_information->blood_type === null? 'NONE':$personal_information->blood_type,
+                'height' => $personal_information->height,
+                'weight' => $personal_information->weight,
+            ];
+
+            $address = [
+                'residential_address' => null,
+                'residential_zip_code' => null,
+                'residential_telephone_no' => null,
+                'permanent_address' => null,
+                'permanent_zip_code' => null,
+                'permanent_telephone_no' => null
+            ];
+
+            $addresses = $personal_information->addresses;
+
+            foreach($addresses as $value){
+
+                if($value->is_residential_and_permanent){
+                    $address['residential_address'] = $value->address;
+                    $address['residential_zip_code'] = $value->zip_code;
+                    $address['residential_telephone_no'] = $value->telephone_no===null?'NONE': $value->telephone_no;
+                    $address['permanent_address'] = $value->address;
+                    $address['permanent_zip_code'] = $value->zip_code;
+                    $address['permanent_telephone_no'] = $value->telephone_no===null?'NONE': $value->telephone_no; 
+                    break;
+                }
+
+                if($value->is_residential){
+                    $address['residential_address'] = $value->address;
+                    $address['residential_zip_code'] = $value->zip_code;
+                    $address['residential_telephone_no'] = $value->telephone_no===null?'NONE': $value->telephone_no;
+                }else{
+                    $address['permanent_address'] = $value->address;
+                    $address['permanent_zip_code'] = $value->zip_code;
+                    $address['permanent_telephone_no'] = $value->telephone_no===null?'NONE': $value->telephone_no; 
+                }
+            }
+
             $data = [
                 'employee_id' => $employee_profile['employee_id'],
                 'name' => $personal_information->employeeName(),
                 'designation'=> $designation['name'],
                 'employee_details' => [
                     'employee' => $employee,
-                    'personal_information' => new PersonalInformationResource( $personal_information),
+                    'personal_information' => $personal_information_data,
                     'contact' => new ContactResource($personal_information->contact),
-                    'address' => AddressResource::collection($personal_information->addresses),
+                    'address' => $address,
                     'family_background' => new FamilyBackGroundResource($personal_information->familyBackground),
                     'children' => ChildResource::collection($personal_information->children),
                     'education' => EducationalBackgroundResource::collection($personal_information->educationalBackground),
