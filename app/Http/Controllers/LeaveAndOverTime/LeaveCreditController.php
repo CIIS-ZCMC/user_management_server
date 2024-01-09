@@ -72,7 +72,6 @@ class LeaveCreditController extends Controller
                     $leaveTypes=[];
                     $vl_leave=[];
                     $leaveTypes = LeaveType::where('is_special', '=', '1')->get();
-
                     $vl_leave = LeaveType::where('id', '=', '1')->first();
                     $employee_leave_credits= ModelsEmployeeLeaveCredit::where('employee_profile_id','1')->get();
 
@@ -107,7 +106,6 @@ class LeaveCreditController extends Controller
                                         });
 
                                         if ($matchingDates->count() > 0) {
-
                                             foreach ($matchingDates as $matchingDate) {
                                                 echo "Matching date: " . $matchingDate->format('Y-m-d') . "\n";
                                             }

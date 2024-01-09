@@ -138,9 +138,8 @@ class LeaveTypeController extends Controller
 
     public function store(Request $request)
     {
-
         try{
-            $user=$request->id;
+            $user=$request->user;
             $validatedData = $request->validate([
                 'name' => 'required|string',
                 'attachments.*' => 'required|mimes:jpeg,png,jpg,pdf|max:2048',

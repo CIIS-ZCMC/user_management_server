@@ -1299,7 +1299,6 @@ class ObApplicationController extends Controller
                 $password=$request->password;
                 if($user_password==$password)
                 {
-
                             $message_action = '';
                             $action = '';
                             $new_status = '';
@@ -1516,10 +1515,9 @@ class ObApplicationController extends Controller
     public function store(Request $request)
     {
         try{
-            // $user_id = Auth::user()->id;
-            // $user = EmployeeProfile::where('id','=',$user_id)->first();
-            // $area = AssignArea::where('employee_profile_id',$employee_id)->value('division_id');
-            // $division = Division::where('id',$area)->value('is_medical');
+            $user = $request->user;
+            $area = AssignArea::where('employee_profile_id',$user->id)->value('division_id');
+            $division = Division::where('id',$area)->value('is_medical');
             $division=true;
             $validatedData = $request->validate([
                 'date_from.*' => 'required|date_format:Y-m-d',
@@ -1553,7 +1551,7 @@ class ObApplicationController extends Controller
 
             DB::beginTransaction();
                 $official_business_application = new ObApplication();
-                $official_business_application->employee_profile_id = '1';
+                $official_business_application->employee_profile_id = $user->id;
                 $official_business_application->date_from = $request->date_from;
                 $official_business_application->date_to = $request->date_to;
                 $official_business_application->time_from = $request->time_from;
@@ -1600,7 +1598,7 @@ class ObApplicationController extends Controller
                 $ob_id=$official_business_application->id;
                 $columnsString="";
                 $process_name="Applied";
-                $this->storeOfficialBusinessApplicationLog($ob_id,$process_name,$columnsString);
+                $this->storeOfficialBusinessApplicationLog($ob_id,$process_name,$columnsString,$user->id);
             DB::commit();
             $official_business_applications =ObApplication::with(['employeeProfile.personalInformation','logs'])
             ->where('id',$official_business_application->id)->get();
@@ -1735,20 +1733,19 @@ class ObApplicationController extends Controller
                                                             ->first();
                 if($ob_applications)
                 {
-                        // $user_id = Auth::user()->id;
-                        // $user = EmployeeProfile::where('id','=',$user_id)->first();
-                        // $user_password=$user->password;
-                        // $password=$request->password;
-                        // if($user_password==$password)
-                        // {
-                        //     if($user_id){
+                        $user=$request->user;
+                        $user = EmployeeProfile::where('id','=',$user->id)->first();
+                        $user_password=$user->password_encrypted;
+                        $password=$request->password;
+                        if($user_password==$password)
+                        {
                             DB::beginTransaction();
                                 $ob_application_log = new ObApplicationLog();
                                 $ob_application_log->action = 'declined';
                                 $ob_application_log->ob_application_id = $id;
                                 $ob_application_log->date = date('Y-m-d');
                                 $ob_application_log->time =  date('H:i:s');
-                                $ob_application_log->action_by_id = '1';
+                                $ob_application_log->action_by_id = $user->id;
                                 $ob_application_log->save();
 
                                 $ob_application = ObApplication::findOrFail($id);
@@ -1877,8 +1874,8 @@ class ObApplicationController extends Controller
                                     $singleArray = array_merge(...$official_business_applications_result);
                                 return response(['message' => 'Application has been sucessfully declined', 'data' => $singleArray],Response::HTTP_OK);
 
-                        //     }
-                        //  }
+
+                         }
                 }
             } catch (\Exception $e) {
             DB::rollBack();
