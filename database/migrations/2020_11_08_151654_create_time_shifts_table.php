@@ -18,6 +18,7 @@ return new class extends Migration
             $table->time('second_in')->nullable();
             $table->time('second_out')->nullable();
             $table->integer('total_hours');
+            $table->string('color');
             $table->softDeletes();
             $table->timestamps();
         });

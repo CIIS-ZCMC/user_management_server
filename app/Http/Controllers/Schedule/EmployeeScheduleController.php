@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers\Schedule;
 
-use App\Models\ExchangeDuties;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
-class ExchangeDutiesController extends Controller
+class EmployeeScheduleController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -35,7 +34,7 @@ class ExchangeDutiesController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(ExchangeDuties $exchangeDuties)
+    public function show(string $id)
     {
         //
     }
@@ -43,7 +42,7 @@ class ExchangeDutiesController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(ExchangeDuties $exchangeDuties)
+    public function edit(string $id)
     {
         //
     }
@@ -51,7 +50,7 @@ class ExchangeDutiesController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, ExchangeDuties $exchangeDuties)
+    public function update(Request $request, string $id)
     {
         //
     }
@@ -59,7 +58,7 @@ class ExchangeDutiesController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(ExchangeDuties $exchangeDuties)
+    public function destroy(string $id)
     {
         //
     }

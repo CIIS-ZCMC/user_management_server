@@ -118,6 +118,8 @@ class TimeShiftController extends Controller
                     'total_hours'   => 'required|min:8|max:24',
                 ]);
 
+                $cleanData['color'] = Helpers::randomHexColor();
+                
                 $data = TimeShift::create($cleanData);
             }
 
@@ -169,7 +171,7 @@ class TimeShiftController extends Controller
 
         } catch (\Throwable $th) {
 
-            // $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -230,7 +232,7 @@ class TimeShiftController extends Controller
 
         } catch (\Throwable $th) {
 
-            // $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
 
         }

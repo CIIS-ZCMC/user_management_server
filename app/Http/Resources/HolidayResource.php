@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class TimeShiftResource extends JsonResource
+class HolidayResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -16,16 +16,12 @@ class TimeShiftResource extends JsonResource
     {
         return [
             'id'            => $this->id,
-            'first_in'      => $this->first_in,
-            'first_out'     => $this->first_out,
-            'second_in'     => $this->second_in,
-            'second_out'    => $this->second_out,
-            'total_hours'   => $this->total_hours,
-            'color'         => $this->color,
-            'deleted_at'    => (string) $this->deleted_at,
+            'description'   => $this->description,
+            'month_day'     => $this->month_day,
+            'isspecial'     => $this->isspecial,
+            'effectiveDate' => $this->effectiveDate,
             'created_at'    => (string) $this->created_at,
             'updated_at'    => (string) $this->updated_at,
-            'section'       => $this->section
         ];
     }
 }

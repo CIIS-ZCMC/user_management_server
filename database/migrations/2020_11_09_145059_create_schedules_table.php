@@ -13,10 +13,13 @@ return new class extends Migration
     {
         Schema::create('schedules', function (Blueprint $table) {
             $table->id();
+            
             $table->unsignedBigInteger('time_shift_id');
-            $table->foreign('time_shift_id')->references('id')->on('time_shifts')->onUpdate('cascade');
+            $table->foreign('time_shift_id')->references('id')->on('time_shifts');
+
             $table->unsignedBigInteger('holiday_id')->nullable();
-            $table->foreign('holiday_id')->references('id')->on('holidays')->onUpdate('cascade');
+            $table->foreign('holiday_id')->references('id')->on('holidays');
+
             $table->string('month');
             $table->date('date_start');
             $table->date('date_end');

@@ -23,8 +23,8 @@ Route::get('/initialize-storage', function () {
 Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
     Route::post('sign-in', 'EmployeeProfileController@signIn');
     Route::post('verify-email-and-send-otp', 'EmployeeProfileController@verifyEmailAndSendOTP');
-    Route::post('validate-otp', 'EmployeeProfileController@validateOTP');
-    Route::post('reset-password', 'EmployeeProfileController@resetPassword');
+    Route::post('verify-otp', 'EmployeeProfileController@verifyOTP');
+    Route::post('new-password', 'EmployeeProfileController@newPassword');
     Route::get('retrieve-token', 'CsrfTokenController@generateCsrfToken');
     Route::get('validate-token', 'CsrfTokenController@validateToken');
 });
@@ -53,7 +53,7 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
 Route::middleware('auth.cookie')->group(function(){
     
     Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function(){
-        Route::post('authenticity-check', 'EmployeeProfileController@isAuthenticated');
+        Route::post('re-authenticate', 'EmployeeProfileController@revalidateAccessToken');
         Route::delete('signout', 'EmployeeProfileController@signOut');
 
         /**
@@ -1449,6 +1449,122 @@ Route::middleware('auth.cookie')->group(function(){
 
         Route::middleware(['auth.permission:UMIS-ScM delete'])->group(function(){
             Route::delete('time-shift/{id}', 'TimeShiftController@destroy');
+        });
+
+        /**
+         * Schedule Module
+         */
+        Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function(){
+            Route::get('schedule', 'ScheduleController@index');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-ScM write'])->group(function(){
+            Route::post('schedule', 'ScheduleController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM view'])->group(function(){
+            Route::get('schedule/{id}', 'ScheduleController@show');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM update'])->group(function(){
+            Route::put('schedule/{id}', 'ScheduleController@update');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM delete'])->group(function(){
+            Route::delete('schedule/{id}', 'ScheduleController@destroy');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function(){
+            Route::get('schedules', 'ScheduleController@create');
+        });
+
+        /**
+         * Exchange Schedule Module
+         */
+        Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function(){
+            Route::get('exchange-duties', 'ExchangeDutyController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM write'])->group(function(){
+            Route::post('exchange-duties', 'ExchangeDutyController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM view'])->group(function(){
+            Route::get('exchange-duties/{id}', 'ExchangeDutyController@show');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM update'])->group(function(){
+            Route::put('exchange-duties/{id}', 'ExchangeDutyController@update');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM delete'])->group(function(){
+            Route::delete('exchange-duties/{id}', 'ExchangeDutyController@destroy');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM approve'])->group(function(){
+            Route::put('exchange-duties/approval/{id}', 'ExchangeDutyController@approve');
+        });
+
+
+        /**
+         * Pull Out Module
+         */
+        Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function(){
+            Route::get('pull-out', 'PullOutController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM write'])->group(function(){
+            Route::post('pull-out', 'PullOutController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM view'])->group(function(){
+            Route::get('pull-out/{id}', 'PullOutController@show');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM update'])->group(function(){
+            Route::put('pull-out/{id}', 'PullOutController@update');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM delete'])->group(function(){
+            Route::delete('pull-out/{id}', 'PullOutController@destroy');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM approve'])->group(function(){
+            Route::put('pull-out/approval/{id}', 'PullOutController@approve');
+        });
+
+        /**
+         * Generate Schedule Module
+         */
+        Route::middleware(['auth.permission:UMIS-ScM download'])->group(function(){
+            Route::get('generate', 'ScheduleController@generate');
+        });
+
+        /**
+         * Time Adjustment Module
+         */
+        Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function(){
+            Route::get('time-adjustment', 'TimeAdjusmentController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM write'])->group(function(){
+            Route::post('time-adjustment', 'TimeAdjusmentController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM view'])->group(function(){
+            Route::get('time-adjustment/{id}', 'TimeAdjusmentController@show');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM update'])->group(function(){
+            Route::put('time-adjustment/{id}', 'TimeAdjusmentController@update');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM delete'])->group(function(){
+            Route::delete('time-adjustment/{id}', 'TimeAdjusmentController@destroy');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM approve'])->group(function(){
+            Route::put('time-adjustment/approval/{id}', 'TimeAdjusmentController@approve');
         });
     });
 });

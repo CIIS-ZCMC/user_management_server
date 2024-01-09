@@ -6,31 +6,31 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
 
-use App\Models\Section;
-
-class TimeShift extends Model
+class TimeAdjusment extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'time_shifts';
+      
+    protected $table = 'time_adjusments';
 
     protected $primaryKey = 'id';
 
     protected $fillable = [
+        'employee_profile_id',
+        'daily_time_record_id',
+        'recommended_by',
+        'approve_by',
+        'approval_date',
         'first_in',
         'first_out',
         'second_in',
         'second_out',
-        'total_hours',
-        'color'
+        'remarks',
+        'status'
     ];
 
     protected $softDelete = true;
 
     public $timestamps = true;
 
-    public function section()
-    {
-        return $this->belongsToMany(Section::class, 'section_time_shift', )->withPivot('section_id');
-    }
 }
