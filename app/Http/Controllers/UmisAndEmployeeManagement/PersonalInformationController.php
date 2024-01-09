@@ -61,10 +61,10 @@ class PersonalInformationController extends Controller
                     $cleanData[$key] = $value;
                     continue;
                 }
-                if($key === 'attachment'){
-                    $cleanData[$key] = $this->fileValidateAndUpload->check_save_file($request, 'employee/profiles');
-                    continue;
-                }
+                // if($key === 'attachment'){
+                //     $cleanData[$key] = $this->fileValidateAndUpload->check_save_file($request, 'employee/profiles');
+                //     continue;
+                // }
                 $cleanData[$key] = strip_tags($value);
             }
 
