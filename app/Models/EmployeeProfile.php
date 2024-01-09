@@ -133,10 +133,6 @@ class EmployeeProfile extends Authenticatable
         return $fullName;
     }
 
-    public function GetPersonalInfo()
-    {
-        return $this->personalInformation;
-    }
     public function leaveCredits()
     {
         return $this->hasMany(EmployeeLeaveCredit::class);
