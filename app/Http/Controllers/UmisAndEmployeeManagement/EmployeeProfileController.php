@@ -212,7 +212,6 @@ class EmployeeProfileController extends Controller
                 'position' => $position,
                 'job_position' => $designation->name,
                 'date_hired' => $employee_profile->date_hired,
-                'citizenship' => $personal_information->citizenship,
                 'job_type' => $employee_profile->employmentType->name,
                 'years_of_service' => $employee_profile->personalInformation->years_of_service,
                 'last_login' => $last_login === null? null: $last_login->created_at
@@ -229,6 +228,7 @@ class EmployeeProfileController extends Controller
                 'date_hired' => $employee_profile->date_hired,
                 'place_of_birth' => $personal_information->place_of_birth,
                 'civil_status' => $personal_information->civil_status,
+                'citizenship' => $personal_information->citizenship,
                 'date_of_marriage' => $personal_information->date_of_marriage === null? 'NONE':$personal_information->date_of_marriage,
                 'agency_employee_no' => $employee_profile->agency_employee_no === null? 'NONE':$personal_information->agency_employee_no,
                 'blood_type' => $personal_information->blood_type === null? 'NONE':$personal_information->blood_type,
@@ -918,7 +918,8 @@ class EmployeeProfileController extends Controller
             $employment_type_id = $request->employment_type_id;
 
             if($employment_type_id !== null){
-                $employee_profiles = EmployeeProfile::where('employment_type_id', $employment_type_id)->get();
+                $employee_profiles = EmployeeProfile::where('employment_type_id', $employment_type_id)
+                    ->where('employment_type_id', "<", "11")->get();
                 
                 return response()->json([
                     'data' => EmployeeDTRList::collection($employee_profiles), 
@@ -926,7 +927,7 @@ class EmployeeProfileController extends Controller
                 ], Response::HTTP_OK);
             }
 
-            $employee_profiles = EmployeeProfile::all();
+            $employee_profiles = EmployeeProfile::where('employment_type_id', "<", "11")->get();
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching a '.$this->PLURAL_MODULE_NAME.'.');
 
