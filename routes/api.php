@@ -1322,6 +1322,7 @@ Route::middleware('auth.cookie')->group(function(){
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
             Route::delete('work-experience-employee/{id}', 'WorkExperienceController@destroyByEmployeeID');
         });
+        });
     });
 
     /**
@@ -1334,7 +1335,7 @@ Route::middleware('auth.cookie')->group(function(){
     /**
      * Leave and Overtime Management
      */
-    Route::namespace('App\Http\Controllers\LeaveAndOverime')->group(function(){
+    Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function(){
 
         Route::middleware(['auth.permission:UMIS-LOM view-all'])->group(function(){
             Route::get('requirements', 'RequirementController@index');
@@ -1434,6 +1435,4 @@ Route::middleware('auth.cookie')->group(function(){
         });
     });
 });
-
-
 });
