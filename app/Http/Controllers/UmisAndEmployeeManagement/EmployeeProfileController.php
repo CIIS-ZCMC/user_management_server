@@ -919,7 +919,7 @@ class EmployeeProfileController extends Controller
 
             if($employment_type_id !== null){
                 $employee_profiles = EmployeeProfile::where('employment_type_id', $employment_type_id)
-                    ->where('employment_type_id', "<", "11")->get();
+                    ->where('employment_type_id', "<", 11)->get();
                 
                 return response()->json([
                     'data' => EmployeeDTRList::collection($employee_profiles), 
@@ -927,7 +927,7 @@ class EmployeeProfileController extends Controller
                 ], Response::HTTP_OK);
             }
 
-            $employee_profiles = EmployeeProfile::where('employment_type_id', "<", "11")->get();
+            $employee_profiles = EmployeeProfile::where('employment_type_id', "<", 11)->get();
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching a '.$this->PLURAL_MODULE_NAME.'.');
 
