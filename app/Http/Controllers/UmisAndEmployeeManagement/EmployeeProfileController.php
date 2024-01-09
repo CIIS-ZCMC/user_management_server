@@ -915,6 +915,17 @@ class EmployeeProfileController extends Controller
     public function employeesDTRList(Request $request)
     {
         try{
+            $employment_type_id = $request->employment_type_id;
+
+            if($employment_type_id !== null){
+                $employee_profiles = EmployeeProfile::where('employment_type_id', $employment_type_id)->get();
+                
+                return response()->json([
+                    'data' => EmployeeDTRList::collection($employee_profiles), 
+                    'message' => 'list of employees retrieved.'
+                ], Response::HTTP_OK);
+            }
+
             $employee_profiles = EmployeeProfile::all();
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching a '.$this->PLURAL_MODULE_NAME.'.');
