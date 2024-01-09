@@ -55,5 +55,12 @@ class SystemModuleSeeder extends Seeder
             'description' => 'General feature for employees.',
             'system_id' => 1
         ]);
+        
+        SystemModule::create([
+            'name' => 'Leave and Overtime Management',
+            'code' => 'UMIS-LOM',
+            'description' => 'Generate personal Over Time report, Request and Approval of Overtime, Monthly Auto Add of leave credits and many more.',
+            'system_id' => 1
+        ]);
     }
 }
