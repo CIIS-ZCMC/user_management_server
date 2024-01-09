@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
 
 use App\Models\TimeShift;
+use App\Models\Holiday;
 use App\Models\EmployeeProfile;
 
 class Schedule extends Model
@@ -24,7 +25,7 @@ class Schedule extends Model
         'is_weekend',
         'status',
         'remarks',
-        'shift_id',
+        'time_shift_id',
         'holiday_id',
     ];
 
@@ -35,6 +36,11 @@ class Schedule extends Model
     public function timeShift()
     {
         return $this->belongsTo(TimeShift::class);
+    }
+
+    public function holiday()
+    {
+        return $this->belongsTo(Holiday::class);
     }
 
     public function employee()

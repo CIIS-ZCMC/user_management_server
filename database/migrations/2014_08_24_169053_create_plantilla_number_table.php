@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('plantilla_numbers', function (Blueprint $table) {
             $table->id();
             $table->string('number');
-            $table->boolean('is_vacant')->default(false);
+            $table->boolean('is_vacant')->default(true);
             $table->datetime('assigned_at')->nullable();
             $table->unsignedBigInteger('plantilla_id');
             $table->foreign('plantilla_id')->references('id')->on('plantillas');

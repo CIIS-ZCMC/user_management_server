@@ -5,6 +5,17 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 use App\Http\Controllers\Controller;
 
 use App\Http\Controllers\DTR\TwoFactorAuthController;
+use App\Http\Resources\AddressResource;
+use App\Http\Resources\ChildResource;
+use App\Http\Resources\CivilServiceEligibilityResource;
+use App\Http\Resources\ContactResource;
+use App\Http\Resources\EducationalBackgroundResource;
+use App\Http\Resources\FamilyBackGroundResource;
+use App\Http\Resources\OtherInformationResource;
+use App\Http\Resources\PersonalInformationResource;
+use App\Http\Resources\TrainingResource;
+use App\Http\Resources\VoluntaryWorkResource;
+use App\Http\Resources\WorkExperienceResource;
 use App\Methods\MailConfig;
 use App\Models\AccessToken;
 use App\Models\AssignAreaTrail;
@@ -160,7 +171,6 @@ class EmployeeProfileController extends Controller
                     'Receiver_Name' => $employee_profile->personalInformation->name(),
                     'Body' => $body
                 ];
-                
         
                 if ($this->mail->send($data)) {
                     return response()->json(['message' => "OTP has sent to your email, submit the OTP to verify that this is your account."], Response::HTTP_OK)
@@ -171,7 +181,6 @@ class EmployeeProfileController extends Controller
             $token = $employee_profile->createToken();
 
             $personal_information = $employee_profile->personalInformation;
-            $name = $personal_information->employeeName();
 
             $assigned_area = $employee_profile->assignedArea;
             $plantilla = null;
@@ -193,10 +202,60 @@ class EmployeeProfileController extends Controller
 
             $area_assigned = $employee_profile->assignedArea->findDetails(); 
 
+            $position = $employee_profile->position();
+            
+            $last_login = LoginTrail::where('employee_profile_id', $employee_profile->id)->orderByDesc('created_at')->first();
+
+            $employee = [
+                'profile_url' => $employee_profile->profile_url,
+                'employee_id' => $employee_profile->employee_id,
+                'position' => $position,
+                'job_position' => $designation->name,
+                'date_hired' => $employee_profile->date_hired,
+                'citizenship' => $personal_information->citizenship,
+                'job_type' => $employee_profile->employmentType->name,
+                'years_of_service' => $employee_profile->personalInformation->years_of_service,
+                'last_login' => $last_login === null? null: $last_login->created_at
+            ];
+
+            $personal_information_data = [
+                'full_name' => $personal_information->nameWithSurnameFirst(),
+                'name_extension' => $personal_information->name_extension === null? 'NONE':$personal_information->name_extension,
+                'employee_id' => $employee_profile->employee_id,
+                'years_of_service' => $employee_profile->personalInformation->years_of_service === null? 'NONE':$personal_information->years_of_service,
+                'name_title' => $personal_information->name_title === null? 'NONE':$personal_information->name_title,
+                'sex' => $personal_information->sex,
+                'date_of_birth' => $personal_information->date_of_birth,
+                'date_hired' => $employee_profile->date_hired,
+                'place_of_birth' => $personal_information->place_of_birth,
+                'civil_status' => $personal_information->civil_status,
+                'date_of_marriage' => $personal_information->date_of_marriage === null? 'NONE':$personal_information->date_of_marriage,
+                'agency_employee_no' => $employee_profile->agency_employee_no === null? 'NONE':$personal_information->agency_employee_no,
+                'blood_type' => $personal_information->blood_type === null? 'NONE':$personal_information->blood_type,
+                'height' => $personal_information->height,
+                'weight' => $personal_information->weight,
+            ];
+
             $data = [
                 'employee_id' => $employee_profile['employee_id'],
-                'name' => $name,
+                'name' => $personal_information->employeeName(),
                 'designation'=> $designation['name'],
+                'employee_details' => [
+                    'employee' => $employee,
+                    'personal_information' => $personal_information_data,
+                    'contact' => new ContactResource($personal_information->contact),
+                    'address' => AddressResource::collection($personal_information->addresses),
+                    'family_background' => new FamilyBackGroundResource($personal_information->familyBackground),
+                    'children' => ChildResource::collection($personal_information->children),
+                    'education' => EducationalBackgroundResource::collection($personal_information->educationalBackground),
+                    'affiliations_and_others' => [
+                        'civil_service_eligibility' => CivilServiceEligibilityResource::collection($personal_information->civilServiceEligibility),
+                        'work_experience' => WorkExperienceResource::collection($personal_information->workExperience),
+                        'voluntary_work_or_involvement' => VoluntaryWorkResource::collection($personal_information->voluntaryWork),
+                        'training' => TrainingResource::collection($personal_information->training),
+                        'other' => $personal_information->other
+                    ]
+                ],
                 'area_assigned' => $area_assigned['details']->name,
                 'area_sector' => $area_assigned['sector'],
                 'side_bar_details' => $side_bar_details
@@ -429,11 +488,43 @@ class EmployeeProfileController extends Controller
 
             $area_assigned = $employee_profile->assignArea->findDetails; 
 
+            $position = $employee_profile->position();
+            
+            $last_login = LoginTrail::where('employee_profile_id', $employee_profile->id)->orderByDesc('created_at')->first();
+
+            $employee = [
+                'profile_url' => $employee_profile->profile_url,
+                'employee_id' => $employee_profile->employee_id,
+                'full_name' => $employee_profile->personalInformation->nameWithSurnameFirst(),
+                'position' => $position,
+                'job_position' => $designation->name,
+                'date_hired' => $employee_profile->date_hired,
+                'job_type' => $employee_profile->employmentType->name,
+                'years_of_service' => $employee_profile->personalInformation->years_of_service,
+                'last_login' => $last_login === null? null: $last_login->created_at
+            ];
+
             $data = [
                 'employee_id' => $employee_profile['employee_id'],
-                'name' => $name,
+                'name' => $personal_information->employeeName(),
                 'designation'=> $designation['name'],
-                'area_assigned' => $area_assigned['name'],
+                'employee_details' => [
+                    'employee' => $employee,
+                    'personal_information' => new PersonalInformationResource( $personal_information),
+                    'contact' => new ContactResource($personal_information->contact),
+                    'address' => AddressResource::collection($personal_information->addresses),
+                    'family_background' => new FamilyBackGroundResource($personal_information->familyBackground),
+                    'children' => ChildResource::collection($personal_information->children),
+                    'education' => EducationalBackgroundResource::collection($personal_information->educationalBackground),
+                    'affiliations_and_others' => [
+                        'civil_service_eligibility' => CivilServiceEligibilityResource::collection($personal_information->civilServiceEligibility),
+                        'work_experience' => WorkExperienceResource::collection($personal_information->workExperience),
+                        'voluntary_work_or_involvement' => VoluntaryWorkResource::collection($personal_information->voluntaryWork),
+                        'training' => TrainingResource::collection($personal_information->training),
+                        'other' => $personal_information->other
+                    ]
+                ],
+                'area_assigned' => $area_assigned['details']->name,
                 'area_sector' => $area_assigned['sector'],
                 'side_bar_details' => $side_bar_details
             ];
@@ -494,10 +585,42 @@ class EmployeeProfileController extends Controller
 
             $area_assigned = $employee_profile->assignedArea->findDetails(); 
 
+            $position = $employee_profile->position();
+            
+            $last_login = LoginTrail::where('employee_profile_id', $employee_profile->id)->orderByDesc('created_at')->first();
+
+            $employee = [
+                'profile_url' => $employee_profile->profile_url,
+                'employee_id' => $employee_profile->employee_id,
+                'full_name' => $employee_profile->personalInformation->nameWithSurnameFirst(),
+                'position' => $position,
+                'job_position' => $designation->name,
+                'date_hired' => $employee_profile->date_hired,
+                'job_type' => $employee_profile->employmentType->name,
+                'years_of_service' => $employee_profile->personalInformation->years_of_service,
+                'last_login' => $last_login === null? null: $last_login->created_at
+            ];
+
             $data = [
                 'employee_id' => $employee_profile['employee_id'],
-                'name' => $name,
+                'name' => $personal_information->employeeName(),
                 'designation'=> $designation['name'],
+                'employee_details' => [
+                    'employee' => $employee,
+                    'personal_information' => new PersonalInformationResource( $personal_information),
+                    'contact' => new ContactResource($personal_information->contact),
+                    'address' => AddressResource::collection($personal_information->addresses),
+                    'family_background' => new FamilyBackGroundResource($personal_information->familyBackground),
+                    'children' => ChildResource::collection($personal_information->children),
+                    'education' => EducationalBackgroundResource::collection($personal_information->educationalBackground),
+                    'affiliations_and_others' => [
+                        'civil_service_eligibility' => CivilServiceEligibilityResource::collection($personal_information->civilServiceEligibility),
+                        'work_experience' => WorkExperienceResource::collection($personal_information->workExperience),
+                        'voluntary_work_or_involvement' => VoluntaryWorkResource::collection($personal_information->voluntaryWork),
+                        'training' => TrainingResource::collection($personal_information->training),
+                        'other' => $personal_information->other
+                    ]
+                ],
                 'area_assigned' => $area_assigned['details']->name,
                 'area_sector' => $area_assigned['sector'],
                 'side_bar_details' => $side_bar_details
@@ -693,10 +816,42 @@ class EmployeeProfileController extends Controller
 
             $area_assigned = $employee_profile->assignedArea->findDetails(); 
 
+            $position = $employee_profile->position();
+            
+            $last_login = LoginTrail::where('employee_profile_id', $employee_profile->id)->orderByDesc('created_at')->first();
+
+            $employee = [
+                'profile_url' => $employee_profile->profile_url,
+                'employee_id' => $employee_profile->employee_id,
+                'full_name' => $employee_profile->personalInformation->nameWithSurnameFirst(),
+                'position' => $position,
+                'job_position' => $designation->name,
+                'date_hired' => $employee_profile->date_hired,
+                'job_type' => $employee_profile->employmentType->name,
+                'years_of_service' => $employee_profile->personalInformation->years_of_service,
+                'last_login' => $last_login === null? null: $last_login->created_at
+            ];
+
             $data = [
                 'employee_id' => $employee_profile['employee_id'],
-                'name' => $name,
+                'name' => $personal_information->employeeName(),
                 'designation'=> $designation['name'],
+                'employee_details' => [
+                    'employee' => $employee,
+                    'personal_information' => new PersonalInformationResource( $personal_information),
+                    'contact' => new ContactResource($personal_information->contact),
+                    'address' => AddressResource::collection($personal_information->addresses),
+                    'family_background' => new FamilyBackGroundResource($personal_information->familyBackground),
+                    'children' => ChildResource::collection($personal_information->children),
+                    'education' => EducationalBackgroundResource::collection($personal_information->educationalBackground),
+                    'affiliations_and_others' => [
+                        'civil_service_eligibility' => CivilServiceEligibilityResource::collection($personal_information->civilServiceEligibility),
+                        'work_experience' => WorkExperienceResource::collection($personal_information->workExperience),
+                        'voluntary_work_or_involvement' => VoluntaryWorkResource::collection($personal_information->voluntaryWork),
+                        'training' => TrainingResource::collection($personal_information->training),
+                        'other' => $personal_information->other
+                    ]
+                ],
                 'area_assigned' => $area_assigned['details']->name,
                 'area_sector' => $area_assigned['sector'],
                 'side_bar_details' => $side_bar_details
@@ -760,6 +915,17 @@ class EmployeeProfileController extends Controller
     public function employeesDTRList(Request $request)
     {
         try{
+            $employment_type_id = $request->employment_type_id;
+
+            if($employment_type_id !== null){
+                $employee_profiles = EmployeeProfile::where('employment_type_id', $employment_type_id)->get();
+                
+                return response()->json([
+                    'data' => EmployeeDTRList::collection($employee_profiles), 
+                    'message' => 'list of employees retrieved.'
+                ], Response::HTTP_OK);
+            }
+
             $employee_profiles = EmployeeProfile::all();
 
             $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching a '.$this->PLURAL_MODULE_NAME.'.');

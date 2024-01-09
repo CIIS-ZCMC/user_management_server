@@ -6,6 +6,7 @@ use App\Models\EmployeeProfile;
 use Illuminate\Http\Request;
 use App\Methods\MailConfig;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\DTR\TwoFactorAuthController;
 
 class MailController extends Controller
 {

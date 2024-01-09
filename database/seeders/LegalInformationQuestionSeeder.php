@@ -52,8 +52,8 @@ class LegalInformationQuestionSeeder extends Seeder
             'order_by' => 3,
             'content_question' => "Have you ever been criminally charged before any court?",
             'has_detail' => TRUE,
-            'has_yes_no' => TRUE,
-            'has_date' => FALSE,
+            'has_yes_no' => TRUE,   
+            'has_date' => TRUE,
         ]);
 
         LegalInformationQuestion::create([
