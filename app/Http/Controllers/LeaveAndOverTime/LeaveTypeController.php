@@ -140,18 +140,10 @@ class LeaveTypeController extends Controller
     {
 
         try{
-
-            // $validatedData = $request->validate([
-            //     'field1' => 'required|string|max:255',
-            //     'field2' => 'required|numeric',
-            // ], [
-            //     'field1.required' => 'Field 1 is required.',
-            //     'field2.numeric' => 'Field 2 must be a numeric value.',
-            // ]);
-            $request->validate([
+            $user=$request->id;
+            $validatedData = $request->validate([
                 'name' => 'required|string',
-                // 'is_special' => 'required|boolean',
-
+                'attachments.*' => 'required|mimes:jpeg,png,jpg,pdf|max:2048',
             ]);
             $employee_id = $request->employee_id;
             $filename="";
@@ -181,7 +173,6 @@ class LeaveTypeController extends Controller
             {
                 $leave_type->leave_credit_year = "";
             }
-
             $leave_type->save();
             $attachment=$request->file('attachments');
             $leave_type_id=$leave_type->id;
@@ -205,11 +196,10 @@ class LeaveTypeController extends Controller
                 }
 
             }
-
             $selectedRequirements = $request->input('requirements');
             $leave_type->requirements()->sync($selectedRequirements);
             $columnsString="";
-            $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString);
+            $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString,$user->id);
             $leave_types = LeaveType::with('logs.employeeProfile.personalInformation', 'requirements.logs.employeeProfile.personalInformation','attachments')
             ->where('id',$leave_type_id)->get();
                 $leave_types_result = $leave_types->map(function ($leave_type) {
@@ -316,10 +306,10 @@ class LeaveTypeController extends Controller
     public function update($id,Request $request, LeaveType $leaveType)
     {
         try{
-            $request->validate([
-                // 'name' => 'required|string',
-                // 'is_special' => 'required|boolean',
-
+            $user=$request->user;
+            $validatedData = $request->validate([
+                'name' => 'required|string',
+                'attachments.*' => 'required|mimes:jpeg,png,jpg,pdf|max:2048',
             ]);
             $leave_type = LeaveType::findOrFail($id);
             $originalValues = $leave_type->getOriginal();
@@ -385,7 +375,7 @@ class LeaveTypeController extends Controller
             $selectedRequirements = $request->input('requirements', []);
             $leave_type->requirements()->sync($selectedRequirements);
             $columnsString="";
-            $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString);
+            $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString,$user->id);
             $leave_types = LeaveType::with('logs.employeeProfile.personalInformation', 'requirements.logs.employeeProfile.personalInformation','attachments')
             ->where('id',$leave_type_id)->get();
                 $leave_types_result = $leave_types->map(function ($leave_type) {
@@ -468,11 +458,10 @@ class LeaveTypeController extends Controller
         //
     }
 
-    public function storeLeaveTypeLog($leave_type_id,$process_name,$changedfields)
+    public function storeLeaveTypeLog($leave_type_id,$process_name,$changedfields,$user_id)
     {
 
         try {
-            $user_id="1";
 
             $data = [
                 'leave_type_id' => $leave_type_id,
@@ -484,7 +473,6 @@ class LeaveTypeController extends Controller
             ];
 
             $leave_type_log = LeaveTypeLog::create($data);
-
             return $leave_type_log;
         } catch(\Exception $e) {
             return response()->json(['message' => $e->getMessage(),'error'=>true]);
@@ -496,9 +484,8 @@ class LeaveTypeController extends Controller
     {
         try{
             $columnsString="";
-            // $user_id = Auth::user()->id;
-            $user = EmployeeProfile::where('id','=','1')->first();
-            $user_password=$user->password;
+            $user = $request->user;
+            $user_password=$user->password_encrypted;
             $password=$request->password;
             if($user_password==$password)
             {
@@ -506,7 +493,7 @@ class LeaveTypeController extends Controller
                 $deactivate_leave_type->is_active=false;
                 $deactivate_leave_type->update();
                 $process_name="Deactivate";
-                $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString);
+                $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString,$user->id);
                 $leave_types = LeaveType::with('logs.employeeProfile.personalInformation', 'requirements.logs.employeeProfile.personalInformation','attachments')
                 ->where('id',$leave_type_id)->get();
                     $leave_types_result = $leave_types->map(function ($leave_type) {
@@ -589,9 +576,8 @@ class LeaveTypeController extends Controller
     {
         try{
             $columnsString="";
-            // $user_id = Auth::user()->id;
-            $user = EmployeeProfile::where('id','=','1')->first();
-            $user_password=$user->password;
+            $user = $request->user;
+            $user_password=$user->password_encrypted;
             $password=$request->password;
             if($user_password==$password)
             {
@@ -599,7 +585,7 @@ class LeaveTypeController extends Controller
                 $reactivate_leave_type->is_active=true;
                 $reactivate_leave_type->update();
                 $process_name="Reactivate";
-                 $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString);
+                 $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString,$user->id);
                  $leave_types = LeaveType::with('logs.employeeProfile.personalInformation', 'requirements.logs.employeeProfile.personalInformation','attachments')
                  ->where('id',$leave_type_id)->get();
                      $leave_types_result = $leave_types->map(function ($leave_type) {

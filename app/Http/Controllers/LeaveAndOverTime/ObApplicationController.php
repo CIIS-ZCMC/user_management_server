@@ -169,12 +169,12 @@ class ObApplicationController extends Controller
 
 
     }
-    public function getUserObApplication()
+    public function getUserObApplication(Request $request)
     {
         try{
-            $id='1';
+            $user = $request->user;
             $ob_applications = ObApplication::with(['employeeProfile.personalInformation','logs'])
-            ->where('employee_profile_id', $id)
+            ->where('employee_profile_id', $user->id)
             ->get();
             if($ob_applications->isNotEmpty())
             {
@@ -194,7 +194,6 @@ class ObApplicationController extends Controller
                     $supervisor_code=null;
                     if($division) {
                                 $division_name = Division::with('chief.personalInformation')->find($division);
-
                                 if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
                                 {
                                     $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
@@ -304,20 +303,20 @@ class ObApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], 500);
         }
     }
-    public function getObApplications()
+    public function getObApplications(Request $request)
     {
 
         try{
-            $id='1';
+            $user=$request->user;
             $official_business_applications = [];
-            $division = AssignArea::where('employee_profile_id',$id)->value('division_id');
+            $division = AssignArea::where('employee_profile_id',$user->id)->value('division_id');
             $divisionHeadId = Division::where('id', $division)->value('chief_employee_profile_id');
-            $department = AssignArea::where('employee_profile_id',$id)->value('department_id');
+            $department = AssignArea::where('employee_profile_id',$user->id)->value('department_id');
             $departmentHeadId = Department::where('id', $department)->value('head_employee_profile_id');
             $training_officer_id = Department::where('id', $department)->value('training_officer_employee_profile_id');
-            $section = AssignArea::where('employee_profile_id',$id)->value('section_id');
+            $section = AssignArea::where('employee_profile_id',$user->id)->value('section_id');
             $sectionHeadId = Section::where('id', $section)->value('supervisor_employee_profile_id');
-                if($divisionHeadId == $id) {
+                if($divisionHeadId == $user->id) {
                     $official_business_applications = ObApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','logs'])
                     ->whereHas('employeeProfile.assignedArea', function ($query) use ($division) {
                         $query->where('id', $division);
@@ -450,7 +449,7 @@ class ObApplicationController extends Controller
                         return response()->json(['message' => 'No records available'], Response::HTTP_OK);
                     }
                 }
-                else if($departmentHeadId == $id || $training_officer_id == $id) {
+                else if($departmentHeadId == $user->id || $training_officer_id == $user->id) {
                     $official_business_applications = ObApplication::with(['employeeProfile.assignedArea.department','employeeProfile.personalInformation','logs' ])
                     ->whereHas('employeeProfile.assignedArea', function ($query) use ($department) {
                         $query->where('id', $department);
@@ -585,7 +584,7 @@ class ObApplicationController extends Controller
                     }
 
                 }
-                else  if($sectionHeadId == $id) {
+                else  if($sectionHeadId == $user->id) {
                     $official_business_applications = ObApplication::with(['employeeProfile.assignedArea.section','employeeProfile.personalInformation','logs'])
                     ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
                         $query->where('id', $section);
@@ -1295,17 +1294,12 @@ class ObApplicationController extends Controller
     public function updateObApplicationStatus ($id,$status,Request $request)
     {
         try {
+                $user=$request->user;
+                $user_password=$user->password_encrypted;
+                $password=$request->password;
+                if($user_password==$password)
+                {
 
-                // $employee = $request->user;
-                // $employee->id;
-                // $user = EmployeeProfile::where('id','=',$user_id)->first();
-                // $area = AssignArea::where('employee_profile_id',$employee_id)->value('division_id');
-                // $division = Division::where('id',$area)->value('is_medical');
-                // $user_password=$user->password;
-                // $password=$request->password;
-                // if($user_password==$password)
-                // {
-                    $division= true;
                             $message_action = '';
                             $action = '';
                             $new_status = '';
@@ -1332,7 +1326,7 @@ class ObApplicationController extends Controller
                                     $ob_application_log = new ObApplicationLog();
                                     $ob_application_log->action = $action;
                                     $ob_application_log->ob_application_id = $id;
-                                    $ob_application_log->action_by_id = '1';
+                                    $ob_application_log->action_by_id = $user->id;
                                     $ob_application_log->date = date('Y-m-d');
                                     $ob_application_log->time =  date('H:i:s');
                                     $ob_application_log->save();
@@ -1461,10 +1455,10 @@ class ObApplicationController extends Controller
                                         $singleArray = array_merge(...$official_business_applications_result);
                                     return response(['message' => 'Application has been sucessfully '.$message_action, 'data' => $singleArray],Response::HTTP_OK);
                             }
-                // }
-                // else{
-                    // return response()->json(['message' => 'Incorrect Password'], Response::HTTP_OK);
-                // }
+                }
+                else{
+                    return response()->json(['message' => 'Incorrect Password'], Response::HTTP_OK);
+                }
             }
 
 

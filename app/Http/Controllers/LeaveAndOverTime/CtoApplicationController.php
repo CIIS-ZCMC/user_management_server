@@ -385,13 +385,11 @@ class CtoApplicationController extends Controller
                                                             ->first();
                 if($cto_applications)
                 {
-                        // $user_id = Auth::user()->id;
-                        // $user = EmployeeProfile::where('id','=',$user_id)->first();
-                        // $user_password=$user->password;
-                        // $password=$request->password;
-                        // if($user_password==$password)
-                        // {
-                        //     if($user_id){
+                        $user_password=$user->password_encrypted;
+                        $password=$request->password;
+                        if($user_password==$password)
+                        {
+
                             DB::beginTransaction();
                                 $cto_application_log = new CtoApplicationLog();
                                 $cto_application_log->action = 'declined';
@@ -542,8 +540,12 @@ class CtoApplicationController extends Controller
                                     $singleArray = array_merge(...$cto_applications_result);
                                 return response(['message' => 'Application has been sucessfully declined', 'data' => $singleArray], Response::HTTP_OK);
 
-                        //     }
-                        //  }
+
+                        }
+                        else
+                        {
+                            return response()->json(['message' => 'Incorrect Password'], Response::HTTP_OK);
+                        }
                 }
             } catch (\Exception $e) {
                 DB::rollBack();
@@ -1983,10 +1985,10 @@ class CtoApplicationController extends Controller
     {
         try {
                 $user = $request->user;
-                // $user_password=$user->password;
-                // $password=$request->password;
-                // if($user_password==$password)
-                // {
+                $user_password=$user->password_encrypted;
+                $password=$request->password;
+                if($user_password==$password)
+                {
                             // $division= true;
                             $message_action = '';
                             $action = '';
@@ -2176,11 +2178,11 @@ class CtoApplicationController extends Controller
                                             });
                                 $singleArray = array_merge(...$cto_applications_result);
                                 return response(['message' => 'Application has been sucessfully '.$message_action, 'data' => $singleArray], Response::HTTP_OK);
+                                    }
                 }
-                // else{
-                //     return response()->json(['message' => 'Incorrect Password'], Response::HTTP_OK);
-                // }
-                // }
+                else{
+                    return response()->json(['message' => 'Incorrect Password'], Response::HTTP_OK);
+                }
             }
          catch (\Exception $e) {
             DB::rollBack();
