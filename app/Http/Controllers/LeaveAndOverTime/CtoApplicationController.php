@@ -168,11 +168,10 @@ class CtoApplicationController extends Controller
     public function store(Request $request)
     {
         try{
-            // $user_id = Auth::user()->id;
-            // $user = EmployeeProfile::where('id','=',$user_id)->first();
-            // $area = AssignArea::where('employee_profile_id',$employee_id)->value('division_id');
-            // $division = Division::where('id',$area)->value('is_medical');
-            $division=true;
+            $user = $request->user;
+            $area = AssignArea::where('employee_profile_id',$user->id)->value('division_id');
+            $division = Division::where('id',$area)->value('is_medical');
+            // $division=true;
             $validatedData = $request->validate([
                 'time_from.*' => 'required|date_format:H:i',
                 'time_to.*' => 'required|date_format:H:i|after_or_equal:time_from.*',
@@ -181,7 +180,7 @@ class CtoApplicationController extends Controller
             ]);
             DB::beginTransaction();
                 $cto_application = new CtoApplication();
-                $cto_application->employee_profile_id = '1';
+                $cto_application->employee_profile_id = $user->id;
                 $cto_application->remarks = $request->remarks;
                 // $cto_application->purpose = $request->purpose;
                 if($division === true)
@@ -214,10 +213,8 @@ class CtoApplicationController extends Controller
                 $cto_id=$cto_application->id;
                 $columnsString="";
                 $process_name="Applied";
-                $this->storeCTOApplicationLog($cto_id,$process_name,$columnsString);
-
+                $this->storeCTOApplicationLog($cto_id,$process_name,$columnsString,$user->id);
                 DB::commit();
-
 
             $cto_applications = CtoApplication::with(['employeeProfile.personalInformation','dates','logs'])
             ->where('id',$cto_application->id)->get();
@@ -360,11 +357,9 @@ class CtoApplicationController extends Controller
         }
     }
 
-    public function storeCTOApplicationLog($cto_id,$process_name,$changedFields)
+    public function storeCTOApplicationLog($cto_id,$process_name,$changedFields,$user_id)
     {
         try {
-            $user_id="1";
-
             $data = [
                 'cto_application_id' => $cto_id,
                 'action_by_id' => $user_id,
@@ -385,7 +380,7 @@ class CtoApplicationController extends Controller
     public function declineCtoApplication($id,Request $request)
     {
         try {
-
+                $user = $request->user;
                 $cto_applications = CtoApplication::where('id','=', $id)
                                                             ->first();
                 if($cto_applications)
@@ -403,7 +398,7 @@ class CtoApplicationController extends Controller
                                 $cto_application_log->cto_application_id  = $id;
                                 $cto_application_log->date = date('Y-m-d');
                                 $cto_application_log->time =  date('H:i:s');
-                                $cto_application_log->action_by_id = '1';
+                                $cto_application_log->action_by_id = $user->id;
                                 $cto_application_log->save();
 
                                 $cto_application = CtoApplication::findOrFail($id);
@@ -559,7 +554,7 @@ class CtoApplicationController extends Controller
     public function cancelCtoApplication($id,Request $request)
     {
         try {
-
+                $user = $request->user;
                 $cto_applications = CtoApplication::where('id','=', $id)->first();
                 if($cto_applications)
                 {
@@ -576,7 +571,7 @@ class CtoApplicationController extends Controller
                                 $cto_application_log->cto_application_id  = $id;
                                 $cto_application_log->date = date('Y-m-d');
                                 $cto_application_log->time =  date('H:i:s');
-                                $cto_application_log->action_by_id = '1';
+                                $cto_application_log->action_by_id = $user->id;
                                 $cto_application_log->save();
 
                                 $cto_application = CtoApplication::findOrFail($id);
@@ -727,12 +722,12 @@ class CtoApplicationController extends Controller
         }
     }
 
-    public function getUserCtoApplication()
+    public function getUserCtoApplication(Request $request)
     {
         try{
-            $id='1';
+            $user = $request->user;
             $cto_applications = CtoApplication::with(['employeeProfile.personalInformation','logs'])
-            ->where('employee_profile_id', $id)
+            ->where('employee_profile_id', $user->id)
             ->get();
             if($cto_applications->isNotEmpty())
             {
@@ -865,7 +860,7 @@ class CtoApplicationController extends Controller
 
                                 ];
                             });
-                        $OvertimeCredits = EmployeeOvertimeCredit::where('employee_profile_id', $id)
+                        $OvertimeCredits = EmployeeOvertimeCredit::where('employee_profile_id', $user->id)
                         ->get();
 
                         $totalOvertimeCredits = 0;
@@ -895,19 +890,18 @@ class CtoApplicationController extends Controller
         }
     }
 
-    public function getCtoApplications($id,$status,Request $request)
+    public function getCtoApplications(Request $request)
     {
-
+        $user = $request->user;
         $cto_applications = [];
-        $division = AssignArea::where('employee_profile_id',$id)->value('division_id');
-        $division = AssignArea::where('employee_profile_id',$id)->value('division_id');
+        $division = AssignArea::where('employee_profile_id',$user->id)->value('division_id');
         $divisionHeadId = Division::where('id', $division)->value('chief_employee_profile_id');
-        $department = AssignArea::where('employee_profile_id',$id)->value('department_id');
+        $department = AssignArea::where('employee_profile_id',$user->id)->value('department_id');
         $departmentHeadId = Department::where('id', $department)->value('head_employee_profile_id');
         $training_officer_id = Department::where('id', $department)->value('training_officer_employee_profile_id');
-        $section = AssignArea::where('employee_profile_id',$id)->value('section_id');
+        $section = AssignArea::where('employee_profile_id',$user->id)->value('section_id');
         $sectionHeadId = Section::where('id', $section)->value('supervisor_employee_profile_id');
-        if($divisionHeadId == $id) {
+        if($divisionHeadId == $user->id) {
             $cto_applications = CtoApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','logs'])
             ->whereHas('employeeProfile.assignedArea', function ($query) use ($division) {
                 $query->where('id', $division);
@@ -1058,7 +1052,7 @@ class CtoApplicationController extends Controller
 
 
         }
-        else if($sectionHeadId == $id) {
+        else if($sectionHeadId == $user->id) {
             $cto_applications = ctoApplication::with(['employeeProfile.assignedArea.section','employeeProfile.personalInformation','logs'])
             ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
                 $query->where('id', $section);
@@ -1206,7 +1200,7 @@ class CtoApplicationController extends Controller
             }
 
         }
-        else  if($departmentHeadId == $id || $training_officer_id == $id) {
+        else  if($departmentHeadId == $user->id || $training_officer_id == $user->id) {
             $cto_applications = CtoApplication::with(['employeeProfile.assignedArea.department','employeeProfile.personalInformation','logs'])
             ->whereHas('employeeProfile.assignedArea', function ($query) use ($department) {
                 $query->where('id', $department);
@@ -1988,15 +1982,12 @@ class CtoApplicationController extends Controller
     public function updateStatus($id,$status,Request $request)
     {
         try {
-                // $employee_id = $request->employee_id;
-                // $user_id = Auth::user()->id;
-                // $user = EmployeeProfile::where('id','=',$user_id)->first();
-                // $division = AssignArea::where('employee_profile_id',$employee_id)->value('is_medical');
+                $user = $request->user;
                 // $user_password=$user->password;
                 // $password=$request->password;
                 // if($user_password==$password)
                 // {
-                            $division= true;
+                            // $division= true;
                             $message_action = '';
                             $action = '';
                             $new_status = '';
@@ -2023,7 +2014,7 @@ class CtoApplicationController extends Controller
                                     $cto_application_log = new CtoApplicationLog();
                                     $cto_application_log->action = $action;
                                     $cto_application_log->cto_application_id = $id;
-                                    $cto_application_log->action_by_id = '1';
+                                    $cto_application_log->action_by_id = $user->id;
                                     $cto_application_log->date = date('Y-m-d');
                                     $cto_application_log->time = date('h-i-s');
                                     $cto_application_log->save();
@@ -2042,7 +2033,7 @@ class CtoApplicationController extends Controller
                                             $totalHours += $timeTo->diffInHours($timeFrom);
                                         }
                                         $employee_cto_credits = new EmployeeOvertimeCredit();
-                                        $employee_cto_credits->employee_profile_id = '1';
+                                        $employee_cto_credits->employee_profile_id = $cto_applications->employee_profile_id;
                                         $employee_cto_credits->cto_application_id = $id;
                                         $employee_cto_credits->operation = "deduct";
                                         // $employee_cto_credits->reason = "cto";
@@ -2185,11 +2176,11 @@ class CtoApplicationController extends Controller
                                             });
                                 $singleArray = array_merge(...$cto_applications_result);
                                 return response(['message' => 'Application has been sucessfully '.$message_action, 'data' => $singleArray], Response::HTTP_OK);
-                // }
-                // else{
-                    // return response()->json(['message' => 'Incorrect Password'], Response::HTTP_OK);
-                // }
                 }
+                // else{
+                //     return response()->json(['message' => 'Incorrect Password'], Response::HTTP_OK);
+                // }
+                // }
             }
          catch (\Exception $e) {
             DB::rollBack();

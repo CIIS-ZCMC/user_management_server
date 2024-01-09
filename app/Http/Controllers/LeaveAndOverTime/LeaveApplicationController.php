@@ -472,13 +472,12 @@ class LeaveApplicationController extends Controller
         }
     }
 
-    public function getLeaveApplications()
+    public function getLeaveApplications(Request $request)
     {
-
-        $leave_applications = [];
+        $user = $request->user;
         $id='1';
         $leave_applications = [];
-        $section = AssignArea::where('employee_profile_id',$id)->value('section_id');
+        $section = AssignArea::  where('employee_profile_id',$id)->value('section_id');
         $hr_head_id = Section::where('id', $section)->value('supervisor_employee_profile_id');
         $division = AssignArea::where('employee_profile_id',$id)->value('division_id');
         $divisionHeadId = Division::where('id', $division)->value('chief_employee_profile_id');
@@ -863,7 +862,7 @@ class LeaveApplicationController extends Controller
             }
 
         }
-        else  if($departmentHeadId == $id || $training_officer_id == $id) {
+        else if($departmentHeadId == $id || $training_officer_id == $id) {
             $leave_applications = LeaveApplication::with(['employeeProfile.assignedArea.department','employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
             ->whereHas('employeeProfile.assignedArea', function ($query) use ($department) {
                 $query->where('id', $department);
@@ -1053,7 +1052,7 @@ class LeaveApplicationController extends Controller
                 return response()->json(['message' => 'No records available'], Response::HTTP_OK);
             }
         }
-        else   if($sectionHeadId == $id) {
+        else if($sectionHeadId == $id) {
 
             $leave_applications = LeaveApplication::with(['employeeProfile.assignedArea.section','employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
             ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {

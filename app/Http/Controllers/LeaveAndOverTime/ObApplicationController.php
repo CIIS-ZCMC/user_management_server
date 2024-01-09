@@ -1295,8 +1295,9 @@ class ObApplicationController extends Controller
     public function updateObApplicationStatus ($id,$status,Request $request)
     {
         try {
-                // $user_id = Auth::user()->id;
-                // $employee_id = $request->employee_id;
+
+                // $employee = $request->user;
+                // $employee->id;
                 // $user = EmployeeProfile::where('id','=',$user_id)->first();
                 // $area = AssignArea::where('employee_profile_id',$employee_id)->value('division_id');
                 // $division = Division::where('id',$area)->value('is_medical');

@@ -276,7 +276,8 @@ class LeaveTypeController extends Controller
                         }),
                     ];
                 });
-            return response()->json(['message' => 'Leave Type has been sucessfully saved','data' => $leave_types_result ], Response::HTTP_OK);
+            $singleArray = array_merge(...$leave_types_result);
+            return response()->json(['message' => 'Leave Type has been sucessfully saved','data' => $singleArray ], Response::HTTP_OK);
 
         }catch(\Throwable $th){
 
@@ -316,7 +317,7 @@ class LeaveTypeController extends Controller
     {
         try{
             $request->validate([
-                'name' => 'name|string',
+                // 'name' => 'required|string',
                 // 'is_special' => 'required|boolean',
 
             ]);
@@ -451,7 +452,8 @@ class LeaveTypeController extends Controller
                         }),
                     ];
                 });
-            return response()->json(['message' => 'Leave Type has been sucessfully updated','data' => $leave_types_result ], Response::HTTP_OK);
+                $singleArray = array_merge(...$leave_types_result);
+            return response()->json(['message' => 'Leave Type has been sucessfully updated','data' => $singleArray ], Response::HTTP_OK);
         }catch(\Throwable $th){
 
             return response()->json(['message' => $th->getMessage()], 500);
