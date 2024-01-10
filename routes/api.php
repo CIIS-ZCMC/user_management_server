@@ -1501,6 +1501,86 @@ Route::middleware('auth.cookie')->group(function(){
             Route::post('print-leave-form/{id}', 'LeaveApplicationController@printLeaveForm');
         });
 
+
+        Route::middleware(['auth.permission:UMIS-OB view-all'])->group(function(){
+            Route::get('ob-application-all', 'ObApplicationController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-OB request'])->group(function(){
+            Route::post('ob-application', 'ObApplicationController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-OB approve'])->group(function(){
+            Route::post('ob-application-decline/{id}', 'ObApplicationController@declineObApplication');
+        });
+
+        Route::middleware(['auth.permission:UMIS-OB approve'])->group(function(){
+            Route::post('ob-application-cancel/{id}', 'ObApplicationController@cancelObApplication');
+        });
+
+        Route::middleware(['auth.permission:UMIS-OB approve'])->group(function(){
+            Route::post('ob-application-update/{id}/{status}', 'ObApplicationController@updateObApplicationStatus');
+        });
+
+        Route::middleware(['auth.permission:UMIS-OB view'])->group(function(){
+            Route::get('user-ob-application', 'ObApplicationController@getUserObApplication');
+        });
+
+        Route::middleware(['auth.permission:UMIS-OB view'])->group(function(){
+            Route::get('access-level-ob-application', 'ObApplicationController@getObApplications');
+        });
+
+
+        Route::middleware(['auth.permission:UMIS-OT view-all'])->group(function(){
+            Route::get('ob-application-all', 'ObApplicationController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-OT request'])->group(function(){
+            Route::post('ob-application', 'ObApplicationController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-OT approve'])->group(function(){
+            Route::post('ob-application-decline/{id}', 'ObApplicationController@declineObApplication');
+        });
+
+        Route::middleware(['auth.permission:UMIS-OT approve'])->group(function(){
+            Route::post('ob-application-cancel/{id}', 'ObApplicationController@cancelObApplication');
+        });
+
+        Route::middleware(['auth.permission:UMIS-OT approve'])->group(function(){
+            Route::post('ob-application-update/{id}/{status}', 'ObApplicationController@updateObApplicationStatus');
+        });
+
+        Route::middleware(['auth.permission:UMIS-OT view'])->group(function(){
+            Route::get('user-ob-application', 'ObApplicationController@getUserObApplication');
+        });
+
+        Route::middleware(['auth.permission:UMIS-OT view'])->group(function(){
+            Route::get('access-level-ob-application', 'ObApplicationController@getObApplications');
+        });
+
+       
+
+
+
+    Route::post('ot-application-logs/{id}/{pr}/{cf}', 'OfficialTimeApplicationController@storeOfficialTimeApplicationLog');
+    //Route::post('OfficialTime-application/{id}', 'OfficialTimeApplicationController@update');
+    Route::post('ot-application-decline/{id}', 'OfficialTimeApplicationController@declineOtApplication');
+    Route::post('ot-application-cancel/{id}', 'OfficialTimeApplicationController@cancelOtApplication');
+    Route::post('ot-application-update/{id}/{status}', 'OfficialTimeApplicationController@updateStatus');
+    Route::get('user-ot-application', 'OfficialTimeApplicationController@getUserOtApplication');
+    Route::get('ot-application-division', 'OfficialTimeApplicationController@getDivisionOtApplications');
+    Route::get('ot-application-department', 'OfficialTimeApplicationController@getDepartmentOtApplications');
+    Route::get('ot-application-section', 'OfficialTimeApplicationController@getSectionOtApplications');
+    Route::get('ot-application-declined', 'OfficialTimeApplicationController@getDeclinedOtApplications');
+    Route::get('access-level-ot-application', 'OfficialTimeApplicationController@getOtApplications');
+
+
+
+
+
+
+
     });
 
     /**
