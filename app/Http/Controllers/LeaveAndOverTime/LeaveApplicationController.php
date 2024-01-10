@@ -469,8 +469,8 @@ class LeaveApplicationController extends Controller
     {
         $user = $request->user;
         $leave_applications = [];
-        $section = AssignArea::  where('employee_profile_id',$user->id)->value('section_id');
-        $hr_head_id = Section::where('id', $section)->value('supervisor_employee_profile_id');
+        // $section_hr = AssignArea::  where('employee_profile_id',$user->id)->value('section_id');
+        $hr_head_id = Section::where('code', 'HRMO')->value('supervisor_employee_profile_id');
         $division = AssignArea::where('employee_profile_id',$user->id)->value('division_id');
         $divisionHeadId = Division::where('id', $division)->value('chief_employee_profile_id');
         $department = AssignArea::where('employee_profile_id',$user->id)->value('department_id');
@@ -3263,7 +3263,7 @@ class LeaveApplicationController extends Controller
 
                             else
                             {
-                                return response()->json(['message' => 'Insufficient Leave Credit Value'], 300);
+                                return response()->json(['message' => 'Insufficient Leave Credit Value'], Response::HTTP_OK);
                             }
                         }
 
