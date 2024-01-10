@@ -77,7 +77,7 @@ class LeaveApplicationController extends Controller
                     $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
                     $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
                     $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                    $hr = Section::with('supervisor.personalInformation')->where('name','HR')->orWhere('name','Human Resource')->first();
+                    $hr = Section::with('supervisor.personalInformation')->where('name','HRMO')->first();
 
                     $chief_name=null;
                     $chief_position=null;
@@ -273,7 +273,7 @@ class LeaveApplicationController extends Controller
                         $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
                         $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
                         $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                        $hr = Section::with('supervisor.personalInformation')->where('name','HR')->orWhere('name','Human Resource')->first();
+                        $hr = Section::with('supervisor.personalInformation')->where('code','HRMO')->first();
                     $chief_name=null;
                     $chief_position=null;
                     $chief_code=null;
@@ -471,6 +471,7 @@ class LeaveApplicationController extends Controller
         $leave_applications = [];
         // $section_hr = AssignArea::  where('employee_profile_id',$user->id)->value('section_id');
         $hr_head_id = Section::where('code', 'HRMO')->value('supervisor_employee_profile_id');
+
         $division = AssignArea::where('employee_profile_id',$user->id)->value('division_id');
         $divisionHeadId = Division::where('id', $division)->value('chief_employee_profile_id');
         $department = AssignArea::where('employee_profile_id',$user->id)->value('department_id');
@@ -494,7 +495,7 @@ class LeaveApplicationController extends Controller
                     $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
                     $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
                     $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                    $hr = Section::with('supervisor.personalInformation')->where('name','HR')->orWhere('name','Human Resource')->first();
+                    $hr = Section::with('supervisor.personalInformation')->where('name','HRMO')->first();
                     $add=EmployeeLeaveCredit::where('employee_profile_id',$leave_application->employee_profile_id)->where('leave_type_id',$leave_application->leave_type_id)
                     ->where('operation', 'add')
                     ->sum('credit_value');
@@ -686,7 +687,7 @@ class LeaveApplicationController extends Controller
                     $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
                     $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
                     $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                    $hr = Section::with('supervisor.personalInformation')->where('name','HR')->orWhere('name','Human Resource')->first();
+                    $hr = Section::with('supervisor.personalInformation')->where('name','HRMO')->first();
                     $add=EmployeeLeaveCredit::where('employee_profile_id',$leave_application->employee_profile_id)->where('leave_type_id',$leave_application->leave_type_id)
                     ->where('operation', 'add')
                     ->sum('credit_value');
@@ -875,7 +876,7 @@ class LeaveApplicationController extends Controller
                     $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
                     $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
                     $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                    $hr = Section::with('supervisor.personalInformation')->where('name','HR')->orWhere('name','Human Resource')->first();
+                    $hr = Section::with('supervisor.personalInformation')->where('name','HRMO')->first();
                     $add=EmployeeLeaveCredit::where('employee_profile_id',$leave_application->employee_profile_id)->where('leave_type_id',$leave_application->leave_type_id)
                     ->where('operation', 'add')
                     ->sum('credit_value');
@@ -1066,7 +1067,7 @@ class LeaveApplicationController extends Controller
                     $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
                     $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
                     $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                    $hr = Section::with('supervisor.personalInformation')->where('name','HR')->orWhere('name','Human Resource')->first();
+                    $hr = Section::with('supervisor.personalInformation')->where('name','HRMO')->first();
                     $add=EmployeeLeaveCredit::where('employee_profile_id',$leave_application->employee_profile_id)->where('leave_type_id',$leave_application->leave_type_id)
                     ->where('operation', 'add')
                     ->sum('credit_value');
@@ -2569,7 +2570,7 @@ class LeaveApplicationController extends Controller
                                     $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
                                     $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
                                     $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                                    $hr = Section::with('supervisor.personalInformation')->where('name','HR')->orWhere('name','Human Resource')->first();
+                                    $hr = Section::with('supervisor.personalInformation')->where('name','HRMO')->first();
 
                                     $chief_name=null;
                                     $chief_position=null;
@@ -2790,7 +2791,7 @@ class LeaveApplicationController extends Controller
                                     $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
                                     $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
                                     $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                                    $hr = Section::with('supervisor.personalInformation')->where('name','HR')->orWhere('name','Human Resource')->first();
+                                    $hr = Section::with('supervisor.personalInformation')->where('name','HRMO')->first();
 
                                     $chief_name=null;
                                     $chief_position=null;
@@ -3270,6 +3271,8 @@ class LeaveApplicationController extends Controller
                     }
                     else
                     {
+
+
                         // $fromDates = $request->input('date_from');
                         // $toDates = $request->input('date_to');
                         DB::beginTransaction();
@@ -3354,7 +3357,7 @@ class LeaveApplicationController extends Controller
                             $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
                             $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
                             $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                            $hr = Section::with('supervisor.personalInformation')->where('name','HR')->orWhere('name','Human Resource')->first();
+                            $hr = Section::with('supervisor.personalInformation')->where('name','HRMO')->first();
 
                             $chief_name=null;
                             $chief_position=null;
