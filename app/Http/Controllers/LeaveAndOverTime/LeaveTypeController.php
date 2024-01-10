@@ -227,7 +227,8 @@ class LeaveTypeController extends Controller
             {
                 foreach ($request->file('attachments') as $file) {
                     $folderName = 'attachments';
-                    $fileName=pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+                    $fileName = $file->getClientOriginalName();
+                    // $fileName=pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
                     $extension  = $file->getClientOriginalName();
                     $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
                     Storage::makeDirectory('public/' . $folderName);
