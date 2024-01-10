@@ -22,8 +22,8 @@ class TwoFactorAuthController extends Controller
         $gen_code = rand(100000, 999999);
         $otp_expiry = date('Y-m-d H:i:s', strtotime('+5 minutes')); /* Expires after 5 minutes. */
         $date_now = date('Y-m-d H:i:s');
-        $emp = $employee->get();
-        
+        $emp = $employee->get(); 
+
         if ($emp[0]->otp == null) {
             $employee->update([
                 'otp' => $gen_code,
@@ -43,7 +43,7 @@ class TwoFactorAuthController extends Controller
         }
         return $otp_code;
     }
-
+    
     private function isOTPActive($employee)
     {
         $emp = $employee->get();
@@ -108,7 +108,6 @@ class TwoFactorAuthController extends Controller
             //throw $th;
         }
     }
-
     public function verifyOTP(Request $request)
     {
         /**

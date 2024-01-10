@@ -36,8 +36,8 @@ class SystemModuleSeeder extends Seeder
         ]);
         
         SystemModule::create([
-            'name' => 'Leave and Overtime Management',
-            'code' => 'UMIS-LOM',
+            'name' => 'Leave Management',
+            'code' => 'UMIS-LM',
             'description' => 'Generate personal Over Time report, Request and Approval of Overtime, Monthly Auto Add of leave credits and many more.',
             'system_id' => 1
         ]);
@@ -53,6 +53,34 @@ class SystemModuleSeeder extends Seeder
             'name' => 'Personal Account Management',
             'code' => 'UMIS-PAM',
             'description' => 'General feature for employees.',
+            'system_id' => 1
+        ]);
+        
+        SystemModule::create([
+            'name' => 'Overtime Management',
+            'code' => 'UMIS-OM',
+            'description' => 'About Overtime',
+            'system_id' => 1
+        ]);
+        
+        SystemModule::create([
+            'name' => 'Official Business',
+            'code' => 'UMIS-OB',
+            'description' => 'About Official Business',
+            'system_id' => 1
+        ]);
+        
+        SystemModule::create([
+            'name' => 'Official Time',
+            'code' => 'UMIS-OT',
+            'description' => 'About Official Time',
+            'system_id' => 1
+        ]);
+        
+        SystemModule::create([
+            'name' => 'Compensatory Time',
+            'code' => 'UMIS-CT',
+            'description' => 'About compensation.',
             'system_id' => 1
         ]);
     }

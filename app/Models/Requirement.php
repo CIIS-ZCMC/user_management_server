@@ -25,7 +25,7 @@ class Requirement extends Model
     }
    
     public function leaveTypes() {
-        return $this->belongsToMany(LeaveType::class, 'leave_type_requirements');
+        return $this->belongsToMany(LeaveType::class);
     }
 
    

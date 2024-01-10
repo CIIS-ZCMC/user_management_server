@@ -5,9 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class biometrics extends Model
+class Biometrics extends Model
 {
     use HasFactory;
+
+    protected $table = "biometrics";
     protected $fillable = [
         'biometric_id',
         'name',
