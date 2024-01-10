@@ -918,15 +918,17 @@ class OfficialTimeApplicationController extends Controller
     public function declineOtApplication($id,Request $request)
     {
         try {
-
+                $user=$request->user;
                 $ot_applications = OfficialTimeApplication::where('id','=', $id)
                                                             ->first();
                 if($ot_applications)
                 {
-                        $user=$request->user;
-                        $user_password=$user->password_encrypted;
-                        $password=$request->password;
-                        if($user_password==$password)
+                    $password_decrypted = Crypt::decryptString($user['password_encrypted']);
+                    $password = strip_tags($request->password);
+                        if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                            return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+                        }
+                        else
                         {
                             DB::beginTransaction();
                                 $ot_application_log = new ModelsOtApplicationLog();
@@ -1233,9 +1235,12 @@ class OfficialTimeApplicationController extends Controller
     {
         try {
                 $user = $request->user;
-                $user_password=$user->password_encrypted;
-                $password=$request->password;
-                if($user_password==$password)
+                $password_decrypted = Crypt::decryptString($user['password_encrypted']);
+                $password = strip_tags($request->password);
+                if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                    return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+                }
+                else
                 {
                             $message_action = '';
                             $action = '';
@@ -1395,9 +1400,7 @@ class OfficialTimeApplicationController extends Controller
                                 return response(['message' => 'Application has been sucessfully '.$message_action, 'data' => $singleArray], Response::HTTP_OK);
                                 }
                 }
-                else{
-                    return response()->json(['message' => 'Incorrect Password'], Response::HTTP_OK);
-                }
+
             }
 
 
