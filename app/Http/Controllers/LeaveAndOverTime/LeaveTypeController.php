@@ -143,7 +143,7 @@ class LeaveTypeController extends Controller
             $user=$request->user;
             $validatedData = $request->validate([
                 'name' => 'required|string',
-                'attachments.*' => 'required|file|mimes:pdf,image|max:2048',
+                'attachments.*' => 'required|file|mimes:pdf,png,jpg,jpeg|max:2048',
             ]);
             $employee_id = $request->employee_id;
             $filename="";
@@ -180,7 +180,8 @@ class LeaveTypeController extends Controller
             {
                 foreach ($request->file('attachments') as $file) {
                     $folderName = 'attachments';
-                    $fileName=pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+                    $fileName = $file->getClientOriginalName();
+                    // $fileName=pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
                     $extension  = $file->getClientOriginalName();
                     $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
                     Storage::makeDirectory('public/' . $folderName);
