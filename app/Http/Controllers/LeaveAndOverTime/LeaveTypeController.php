@@ -158,17 +158,25 @@ class LeaveTypeController extends Controller
                 });
 
                 return [
-                    'leave_type' => $leaveType->name,
-                    'balance' => $balance,
-                ];
+                                'value' => "$leaveType->id",
+                                'label' => $leaveType->name,
+                                'balance' => $balance,
+                                'description' => $leaveType->description,
+                                'file_date' => $leaveType->file_date,
+                                'period' => $leaveType->period,
+                                'is_country' => $leaveType->is_country,
+                                'is_illness' => $leaveType->is_illness,
+                                'is_days_recommended' => $leaveType->is_days_recommended,
+                                'requirements' => $leaveType->requirements->map(function ($requirement) {
+                                    return [
+                                        'id' => $requirement->id,
+                                        'name' => $requirement->name,
+                                    ];
+                                }),
+                            ];
+
             });
-
-        return $leaveTypes;
-
-
-
-
-                 return response()->json(['data' => $leave_types_result], Response::HTTP_OK);
+                 return response()->json(['data' => $leaveTypes], Response::HTTP_OK);
             }catch(\Throwable $th){
 
                 return response()->json(['message' => $th->getMessage()], 500);
