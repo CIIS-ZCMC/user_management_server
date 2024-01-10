@@ -2,6 +2,10 @@
 
 namespace App\Models;
 
+use App\Http\Resources\AssignAreaDepartmentResource;
+use App\Http\Resources\AssignAreaDivisionResource;
+use App\Http\Resources\AssignAreaSectionResource;
+use App\Http\Resources\AssignAreaUnitResource;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -19,8 +23,6 @@ class PlantillaAssignedArea extends Model
         'unit_id',
         'effective_at'
     ];
-
-   
 
 #0 {main}
 
@@ -55,5 +57,36 @@ class PlantillaAssignedArea extends Model
     public function plantilla()
     {
         return $this->belongsTo(PlantillaNumber::class, Plantilla::class);
+    }
+    public function area()
+    {
+        if($this->division_id !== null)
+        {
+            return [
+                'details' => new AssignAreaDivisionResource($this->division),
+                'sector' => 'Division'
+            ];
+        }
+
+        if($this->department_id !== null)
+        {
+            return [
+                'details' => new AssignAreaDepartmentResource($this->department),
+                'sector' => 'Department'
+            ];
+        }
+
+        if($this->section_id !== null)
+        {
+            return [
+                'details' => new AssignAreaSectionResource($this->section),
+                'sector' => 'Section'
+            ];
+        }
+
+        return [
+            'details' => new AssignAreaUnitResource($this->unit),
+            'sector' => 'Unit'
+        ]; 
     }
 }
