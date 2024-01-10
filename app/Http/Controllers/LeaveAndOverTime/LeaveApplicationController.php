@@ -23,6 +23,8 @@ use App\Services\FileService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 class LeaveApplicationController extends Controller
 {
     protected $file_service;
@@ -2255,11 +2257,12 @@ class LeaveApplicationController extends Controller
                 $leave_applications = LeaveApplication::where('id','=', $id)
                 ->first();
                 $division = AssignArea::where('employee_profile_id',$leave_applications->employee_profile_id)->value('division_id');
-                $user_password=$user->password_encrypted;
-                $password=$request->password;
-                if($user_password==$password)
-                {
-
+                $password_decrypted = Crypt::decryptString($user['password_encrypted']);
+                $password = strip_tags($request->password);
+                if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                    return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+                }
+                else{
                             $message_action = '';
                             $action = '';
                             $new_status = '';
@@ -2511,9 +2514,6 @@ class LeaveApplicationController extends Controller
                                 return response(['message' => 'Application has been sucessfully '.$message_action, 'data' => $singleArray], Response::HTTP_OK);
                             }
                 }
-                else{
-                    return response()->json(['message' => 'Incorrect Password'], Response::HTTP_OK);
-                }
 
             }
          catch (\Exception $e) {
@@ -2530,12 +2530,12 @@ class LeaveApplicationController extends Controller
                                                             ->first();
                 if($leave_applications)
                 {
-                        $user_id = Auth::user()->id;
-                        $user = EmployeeProfile::where('id','=',$user_id)->first();
-                        $user_password=$user->password;
-                        $password=$request->password;
-                        if($user_password==$password)
-                        {
+                    $password_decrypted = Crypt::decryptString($user['password_encrypted']);
+                    $password = strip_tags($request->password);
+                        if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                            return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+                        }
+                        else{
 
                                 DB::beginTransaction();
                                     $leave_application_log = new LeaveApplicationLog();
@@ -2734,10 +2734,6 @@ class LeaveApplicationController extends Controller
 
 
                         }
-                        else{
-                            return response()->json(['message' => 'Incorrect Password'], Response::HTTP_OK);
-                        }
-
                 }
             } catch (\Exception $e) {
                 DB::rollBack();

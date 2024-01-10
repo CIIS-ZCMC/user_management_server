@@ -23,6 +23,8 @@ use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Hamcrest\Core\IsNot;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 
 class ObApplicationController extends Controller
 {

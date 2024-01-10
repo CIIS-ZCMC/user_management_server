@@ -22,6 +22,8 @@ use App\Services\FileService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 class OfficialTimeApplicationController extends Controller
 {
     protected $file_service;

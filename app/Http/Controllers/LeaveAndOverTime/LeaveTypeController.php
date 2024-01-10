@@ -21,6 +21,8 @@ use \Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 class LeaveTypeController extends Controller
 {
     /**
@@ -533,84 +535,87 @@ class LeaveTypeController extends Controller
         try{
             $columnsString="";
             $user = $request->user;
-            $user_password=$user->password_encrypted;
-            $password=$request->password;
-            if($user_password==$password)
-            {
-                $deactivate_leave_type = LeaveType::findOrFail($leave_type_id);
-                $deactivate_leave_type->is_active=false;
-                $deactivate_leave_type->update();
-                $process_name="Deactivate";
-                $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString,$user->id);
-                $leave_types = LeaveType::with('logs.employeeProfile.personalInformation', 'requirements.logs.employeeProfile.personalInformation','attachments')
-                ->where('id',$leave_type_id)->get();
-                    $leave_types_result = $leave_types->map(function ($leave_type) {
-                    $attachmentsData = $leave_type->attachments ? $leave_type->attachments : collect();
-                    $requirementsData = $leave_type->requirements ? $leave_type->requirements : collect();
-                        return [
-                            'id' => $leave_type->id,
-                            'name' => $leave_type->name,
-                            'description' => $leave_type->description,
-                            'period' => $leave_type->period,
-                            'file_date' => $leave_type->file_date,
-                            'code' => $leave_type->code,
-                            'is_active' => $leave_type->is_active,
-                            'is_special' => $leave_type->is_special,
-                            'is_country' => $leave_type->is_country,
-                            'is_illness' => $leave_type->is_illness,
-                            'is_days_recommended' => $leave_type->is_days_recommended,
-                            'leave_credit_year' => $leave_type->leave_credit_year,
-                            'date_created' => $leave_type->created_at,
-                            'logs' => $leave_type->logs->map(function ($log) {
-                                $process_name=$log->action;
-                                $action ="";
-                                $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
-                                $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
+            $password_decrypted = Crypt::decryptString($user['password_encrypted']);
+            $password = strip_tags($request->password);
+                if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                    return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+                }
+                else
+                {
+                    $deactivate_leave_type = LeaveType::findOrFail($leave_type_id);
+                    $deactivate_leave_type->is_active=false;
+                    $deactivate_leave_type->update();
+                    $process_name="Deactivate";
+                    $this->storeLeaveTypeLog($leave_type_id,$process_name,$columnsString,$user->id);
+                    $leave_types = LeaveType::with('logs.employeeProfile.personalInformation', 'requirements.logs.employeeProfile.personalInformation','attachments')
+                    ->where('id',$leave_type_id)->get();
+                        $leave_types_result = $leave_types->map(function ($leave_type) {
+                        $attachmentsData = $leave_type->attachments ? $leave_type->attachments : collect();
+                        $requirementsData = $leave_type->requirements ? $leave_type->requirements : collect();
+                            return [
+                                'id' => $leave_type->id,
+                                'name' => $leave_type->name,
+                                'description' => $leave_type->description,
+                                'period' => $leave_type->period,
+                                'file_date' => $leave_type->file_date,
+                                'code' => $leave_type->code,
+                                'is_active' => $leave_type->is_active,
+                                'is_special' => $leave_type->is_special,
+                                'is_country' => $leave_type->is_country,
+                                'is_illness' => $leave_type->is_illness,
+                                'is_days_recommended' => $leave_type->is_days_recommended,
+                                'leave_credit_year' => $leave_type->leave_credit_year,
+                                'date_created' => $leave_type->created_at,
+                                'logs' => $leave_type->logs->map(function ($log) {
+                                    $process_name=$log->action;
+                                    $action ="";
+                                    $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
+                                    $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
 
-                                $date=$log->date;
-                                $formatted_date=Carbon::parse($date)->format('M d,Y');
-                                return [
-                                    'id' => $log->id,
-                                    'leave_application_id' => $log->leave_application_id,
-                                    'action_by' => "{$first_name} {$last_name}" ,
-                                    'position' => $log->employeeProfile->assignedArea->designation->code ?? null,
-                                    'action' => $log->action,
-                                    'date' => $formatted_date,
-                                    'time' => $log->time,
+                                    $date=$log->date;
+                                    $formatted_date=Carbon::parse($date)->format('M d,Y');
+                                    return [
+                                        'id' => $log->id,
+                                        'leave_application_id' => $log->leave_application_id,
+                                        'action_by' => "{$first_name} {$last_name}" ,
+                                        'position' => $log->employeeProfile->assignedArea->designation->code ?? null,
+                                        'action' => $log->action,
+                                        'date' => $formatted_date,
+                                        'time' => $log->time,
 
-                                ];
-                            }),
-                            'requirements' => $requirementsData->map(function ($requirement) {
-                                return [
-                                    'id' => $requirement->id,
-                                    'name' => $requirement->name,
-                                    'logs' => $requirement->logs->map(function ($log) {
-                                        $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null ;
-                                        $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
-                                        return [
-                                            'id' => $log->id,
-                                            'action_by' => "{$first_name} {$last_name}",
-                                            'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
-                                            'action' => $log->action,
-                                            'date' => $log->date,
-                                            'time' => $log->time,
-                                        ];
-                                    }),
-                                ];
-                            }),
-                            'attachments' => $attachmentsData->map(function ($attachment) {
-                                return [
-                                    'id' => $attachment->id,
-                                    'name' => $attachment->file_name,
-                                    'path' => $attachment->path,
-                                    'size' => $attachment->size,
-                                ];
-                            }),
-                        ];
-                    });
-                return response()->json(['message' => 'Leave Type has been sucessfully deactivated','data' => $leave_types_result ], Response::HTTP_OK);
+                                    ];
+                                }),
+                                'requirements' => $requirementsData->map(function ($requirement) {
+                                    return [
+                                        'id' => $requirement->id,
+                                        'name' => $requirement->name,
+                                        'logs' => $requirement->logs->map(function ($log) {
+                                            $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null ;
+                                            $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
+                                            return [
+                                                'id' => $log->id,
+                                                'action_by' => "{$first_name} {$last_name}",
+                                                'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                                                'action' => $log->action,
+                                                'date' => $log->date,
+                                                'time' => $log->time,
+                                            ];
+                                        }),
+                                    ];
+                                }),
+                                'attachments' => $attachmentsData->map(function ($attachment) {
+                                    return [
+                                        'id' => $attachment->id,
+                                        'name' => $attachment->file_name,
+                                        'path' => $attachment->path,
+                                        'size' => $attachment->size,
+                                    ];
+                                }),
+                            ];
+                        });
+                    return response()->json(['message' => 'Leave Type has been sucessfully deactivated','data' => $leave_types_result ], Response::HTTP_OK);
 
-            }
+                }
 
 
         }catch(\Throwable $th){
@@ -625,9 +630,13 @@ class LeaveTypeController extends Controller
         try{
             $columnsString="";
             $user = $request->user;
-            $user_password=$user->password_encrypted;
             $password=$request->password;
-            if($user_password==$password)
+            $password_decrypted = Crypt::decryptString($user['password_encrypted']);
+            $password = strip_tags($request->password);
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                    return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+            else
             {
                 $reactivate_leave_type = LeaveType::findOrFail($leave_type_id);
                 $reactivate_leave_type->is_active=true;

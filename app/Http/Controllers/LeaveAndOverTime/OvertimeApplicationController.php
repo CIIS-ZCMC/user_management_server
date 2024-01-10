@@ -21,6 +21,8 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Random\Engine\Secure;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 class OvertimeApplicationController extends Controller
 {
 
