@@ -6,7 +6,9 @@ use Intervention\Image\Facades\Image;
 use Carbon\Carbon;
 use App\Models\LeaveType;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\EmployeeLeaveCredit;
 use App\Http\Resources\LeaveType as ResourcesLeaveType;
+use App\Models\EmployeeLeaveCredit as ModelsEmployeeLeaveCredit;
 use App\Models\EmployeeProfile;
 use App\Models\LeaveAttachment;
 use App\Models\LeaveCredit;
@@ -105,29 +107,66 @@ class LeaveTypeController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function select()
+    public function select(Request $request)
     {
         try{
+            $user=$request->user;
+            // $leaveCredits = LeaveType::with('EmployeeLeaveCredits')
+            // ->whereHas('EmployeeLeaveCredits', function ($query) use ($user) {
+            //     $query->where('employee_profile_id', $user->id);
+            // })
+            // ->get();
 
-            $leave_types = LeaveType::get();
-            $leave_types_result = $leave_types->map(function ($leave_type) {
-                    return [
-                        'value' => "$leave_type->id",
-                        'label' => $leave_type->name,
-                        'description' => $leave_type->description,
-                        'file_date' => $leave_type->file_date,
-                        'period' => $leave_type->period,
-                        'is_country' => $leave_type->is_country,
-                        'is_illness' => $leave_type->is_illness,
-                        'is_days_recommended' => $leave_type->is_days_recommended,
-                        'requirements' => $leave_type->requirements->map(function ($requirement) {
-                            return [
-                                'id' => $requirement->id,
-                                'name' => $requirement->name,
-                            ];
-                        }),
-                    ];
+
+            // $leave_types_result = $leaveCredits->map(function ($leaveCredit) {
+
+            //     $balance = $leaveCredit->employeeLeaveCredits->sum(function ($credit) {
+            //         $operationMultiplier = ($credit->operation === 'Add') ? 1 : -1;
+            //         return $operationMultiplier * (float) $credit->credit_value;
+            //     });
+            //     $add=EmployeeLeaveCredit::where('employee_profile_id',$leaveCredit->EmployeeLeaveCredits)->where('id',$leaveCredit->id)
+            //     ->where('operation', 'add')
+            //     ->sum('credit_value');
+            //     $deduct=EmployeeLeaveCredit::where('employee_profile_id',$leaveCredit->EmployeeLeaveCredits->employee_profile_id)->where('id',$leaveCredit->id)
+            //     ->where('operation', 'deduct')
+            //     ->sum('credit_value');
+            //         return [
+            //             'value' => "$leaveCredit->id",
+            //             'label' => $leaveCredit->name,
+            //             'label' => $add - $deduct,
+            //             'description' => $leaveCredit->description,
+            //             'file_date' => $leaveCredit->file_date,
+            //             'period' => $leaveCredit->period,
+            //             'is_country' => $leaveCredit->is_country,
+            //             'is_illness' => $leaveCredit->is_illness,
+            //             'is_days_recommended' => $leaveCredit->is_days_recommended,
+            //             'requirements' => $leaveCredit->requirements->map(function ($requirement) {
+            //                 return [
+            //                     'id' => $requirement->id,
+            //                     'name' => $requirement->name,
+            //                 ];
+            //             }),
+            //         ];
+            //     });
+
+            $leaveTypes = LeaveType::with('EmployeeLeaveCredits')
+            ->get()
+            ->map(function ($leaveType) {
+                $balance = $leaveType->EmployeeLeaveCredits->sum(function ($credit) {
+                    $operationMultiplier = ($credit->operation === 'add') ? 1 : -1;
+                    return $operationMultiplier * (float) $credit->credit_value;
                 });
+
+                return [
+                    'leave_type' => $leaveType->name,
+                    'balance' => $balance,
+                ];
+            });
+
+        return $leaveTypes;
+
+
+
 
                  return response()->json(['data' => $leave_types_result], Response::HTTP_OK);
             }catch(\Throwable $th){

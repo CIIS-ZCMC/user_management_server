@@ -66,8 +66,8 @@ class LeaveCreditController extends Controller
                 $employee_records = $this->DTR_UTOT_Report($request);
                 // $dates = $data['dates'];
                 // $absences = $data['absences']
-                    $total_absences="1";
-                    $total_undertime="15";
+                    $total_absences="0";
+                    $total_undertime="0";
                     $total_working_hours="150";
                     $leaveTypes=[];
                     $vl_leave=[];
