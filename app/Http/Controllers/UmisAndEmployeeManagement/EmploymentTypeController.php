@@ -43,6 +43,23 @@ class EmploymentTypeController extends Controller
         }
     }
     
+    public function employmentTypeForDTR(Request $request)
+    {
+        try{
+            $employment_types = EmploymentType::where('id', '<', 11)->get();
+
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            
+            return response()->json([
+                'data' => EmploymentTypeResource::collection($employment_types),
+                'message' => 'Employment type list retrieved.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
     public function store(Request $request)
     {
         try{

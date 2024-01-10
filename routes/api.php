@@ -801,7 +801,11 @@ Route::middleware('auth.cookie')->group(function(){
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function(){
             Route::get('employment-type-all', 'EmploymentTypeController@index');
         });
-
+        
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function(){
+            Route::get('employment-type-for-dtr', 'EmploymentTypeController@employmentTypeForDTR');
+        });
+        
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
             Route::post('employment-type', 'EmploymentTypeController@store');
         });
@@ -1152,14 +1156,6 @@ Route::middleware('auth.cookie')->group(function(){
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
             Route::put('profile-update-approve/{id}', 'ProfileUpdateRequestController@approveRequest');
-        });
-
-        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
-            Route::delete('profile-update/{id}', 'ProfileUpdateController@destroy');
-        });
-
-        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
-            Route::delete('profile-update-personal-info/{id}', 'ProfileUpdateController@destroyByPersonalInformationID');
         });
 
         /**
