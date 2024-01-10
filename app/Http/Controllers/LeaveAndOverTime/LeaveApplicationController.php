@@ -3263,7 +3263,7 @@ class LeaveApplicationController extends Controller
 
                             else
                             {
-                                return response()->json(['message' => 'Insufficient Leave Credit Value'], Response::HTTP_OK);
+                                return response()->json(['message' => 'Insufficient Leave Credit Value'], 300);
                             }
                         }
 
