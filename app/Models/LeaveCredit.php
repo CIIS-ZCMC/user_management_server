@@ -14,4 +14,9 @@ class LeaveCredit extends Model
         'day_value',
         'month_value'
     ];
+    public function leaveType()
+    {
+        return $this->belongsTo(LeaveType::class);
+    }
+
 }

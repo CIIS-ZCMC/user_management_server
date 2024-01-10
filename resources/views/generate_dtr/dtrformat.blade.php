@@ -8,13 +8,8 @@
     }
 
     #po {
-
-
         width: 395px;
         padding: 5px;
-       
-        
-
     }
 
     #titleBar {
@@ -23,8 +18,6 @@
         font-weight: 350;
         margin-bottom: 5px;
     }
-
-
 
     #zcmc {
         font-size: 13px;
@@ -68,13 +61,9 @@
     }
 
     .ftmo {
-
         display: flex;
-
         width: 100%;
         font-weight: normal;
-
-
     }
 
     .ftmo>* {
@@ -89,7 +78,6 @@
     .ftmo span {
         font-size: 13px;
         text-transform: uppercase;
-
     }
 
     #f1 {
@@ -97,16 +85,12 @@
     }
 
     #f2 {
-
         text-align: center !important;
-
     }
 
     #f2 div {
         height: 1.5px;
-
         background-color: gray;
-
     }
 
     .tit {
@@ -121,9 +105,7 @@
     #zcmclogo {
         width: 45px;
         float: left;
-
     }
-
 
     #dohlogo {
         width: 60px;
@@ -221,7 +203,6 @@
     #lfooter {
         font-size: 11px;
         width: 100% !important;
-
     }
 
     #f1 {
@@ -262,7 +243,7 @@
         justify-content: center;
         font-family: 'Onest', sans-serif;
         user-select: none;
-        
+
     }
 
     #po {
@@ -270,8 +251,8 @@
 
         width: 395px;
         padding: 5px;
-       
-        
+
+
 
     }
 
@@ -525,11 +506,11 @@
     @if ($print_view)
     <img id="zcmclogo" src="{{ asset('storage/logo/zcmc.jpeg') }}" alt="zcmcLogo">
     <img id="dohlogo" src="{{ asset('storage/logo/doh.jpeg')}}" alt="dohLogo">
-    @else 
+    @else
     <img id="zcmclogo" src="{{ base_path() . '\public\storage\logo/zcmc.jpeg'}}" alt="zcmcLogo">
     <img id="dohlogo" src="{{ base_path() . '\public\storage\logo/doh.jpeg'}}" alt="dohLogo">
     @endif
-   
+
 
     <div id="titleBar">
 
@@ -568,7 +549,7 @@
 
 
     <table style="width:100% !important;" >
-  
+
 
         <tr>
             <td class="tit">
@@ -637,13 +618,13 @@
                 $isExcept = false;
             @endphp
             @for($i = 1; $i <= $daysInMonth; $i++)
-         
+
             @php
             $checkIn = array_filter($dtrRecords, function ($res) use ($i) {
                 return date('d', strtotime($res['first_in'])) == $i
                     && date('d', strtotime($res['first_out'])) == $i + 1;
             });
-            
+
             $val = 0;
             $outdd = array_map(function($res) {
                 return [
@@ -651,24 +632,24 @@
                 ];
             }, $checkIn);
             @endphp
-        
+
             <tr>
                 <td>{{$i}}</td>
                 <td style="text-transform: capitalize; color:#05171f; font-size:10px">
                     {{date('D', strtotime(date('Y-m-d', strtotime($year.'-'.$month.'-'.$i))))}}
                 </td>
-        
+
                 @php $rowspan = count($outdd) > 0 ? 2 : 1; @endphp
-                
+
                 @if ($rowspan > 1)
                     @php
                         $isExcept = true;
                     @endphp
-             
-                 @include('generate_dtr.TableDtrDateSpan') 
+
+                 @include('generate_dtr.tableDtr_datespan')
                 @else
                     @if ($isExcept == true)
-                        
+
                         @php
                             $isExcept = false;
                         @endphp
@@ -676,7 +657,7 @@
                       @include('generate_dtr.TableDtrDate')
                     @endif
                 @endif
-        
+
                 @if (count($checkIn) >= 1)
                     @php $val = $i; @endphp
                 @endif

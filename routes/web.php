@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\LeaveAndOverTime\LeaveApplicationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -25,8 +26,11 @@ Route::controller(App\Http\Controllers\DTR\DTRcontroller::class)->group(
         Route::get('/viewdtr', 'viewDTR')->name('viewdtr');
         Route::get('/dtrutotreport', 'dtrUTOTReport')->name('dtrutotreport');
         Route::get('/testtest', 'test')->name('testtest');
+
+        Route::get('/setHolidays', 'Set_Holidays')->name('setHolidays');
     }
 );
+
 
 
 Route::controller(App\Http\Controllers\DTR\BioController::class)->group(

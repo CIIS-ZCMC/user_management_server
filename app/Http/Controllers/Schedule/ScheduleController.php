@@ -9,7 +9,6 @@ use App\Models\EmployeeProfile;
 
 use App\Http\Resources\ScheduleResource;
 use App\Http\Requests\ScheduleRequest;
-use App\Services\RequestLogger;
 use App\Helpers\Helpers;
 
 use Illuminate\Http\Response;
@@ -31,14 +30,6 @@ class ScheduleController extends Controller
     private $PLURAL_MODULE_NAME = 'schedules';
     private $SINGULAR_MODULE_NAME = 'schedule';
 
-    protected $requestLogger;
-
-    public function __construct(RequestLogger $requestLogger)
-    {
-        $this->requestLogger = $requestLogger;
-    }
-    
-
     /**
      * Display a listing of the resource.
      */
@@ -51,7 +42,7 @@ class ScheduleController extends Controller
 
         } catch (\Throwable $th) {
 
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -101,7 +92,7 @@ class ScheduleController extends Controller
 
         } catch (\Throwable $th) {
 
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -239,7 +230,7 @@ class ScheduleController extends Controller
 
         } catch (\Throwable $th) {
 
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -262,7 +253,7 @@ class ScheduleController extends Controller
 
         } catch (\Throwable $th) {
 
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -324,7 +315,7 @@ class ScheduleController extends Controller
 
         } catch (\Throwable $th) {
 
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -347,7 +338,7 @@ class ScheduleController extends Controller
             return response()->json(['data' => $data], Response::HTTP_OK);
         } catch (\Throwable $th) {
 
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -405,7 +396,7 @@ class ScheduleController extends Controller
 
         } catch (\Throwable $th) {
 
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

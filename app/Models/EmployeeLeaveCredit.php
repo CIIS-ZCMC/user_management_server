@@ -18,17 +18,18 @@ class EmployeeLeaveCredit extends Model
         'under_time_total',
         'working_hours_total',
         'credit_value',
+        'true_credit_value',
         'date',
     ];
     public function employeeProfile()
     {
         return $this->belongsTo(EmployeeProfile::class);
     }
-    
+
     public function leaveType()
     {
         return $this->belongsTo(LeaveType::class);
     }
 
-    
+
 }

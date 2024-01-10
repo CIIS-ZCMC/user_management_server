@@ -35,7 +35,7 @@ class Section extends Model
     {
         return $this->belongsToMany(AssignArea::class, EmployeeProfile::class, 'employee_profile_id', 'id', 'section_id', 'id');
     }
-    
+
     public function assignArea()
     {
         return $this->hasMany(AssignArea::class);
@@ -55,6 +55,11 @@ class Section extends Model
     public function supervisor()
     {
         return $this->belongsTo(EmployeeProfile::class,'supervisor_employee_profile_id');
+    }
+
+    public function supervisorJobSpecification()
+    {
+        return Designation::where('code', $this->job_specification)->first();
     }
 
     public function oic()
