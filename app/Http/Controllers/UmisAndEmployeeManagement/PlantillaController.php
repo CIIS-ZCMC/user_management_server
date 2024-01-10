@@ -73,7 +73,9 @@ class PlantillaController extends Controller
 
             foreach($plantillas as $plantilla){
                 foreach($plantilla->plantillaNumbers as $value){
-                    $plantilla_numbers[] = $value;
+                    if($value->is_vacant && $value->assigned_at !== null){
+                        $plantilla_numbers[] = $value;
+                    }
                 }
             }
 

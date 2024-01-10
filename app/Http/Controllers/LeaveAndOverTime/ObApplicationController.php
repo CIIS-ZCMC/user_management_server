@@ -1504,7 +1504,7 @@ class ObApplicationController extends Controller
             $ob_id=$official_business_application->id;
             $columnsString="";
             $process_name="Applied";
-            $this->storeOfficialBusinessApplicationLog($ob_id,$process_name,$columnsString);
+            $this->storeOfficialBusinessApplicationLog($ob_id,$process_name,$columnsString,1);
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
             return response()->json(['message' => $th->getMessage()], 500);
@@ -1734,11 +1734,11 @@ class ObApplicationController extends Controller
                 if($ob_applications)
                 {
                         $user=$request->user;
-                        $user = EmployeeProfile::where('id','=',$user->id)->first();
                         $user_password=$user->password_encrypted;
                         $password=$request->password;
                         if($user_password==$password)
                         {
+
                             DB::beginTransaction();
                                 $ob_application_log = new ObApplicationLog();
                                 $ob_application_log->action = 'declined';
@@ -1875,7 +1875,11 @@ class ObApplicationController extends Controller
                                 return response(['message' => 'Application has been sucessfully declined', 'data' => $singleArray],Response::HTTP_OK);
 
 
-                         }
+                        }
+                        else
+                        {
+                            return response()->json(['message' => 'Incorrect Password'], Response::HTTP_OK);
+                        }
                 }
             } catch (\Exception $e) {
             DB::rollBack();
@@ -1896,11 +1900,9 @@ class ObApplicationController extends Controller
         }
     }
 
-    public function storeOfficialBusinessApplicationLog($ob_id,$process_name,$changedfields)
+    public function storeOfficialBusinessApplicationLog($ob_id,$process_name,$changedfields,$user_id)
     {
         try {
-            $user_id="1";
-
             $data = [
                 'ob_application_id' => $ob_id,
                 'action_by_id' => $user_id,
@@ -1921,18 +1923,15 @@ class ObApplicationController extends Controller
     public function cancelObApplication($id,Request $request)
     {
         try {
-
-                    $ob_applications = ObApplication::where('id','=', $id)
+                $user=$request->user;
+                $ob_applications = ObApplication::where('id','=', $id)
                                                             ->first();
                 if($ob_applications)
                 {
-                        // $user_id = Auth::user()->id;
-                        // $user = EmployeeProfile::where('id','=',$user_id)->first();
-                        // $user_password=$user->password;
-                        // $password=$request->password;
-                        // if($user_password==$password)
-                        // {
-                        //     if($user_id){
+                        $user_password=$user->password_encrypted;
+                        $password=$request->password;
+                        if($user_password==$password)
+                        {
                             DB::beginTransaction();
                                 $ob_application_log = new ObApplicationLog();
                                 $ob_application_log->action = 'cancelled';
@@ -2067,8 +2066,9 @@ class ObApplicationController extends Controller
 
                                 return response(['message' => 'Application has been sucessfully cancelled', 'data' => $singleArray], Response::HTTP_OK);
 
-                        //     }
-                        //  }
+
+                        }
+
                 }
             } catch (\Exception $e) {
                 DB::rollBack();
