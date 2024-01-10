@@ -118,14 +118,12 @@ class ScheduleController extends Controller
                 }
             }
         
-            return response()->json(['data' => $data]);
-
-            // Helpers::registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
-            // return response()->json(['data' => $data, 'date'=> $date], Response::HTTP_OK);
+            Helpers::registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            return response()->json(['data' => $data, 'date'=> $dates], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
-            // $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -426,12 +424,12 @@ class ScheduleController extends Controller
 
             $pull_out = PullOut::all();
 
-            // Helpers::registerSystemLogs($request, $data->id, true, 'Success in delete '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $data->id, true, 'Success in delete '.$this->SINGULAR_MODULE_NAME.'.');
             return view('generate_schedule/section-schedule', compact('data', 'holiday', 'pull_out', 'month', 'year', 'days', 'weeks', 'dates'));
 
         } catch (\Throwable $th) {
 
-            // $this->requestLogger->errorLog($this->CONTROLLER_NAME,'de    stroy', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'de    stroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
