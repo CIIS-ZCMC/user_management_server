@@ -20,6 +20,7 @@ class Unit extends Model
         'unit_attachment_url',
         'head_attachment_url',
         'head_effective_at',
+        'oic_employee_profile_id',
         'oic_attachment_url',
         'oic_effective_at',
         'oic_end_at',
@@ -37,12 +38,12 @@ class Unit extends Model
 
     public function head()
     {
-        return $this->belongsTo(EmployeeProfile::class, 'id', 'head_employee_profile_id');
+        return $this->belongsTo(EmployeeProfile::class, 'head_employee_profile_id');
     }
 
     public function oic()
     {
-        return $this->belongsTo(EmployeeProfile::class, 'id', 'oic_employee_profile_id');
+        return $this->belongsTo(EmployeeProfile::class, 'oic_employee_profile_id');
     }
 
     public function section()

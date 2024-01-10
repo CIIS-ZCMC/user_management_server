@@ -93,7 +93,54 @@ class VoluntaryWorkController extends Controller
             $this->requestLogger->registerSystemLogs($request, $voluntary_work['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([
-                'data' => new VoluntaryWork($voluntary_work),
+                'data' => new VoluntaryWorkResource($voluntary_work),
+                'message' => 'New employee voluntary work registered.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function storeMany(Request $request)
+    {
+        try{
+            $success = [];
+            $failed = [];
+            $personal_information_id = strip_tags($request->personal_information_id);
+
+            foreach($request->voluntary_works as $voluntary_work){
+                $cleanData = [];
+                $cleanData['personal_information_id'] = $personal_information_id;
+                foreach ($voluntary_work as $key => $value) {
+                    if ($value === null) {
+                        $cleanData[$key] = $value;
+                        continue;
+                    }
+                    $cleanData[$key] = strip_tags($value);
+                }
+                $voluntary_work = VoluntaryWork::create($cleanData);
+
+                if(!$voluntary_work){
+                    $failed[] = $cleanData;
+                    continue;
+                }
+
+                $success[] = $voluntary_work;
+            };
+
+            $this->requestLogger->registerSystemLogs($request, $voluntary_work['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+
+            if(count($failed) > 0){
+                return response()->json([
+                    'data' => VoluntaryWorkResource::collection($success),
+                    'failed' => $failed,
+                    'message' => 'Some data failed to registere.'
+                ], Response::HTTP_OK);
+            }
+
+            return response()->json([
+                'data' => VoluntaryWorkResource::collection($success),
                 'message' => 'New employee voluntary work registered.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){

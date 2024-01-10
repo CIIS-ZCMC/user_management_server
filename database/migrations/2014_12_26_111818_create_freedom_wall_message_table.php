@@ -11,13 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('request_details', function (Blueprint $table) {
+        Schema::create('freedom_wall_messages', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('profile_update_request_id');
-            $table->foreign('profile_update_request_id')->references('id')->on('profile_update_requests');
-            $table->string('attachment_url');
-            $table->string('target_data');
-            $table->string('new_data');
+            $table->text('content');
+            $table->unsignedBigInteger('employee_profile_id');
+            $table->foreign('employee_profile_id')->references('id')->on('employee_profiles');
             $table->timestamps();
         });
     }
@@ -27,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('request_details');
+        Schema::dropIfExists('freedom_wall_messages');
     }
 };

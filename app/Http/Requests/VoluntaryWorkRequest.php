@@ -22,7 +22,7 @@ class VoluntaryWorkRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'personal_information_id' => 'required|string|size:36',
+            'personal_information_id' => 'required|integer',
             'name_address_organization' => 'required|string|max:255',
             'inclusive_from' => 'required|date:Y-m-d',
             'inclusive_to' => 'required|date:Y-m-d',

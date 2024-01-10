@@ -4,6 +4,8 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Http\Resources\PlantillaWithDesignationResource;
+use App\Models\Designation;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -50,6 +52,36 @@ class PlantillaController extends Controller
             return response()->json([
                 'data' => PlantillaNumberAllResource::collection($plantillas),
                 'message' => 'Plantilla list retrieved.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function plantillaWithDesignation($id, Request $request)
+    {
+        try{
+            $designation = Designation::find($id);
+
+            if(!$designation){
+                return response()->json(['message' => 'No record found for designation with id '.$id], Response::HTTP_NOT_FOUND);
+            }
+
+            $plantillas = $designation->plantilla;
+            $plantilla_numbers = [];
+
+            foreach($plantillas as $plantilla){
+                foreach($plantilla->plantillaNumbers as $value){
+                    $plantilla_numbers[] = $value;
+                }
+            }
+
+            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            
+            return response()->json([
+                'data' => PlantillaWithDesignationResource::collection($plantilla_numbers),
+                'message' => 'Plantilla number by designation.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
              $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());

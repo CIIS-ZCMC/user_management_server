@@ -25,7 +25,7 @@ class ReferenceRequest extends FormRequest
             'name' => 'required|string|max:255',
             'address' => 'required|string|max:255',
             'contact_no' => 'required|string|max:255',
-            'personal_information_id' => 'required|string|size:36',
+            'personal_information_id' => 'required|integer',
         ];
     }
 }
