@@ -84,6 +84,8 @@ class FamilyBackgroundController extends Controller
      */
     public function store(FamilyBackgroundRequest $request)
     {
+
+        
         try{
             $failed = [];
             $success = [];
@@ -113,7 +115,9 @@ class FamilyBackgroundController extends Controller
 
             $family_background = FamilyBackground::create($cleanData);
 
-            foreach($request->children as $child){
+
+            
+            foreach(json_decode($request->children) as $child){
                 $child_data = [];
                 $child_data['personal_information_id'] = $personal_information_id;
                 foreach($child as $key => $value) {

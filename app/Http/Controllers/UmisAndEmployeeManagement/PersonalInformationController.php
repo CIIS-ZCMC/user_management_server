@@ -53,7 +53,7 @@ class PersonalInformationController extends Controller
     public function store(PersonalInformationRequest $request)
     {
         try{
-            $is_res_per = $request->is_res_per === 1? true:false;
+            $is_res_per = $request->is_res_per === 1 ? true:false;
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
@@ -74,8 +74,9 @@ class PersonalInformationController extends Controller
                 'address' => strip_tags($request->r_address),
                 'telephone' => strip_tags($request->r_telephone),
                 'zip_code' => strip_tags($request->r_zip_code),
-                'is_res_per' => $is_res_per,
-                'type' => 'residential',
+                'is_res_per' => $request->is_res_per,
+                'is_residential' => 1,
+                // 'type' => 'residential',
                 'personal_information_id' => $personal_information->id
             ];
 
@@ -95,14 +96,16 @@ class PersonalInformationController extends Controller
                 'address' => strip_tags($request->p_address),
                 'telephone' => strip_tags($request->p_telephone),
                 'zip_code' => strip_tags($request->p_zip_code),
-                'is_res_per' => $is_res_per,
-                'type' => 'permanent',
+                'is_res_per' => 0,
+                'is_residential' => 0,
+                // 'type' => 'permanent',
                 'personal_information_id' => $personal_information->id
             ];
 
             $permanent = Address::create($permanent_address);
 
             $data = [
+                'personal_information_id' => $personal_information->id,
                 'personal_information' => $personal_information,
                 'residential' => $residential,
                 'permanent' => $permanent

@@ -110,7 +110,7 @@ class WorkExperienceController extends Controller
 
             $personal_information_id = strip_tags($request->personal_information_id);
 
-            foreach($request->work_experiences as $work_experience){
+            foreach(json_decode($request->work_experiences) as $work_experience){
                 $cleanData = [];
                 $cleanData['personal_information_id'] = $personal_information_id;
                 foreach ($work_experience as $key => $value) {

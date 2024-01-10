@@ -109,7 +109,7 @@ class TrainingController extends Controller
             $failed = [];
             $personal_information_id = strip_tags($request->personal_information_id);
 
-            foreach($request->trainings as $training){
+            foreach(json_decode($request->trainings) as $training){
                 $cleanData = [];
                 $cleanData['personal_information_id'] = $personal_information_id;
                 foreach ($training as $key => $value) {

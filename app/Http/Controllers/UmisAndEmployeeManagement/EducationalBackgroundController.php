@@ -77,10 +77,11 @@ class EducationalBackgroundController extends Controller
     
     public function store(EducationalBackgroundRequest $request)
     {
+        
         try{
             $cleanData = [];
 
-            foreach ($request->all() as $key => $value) {
+            foreach (json_decode($request->all()) as $key => $value) {
                 if ($value === null) {
                     $cleanData[$key] = $value;
                     continue;
@@ -108,7 +109,7 @@ class EducationalBackgroundController extends Controller
             $success = [];
             $failed = [];
 
-            foreach($request->educations as $education){
+            foreach(json_decode($request->educations) as $education){
                 $cleanData = [];
                 foreach ($education as $key => $value) {
                     if ($value === null) {

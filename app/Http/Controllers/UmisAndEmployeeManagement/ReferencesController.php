@@ -104,7 +104,7 @@ class ReferencesController extends Controller
             $failed = [];
             $personal_information_id = strip_tags($request->personal_information_id);
 
-            foreach($request->references as $reference){
+            foreach(json_decode($request->references) as $reference){
                 $cleanData = [];
                 $cleanData['personal_information_id'] = $personal_information_id;
                 foreach ($reference as $key => $value) {

@@ -109,7 +109,7 @@ class VoluntaryWorkController extends Controller
             $failed = [];
             $personal_information_id = strip_tags($request->personal_information_id);
 
-            foreach($request->voluntary_works as $voluntary_work){
+            foreach(json_decode($request->voluntary_works) as $voluntary_work){
                 $cleanData = [];
                 $cleanData['personal_information_id'] = $personal_information_id;
                 foreach ($voluntary_work as $key => $value) {

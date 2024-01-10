@@ -102,7 +102,7 @@ class OtherInformationController extends Controller
             $failed = [];
             $personal_information_id = strip_tags($request->personal_information_id);
 
-            foreach($request->other_informations as $other){
+            foreach(json_decode($request->other_informations) as $other){
                 $cleanData = [];
                 $cleanData['personal_information_id'] = $personal_information_id;
                 foreach ($other as $key => $value) {

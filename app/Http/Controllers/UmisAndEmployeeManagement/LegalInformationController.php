@@ -80,7 +80,7 @@ class LegalInformationController extends Controller
             $failed = [];
             $personal_information_id = strip_tags($request->personal_information_id);
 
-            foreach($request->legal_informations as $legal_info){
+            foreach(json_decode($request->legal_informations) as $legal_info){
                 $cleanData = [];
                 $cleanData['personal_information_id'] = intval($personal_information_id);
                 foreach ($legal_info as $key => $value) {

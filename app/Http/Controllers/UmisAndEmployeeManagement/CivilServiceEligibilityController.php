@@ -108,7 +108,7 @@ class CivilServiceEligibilityController extends Controller
 
             $personal_information_id = strip_tags($request->personal_information_id);
 
-            foreach($request->civilserviceeligibilities as $civil_service_eligibility){
+            foreach(json_decode($request->civilserviceeligibilities) as $civil_service_eligibility){
                 $cleanData = [];
                 $cleanData['personal_information_id'] = $personal_information_id;
                 foreach ($civil_service_eligibility as $key => $value) {
