@@ -1544,8 +1544,8 @@ class ObApplicationController extends Controller
                         }
                     },
                 ],
-                'certificate_of_appearance' => 'required|image|mimes:jpeg,png,jpg,pdf|max:2048',
-                'personal_order' => 'required|image|mimes:jpeg,png,jpg,pdf|max:2048',
+                'certificate_of_appearance' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
+                'personal_order' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
                 'reason' => 'required|string|max:512',
             ]);
 

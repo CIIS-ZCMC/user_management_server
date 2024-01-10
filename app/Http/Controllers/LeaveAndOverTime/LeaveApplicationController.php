@@ -2976,7 +2976,7 @@ class LeaveApplicationController extends Controller
                         }
                     },
                 ],
-                'requirements.*' => 'required|mimes:jpeg,png,jpg,pdf|max:2048',
+                'requirements.*' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048'
             ]);
                 $leave_type_id = $request->leave_type_id;
                 $user=$request->user;

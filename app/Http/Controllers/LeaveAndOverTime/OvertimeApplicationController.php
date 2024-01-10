@@ -1807,7 +1807,7 @@ class OvertimeApplicationController extends Controller
                         }
                     },
                 ],
-                'letter_of_request' => 'required|image|mimes:jpeg,png,jpg,pdf|max:2048',
+                'letter_of_request' =>'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
                 'purpose.*' => 'required|string|max:512',
                 'activities.*' => 'required',
                 'remarks.*' => 'required|string|max:512',
