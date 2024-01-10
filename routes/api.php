@@ -122,7 +122,7 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
     // Route::get('division-laot', 'LeaveApplicationController@getDivisionLeaveApplications');
     // Route::get('add', 'LeaveCreditController@addMonthlyLeaveCredit');
 
-    Route::post('add-monthly', 'LeaveCreditController@addMonthlyLeaveCredit');
+    // Route::post('add-monthly', 'LeaveCreditController@addMonthlyLeaveCredit');
     // Route::get('ob-application-all', 'ObApplicationController@index');
 });
 
