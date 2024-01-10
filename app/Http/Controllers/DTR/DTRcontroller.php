@@ -960,7 +960,7 @@ class DTRcontroller extends Controller
                         }
                         $total_Hours_of_Duty = 0;
                         foreach ($Time_Records as $record) {
-                            $total_Hours_of_Duty += floor($record['total_working_minutes'] - $record['undertime_minutes']);
+                            $total_Hours_of_Duty += floor($record['total_working_minutes'] - $record['undertime_minutes']); ////
                         }
                         $total_Hours_of_Duty = floor($total_Hours_of_Duty / 60);
                         $total_minutes_of_Duty = floor($total_Hours_of_Duty * 60);
@@ -1009,6 +1009,7 @@ class DTRcontroller extends Controller
                                 $days_present[] = $value;
                             }
                         }
+
 
                         $numeric_days = array_map(function ($res) {
                             $timestamp = strtotime($res);
@@ -1080,6 +1081,8 @@ class DTRcontroller extends Controller
                         } else {
                             $dt_records = $this->generateMonthly($month_of, $year_of, $biometric_id);
                         }
+
+
                         $mdtr = [];
                         $no_Sched_dtr = [];
                         $number_Of_Days = 0;
@@ -1246,8 +1249,43 @@ class DTRcontroller extends Controller
 
 
 
+            $days_In_Month = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
+            $mdt = [];
+            for ($i = 1; $i <= $days_In_Month; $i++) {
+                $found = false;
+                foreach ($mdtr as $d) {
+                    if (date('d', strtotime($d['first_in'])) == $i) {
+                        $mdt[] = $d;  // Use the day from $mdtr   
+                        $found = true;
+                    }
+                }
+                if (!$found) {
+                    $mdt[] =  [
+                        'dtr_ID' => '',
+                        'first_in' => '',
+                        'first_out' => '',
+                        'second_in' => '',
+                        'second_out' => '',
+                        'interval_req' => '',
+                        'required_working_hours' => '',
+                        'required_working_minutes' => '',
+                        'total_working_hours' => '',
+                        'total_working_minutes' => '',
+                        'overtime' => '',
+                        'overtime_minutes' => '',
+                        'undertime' => '',
+                        'undertime_minutes' => '',
+                        'overall_minutes_rendered' => '',
+                        'total_minutes_reg' => '',
+                        'day' => $i,
+                        'created_at' => '',
+                        'weekStatus' => '',
+                        'isHoliday' => ''
+                    ];
+                }
+            }
 
-
+            $dtr[0]['AllRecords'] = $mdt;
 
             return $dtr;
         } catch (\Throwable $th) {
@@ -1327,6 +1365,7 @@ class DTRcontroller extends Controller
 
     private function mDTR($value)
     {
+
         return   [
             'dtr_ID' => $value->id,
             'first_in' => $this->FormatDate($value->first_in),
