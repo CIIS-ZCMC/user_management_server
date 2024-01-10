@@ -30,7 +30,12 @@ class DTRcontroller extends Controller
         $this->helper = new Helpers();
         $this->device = new BioControl();
         $this->bioms = new BioMSController();
-        $this->devices = json_decode($this->bioms->operatingDevice()->getContent(), true)['data'];
+        try{
+            $content = $this->bioms->operatingDevice()->getContent();
+            $this->devices = $content !== null?json_decode($content, true)['data']:[];
+        }catch(\Throwable $th){
+            Log::channel("custom-dtr-log-error")->error($th->getMessage());
+        }
     }
 
     public function fetchDTRFromDevice()

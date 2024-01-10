@@ -22,7 +22,7 @@ class PositionSystemRoleResource extends JsonResource
         $designation_code = $designation['code'];
         $system_role_name = $system_role['name'];
         $system_role_code = $system_role['code'];
-        $status = $deactivated_at === null? 'Deactivated': 'Active';
+        $status = $this->deactivated_at === null? 'Deactivated': 'Active';
 
         $role_module_permissions = $system_role->roleModulePermission;
         $permissions = [];
@@ -32,6 +32,7 @@ class PositionSystemRoleResource extends JsonResource
         }
 
         return [
+            'id' => $this->id,
             'designation_name' => $designation_name,
             'designation_code' => $designation_code,
             'system_role_name' => $system_role_name,

@@ -13,8 +13,11 @@ return new class extends Migration
     {
         Schema::create('assigned_area_trails', function (Blueprint $table) {
             $table->id();
+            $table->integer('salary_grade_step')->default(1);
             $table->unsignedBigInteger('employee_profile_id')->nullable();
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles');
+            $table->unsignedBigInteger('in_active_employee_id')->nullable();
+            $table->foreign('in_active_employee_id')->references('id')->on('in_active_employees');
             $table->unsignedBigInteger('division_id')->nullable();
             $table->foreign('division_id')->references('id')->on('divisions');
             $table->unsignedBigInteger('department_id')->nullable();
@@ -27,6 +30,8 @@ return new class extends Migration
             $table->foreign('designation_id')->references('id')->on('designations');
             $table->unsignedBigInteger('plantilla_id')->nullable();
             $table->foreign('plantilla_id')->references('id')->on('plantillas');
+            $table->unsignedBigInteger('plantilla_number_id')->nullable();
+            $table->foreign('plantilla_number_id')->references('id')->on('plantilla_numbers');
             $table->datetime('started_at');
             $table->datetime('end_at');
             $table->timestamps();

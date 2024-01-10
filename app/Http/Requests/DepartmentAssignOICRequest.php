@@ -11,7 +11,7 @@ class DepartmentAssignOICRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,7 +23,7 @@ class DepartmentAssignOICRequest extends FormRequest
     {
         return [
             'employee_id' => 'required|string|max:255',
-            'attachment' => 'nullable|text',
+            'attachment' => 'nullable|file|mimes:jpeg,png,pdf,doc,docx',
             'password' => 'required|string|max:255',
             'effective_at' => 'required|date:Y-m-d',
             'end_at' => 'required|date:Y-m-d'

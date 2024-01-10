@@ -22,8 +22,15 @@ return new class extends Migration
             $table->string('reason')->nullable();
             $table->string('status');
             $table->string('date')->nullable();
+            $table->string('time')->nullable();
+            $table->string('personal_order')->nullable();
+            $table->string('personal_order_path')->nullable();
+            $table->string('personal_order_size')->nullable();
+            $table->string('certificate_of_appearance')->nullable();
+            $table->string('certificate_of_appearance_path')->nullable();
+            $table->string('certificate_of_appearance_size')->nullable();
             $table->string('reference_number')->nullable();
-           
+            $table->string('decline_reason')->nullable();
             $table->timestamps();
         });
     }

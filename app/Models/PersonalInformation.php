@@ -41,6 +41,21 @@ class PersonalInformation extends Model
 
         return $name;
     }
+    
+    public function nameWithSurnameFirst()
+    {
+        return $this->last_name.', '.$this->first_name.','.$this->middle_name;
+    }
+
+    public function name()
+    {
+        $nameExtension = $this->name_extension===NULL?'':' '.$this->name_extion.' ';
+        $nameTitle = $this->name_title===NULL?'': ' '.$this->name_title;
+
+        $name = $this->first_name.' '.$this->last_name.$nameExtension.$nameTitle;
+
+        return $name;
+    }
 
     public function familyBackground()
     {

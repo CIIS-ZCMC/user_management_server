@@ -24,10 +24,9 @@ class SectionRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'code' => 'required|string|max:255',
-            'attachment' => 'nullable|text',
-            'job_specification' => 'required|string|max:255',
-            'division_id' => 'nullable|string|size:36',
-            'department_id' => 'nullable|string|size:36'
+            'attachment' => 'nullable|file|mimes:jpeg,png,pdf,doc,docx',
+            'division_id' => 'nullable|integer',
+            'department_id' => 'nullable|integer'
         ];
     }
 }

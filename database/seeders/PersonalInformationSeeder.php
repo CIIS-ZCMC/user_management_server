@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
@@ -18,6 +19,7 @@ use App\Models\EmployeeProfile;
 use App\Models\EmploymentType;
 use App\Models\FamilyBackground;
 use App\Models\IdentificationNumber;
+use App\Models\IssuanceInformation;
 use App\Models\LegalInformation;
 use App\Models\LegalInformationQuestion;
 use App\Models\Reference;
@@ -45,24 +47,9 @@ class PersonalInformationSeeder extends Seeder
         ]);
 
         Address::create([
-            'street' => 'No where',
-            'barangay' => 'San roque',
-            'city' => 'Zamboanga City',
-            'province' => 'Zamboanga Del Sur',
-            'zip_code' => '7000',
-            'country' => 'Philippines',
+            'address' => 'San Roque, Zamboanga City',
+            'is_residential_and_permanent' => true,
             'is_residential' => true,
-            'personal_information_id' => $personal_information->id,
-        ]);
-
-        Address::create([
-            'street' => 'No where',
-            'barangay' => 'San roque',
-            'city' => 'Zamboanga City',
-            'province' => 'Zamboanga Del Sur',
-            'zip_code' => '7000',
-            'country' => 'Philippines',
-            'is_residential' => false,
             'personal_information_id' => $personal_information->id,
         ]);
 
@@ -212,10 +199,19 @@ class PersonalInformationSeeder extends Seeder
             'password_encrypted' => $encryptedPassword,
             'password_created_at' => now(),
             'password_expiration_at' => $fortyDaysExpiration,
-            'biometric_id' => 5335,
+            'biometric_id' => 3553,
             'allow_time_adjustment' => TRUE,
             'employment_type_id' => EmploymentType::find(3)->id,
             'personal_information_id' => $personal_information->id
+        ]);
+
+        IssuanceInformation::create([
+            'employee_profile_id' => $employee_profile->id,
+            'license_no' => '123456',
+            'govt_issued_id' => '987654321',
+            'ctc_issued_date' => now(),
+            'ctc_issued_at' => 'ZCMC',
+            'person_administrative_oath' => null
         ]);
 
         AssignArea::create([
@@ -224,6 +220,12 @@ class PersonalInformationSeeder extends Seeder
             'designation_id' => Designation::where('code', 'CP III')->first()->id,
             'effective_at' => now()
         ]);
+
+        $designations = Designation::all();
+
+        foreach($designations as $designation){
+            Cache::forget($designation['name']);
+        }
     }
 
     protected function encryptData($dataToEncrypt)

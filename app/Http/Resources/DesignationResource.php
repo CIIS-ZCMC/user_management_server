@@ -14,15 +14,20 @@ class DesignationResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $salary_grade = $this->salaryGrade;
-        $salary_grade_number = $salary_grade['salary_grade_number'];
-        $salary_grade_amount = $salary_grade['amount'];
+        $salary_grade_data = $this->salaryGrade;
+        $salary_grade = [
+            'id' => $salary_grade_data->id,
+            'salary_grade_number' => $salary_grade_data->salary_grade_number,
+            'amount' => $salary_grade_data->one,
+            'effective_at' => $salary_grade_data->effective_at,
+            'tranch' => $salary_grade_data->tranch
+        ];
 
         return [
+            'id' => $this->id,
             'name' => $this->name,
             'code' => $this->code,
-            'salary_grade_number' => $this->salary_grade_number,
-            'salary_grade_amount' => $this->salary_grade_amount
+            'salary_grade' => $salary_grade
         ];
     }
 }

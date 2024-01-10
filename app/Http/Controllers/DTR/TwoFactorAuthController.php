@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\DTR;
 
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
-use App\Models\EmployeeProfile;
+use Illuminate\Http\Response;
 use App\Models\Contact;
+use App\Models\EmployeeProfile;
+use App\Http\Controllers\Controller;
 
 class TwoFactorAuthController extends Controller
 {
@@ -21,7 +22,8 @@ class TwoFactorAuthController extends Controller
         $gen_code = rand(100000, 999999);
         $otp_expiry = date('Y-m-d H:i:s', strtotime('+5 minutes')); /* Expires after 5 minutes. */
         $date_now = date('Y-m-d H:i:s');
-        $emp = $employee->get();
+        $emp = $employee->get(); 
+
         if ($emp[0]->otp == null) {
             $employee->update([
                 'otp' => $gen_code,
@@ -41,6 +43,7 @@ class TwoFactorAuthController extends Controller
         }
         return $otp_code;
     }
+    
     private function isOTPActive($employee)
     {
         $emp = $employee->get();
@@ -100,7 +103,7 @@ class TwoFactorAuthController extends Controller
                 $this->getOTP($employee);
                 return redirect()->route('mail.sendOTP', ['data' => $employee_Data])->cookie('access', json_encode(['email' => $email, 'employeeID' => $employee_ID]), 60, '/', env('SESSION_DOMAIN'), true);
             }
-            return response()->json(['message' => 'Records not found'], 401);
+            return response()->json(['message' => 'Records not found'], Response::HTTP_UNAUTHORIZED);
         } catch (\Throwable $th) {
             //throw $th;
         }
@@ -114,24 +117,28 @@ class TwoFactorAuthController extends Controller
          */
         try {
             $otpCode = $request->otpCode;
-            $employee_Data = json_decode($request->cookie('access'));
+            $employee_Data = json_decode($request->cookie('email'));
+
             if (!isset($employee_Data)) {
-                return response()->json(['message' => 'Invalid Request'], 401);
+                return response()->json(['message' => 'Invalid Request'], Response::HTTP_BAD_REQUEST);
             }
+            
             $email = $employee_Data->email;
             $employee_ID = $employee_Data->employeeID;
+
             if ($this->validateEmployee($employee_ID, $email)) {
                 $employee = $this->validateEmployee($employee_ID, $email);
                 if ($this->isOTPActive($employee)) {
                     $activecode  =   $this->getOTP($employee);
                 } else {
-                    return response()->json(['message' => 'Code Expired'], 401);
+                    return response()->json(['message' => 'Code Expired'], Response::HTTP_UNAUTHORIZED);
                 }
                 if ($otpCode == $activecode) {
-                    return response()->json(['message' => 'OTP code matched'], 200);
+                    return response()->json(['message' => 'OTP code matched'], Response::HTTP_OK);
                 }
             }
-            return response()->json(['message' => 'Invalid code'], 401);
+
+            return response()->json(['message' => 'Invalid code'], Response::HTTP_UNAUTHORIZED);
         } catch (\Throwable $th) {
             return $th;
         }

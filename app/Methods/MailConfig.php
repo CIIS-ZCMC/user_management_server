@@ -16,6 +16,7 @@ class MailConfig
     private $provider;
     private $sys_email;
     private $from_System;
+
     public function __construct()
     {
         $this->client_id = env('GOOGLE_API_CLIENT_ID');

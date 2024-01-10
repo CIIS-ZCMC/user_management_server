@@ -15,12 +15,11 @@ class SectionSeeder extends Seeder
      */
     public function run(): void
     {
-        $division       = Division::where('code', 'HOPPS')->first();
+        $division = Division::where('code', 'HOPPS')->first();
 
         Section::create([
             'name' => 'Material Management Section',
             'code' => 'MMS',
-            'job_specification' => 'SC II',
             'division_id' => $division->id
         ]);
     }

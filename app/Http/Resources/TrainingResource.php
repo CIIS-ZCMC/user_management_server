@@ -14,15 +14,13 @@ class TrainingResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $conducted_by = $this->conducted_by === null? 'NONE': $this->conducted_by;
-        $total_hours = $this->total_hours === null? 'NONE': $this->total_hours;
-
         return [
+            'id' => $this->id,
             'title' => $this->title,
             'inclusive_date' => $this->inclusive_date,
-            'hours' => $hours,
+            'hours' => $this->total_hours ?? 'NONE',
             'type_of_ld' => $this->type_of_ld,
-            'conducted_by' => $conducted_by,
+            'conducted_by' =>  $this->conducted_by ?? 'NONE',
         ];
     }
 }

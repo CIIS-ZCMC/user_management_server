@@ -21,7 +21,8 @@ class TimeShift extends Model
         'first_out',
         'second_in',
         'second_out',
-        'total_hours'
+        'total_hours',
+        'color'
     ];
 
     protected $softDelete = true;

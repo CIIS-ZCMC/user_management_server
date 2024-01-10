@@ -14,10 +14,11 @@ class Permission extends Model
     public $fillable = [
         'name',
         'action',
-        'deactivated'
+        'active'
     ];
     
-    public function modulePermission(){
+    public function modulePermission()
+    {
         return $this->hasMany(ModulePermission::class);
     }
 }

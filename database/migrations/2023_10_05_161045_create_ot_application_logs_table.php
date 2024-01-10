@@ -15,11 +15,12 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('official_time_application_id')->unsigned();
             $table->foreign('official_time_application_id')->references('id')->on('official_time_applications')->onDelete('cascade');
-            $table->unsignedBigInteger('action_by')->unsigned();
-            $table->foreign('action_by')->references('id')->on('users')->onDelete('cascade');
+            $table->unsignedBigInteger('action_by_id')->unsigned();
+            $table->foreign('action_by_id')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->string('action')->nullable();
-            $table->string('status');
             $table->string('date');
+            $table->string('time')->nullable();
+            $table->string('fields')->nullable();
             $table->timestamps();
         });
     }

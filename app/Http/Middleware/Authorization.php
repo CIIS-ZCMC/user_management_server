@@ -5,11 +5,12 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
-use App\Models\JobPosition;
+use App\Models\Designation;
 use App\Models\System;
 use App\Models\SystemRole;
+use App\Models\SystemModule;
 use App\Models\PositionSystemRole;
 
 class Authorization
@@ -21,25 +22,37 @@ class Authorization
      */
     public function handle(Request $request, Closure $next, $routePermission): Response
     {   
+        list($module, $action) = explode(' ', $routePermission);
+
+        $system_module = SystemModule::where('code', $module)->first();
+
         $user = $request->user;
-    
-        $jobPosition = JobPosition::where('uuid', $user->job_position_id)->first();
 
-        list($action, $module) = explode(' ', $routePermission);
+        $employe_designation = $user->findDesignation();
 
-        $system = System::where('code', env('SYSTEM_ABBREVIATION'))->first();
-        $systemRoles = $system->systemRoles;
-        $hasPermission = null;
+        $permissions = Cache::get($employe_designation->name);
 
-        foreach ($systemRoles as $systemRole) {
-            $positionSystemRole = PositionSystemRole::where('system_role_id', $systemRole->uuid)->where('job_position_id', $user->job_position_id)->first();
-            if(!$positionSystemRole){
-                continue;
+        $has_rights = false;
+
+        foreach($permissions['system'] as $key => $value)
+        {
+            foreach($value['roles'] as $key => $value)
+            {
+                foreach($value['modules'] as $key => $value)
+                {
+                    if($value['name'] === $system_module['name'])
+                    {
+                        if (in_array($action, $value['permissions'])) {
+                            $has_rights = true;
+                        }
+                    }
+                }
             }
-            $hasPermission = $systemRole->hasPermission($routePermission);
+
         }
-        
-        if(!$hasPermission){
+
+        if(!$has_rights)
+        {
             return response()->json(['message'=>'Un-Authorized.'], 401);
         }
 

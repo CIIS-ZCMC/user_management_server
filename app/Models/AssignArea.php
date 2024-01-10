@@ -17,13 +17,16 @@ class AssignArea extends Model
     protected $table = 'assigned_areas';
 
     public $fillable = [ 
+        'salary_grade_step',
         'employee_profile_id',
         'division_id',
         'department_id',
         'section_id',
         'unit_id',
         'designation_id',
-        'plantilla_id'
+        'plantilla_id',
+        'plantilla_number_id',
+        'effective_at'
     ];
 
     public $timestamps = TRUE;
@@ -61,6 +64,11 @@ class AssignArea extends Model
     public function plantilla()
     {
         return $this->belongsTo(Plantilla::class);
+    }
+
+    public function plantillaNumber()
+    {
+        return $this->belongsTo(PlantillaNumber::class);
     }
 
     public function findDetails()

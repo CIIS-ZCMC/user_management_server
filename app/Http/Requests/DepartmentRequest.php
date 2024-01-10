@@ -22,12 +22,10 @@ class DepartmentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'division_id' => 'required|string|size:36',
-            'code' => 'required|string|max:255',
             'name' => 'required|string|max:255',
-            'attachment' => 'nullable|text',
-            'head_job_specification' => 'required|string|max:255',
-            'training_officer_job_specification' => 'required|string|max:255',
+            'code' => 'required|string|max:255',
+            'attachment' => 'nullable|file|mimes:jpeg,png,pdf,doc,docx',
+            'division_id' => 'required|integer'
         ];
     }
 }

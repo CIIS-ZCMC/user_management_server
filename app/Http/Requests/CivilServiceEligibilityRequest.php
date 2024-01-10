@@ -22,13 +22,13 @@ class CivilServiceEligibilityRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'carrer_service' => 'required|string|max:255',
-            'rating' => 'nullable|float',
+            'career_service' => 'required|string|max:255',
+            'rating' => 'nullable|numeric',
             'date_of_examination' => 'required|date:Y-m-d',
             'place_of_examination' => 'required|string|max:255',
             'license_number' => 'nullable|string|max:255',
             'license_release_at' => 'nullable|date:Y-m-d',
-            'personal_information_id' => 'required|string|size:36'
+            'personal_information_id' => 'required|integer'
         ];
     }
 }

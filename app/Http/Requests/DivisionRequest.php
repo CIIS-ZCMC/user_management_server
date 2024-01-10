@@ -22,10 +22,10 @@ class DivisionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'code' => 'required|string|max:255',
             'name' => 'required|string|max:255',
-            'division' => 'nullable|text',
-            'job_specification' => 'required|string|max:255'
+            'code' => 'required|string|max:255',
+            // 'designation_id' => 'required|integer',
+            'attachment' => 'nullable|file|mimes:jpeg,png,pdf,doc,docx',
         ];
     }
 }

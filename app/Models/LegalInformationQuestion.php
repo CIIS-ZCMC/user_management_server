@@ -14,6 +14,9 @@ class LegalInformationQuestion extends Model
     public $fillable = [
         'order_by',
         'content_question',
+        'has_detail',
+        'has_yes_no',
+        'has_date',
         'has_sub_question',
         'legal_iq_id'
     ];
@@ -27,6 +30,6 @@ class LegalInformationQuestion extends Model
 
     public function subQuestions()
     {
-        return $this->hasMany(LegalInformationQuestion::class);
+        return $this->hasMany(LegalInformationQuestion::class, 'legal_iq_id');
     }
 }

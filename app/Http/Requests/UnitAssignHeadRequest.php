@@ -23,7 +23,8 @@ class UnitAssignHeadRequest extends FormRequest
     {
         return [
             'employee_id' => 'required|string|max:255',
-            'attachment' => 'nullable|string|max:255'
+            'attachment' => 'nullable|file|mimes:jpeg,png,pdf,doc,docx',
+            'password' => 'required|string|max:255'
         ];
     }
 }

@@ -5,11 +5,10 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+
+use App\Models\Schedule;
 
 class EmployeeProfile extends Authenticatable
 {
@@ -32,7 +31,9 @@ class EmployeeProfile extends Authenticatable
         'deactivated_at',
         'agency_employee_no',
         'allow_time_adjustment',
-        'employee_type_id'
+        'is_2fa',
+        'employee_type_id',
+        'employment_type_id'
     ];
 
     public $timestamps = TRUE;
@@ -84,7 +85,7 @@ class EmployeeProfile extends Authenticatable
 
     public function loginTrails()
     {
-        return $this->hasMany(LoginTrails::class);
+        return $this->hasMany(LoginTrail::class);
     }
 
     public function isDeactivated()
@@ -95,6 +96,11 @@ class EmployeeProfile extends Authenticatable
     public function isEmailVerified()
     {
         return $this->email_verified_at === null;
+    }
+
+    public function employmentType()
+    {
+        return $this->belongsTo(EmploymentType::class);
     }
 
     public function createToken()
@@ -127,6 +133,165 @@ class EmployeeProfile extends Authenticatable
         return $fullName;
     }
 
+    public function leaveCredits()
+    {
+        return $this->hasMany(EmployeeLeaveCredit::class);
+    }
+    public function leaveLogs() {
+        return $this->hasMany(LeaveTypeLog::class);
+    }
+
+    public function overtimeCredits()
+    {
+        return $this->hasMany(EmployeeOvertimeCredit::class);
+    }
+
+    public function leaveApplications() {
+        return $this->hasMany(LeaveApplication::class);
+    }
+
+    public function leaveApplicationLogs() {
+        return $this->hasMany(LeaveApplicationLog::class);
+    }
+
+    public function obApplications() {
+        return $this->hasMany(ObApplication::class);
+    }
+
+    public function obApplicationLogs() {
+        return $this->hasMany(ObApplicationLog::class);
+    }
+
+    public function otApplications() {
+        return $this->hasMany(OfficialTimeApplication::class);
+    }
+
+    public function otApplicationLogs() {
+        return $this->hasMany(OvtApplicationLog::class);
+    }
+
+    public function overtimeApplication() {
+        return $this->hasMany(OvertimeApplication::class);
+    }
+
+    public function ovtApplicationLogs() {
+        return $this->hasMany(OvtApplicationLog::class);
+    }
+
+
+
+    public function findDesignation()
+    {
+        $assign_area = $this->assignedArea;
+
+        $designation = $assign_area->plantilla_id  === null?$assign_area->designation:$assign_area->plantilla->designation;
+
+        return $designation;
+    }
+
+    public function issuanceInformation()
+    {
+        return $this->hasOne(IssuanceInformation::class);
+    }
+
+    public function position()
+    {
+        /** Division Chief */
+        $chief = Division::where('chief_employee_profile_id', $this->id)->first();
+
+        if($chief){
+            return [
+                'position' => 'Chief',
+                'area' => $chief
+            ];
+        }
+
+        /** Division Officer in Charge */
+        $division_oic = Division::where('oic_employee_profile_id', $this->id)->first();
+
+        if($division_oic){
+            return [
+                'position' => 'Division OIC',
+                'area' => $division_oic
+            ];
+        }
+
+        /** Department Chief */
+        $head = Department::where('head_employee_profile_id', $this->id)->first();
+
+        if($head){
+            return [
+                'position' => 'Chief',
+                'area' => $head
+            ];
+        }
+
+        /** Training Officer */
+        $training_officer = Department::where('training_officer_employee_profile_id', $this->id)->first();
+
+        if($head){
+            return [
+                'position' => 'Training Officer',
+                'area' => $training_officer
+            ];
+        }
+
+        /** Department Officer in Charge */
+        $department_oic = Department::where('oic_employee_profile_id', $this->id)->first();
+
+        if($department_oic){
+            return [
+                'position' => 'Department OIC',
+                'area' => $department_oic
+            ];
+        }
+
+        /** Section Supervisor */
+        $supervisor = Section::where('supervisor_employee_profile_id', $this->id)->first();
+
+        if($supervisor){
+            return [
+                'position' => 'Supervisor',
+                'area' => $supervisor
+            ];
+        }
+
+        /** Section Officer in Charge */
+        $section_oic = Section::where('oic_employee_profile_id', $this->id)->first();
+
+        if($section_oic){
+            return [
+                'position' => 'Section OIC',
+                'area' => $section_oic
+            ];
+        }
+
+        /** Unit Head */
+        $head = Unit::where('head_employee_profile_id', $this->id)->first();
+
+        if($head){
+            return [
+                'position' => 'Unit Head',
+                'area' => $supervisor
+            ];
+        }
+
+        /** Unit Officer in Charge */
+        $unit_oic = Unit::where('oic_employee_profile_id', $this->id)->first();
+
+        if($unit_oic){
+            return [
+                'position' => 'Unit OIC',
+                'area' => $unit_oic
+            ];
+        }
+
+        return null;
+    }
+    
+    public function schedule() {
+        return $this->belongsToMany(Schedule::class, 'employee_profile_schedule')->withPivot('employee_profile_id');
+    }
     public function GetPersonalInfo()
     {
         return $this->personalInformation;

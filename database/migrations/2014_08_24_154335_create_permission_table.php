@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('action');
-            $table->boolean('deactivated')->default(FALSE);
+            $table->boolean('active')->default(TRUE);
             $table->timestamps();
         });
     }

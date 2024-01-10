@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\LeaveAndOverTime\LeaveApplicationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -25,8 +26,11 @@ Route::controller(App\Http\Controllers\DTR\DTRcontroller::class)->group(
         Route::get('/viewdtr', 'viewDTR')->name('viewdtr');
         Route::get('/dtrutotreport', 'dtrUTOTReport')->name('dtrutotreport');
         Route::get('/testtest', 'test')->name('testtest');
+
+        Route::get('/setHolidays', 'Set_Holidays')->name('setHolidays');
     }
 );
+
 
 
 Route::controller(App\Http\Controllers\DTR\BioController::class)->group(
@@ -66,6 +70,9 @@ Route::controller(App\Http\Controllers\DTR\MailController::class)->group(
 );
 
 
+Route::get('/welcome', function () {
+    return view('welcome');
+});
 
 Route::controller(App\Http\Controllers\DTR\TwoFactorAuthController::class)->group(
     function () {
@@ -76,4 +83,19 @@ Route::controller(App\Http\Controllers\DTR\TwoFactorAuthController::class)->grou
 
 Route::get('/', function () {
     return view('mail.otp');
+});
+
+
+Route::namespace('App\Http\Controllers\Schedule')->group(function(){
+    Route::get('/generate', 'ScheduleController@generate');
+});
+
+Route::get('/ot', function () {
+    return view('overtime_authority');
+});
+
+
+
+Route::get('/lr', function () {
+    return view('leave_report');
 });

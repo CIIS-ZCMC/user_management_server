@@ -21,9 +21,11 @@ return new class extends Migration
             $table->string('illness')->nullable();
             $table->string('reason')->nullable();
             $table->string('leave_credit_total')->nullable();
-            $table->string('status')->nullable();;
-            $table->string('remarks')->nullable();;
-            $table->string('date')->nullable();;
+            $table->string('status')->nullable();
+            $table->string('remarks')->nullable();
+            $table->string('date')->nullable();
+            $table->string('time')->nullable();
+            $table->string('decline_reason')->nullable();
             $table->boolean('with_pay')->default(false);
             $table->unsignedBigInteger('employee_profile_id')->unsigned();
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles')->onDelete('cascade');
