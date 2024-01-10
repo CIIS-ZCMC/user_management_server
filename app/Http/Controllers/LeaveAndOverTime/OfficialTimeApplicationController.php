@@ -167,19 +167,19 @@ class OfficialTimeApplicationController extends Controller
         }
 
     }
-    public function getOtApplications()
+    public function getOtApplications(Request $request)
     {
         try{
-            $id='1';
+            $user=$request->user;
             $OfficialTimeApplication = [];
-            $division = AssignArea::where('employee_profile_id',$id)->value('division_id');
+            $division = AssignArea::where('employee_profile_id',$user->id)->value('division_id');
             $divisionHeadId = Division::where('id', $division)->value('chief_employee_profile_id');
-            $section = AssignArea::where('employee_profile_id',$id)->value('section_id');
+            $section = AssignArea::where('employee_profile_id',$user->id)->value('section_id');
             $sectionHeadId = Section::where('id', $section)->value('supervisor_employee_profile_id');
-            $department = AssignArea::where('employee_profile_id',$id)->value('department_id');
+            $department = AssignArea::where('employee_profile_id',$user->id)->value('department_id');
             $departmentHeadId = Department::where('id', $department)->value('head_employee_profile_id');
             $training_officer_id = Department::where('id', $department)->value('training_officer_employee_profile_id');
-            if($divisionHeadId == $id) {
+            if($divisionHeadId == $user->id) {
                 $OfficialTimeApplication = OfficialTimeApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','logs'])
                         ->whereHas('employeeProfile.assignedArea', function ($query) use ($division) {
                             $query->where('id', $division);
@@ -313,7 +313,7 @@ class OfficialTimeApplicationController extends Controller
                     return response()->json(['message' => 'No records available'], Response::HTTP_OK);
                 }
             }
-            else if($departmentHeadId == $id || $training_officer_id == $id) {
+            else if($departmentHeadId == $user->id || $training_officer_id == $user->id) {
                 $OfficialTimeApplication = OfficialTimeApplication::with(['employeeProfile.assignedArea.department','employeeProfile.personalInformation','logs' ])
                 ->whereHas('employeeProfile.assignedArea', function ($query) use ($department) {
                     $query->where('id', $department);
@@ -447,7 +447,7 @@ class OfficialTimeApplicationController extends Controller
                     return response()->json(['message' => 'No records available'], Response::HTTP_OK);
                 }
             }
-            else if($sectionHeadId == $id) {
+            else if($sectionHeadId == $user->id) {
                 $official_time_applications = OfficialTimeApplication::with(['employeeProfile.assignedArea.section','employeeProfile.personalInformation','logs'])
                 ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
                     $query->where('id', $section);
@@ -581,19 +581,17 @@ class OfficialTimeApplicationController extends Controller
                 }
             }
 
-
-
         }catch(\Throwable $th){
 
             return response()->json(['message' => $th->getMessage()], 500);
         }
     }
-    public function getUserOtApplication()
+    public function getUserOtApplication(Request $request)
     {
         try{
-            $id='1';
+            $user=$request->user;
             $ot_applications = OfficialTimeApplication::with(['employeeProfile.personalInformation','logs'])
-            ->where('employee_profile_id', $id)
+            ->where('employee_profile_id', $user->id)
             ->get();
             if($ot_applications->isNotEmpty())
             {
@@ -734,14 +732,12 @@ class OfficialTimeApplicationController extends Controller
                 'reason' => 'required|string|max:512',
             ]);
 
-            // $user_id = Auth::user()->id;
-            // $user = EmployeeProfile::where('id','=',$user_id)->first();
-            // $area = AssignArea::where('employee_profile_id',$employee_id)->value('division_id');
-            // $division = Division::where('id',$area)->value('is_medical');
-            $division=true;
+            $user=$request->user;
+            $area = AssignArea::where('employee_profile_id',$user->id)->value('division_id');
+            $division = Division::where('id',$area)->value('is_medical');
             DB::beginTransaction();
                 $official_time_application = new OfficialTimeApplication();
-                $official_time_application->employee_profile_id = '1';
+                $official_time_application->employee_profile_id = $user->id;
                 $official_time_application->date_from = $request->date_from;
                 $official_time_application->date_to = $request->date_to;
                 // $official_time_application->time_from = $request->time_from;
@@ -790,7 +786,7 @@ class OfficialTimeApplicationController extends Controller
                 $ot_id=$official_time_application->id;
                 $columnsString="";
                 $process_name="Applied";
-                $this->storeOfficialTimeApplicationLog($ot_id,$process_name,$columnsString);
+                $this->storeOfficialTimeApplicationLog($ot_id,$process_name,$columnsString,$user->id);
             DB::commit();
 
             $official_time_applications = OfficialTimeApplication::with(['employeeProfile.personalInformation','logs'])
@@ -925,20 +921,18 @@ class OfficialTimeApplicationController extends Controller
                                                             ->first();
                 if($ot_applications)
                 {
-                        // $user_id = Auth::user()->id;
-                        // $user = EmployeeProfile::where('id','=',$user_id)->first();
-                        // $user_password=$user->password;
-                        // $password=$request->password;
-                        // if($user_password==$password)
-                        // {
-                        //     if($user_id){
+                        $user=$request->user;
+                        $user_password=$user->password_encrypted;
+                        $password=$request->password;
+                        if($user_password==$password)
+                        {
                             DB::beginTransaction();
                                 $ot_application_log = new ModelsOtApplicationLog();
                                 $ot_application_log->action = 'declined';
                                 $ot_application_log->official_time_application_id = $id;
                                 $ot_application_log->date = date('Y-m-d');
                                 $ot_application_log->time =  date('H:i:s');
-                                $ot_application_log->action_by_id = '1';
+                                $ot_application_log->action_by_id = $user->id;
                                 $ot_application_log->save();
 
                                 $ot_application = OfficialTimeApplication::findOrFail($id);
@@ -1068,8 +1062,8 @@ class OfficialTimeApplicationController extends Controller
                                     $singleArray = array_merge(...$official_time_applications_result);
                                 return response(['message' => 'Application has been sucessfully declined', 'data' => $singleArray], Response::HTTP_OK);
 
-                        //     }
-                        //  }
+                        }
+
                 }
             } catch (\Exception $e) {
                 DB::rollBack();
@@ -1236,18 +1230,14 @@ class OfficialTimeApplicationController extends Controller
     public function updateStatus ($id,$status,Request $request)
     {
         try {
-                // $user_id = Auth::user()->id;
-                // $user = EmployeeProfile::where('id','=',$user_id)->first();
-                // $user_password=$user->password;
-                // $password=$request->password;
-                // $area = AssignArea::where('employee_profile_id',$employee_id)->value('division_id');
-                // $division = Division::where('id',$area)->value('is_medical');
-                // if($user_password==$password)
-                // {
+                $user = $request->user;
+                $user_password=$user->password_encrypted;
+                $password=$request->password;
+                if($user_password==$password)
+                {
                             $message_action = '';
                             $action = '';
                             $new_status = '';
-                            $division= true;
 
                          if($status == 'for-approval-section-head' ){
                                 $action = 'Aprroved by Supervisor';
@@ -1272,7 +1262,7 @@ class OfficialTimeApplicationController extends Controller
                                     $ot_application_log = new ModelsOtApplicationLog();
                                     $ot_application_log->action = $action;
                                     $ot_application_log->official_time_application_id = $id;
-                                    $ot_application_log->action_by_id = '1';
+                                    $ot_application_log->action_by_id = $user->id;
                                     $ot_application_log->date = date('Y-m-d');
                                     $ot_application_log->time =  date('H:i:s');
                                     $ot_application_log->save();
@@ -1402,10 +1392,10 @@ class OfficialTimeApplicationController extends Controller
                                     $singleArray = array_merge(...$official_time_applications_result);
                                 return response(['message' => 'Application has been sucessfully '.$message_action, 'data' => $singleArray], Response::HTTP_OK);
                                 }
-            //     }
-                // else{
-                    // return response()->json(['message' => 'Incorrect Password'], Response::HTTP_OK);
-                // }
+                }
+                else{
+                    return response()->json(['message' => 'Incorrect Password'], Response::HTTP_OK);
+                }
             }
 
 
@@ -2024,7 +2014,7 @@ class OfficialTimeApplicationController extends Controller
             }
             $process_name="Update";
             $columnsString="";
-            $official_time_logs = $this->storeOfficialTimeApplicationLog($official_time_application_id,$process_name,$columnsString);
+            $official_time_logs = $this->storeOfficialTimeApplicationLog($official_time_application_id,$process_name,$columnsString,1);
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
 
@@ -2044,10 +2034,9 @@ class OfficialTimeApplicationController extends Controller
             return response()->json(['message' => $e->getMessage(),'error'=>true]);
         }
     }
-    public function storeOfficialTimeApplicationLog($ot_id,$process_name,$changedFields)
+    public function storeOfficialTimeApplicationLog($ot_id,$process_name,$changedFields,$user_id)
     {
         try {
-            $user_id="1";
 
             $data = [
                 'official_time_application_id' => $ot_id,

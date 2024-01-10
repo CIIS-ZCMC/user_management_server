@@ -138,6 +138,7 @@ class LeaveTypeController extends Controller
 
     public function store(Request $request)
     {
+
         try{
             $user=$request->user;
             $validatedData = $request->validate([

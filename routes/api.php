@@ -1431,77 +1431,77 @@ Route::middleware('auth.cookie')->group(function(){
     /**
      * Leave and Overtime Management
      */
-    // Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function(){
+    Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function(){
 
-    //     Route::middleware(['auth.permission:UMIS-LOM view-all'])->group(function(){
-    //         Route::get('requirements', 'RequirementController@index');
-    //     });
+        Route::middleware(['auth.permission:UMIS-LOM view-all'])->group(function(){
+            Route::get('requirements', 'RequirementController@index');
+        });
 
-    //     Route::middleware(['auth.permission:UMIS-LOM write'])->group(function(){
-    //         Route::post('requirement', 'RequirementController@store');
-    //     });
+        Route::middleware(['auth.permission:UMIS-LOM write'])->group(function(){
+            Route::post('requirement', 'RequirementController@store');
+        });
 
-    //     Route::middleware(['auth.permission:UMIS-LOM update'])->group(function(){
-    //         Route::post('requirement/{id}', 'RequirementController@update');
-    //     });
+        Route::middleware(['auth.permission:UMIS-LOM update'])->group(function(){
+            Route::post('requirement/{id}', 'RequirementController@update');
+        });
 
-    //     Route::middleware(['auth.permission:UMIS-LOM view-all'])->group(function(){
-    //         Route::get('leave-type-all', 'LeaveTypeController@index');
-    //     });
+        Route::middleware(['auth.permission:UMIS-LOM view-all'])->group(function(){
+            Route::get('leave-type-all', 'LeaveTypeController@index');
+        });
 
-    //     Route::middleware(['auth.permission:UMIS-LOM update'])->group(function(){
-    //         Route::post('leave-type', 'LeaveTypeController@store');
-    //     });
+        Route::middleware(['auth.permission:UMIS-LOM update'])->group(function(){
+            Route::post('leave-type', 'LeaveTypeController@store');
+        });
 
-    //     Route::middleware(['auth.permission:UMIS-LOM update'])->group(function(){
-    //         Route::post('leave-type/{id}', 'LeaveTypeController@update');
-    //     });
+        Route::middleware(['auth.permission:UMIS-LOM update'])->group(function(){
+            Route::post('leave-type/{id}', 'LeaveTypeController@update');
+        });
 
-    //     Route::middleware(['auth.permission:UMIS-LOM view'])->group(function(){
-    //         Route::get('leave-type-select', 'LeaveTypeController@select');
-    //     });
+        Route::middleware(['auth.permission:UMIS-LOM view'])->group(function(){
+            Route::get('leave-type-select', 'LeaveTypeController@select');
+        });
 
-    //     Route::middleware(['auth.permission:UMIS-LOM update'])->group(function(){
-    //         Route::post('leave-type-deactivate-password/{id}', 'LeaveTypeController@deactivateLeaveType');
-    //     });
+        Route::middleware(['auth.permission:UMIS-LOM update'])->group(function(){
+            Route::post('leave-type-deactivate-password/{id}', 'LeaveTypeController@deactivateLeaveType');
+        });
 
-    //     Route::middleware(['auth.permission:UMIS-LOM update'])->group(function(){
-    //         Route::post('leave-type-activate-password/{id}', 'LeaveTypeController@reactivateLeaveType');
-    //     });
+        Route::middleware(['auth.permission:UMIS-LOM update'])->group(function(){
+            Route::post('leave-type-activate-password/{id}', 'LeaveTypeController@reactivateLeaveType');
+        });
 
-    //     Route::middleware(['auth.permission:UMIS-LOM view-all'])->group(function(){
-    //         Route::get('leave-application-all', 'LeaveApplicationController@index');
-    //     });
+        Route::middleware(['auth.permission:UMIS-LOM view-all'])->group(function(){
+            Route::get('leave-application-all', 'LeaveApplicationController@index');
+        });
 
-    //     Route::middleware(['auth.permission:UMIS-LOM request'])->group(function(){
-    //         Route::post('leave-application', 'LeaveApplicationController@store');
-    //     });
+        Route::middleware(['auth.permission:UMIS-LOM request'])->group(function(){
+            Route::post('leave-application', 'LeaveApplicationController@store');
+        });
 
-    //     Route::middleware(['auth.permission:UMIS-LOM approve'])->group(function(){
-    //         Route::post('leave-application-decline/{id}', 'LeaveApplicationController@declineLeaveApplication');
-    //     });
+        Route::middleware(['auth.permission:UMIS-LOM approve'])->group(function(){
+            Route::post('leave-application-decline/{id}', 'LeaveApplicationController@declineLeaveApplication');
+        });
 
-    //     Route::middleware(['auth.permission:UMIS-LOM approve'])->group(function(){
-    //         Route::post('leave-application-cancel/{id}', 'LeaveApplicationController@cancelLeaveApplication');
-    //     });
+        Route::middleware(['auth.permission:UMIS-LOM approve'])->group(function(){
+            Route::post('leave-application-cancel/{id}', 'LeaveApplicationController@cancelLeaveApplication');
+        });
 
-    //     Route::middleware(['auth.permission:UMIS-LOM approve'])->group(function(){
-    //         Route::post('leave-application-update/{id}/{status}', 'LeaveApplicationController@updateLeaveApplicationStatus');
-    //     });
+        Route::middleware(['auth.permission:UMIS-LOM approve'])->group(function(){
+            Route::post('leave-application-update/{id}/{status}', 'LeaveApplicationController@updateLeaveApplicationStatus');
+        });
 
-    //     Route::middleware(['auth.permission:UMIS-LOM view'])->group(function(){
-    //         Route::get('user-leave-application', 'LeaveApplicationController@getUserLeaveApplication');
-    //     });
+        Route::middleware(['auth.permission:UMIS-LOM view'])->group(function(){
+            Route::get('user-leave-application', 'LeaveApplicationController@getUserLeaveApplication');
+        });
 
-    //     Route::middleware(['auth.permission:UMIS-LOM view'])->group(function(){
-    //         Route::post('access-level-leave-application', 'LeaveApplicationController@getLeaveApplications');
-    //     });
+        Route::middleware(['auth.permission:UMIS-LOM view'])->group(function(){
+            Route::post('access-level-leave-application', 'LeaveApplicationController@getLeaveApplications');
+        });
 
-    //     Route::middleware(['auth.permission:UMIS-LOM download'])->group(function(){
-    //         Route::post('print-leave-form/{id}', 'LeaveApplicationController@printLeaveForm');
-    //     });
+        Route::middleware(['auth.permission:UMIS-LOM download'])->group(function(){
+            Route::post('print-leave-form/{id}', 'LeaveApplicationController@printLeaveForm');
+        });
 
-    // });
+    });
 
     /**
      * Schedule Management
