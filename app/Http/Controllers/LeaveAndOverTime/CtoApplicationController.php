@@ -15,6 +15,8 @@ use App\Models\Section;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 class CtoApplicationController extends Controller
 {
     public function index()
@@ -170,8 +172,8 @@ class CtoApplicationController extends Controller
         try{
             $user = $request->user;
             $area = AssignArea::where('employee_profile_id',$user->id)->value('division_id');
-            $division = Division::where('id',$area)->value('is_medical');
-            // $division=true;
+            // $division = Division::where('id',$area)->value('is_medical');
+            $division=true;
             $validatedData = $request->validate([
                 'time_from.*' => 'required|date_format:H:i',
                 'time_to.*' => 'required|date_format:H:i|after_or_equal:time_from.*',
@@ -385,10 +387,12 @@ class CtoApplicationController extends Controller
                                                             ->first();
                 if($cto_applications)
                 {
-                        $user_password=$user->password_encrypted;
-                        $password=$request->password;
-                        if($user_password==$password)
-                        {
+                    $password_decrypted = Crypt::decryptString($user['password_encrypted']);
+                    $password = strip_tags($request->password);
+                    if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                        return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+                    }
+                    else{
 
                             DB::beginTransaction();
                                 $cto_application_log = new CtoApplicationLog();
@@ -542,10 +546,7 @@ class CtoApplicationController extends Controller
 
 
                         }
-                        else
-                        {
-                            return response()->json(['message' => 'Incorrect Password'], Response::HTTP_OK);
-                        }
+
                 }
             } catch (\Exception $e) {
                 DB::rollBack();
@@ -1984,11 +1985,13 @@ class CtoApplicationController extends Controller
     public function updateStatus($id,$status,Request $request)
     {
         try {
-                $user = $request->user;
-                $user_password=$user->password_encrypted;
-                $password=$request->password;
-                if($user_password==$password)
-                {
+            $user = $request->user;
+            $password_decrypted = Crypt::decryptString($user['password_encrypted']);
+            $password = strip_tags($request->password);
+                if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                    return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+                }
+                else{
                             // $division= true;
                             $message_action = '';
                             $action = '';
@@ -2180,9 +2183,7 @@ class CtoApplicationController extends Controller
                                 return response(['message' => 'Application has been sucessfully '.$message_action, 'data' => $singleArray], Response::HTTP_OK);
                                     }
                 }
-                else{
-                    return response()->json(['message' => 'Incorrect Password'], Response::HTTP_OK);
-                }
+
             }
          catch (\Exception $e) {
             DB::rollBack();

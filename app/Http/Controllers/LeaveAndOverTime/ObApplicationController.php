@@ -23,6 +23,8 @@ use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Hamcrest\Core\IsNot;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 
 class ObApplicationController extends Controller
 {
@@ -1295,9 +1297,12 @@ class ObApplicationController extends Controller
     {
         try {
                 $user=$request->user;
-                $user_password=$user->password_encrypted;
-                $password=$request->password;
-                if($user_password==$password)
+                $password_decrypted = Crypt::decryptString($user['password_encrypted']);
+                $password = strip_tags($request->password);
+                if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                        return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+                }
+                else
                 {
                             $message_action = '';
                             $action = '';
@@ -1455,9 +1460,7 @@ class ObApplicationController extends Controller
                                     return response(['message' => 'Application has been sucessfully '.$message_action, 'data' => $singleArray],Response::HTTP_OK);
                             }
                 }
-                else{
-                    return response()->json(['message' => 'Incorrect Password'], Response::HTTP_OK);
-                }
+
             }
 
 
@@ -1517,7 +1520,7 @@ class ObApplicationController extends Controller
         try{
             $user = $request->user;
             $area = AssignArea::where('employee_profile_id',$user->id)->value('division_id');
-            $division = Division::where('id',$area)->value('is_medical');
+            // $division = Division::where('id',$area)->value('is_medical');
             $division=true;
             $validatedData = $request->validate([
                 'date_from.*' => 'required|date_format:Y-m-d',
@@ -1544,8 +1547,8 @@ class ObApplicationController extends Controller
                         }
                     },
                 ],
-                'certificate_of_appearance' => 'required|image|mimes:jpeg,png,jpg,pdf|max:2048',
-                'personal_order' => 'required|image|mimes:jpeg,png,jpg,pdf|max:2048',
+                'certificate_of_appearance' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
+                'personal_order' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
                 'reason' => 'required|string|max:512',
             ]);
 
@@ -1734,10 +1737,12 @@ class ObApplicationController extends Controller
                 if($ob_applications)
                 {
                         $user=$request->user;
-                        $user_password=$user->password_encrypted;
-                        $password=$request->password;
-                        if($user_password==$password)
-                        {
+                        $password_decrypted = Crypt::decryptString($user['password_encrypted']);
+                        $password = strip_tags($request->password);
+                        if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+                        }
+                        else{
 
                             DB::beginTransaction();
                                 $ob_application_log = new ObApplicationLog();
@@ -1876,10 +1881,7 @@ class ObApplicationController extends Controller
 
 
                         }
-                        else
-                        {
-                            return response()->json(['message' => 'Incorrect Password'], Response::HTTP_OK);
-                        }
+
                 }
             } catch (\Exception $e) {
             DB::rollBack();

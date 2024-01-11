@@ -66,14 +66,14 @@ class LeaveCreditController extends Controller
                 $employee_records = $this->DTR_UTOT_Report($request);
                 // $dates = $data['dates'];
                 // $absences = $data['absences']
-                    $total_absences="1";
-                    $total_undertime="15";
+                    $total_absences="0";
+                    $total_undertime="0";
                     $total_working_hours="150";
                     $leaveTypes=[];
                     $vl_leave=[];
-                    $leaveTypes = LeaveType::where('is_special', '=', '1')->get();
+                    $leaveTypes = LeaveType::where('is_special', '=', '0')->get();
                     $vl_leave = LeaveType::where('id', '=', '1')->first();
-                    $employee_leave_credits= ModelsEmployeeLeaveCredit::where('employee_profile_id','1')->get();
+                    $employee_leave_credits= ModelsEmployeeLeaveCredit::where('employee_profile_id',$employee->id)->get();
 
                         $totalLeaveCredits = $employee_leave_credits->mapToGroups(function ($credit) {
                             return [$credit->operation => $credit->credit_value];
@@ -150,7 +150,7 @@ class LeaveCreditController extends Controller
                             {
                                 $employeeCredit = new ModelsEmployeeLeaveCredit();
                                 $employeeCredit->leave_type_id = $vl_leave->id;
-                                $employeeCredit->employee_profile_id = '1';
+                                $employeeCredit->employee_profile_id = $employee->id;
                                 $employeeCredit->operation = "deduct";
                                 $employeeCredit->reason = "Undertime";
                                 $employeeCredit->undertime_total = $total_undertime;
@@ -175,14 +175,15 @@ class LeaveCreditController extends Controller
 
                         }
 
+
                         foreach ($leaveTypes as $leaveType) {
 
-                            if($leaveType->is_special == '1')
+                            if($leaveType->is_special == '0')
                             {
                                  $month_credit_value = $leaveType->leave_credit_year/12;
                                  $employeeCredit = new ModelsEmployeeLeaveCredit();
                                  $employeeCredit->leave_type_id = $leaveType->id;
-                                 $employeeCredit->employee_profile_id = '1';
+                                 $employeeCredit->employee_profile_id = $employee->id;
                                  $employeeCredit->operation = "add";
                                  $employeeCredit->reason = "Monthly Leave Credits";
                                  $employeeCredit->working_hours_total = $total_working_hours;

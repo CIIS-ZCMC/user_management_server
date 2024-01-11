@@ -22,6 +22,8 @@ use App\Services\FileService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 class OfficialTimeApplicationController extends Controller
 {
     protected $file_service;
@@ -727,14 +729,15 @@ class OfficialTimeApplicationController extends Controller
             $validatedData = $request->validate([
                 'date_from' => 'required|date_format:Y-m-d',
                 'date_to' => 'required_with:date_from|date_format:Y-m-d|after:date_from',
-                'certificate_of_appearance' => 'required|image|mimes:jpeg,png,jpg,pdf|max:2048',
-                'personal_order' => 'required|image|mimes:jpeg,png,jpg,pdf|max:2048',
+                'certificate_of_appearance' =>'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
+                'personal_order' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
                 'reason' => 'required|string|max:512',
             ]);
 
             $user=$request->user;
             $area = AssignArea::where('employee_profile_id',$user->id)->value('division_id');
-            $division = Division::where('id',$area)->value('is_medical');
+            // $division = Division::where('id',$area)->value('is_medical');
+            $division=true;
             DB::beginTransaction();
                 $official_time_application = new OfficialTimeApplication();
                 $official_time_application->employee_profile_id = $user->id;
@@ -916,15 +919,17 @@ class OfficialTimeApplicationController extends Controller
     public function declineOtApplication($id,Request $request)
     {
         try {
-
+                $user=$request->user;
                 $ot_applications = OfficialTimeApplication::where('id','=', $id)
                                                             ->first();
                 if($ot_applications)
                 {
-                        $user=$request->user;
-                        $user_password=$user->password_encrypted;
-                        $password=$request->password;
-                        if($user_password==$password)
+                    $password_decrypted = Crypt::decryptString($user['password_encrypted']);
+                    $password = strip_tags($request->password);
+                        if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                            return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+                        }
+                        else
                         {
                             DB::beginTransaction();
                                 $ot_application_log = new ModelsOtApplicationLog();
@@ -1231,9 +1236,12 @@ class OfficialTimeApplicationController extends Controller
     {
         try {
                 $user = $request->user;
-                $user_password=$user->password_encrypted;
-                $password=$request->password;
-                if($user_password==$password)
+                $password_decrypted = Crypt::decryptString($user['password_encrypted']);
+                $password = strip_tags($request->password);
+                if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                    return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+                }
+                else
                 {
                             $message_action = '';
                             $action = '';
@@ -1393,9 +1401,7 @@ class OfficialTimeApplicationController extends Controller
                                 return response(['message' => 'Application has been sucessfully '.$message_action, 'data' => $singleArray], Response::HTTP_OK);
                                 }
                 }
-                else{
-                    return response()->json(['message' => 'Incorrect Password'], Response::HTTP_OK);
-                }
+
             }
 
 

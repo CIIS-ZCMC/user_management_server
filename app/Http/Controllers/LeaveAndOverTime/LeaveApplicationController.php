@@ -23,6 +23,8 @@ use App\Services\FileService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 class LeaveApplicationController extends Controller
 {
     protected $file_service;
@@ -77,7 +79,7 @@ class LeaveApplicationController extends Controller
                     $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
                     $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
                     $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                    $hr = Section::with('supervisor.personalInformation')->where('name','HR')->orWhere('name','Human Resource')->first();
+                    $hr = Section::with('supervisor.personalInformation')->where('name','HRMO')->first();
 
                     $chief_name=null;
                     $chief_position=null;
@@ -273,7 +275,7 @@ class LeaveApplicationController extends Controller
                         $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
                         $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
                         $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                        $hr = Section::with('supervisor.personalInformation')->where('name','HR')->orWhere('name','Human Resource')->first();
+                        $hr = Section::with('supervisor.personalInformation')->where('code','HRMO')->first();
                     $chief_name=null;
                     $chief_position=null;
                     $chief_code=null;
@@ -469,8 +471,9 @@ class LeaveApplicationController extends Controller
     {
         $user = $request->user;
         $leave_applications = [];
-        $section = AssignArea::  where('employee_profile_id',$user->id)->value('section_id');
-        $hr_head_id = Section::where('id', $section)->value('supervisor_employee_profile_id');
+        // $section_hr = AssignArea::  where('employee_profile_id',$user->id)->value('section_id');
+        $hr_head_id = Section::where('code', 'HRMO')->value('supervisor_employee_profile_id');
+
         $division = AssignArea::where('employee_profile_id',$user->id)->value('division_id');
         $divisionHeadId = Division::where('id', $division)->value('chief_employee_profile_id');
         $department = AssignArea::where('employee_profile_id',$user->id)->value('department_id');
@@ -494,7 +497,7 @@ class LeaveApplicationController extends Controller
                     $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
                     $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
                     $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                    $hr = Section::with('supervisor.personalInformation')->where('name','HR')->orWhere('name','Human Resource')->first();
+                    $hr = Section::with('supervisor.personalInformation')->where('name','HRMO')->first();
                     $add=EmployeeLeaveCredit::where('employee_profile_id',$leave_application->employee_profile_id)->where('leave_type_id',$leave_application->leave_type_id)
                     ->where('operation', 'add')
                     ->sum('credit_value');
@@ -686,7 +689,7 @@ class LeaveApplicationController extends Controller
                     $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
                     $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
                     $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                    $hr = Section::with('supervisor.personalInformation')->where('name','HR')->orWhere('name','Human Resource')->first();
+                    $hr = Section::with('supervisor.personalInformation')->where('name','HRMO')->first();
                     $add=EmployeeLeaveCredit::where('employee_profile_id',$leave_application->employee_profile_id)->where('leave_type_id',$leave_application->leave_type_id)
                     ->where('operation', 'add')
                     ->sum('credit_value');
@@ -875,7 +878,7 @@ class LeaveApplicationController extends Controller
                     $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
                     $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
                     $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                    $hr = Section::with('supervisor.personalInformation')->where('name','HR')->orWhere('name','Human Resource')->first();
+                    $hr = Section::with('supervisor.personalInformation')->where('name','HRMO')->first();
                     $add=EmployeeLeaveCredit::where('employee_profile_id',$leave_application->employee_profile_id)->where('leave_type_id',$leave_application->leave_type_id)
                     ->where('operation', 'add')
                     ->sum('credit_value');
@@ -1066,7 +1069,7 @@ class LeaveApplicationController extends Controller
                     $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
                     $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
                     $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                    $hr = Section::with('supervisor.personalInformation')->where('name','HR')->orWhere('name','Human Resource')->first();
+                    $hr = Section::with('supervisor.personalInformation')->where('name','HRMO')->first();
                     $add=EmployeeLeaveCredit::where('employee_profile_id',$leave_application->employee_profile_id)->where('leave_type_id',$leave_application->leave_type_id)
                     ->where('operation', 'add')
                     ->sum('credit_value');
@@ -2253,12 +2256,18 @@ class LeaveApplicationController extends Controller
                 $user = $request->user;
                 $leave_applications = LeaveApplication::where('id','=', $id)
                 ->first();
-                $division = AssignArea::where('employee_profile_id',$leave_applications->employee_profile_id)->value('division_id');
-                $user_password=$user->password_encrypted;
-                $password=$request->password;
-                if($user_password==$password)
-                {
-
+                $area = AssignArea::where('employee_profile_id',$leave_applications->employee_profile_id)->value('division_id');
+                // $division = Division::where('id',$area)->value('is_medical');
+                $division_head=Division::where('chief_employee_profile_id',$leave_applications->employee_profile_id)->count();
+                $section_head=Section::where('supervisor_employee_profile_id',$leave_applications->employee_profile_id)->count();
+                $department_head=Department::where('head_employee_profile_id',$leave_applications->employee_profile_id)->count();
+                $division=true;
+                $password_decrypted = Crypt::decryptString($user['password_encrypted']);
+                $password = strip_tags($request->password);
+                if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                    return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+                }
+                else{
                             $message_action = '';
                             $action = '';
                             $new_status = '';
@@ -2279,16 +2288,28 @@ class LeaveApplicationController extends Controller
                             }
                             else if($status == 'applied'){
                                 $action = 'Verified by HRMO';
-                                if($division === true)
-                                {
-                                    $new_status='for-approval-department-head';
+                                if ($division_head > 0) {
+                                    $new_status='for-approval-omcc-head';
                                     $message_action="verified";
                                 }
-                                else
+                                else if($section_head > 0 || $department_head > 0)
                                 {
-                                    $new_status='for-approval-section-head';
+                                    $new_status='for-approval-division-head';
                                     $message_action="verified";
                                 }
+                                else{
+                                    if($division === true)
+                                    {
+                                        $new_status='for-approval-department-head';
+                                        $message_action="verified";
+                                    }
+                                    else
+                                    {
+                                        $new_status='for-approval-section-head';
+                                        $message_action="verified";
+                                    }
+                                }
+
 
                             }
 
@@ -2510,9 +2531,6 @@ class LeaveApplicationController extends Controller
                                 return response(['message' => 'Application has been sucessfully '.$message_action, 'data' => $singleArray], Response::HTTP_OK);
                             }
                 }
-                else{
-                    return response()->json(['message' => 'Incorrect Password'], Response::HTTP_OK);
-                }
 
             }
          catch (\Exception $e) {
@@ -2529,12 +2547,12 @@ class LeaveApplicationController extends Controller
                                                             ->first();
                 if($leave_applications)
                 {
-                        $user_id = Auth::user()->id;
-                        $user = EmployeeProfile::where('id','=',$user_id)->first();
-                        $user_password=$user->password;
-                        $password=$request->password;
-                        if($user_password==$password)
-                        {
+                    $password_decrypted = Crypt::decryptString($user['password_encrypted']);
+                    $password = strip_tags($request->password);
+                        if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                            return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+                        }
+                        else{
 
                                 DB::beginTransaction();
                                     $leave_application_log = new LeaveApplicationLog();
@@ -2569,7 +2587,7 @@ class LeaveApplicationController extends Controller
                                     $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
                                     $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
                                     $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                                    $hr = Section::with('supervisor.personalInformation')->where('name','HR')->orWhere('name','Human Resource')->first();
+                                    $hr = Section::with('supervisor.personalInformation')->where('name','HRMO')->first();
 
                                     $chief_name=null;
                                     $chief_position=null;
@@ -2733,10 +2751,6 @@ class LeaveApplicationController extends Controller
 
 
                         }
-                        else{
-                            return response()->json(['message' => 'Incorrect Password'], Response::HTTP_OK);
-                        }
-
                 }
             } catch (\Exception $e) {
                 DB::rollBack();
@@ -2790,7 +2804,7 @@ class LeaveApplicationController extends Controller
                                     $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
                                     $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
                                     $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                                    $hr = Section::with('supervisor.personalInformation')->where('name','HR')->orWhere('name','Human Resource')->first();
+                                    $hr = Section::with('supervisor.personalInformation')->where('name','HRMO')->first();
 
                                     $chief_name=null;
                                     $chief_position=null;
@@ -2976,7 +2990,7 @@ class LeaveApplicationController extends Controller
                         }
                     },
                 ],
-                'requirements.*' => 'required|mimes:jpeg,png,jpg,pdf|max:2048',
+                'requirements.*' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048'
             ]);
                 $leave_type_id = $request->leave_type_id;
                 $user=$request->user;
@@ -3270,6 +3284,8 @@ class LeaveApplicationController extends Controller
                     }
                     else
                     {
+
+
                         // $fromDates = $request->input('date_from');
                         // $toDates = $request->input('date_to');
                         DB::beginTransaction();
@@ -3354,7 +3370,7 @@ class LeaveApplicationController extends Controller
                             $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
                             $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
                             $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                            $hr = Section::with('supervisor.personalInformation')->where('name','HR')->orWhere('name','Human Resource')->first();
+                            $hr = Section::with('supervisor.personalInformation')->where('name','HRMO')->first();
 
                             $chief_name=null;
                             $chief_position=null;
