@@ -124,7 +124,7 @@ class CivilServiceEligibilityController extends Controller
                 return response()->json([
                     'data' => CivilServiceEligibilityResource::collection($success),
                     'failed' => $failed,
-                    'message' => 'Some data failed to registere.'
+                    'message' => 'Some data failed to register.'
                 ], Response::HTTP_OK);
             }
 

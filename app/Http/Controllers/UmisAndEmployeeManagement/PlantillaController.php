@@ -246,6 +246,8 @@ class PlantillaController extends Controller
 
             $cleanData = [];
 
+            $cleanData['effective_at'] = $plantilla_number->plantilla->effective_at;
+
             $cleanData['plantilla_number_id'] = $plantilla_number->id;
             $key = '';
             
@@ -266,7 +268,14 @@ class PlantillaController extends Controller
             }
             $cleanData[$key] =  strip_tags($request->area);
 
+            $key_list = ['division_id', 'department_id', 'section_id', 'unit_id'];
+
+            foreach($key_list as $value){
+                if($value === $key) continue;
+                $cleanData[$value] = null;
+            }
             $plantilla_assign_area = PlantillaAssignedArea::create($cleanData);
+            $plantilla_number->update(['assigned_at' => now()]);
 
             if(!$plantilla_assign_area){
                 return response()->json(['message' => "Failed to assign plantilla number."], Response::HTTP_UNPROCESSABLE_ENTITY);
