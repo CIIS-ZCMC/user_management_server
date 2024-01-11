@@ -1520,7 +1520,7 @@ class ObApplicationController extends Controller
         try{
             $user = $request->user;
             $area = AssignArea::where('employee_profile_id',$user->id)->value('division_id');
-            $division = Division::where('id',$area)->value('is_medical');
+            // $division = Division::where('id',$area)->value('is_medical');
             $division=true;
             $validatedData = $request->validate([
                 'date_from.*' => 'required|date_format:Y-m-d',

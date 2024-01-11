@@ -1820,7 +1820,8 @@ class OvertimeApplicationController extends Controller
 
             $user = $request->user;
             $area = AssignArea::where('employee_profile_id',$user->id)->value('division_id');
-            $division = Division::where('id',$area)->value('is_medical');
+            // $division = Division::where('id',$area)->value('is_medical');
+            $division=true;
             DB::beginTransaction();
                 $path="";
                 if($request->hasFile('letter_of_request'))

@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 class LeaveTypeController extends Controller
 {
     /**
@@ -113,73 +114,83 @@ class LeaveTypeController extends Controller
     {
         try{
             $user=$request->user;
-            // $leaveCredits = LeaveType::with('EmployeeLeaveCredits')
+            // $leaveTypes = LeaveType::with('EmployeeLeaveCredits')
             // ->whereHas('EmployeeLeaveCredits', function ($query) use ($user) {
-            //     $query->where('employee_profile_id', $user->id);
-            // })
-            // ->get();
-
-
-            // $leave_types_result = $leaveCredits->map(function ($leaveCredit) {
-
-            //     $balance = $leaveCredit->employeeLeaveCredits->sum(function ($credit) {
-            //         $operationMultiplier = ($credit->operation === 'Add') ? 1 : -1;
+            //         $query->where('employee_profile_id', $user->id);
+            //     })
+            // ->get()
+            // ->map(function ($leaveType) {
+            //     $balance = $leaveType->EmployeeLeaveCredits->isEmpty()
+            //     ? 0
+            //     : $leaveType->EmployeeLeaveCredits->sum(function ($credit) {
+            //         $operationMultiplier = ($credit->operation === 'add') ? 1 : -1;
             //         return $operationMultiplier * (float) $credit->credit_value;
             //     });
-            //     $add=EmployeeLeaveCredit::where('employee_profile_id',$leaveCredit->EmployeeLeaveCredits)->where('id',$leaveCredit->id)
-            //     ->where('operation', 'add')
-            //     ->sum('credit_value');
-            //     $deduct=EmployeeLeaveCredit::where('employee_profile_id',$leaveCredit->EmployeeLeaveCredits->employee_profile_id)->where('id',$leaveCredit->id)
-            //     ->where('operation', 'deduct')
-            //     ->sum('credit_value');
-            //         return [
-            //             'value' => "$leaveCredit->id",
-            //             'label' => $leaveCredit->name,
-            //             'label' => $add - $deduct,
-            //             'description' => $leaveCredit->description,
-            //             'file_date' => $leaveCredit->file_date,
-            //             'period' => $leaveCredit->period,
-            //             'is_country' => $leaveCredit->is_country,
-            //             'is_illness' => $leaveCredit->is_illness,
-            //             'is_days_recommended' => $leaveCredit->is_days_recommended,
-            //             'requirements' => $leaveCredit->requirements->map(function ($requirement) {
-            //                 return [
-            //                     'id' => $requirement->id,
-            //                     'name' => $requirement->name,
+
+            //     return [
+            //                     'value' => "$leaveType->id",
+            //                     'label' => $leaveType->name,
+            //                     'balance' => $balance,
+            //                     'description' => $leaveType->description,
+            //                     'file_date' => $leaveType->file_date,
+            //                     'period' => $leaveType->period,
+            //                     'is_country' => $leaveType->is_country,
+            //                     'is_illness' => $leaveType->is_illness,
+            //                     'is_days_recommended' => $leaveType->is_days_recommended,
+            //                     'requirements' => $leaveType->requirements->map(function ($requirement) {
+            //                         return [
+            //                             'id' => $requirement->id,
+            //                             'name' => $requirement->name,
+            //                         ];
+            //                     }),
             //                 ];
-            //             }),
-            //         ];
-            //     });
 
-            $leaveTypes = LeaveType::with('EmployeeLeaveCredits')
-            ->get()
-            ->map(function ($leaveType) {
-                $balance = $leaveType->EmployeeLeaveCredits->sum(function ($credit) {
-                    $operationMultiplier = ($credit->operation === 'add') ? 1 : -1;
-                    return $operationMultiplier * (float) $credit->credit_value;
-                });
+            // });
 
-                return [
-                                'value' => "$leaveType->id",
-                                'label' => $leaveType->name,
-                                'balance' => $balance,
-                                'description' => $leaveType->description,
-                                'file_date' => $leaveType->file_date,
-                                'period' => $leaveType->period,
-                                'is_special' => $leaveType->is_special,
-                                'is_country' => $leaveType->is_country,
-                                'is_illness' => $leaveType->is_illness,
-                                'is_days_recommended' => $leaveType->is_days_recommended,
-                                'requirements' => $leaveType->requirements->map(function ($requirement) {
-                                    return [
-                                        'id' => $requirement->id,
-                                        'name' => $requirement->name,
-                                    ];
-                                }),
-                            ];
+            $leaveTypes = LeaveType::leftJoin('employee_leave_credits', function ($join) use ($user) {
+                $join->on('leave_types.id', '=', 'employee_leave_credits.leave_type_id')
+                    ->where('employee_leave_credits.employee_profile_id', '=', $user->id);
+            })
+            ->select(
+                'leave_types.id',
+                'leave_types.name',
+                'leave_types.description',
+                'leave_types.file_date',
+                'leave_types.period',
+                'leave_types.is_country',
+                'leave_types.is_illness',
+                'leave_types.is_days_recommended',
+                DB::raw('IFNULL(SUM(CASE WHEN employee_leave_credits.operation = "add" THEN employee_leave_credits.credit_value ELSE -employee_leave_credits.credit_value END), 0) as balance')
+            )
+            ->groupBy(
+                'leave_types.id',
+                'leave_types.name',
+                'leave_types.description',
+                'leave_types.file_date',
+                'leave_types.period',
+                'leave_types.is_country',
+                'leave_types.is_illness',
+                'leave_types.is_days_recommended'
+            )
+            ->get();
 
-            });
-                 return response()->json(['data' => $leaveTypes], Response::HTTP_OK);
+        // Map the result
+        $result = $leaveTypes->map(function ($leaveType) {
+            return [
+                'value' => $leaveType->id,
+                'label' => $leaveType->name,
+                'balance' => $leaveType->balance,
+                'description' => $leaveType->description,
+                'file_date' => $leaveType->file_date,
+                'period' => $leaveType->period,
+                'is_special' => $leaveType->is_special,
+                'is_country' => $leaveType->is_country,
+                'is_illness' => $leaveType->is_illness,
+                'is_days_recommended' => $leaveType->is_days_recommended,
+            ];
+        });
+
+                 return response()->json(['data' => $result], Response::HTTP_OK);
             }catch(\Throwable $th){
 
                 return response()->json(['message' => $th->getMessage()], 500);

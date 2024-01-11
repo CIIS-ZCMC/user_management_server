@@ -736,7 +736,8 @@ class OfficialTimeApplicationController extends Controller
 
             $user=$request->user;
             $area = AssignArea::where('employee_profile_id',$user->id)->value('division_id');
-            $division = Division::where('id',$area)->value('is_medical');
+            // $division = Division::where('id',$area)->value('is_medical');
+            $division=true;
             DB::beginTransaction();
                 $official_time_application = new OfficialTimeApplication();
                 $official_time_application->employee_profile_id = $user->id;

@@ -2256,7 +2256,12 @@ class LeaveApplicationController extends Controller
                 $user = $request->user;
                 $leave_applications = LeaveApplication::where('id','=', $id)
                 ->first();
-                $division = AssignArea::where('employee_profile_id',$leave_applications->employee_profile_id)->value('division_id');
+                $area = AssignArea::where('employee_profile_id',$leave_applications->employee_profile_id)->value('division_id');
+                // $division = Division::where('id',$area)->value('is_medical');
+                $division_head=Division::where('chief_employee_profile_id',$leave_applications->employee_profile_id)->count();
+                $section_head=Section::where('supervisor_employee_profile_id',$leave_applications->employee_profile_id)->count();
+                $department_head=Department::where('head_employee_profile_id',$leave_applications->employee_profile_id)->count();
+                $division=true;
                 $password_decrypted = Crypt::decryptString($user['password_encrypted']);
                 $password = strip_tags($request->password);
                 if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
@@ -2283,16 +2288,28 @@ class LeaveApplicationController extends Controller
                             }
                             else if($status == 'applied'){
                                 $action = 'Verified by HRMO';
-                                if($division === true)
-                                {
-                                    $new_status='for-approval-department-head';
+                                if ($division_head > 0) {
+                                    $new_status='for-approval-omcc-head';
                                     $message_action="verified";
                                 }
-                                else
+                                else if($section_head > 0 || $department_head > 0)
                                 {
-                                    $new_status='for-approval-section-head';
+                                    $new_status='for-approval-division-head';
                                     $message_action="verified";
                                 }
+                                else{
+                                    if($division === true)
+                                    {
+                                        $new_status='for-approval-department-head';
+                                        $message_action="verified";
+                                    }
+                                    else
+                                    {
+                                        $new_status='for-approval-section-head';
+                                        $message_action="verified";
+                                    }
+                                }
+
 
                             }
 
