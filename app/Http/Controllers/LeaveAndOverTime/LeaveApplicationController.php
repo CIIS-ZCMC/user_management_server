@@ -585,7 +585,7 @@ class LeaveApplicationController extends Controller
                         'remarks' => $leave_application->remarks ,
                         'date' => $leave_application->created_at ,
                         'with_pay' => $leave_application->with_pay ,
-                        'employee_id' => $leave_application->employee_profile_id,
+                        'employee_id' => $leave_application->employeeProfile->employee_id,
                         'employee_name' => "{$first_name} {$last_name}" ,
                         'position_code' => $leave_application->employeeProfile->assignedArea->designation->code ?? null,
                         'position_name' => $leave_application->employeeProfile->assignedArea->designation->name ?? null,
@@ -3260,7 +3260,7 @@ class LeaveApplicationController extends Controller
 
                             else
                             {
-                                return response()->json(['message' => 'Insufficient Leave Credit Value'], Response::HTTP_OK);
+                                return response()->json(['message' => 'Insufficient Leave Credit Value'], 300);
                             }
                         }
 

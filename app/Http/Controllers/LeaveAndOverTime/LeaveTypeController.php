@@ -166,6 +166,7 @@ class LeaveTypeController extends Controller
                                 'description' => $leaveType->description,
                                 'file_date' => $leaveType->file_date,
                                 'period' => $leaveType->period,
+                                'is_special' => $leaveType->is_special,
                                 'is_country' => $leaveType->is_country,
                                 'is_illness' => $leaveType->is_illness,
                                 'is_days_recommended' => $leaveType->is_days_recommended,

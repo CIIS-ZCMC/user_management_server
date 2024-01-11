@@ -1491,7 +1491,7 @@ Route::middleware('auth.cookie')->group(function(){
         });
 
         Route::middleware(['auth.permission:UMIS-LM view'])->group(function(){
-            Route::post('access-level-leave-application', 'LeaveApplicationController@getLeaveApplications');
+            Route::get('access-level-leave-application', 'LeaveApplicationController@getLeaveApplications');
         });
 
         Route::middleware(['auth.permission:UMIS-LM download'])->group(function(){
