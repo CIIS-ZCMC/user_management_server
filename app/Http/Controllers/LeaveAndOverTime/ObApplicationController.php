@@ -1559,14 +1559,16 @@ class ObApplicationController extends Controller
                 $official_business_application->date_to = $request->date_to;
                 $official_business_application->time_from = $request->time_from;
                 $official_business_application->time_to = $request->time_to;
-                if($division === true)
-                {
-                    $status='for-approval-department-head';
-                }
-                else
-                {
-                    $status='for-approval-section-head';
-                }
+                        $divisions = Division::where('id',$area)->first();
+                            if ($divisions->code === 'NS' || $divisions->code === 'MS') {
+                                $status='for-approval-department-head';
+                                $message_action="verified";
+                            }
+                            else
+                            {
+                                $status='for-approval-section-head';
+                                $message_action="verified";
+                            }
                 $official_business_application->status =$status;
                 $official_business_application->reason =$request->reason;
                 $official_business_application->date = date('Y-m-d');

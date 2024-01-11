@@ -21,6 +21,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Random\Engine\Secure;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 class OvertimeApplicationController extends Controller
@@ -1835,8 +1836,8 @@ class OvertimeApplicationController extends Controller
                         $path =  $image->storeAs('public/' . $folderName, $imageName);
 
                 }
-                if($division  === true)
-                {
+                $divisions = Division::where('id',$area)->first();
+                if ($divisions->code == 'NS' || $divisions->code == 'MS') {
                     $status='for-approval-department-head';
                 }
                 else
@@ -2086,7 +2087,6 @@ class OvertimeApplicationController extends Controller
         try{
             $user = $request->user;
             $area = AssignArea::where('employee_profile_id',$user->id)->value('division_id');
-            $division = Division::where('id',$area)->value('is_medical');
             $validatedData = $request->validate([
                 'dates.*' => 'required|date_format:Y-m-d',
                 'time_from.*' => 'required|date_format:H:i',
@@ -2107,14 +2107,16 @@ class OvertimeApplicationController extends Controller
             ]);
             DB::beginTransaction();
                 $path="";
-                if($division === true)
-                {
-                    $status='for-approval-department-head';
-                }
-                else
-                {
-                    $status='for-approval-section-head';
-                }
+                $divisions = Division::where('id',$area)->first();
+                    if ($divisions->code === 'NS' || $divisions->code === 'MS') {
+                            $status='for-approval-department-head';
+
+                        }
+                        else
+                        {
+                             $status='for-approval-section-head';
+
+                        }
                 $overtime_application = OvertimeApplication::create([
                     'employee_profile_id' => $user->id,
                     'reference_number' => '123',

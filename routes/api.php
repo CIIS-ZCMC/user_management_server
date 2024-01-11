@@ -801,11 +801,11 @@ Route::middleware('auth.cookie')->group(function(){
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function(){
             Route::get('employment-type-all', 'EmploymentTypeController@index');
         });
-        
+
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function(){
             Route::get('employment-type-for-dtr', 'EmploymentTypeController@employmentTypeForDTR');
         });
-        
+
 
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
             Route::post('employment-type', 'EmploymentTypeController@store');

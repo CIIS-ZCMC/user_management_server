@@ -745,8 +745,8 @@ class OfficialTimeApplicationController extends Controller
                 $official_time_application->date_to = $request->date_to;
                 // $official_time_application->time_from = $request->time_from;
                 // $official_time_application->time_to = $request->time_to;
-                if($division === true)
-                {
+                $divisions = Division::where('id',$area)->first();
+                if ($divisions->code === 'NS' || $divisions->code === 'MS') {
                     $status='for-approval-department-head';
                 }
                 else

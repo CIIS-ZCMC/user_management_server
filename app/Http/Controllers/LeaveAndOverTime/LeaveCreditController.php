@@ -123,11 +123,9 @@ class LeaveCreditController extends Controller
                                                 $employeeCredit->credit_value = $absent_credit_value;
                                                 $employeeCredit->date = date('Y-m-d');
                                                 $employeeCredit->save();
-
                                             }
                                             else if($absent_credit_value > $totalLeaveCredits)
                                             {
-
                                                 $employeeCredit = new ModelsEmployeeLeaveCredit();
                                                 $employeeCredit->leave_type_id = $vl_leave->id;
                                                 $employeeCredit->employee_profile_id = $employee->id;
@@ -176,6 +174,7 @@ class LeaveCreditController extends Controller
                         }
 
 
+
                         foreach ($leaveTypes as $leaveType) {
 
                             if($leaveType->is_special == '0')
@@ -199,6 +198,8 @@ class LeaveCreditController extends Controller
         return response()->json(['data' => $employee_leave_credits], Response::HTTP_OK);
 
     }
+
+    
 
     Public function addYearlyLeaveCredit(Request $request)
     {
