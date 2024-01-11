@@ -20,13 +20,13 @@ class Helpers {
         $ip = $request->ip();
         $user = $request->user;
         $permission = $request->permission;
-        $action = Permission::where('name', $permission)->first();
-        // list($action, $module) = explode(' ', $permission);
+        list($module, $action) = explode(' ', $permission);
 
         SystemLogs::create([
-            'employee_profile_id' => $user,
+            'employee_profile_id' => $user->id,
             'module_id' => $moduleID,
             'action' => $action,
+            'module' => $module,
             'status' => $status,
             'remarks' => $remarks,
             'ip_address' => $ip
@@ -79,6 +79,10 @@ class Helpers {
                     $dates[] = $date->format('Y');
                     break;
 
+                case 'Days of Week':
+                    $dates[] = $date->format('Y-m-d D');
+                    break;
+
                 default:
                     $dates[] = $date->format('Y-m-d');
                     break;
@@ -86,6 +90,6 @@ class Helpers {
         }
 
         return $dates;
-    }    
+    }
     
 }
