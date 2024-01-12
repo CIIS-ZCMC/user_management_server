@@ -11,6 +11,7 @@ use App\Http\Resources\LeaveCredit as ResourcesLeaveCredit;
 use App\Models\DailyTimeRecord;
 use App\Models\EmployeeLeaveCredit as ModelsEmployeeLeaveCredit;
 use App\Models\EmployeeProfile as ModelsEmployeeProfile;
+use App\Models\EmploymentType;
 use App\Models\LeaveApplication as ModelsLeaveApplication;
 use App\Models\LeaveType;
 use Illuminate\Http\Request;
@@ -37,6 +38,40 @@ class LeaveCreditController extends Controller
     }
 
     public function addMonthlyLeaveCredit(Request $request)
+    {
+
+        $employees=[];
+        $employees = ModelsEmployeeProfile::get();
+        $employment_type = EmploymentType::where('name','Regular Full-Time')->orwhere('name','Regular Part-Time')->first();
+        if($employees)
+        {
+            foreach ($employees as $employee) {
+
+                    $total_working_hours="150";
+                    $leaveTypes = LeaveType::where('is_special', '=', '0')->get();
+                        foreach ($leaveTypes as $leaveType) {
+                            if($leaveType->is_special == '0')
+                            {
+                                 $month_credit_value = $leaveType->leave_credit_year/12;
+                                 $employeeCredit = new ModelsEmployeeLeaveCredit();
+                                 $employeeCredit->leave_type_id = $leaveType->id;
+                                 $employeeCredit->employee_profile_id = $employee->id;
+                                 $employeeCredit->operation = "add";
+                                 $employeeCredit->reason = "Monthly Leave Credits";
+                                 $employeeCredit->working_hours_total = $total_working_hours;
+                                 $employeeCredit->credit_value = $month_credit_value;
+                                 $employeeCredit->date = date('Y-m-d');
+                                 $employeeCredit->save();
+
+                            }
+
+                        }
+            }
+        }
+        return response()->json(['data' => $employeeCredit], Response::HTTP_OK);
+
+    }
+    public function deductUndertime(Request $request)
     {
         $currentMonth = date('m');
         $currentDate = date('Y-m-d');
@@ -83,66 +118,12 @@ class LeaveCreditController extends Controller
 
                         if($vl_leave)
                         {
-                            $absent_credit_value = $vl_leave->leave_credit_year / 360 * 24 * $total_absences;
                             $undertime_credit_value = $total_undertime / 480;
                         }
 
                         if($totalLeaveCredits != 0 )
                         {
-                            $datesToCompare = ['2023-11-09', '2023-11-10', '2023-11-15'];
-                            $approvedLeaveApplications=[];
-                            $approvedLeaveApplications = ModelsLeaveApplication::with('dates')->where('employee_profile_id', $employee->id)->where('status', 'approved')->get();
-                            if ($approvedLeaveApplications->count() > 0)
-                            {
-                                foreach ($approvedLeaveApplications as $leave) {
-                                    foreach ($leave->dates as $leaveDate) {
-                                        $startDate = $leaveDate->date_from;
-                                        $endDate = $leaveDate->date_to;
 
-                                        // Check if any date within the range falls within the array of dates
-                                        $dateRange = collect(\Carbon\CarbonPeriod::create($startDate, $endDate));
-                                        $matchingDates = $dateRange->filter(function ($date) use ($datesToCompare) {
-                                            return in_array($date->format('Y-m-d'), $datesToCompare);
-                                        });
-
-                                        if ($matchingDates->count() > 0) {
-                                            foreach ($matchingDates as $matchingDate) {
-                                                echo "Matching date: " . $matchingDate->format('Y-m-d') . "\n";
-                                            }
-                                        }
-                                        else
-                                        {
-                                            if($absent_credit_value != 0 && $absent_credit_value < $totalLeaveCredits)
-                                            {
-                                                $employeeCredit = new ModelsEmployeeLeaveCredit();
-                                                $employeeCredit->leave_type_id = $vl_leave->id;
-                                                $employeeCredit->employee_profile_id = $employee->id;
-                                                $employeeCredit->operation = "deduct";
-                                                $employeeCredit->reason = "Absent";
-                                                $employeeCredit->absent_total =$total_absences;
-                                                $employeeCredit->credit_value = $absent_credit_value;
-                                                $employeeCredit->date = date('Y-m-d');
-                                                $employeeCredit->save();
-                                            }
-                                            else if($absent_credit_value > $totalLeaveCredits)
-                                            {
-                                                $employeeCredit = new ModelsEmployeeLeaveCredit();
-                                                $employeeCredit->leave_type_id = $vl_leave->id;
-                                                $employeeCredit->employee_profile_id = $employee->id;
-                                                $employeeCredit->operation = "deduct";
-                                                $employeeCredit->reason = "Absent";
-                                                $employeeCredit->absent_total =$total_absences;
-                                                $employeeCredit->credit_value = $totalLeaveCredits;
-                                                $employeeCredit->true_credit_value = $absent_credit_value;
-                                                $employeeCredit->date = date('Y-m-d');
-                                                $employeeCredit->save();
-                                            }
-
-
-                                        }
-                                    }
-                                }
-                            }
 
                             if($undertime_credit_value !=0 && $undertime_credit_value < $totalLeaveCredits)
                             {
@@ -174,7 +155,6 @@ class LeaveCreditController extends Controller
                         }
 
 
-
                         foreach ($leaveTypes as $leaveType) {
 
                             if($leaveType->is_special == '0')
@@ -198,8 +178,6 @@ class LeaveCreditController extends Controller
         return response()->json(['data' => $employee_leave_credits], Response::HTTP_OK);
 
     }
-
-    
 
     Public function addYearlyLeaveCredit(Request $request)
     {

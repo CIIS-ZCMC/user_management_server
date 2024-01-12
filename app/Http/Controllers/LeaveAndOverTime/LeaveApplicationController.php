@@ -469,19 +469,24 @@ class LeaveApplicationController extends Controller
 
     public function getLeaveApplications(Request $request)
     {
+
         $user = $request->user;
         $leave_applications = [];
-        // $section_hr = AssignArea::  where('employee_profile_id',$user->id)->value('section_id');
         $hr_head_id = Section::where('code', 'HRMO')->value('supervisor_employee_profile_id');
+        $hr_oic_id = Section::where('code', 'HRMO')->value('oic_employee_profile_id');
         $omcc_head_id = Division::where('code', 'OMCC')->value('chief_employee_profile_id');
+        $omcc_oic_id = Division::where('code', 'OMCC')->value('oic_employee_profile_id');
         $division = AssignArea::where('employee_profile_id',$user->id)->value('division_id');
         $divisionHeadId = Division::where('id', $division)->value('chief_employee_profile_id');
+        $division_oic_Id = Division::where('id', $division)->value('chief_employee_profile_id');
         $department = AssignArea::where('employee_profile_id',$user->id)->value('department_id');
         $departmentHeadId = Department::where('id', $department)->value('head_employee_profile_id');
+        $department_oic_Id = Division::where('id', $division)->value('chief_employee_profile_id');
         $training_officer_id = Department::where('id', $department)->value('training_officer_employee_profile_id');
         $section = AssignArea::where('employee_profile_id',$user->id)->value('section_id');
         $sectionHeadId = Section::where('id', $section)->value('supervisor_employee_profile_id');
-        if($hr_head_id === $user->id ) {
+        $section_oic_id = Section::where('id', $section)->value('supervisor_employee_profile_id');
+        if($hr_head_id === $user->id || $hr_oic_id === $user->id) {
             $leave_applications = LeaveApplication::with(['employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
             // ->where('status', 'applied')
             ->get();
@@ -667,16 +672,18 @@ class LeaveApplicationController extends Controller
             }
 
         }
-        else if($divisionHeadId === $user->id)
+        else if($divisionHeadId === $user->id || $division_oic_Id === $user->id)
         {
-            $leave_applications = LeaveApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
-            ->whereHas('employeeProfile.assignedArea', function ($query) use ($division) {
-                $query->where('id', $division);
+            $leave_applications = LeaveApplication::with(['employeeProfile.assignedArea','employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
+            ->whereHas('employeeProfile.assignedArea.division', function ($query) use ($divisionHeadId) {
+                $query->where('id', $divisionHeadId);
             })
             ->where('status', 'for-approval-division-head')
             ->orwhere('status', 'approved')
             ->orwhere('status', 'declined')
             ->get();
+
+
             if($leave_applications->isNotEmpty())
             {
                 $leave_applications_result = $leave_applications->map(function ($leave_application) {
@@ -857,7 +864,7 @@ class LeaveApplicationController extends Controller
             }
 
         }
-        else if($departmentHeadId === $user->id || $training_officer_id == $user->id) {
+        else if($departmentHeadId === $user->id || $training_officer_id == $user->id || $department_oic_Id === $user->id) {
             $leave_applications = LeaveApplication::with(['employeeProfile.assignedArea.department','employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
             ->whereHas('employeeProfile.assignedArea', function ($query) use ($department) {
                 $query->where('id', $department);
@@ -1047,7 +1054,7 @@ class LeaveApplicationController extends Controller
                 return response()->json(['message' => 'No records available'], Response::HTTP_OK);
             }
         }
-        else if($sectionHeadId === $user->id) {
+        else if($sectionHeadId === $user->id || $section_oic_id === $user->id) {
 
             $leave_applications = LeaveApplication::with(['employeeProfile.assignedArea.section','employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
             ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
@@ -1237,7 +1244,7 @@ class LeaveApplicationController extends Controller
             }
 
         }
-        else if($omcc_head_id === $user->id) {
+        else if($omcc_head_id === $user->id || $omcc_oic_id === $user->id) {
             $leave_applications = LeaveApplication::with(['employeeProfile.assignedArea.section','employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
             ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
                 $query->where('id', $section);
@@ -2769,15 +2776,18 @@ class LeaveApplicationController extends Controller
                                             $total_days += $date_to->diffInDays($date_from) + 1; // Add 1 to include both the start and end dates
 
                                     }
-                                    $employee_leave_credits = new EmployeeLeaveCredit();
-                                    $employee_leave_credits->employee_profile_id = $leave_applications->employee_profile_id;
-                                    $employee_leave_credits->leave_application_id = $id;
-                                    $employee_leave_credits->operation = "add";
-                                    $employee_leave_credits->reason = "Declined";
-                                    $employee_leave_credits->leave_credit = $total_days;
-                                    $employee_leave_credits->date = date('Y-m-d');
-                                    $employee_leave_credits->save();
 
+                                    if($leave_applications->without_pay === 1)
+                                    {
+                                        $employee_leave_credits = new EmployeeLeaveCredit();
+                                        $employee_leave_credits->employee_profile_id = $leave_applications->employee_profile_id;
+                                        $employee_leave_credits->leave_application_id = $id;
+                                        $employee_leave_credits->operation = "add";
+                                        $employee_leave_credits->reason = "Declined";
+                                        $employee_leave_credits->leave_credit = $total_days;
+                                        $employee_leave_credits->date = date('Y-m-d');
+                                        $employee_leave_credits->save();
+                                    }
                                 DB::commit();
 
                                 $leave_applications =LeaveApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','dates','logs', 'requirements','employeeProfile.leaveCredits.leaveType'])
@@ -3248,7 +3258,7 @@ class LeaveApplicationController extends Controller
                                         $leave_application->patient_type = $request->patient_type;
                                         $leave_application->illness = $request->illness;
                                         $leave_application->reason = $request->reason;
-                                        $leave_application->with_pay =  $request->has('with_pay');
+                                        $leave_application->without_pay =  $request->has('without_pay');
                                         $leave_application->leave_credit_total = $total_days;
                                         $leave_application->status = "applied";
                                         $leave_application->date = date('Y-m-d');
@@ -3314,15 +3324,31 @@ class LeaveApplicationController extends Controller
 
                                         }
 
-                                        $employee_leave_credits = new EmployeeLeaveCredit();
-                                        $employee_leave_credits->employee_profile_id = $user->id;
-                                        $employee_leave_credits->leave_application_id = $leave_application_id;
-                                        $employee_leave_credits->leave_type_id = $leave_type_id;;
-                                        $employee_leave_credits->operation = "deduct";
-                                        $employee_leave_credits->reason = "Leave";
-                                        $employee_leave_credits->credit_value = $total_days;
-                                        $employee_leave_credits->date = date('Y-m-d');
-                                        $employee_leave_credits->save();
+                                        if($request->has('without_pay') === 1)
+                                        {
+                                            $employee_leave_credits = new EmployeeLeaveCredit();
+                                            $employee_leave_credits->employee_profile_id = $user->id;
+                                            $employee_leave_credits->leave_application_id = $leave_application_id;
+                                            $employee_leave_credits->leave_type_id = $leave_type_id;;
+                                            $employee_leave_credits->operation = "deduct";
+                                            $employee_leave_credits->reason = "Leave With Pay";
+                                            $employee_leave_credits->credit_value = $total_days;
+                                            $employee_leave_credits->date = date('Y-m-d');
+                                            $employee_leave_credits->save();
+                                        }
+                                        // else
+                                        // {
+                                        //     $employee_leave_credits = new EmployeeLeaveCredit();
+                                        //     $employee_leave_credits->employee_profile_id = $user->id;
+                                        //     $employee_leave_credits->leave_application_id = $leave_application_id;
+                                        //     $employee_leave_credits->leave_type_id = $leave_type_id;;
+                                        //     $employee_leave_credits->operation = "deduct";
+                                        //     $employee_leave_credits->reason = "Leave Without Pay";
+                                        //     $employee_leave_credits->credit_value = 0;
+                                        //     $employee_leave_credits->date = date('Y-m-d');
+                                        //     $employee_leave_credits->save();
+                                        // }
+
 
                                         DB::commit();
 

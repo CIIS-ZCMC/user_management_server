@@ -387,6 +387,7 @@ class OvertimeApplicationController extends Controller
 
     public function getOvertimeApplications(Request $request)
     {
+
             try{
                 $user=$request->user;
                 $OvertimeApplication = [];
@@ -397,7 +398,11 @@ class OvertimeApplicationController extends Controller
                 $section = AssignArea::where('employee_profile_id',$user->id)->value('section_id');
                 $sectionHeadId = Section::where('id', $section)->value('supervisor_employee_profile_id');
                 $training_officer_id = Department::where('id', $department)->value('training_officer_employee_profile_id');
-                if($divisionHeadId == $user->id) {
+                $division_oic_Id = Division::where('id', $division)->value('chief_employee_profile_id');
+                $department_oic_Id = Division::where('id', $division)->value('chief_employee_profile_id');
+                $section_oic_id = Section::where('id', $section)->value('supervisor_employee_profile_id');
+
+                if($divisionHeadId === $user->id || $division_oic_Id === $user->id) {
                     $OvertimeApplication = OvertimeApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','logs','activities'])
                     ->whereHas('employeeProfile.assignedArea', function ($query) use ($division) {
                         $query->where('id', $division);
@@ -575,7 +580,7 @@ class OvertimeApplicationController extends Controller
                         return response()->json(['message' => 'No records available'], Response::HTTP_OK);
                     }
                 }
-                else if($departmentHeadId == $user->id || $training_officer_id == $user->id) {
+                else if($departmentHeadId === $user->id || $training_officer_id === $user->id || $department_oic_Id === $user->id) {
                     $OvertimeApplication = OvertimeApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','logs','activities'])
                     ->whereHas('employeeProfile.assignedArea', function ($query) use ($department) {
                         $query->where('id', $department);
@@ -750,7 +755,7 @@ class OvertimeApplicationController extends Controller
                         return response()->json(['message' => 'No records available'], Response::HTTP_OK);
                     }
                 }
-                else if($sectionHeadId == $user->id) {
+                else if($sectionHeadId === $user->id || $section_oic_id === $user->id) {
                     $overtime_applications = OvertimeApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','logs','activities'])
                     ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
                         $query->where('id', $section);
@@ -925,6 +930,7 @@ class OvertimeApplicationController extends Controller
                         return response()->json(['message' => 'No records available'], Response::HTTP_OK);
                     }
                 }
+
             }catch(\Throwable $th){
 
                 return response()->json(['message' => $th->getMessage()], 500);
@@ -1914,6 +1920,7 @@ class OvertimeApplicationController extends Controller
                 $columnsString="";
                 $process_name="Applied";
                 $this->storeOvertimeApplicationLog($ovt_id,$process_name,$columnsString,$user->id);
+                
             DB::commit();
             $overtime_applications =OvertimeApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','logs','directDates'])
             ->where('id',$ovt_id)->get();

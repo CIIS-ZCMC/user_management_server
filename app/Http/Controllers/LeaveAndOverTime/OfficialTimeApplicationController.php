@@ -181,7 +181,12 @@ class OfficialTimeApplicationController extends Controller
             $department = AssignArea::where('employee_profile_id',$user->id)->value('department_id');
             $departmentHeadId = Department::where('id', $department)->value('head_employee_profile_id');
             $training_officer_id = Department::where('id', $department)->value('training_officer_employee_profile_id');
-            if($divisionHeadId == $user->id) {
+            $division_oic_Id = Division::where('id', $division)->value('oic_employee_profile_id');
+            $department_oic_Id = Division::where('id', $division)->value('oic_employee_profile_id');
+            $section_oic_id = Section::where('id', $section)->value('oic_employee_profile_id');
+
+
+            if($divisionHeadId === $user->id || $division_oic_Id === $user->id) {
                 $OfficialTimeApplication = OfficialTimeApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','logs'])
                         ->whereHas('employeeProfile.assignedArea', function ($query) use ($division) {
                             $query->where('id', $division);
@@ -315,7 +320,7 @@ class OfficialTimeApplicationController extends Controller
                     return response()->json(['message' => 'No records available'], Response::HTTP_OK);
                 }
             }
-            else if($departmentHeadId == $user->id || $training_officer_id == $user->id) {
+            else if($departmentHeadId === $user->id || $training_officer_id === $user->id || $department_oic_Id === $user->id) {
                 $OfficialTimeApplication = OfficialTimeApplication::with(['employeeProfile.assignedArea.department','employeeProfile.personalInformation','logs' ])
                 ->whereHas('employeeProfile.assignedArea', function ($query) use ($department) {
                     $query->where('id', $department);
@@ -449,7 +454,7 @@ class OfficialTimeApplicationController extends Controller
                     return response()->json(['message' => 'No records available'], Response::HTTP_OK);
                 }
             }
-            else if($sectionHeadId == $user->id) {
+            else if($sectionHeadId === $user->id || $section_oic_id === $user->id) {
                 $official_time_applications = OfficialTimeApplication::with(['employeeProfile.assignedArea.section','employeeProfile.personalInformation','logs'])
                 ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
                     $query->where('id', $section);

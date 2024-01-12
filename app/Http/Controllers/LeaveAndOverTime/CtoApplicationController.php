@@ -225,6 +225,7 @@ class CtoApplicationController extends Controller
                     $timeTo = Carbon::parse($cto_application_date_time->time_to);
                     $totalHours += $timeTo->diffInHours($timeFrom);
                 }
+                
                 $employee_cto_credits = new EmployeeOvertimeCredit();
                 $employee_cto_credits->employee_profile_id = $user->id;
                 $employee_cto_credits->cto_application_id = $cto_id;
@@ -923,7 +924,10 @@ class CtoApplicationController extends Controller
         $training_officer_id = Department::where('id', $department)->value('training_officer_employee_profile_id');
         $section = AssignArea::where('employee_profile_id',$user->id)->value('section_id');
         $sectionHeadId = Section::where('id', $section)->value('supervisor_employee_profile_id');
-        if($divisionHeadId == $user->id) {
+        $division_oic_Id = Division::where('id', $division)->value('chief_employee_profile_id');
+        $department_oic_Id = Division::where('id', $division)->value('chief_employee_profile_id');
+        $section_oic_id = Section::where('id', $section)->value('supervisor_employee_profile_id');
+        if($divisionHeadId === $user->id || $division_oic_Id === $user->id) {
             $cto_applications = CtoApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','logs'])
             ->whereHas('employeeProfile.assignedArea', function ($query) use ($division) {
                 $query->where('id', $division);
@@ -1074,7 +1078,7 @@ class CtoApplicationController extends Controller
 
 
         }
-        else if($sectionHeadId == $user->id) {
+        else if($sectionHeadId === $user->id || $section_oic_id === $user->id) {
             $cto_applications = ctoApplication::with(['employeeProfile.assignedArea.section','employeeProfile.personalInformation','logs'])
             ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
                 $query->where('id', $section);
@@ -1222,7 +1226,7 @@ class CtoApplicationController extends Controller
             }
 
         }
-        else  if($departmentHeadId == $user->id || $training_officer_id == $user->id) {
+        else  if($departmentHeadId === $user->id || $training_officer_id === $user->id || $department_oic_Id === $user->id) {
             $cto_applications = CtoApplication::with(['employeeProfile.assignedArea.department','employeeProfile.personalInformation','logs'])
             ->whereHas('employeeProfile.assignedArea', function ($query) use ($department) {
                 $query->where('id', $department);
