@@ -187,6 +187,12 @@ class LeaveTypeController extends Controller
                 'is_country' => $leaveType->is_country,
                 'is_illness' => $leaveType->is_illness,
                 'is_days_recommended' => $leaveType->is_days_recommended,
+                'requirements' => $leaveType->requirements->map(function ($requirement) {
+                                            return [
+                                                'id' => $requirement->id,
+                                                'name' => $requirement->name,
+                                            ];
+                                        }),
             ];
         });
 

@@ -481,7 +481,7 @@ class LeaveApplicationController extends Controller
         $training_officer_id = Department::where('id', $department)->value('training_officer_employee_profile_id');
         $section = AssignArea::where('employee_profile_id',$user->id)->value('section_id');
         $sectionHeadId = Section::where('id', $section)->value('supervisor_employee_profile_id');
-        if($hr_head_id === $user->id) {
+        if($hr_head_id === $user->id ) {
             $leave_applications = LeaveApplication::with(['employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
             // ->where('status', 'applied')
             ->get();
