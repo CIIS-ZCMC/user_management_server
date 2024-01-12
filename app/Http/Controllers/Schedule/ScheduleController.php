@@ -117,13 +117,14 @@ class ScheduleController extends Controller
                                 'last_name'     => $value['last_name'],
                                 'assigned_area' => $value['assigned_area'],
                                 'schedule'      => $schedule,
+                                'dates'         => $dates_with_day
                             ];
                         }
                     }
                 }
             }
         
-            return response()->json(['data' => $data, 'date'=> $dates_with_day], Response::HTTP_OK);
+            return response()->json(['data' => $data], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
@@ -296,8 +297,7 @@ class ScheduleController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
-            return response()->json(['data' => $data], Response::HTTP_OK);
+             return response()->json(['data' => $data], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
@@ -421,13 +421,13 @@ class ScheduleController extends Controller
             }
 
             $user = $request->user;
-            if ($user != null && $user->position()) {
-                $position = $user->position();
+            // if ($user != null && $user->position()) {
+            //     $position = $user->position();
 
-                if ($position->position === "Chief" || $position->position === "Department OIC" || $position->position === "Supervisor" || $position->position === "Section OIC" || $position->position === "Unit Head" || $position->position === "Unit OIC") {
+            //     if ($position->position === "Chief" || $position->position === "Department OIC" || $position->position === "Supervisor" || $position->position === "Section OIC" || $position->position === "Unit Head" || $position->position === "Unit OIC") {
                     
-                    $month  = $cleanData['month'];  // Replace with the desired month (1 to 12)
-                    $year   = $cleanData['year'];   // Replace with the desired year
+                    $month  = 12;  // Replace with the desired month (1 to 12)
+                    $year   = 2023;   // Replace with the desired year
 
                     $days   = Helpers::getDatesInMonth($year, $month, "Day");
                     $weeks  = Helpers::getDatesInMonth($year, $month, "Week");
@@ -438,7 +438,7 @@ class ScheduleController extends Controller
                         $query->with(['timeShift', 'holiday'])->whereYear('date_start', '=', $year)->whereMonth('date_start', '=', $month);
                     }])
                     ->whereHas('assignedArea', function ($query) use ($cleanData) {
-                        $query->where('section_id', $cleanData['section']);
+                        $query->where('section_id', 1);
                     })
                     ->select('employee_profiles.id','employee_id','biometric_id', 'PI.first_name','PI.middle_name', 'PI.last_name')
                     ->get();
@@ -447,29 +447,40 @@ class ScheduleController extends Controller
 
                     $pull_out = PullOut::all();
 
-                    $area = $user->assingedArea->findDetails();
-                    if ($area != null) {
-                        if($area->sector === 'Division'){
-                            $chief = $user->assignedArea->division->divisionHead;
-                        }
+                    
+                    $chief      = null;
+                    $head       = null;
+                    $supervisor = null;
+                    $unit_head  = null;
 
-                        if($area->sector === 'Department'){
-                            $head = $user->assignedArea->department->head;
-                        }
+                    // $area = $user->assignedArea->findDetails();
+                    // if ($area != null) {
+                    //     if($area['sector'] === 'Division'){
+                    //         $chief = $user->assignedArea->division->divisionHead;
+                    //     }
 
-                        if($area->sector === 'Section'){
-                            $supervisor = $user->assignedArea->department->supervisor;
-                        }
+                    //     if($area['sector'] === 'Department'){
+                    //         $head = $user->assignedArea->department->head;
+                    //     }
 
-                        if($area->sector === 'Unit'){
-                            $unit_head = $user->assignedArea->department->head;
-                        }
-                    }
+                    //     if($area['sector'] === 'Section'){
+                    //         // $supervisor = $user->assignedArea->department->supervisor;
+                    //     }
 
-                    Helpers::registerSystemLogs($request, $data->id, true, 'Success in delete '.$this->SINGULAR_MODULE_NAME.'.');
-                    return view('generate_schedule/section-schedule', compact('data', 'holiday', 'pull_out', 'month', 'year', 'days', 'weeks', 'dates', 'chief', 'head', 'supervisor', 'unit_head'));
-                }
-            }
+                    //     if($area['sector'] === 'Unit'){
+                    //         $unit_head = $user->assignedArea->department->head;
+                    //     }
+                    // }
+
+                    // Helpers::registerSystemLogs($request, $data->id, true, 'Success in generate '.$this->SINGULAR_MODULE_NAME.'.');
+                    return view('generate_schedule/section-schedule', compact('data', 'holiday', 'pull_out', 'month', 'year', 'days', 'weeks', 'dates','user', 'chief', 'head', 'supervisor', 'unit_head'));
+            //     } else {
+            //         return response()->json(['message' => 'User not allowed to create'], Response::HTTP_OK);
+            //     }
+                
+            // } else {
+            //     return response()->json(['message' => 'User no position'], Response::HTTP_OK);
+            // }
 
         } catch (\Throwable $th) {
 
