@@ -187,9 +187,9 @@ class PersonalInformationSeeder extends Seeder
         ]);
 
         $password = 'Zcmc_Umis2023@';
-        $hashPassword = Hash::make($password.env('SALT_VALUE'));
+        $hashPassword = Hash::make($password . env('SALT_VALUE'));
         $encryptedPassword = Crypt::encryptString($hashPassword);
-        
+
         $now = Carbon::now();
         $fortyDaysFromNow = $now->addDays(40);
         $fortyDaysExpiration = $fortyDaysFromNow->toDateTimeString();
@@ -224,7 +224,7 @@ class PersonalInformationSeeder extends Seeder
 
         $designations = Designation::all();
 
-        foreach($designations as $designation){
+        foreach ($designations as $designation) {
             Cache::forget($designation['name']);
         }
 
@@ -381,9 +381,9 @@ class PersonalInformationSeeder extends Seeder
         ]);
 
         $password = 'Zcmc_Umis2023@';
-        $hashPassword = Hash::make($password.env('SALT_VALUE'));
+        $hashPassword = Hash::make($password . env('SALT_VALUE'));
         $encryptedPassword = Crypt::encryptString($hashPassword);
-        
+
         $now = Carbon::now();
         $fortyDaysFromNow = $now->addDays(40);
         $fortyDaysExpiration = $fortyDaysFromNow->toDateTimeString();
@@ -418,7 +418,7 @@ class PersonalInformationSeeder extends Seeder
 
         $designations = Designation::all();
 
-        foreach($designations as $designation){
+        foreach ($designations as $designation) {
             Cache::forget($designation['name']);
         }
 
@@ -575,9 +575,9 @@ class PersonalInformationSeeder extends Seeder
         ]);
 
         $password = 'Zcmc_Umis2023@';
-        $hashPassword = Hash::make($password.env('SALT_VALUE'));
+        $hashPassword = Hash::make($password . env('SALT_VALUE'));
         $encryptedPassword = Crypt::encryptString($hashPassword);
-        
+
         $now = Carbon::now();
         $fortyDaysFromNow = $now->addDays(40);
         $fortyDaysExpiration = $fortyDaysFromNow->toDateTimeString();
@@ -612,7 +612,7 @@ class PersonalInformationSeeder extends Seeder
 
         $designations = Designation::all();
 
-        foreach($designations as $designation){
+        foreach ($designations as $designation) {
             Cache::forget($designation['name']);
         }
 
@@ -769,9 +769,9 @@ class PersonalInformationSeeder extends Seeder
         ]);
 
         $password = 'Zcmc_Umis2023@';
-        $hashPassword = Hash::make($password.env('SALT_VALUE'));
+        $hashPassword = Hash::make($password . env('SALT_VALUE'));
         $encryptedPassword = Crypt::encryptString($hashPassword);
-        
+
         $now = Carbon::now();
         $fortyDaysFromNow = $now->addDays(40);
         $fortyDaysExpiration = $fortyDaysFromNow->toDateTimeString();
@@ -806,7 +806,7 @@ class PersonalInformationSeeder extends Seeder
 
         $designations = Designation::all();
 
-        foreach($designations as $designation){
+        foreach ($designations as $designation) {
             Cache::forget($designation['name']);
         }
 
@@ -963,9 +963,9 @@ class PersonalInformationSeeder extends Seeder
         ]);
 
         $password = 'Zcmc_Umis2023@';
-        $hashPassword = Hash::make($password.env('SALT_VALUE'));
+        $hashPassword = Hash::make($password . env('SALT_VALUE'));
         $encryptedPassword = Crypt::encryptString($hashPassword);
-        
+
         $now = Carbon::now();
         $fortyDaysFromNow = $now->addDays(40);
         $fortyDaysExpiration = $fortyDaysFromNow->toDateTimeString();
@@ -1000,7 +1000,7 @@ class PersonalInformationSeeder extends Seeder
 
         $designations = Designation::all();
 
-        foreach($designations as $designation){
+        foreach ($designations as $designation) {
             Cache::forget($designation['name']);
         }
 
@@ -1157,9 +1157,9 @@ class PersonalInformationSeeder extends Seeder
         ]);
 
         $password = 'Zcmc_Umis2023@';
-        $hashPassword = Hash::make($password.env('SALT_VALUE'));
+        $hashPassword = Hash::make($password . env('SALT_VALUE'));
         $encryptedPassword = Crypt::encryptString($hashPassword);
-        
+
         $now = Carbon::now();
         $fortyDaysFromNow = $now->addDays(40);
         $fortyDaysExpiration = $fortyDaysFromNow->toDateTimeString();
@@ -1194,7 +1194,7 @@ class PersonalInformationSeeder extends Seeder
 
         $designations = Designation::all();
 
-        foreach($designations as $designation){
+        foreach ($designations as $designation) {
             Cache::forget($designation['name']);
         }
     }

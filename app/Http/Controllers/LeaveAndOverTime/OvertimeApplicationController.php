@@ -1690,7 +1690,7 @@ class OvertimeApplicationController extends Controller
                         }
                     },
                 ],
-                'letter_of_request' => 'required|image|mimes:jpeg,png,jpg,pdf|max:2048',
+                //   'letter_of_request' => 'required|image|mimes:jpeg,png,jpg,pdf|max:2048',
                 'purpose.*' => 'required|string|max:512',
                 'activities.*' => 'required',
                 'remarks.*' => 'required|string|max:512',
@@ -1701,18 +1701,20 @@ class OvertimeApplicationController extends Controller
 
             $user = $request->user;
             $area = AssignArea::where('employee_profile_id', $user->id)->value('division_id');
-            $division = Division::where('id', $area)->value('is_medical');
+            // $division = Division::where('id', $area)->value('is_medical');
+            $division = true;
             DB::beginTransaction();
             $path = "";
-            if ($request->hasFile('letter_of_request')) {
-                $folderName = 'Letter';
-                $image = $request->file('letter_of_request');
-                $imageName = time() . '.' . $image->getClientOriginalExtension();
-                $image->storeAs('images', $imageName, 'public');
+            // if ($request->hasFile('letter_of_request')) {
+            //     $folderName = 'Letter';
+            //     $image = $request->file('letter_of_request');
+            //     $imageName = time() . '.' . $image->getClientOriginalExtension();
+            //     $image->storeAs('images', $imageName, 'public');
 
-                Storage::makeDirectory('public/' . $folderName);
-                $path =  $image->storeAs('public/' . $folderName, $imageName);
-            }
+            //     Storage::makeDirectory('public/' . $folderName);
+            //     $path =  $image->storeAs('public/' . $folderName, $imageName);
+            // }
+            $imageName = 'sample.pdf';
             if ($division  === true) {
                 $status = 'for-approval-department-head';
             } else {
