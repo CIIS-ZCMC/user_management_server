@@ -473,7 +473,7 @@ class LeaveApplicationController extends Controller
         $leave_applications = [];
         // $section_hr = AssignArea::  where('employee_profile_id',$user->id)->value('section_id');
         $hr_head_id = Section::where('code', 'HRMO')->value('supervisor_employee_profile_id');
-        $omcc_head_id = Section::where('code', 'HRMO')->value('supervisor_employee_profile_id');
+        $omcc_head_id = Division::where('code', 'OMCC')->value('chief_employee_profile_id');
         $division = AssignArea::where('employee_profile_id',$user->id)->value('division_id');
         $divisionHeadId = Division::where('id', $division)->value('chief_employee_profile_id');
         $department = AssignArea::where('employee_profile_id',$user->id)->value('department_id');
@@ -669,7 +669,6 @@ class LeaveApplicationController extends Controller
         }
         else if($divisionHeadId === $user->id)
         {
-
             $leave_applications = LeaveApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
             ->whereHas('employeeProfile.assignedArea', function ($query) use ($division) {
                 $query->where('id', $division);
@@ -858,7 +857,7 @@ class LeaveApplicationController extends Controller
             }
 
         }
-        else if($departmentHeadId == $user->id || $training_officer_id == $user->id) {
+        else if($departmentHeadId === $user->id || $training_officer_id == $user->id) {
             $leave_applications = LeaveApplication::with(['employeeProfile.assignedArea.department','employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
             ->whereHas('employeeProfile.assignedArea', function ($query) use ($department) {
                 $query->where('id', $department);
@@ -1239,7 +1238,6 @@ class LeaveApplicationController extends Controller
 
         }
         else if($omcc_head_id === $user->id) {
-
             $leave_applications = LeaveApplication::with(['employeeProfile.assignedArea.section','employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
             ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
                 $query->where('id', $section);

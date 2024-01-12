@@ -177,7 +177,7 @@ class LeaveTypeController extends Controller
         // Map the result
         $result = $leaveTypes->map(function ($leaveType) {
             return [
-                'value' => $leaveType->id,
+                'value' => "$leaveType->id",
                 'label' => $leaveType->name,
                 'balance' => $leaveType->balance,
                 'description' => $leaveType->description,
