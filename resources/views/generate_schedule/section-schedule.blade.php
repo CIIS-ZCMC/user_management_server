@@ -237,7 +237,7 @@
                 <br>
                 <span class="signature"></span>
                 <br>
-                {{ $user->name }}
+                {{-- {{ $user->name }} --}}
                 <span>Position</span>
             </div>
 

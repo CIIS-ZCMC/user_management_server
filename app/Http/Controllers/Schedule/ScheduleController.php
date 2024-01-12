@@ -117,14 +117,13 @@ class ScheduleController extends Controller
                                 'last_name'     => $value['last_name'],
                                 'assigned_area' => $value['assigned_area'],
                                 'schedule'      => $schedule,
-                                'dates'         => $dates_with_day
                             ];
                         }
                     }
                 }
             }
         
-            return response()->json(['data' => $data], Response::HTTP_OK);
+            return response()->json(['data' => $data,'dates' => $dates_with_day], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
