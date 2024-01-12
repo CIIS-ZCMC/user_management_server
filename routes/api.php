@@ -51,54 +51,54 @@ Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(functi
 Route::middleware('auth.cookie')->group(function(){
 
     Route::namespace('App\Http\Controllers')->group(function () {
-        Route::middleware('auth.permission:user write')->group(function(){
+        Route::middleware('auth.permission:UMIS-SM write')->group(function(){
             Route::post('announcements', 'AnnouncementsController@store');
         });
 
-        Route::middleware('auth.permission:user update')->group(function(){
+        Route::middleware('auth.permission:UMIS-SM update')->group(function(){
             Route::put('announcements/{id}', 'AnnouncementsController@update');
         });
 
-        Route::middleware('auth.permission:user delete')->group(function(){
+        Route::middleware('auth.permission:UMIS-SM delete')->group(function(){
             Route::delete('announcements/{id}', 'AnnouncementsController@delete');
         });
         
         /** Events */
-        Route::middleware('auth.permission:user write')->group(function(){
+        Route::middleware('auth.permission:UMIS-SM write')->group(function(){
             Route::post('events', 'EventsController@store');
         });
 
-        Route::middleware('auth.permission:user update')->group(function(){
+        Route::middleware('auth.permission:UMIS-SM update')->group(function(){
             Route::put('events/{id}', 'EventsController@update');
         });
 
-        Route::middleware('auth.permission:user delete')->group(function(){
+        Route::middleware('auth.permission:UMIS-SM delete')->group(function(){
             Route::delete('events/{id}', 'EventsController@delete');
         });
         
         /** Memoranda */
-        Route::middleware('auth.permission:user write')->group(function(){
+        Route::middleware('auth.permission:UMIS-SM write')->group(function(){
             Route::post('memorandums', 'MemorandumsController@store');
         });
 
-        Route::middleware('auth.permission:user update')->group(function(){
+        Route::middleware('auth.permission:UMIS-SM update')->group(function(){
             Route::put('memorandums/{id}', 'MemorandumsController@update');
         });
 
-        Route::middleware('auth.permission:user delete')->group(function(){
+        Route::middleware('auth.permission:UMIS-SM delete')->group(function(){
             Route::delete('memorandums/{id}', 'MemorandumsController@delete');
         });
         
         /** News */
-        Route::middleware('auth.permission:user write')->group(function(){
+        Route::middleware('auth.permission:UMIS-SM write')->group(function(){
             Route::post('news', 'NewsController@store');
         });
 
-        Route::middleware('auth.permission:user update')->group(function(){
+        Route::middleware('auth.permission:UMIS-SM update')->group(function(){
             Route::put('news/{id}', 'NewsController@update');
         });
 
-        Route::middleware('auth.permission:user delete')->group(function(){
+        Route::middleware('auth.permission:UMIS-SM delete')->group(function(){
             Route::delete('news/{id}', 'NewsController@delete');
         });
     });
