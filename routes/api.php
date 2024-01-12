@@ -1615,7 +1615,7 @@ Route::middleware('auth.cookie')->group(function(){
         /**
          * Generate Schedule Module
          */
-        Route::middleware(['auth.permission:UMIS-ScM download'])->group(function(){
+        Route::middleware(['auth.permission:UMIS-ScM view'])->group(function(){
             Route::get('generate', 'ScheduleController@generate');
         });
 

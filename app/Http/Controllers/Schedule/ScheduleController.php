@@ -171,11 +171,11 @@ class ScheduleController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $user = $request->user;
-            if ($user != null && $user->position()) {
-                $position = $user->position();
+            // $user = $request->user;
+            // if ($user != null && $user->position()) {
+            //     $position = $user->position();
 
-                if ($position->position === "Chief" || $position->position === "Department OIC" || $position->position === "Supervisor" || $position->position === "Section OIC" || $position->position === "Unit Head" || $position->position === "Unit OIC") {
+            //     if ($position->position === "Chief" || $position->position === "Department OIC" || $position->position === "Supervisor" || $position->position === "Section OIC" || $position->position === "Unit Head" || $position->position === "Unit OIC") {
                     
                     $date_start     = Carbon::parse($cleanData['date_start']);    // Replace with your start date
                     $date_end       = Carbon::parse($cleanData['date_end']);      // Replace with your end date
@@ -193,8 +193,8 @@ class ScheduleController extends Controller
                         break;
         
                         case 'days_only' :
-                            $year   = Carbon::now()->year;              // Replace with your desired year
-                            $month  = $cleanData['selected_month'];     // Replace with your desired month
+                            $year   = Carbon::now()->year;  // Replace with your desired year
+                            $month  = $cleanData['month'];  // Replace with your desired month
         
                             $start_date = Carbon::create($year, $month, 1)->startOfMonth(); // Calculate the first day of the month
                             $end_date   = $start_date->copy()->endOfMonth();                // Calculate the last day of the month
@@ -269,15 +269,15 @@ class ScheduleController extends Controller
                     
                     Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
                     return response()->json(['data' => $data ,'message' => $msg], Response::HTTP_OK);
-                } else {
-                    return response()->json(['message' => 'User not allowed to create'], Response::HTTP_OK);
-                }
-            } else {
-                return response()->json(['message' => 'User no position'], Response::HTTP_OK);
-            }
+            //     } else {
+            //         return response()->json(['message' => 'User not allowed to create'], Response::HTTP_OK);
+            //     }
+            // } else {
+            //     return response()->json(['message' => 'User no position'], Response::HTTP_OK);
+            // }
 
         } catch (\Throwable $th) {
-
+            
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -419,14 +419,14 @@ class ScheduleController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $user = $request->user;
+            $user = null;
             // if ($user != null && $user->position()) {
             //     $position = $user->position();
 
-            //     if ($position->position === "Chief" || $position->position === "Department OIC" || $position->position === "Supervisor" || $position->position === "Section OIC" || $position->position === "Unit Head" || $position->position === "Unit OIC") {
+                // if ($position->position === "Chief" || $position->position === "Department OIC" || $position->position === "Supervisor" || $position->position === "Section OIC" || $position->position === "Unit Head" || $position->position === "Unit OIC") {
                     
-                    $month  = 12;  // Replace with the desired month (1 to 12)
-                    $year   = 2023;   // Replace with the desired year
+                    $month  = 01;  // Replace with the desired month (1 to 12)
+                    $year   = 2024;   // Replace with the desired year
 
                     $days   = Helpers::getDatesInMonth($year, $month, "Day");
                     $weeks  = Helpers::getDatesInMonth($year, $month, "Week");
