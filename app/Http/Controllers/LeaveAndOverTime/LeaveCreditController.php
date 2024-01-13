@@ -76,20 +76,9 @@ class LeaveCreditController extends Controller
         $currentMonth = date('m');
         $currentDate = date('Y-m-d');
         $pastMonth = date('m', strtotime('-1 month'));
-       // Subtract one month to get the last month
         $lastMonthDate = date('Y-m-d', strtotime('-1 month', strtotime($currentDate)));
-        // Get the first day of the last month
-        $firstDayOfLastMonth = date('Y-m-01', strtotime($lastMonthDate));
-        // Get the last day of the last month
-        $lastDayOfLastMonth = date('Y-m-t', strtotime($lastMonthDate));
-        $currentDate = date('Y-m-d');
-        // Subtract one month to get the last month
-        $lastMonthDate = date('Y-m-d', strtotime('-1 month', strtotime($currentDate)));
-         // Get the first day of the last month
-        $firstDayOfLastMonth = date('Y-m-01', strtotime($lastMonthDate));
-         // Get the last day of the last month
-        $lastDayOfLastMonth = date('Y-m-t', strtotime($lastMonthDate));
         $employees=[];
+
         $employees = ModelsEmployeeProfile::whereHas('employmentType', function ($query) {
             $query->where('name', 'Regular Full-Time')
                   ->orWhere('name', 'Regular Part-Time');
@@ -98,15 +87,13 @@ class LeaveCreditController extends Controller
         {
             foreach ($employees as $employee) {
                 $month = $currentMonth;
-                    $total_absences="0";
                     $total_undertime="0";
-                    $total_working_hours="150";
-                    $leaveTypes=[];
                     $vl_leave=[];
                     $leaveTypes = LeaveType::where('is_special', '=', '0')->get();
                     $vl_leave = LeaveType::where('id', '=', '1')->first();
                     $employee_leave_credits= ModelsEmployeeLeaveCredit::where('employee_profile_id',$employee->id)->get();
 
+                    // $undertime = $this->calculateUndertime($biometricId, $monthOf, $yearOf, $is15thDays, $firstHalf, $secondHalf);
                         $totalLeaveCredits = $employee_leave_credits->mapToGroups(function ($credit) {
                             return [$credit->operation => $credit->credit_value];
                         })->map(function ($operationCredits, $operation) {

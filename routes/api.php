@@ -24,15 +24,15 @@ Route::namespace('App\Http\Controllers')->group(function () {
     Route::get('announcements', 'AnnouncementsController@index');
     Route::get('announcements-search', 'AnnouncementsController@searchAnnouncement');
     Route::get('announcements/{id}', 'AnnouncementsController@show');
-    
+
     Route::get('events', 'EventsController@index');
     Route::get('events-search', 'EventsController@searchEvents');
     Route::get('events/{id}', 'EventsController@show');
-    
+
     Route::get('memorandums', 'MemorandumsController@index');
     Route::get('memorandums-search', 'MemorandumsController@searchMemorandum');
     Route::get('memorandums/{id}', 'MemorandumsController@show');
-    
+
     Route::get('news', 'NewsController@index');
     Route::get('news-search', 'NewsController@searchNews');
     Route::get('news/{id}', 'NewsController@show');
@@ -62,7 +62,7 @@ Route::middleware('auth.cookie')->group(function(){
         Route::middleware('auth.permission:UMIS-SM delete')->group(function(){
             Route::delete('announcements/{id}', 'AnnouncementsController@delete');
         });
-        
+
         /** Events */
         Route::middleware('auth.permission:UMIS-SM write')->group(function(){
             Route::post('events', 'EventsController@store');
@@ -75,7 +75,7 @@ Route::middleware('auth.cookie')->group(function(){
         Route::middleware('auth.permission:UMIS-SM delete')->group(function(){
             Route::delete('events/{id}', 'EventsController@delete');
         });
-        
+
         /** Memoranda */
         Route::middleware('auth.permission:UMIS-SM write')->group(function(){
             Route::post('memorandums', 'MemorandumsController@store');
@@ -88,7 +88,7 @@ Route::middleware('auth.cookie')->group(function(){
         Route::middleware('auth.permission:UMIS-SM delete')->group(function(){
             Route::delete('memorandums/{id}', 'MemorandumsController@delete');
         });
-        
+
         /** News */
         Route::middleware('auth.permission:UMIS-SM write')->group(function(){
             Route::post('news', 'NewsController@store');
@@ -122,7 +122,7 @@ Route::middleware('auth.cookie')->group(function(){
         Route::put('freedom-wall-messages/{id}', 'FreedomWallMessagesController@update');
         Route::delete('freedom-wall-messages/{id}', 'FreedomWallMessagesController@destroy');
     });
-    
+
     /**
      * User Management Information System
      */
@@ -1397,7 +1397,7 @@ Route::middleware('auth.cookie')->group(function(){
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
             Route::delete('work-experience-employee/{id}', 'WorkExperienceController@destroyByEmployeeID');
         });
-        
+
     });
 
     /**
@@ -1479,6 +1479,7 @@ Route::middleware('auth.cookie')->group(function(){
         Route::middleware(['auth.permission:UMIS-LM download'])->group(function(){
             Route::post('print-leave-form/{id}', 'LeaveApplicationController@printLeaveForm');
         });
+
 
     });
 
