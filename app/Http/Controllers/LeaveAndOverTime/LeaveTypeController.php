@@ -177,15 +177,22 @@ class LeaveTypeController extends Controller
         // Map the result
         $result = $leaveTypes->map(function ($leaveType) {
             return [
-                'value' => $leaveType->id,
+                'value' => "$leaveType->id",
                 'label' => $leaveType->name,
                 'balance' => $leaveType->balance,
                 'description' => $leaveType->description,
                 'file_date' => $leaveType->file_date,
                 'period' => $leaveType->period,
+                'is_special' => $leaveType->is_special,
                 'is_country' => $leaveType->is_country,
                 'is_illness' => $leaveType->is_illness,
                 'is_days_recommended' => $leaveType->is_days_recommended,
+                'requirements' => $leaveType->requirements->map(function ($requirement) {
+                                            return [
+                                                'id' => $requirement->id,
+                                                'name' => $requirement->name,
+                                            ];
+                                        }),
             ];
         });
 
