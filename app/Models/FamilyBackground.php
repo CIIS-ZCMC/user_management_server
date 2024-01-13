@@ -29,7 +29,7 @@ class FamilyBackground extends Model
         'mother_first_name',
         'mother_middle_name',
         'mother_last_name',
-        'mother_ext_name',
+        'mother_maiden_name',
         'personal_information_id'
     ];
 
@@ -42,14 +42,12 @@ class FamilyBackground extends Model
 
     public function fatherName()
     {
-        $extName = $this->father_ext_name===null?'':$this->father_ext_name;
-        return $this->father_first_name.' '.$this->father_last_name.' '.$extName;
+        return $this->father_last_name.','.$this->father_first_name.' '.$this->father_middle_name;
     }
 
     public function motherName()
     {
-        $extName = $this->mother_ext_name===null?'':$this->mother_ext_name;
-        return $this->mother_first_name.' '.$this->mother_last_name.' '.$extName;
+        return $this->mother_last_name.','.$this->mother_first_name.' '.$this->mother_middle_name;
     }
 
     public function decryptData($toEncrypt)

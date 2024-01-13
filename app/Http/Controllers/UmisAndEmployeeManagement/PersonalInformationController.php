@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
-use App\Services\RequestLogger;
+use App\Helpers\Helpers;
 use App\Services\FileValidationAndUpload;
 use App\Http\Requests\PersonalInformationRequest;
 use App\Http\Resources\PersonalInformationResource;
@@ -22,12 +22,10 @@ class PersonalInformationController extends Controller
     private $PLURAL_MODULE_NAME = 'personal informations';
     private $SINGULAR_MODULE_NAME = 'personal information';
 
-    protected $requestLogger;
     protected $fileValidateAndUpload;
 
-    public function __construct(RequestLogger $requestLogger, FileValidationAndUpload $fileValidateAndUpload)
+    public function __construct(FileValidationAndUpload $fileValidateAndUpload)
     {
-        $this->requestLogger = $requestLogger;
         $this->fileValidateAndUpload = $fileValidateAndUpload;
     }
     
@@ -35,12 +33,10 @@ class PersonalInformationController extends Controller
     {
         try{
             $personal_informations = PersonalInformation::all();
-
-            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
             
             return response()->json(['data' => PersonalInformationResource::collection($personal_informations)], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -53,7 +49,7 @@ class PersonalInformationController extends Controller
     public function store(PersonalInformationRequest $request)
     {
         try{
-            $is_res_per = $request->is_res_per === 1? true:false;
+            $is_res_per = $request->is_res_per === 1 ? true:false;
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
@@ -74,8 +70,9 @@ class PersonalInformationController extends Controller
                 'address' => strip_tags($request->r_address),
                 'telephone' => strip_tags($request->r_telephone),
                 'zip_code' => strip_tags($request->r_zip_code),
-                'is_res_per' => $is_res_per,
-                'type' => 'residential',
+                'is_res_per' => $request->is_res_per,
+                'is_residential' => 1,
+                // 'type' => 'residential',
                 'personal_information_id' => $personal_information->id
             ];
 
@@ -95,24 +92,26 @@ class PersonalInformationController extends Controller
                 'address' => strip_tags($request->p_address),
                 'telephone' => strip_tags($request->p_telephone),
                 'zip_code' => strip_tags($request->p_zip_code),
-                'is_res_per' => $is_res_per,
-                'type' => 'permanent',
+                'is_res_per' => 0,
+                'is_residential' => 0,
+                // 'type' => 'permanent',
                 'personal_information_id' => $personal_information->id
             ];
 
             $permanent = Address::create($permanent_address);
 
             $data = [
+                'personal_information_id' => $personal_information->id,
                 'personal_information' => $personal_information,
                 'residential' => $residential,
                 'permanent' => $permanent
             ];
             
-            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json($data, Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -127,11 +126,9 @@ class PersonalInformationController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json(['data' => new PersonalInformationResource($personal_information)], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -149,11 +146,11 @@ class PersonalInformationController extends Controller
 
             $personal_information->update($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['data' => new PersonalInformationResource($personal_information),'message' => 'Employee PDS updated.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -180,11 +177,11 @@ class PersonalInformationController extends Controller
 
             $personal_information -> delete();
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
