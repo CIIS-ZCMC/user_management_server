@@ -26,7 +26,7 @@ return new class extends Migration
             $table->string('date')->nullable();
             $table->string('time')->nullable();
             $table->string('decline_reason')->nullable();
-            $table->boolean('with_pay')->default(false);
+            $table->boolean('without_pay')->default(false);
             $table->unsignedBigInteger('employee_profile_id')->unsigned();
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->unsignedBigInteger('leave_type_id')->unsigned();

@@ -22,6 +22,8 @@ use App\Services\FileService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 class OfficialTimeApplicationController extends Controller
 {
     protected $file_service;
@@ -179,10 +181,15 @@ class OfficialTimeApplicationController extends Controller
             $department = AssignArea::where('employee_profile_id',$user->id)->value('department_id');
             $departmentHeadId = Department::where('id', $department)->value('head_employee_profile_id');
             $training_officer_id = Department::where('id', $department)->value('training_officer_employee_profile_id');
-            if($divisionHeadId == $user->id) {
+            $division_oic_Id = Division::where('id', $division)->value('oic_employee_profile_id');
+            $department_oic_Id = Division::where('id', $division)->value('oic_employee_profile_id');
+            $section_oic_id = Section::where('id', $section)->value('oic_employee_profile_id');
+
+
+            if($divisionHeadId === $user->id || $division_oic_Id === $user->id) {
                 $OfficialTimeApplication = OfficialTimeApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','logs'])
                         ->whereHas('employeeProfile.assignedArea', function ($query) use ($division) {
-                            $query->where('id', $division);
+                            $query->where('division_id', $division);
                         })
                         ->where('status', 'for-approval-division-head')
                         ->orwhere('status', 'approved')
@@ -313,10 +320,10 @@ class OfficialTimeApplicationController extends Controller
                     return response()->json(['message' => 'No records available'], Response::HTTP_OK);
                 }
             }
-            else if($departmentHeadId == $user->id || $training_officer_id == $user->id) {
+            else if($departmentHeadId === $user->id || $training_officer_id === $user->id || $department_oic_Id === $user->id) {
                 $OfficialTimeApplication = OfficialTimeApplication::with(['employeeProfile.assignedArea.department','employeeProfile.personalInformation','logs' ])
                 ->whereHas('employeeProfile.assignedArea', function ($query) use ($department) {
-                    $query->where('id', $department);
+                    $query->where('department_id', $department);
                 })
                 ->where('status', 'for-approval-department-head')
                 ->orWhere('status', 'for-approval-division-head')
@@ -447,10 +454,10 @@ class OfficialTimeApplicationController extends Controller
                     return response()->json(['message' => 'No records available'], Response::HTTP_OK);
                 }
             }
-            else if($sectionHeadId == $user->id) {
+            else if($sectionHeadId === $user->id || $section_oic_id === $user->id) {
                 $official_time_applications = OfficialTimeApplication::with(['employeeProfile.assignedArea.section','employeeProfile.personalInformation','logs'])
                 ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
-                    $query->where('id', $section);
+                    $query->where('section_id', $section);
                 })
                 ->where('status', 'for-approval-section-head')
                 ->orWhere('status', 'for-approval-division-head')
@@ -600,13 +607,16 @@ class OfficialTimeApplicationController extends Controller
                     $division = AssignArea::where('employee_profile_id',$ot_application->employee_profile_id)->value('division_id');
                     $department = AssignArea::where('employee_profile_id',$ot_application->employee_profile_id)->value('department_id');
                     $section = AssignArea::where('employee_profile_id',$ot_application->employee_profile_id)->value('section_id');
-                    $chief_name=null;
+                    $chief_first_name=null;
+                    $chief_last_name=null;
                     $chief_position=null;
                     $chief_code=null;
-                    $head_name=null;
+                    $head_first_name=null;
+                    $head_last_name=null;
                     $head_position=null;
                     $head_code=null;
-                    $supervisor_name=null;
+                    $supervisor_first_name=null;
+                    $supervisor_last_name=null;
                     $supervisor_position=null;
                     $supervisor_code=null;
                     if($division) {
@@ -614,7 +624,8 @@ class OfficialTimeApplicationController extends Controller
 
                         if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
                         {
-                            $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
+                            $chief_first_name = optional($division_name->chief->personalInformation)->first_name ?? null;
+                            $chief_last_name =optional($division_name->chief->personalInformation)->last_name ?? null;
                             $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
                             $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
                         }
@@ -624,7 +635,8 @@ class OfficialTimeApplicationController extends Controller
                         $department_name = Department::with('head.personalInformation')->find($department);
                         if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
                         {
-                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                            $head_first_name = optional($department_name->head->personalInformation)->first_name ?? null;
+                            $head_last_name = optional($department_name->head->personalInformation)->last_name ?? null;
                             $head_position = $department_name->head->assignedArea->designation->name ?? null;
                             $head_code = $department_name->head->assignedArea->designation->code ?? null;
                         }
@@ -634,7 +646,8 @@ class OfficialTimeApplicationController extends Controller
                         $section_name = Section::with('supervisor.personalInformation')->find($section);
                         if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
                         {
-                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                            $supervisor_first_name = optional($section_name->supervisor->personalInformation)->first_name ?? null;
+                            $supervisor_last_name = optional($section_name->supervisor->personalInformation)->last_name ?? null;
                             $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
                             $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
                         }
@@ -664,13 +677,16 @@ class OfficialTimeApplicationController extends Controller
                         'position_code' => $ot_application->employeeProfile->assignedArea->designation->code ?? null,
                         'position_name' => $ot_application->employeeProfile->assignedArea->designation->name ?? null,
                         'date_created' => $ot_application->created_at,
-                        'division_head' =>$chief_name,
+                        'division_head_first' =>$chief_first_name,
+                        'division_head_last' =>$chief_last_name,
                         'division_head_position'=> $chief_position,
                         'division_head_code'=> $chief_code,
-                        'department_head' =>$head_name,
+                        'department_head_first' =>$head_first_name,
+                        'department_head_last' =>$head_last_name,
                         'department_head_position' =>$head_position,
                         'department_head_code' =>$head_code,
-                        'section_head' =>$supervisor_name,
+                        'section_head_first' =>$supervisor_first_name,
+                        'section_head_last' =>$supervisor_last_name,
                         'section_head_position' =>$supervisor_position,
                         'section_head_code' =>$supervisor_code,
                         'division_name' => $ot_application->employeeProfile->assignedArea->division->name ?? null,
@@ -726,15 +742,26 @@ class OfficialTimeApplicationController extends Controller
         try{
             $validatedData = $request->validate([
                 'date_from' => 'required|date_format:Y-m-d',
-                'date_to' => 'required_with:date_from|date_format:Y-m-d|after:date_from',
-                'certificate_of_appearance' => 'required|image|mimes:jpeg,png,jpg,pdf|max:2048',
-                'personal_order' => 'required|image|mimes:jpeg,png,jpg,pdf|max:2048',
+                'date_to.*' => [
+                    'required',
+                    'date_format:Y-m-d',
+                    function ($attribute, $value, $fail) use ($request) {
+                        $index = explode('.', $attribute)[1];
+                        $dateFrom = $request->input('date_from.' . $index);
+                        if ($value < $dateFrom) {
+                            $fail("The date to must be greater than date from.");
+                        }
+                    },
+                ],
+                'certificate_of_appearance' =>'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
+                'personal_order' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
                 'reason' => 'required|string|max:512',
             ]);
 
             $user=$request->user;
             $area = AssignArea::where('employee_profile_id',$user->id)->value('division_id');
-            $division = Division::where('id',$area)->value('is_medical');
+            // $division = Division::where('id',$area)->value('is_medical');
+            $division=true;
             DB::beginTransaction();
                 $official_time_application = new OfficialTimeApplication();
                 $official_time_application->employee_profile_id = $user->id;
@@ -742,8 +769,8 @@ class OfficialTimeApplicationController extends Controller
                 $official_time_application->date_to = $request->date_to;
                 // $official_time_application->time_from = $request->time_from;
                 // $official_time_application->time_to = $request->time_to;
-                if($division === true)
-                {
+                $divisions = Division::where('id',$area)->first();
+                if ($divisions->code === 'NS' || $divisions->code === 'MS') {
                     $status='for-approval-department-head';
                 }
                 else
@@ -796,13 +823,16 @@ class OfficialTimeApplicationController extends Controller
                  $division = AssignArea::where('employee_profile_id',$official_time_application->employee_profile_id)->value('division_id');
                     $department = AssignArea::where('employee_profile_id',$official_time_application->employee_profile_id)->value('department_id');
                     $section = AssignArea::where('employee_profile_id',$official_time_application->employee_profile_id)->value('section_id');
-                    $chief_name=null;
+                    $chief_first_name=null;
+                    $chief_last_name=null;
                     $chief_position=null;
                     $chief_code=null;
-                    $head_name=null;
+                    $head_first_name=null;
+                    $head_last_name=null;
                     $head_position=null;
                     $head_code=null;
-                    $supervisor_name=null;
+                    $supervisor_first_name=null;
+                    $supervisor_last_name=null;
                     $supervisor_position=null;
                     $supervisor_code=null;
                     if($division) {
@@ -810,7 +840,8 @@ class OfficialTimeApplicationController extends Controller
 
                         if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
                         {
-                            $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
+                            $chief_first_name = optional($division_name->chief->personalInformation)->first_name ?? null;
+                            $chief_last_name =optional($division_name->chief->personalInformation)->last_name ?? null;
                             $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
                             $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
                         }
@@ -820,7 +851,8 @@ class OfficialTimeApplicationController extends Controller
                         $department_name = Department::with('head.personalInformation')->find($department);
                         if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
                         {
-                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                            $head_first_name = optional($department_name->head->personalInformation)->first_name ?? null;
+                            $head_last_name = optional($department_name->head->personalInformation)->last_name ?? null;
                             $head_position = $department_name->head->assignedArea->designation->name ?? null;
                             $head_code = $department_name->head->assignedArea->designation->code ?? null;
                         }
@@ -830,7 +862,8 @@ class OfficialTimeApplicationController extends Controller
                         $section_name = Section::with('supervisor.personalInformation')->find($section);
                         if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
                         {
-                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                            $supervisor_first_name = optional($section_name->supervisor->personalInformation)->first_name ?? null;
+                            $supervisor_last_name = optional($section_name->supervisor->personalInformation)->last_name ?? null;
                             $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
                             $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
                         }
@@ -859,13 +892,16 @@ class OfficialTimeApplicationController extends Controller
                         'position_code' => $official_time_application->employeeProfile->assignedArea->designation->code ?? null,
                         'position_name' => $official_time_application->employeeProfile->assignedArea->designation->name ?? null,
                         'date_created' => $official_time_application->created_at,
-                        'division_head' =>$chief_name,
+                        'division_head_first' =>$chief_first_name,
+                        'division_head_last' =>$chief_last_name,
                         'division_head_position'=> $chief_position,
                         'division_head_code'=> $chief_code,
-                        'department_head' =>$head_name,
+                        'department_head_first' =>$head_first_name,
+                        'department_head_last' =>$head_last_name,
                         'department_head_position' =>$head_position,
                         'department_head_code' =>$head_code,
-                        'section_head' =>$supervisor_name,
+                        'section_head_first' =>$supervisor_first_name,
+                        'section_head_last' =>$supervisor_last_name,
                         'section_head_position' =>$supervisor_position,
                         'section_head_code' =>$supervisor_code,
                         'division_name' => $official_time_application->employeeProfile->assignedArea->division->name ?? null,
@@ -916,15 +952,17 @@ class OfficialTimeApplicationController extends Controller
     public function declineOtApplication($id,Request $request)
     {
         try {
-
+                $user=$request->user;
                 $ot_applications = OfficialTimeApplication::where('id','=', $id)
                                                             ->first();
                 if($ot_applications)
                 {
-                        $user=$request->user;
-                        $user_password=$user->password_encrypted;
-                        $password=$request->password;
-                        if($user_password==$password)
+                    $password_decrypted = Crypt::decryptString($user['password_encrypted']);
+                    $password = strip_tags($request->password);
+                        if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                            return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+                        }
+                        else
                         {
                             DB::beginTransaction();
                                 $ot_application_log = new ModelsOtApplicationLog();
@@ -1231,9 +1269,12 @@ class OfficialTimeApplicationController extends Controller
     {
         try {
                 $user = $request->user;
-                $user_password=$user->password_encrypted;
-                $password=$request->password;
-                if($user_password==$password)
+                $password_decrypted = Crypt::decryptString($user['password_encrypted']);
+                $password = strip_tags($request->password);
+                if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                    return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+                }
+                else
                 {
                             $message_action = '';
                             $action = '';
@@ -1393,9 +1434,7 @@ class OfficialTimeApplicationController extends Controller
                                 return response(['message' => 'Application has been sucessfully '.$message_action, 'data' => $singleArray], Response::HTTP_OK);
                                 }
                 }
-                else{
-                    return response()->json(['message' => 'Incorrect Password'], Response::HTTP_OK);
-                }
+
             }
 
 

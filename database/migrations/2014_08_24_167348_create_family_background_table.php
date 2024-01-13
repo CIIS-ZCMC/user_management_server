@@ -19,7 +19,7 @@ return new class extends Migration
             $table->date('date_of_birth')->nullable();
             $table->string('occupation')->nullable();
             $table->string('employer')->nullable();
-            $table->date('business_address')->nullable();
+            $table->string('business_address')->nullable();
             $table->string('telephone_no')->nullable();
             $table->string('tin_no')->nullable();
             $table->string('rdo_no')->nullable();
@@ -30,7 +30,7 @@ return new class extends Migration
             $table->string('mother_first_name');
             $table->string('mother_middle_name')->nullable();
             $table->string('mother_last_name');
-            $table->string('mother_ext_name')->nullable();
+            $table->string('mother_maiden_name')->nullable();
             $table->unsignedBigInteger('personal_information_id')->nullable();
             $table->foreign('personal_information_id')->references('id')->on('personal_informations');
             $table->timestamps();

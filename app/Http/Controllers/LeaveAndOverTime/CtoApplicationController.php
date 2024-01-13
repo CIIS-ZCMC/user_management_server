@@ -15,6 +15,8 @@ use App\Models\Section;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 class CtoApplicationController extends Controller
 {
     public function index()
@@ -170,11 +172,21 @@ class CtoApplicationController extends Controller
         try{
             $user = $request->user;
             $area = AssignArea::where('employee_profile_id',$user->id)->value('division_id');
-            $division = Division::where('id',$area)->value('is_medical');
-            // $division=true;
+            $divisions = Division::where('id',$area)->first();
+
             $validatedData = $request->validate([
                 'time_from.*' => 'required|date_format:H:i',
-                'time_to.*' => 'required|date_format:H:i|after_or_equal:time_from.*',
+                'time_to.*' => [
+                    'required',
+                    'date_format::H:i',
+                    function ($attribute, $value, $fail) use ($request) {
+                        $index = explode('.', $attribute)[1];
+                        $dateFrom = $request->input('time_from.' . $index);
+                        if ($value < $dateFrom) {
+                            $fail("The time to must be greater than time from.");
+                        }
+                    },
+                ],
                 'date.*' => 'required|date_format:Y-m-d',
                 'purpose.*' => 'required|string|max:512',
             ]);
@@ -183,14 +195,16 @@ class CtoApplicationController extends Controller
                 $cto_application->employee_profile_id = $user->id;
                 $cto_application->remarks = $request->remarks;
                 // $cto_application->purpose = $request->purpose;
-                if($division === true)
-                {
-                    $status='for-approval-department-head';
-                }
-                else
-                {
-                    $status='for-approval-section-head';
-                }
+                $divisions = Division::where('id',$area)->first();
+                    if ($divisions->code === 'NS' || $divisions->code === 'MS') {
+
+                        $status='for-approval-department-head';
+                    }
+                    else
+                    {
+                        $status='for-approval-section-head';
+                    }
+
                 $cto_application->status = $status;
                 $cto_application->date = date('Y-m-d');
                 $cto_application->time =  date('H:i:s');
@@ -214,6 +228,24 @@ class CtoApplicationController extends Controller
                 $columnsString="";
                 $process_name="Applied";
                 $this->storeCTOApplicationLog($cto_id,$process_name,$columnsString,$user->id);
+                $cto_application_date_times=CtoApplicationDate::where('cto_application_id',$cto_id)->get();
+                $totalHours = 0;
+                foreach ($cto_application_date_times as $cto_application_date_time) {
+                    $timeFrom = Carbon::parse($cto_application_date_time->time_from);
+                    $timeTo = Carbon::parse($cto_application_date_time->time_to);
+                    $totalHours += $timeTo->diffInHours($timeFrom);
+                }
+
+                $employee_cto_credits = new EmployeeOvertimeCredit();
+                $employee_cto_credits->employee_profile_id = $user->id;
+                $employee_cto_credits->cto_application_id = $cto_id;
+                $employee_cto_credits->operation = "deduct";
+                $employee_cto_credits->reason = "CTO";
+                $employee_cto_credits->overtime_hours = $totalHours;
+                $employee_cto_credits->credit_value = $totalHours;
+                $employee_cto_credits->date = date('Y-m-d');
+                $employee_cto_credits->save();
+
                 DB::commit();
 
             $cto_applications = CtoApplication::with(['employeeProfile.personalInformation','dates','logs'])
@@ -385,10 +417,12 @@ class CtoApplicationController extends Controller
                                                             ->first();
                 if($cto_applications)
                 {
-                        $user_password=$user->password_encrypted;
-                        $password=$request->password;
-                        if($user_password==$password)
-                        {
+                    $password_decrypted = Crypt::decryptString($user['password_encrypted']);
+                    $password = strip_tags($request->password);
+                    if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                        return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+                    }
+                    else{
 
                             DB::beginTransaction();
                                 $cto_application_log = new CtoApplicationLog();
@@ -542,10 +576,7 @@ class CtoApplicationController extends Controller
 
 
                         }
-                        else
-                        {
-                            return response()->json(['message' => 'Incorrect Password'], Response::HTTP_OK);
-                        }
+
                 }
             } catch (\Exception $e) {
                 DB::rollBack();
@@ -903,10 +934,13 @@ class CtoApplicationController extends Controller
         $training_officer_id = Department::where('id', $department)->value('training_officer_employee_profile_id');
         $section = AssignArea::where('employee_profile_id',$user->id)->value('section_id');
         $sectionHeadId = Section::where('id', $section)->value('supervisor_employee_profile_id');
-        if($divisionHeadId == $user->id) {
+        $division_oic_Id = Division::where('id', $division)->value('chief_employee_profile_id');
+        $department_oic_Id = Division::where('id', $division)->value('chief_employee_profile_id');
+        $section_oic_id = Section::where('id', $section)->value('supervisor_employee_profile_id');
+        if($divisionHeadId === $user->id || $division_oic_Id === $user->id) {
             $cto_applications = CtoApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','logs'])
             ->whereHas('employeeProfile.assignedArea', function ($query) use ($division) {
-                $query->where('id', $division);
+                $query->where('division_id', $division);
             })
             ->where('status', 'for-approval-division-head')
             ->orwhere('status', 'approved')
@@ -1054,10 +1088,10 @@ class CtoApplicationController extends Controller
 
 
         }
-        else if($sectionHeadId == $user->id) {
+        else if($sectionHeadId === $user->id || $section_oic_id === $user->id) {
             $cto_applications = ctoApplication::with(['employeeProfile.assignedArea.section','employeeProfile.personalInformation','logs'])
             ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
-                $query->where('id', $section);
+                $query->where('section_id', $section);
             })
             ->where('status', 'for-approval-division-head')
             ->orwhere('status', 'approved')
@@ -1202,10 +1236,10 @@ class CtoApplicationController extends Controller
             }
 
         }
-        else  if($departmentHeadId == $user->id || $training_officer_id == $user->id) {
+        else  if($departmentHeadId === $user->id || $training_officer_id === $user->id || $department_oic_Id === $user->id) {
             $cto_applications = CtoApplication::with(['employeeProfile.assignedArea.department','employeeProfile.personalInformation','logs'])
             ->whereHas('employeeProfile.assignedArea', function ($query) use ($department) {
-                $query->where('id', $department);
+                $query->where('department_id', $department);
             })
             ->where('status', 'for-approval-department-head')
             ->orwhere('status', 'approved')
@@ -1984,11 +2018,13 @@ class CtoApplicationController extends Controller
     public function updateStatus($id,$status,Request $request)
     {
         try {
-                $user = $request->user;
-                $user_password=$user->password_encrypted;
-                $password=$request->password;
-                if($user_password==$password)
-                {
+            $user = $request->user;
+            $password_decrypted = Crypt::decryptString($user['password_encrypted']);
+            $password = strip_tags($request->password);
+                if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                    return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+                }
+                else{
                             // $division= true;
                             $message_action = '';
                             $action = '';
@@ -2025,25 +2061,25 @@ class CtoApplicationController extends Controller
                                     $cto_application->status = $new_status;
                                     $cto_application->update();
 
-                                    if($new_status=="approved")
-                                    {
-                                        $cto_application_date_times=CtoApplicationDate::where('cto_application_id',$id)->get();
-                                        $totalHours = 0;
-                                        foreach ($cto_application_date_times as $cto_application_date_time) {
-                                            $timeFrom = Carbon::parse($cto_application_date_time->time_from);
-                                            $timeTo = Carbon::parse($cto_application_date_time->time_to);
-                                            $totalHours += $timeTo->diffInHours($timeFrom);
-                                        }
-                                        $employee_cto_credits = new EmployeeOvertimeCredit();
-                                        $employee_cto_credits->employee_profile_id = $cto_applications->employee_profile_id;
-                                        $employee_cto_credits->cto_application_id = $id;
-                                        $employee_cto_credits->operation = "deduct";
-                                        // $employee_cto_credits->reason = "cto";
-                                        $employee_cto_credits->overtime_hours = $totalHours;
-                                        $employee_cto_credits->credit_value = $totalHours;
-                                        $employee_cto_credits->date = date('Y-m-d');
-                                        $employee_cto_credits->save();
-                                    }
+                                    // if($new_status=="approved")
+                                    // {
+                                    //     $cto_application_date_times=CtoApplicationDate::where('cto_application_id',$id)->get();
+                                    //     $totalHours = 0;
+                                    //     foreach ($cto_application_date_times as $cto_application_date_time) {
+                                    //         $timeFrom = Carbon::parse($cto_application_date_time->time_from);
+                                    //         $timeTo = Carbon::parse($cto_application_date_time->time_to);
+                                    //         $totalHours += $timeTo->diffInHours($timeFrom);
+                                    //     }
+                                    //     $employee_cto_credits = new EmployeeOvertimeCredit();
+                                    //     $employee_cto_credits->employee_profile_id = $cto_applications->employee_profile_id;
+                                    //     $employee_cto_credits->cto_application_id = $id;
+                                    //     $employee_cto_credits->operation = "deduct";
+                                    //     // $employee_cto_credits->reason = "cto";
+                                    //     $employee_cto_credits->overtime_hours = $totalHours;
+                                    //     $employee_cto_credits->credit_value = $totalHours;
+                                    //     $employee_cto_credits->date = date('Y-m-d');
+                                    //     $employee_cto_credits->save();
+                                    // }
                                 DB::commit();
                                 $cto_applications = CtoApplication::with(['employeeProfile.personalInformation','dates','logs'])
                                 ->where('id',$cto_application->id)->get();
@@ -2180,9 +2216,7 @@ class CtoApplicationController extends Controller
                                 return response(['message' => 'Application has been sucessfully '.$message_action, 'data' => $singleArray], Response::HTTP_OK);
                                     }
                 }
-                else{
-                    return response()->json(['message' => 'Incorrect Password'], Response::HTTP_OK);
-                }
+
             }
          catch (\Exception $e) {
             DB::rollBack();
