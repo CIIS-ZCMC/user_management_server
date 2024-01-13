@@ -39,15 +39,15 @@ class LeaveCreditController extends Controller
 
     public function addMonthlyLeaveCredit(Request $request)
     {
-
         $employees=[];
-        $employees = ModelsEmployeeProfile::get();
-        $employment_type = EmploymentType::where('name','Regular Full-Time')->orwhere('name','Regular Part-Time')->first();
+        $employees = ModelsEmployeeProfile::whereHas('employmentType', function ($query) {
+            $query->where('name', 'Regular Full-Time')
+                  ->orWhere('name', 'Regular Part-Time');
+        })->get();
         if($employees)
         {
             foreach ($employees as $employee) {
 
-                    $total_working_hours="150";
                     $leaveTypes = LeaveType::where('is_special', '=', '0')->get();
                         foreach ($leaveTypes as $leaveType) {
                             if($leaveType->is_special == 0)
@@ -58,7 +58,7 @@ class LeaveCreditController extends Controller
                                  $employeeCredit->employee_profile_id = $employee->id;
                                  $employeeCredit->operation = "add";
                                  $employeeCredit->reason = "Monthly Leave Credits";
-                                 $employeeCredit->working_hours_total = $total_working_hours;
+                                //  $employeeCredit->working_hours_total = $total_working_hours;
                                  $employeeCredit->credit_value = $month_credit_value;
                                  $employeeCredit->date = date('Y-m-d');
                                  $employeeCredit->save();
