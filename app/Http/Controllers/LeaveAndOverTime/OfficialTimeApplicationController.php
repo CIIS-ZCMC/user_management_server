@@ -742,7 +742,17 @@ class OfficialTimeApplicationController extends Controller
         try{
             $validatedData = $request->validate([
                 'date_from' => 'required|date_format:Y-m-d',
-                'date_to' => 'required_with:date_from|date_format:Y-m-d|after:date_from',
+                'date_to.*' => [
+                    'required',
+                    'date_format:Y-m-d',
+                    function ($attribute, $value, $fail) use ($request) {
+                        $index = explode('.', $attribute)[1];
+                        $dateFrom = $request->input('date_from.' . $index);
+                        if ($value < $dateFrom) {
+                            $fail("The date to must be greater than date from.");
+                        }
+                    },
+                ],
                 'certificate_of_appearance' =>'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
                 'personal_order' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
                 'reason' => 'required|string|max:512',
