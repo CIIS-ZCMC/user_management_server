@@ -176,7 +176,17 @@ class CtoApplicationController extends Controller
 
             $validatedData = $request->validate([
                 'time_from.*' => 'required|date_format:H:i',
-                'time_to.*' => 'required|date_format:H:i|after_or_equal:time_from.*',
+                'time_to.*' => [
+                    'required',
+                    'date_format::H:i',
+                    function ($attribute, $value, $fail) use ($request) {
+                        $index = explode('.', $attribute)[1];
+                        $dateFrom = $request->input('time_from.' . $index);
+                        if ($value < $dateFrom) {
+                            $fail("The time to must be greater than time from.");
+                        }
+                    },
+                ],
                 'date.*' => 'required|date_format:Y-m-d',
                 'purpose.*' => 'required|string|max:512',
             ]);
