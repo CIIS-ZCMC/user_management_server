@@ -387,7 +387,6 @@ class OvertimeApplicationController extends Controller
 
     public function getOvertimeApplications(Request $request)
     {
-
             try{
                 $user=$request->user;
                 $OvertimeApplication = [];
@@ -405,7 +404,7 @@ class OvertimeApplicationController extends Controller
                 if($divisionHeadId === $user->id || $division_oic_Id === $user->id) {
                     $OvertimeApplication = OvertimeApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','logs','activities'])
                     ->whereHas('employeeProfile.assignedArea', function ($query) use ($division) {
-                        $query->where('id', $division);
+                        $query->where('division_id', $division);
                     })
                     ->where('status', 'for-approval-division-head')
                     ->orwhere('status', 'approved')
@@ -583,7 +582,7 @@ class OvertimeApplicationController extends Controller
                 else if($departmentHeadId === $user->id || $training_officer_id === $user->id || $department_oic_Id === $user->id) {
                     $OvertimeApplication = OvertimeApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','logs','activities'])
                     ->whereHas('employeeProfile.assignedArea', function ($query) use ($department) {
-                        $query->where('id', $department);
+                        $query->where('department_id', $department);
                     })
                     ->where('status', 'for-approval-section-head')
                     ->orWhere('status', 'for-approval-division-head')
@@ -758,7 +757,7 @@ class OvertimeApplicationController extends Controller
                 else if($sectionHeadId === $user->id || $section_oic_id === $user->id) {
                     $overtime_applications = OvertimeApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','logs','activities'])
                     ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
-                        $query->where('id', $section);
+                        $query->where('section_id', $section);
                     })
                     ->where('status', 'for-approval-section-head')
                     ->orWhere('status', 'for-approval-division-head')
@@ -930,7 +929,6 @@ class OvertimeApplicationController extends Controller
                         return response()->json(['message' => 'No records available'], Response::HTTP_OK);
                     }
                 }
-
             }catch(\Throwable $th){
 
                 return response()->json(['message' => $th->getMessage()], 500);
@@ -1920,7 +1918,7 @@ class OvertimeApplicationController extends Controller
                 $columnsString="";
                 $process_name="Applied";
                 $this->storeOvertimeApplicationLog($ovt_id,$process_name,$columnsString,$user->id);
-                
+
             DB::commit();
             $overtime_applications =OvertimeApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','logs','directDates'])
             ->where('id',$ovt_id)->get();

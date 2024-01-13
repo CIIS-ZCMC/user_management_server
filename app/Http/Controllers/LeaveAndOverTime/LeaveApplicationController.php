@@ -674,9 +674,10 @@ class LeaveApplicationController extends Controller
         }
         else if($divisionHeadId === $user->id || $division_oic_Id === $user->id)
         {
+
             $leave_applications = LeaveApplication::with(['employeeProfile.assignedArea','employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
-            ->whereHas('employeeProfile.assignedArea.division', function ($query) use ($divisionHeadId) {
-                $query->where('id', $divisionHeadId);
+            ->whereHas('employeeProfile.assignedArea', function ($query) use ($division) {
+                $query->where('division_id', $division);
             })
             ->where('status', 'for-approval-division-head')
             ->orwhere('status', 'approved')
@@ -867,7 +868,7 @@ class LeaveApplicationController extends Controller
         else if($departmentHeadId === $user->id || $training_officer_id == $user->id || $department_oic_Id === $user->id) {
             $leave_applications = LeaveApplication::with(['employeeProfile.assignedArea.department','employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
             ->whereHas('employeeProfile.assignedArea', function ($query) use ($department) {
-                $query->where('id', $department);
+                $query->where('department_id', $department);
             })
             ->where('status', 'for-approval-department-head')
             ->orwhere('status', 'for-approval-division-head')
@@ -1058,7 +1059,7 @@ class LeaveApplicationController extends Controller
 
             $leave_applications = LeaveApplication::with(['employeeProfile.assignedArea.section','employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
             ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
-                $query->where('id', $section);
+                $query->where('section_id', $section);
             })
             ->where('status', 'for-approval-section-head')
             ->orwhere('status', 'for-approval-division-head')
@@ -1247,7 +1248,7 @@ class LeaveApplicationController extends Controller
         else if($omcc_head_id === $user->id || $omcc_oic_id === $user->id) {
             $leave_applications = LeaveApplication::with(['employeeProfile.assignedArea.section','employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
             ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
-                $query->where('id', $section);
+                $query->where('section_id', $section);
             })
             ->where('status', 'for-approval-omcc-head')
             ->get();

@@ -225,7 +225,7 @@ class CtoApplicationController extends Controller
                     $timeTo = Carbon::parse($cto_application_date_time->time_to);
                     $totalHours += $timeTo->diffInHours($timeFrom);
                 }
-                
+
                 $employee_cto_credits = new EmployeeOvertimeCredit();
                 $employee_cto_credits->employee_profile_id = $user->id;
                 $employee_cto_credits->cto_application_id = $cto_id;
@@ -930,7 +930,7 @@ class CtoApplicationController extends Controller
         if($divisionHeadId === $user->id || $division_oic_Id === $user->id) {
             $cto_applications = CtoApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','logs'])
             ->whereHas('employeeProfile.assignedArea', function ($query) use ($division) {
-                $query->where('id', $division);
+                $query->where('division_id', $division);
             })
             ->where('status', 'for-approval-division-head')
             ->orwhere('status', 'approved')
@@ -1081,7 +1081,7 @@ class CtoApplicationController extends Controller
         else if($sectionHeadId === $user->id || $section_oic_id === $user->id) {
             $cto_applications = ctoApplication::with(['employeeProfile.assignedArea.section','employeeProfile.personalInformation','logs'])
             ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
-                $query->where('id', $section);
+                $query->where('section_id', $section);
             })
             ->where('status', 'for-approval-division-head')
             ->orwhere('status', 'approved')
@@ -1229,7 +1229,7 @@ class CtoApplicationController extends Controller
         else  if($departmentHeadId === $user->id || $training_officer_id === $user->id || $department_oic_Id === $user->id) {
             $cto_applications = CtoApplication::with(['employeeProfile.assignedArea.department','employeeProfile.personalInformation','logs'])
             ->whereHas('employeeProfile.assignedArea', function ($query) use ($department) {
-                $query->where('id', $department);
+                $query->where('department_id', $department);
             })
             ->where('status', 'for-approval-department-head')
             ->orwhere('status', 'approved')

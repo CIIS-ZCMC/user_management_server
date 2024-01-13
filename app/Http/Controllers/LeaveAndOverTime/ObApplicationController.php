@@ -324,7 +324,7 @@ class ObApplicationController extends Controller
                 if($divisionHeadId === $user->id || $division_oic_Id === $user->id) {
                     $official_business_applications = ObApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','logs'])
                     ->whereHas('employeeProfile.assignedArea', function ($query) use ($division) {
-                        $query->where('id', $division);
+                        $query->where('division_id', $division);
                     })
                     ->where('status', 'for-approval-division-head')
                     ->orwhere('status', 'approved')
@@ -457,7 +457,7 @@ class ObApplicationController extends Controller
                 else if($departmentHeadId === $user->id || $training_officer_id === $user->id || $department_oic_Id === $user->id) {
                     $official_business_applications = ObApplication::with(['employeeProfile.assignedArea.department','employeeProfile.personalInformation','logs' ])
                     ->whereHas('employeeProfile.assignedArea', function ($query) use ($department) {
-                        $query->where('id', $department);
+                        $query->where('department_id', $department);
                     })
                     ->where('status', 'for-approval-department-head')
                     ->orWhere('status', 'for-approval-division-head')
@@ -592,7 +592,7 @@ class ObApplicationController extends Controller
                 else  if($sectionHeadId === $user->id || $section_oic_id === $user->id) {
                     $official_business_applications = ObApplication::with(['employeeProfile.assignedArea.section','employeeProfile.personalInformation','logs'])
                     ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
-                        $query->where('id', $section);
+                        $query->where('section_id', $section);
                     })
                     ->where('status', 'for-approval-section-head')
                     ->orWhere('status', 'for-approval-division-head')
