@@ -1620,7 +1620,7 @@ Route::middleware('auth.cookie')->group(function(){
             Route::post('ot-application-cancel/{id}', 'OfficialTimeApplicationController@cancelOtApplication');
         });
 
-        Route::middleware(['auth.permission:UMIS-OT approve'])->group(function(){
+        Route::middleware(['auth.permission:UMIS-LM approve'])->group(function(){
             Route::post('ot-application-update/{id}/{status}', 'OfficialTimeApplicationController@updateStatus');
         });
 

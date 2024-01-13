@@ -47,7 +47,6 @@ class LeaveCreditController extends Controller
         if($employees)
         {
             foreach ($employees as $employee) {
-
                     $leaveTypes = LeaveType::where('is_special', '=', '0')->get();
                         foreach ($leaveTypes as $leaveType) {
                             if($leaveType->is_special == 0)
@@ -74,6 +73,7 @@ class LeaveCreditController extends Controller
     public function deductUndertimefirsthalf(Request $request)
     {
         $currentMonth = date('m');
+        $currentYear = date('Y');
         $currentDate = date('Y-m-d');
         $pastMonth = date('m', strtotime('-1 month'));
         $lastMonthDate = date('Y-m-d', strtotime('-1 month', strtotime($currentDate)));
@@ -86,14 +86,14 @@ class LeaveCreditController extends Controller
         if($employees)
         {
             foreach ($employees as $employee) {
-                $month = $currentMonth;
                     $total_undertime="0";
                     $vl_leave=[];
-                    $leaveTypes = LeaveType::where('is_special', '=', '0')->get();
                     $vl_leave = LeaveType::where('id', '=', '1')->first();
                     $employee_leave_credits= ModelsEmployeeLeaveCredit::where('employee_profile_id',$employee->id)->get();
-
-                    // $undertime = $this->calculateUndertime($biometricId, $monthOf, $yearOf, $is15thDays, $firstHalf, $secondHalf);
+                    $biometric_id=$employee->biometric_id;
+                    return $biometric_id;
+                    $undertime_total = $this->calculateUndertime($biometric_id, $currentMonth, $currentYear, 1, 1, 0);
+                    
                         $totalLeaveCredits = $employee_leave_credits->mapToGroups(function ($credit) {
                             return [$credit->operation => $credit->credit_value];
                         })->map(function ($operationCredits, $operation) {
