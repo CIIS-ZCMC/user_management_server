@@ -276,16 +276,20 @@ class LeaveApplicationController extends Controller
                         $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
                         $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
                         $hr = Section::with('supervisor.personalInformation')->where('code','HRMO')->first();
-                    $chief_name=null;
+                    $chief_first_name=null;
+                    $chief_last_name=null;
                     $chief_position=null;
                     $chief_code=null;
-                    $head_name=null;
+                    $head_first_name=null;
+                    $head_last_name=null;
                     $head_position=null;
                     $head_code=null;
-                    $supervisor_name=null;
+                    $supervisor_first_name=null;
+                    $supervisor_last_name=null;
                     $supervisor_position=null;
                     $supervisor_code=null;
-                    $hr_name=null;
+                    $hr_last_name=null;
+                    $hr_first_name=null;
                     $hr_position=null;
                     $hr_code=null;
                     if($division) {
@@ -293,7 +297,8 @@ class LeaveApplicationController extends Controller
 
                         if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
                         {
-                            $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
+                            $chief_first_name = optional($division_name->chief->personalInformation)->first_name ?? null;
+                            $chief_last_name =optional($division_name->chief->personalInformation)->last_name ?? null;
                             $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
                             $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
                         }
@@ -303,7 +308,8 @@ class LeaveApplicationController extends Controller
                         $department_name = Department::with('head.personalInformation')->find($department);
                         if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
                         {
-                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                            $head_first_name = optional($department_name->head->personalInformation)->first_name ?? null;
+                            $head_last_name = optional($department_name->head->personalInformation)->last_name ?? null;
                             $head_position = $department_name->head->assignedArea->designation->name ?? null;
                             $head_code = $department_name->head->assignedArea->designation->code ?? null;
                         }
@@ -313,7 +319,8 @@ class LeaveApplicationController extends Controller
                         $section_name = Section::with('supervisor.personalInformation')->find($section);
                         if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
                         {
-                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                            $supervisor_first_name = optional($section_name->supervisor->personalInformation)->first_name ?? null;
+                            $supervisor_last_name = optional($section_name->supervisor->personalInformation)->last_name ?? null;
                             $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
                             $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
                         }
@@ -323,7 +330,8 @@ class LeaveApplicationController extends Controller
 
                         if($hr && $hr->supervisor  && $hr->supervisor->personalInformation != null)
                         {
-                            $hr_name = optional($hr->supervisor->personalInformation)->first_name . ' ' . optional($hr->supervisor->personalInformation)->last_name;
+                            $hr_first_name = optional($hr->supervisor->personalInformation)->first_name ?? null;
+                            $hr_last_name = optional($hr->supervisor->personalInformation)->last_name ?? null;
                             $hr_position = $hr->supervisor->assignedArea->designation->name ?? null;
                             $hr_code = $hr->supervisor->assignedArea->designation->code ?? null;
                         }
@@ -363,16 +371,20 @@ class LeaveApplicationController extends Controller
                             'position_code' => $leave_application->employeeProfile->assignedArea->designation->code ?? null,
                             'position_name' => $leave_application->employeeProfile->assignedArea->designation->name ?? null,
                             'date_created' => $leave_application->date,
-                            'division_head' =>$chief_name,
+                            'division_head_first' =>$chief_first_name,
+                            'division_head_last' =>$chief_last_name,
                             'division_head_position'=> $chief_position,
                             'division_head_code'=> $chief_code,
-                            'department_head' =>$head_name,
+                            'department_head_first' =>$head_first_name,
+                            'department_head_last' =>$head_last_name,
                             'department_head_position' =>$head_position,
                             'department_head_code' =>$head_code,
-                            'section_head' =>$supervisor_name,
+                            'section_head_first' =>$supervisor_first_name,
+                            'section_head_last' =>$supervisor_last_name,
                             'section_head_position' =>$supervisor_position,
                             'section_head_code' =>$supervisor_code,
-                            'hr_head' =>$hr_name,
+                            'hr_head_first' =>$hr_first_name,
+                            'hr_head_last' =>$hr_last_name,
                             'hr_head_position' =>$hr_position,
                             'hr_head_code' =>$hr_code,
                             'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
@@ -3373,16 +3385,20 @@ class LeaveApplicationController extends Controller
                                             $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
                                             $hr = Section::with('supervisor.personalInformation')->where('name','HR')->orWhere('name','Human Resource')->first();
 
-                                            $chief_name=null;
+                                            $chief_first_name=null;
+                                            $chief_last_name=null;
                                             $chief_position=null;
                                             $chief_code=null;
-                                            $head_name=null;
+                                            $head_first_name=null;
+                                            $head_last_name=null;
                                             $head_position=null;
                                             $head_code=null;
-                                            $supervisor_name=null;
+                                            $supervisor_first_name=null;
+                                            $supervisor_last_name=null;
                                             $supervisor_position=null;
                                             $supervisor_code=null;
-                                            $hr_name=null;
+                                            $hr_last_name=null;
+                                            $hr_first_name=null;
                                             $hr_position=null;
                                             $hr_code=null;
                                             if($division) {
@@ -3390,7 +3406,8 @@ class LeaveApplicationController extends Controller
 
                                                 if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
                                                 {
-                                                    $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
+                                                    $chief_first_name = optional($division_name->chief->personalInformation)->first_name ?? null;
+                                                    $chief_last_name =optional($division_name->chief->personalInformation)->last_name ?? null;
                                                     $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
                                                     $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
                                                 }
@@ -3400,17 +3417,19 @@ class LeaveApplicationController extends Controller
                                                 $department_name = Department::with('head.personalInformation')->find($department);
                                                 if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
                                                 {
-                                                    $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                                                    $head_first_name = optional($department_name->head->personalInformation)->first_name ?? null;
+                                                    $head_last_name = optional($department_name->head->personalInformation)->last_name ?? null;
                                                     $head_position = $department_name->head->assignedArea->designation->name ?? null;
                                                     $head_code = $department_name->head->assignedArea->designation->code ?? null;
-                                                }
                                             }
+                                        }
                                             if($section)
                                             {
                                                 $section_name = Section::with('supervisor.personalInformation')->find($section);
                                                 if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
                                                 {
-                                                    $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                                                    $supervisor_first_name = optional($section_name->supervisor->personalInformation)->first_name ?? null;
+                                                    $supervisor_last_name = optional($section_name->supervisor->personalInformation)->last_name ?? null;
                                                     $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
                                                     $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
                                                 }
@@ -3420,7 +3439,8 @@ class LeaveApplicationController extends Controller
 
                                                 if($hr && $hr->supervisor  && $hr->supervisor->personalInformation != null)
                                                 {
-                                                    $hr_name = optional($hr->supervisor->personalInformation)->first_name . ' ' . optional($hr->supervisor->personalInformation)->last_name;
+                                                    $hr_first_name = optional($hr->supervisor->personalInformation)->first_name ?? null;
+                                                    $hr_last_name = optional($hr->supervisor->personalInformation)->last_name ?? null;
                                                     $hr_position = $hr->supervisor->assignedArea->designation->name ?? null;
                                                     $hr_code = $hr->supervisor->assignedArea->designation->code ?? null;
                                                 }
@@ -3460,16 +3480,20 @@ class LeaveApplicationController extends Controller
                                                                     'position_code' => $leave_application->employeeProfile->assignedArea->designation->code ?? null,
                                                                     'position_name' => $leave_application->employeeProfile->assignedArea->designation->name ?? null,
                                                                     'date_created' => $leave_application->date,
-                                                                    'division_head' =>$chief_name,
+                                                                    'division_head_first' =>$chief_first_name,
+                                                                    'division_head_last' =>$chief_last_name,
                                                                     'division_head_position'=> $chief_position,
                                                                     'division_head_code'=> $chief_code,
-                                                                    'department_head' =>$head_name,
+                                                                    'department_head_first' =>$head_first_name,
+                                                                    'department_head_last' =>$head_last_name,
                                                                     'department_head_position' =>$head_position,
                                                                     'department_head_code' =>$head_code,
-                                                                    'section_head' =>$supervisor_name,
+                                                                    'section_head_first' =>$supervisor_first_name,
+                                                                    'section_head_last' =>$supervisor_last_name,
                                                                     'section_head_position' =>$supervisor_position,
                                                                     'section_head_code' =>$supervisor_code,
-                                                                    'hr_head' =>$hr_name,
+                                                                    'hr_head_first' =>$hr_first_name,
+                                                                    'hr_head_last' =>$hr_last_name,
                                                                     'hr_head_position' =>$hr_position,
                                                                     'hr_head_code' =>$hr_code,
                                                                     'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
