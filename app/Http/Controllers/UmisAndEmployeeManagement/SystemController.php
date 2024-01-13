@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
-use App\Services\RequestLogger;
+use App\Helpers\Helpers;
 use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\SystemRequest;
 use App\Http\Resources\SystemResource;
@@ -19,27 +19,18 @@ class SystemController extends Controller
     private $CONTROLLER_NAME = 'System';
     private $PLURAL_MODULE_NAME = 'systems';
     private $SINGULAR_MODULE_NAME = 'system';
-
-    protected $requestLogger;
-
-    public function __construct(RequestLogger $requestLogger)
-    {
-        $this->requestLogger = $requestLogger;
-    }
     
     public function index(Request $request)
     {
         try{
             $systems = System::all();
-
-            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
             
             return response() -> json([
                 'data' => SystemResource::collection($systems),
                 'message' => 'System list retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -60,14 +51,14 @@ class SystemController extends Controller
 
             $system = System::create($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response() -> json([
                 'data' => new SystemResource($system),
                 'message' => 'System created successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -95,14 +86,14 @@ class SystemController extends Controller
             $system -> updated_at = now();
             $system -> save();
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in generating API Key '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in generating API Key '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response() -> json([
                 'data' => new SystemResource($system),
                 'message' => 'System record updated.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'generateKey', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'generateKey', $th->getMessage());
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -141,14 +132,14 @@ class SystemController extends Controller
 
             $system->update(['status' => $status]);
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in Updating System Status'.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in Updating System Status'.$this->SINGULAR_MODULE_NAME.'.');
             
             return response() -> json([
                 'data' => new SystemResource($system),
                 'message' => 'System updated successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'activateSystem', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'activateSystem', $th->getMessage());
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -161,15 +152,13 @@ class SystemController extends Controller
             if(!$system){
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
-
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response() -> json([
                 'data' => new SystemResource($system),
                 'message' => 'System record retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -206,13 +195,13 @@ class SystemController extends Controller
 
             $system -> update($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response() -> json([
                 'data' => new SystemResource($system),
                 "message" => 'System record updated.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -238,11 +227,11 @@ class SystemController extends Controller
 
             $system -> delete();
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response() -> json(['message' => 'System deleted successfully.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

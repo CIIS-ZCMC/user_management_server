@@ -12,7 +12,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
-use App\Services\RequestLogger;
+use App\Helpers\Helpers;
 use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\PlantillaRequest;
 use App\Http\Resources\DesignationEmployeesResource;
@@ -32,29 +32,19 @@ class PlantillaController extends Controller
     private $CONTROLLER_NAME = 'Plantilla';
     private $PLURAL_MODULE_NAME = 'plantillas';
     private $SINGULAR_MODULE_NAME = 'plantilla';
-
-    protected $requestLogger;
-
-    public function __construct(RequestLogger $requestLogger)
-    {
-        $this->requestLogger = $requestLogger;
-    }
     
     public function index(Request $request)
     {
         try{
-            // $cacheExpiration = Carbon::now()->addDay();
 
             $plantillas = PlantillaNumber::all();
-
-            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => PlantillaNumberAllResource::collection($plantillas),
                 'message' => 'Plantilla list retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+             Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -78,15 +68,13 @@ class PlantillaController extends Controller
                     }
                 }
             }
-
-            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => PlantillaWithDesignationResource::collection($plantilla_numbers),
                 'message' => 'Plantilla number by designation.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+             Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -96,14 +84,12 @@ class PlantillaController extends Controller
         try{
             $sector_employees = Plantilla::with('assigned_areas')->findOrFail($id);
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => DesignationEmployeesResource::collection($sector_employees),
                 'message' => 'Plantilla record retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'employeesOfSector', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'employeesOfSector', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -180,14 +166,14 @@ class PlantillaController extends Controller
                 $message = 'Some plantilla number failed to register.';
             }
 
-            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response() -> json([
                 'data' => $data,
                 'message' => $message
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+             Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -243,7 +229,7 @@ class PlantillaController extends Controller
                 'message' => 'List of areas'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'assignPlantillaToAreas', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'assignPlantillaToAreas', $th->getMessage());
            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -259,6 +245,8 @@ class PlantillaController extends Controller
             }
 
             $cleanData = [];
+
+            $cleanData['effective_at'] = $plantilla_number->plantilla->effective_at;
 
             $cleanData['plantilla_number_id'] = $plantilla_number->id;
             $key = '';
@@ -280,7 +268,14 @@ class PlantillaController extends Controller
             }
             $cleanData[$key] =  strip_tags($request->area);
 
+            $key_list = ['division_id', 'department_id', 'section_id', 'unit_id'];
+
+            foreach($key_list as $value){
+                if($value === $key) continue;
+                $cleanData[$value] = null;
+            }
             $plantilla_assign_area = PlantillaAssignedArea::create($cleanData);
+            $plantilla_number->update(['assigned_at' => now()]);
 
             if(!$plantilla_assign_area){
                 return response()->json(['message' => "Failed to assign plantilla number."], Response::HTTP_UNPROCESSABLE_ENTITY);
@@ -291,7 +286,7 @@ class PlantillaController extends Controller
                 'message' => 'Plantilla assign successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'assignPlantillaToAreas', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'assignPlantillaToAreas', $th->getMessage());
            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -305,15 +300,13 @@ class PlantillaController extends Controller
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
-
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => new PlantillaResource($plantilla),
                 'message' => 'Plantilla record retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+             Helpers::errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -328,14 +321,14 @@ class PlantillaController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => new PlantillaNumberAllResource($plantilla_number),
                 'message' => 'Plantilla list retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+             Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -364,13 +357,13 @@ class PlantillaController extends Controller
             $plantilla_requirement = $plantilla->requirement;
             $plantilla_requirement->update($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => new PlantillaResource($plantilla),
                 'message' => 'Plantilla update successfully.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+             Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -424,11 +417,11 @@ class PlantillaController extends Controller
             $requirement->delete();
             $plantilla -> delete();
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['message' => 'Plantilla record and plantilla number are deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -455,11 +448,11 @@ class PlantillaController extends Controller
 
             $plantilla_number -> delete();
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['message' => 'Plantilla number deleted successfully.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

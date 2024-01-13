@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
-use App\Services\RequestLogger;
+use App\Helpers\Helpers;
 use App\Http\Resources\InActiveEmployeeResource;
 use App\Http\Resources\AssignAreaResource;
 use App\Models\InActiveEmployee;
@@ -22,23 +22,14 @@ class InActiveEmployeeController extends Controller
     private $PLURAL_MODULE_NAME = 'In active employee modules';
     private $SINGULAR_MODULE_NAME = 'In active employee module';
 
-    protected $requestLogger;
-
-    public function __construct(RequestLogger $requestLogger)
-    {
-        $this->requestLogger = $requestLogger;
-    }
-
     public function index(Request $request)
     {
         try{
             $in_active_employees = InActiveEmployee::all();
 
-            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
-
             return response()->json(['data' => InActiveEmployeeResource::collection($in_active_employees), 'message' => 'Record of in-active employee history retrieved.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -60,11 +51,9 @@ class InActiveEmployeeController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json(['data' => new InActiveEmployeeResource($in_active_employee), 'message' => 'Employee profile found.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByEmployeeID', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'findByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -86,11 +75,9 @@ class InActiveEmployeeController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json(['data' => new AssignAreaResource($in_active_employee), 'message' => 'Employee assigned area record trail found.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByEmployeeID', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'findByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -105,11 +92,9 @@ class InActiveEmployeeController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json(['data' => new InActiveEmployeeResource($in_active_employee), 'message' => 'Employee in-active record found.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -136,11 +121,11 @@ class InActiveEmployeeController extends Controller
 
             $in_active_employee->delete();
             
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['data' => 'Employee in-active record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

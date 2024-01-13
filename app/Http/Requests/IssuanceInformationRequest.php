@@ -23,7 +23,7 @@ class IssuanceInformationRequest extends FormRequest
     {
         return [
             'license_no' => 'nullable|string|max:255',
-            'govt_issued_id' => 'nullable|integer',
+            'govt_issued_id' => 'nullable|string',
             'ctct_issued_date' => 'nullable|date:Y-m-d',
             'ctc_issued_at' => 'nullable|string|max:255',
             'person_administrative_oath' => 'nullable|string|max:255',

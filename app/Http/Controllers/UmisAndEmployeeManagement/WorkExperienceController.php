@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
-use App\Services\RequestLogger;
+use App\Helpers\Helpers;
 use App\Http\Requests\WorkExperienceRequest;
 use App\Http\Resources\WorkExperienceResource;
 use App\Models\WorkExperience;
@@ -21,13 +21,6 @@ class WorkExperienceController extends Controller
     private $PLURAL_MODULE_NAME = 'work experiences';
     private $SINGULAR_MODULE_NAME = 'work experience';
 
-    protected $requestLogger;
-
-    public function __construct(RequestLogger $requestLogger)
-    {
-        $this->requestLogger = $requestLogger;
-    }
-
     public function findByPersonalInformationID($id, Request $request)
     {
         try{
@@ -37,15 +30,13 @@ class WorkExperienceController extends Controller
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
-
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching employee '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => WorkExperienceResource::collection($work_experience),
                 'message' => 'Employee work experience record retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByPersonalInformationID', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'findByPersonalInformationID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -62,15 +53,13 @@ class WorkExperienceController extends Controller
 
             $personal_information = $employee_profile->personalInformation;
             $work_experience = $personal_information->workExperience;
-
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching employee '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => WorkExperienceResource::collection($work_experience),
                 'message' => 'Employee work experience record retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByEmployeeID', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'findByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -90,14 +79,14 @@ class WorkExperienceController extends Controller
 
             $work_experience = WorkExperience::create($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => new WorkExperienceResource($work_experience),
                 'message' => 'New work experience added.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -110,7 +99,7 @@ class WorkExperienceController extends Controller
 
             $personal_information_id = strip_tags($request->personal_information_id);
 
-            foreach($request->work_experiences as $work_experience){
+            foreach(json_decode($request->work_experiences) as $work_experience){
                 $cleanData = [];
                 $cleanData['personal_information_id'] = $personal_information_id;
                 foreach ($work_experience as $key => $value) {
@@ -130,7 +119,7 @@ class WorkExperienceController extends Controller
                 $success[] = $work_experience;
             }
 
-            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
             if(count($failed) > 0){
                 return response()->json([
@@ -145,7 +134,7 @@ class WorkExperienceController extends Controller
                 'message' => 'New work experience added.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -159,15 +148,13 @@ class WorkExperienceController extends Controller
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
-
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => new WorkExperienceResource($work_experience),
                 'message' => 'Work experience record retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -194,14 +181,14 @@ class WorkExperienceController extends Controller
 
             $work_experience -> update($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => new WorkExperienceResource($work_experience),
                 'message' => 'Work experience record updated.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -228,11 +215,11 @@ class WorkExperienceController extends Controller
 
             $work_experience -> delete();
             
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['message' => 'Work experience record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['meTruessage' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -261,11 +248,11 @@ class WorkExperienceController extends Controller
                 $value->delete();
             }
             
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['message' => 'Employee work experience record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroyByPersonalInformationID', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'destroyByPersonalInformationID', $th->getMessage());
             return response()->json(['meTruessage' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -297,11 +284,11 @@ class WorkExperienceController extends Controller
                 $value->delete();
             }
             
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['message' => 'Employee work experience record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroyByPersonalInformationID', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'destroyByPersonalInformationID', $th->getMessage());
             return response()->json(['meTruessage' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
