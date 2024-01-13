@@ -46,10 +46,11 @@ class PersonalInformationController extends Controller
      * This must have registration of employee information such as name, height, weight, etc
      * contacts and addresses
      */
-    public function store(PersonalInformationRequest $request)
+    public function store(Request $request)
     {
         try{
-            $is_res_per = $request->is_res_per === 1 ? true:false;
+            $is_res_per = $request->is_res_per == 1 ? true:false;
+
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
@@ -70,7 +71,7 @@ class PersonalInformationController extends Controller
                 'address' => strip_tags($request->r_address),
                 'telephone' => strip_tags($request->r_telephone),
                 'zip_code' => strip_tags($request->r_zip_code),
-                'is_res_per' => $request->is_res_per,
+                'is_residential_permanent' => $request->is_res_per,
                 'is_residential' => 1,
                 // 'type' => 'residential',
                 'personal_information_id' => $personal_information->id
@@ -80,6 +81,7 @@ class PersonalInformationController extends Controller
 
             if($is_res_per !== null && $is_res_per){
                 $data = [
+                    'personal_information_id' => $personal_information->id,
                     'personal_information' => $personal_information,
                     'residential' => $residential,
                     'permanent' => $residential
@@ -106,7 +108,6 @@ class PersonalInformationController extends Controller
                 'residential' => $residential,
                 'permanent' => $permanent
             ];
-            
             Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json($data, Response::HTTP_OK);

@@ -14,19 +14,20 @@ class EmployeeWithSpecialAccessResource extends JsonResource
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array
-    {
-        $assign_area = $this->assignedArea;
+    {   
+        $employee = $this->employeeProfile;
+        $assign_area = $employee->assignedArea;
         $designation = $assign_area->designation;
         $area = $assign_area->findDetails();
         $position_system_roles = $designation->positionSystemRoles;
 
         return [
             'id' => $this->id,
-            'name' => $this->personalInformation->name(),
+            'name' => $employee->personalInformation->name(),
             'job_position' => $designation->name,
             'area' => $area['details']->name,
             'system_role' => PositionSystemRoleOnlyResource::collection($position_system_roles),
-            'special_access_role' => PositionSystemRoleOnlyResource::collection($this->specialAccessRole),
+            'special_access_role' => PositionSystemRoleOnlyResource::collection($employee->specialAccessRole),
             'effective_at' => $this->formatEffectiveAt($this->effective_at),
         ];
     }

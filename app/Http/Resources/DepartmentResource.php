@@ -52,7 +52,7 @@ class DepartmentResource extends JsonResource
                 'name' => $name,
                 'code' => $code,
                 'head' => $head,
-                'head_designation' => $head_designation,
+                'head_designation' => $head->assignedArea->findDetails,
                 'head_status' => $head_status,
                 'training_officer' => $training_officer,
                 'training_officer_designation' => $toe_designation,

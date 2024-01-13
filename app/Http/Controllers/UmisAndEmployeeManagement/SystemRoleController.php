@@ -53,10 +53,10 @@ class SystemRoleController extends Controller
     public function employeesWithSpecialAccess(Request $request)
     {
         try{
-            $employees = EmployeeProfile::all();
+            $special_access_roles = SpecialAccessRole::all();
 
             return response() -> json([
-                'data' => EmployeeWithSpecialAccessResource::collection($employees),
+                'data' => EmployeeWithSpecialAccessResource::collection($special_access_roles),
                 'message' => 'Special access role assign successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
