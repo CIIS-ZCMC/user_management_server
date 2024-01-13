@@ -577,8 +577,6 @@ Route::middleware('auth.cookie')->group(function(){
             Route::get('department-all', 'DepartmentController@index');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM put'])->group(function(){
-
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
             Route::post('department-assign-head-employee/{id}', 'DepartmentController@assignHeadByEmployeeID');
         });
@@ -1418,7 +1416,7 @@ Route::middleware('auth.cookie')->group(function(){
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
             Route::delete('work-experience-employee/{id}', 'WorkExperienceController@destroyByEmployeeID');
         });
-        });
+        
     });
 
     /**
