@@ -50,7 +50,7 @@ class LeaveCreditController extends Controller
                     $total_working_hours="150";
                     $leaveTypes = LeaveType::where('is_special', '=', '0')->get();
                         foreach ($leaveTypes as $leaveType) {
-                            if($leaveType->is_special == '0')
+                            if($leaveType->is_special == 0)
                             {
                                  $month_credit_value = $leaveType->leave_credit_year/12;
                                  $employeeCredit = new ModelsEmployeeLeaveCredit();
