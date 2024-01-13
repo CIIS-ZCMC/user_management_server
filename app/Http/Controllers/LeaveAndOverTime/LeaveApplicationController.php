@@ -729,7 +729,6 @@ class LeaveApplicationController extends Controller
                     $hr_name=null;
                     $hr_position=null;
                     $hr_code=null;
-                    return $hr;
                     if($division) {
                         $division_name = Division::with('chief.personalInformation')->find($division);
 
@@ -3879,7 +3878,7 @@ class LeaveApplicationController extends Controller
                                     $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
                                     $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
                                     $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                                    $hr = Section::with('supervisor.personalInformation')->where('code','HRMO')->first();
+                                    $hr = Section::with('supervisor.personalInformation')->where('code','HRMO')->orWhere('name','Human Resource')->first();
 
                                     $chief_name=null;
                                     $chief_position=null;
