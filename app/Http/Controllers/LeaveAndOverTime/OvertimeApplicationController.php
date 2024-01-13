@@ -1684,6 +1684,7 @@ class OvertimeApplicationController extends Controller
     public function store(Request $request)
     {
         try {
+            return "ok";
             $validatedData = $request->validate([
                 'dates.*' => 'required|date_format:Y-m-d',
                 'time_from.*' => 'required|date_format:H:i',
