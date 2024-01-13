@@ -30,6 +30,7 @@ class Authorization
 
         $employe_designation = $user->findDesignation();
 
+        
         $permissions = Cache::get($employe_designation->name);
 
         $has_rights = false;

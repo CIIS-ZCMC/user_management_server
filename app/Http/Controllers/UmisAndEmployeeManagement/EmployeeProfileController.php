@@ -19,6 +19,7 @@ use App\Methods\MailConfig;
 use App\Models\AccessToken;
 use App\Models\AssignAreaTrail;
 use App\Models\Contact;
+use App\Models\Designation;
 use App\Models\InActiveEmployee;
 use App\Models\PasswordTrail;
 use App\Models\PlantillaNumber;
@@ -77,7 +78,6 @@ class EmployeeProfileController extends Controller
     public function signIn(SignInRequest $request)
     {
         try {
-
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
