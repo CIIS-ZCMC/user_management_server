@@ -148,13 +148,13 @@ class ScheduleController extends Controller
                 }
 
                 if (is_array($value)) {
-                    $employee_data = [];
+                    // $array_value = [];
 
-                    foreach ($request->all() as $key => $value) {
-                        $employee_data[$key] = $value;
-                    }
+                    // foreach ($request->all() as $key => $val) {
+                    //     $array_value[$key] = $val;
+                    // }
 
-                    $cleanData[$key] = $employee_data;
+                    $cleanData[$key] = $value;
                     continue;
                 }
 
@@ -176,14 +176,14 @@ class ScheduleController extends Controller
             //     $position = $user->position();
 
             //     if ($position->position === "Chief" || $position->position === "Department OIC" || $position->position === "Supervisor" || $position->position === "Section OIC" || $position->position === "Unit Head" || $position->position === "Unit OIC") {
-                    
-                    $date_start     = Carbon::parse($cleanData['date_start']);    // Replace with your start date
-                    $date_end       = Carbon::parse($cleanData['date_end']);      // Replace with your end date
+                    $date_start     = $cleanData['date_start'];    // Replace with your start date
+                    $date_end       = $cleanData['date_end'];      // Replace with your end date
                     $selected_days  = $cleanData['selected_days'];                // Replace with your selected days
                     $selected_dates = [];                                         // Replace with your selected dates
         
-                    switch ($cleanData['schedule_type']) {
-                        case 'dates_only':
+                    switch ($selected_days) {
+                        //If Toggle Date Period On
+                        case ($selected_days <= 0 && $date_start != null && $date_end != null) :
                             $current_date = $date_start->copy();
         
                             while ($current_date->lte($date_end)) {
@@ -191,11 +191,13 @@ class ScheduleController extends Controller
                                 $current_date->addDay();
                             }
                         break;
-        
-                        case 'days_only' :
+                        
+                        //If Toggle Show Day on
+                        case ($selected_days >=1 && $date_start === null && $date_end === null ) :
                             $year   = Carbon::now()->year;  // Replace with your desired year
-                            $month  = $cleanData['month'];  // Replace with your desired month
-        
+                            $month  = Carbon::parse($cleanData['month'])->month;  // Replace with your desired month
+
+                            //To Update
                             $start_date = Carbon::create($year, $month, 1)->startOfMonth(); // Calculate the first day of the month
                             $end_date   = $start_date->copy()->endOfMonth();                // Calculate the last day of the month
         
@@ -207,7 +209,8 @@ class ScheduleController extends Controller
                                 }
                                 $current_date->addDay();
                             }
-        
+
+                            return $selected_dates;
                         break;
         
                         default:
@@ -221,7 +224,6 @@ class ScheduleController extends Controller
                             }
                         break;
                     }
-
                     
                     foreach ($selected_dates as $key => $date) {
                         $schedule = Schedule::where('time_shift_id',$cleanData['time_shift_id'])
@@ -267,8 +269,10 @@ class ScheduleController extends Controller
                     }
 
                     
-                    Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
-                    return response()->json(['data' => $data ,'message' => $msg], Response::HTTP_OK);
+
+                    
+                    // Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+                    // return response()->json(['data' => $data ,'message' => $msg], Response::HTTP_OK);
             //     } else {
             //         return response()->json(['message' => 'User not allowed to create'], Response::HTTP_OK);
             //     }
@@ -277,7 +281,7 @@ class ScheduleController extends Controller
             // }
 
         } catch (\Throwable $th) {
-            
+            return $th;            
             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }

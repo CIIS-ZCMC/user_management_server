@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "780c262e00c7079dc7154f2487e35404",
+    "content-hash": "a90d80355c4124c19ce807b2861efb3b",
     "packages": [
         {
             "name": "batang-it/tad-php",
@@ -1864,39 +1864,28 @@
         },
         {
             "name": "league/csv",
-            "version": "9.12.0",
+            "version": "9.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/thephpleague/csv.git",
-                "reference": "c1dc31e23eb3cd0f7b537ee1a669d5f58d5cfe21"
+                "reference": "60ea563773f1c50162a948c44901c93b9a0aee56"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/thephpleague/csv/zipball/c1dc31e23eb3cd0f7b537ee1a669d5f58d5cfe21",
-                "reference": "c1dc31e23eb3cd0f7b537ee1a669d5f58d5cfe21",
+                "url": "https://api.github.com/repos/thephpleague/csv/zipball/60ea563773f1c50162a948c44901c93b9a0aee56",
+                "reference": "60ea563773f1c50162a948c44901c93b9a0aee56",
                 "shasum": ""
             },
             "require": {
-                "ext-filter": "*",
-                "ext-json": "*",
                 "ext-mbstring": "*",
-                "php": "^8.1.2"
+                "php": ">=7.0.10"
             },
             "require-dev": {
-                "doctrine/collections": "^2.1.4",
-                "ext-dom": "*",
-                "ext-xdebug": "*",
-                "friendsofphp/php-cs-fixer": "^v3.22.0",
-                "phpbench/phpbench": "^1.2.15",
-                "phpstan/phpstan": "^1.10.46",
-                "phpstan/phpstan-deprecation-rules": "^1.1.4",
-                "phpstan/phpstan-phpunit": "^1.3.15",
-                "phpstan/phpstan-strict-rules": "^1.5.2",
-                "phpunit/phpunit": "^10.4.2",
-                "symfony/var-dumper": "^6.4.0"
+                "ext-curl": "*",
+                "friendsofphp/php-cs-fixer": "^2.0",
+                "phpunit/phpunit": "^6.0"
             },
             "suggest": {
-                "ext-dom": "Required to use the XMLConverter and the HTMLConverter classes",
                 "ext-iconv": "Needed to ease transcoding CSV using iconv stream filters"
             },
             "type": "library",
@@ -1925,31 +1914,22 @@
                     "role": "Developer"
                 }
             ],
-            "description": "CSV data manipulation made easy in PHP",
-            "homepage": "https://csv.thephpleague.com",
+            "description": "Csv data manipulation made easy in PHP",
+            "homepage": "http://csv.thephpleague.com",
             "keywords": [
-                "convert",
                 "csv",
                 "export",
                 "filter",
                 "import",
                 "read",
-                "transform",
                 "write"
             ],
             "support": {
-                "docs": "https://csv.thephpleague.com",
+                "forum": "https://groups.google.com/forum/#!forum/thephpleague",
                 "issues": "https://github.com/thephpleague/csv/issues",
-                "rss": "https://github.com/thephpleague/csv/releases.atom",
-                "source": "https://github.com/thephpleague/csv"
+                "source": "https://github.com/thephpleague/csv/tree/master"
             },
-            "funding": [
-                {
-                    "url": "https://github.com/sponsors/nyamsprod",
-                    "type": "github"
-                }
-            ],
-            "time": "2023-12-01T17:54:07+00:00"
+            "time": "2017-08-18T10:27:55+00:00"
         },
         {
             "name": "league/flysystem",
