@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
-use App\Services\RequestLogger;
+use App\Helpers\Helpers;
 use App\Models\DefaultPassword;
 use App\Http\Resources\DefaultPasswordResource;
 use App\Http\Requests\DefaultPasswordRequest;
@@ -19,27 +19,18 @@ class DefaultPasswordController extends Controller
     private $CONTROLLER_NAME = 'Default Password';
     private $PLURAL_MODULE_NAME = 'default password records';
     private $SINGULAR_MODULE_NAME = 'default password record';
-
-    protected $requestLogger;
-
-    public function __construct(RequestLogger $requestLogger)
-    {
-        $this->requestLogger = $requestLogger;
-    }
     
     public function index(Request $request)
     {
         try{
             $default_passwords = DefaultPassword::all();
 
-            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => DefaultPasswordResource::collection($default_passwords),
                 'message' => 'Default password records retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -59,14 +50,14 @@ class DefaultPasswordController extends Controller
 
             $default_password = DefaultPassword::create($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $default_password['id'], true, 'Success creating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $default_password['id'], true, 'Success creating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => new DefaultPasswordResource($default_password),
                 'message' => 'New default password added.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -78,18 +69,16 @@ class DefaultPasswordController extends Controller
 
             if(!$default_password)
             {
-                $this->requestLogger->registerSystemLogs($request, $id, false, 'Failed to find a '.$this->SINGULAR_MODULE_NAME.'.');
+                Helpers::registerSystemLogs($request, $id, false, 'Failed to find a '.$this->SINGULAR_MODULE_NAME.'.');
                 return response()->json(['message' => "No record found"], Response::HTTP_NOT_FOUND);
             }
-
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => new DefaultPasswordResource($default_password),
                 'message' => 'Default password record retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -116,14 +105,14 @@ class DefaultPasswordController extends Controller
 
             $default_password->update($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => new DefaultPasswordResource($default_password),
                 'message' => 'Default password record updated.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -150,11 +139,11 @@ class DefaultPasswordController extends Controller
 
             $default_password -> delete();
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting a '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting a '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['message' => 'Default password record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
