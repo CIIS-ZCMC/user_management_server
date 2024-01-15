@@ -93,9 +93,9 @@ class LeaveCreditController extends Controller
                     $employee_leave_credits= ModelsEmployeeLeaveCredit::where('employee_profile_id',$employee->id)->get();
                     $biometric_id=$employee->biometric_id;
                     $undertimeController = new DTRcontroller();
-                    
-                    $undertime_total = $undertimeController->dtrUTOTReport($biometric_id, $currentMonth, $currentYear, 1, 1, 0);
-                    $employee_undertime=$undertime_total['undertime_minutes'];
+                    $undertime_request = new Request(['biometric_id' => $biometric_id, 'monthof' => $currentMonth, 'yearof' => $currentYear, 'is15thdays' => '1','firsthalf' => '1', 'secondhalf' => '0']);
+                    $undertime_total = $undertimeController->dtrUTOTReport($undertime_request);
+                    $employee_undertime=$undertime_total[''];
 
                         $totalLeaveCredits = $employee_leave_credits->mapToGroups(function ($credit) {
                             return [$credit->operation => $credit->credit_value];

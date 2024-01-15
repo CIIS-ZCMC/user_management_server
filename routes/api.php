@@ -104,22 +104,22 @@ Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
     // Route::get('ot-application-declined', 'OfficialTimeApplicationController@getDeclinedOtApplications');
     // Route::get('access-level-ot-application', 'OfficialTimeApplicationController@getOtApplications');
 
-    // Route::get('ovt-application-all', 'OvertimeApplicationController@index');
-    // Route::post('ovt-application', 'OvertimeApplicationController@store');
-    // Route::post('ovt-application-past', 'OvertimeApplicationController@storePast');
-    // Route::get('ovt-employee-select', 'OvertimeApplicationController@computeEmployees');
-    // Route::post('ovt-application-logs/{id}/{pr}/{cf}', 'OvertimeApplicationController@storeOfficialTimeApplicationLog');
-    // Route::post('OfficialTime-application/{id}', 'OfficialTimeApplicationController@update');
-    // Route::post('ovt-application-decline/{id}', 'OvertimeApplicationController@declineOtApplication');
-    // Route::post('ovt-application-cancel/{id}', 'OvertimeApplicationController@cancelOtApplication');
-    // Route::post('ovt-application-update/{id}/{status}', 'OvertimeApplicationController@updateOvertimeApplicationStatus');
-    // Route::get('user-ovt-application', 'OvertimeApplicationController@getUserOvertimeApplication');
-    // Route::get('ovt-application-division', 'OvertimeApplicationController@getDivisionOvertimeApplications');
-    // Route::get('ovt-application-department', 'OvertimeApplicationController@getDepartmentOvertimeApplications');
-    // Route::get('ovt-application-section', 'OvertimeApplicationController@getSectionOvertimeApplications');
-    // Route::get('ovt-application-declined', 'OvertimeApplicationController@getDeclinedOvertimeApplications');
-    // Route::get('access-level-ovt-application', 'OvertimeApplicationController@getOvertimeApplications');
-    // Route::post('add-monthly-overtime', 'EmployeeOvertimeCreditController@store');
+    Route::get('ovt-application-all', 'OvertimeApplicationController@index');
+    Route::post('ovt-application', 'OvertimeApplicationController@store');
+    Route::post('ovt-application-past', 'OvertimeApplicationController@storePast');
+    Route::get('ovt-employee-select', 'OvertimeApplicationController@computeEmployees');
+    Route::post('ovt-application-logs/{id}/{pr}/{cf}', 'OvertimeApplicationController@storeOfficialTimeApplicationLog');
+    Route::post('OfficialTime-application/{id}', 'OfficialTimeApplicationController@update');
+    Route::post('ovt-application-decline/{id}', 'OvertimeApplicationController@declineOtApplication');
+    Route::post('ovt-application-cancel/{id}', 'OvertimeApplicationController@cancelOtApplication');
+    Route::post('ovt-application-update/{id}/{status}', 'OvertimeApplicationController@updateOvertimeApplicationStatus');
+    Route::get('user-ovt-application', 'OvertimeApplicationController@getUserOvertimeApplication');
+    Route::get('ovt-application-division', 'OvertimeApplicationController@getDivisionOvertimeApplications');
+    Route::get('ovt-application-department', 'OvertimeApplicationController@getDepartmentOvertimeApplications');
+    Route::get('ovt-application-section', 'OvertimeApplicationController@getSectionOvertimeApplications');
+    Route::get('ovt-application-declined', 'OvertimeApplicationController@getDeclinedOvertimeApplications');
+    Route::get('access-level-ovt-application', 'OvertimeApplicationController@getOvertimeApplications');
+    Route::post('add-monthly-overtime', 'EmployeeOvertimeCreditController@store');
 
     // Route::get('cto-application-all', 'CtoApplicationController@index');
     // Route::post('cto-application', 'CtoApplicationController@store');
@@ -1633,42 +1633,42 @@ Route::middleware('auth.cookie')->group(function(){
         });
 
 
-        Route::middleware(['auth.permission:UMIS-OM view-all'])->group(function(){
-            Route::get('ovt-application-all', 'OvertimeApplicationController@index');
-        });
+        // Route::middleware(['auth.permission:UMIS-OM view-all'])->group(function(){
+        //     Route::get('ovt-application-all', 'OvertimeApplicationController@index');
+        // });
 
-        Route::middleware(['auth.permission:UMIS-OM request'])->group(function(){
-            Route::post('ovt-application', 'OvertimeApplicationController@store');
-        });
+        // Route::middleware(['auth.permission:UMIS-OM request'])->group(function(){
+        //     Route::post('ovt-application', 'OvertimeApplicationController@store');
+        // });
 
-        Route::middleware(['auth.permission:UMIS-OM request'])->group(function(){
-            Route::post('ovt-application-past', 'OvertimeApplicationController@storePast');
-        });
+        // Route::middleware(['auth.permission:UMIS-OM request'])->group(function(){
+        //     Route::post('ovt-application-past', 'OvertimeApplicationController@storePast');
+        // });
 
-        Route::middleware(['auth.permission:UMIS-OM view'])->group(function(){
-            Route::get('ovt-employee-select', 'OvertimeApplicationController@computeEmployees');
-        });
+        // Route::middleware(['auth.permission:UMIS-OM view'])->group(function(){
+        //     Route::get('ovt-employee-select', 'OvertimeApplicationController@computeEmployees');
+        // });
 
-        Route::middleware(['auth.permission:UMIS-OM approve'])->group(function(){
-            Route::post('ovt-application-decline/{id}', 'OvertimeApplicationController@declineOtApplication');
-        });
+        // Route::middleware(['auth.permission:UMIS-OM approve'])->group(function(){
+        //     Route::post('ovt-application-decline/{id}', 'OvertimeApplicationController@declineOtApplication');
+        // });
 
-        Route::middleware(['auth.permission:UMIS-OM approve'])->group(function(){
-            Route::post('ovt-application-cancel/{id}', 'OvertimeApplicationController@cancelOtApplication');
-        });
+        // Route::middleware(['auth.permission:UMIS-OM approve'])->group(function(){
+        //     Route::post('ovt-application-cancel/{id}', 'OvertimeApplicationController@cancelOtApplication');
+        // });
 
-        Route::middleware(['auth.permission:UMIS-OM approve'])->group(function(){
-            Route::post('ovt-application-update/{id}/{status}', 'OvertimeApplicationController@updateOvertimeApplicationStatus');
-        });
+        // Route::middleware(['auth.permission:UMIS-OM approve'])->group(function(){
+        //     Route::post('ovt-application-update/{id}/{status}', 'OvertimeApplicationController@updateOvertimeApplicationStatus');
+        // });
 
-        Route::middleware(['auth.permission:UMIS-OM view'])->group(function(){
-            Route::get('user-ovt-application', 'OvertimeApplicationController@getUserOvertimeApplication');
-        });
+        // Route::middleware(['auth.permission:UMIS-OM view'])->group(function(){
+        //     Route::get('user-ovt-application', 'OvertimeApplicationController@getUserOvertimeApplication');
+        // });
 
-        Route::middleware(['auth.permission:UMIS-OM view'])->group(function(){
-            Route::get('access-level-ovt-application', 'OvertimeApplicationController@getOvertimeApplications');
-        });
-        
+        // Route::middleware(['auth.permission:UMIS-OM view'])->group(function(){
+        //     Route::get('access-level-ovt-application', 'OvertimeApplicationController@getOvertimeApplications');
+        // });
+
 
         Route::middleware(['auth.permission:UMIS-CT view-all'])->group(function(){
             Route::get('cto-application-all', 'CtoApplicationController@index');
