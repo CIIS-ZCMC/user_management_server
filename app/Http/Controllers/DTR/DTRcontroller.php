@@ -30,10 +30,10 @@ class DTRcontroller extends Controller
         $this->helper = new Helpers();
         $this->device = new BioControl();
         $this->bioms = new BioMSController();
-        try{
+        try {
             $content = $this->bioms->operatingDevice()->getContent();
-            $this->devices = $content !== null?json_decode($content, true)['data']:[];
-        }catch(\Throwable $th){
+            $this->devices = $content !== null ? json_decode($content, true)['data'] : [];
+        } catch (\Throwable $th) {
             Log::channel("custom-dtr-log-error")->error($th->getMessage());
         }
     }
@@ -86,9 +86,9 @@ class DTRcontroller extends Controller
                     } else {
                         //Save anomaly entries
                         /**
-                         * Here we saved all entries that the device date and time and server 
+                         * Here we saved all entries that the device date and time and server
                          * does not match..
-                         * 
+                         *
                          */
                         foreach ($Employee_Attendance as $key => $value) {
                             DtrAnomalies::create([
@@ -295,7 +295,7 @@ class DTRcontroller extends Controller
             $year_of = $request->yearof;
             $view = $request->view;
 
-            /* 
+            /*
             Multiple IDS for Multiple PDF generation
             */
             $id = json_decode($biometric_id);
@@ -307,6 +307,7 @@ class DTRcontroller extends Controller
 
             $emp_name = '';
             $biometric_id = $id[0];
+
             if ($this->helper->isEmployee($id[0])) {
                 $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
                 $emp_name = $employee->name();
@@ -373,13 +374,13 @@ class DTRcontroller extends Controller
 
             return $this->PrintDtr($month_of, $year_of, $biometric_id, $emp_Details, $view);
         } catch (\Throwable $th) {
-
+            return $th;
             return response()->json(['message' =>  $th->getMessage()]);
         }
     }
 
 
-    /* 
+    /*
     *    This is either view or print as PDF
     *
     */
@@ -411,7 +412,7 @@ class DTRcontroller extends Controller
 
             foreach ($dtr as $val) {
                 /* Validating DTR with its Matching Schedules */
-                /* 
+                /*
                 *   if no matching schedule then
                 *   it will not display the daily time record
                 */
@@ -563,6 +564,7 @@ class DTRcontroller extends Controller
                 $dompdf->stream($filename);
             }
         } catch (\Throwable $th) {
+
             return response()->json(['message' =>  $th->getMessage()]);
         }
     }
@@ -597,7 +599,7 @@ class DTRcontroller extends Controller
                     $time_stamps_req = '';
                     foreach ($dtr as $val) {
                         /* Validating DTR with its Matching Schedules */
-                        /* 
+                        /*
                         *   if no matching schedule then
                         *   it will not display the daily time record
                         */
@@ -663,7 +665,7 @@ class DTRcontroller extends Controller
                     $time_stamps_req = '';
                     foreach ($dtr as $val) {
                         /* Validating DTR with its Matching Schedules */
-                        /* 
+                        /*
                         *   if no matching schedule then
                         *   it will not display the daily time record
                         */
@@ -869,11 +871,11 @@ class DTRcontroller extends Controller
         return false;
     }
 
-    /* 
+    /*
     *
     *
      Report Generation
-     Undertime, Overtime , present dates and its absences 
+     Undertime, Overtime , present dates and its absences
     **
     */
     public function dtrUTOTReport(Request $request)
@@ -886,7 +888,7 @@ class DTRcontroller extends Controller
             $dt_records = [];
             $is_Half_Schedule = false;
             $dtr = [];
-
+            $mdtr = [];
             if (count($bio) >= 1) {
                 foreach ($bio as $biometric_id) {
                     if ($this->helper->isEmployee($biometric_id)) {
@@ -904,7 +906,7 @@ class DTRcontroller extends Controller
                         } else {
                             $dt_records = $this->generateMonthly($month_of, $year_of, $biometric_id);
                         }
-                        $mdtr = [];
+
                         $no_Sched_dtr = [];
                         $number_Of_Days = 0;
                         $number_Of_all_Days_past = 0;
@@ -1260,7 +1262,7 @@ class DTRcontroller extends Controller
                 $found = false;
                 foreach ($mdtr as $d) {
                     if (date('d', strtotime($d['first_in'])) == $i) {
-                        $mdt[] = $d;  // Use the day from $mdtr   
+                        $mdt[] = $d;  // Use the day from $mdtr
                         $found = true;
                     }
                 }
@@ -1294,7 +1296,8 @@ class DTRcontroller extends Controller
 
             return $dtr;
         } catch (\Throwable $th) {
-            return response()->json(['message' => 'Invalid Month']);
+
+            return response()->json(['message' => $th->getMessage()]);
         }
     }
 
@@ -1406,7 +1409,7 @@ class DTRcontroller extends Controller
     }
     public function test()
     {
-        /* 
+        /*
         **
         * test on how to access request function on another controller for instance
         */
@@ -1423,7 +1426,7 @@ class DTRcontroller extends Controller
                 $secondout = date('H:i:s', strtotime('today') + rand(59400, 77400));
 
                 DailyTimeRecords::create([
-                    'biometric_id' => 5182,
+                    'biometric_id' => 3553,
                     'dtr_date' => $date,
                     'first_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin)),
                     'first_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstout)),
