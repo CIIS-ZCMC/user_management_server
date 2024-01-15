@@ -35,6 +35,7 @@ class ResetLeaveCredits extends Command
             $schedule->call('App\Http\Controllers\LeaveCreditsController@addSpLeaveCredit')->yearlyOn(7, 1, '00:00');
             $schedule->call('App\Http\Controllers\LeaveCreditsController@resetYearlyLeaveCredit')->yearlyOn(1, 1);
             $schedule->call('App\Http\Controllers\LeaveCreditsController@addMonthlyLeaveCredit')->monthlyOn(1, '00:00');
+            $schedule->call('App\Http\Controllers\LeaveCreditsController@deductUndertime')->monthlyOn(16, '00:00');
 
             $schedule->call('App\Http\Controllers\OvertimeApplicationController@resetYearlyOvertimeCredit')->yearlyOn(1, 1);
             $schedule->call('App\Http\Controllers\EmployeeOvertimeCreditController@store')->monthlyOn(1, '00:00');

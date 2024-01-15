@@ -115,14 +115,24 @@ class EmployeeOvertimeCreditController extends Controller
                                         // Store the total overtime hours for each unique combination in the database
                                         $date_compare=$date->date;
                                         $total =  $this->calculateTotal($date_compare);
-                                        EmployeeOvertimeCredit::create([
-                                            'employee_profile_id' => $employee->employee_profile_id,
-                                            'date' => date('Y-m-d'),
-                                            'operation' => 'add',
-                                            'overtime_application_id' =>$overtimeApplication->id,
-                                            'credit_value' => $totalOvertimeHours * $total,
-                                            'overtime_hours' => $totalOvertimeHours * $total,
-                                        ]);
+                                        $employee = EmployeeProfile::where('id', $employee->employee_profile_id)
+                                        ->whereHas('employmentType', function ($query) {
+                                            $query->where('name', 'Regular Full-Time')
+                                                  ->orWhere('name', 'Regular Part-Time');
+                                        })
+                                        ->first();
+                                        if($employee)
+                                        {
+                                            EmployeeOvertimeCredit::create([
+                                                'employee_profile_id' => $employee->employee_profile_id,
+                                                'date' => date('Y-m-d'),
+                                                'operation' => 'add',
+                                                'overtime_application_id' =>$overtimeApplication->id,
+                                                'credit_value' => $totalOvertimeHours * $total,
+                                                'overtime_hours' => $totalOvertimeHours * $total,
+                                            ]);
+                                        }
+
                                     }
                                 }
                             }
@@ -174,14 +184,23 @@ class EmployeeOvertimeCreditController extends Controller
                                         // Store the total overtime hours for each unique combination in the database
                                         $date_compare=$date->date;
                                         $total =  $this->calculateTotal($date_compare);
-                                        EmployeeOvertimeCredit::create([
-                                            'employee_profile_id' => $employee->employee_profile_id,
-                                            'date' => date('Y-m-d'),
-                                            'operation' => 'add',
-                                            'overtime_application_id' =>$overtimeApplication->id,
-                                            'credit_value' => $totalOvertimeHours * $total,
-                                            'overtime_hours' => $totalOvertimeHours * $total,
-                                        ]);
+                                        $employee = EmployeeProfile::where('id', $employee->employee_profile_id)
+                                        ->whereHas('employmentType', function ($query) {
+                                            $query->where('name', 'Regular Full-Time')
+                                                  ->orWhere('name', 'Regular Part-Time');
+                                        })
+                                        ->first();
+                                        if($employee)
+                                        {
+                                            EmployeeOvertimeCredit::create([
+                                                'employee_profile_id' => $employee->employee_profile_id,
+                                                'date' => date('Y-m-d'),
+                                                'operation' => 'add',
+                                                'overtime_application_id' =>$overtimeApplication->id,
+                                                'credit_value' => $totalOvertimeHours * $total,
+                                                'overtime_hours' => $totalOvertimeHours * $total,
+                                            ]);
+                                        }
                                     }
                                 }
                             }

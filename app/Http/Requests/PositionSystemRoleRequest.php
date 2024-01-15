@@ -22,8 +22,8 @@ class PositionSystemRoleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'designation_id' => 'required|string|size:36',
-            'system_role_id' => 'required|string|size:36',
+            'designation_id' => 'required|integer',
+            'system_role_id' => 'required|integer',
         ];
     }
 }

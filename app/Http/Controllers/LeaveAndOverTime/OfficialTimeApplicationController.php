@@ -327,6 +327,7 @@ class OfficialTimeApplicationController extends Controller
                 })
                 ->where('status', 'for-approval-department-head')
                 ->orWhere('status', 'for-approval-division-head')
+                ->orWhere('status', 'approved')
                 ->orwhere('status', 'declined')
                 ->get();
                 if($OfficialTimeApplication->isNotEmpty())
@@ -461,6 +462,7 @@ class OfficialTimeApplicationController extends Controller
                 })
                 ->where('status', 'for-approval-section-head')
                 ->orWhere('status', 'for-approval-division-head')
+                ->orWhere('status', 'approved')
                 ->orwhere('status', 'declined')
                 ->get();
                 if($official_time_applications->isNotEmpty())
@@ -607,13 +609,16 @@ class OfficialTimeApplicationController extends Controller
                     $division = AssignArea::where('employee_profile_id',$ot_application->employee_profile_id)->value('division_id');
                     $department = AssignArea::where('employee_profile_id',$ot_application->employee_profile_id)->value('department_id');
                     $section = AssignArea::where('employee_profile_id',$ot_application->employee_profile_id)->value('section_id');
-                    $chief_name=null;
+                    $chief_first_name=null;
+                    $chief_last_name=null;
                     $chief_position=null;
                     $chief_code=null;
-                    $head_name=null;
+                    $head_first_name=null;
+                    $head_last_name=null;
                     $head_position=null;
                     $head_code=null;
-                    $supervisor_name=null;
+                    $supervisor_first_name=null;
+                    $supervisor_last_name=null;
                     $supervisor_position=null;
                     $supervisor_code=null;
                     if($division) {
@@ -621,7 +626,8 @@ class OfficialTimeApplicationController extends Controller
 
                         if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
                         {
-                            $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
+                            $chief_first_name = optional($division_name->chief->personalInformation)->first_name ?? null;
+                            $chief_last_name =optional($division_name->chief->personalInformation)->last_name ?? null;
                             $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
                             $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
                         }
@@ -631,7 +637,8 @@ class OfficialTimeApplicationController extends Controller
                         $department_name = Department::with('head.personalInformation')->find($department);
                         if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
                         {
-                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                            $head_first_name = optional($department_name->head->personalInformation)->first_name ?? null;
+                            $head_last_name = optional($department_name->head->personalInformation)->last_name ?? null;
                             $head_position = $department_name->head->assignedArea->designation->name ?? null;
                             $head_code = $department_name->head->assignedArea->designation->code ?? null;
                         }
@@ -641,7 +648,8 @@ class OfficialTimeApplicationController extends Controller
                         $section_name = Section::with('supervisor.personalInformation')->find($section);
                         if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
                         {
-                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                            $supervisor_first_name = optional($section_name->supervisor->personalInformation)->first_name ?? null;
+                            $supervisor_last_name = optional($section_name->supervisor->personalInformation)->last_name ?? null;
                             $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
                             $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
                         }
@@ -671,13 +679,16 @@ class OfficialTimeApplicationController extends Controller
                         'position_code' => $ot_application->employeeProfile->assignedArea->designation->code ?? null,
                         'position_name' => $ot_application->employeeProfile->assignedArea->designation->name ?? null,
                         'date_created' => $ot_application->created_at,
-                        'division_head' =>$chief_name,
+                        'division_head_first' =>$chief_first_name,
+                        'division_head_last' =>$chief_last_name,
                         'division_head_position'=> $chief_position,
                         'division_head_code'=> $chief_code,
-                        'department_head' =>$head_name,
+                        'department_head_first' =>$head_first_name,
+                        'department_head_last' =>$head_last_name,
                         'department_head_position' =>$head_position,
                         'department_head_code' =>$head_code,
-                        'section_head' =>$supervisor_name,
+                        'section_head_first' =>$supervisor_first_name,
+                        'section_head_last' =>$supervisor_last_name,
                         'section_head_position' =>$supervisor_position,
                         'section_head_code' =>$supervisor_code,
                         'division_name' => $ot_application->employeeProfile->assignedArea->division->name ?? null,
@@ -732,8 +743,18 @@ class OfficialTimeApplicationController extends Controller
     {
         try{
             $validatedData = $request->validate([
-                'date_from' => 'required|date_format:Y-m-d',
-                'date_to' => 'required_with:date_from|date_format:Y-m-d|after:date_from',
+                'date_from.*' => 'required|date_format:Y-m-d',
+                'date_to.*' => [
+                    'required',
+                    'date_format:Y-m-d',
+                    function ($attribute, $value, $fail) use ($request) {
+                        $index = explode('.', $attribute)[1];
+                        $dateFrom = $request->input('date_from.' . $index);
+                        if ($value < $dateFrom) {
+                            $fail("The date to must be greater than date from.");
+                        }
+                    },
+                ],
                 'certificate_of_appearance' =>'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
                 'personal_order' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
                 'reason' => 'required|string|max:512',
@@ -804,13 +825,16 @@ class OfficialTimeApplicationController extends Controller
                  $division = AssignArea::where('employee_profile_id',$official_time_application->employee_profile_id)->value('division_id');
                     $department = AssignArea::where('employee_profile_id',$official_time_application->employee_profile_id)->value('department_id');
                     $section = AssignArea::where('employee_profile_id',$official_time_application->employee_profile_id)->value('section_id');
-                    $chief_name=null;
+                    $chief_first_name=null;
+                    $chief_last_name=null;
                     $chief_position=null;
                     $chief_code=null;
-                    $head_name=null;
+                    $head_first_name=null;
+                    $head_last_name=null;
                     $head_position=null;
                     $head_code=null;
-                    $supervisor_name=null;
+                    $supervisor_first_name=null;
+                    $supervisor_last_name=null;
                     $supervisor_position=null;
                     $supervisor_code=null;
                     if($division) {
@@ -818,7 +842,8 @@ class OfficialTimeApplicationController extends Controller
 
                         if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
                         {
-                            $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
+                            $chief_first_name = optional($division_name->chief->personalInformation)->first_name ?? null;
+                            $chief_last_name =optional($division_name->chief->personalInformation)->last_name ?? null;
                             $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
                             $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
                         }
@@ -828,7 +853,8 @@ class OfficialTimeApplicationController extends Controller
                         $department_name = Department::with('head.personalInformation')->find($department);
                         if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
                         {
-                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                            $head_first_name = optional($department_name->head->personalInformation)->first_name ?? null;
+                            $head_last_name = optional($department_name->head->personalInformation)->last_name ?? null;
                             $head_position = $department_name->head->assignedArea->designation->name ?? null;
                             $head_code = $department_name->head->assignedArea->designation->code ?? null;
                         }
@@ -838,7 +864,8 @@ class OfficialTimeApplicationController extends Controller
                         $section_name = Section::with('supervisor.personalInformation')->find($section);
                         if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
                         {
-                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                            $supervisor_first_name = optional($section_name->supervisor->personalInformation)->first_name ?? null;
+                            $supervisor_last_name = optional($section_name->supervisor->personalInformation)->last_name ?? null;
                             $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
                             $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
                         }
@@ -867,13 +894,16 @@ class OfficialTimeApplicationController extends Controller
                         'position_code' => $official_time_application->employeeProfile->assignedArea->designation->code ?? null,
                         'position_name' => $official_time_application->employeeProfile->assignedArea->designation->name ?? null,
                         'date_created' => $official_time_application->created_at,
-                        'division_head' =>$chief_name,
+                        'division_head_first' =>$chief_first_name,
+                        'division_head_last' =>$chief_last_name,
                         'division_head_position'=> $chief_position,
                         'division_head_code'=> $chief_code,
-                        'department_head' =>$head_name,
+                        'department_head_first' =>$head_first_name,
+                        'department_head_last' =>$head_last_name,
                         'department_head_position' =>$head_position,
                         'department_head_code' =>$head_code,
-                        'section_head' =>$supervisor_name,
+                        'section_head_first' =>$supervisor_first_name,
+                        'section_head_last' =>$supervisor_last_name,
                         'section_head_position' =>$supervisor_position,
                         'section_head_code' =>$supervisor_code,
                         'division_name' => $official_time_application->employeeProfile->assignedArea->division->name ?? null,
@@ -915,7 +945,7 @@ class OfficialTimeApplicationController extends Controller
                     ];
                 });
                 $singleArray = array_merge(...$official_time_applications_result);
-            return response()->json(['message' => 'Official Business Application has been sucessfully saved','data' => $singleArray ], Response::HTTP_OK);
+            return response()->json(['message' => 'Official Time Application has been sucessfully saved','data' => $singleArray ], Response::HTTP_OK);
         }catch(\Throwable $th){
             DB::rollBack();
             return response()->json(['message' => $th->getMessage()], 500);

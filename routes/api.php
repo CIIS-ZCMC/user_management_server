@@ -20,6 +20,25 @@ Route::get('/initialize-storage', function () {
     Artisan::call('storage:link');
 });
 
+Route::namespace('App\Http\Controllers')->group(function () {
+    Route::get('announcements', 'AnnouncementsController@index');
+    Route::get('announcements-search', 'AnnouncementsController@searchAnnouncement');
+    Route::get('announcements/{id}', 'AnnouncementsController@show');
+
+    Route::get('events', 'EventsController@index');
+    Route::get('events-search', 'EventsController@searchEvents');
+    Route::get('events/{id}', 'EventsController@show');
+
+    Route::get('memorandums', 'MemorandumsController@index');
+    Route::get('memorandums-search', 'MemorandumsController@searchMemorandum');
+    Route::get('memorandums/{id}', 'MemorandumsController@show');
+
+    Route::get('news', 'NewsController@index');
+    Route::get('news-search', 'NewsController@searchNews');
+    Route::get('news/{id}', 'NewsController@show');
+});
+
+
 Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
     Route::post('sign-in', 'EmployeeProfileController@signIn');
     Route::post('verify-email-and-send-otp', 'EmployeeProfileController@verifyEmailAndSendOTP');
@@ -30,103 +49,79 @@ Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(functi
 });
 
 Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
-    // Route::get('get_employees', 'OvertimeApplicationController@getEmployees');
-    // Route::get('get_employees_overtime_total', 'OvertimeApplicationController@getEmployeeOvertimeTotal');
-    // Route::get('requirements', 'RequirementController@index');
-    // Route::get('leave-type-all', 'LeaveTypeController@index');
-    // Route::get('leave-type-select', 'LeaveTypeController@select');
-    // Route::post('leave-type', 'LeaveTypeController@store');
-    // Route::post('leave-type/{id}', 'LeaveTypeController@update');
-    // Route::post('leave-type-deactivate-password/{id}', 'LeaveTypeController@deactivateLeaveType');
-    // Route::post('leave-type-activate-password/{id}', 'LeaveTypeController@reactivateLeaveType');
-    // Route::get('requirement-all', 'RequirementController@index');
-    // Route::post('requirement', 'RequirementController@store');
-    // Route::post('requirement/{id}', 'RequirementController@update');
-    // Route::get('leave-application-all', 'LeaveApplicationController@index');
-    // Route::post('leave-application', 'LeaveApplicationController@store');
-    // Route::post('leave-application-decline/{id}', 'LeaveApplicationController@declineLeaveApplication');
-    // Route::post('leave-application-cancel/{id}', 'LeaveApplicationController@cancelLeaveApplication');
-    // Route::post('leave-application-update/{id}/{status}', 'LeaveApplicationController@updateLeaveApplicationStatus');
-    // Route::get('user-leave-application', 'LeaveApplicationController@getUserLeaveApplication');
-    // Route::post('user-leave-credit-logs/{id}', 'LeaveApplicationController@getUserLeaveCreditsLogs');
-    // Route::get('leave-application-hr', 'LeaveApplicationController@getHRLeaveApplications');
-    // Route::get('leave-application-division', 'LeaveApplicationController@getDivisionLeaveApplications');
-    // Route::get('leave-application-department', 'LeaveApplicationController@getDepartmentLeaveApplications');
-    // Route::get('leave-application-section', 'LeaveApplicationController@getSectionLeaveApplications');
-    // Route::get('leave-application-declined', 'LeaveApplicationController@getDeclinedLeaveApplications');
-    // Route::get('access-level-leave-application', 'LeaveApplicationController@getLeaveApplications');
-    // Route::post('reset-leave-credit', 'LeaveApplicationController@resetYearlyLeaveCredit');
-    // Route::post('print-leave-form/{id}', 'LeaveApplicationController@printLeaveForm');
 
-    // Route::get('ob-application-all', 'ObApplicationController@index');
-    // Route::post('ob-application', 'ObApplicationController@store');
-    // Route::post('ob-application/{id}', 'ObApplicationController@update');
-    // Route::post('ob-application-decline/{id}', 'ObApplicationController@declineObApplication');
-    // Route::post('ob-application-cancel/{id}', 'ObApplicationController@cancelObApplication');
-    // Route::post('ob-application-update/{id}/{status}', 'ObApplicationController@updateObApplicationStatus');
-    // Route::get('user-ob-application', 'ObApplicationController@getUserObApplication');
-    // Route::get('ob-application-division', 'ObApplicationController@getDivisionObApplications');
-    // Route::get('ob-application-department', 'ObApplicationController@getDepartmentObApplications');
-    // Route::get('ob-application-section', 'ObApplicationController@getSectionObApplications');
-    // Route::get('ob-application-declined', 'ObApplicationController@getDeclinedObApplications');
-    // Route::get('access-level-ob-application', 'ObApplicationController@getObApplications');
-
-    // Route::get('ot-application-all', 'OfficialTimeApplicationController@index');
-    // Route::post('ot-application', 'OfficialTimeApplicationController@store');
-    // Route::post('ot-application-logs/{id}/{pr}/{cf}', 'OfficialTimeApplicationController@storeOfficialTimeApplicationLog');
-    // Route::post('OfficialTime-application/{id}', 'OfficialTimeApplicationController@update');
-    // Route::post('ot-application-decline/{id}', 'OfficialTimeApplicationController@declineOtApplication');
-    // Route::post('ot-application-cancel/{id}', 'OfficialTimeApplicationController@cancelOtApplication');
-    // Route::post('ot-application-update/{id}/{status}', 'OfficialTimeApplicationController@updateStatus');
-    // Route::get('user-ot-application', 'OfficialTimeApplicationController@getUserOtApplication');
-    // Route::get('ot-application-division', 'OfficialTimeApplicationController@getDivisionOtApplications');
-    // Route::get('ot-application-department', 'OfficialTimeApplicationController@getDepartmentOtApplications');
-    // Route::get('ot-application-section', 'OfficialTimeApplicationController@getSectionOtApplications');
-    // Route::get('ot-application-declined', 'OfficialTimeApplicationController@getDeclinedOtApplications');
-    // Route::get('access-level-ot-application', 'OfficialTimeApplicationController@getOtApplications');
-
-    // Route::get('ovt-application-all', 'OvertimeApplicationController@index');
-    // Route::post('ovt-application', 'OvertimeApplicationController@store');
-    // Route::post('ovt-application-past', 'OvertimeApplicationController@storePast');
-    // Route::get('ovt-employee-select', 'OvertimeApplicationController@computeEmployees');
-    // Route::post('ovt-application-logs/{id}/{pr}/{cf}', 'OvertimeApplicationController@storeOfficialTimeApplicationLog');
-    // Route::post('OfficialTime-application/{id}', 'OfficialTimeApplicationController@update');
-    // Route::post('ovt-application-decline/{id}', 'OvertimeApplicationController@declineOtApplication');
-    // Route::post('ovt-application-cancel/{id}', 'OvertimeApplicationController@cancelOtApplication');
-    // Route::post('ovt-application-update/{id}/{status}', 'OvertimeApplicationController@updateOvertimeApplicationStatus');
-    // Route::get('user-ovt-application', 'OvertimeApplicationController@getUserOvertimeApplication');
-    // Route::get('ovt-application-division', 'OvertimeApplicationController@getDivisionOvertimeApplications');
-    // Route::get('ovt-application-department', 'OvertimeApplicationController@getDepartmentOvertimeApplications');
-    // Route::get('ovt-application-section', 'OvertimeApplicationController@getSectionOvertimeApplications');
-    // Route::get('ovt-application-declined', 'OvertimeApplicationController@getDeclinedOvertimeApplications');
-    // Route::get('access-level-ovt-application', 'OvertimeApplicationController@getOvertimeApplications');
-    // Route::post('add-monthly-overtime', 'EmployeeOvertimeCreditController@store');
-
-    // Route::get('cto-application-all', 'CtoApplicationController@index');
-    // Route::post('cto-application', 'CtoApplicationController@store');
-    // Route::post('cto-application-logs/{id}/{pr}/{cf}', 'CtoApplicationController@storeCtoApplicationLog');
-    // Route::post('OfficialTime-application/{id}', 'CtoApplicationController@update');
-    // Route::post('cto-application-decline/{id}', 'CtoApplicationController@declineCtoApplication');
-    // Route::post('cto-application-cancel/{id}', 'CtoApplicationController@cancelCtoApplication');
-    // Route::post('cto-application-update/{id}/{status}', 'CtoApplicationController@updateStatus');
-    // Route::get('user-cto-application', 'CtoApplicationController@getUserCtoApplication');
-    // Route::get('cto-application-division', 'CtoApplicationController@getDivisionCtoApplications');
-    // Route::get('cto-application-department', 'CtoApplicationController@getDepartmentCtoApplications');
-    // Route::get('cto-application-section', 'CtoApplicationController@getSectionCtoApplications');
-    // Route::get('cto-application-declined', 'CtoApplicationController@getDeclinedCtoApplications');
-    // Route::get('access-level-cto-application', 'CtoApplicationController@getCtoApplications');
-
-
-    // Route::get('division', 'LeaveApplicationController@getDivisionLeaveApplications');
-
-    // Route::get('division-laot', 'LeaveApplicationController@getDivisionLeaveApplications');
-    // Route::get('add', 'LeaveCreditController@addMonthlyLeaveCredit');
-
-    // Route::post('add-monthly', 'LeaveCreditController@addMonthlyLeaveCredit');
-    // Route::get('ob-application-all', 'ObApplicationController@index');
+    Route::get('ovt-application-all', 'OvertimeApplicationController@index');
+    Route::post('ovt-application', 'OvertimeApplicationController@store');
+    Route::post('ovt-application-past', 'OvertimeApplicationController@storePast');
+    Route::get('ovt-employee-select', 'OvertimeApplicationController@computeEmployees');
+    Route::post('ovt-application-logs/{id}/{pr}/{cf}', 'OvertimeApplicationController@storeOfficialTimeApplicationLog');
+    Route::post('OfficialTime-application/{id}', 'OfficialTimeApplicationController@update');
+    Route::post('ovt-application-decline/{id}', 'OvertimeApplicationController@declineOtApplication');
+    Route::post('ovt-application-cancel/{id}', 'OvertimeApplicationController@cancelOtApplication');
+    Route::post('ovt-application-update/{id}/{status}', 'OvertimeApplicationController@updateOvertimeApplicationStatus');
+    Route::get('user-ovt-application', 'OvertimeApplicationController@getUserOvertimeApplication');
+    Route::get('ovt-application-division', 'OvertimeApplicationController@getDivisionOvertimeApplications');
+    Route::get('ovt-application-department', 'OvertimeApplicationController@getDepartmentOvertimeApplications');
+    Route::get('ovt-application-section', 'OvertimeApplicationController@getSectionOvertimeApplications');
+    Route::get('ovt-application-declined', 'OvertimeApplicationController@getDeclinedOvertimeApplications');
+    Route::get('access-level-ovt-application', 'OvertimeApplicationController@getOvertimeApplications');
+    Route::post('add-monthly-overtime', 'EmployeeOvertimeCreditController@store');
 });
 
 Route::middleware('auth.cookie')->group(function(){
+
+    Route::namespace('App\Http\Controllers')->group(function () {
+        Route::middleware('auth.permission:UMIS-SM write')->group(function(){
+            Route::post('announcements', 'AnnouncementsController@store');
+        });
+
+        Route::middleware('auth.permission:UMIS-SM update')->group(function(){
+            Route::put('announcements/{id}', 'AnnouncementsController@update');
+        });
+
+        Route::middleware('auth.permission:UMIS-SM delete')->group(function(){
+            Route::delete('announcements/{id}', 'AnnouncementsController@delete');
+        });
+
+        /** Events */
+        Route::middleware('auth.permission:UMIS-SM write')->group(function(){
+            Route::post('events', 'EventsController@store');
+        });
+
+        Route::middleware('auth.permission:UMIS-SM update')->group(function(){
+            Route::put('events/{id}', 'EventsController@update');
+        });
+
+        Route::middleware('auth.permission:UMIS-SM delete')->group(function(){
+            Route::delete('events/{id}', 'EventsController@delete');
+        });
+
+        /** Memoranda */
+        Route::middleware('auth.permission:UMIS-SM write')->group(function(){
+            Route::post('memorandums', 'MemorandumsController@store');
+        });
+
+        Route::middleware('auth.permission:UMIS-SM update')->group(function(){
+            Route::put('memorandums/{id}', 'MemorandumsController@update');
+        });
+
+        Route::middleware('auth.permission:UMIS-SM delete')->group(function(){
+            Route::delete('memorandums/{id}', 'MemorandumsController@delete');
+        });
+
+        /** News */
+        Route::middleware('auth.permission:UMIS-SM write')->group(function(){
+            Route::post('news', 'NewsController@store');
+        });
+
+        Route::middleware('auth.permission:UMIS-SM update')->group(function(){
+            Route::put('news/{id}', 'NewsController@update');
+        });
+
+        Route::middleware('auth.permission:UMIS-SM delete')->group(function(){
+            Route::delete('news/{id}', 'NewsController@delete');
+        });
+    });
 
     Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function(){
         Route::post('re-authenticate', 'EmployeeProfileController@revalidateAccessToken');
@@ -147,6 +142,7 @@ Route::middleware('auth.cookie')->group(function(){
         Route::put('freedom-wall-messages/{id}', 'FreedomWallMessagesController@update');
         Route::delete('freedom-wall-messages/{id}', 'FreedomWallMessagesController@destroy');
     });
+
     /**
      * User Management Information System
      */
@@ -581,11 +577,11 @@ Route::middleware('auth.cookie')->group(function(){
             Route::post('department-assign-head-employee/{id}', 'DepartmentController@assignHeadByEmployeeID');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM put'])->group(function(){
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
             Route::post('department-assign-to-employee/{id}', 'DepartmentController@assignTrainingOfficerByEmployeeID');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM put'])->group(function(){
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
             Route::put('department-assign-oic-employee/{id}', 'DepartmentController@assignOICByEmployeeID');
         });
 
@@ -674,17 +670,23 @@ Route::middleware('auth.cookie')->group(function(){
         /**
          * Educational Background Module
          */
-        Route::middleware(['auth.permission:UMIS-EM put'])->group(function(){
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
             Route::put('educational-background-by-personal-info/{id}', 'EducationalBackgroundController@findByPersonalInformationID');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM put'])->group(function(){
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
             Route::put('educational-background-by-employee/{id}', 'EducationalBackgroundController@findByEmployeeID');
         });
 
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
             Route::post('educational-background', 'EducationalBackgroundController@store');
         });
+
+        // Kriz
+          Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('educational-background-many', 'EducationalBackgroundController@storeMany');
+        });
+
 
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
             Route::get('educational-background/{id}', 'EducationalBackgroundController@show');
@@ -709,11 +711,11 @@ Route::middleware('auth.cookie')->group(function(){
         /**
          * Educational Background Module
          */
-        Route::middleware(['auth.permission:UMIS-EM put'])->group(function(){
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
             Route::put('educational-background-by-personal-info/{id}', 'EducationalBackgroundController@findByPersonalInformationID');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM put'])->group(function(){
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
             Route::put('educational-background-by-employee/{id}', 'EducationalBackgroundController@findByEmployeeID');
         });
 
@@ -748,7 +750,7 @@ Route::middleware('auth.cookie')->group(function(){
             Route::delete('employee-profile/signout-from-other-device/{id}', 'EmployeeProfileController@signOutFromOtherDevice');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM put'])->group(function(){
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function(){
             Route::get('employee-profile/validate-access-token', 'EmployeeProfileController@revalidateAccessToken');
         });
 
@@ -945,6 +947,11 @@ Route::middleware('auth.cookie')->group(function(){
             Route::post('legal-information', 'LegalInformationController@store');
         });
 
+        // Kriz
+         Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('legal-information-many', 'LegalInformationController@storeMany');
+        });
+
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
             Route::get('legal-information/{id}', 'LegalInformationController@show');
         });
@@ -1077,6 +1084,11 @@ Route::middleware('auth.cookie')->group(function(){
 
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
             Route::get('plantilla/find-by-designation/{id}', 'PlantillaController@findByDesignationID');
+        });
+
+
+         Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('plantilla-with-designation/{id}', 'PlantillaController@plantillaWithDesignation');
         });
 
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
@@ -1413,7 +1425,7 @@ Route::middleware('auth.cookie')->group(function(){
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function(){
             Route::delete('work-experience-employee/{id}', 'WorkExperienceController@destroyByEmployeeID');
         });
-        
+
     });
 
     /**
@@ -1496,11 +1508,9 @@ Route::middleware('auth.cookie')->group(function(){
             Route::post('print-leave-form/{id}', 'LeaveApplicationController@printLeaveForm');
         });
 
-
         Route::middleware(['auth.permission:UMIS-LM write'])->group(function(){
             Route::post('add-monthly', 'LeaveCreditController@addMonthlyLeaveCredit');
         });
-
 
         Route::middleware(['auth.permission:UMIS-OB view-all'])->group(function(){
             Route::get('ob-application-all', 'ObApplicationController@index');
@@ -1547,7 +1557,7 @@ Route::middleware('auth.cookie')->group(function(){
             Route::post('ot-application-cancel/{id}', 'OfficialTimeApplicationController@cancelOtApplication');
         });
 
-        Route::middleware(['auth.permission:UMIS-OT approve'])->group(function(){
+        Route::middleware(['auth.permission:UMIS-LM approve'])->group(function(){
             Route::post('ot-application-update/{id}/{status}', 'OfficialTimeApplicationController@updateStatus');
         });
 
@@ -1594,6 +1604,35 @@ Route::middleware('auth.cookie')->group(function(){
 
         Route::middleware(['auth.permission:UMIS-OM view'])->group(function(){
             Route::get('access-level-ovt-application', 'OvertimeApplicationController@getOvertimeApplications');
+        });
+
+
+        Route::middleware(['auth.permission:UMIS-CT view-all'])->group(function(){
+            Route::get('cto-application-all', 'CtoApplicationController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-CT request'])->group(function(){
+            Route::post('cto-application', 'CtoApplicationController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-CT approve'])->group(function(){
+            Route::post('cto-application-decline/{id}', 'CtoApplicationController@declineCtoApplication');
+        });
+
+        Route::middleware(['auth.permission:UMIS-CT approve'])->group(function(){
+            Route::post('cto-application-cancel/{id}', 'CtoApplicationController@cancelCtoApplication');
+        });
+
+        Route::middleware(['auth.permission:UMIS-CT approve'])->group(function(){
+            Route::post('cto-application-update/{id}/{status}', 'CtoApplicationController@updateStatus');
+        });
+
+        Route::middleware(['auth.permission:UMIS-CT view'])->group(function(){
+            Route::get('user-cto-application', 'CtoApplicationController@getUserCtoApplication');
+        });
+
+        Route::middleware(['auth.permission:UMIS-CT view'])->group(function(){
+            Route::get('access-level-cto-application', 'CtoApplicationController@getCtoApplications');
         });
 
     });

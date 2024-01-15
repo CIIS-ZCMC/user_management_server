@@ -86,9 +86,9 @@ class DTRcontroller extends Controller
                     } else {
                         //Save anomaly entries
                         /**
-                         * Here we saved all entries that the device date and time and server 
+                         * Here we saved all entries that the device date and time and server
                          * does not match..
-                         * 
+                         *
                          */
                         foreach ($Employee_Attendance as $key => $value) {
                             DtrAnomalies::create([
@@ -302,7 +302,7 @@ class DTRcontroller extends Controller
             $year_of = $request->yearof;
             $view = $request->view;
 
-            /* 
+            /*
             Multiple IDS for Multiple PDF generation
             */
             $id = json_decode($biometric_id);
@@ -387,7 +387,7 @@ class DTRcontroller extends Controller
     }
 
 
-    /* 
+    /*
     *    This is either view or print as PDF
     *
     */
@@ -419,7 +419,7 @@ class DTRcontroller extends Controller
 
             foreach ($dtr as $val) {
                 /* Validating DTR with its Matching Schedules */
-                /* 
+                /*
                 *   if no matching schedule then
                 *   it will not display the daily time record
                 */
@@ -606,7 +606,7 @@ class DTRcontroller extends Controller
                     $time_stamps_req = '';
                     foreach ($dtr as $val) {
                         /* Validating DTR with its Matching Schedules */
-                        /* 
+                        /*
                         *   if no matching schedule then
                         *   it will not display the daily time record
                         */
@@ -672,7 +672,7 @@ class DTRcontroller extends Controller
                     $time_stamps_req = '';
                     foreach ($dtr as $val) {
                         /* Validating DTR with its Matching Schedules */
-                        /* 
+                        /*
                         *   if no matching schedule then
                         *   it will not display the daily time record
                         */
@@ -878,11 +878,11 @@ class DTRcontroller extends Controller
         return false;
     }
 
-    /* 
+    /*
     *
     *
      Report Generation
-     Undertime, Overtime , present dates and its absences 
+     Undertime, Overtime , present dates and its absences
     **
     */
     public function dtrUTOTReport(Request $request)
@@ -1269,7 +1269,7 @@ class DTRcontroller extends Controller
                 $found = false;
                 foreach ($mdtr as $d) {
                     if (date('d', strtotime($d['first_in'])) == $i) {
-                        $mdt[] = $d;  // Use the day from $mdtr   
+                        $mdt[] = $d;  // Use the day from $mdtr
                         $found = true;
                     }
                 }
@@ -1416,7 +1416,7 @@ class DTRcontroller extends Controller
     }
     public function test()
     {
-        /* 
+        /*
         **
         * test on how to access request function on another controller for instance
         */

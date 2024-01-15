@@ -971,7 +971,7 @@ class PersonalInformationSeeder extends Seeder
         $fortyDaysExpiration = $fortyDaysFromNow->toDateTimeString();
 
         $employee_profile = EmployeeProfile::create([
-            'employee_id' => '2022091355',
+            'employee_id' => '2022091356',
             'date_hired' => Carbon::createFromFormat('Y-m-d', "2022-9-13"),
             'password_encrypted' => $encryptedPassword,
             'password_created_at' => now(),
