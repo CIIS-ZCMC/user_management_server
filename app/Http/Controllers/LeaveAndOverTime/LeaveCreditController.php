@@ -4,6 +4,7 @@ namespace App\Http\Controllers\LeaveAndOverTime;
 
 use App\Models\LeaveCredit;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\DTR\DTRcontroller;
 use App\Http\Resources\EmployeeLeaveCredit;
 use App\Http\Resources\EmployeeProfile;
 use App\Http\Resources\LeaveApplication;
@@ -91,9 +92,11 @@ class LeaveCreditController extends Controller
                     $vl_leave = LeaveType::where('id', '=', '1')->first();
                     $employee_leave_credits= ModelsEmployeeLeaveCredit::where('employee_profile_id',$employee->id)->get();
                     $biometric_id=$employee->biometric_id;
-                    return $biometric_id;
-                    $undertime_total = $this->calculateUndertime($biometric_id, $currentMonth, $currentYear, 1, 1, 0);
+                    $undertimeController = new DTRcontroller();
                     
+                    $undertime_total = $undertimeController->dtrUTOTReport($biometric_id, $currentMonth, $currentYear, 1, 1, 0);
+                    $employee_undertime=$undertime_total['undertime_minutes'];
+
                         $totalLeaveCredits = $employee_leave_credits->mapToGroups(function ($credit) {
                             return [$credit->operation => $credit->credit_value];
                         })->map(function ($operationCredits, $operation) {

@@ -1668,6 +1668,35 @@ Route::middleware('auth.cookie')->group(function(){
         Route::middleware(['auth.permission:UMIS-OM view'])->group(function(){
             Route::get('access-level-ovt-application', 'OvertimeApplicationController@getOvertimeApplications');
         });
+        
+
+        Route::middleware(['auth.permission:UMIS-CT view-all'])->group(function(){
+            Route::get('cto-application-all', 'CtoApplicationController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-CT request'])->group(function(){
+            Route::post('cto-application', 'CtoApplicationController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-CT approve'])->group(function(){
+            Route::post('cto-application-decline/{id}', 'CtoApplicationController@declineCtoApplication');
+        });
+
+        Route::middleware(['auth.permission:UMIS-CT approve'])->group(function(){
+            Route::post('cto-application-cancel/{id}', 'CtoApplicationController@cancelCtoApplication');
+        });
+
+        Route::middleware(['auth.permission:UMIS-CT approve'])->group(function(){
+            Route::post('cto-application-update/{id}/{status}', 'CtoApplicationController@updateStatus');
+        });
+
+        Route::middleware(['auth.permission:UMIS-CT view'])->group(function(){
+            Route::get('user-cto-application', 'CtoApplicationController@getUserCtoApplication');
+        });
+
+        Route::middleware(['auth.permission:UMIS-CT view'])->group(function(){
+            Route::get('access-level-cto-application', 'CtoApplicationController@getCtoApplications');
+        });
 
     });
 
