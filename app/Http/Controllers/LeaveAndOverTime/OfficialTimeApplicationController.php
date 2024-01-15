@@ -741,7 +741,7 @@ class OfficialTimeApplicationController extends Controller
     {
         try{
             $validatedData = $request->validate([
-                'date_from' => 'required|date_format:Y-m-d',
+                'date_from.*' => 'required|date_format:Y-m-d',
                 'date_to.*' => [
                     'required',
                     'date_format:Y-m-d',
@@ -943,7 +943,7 @@ class OfficialTimeApplicationController extends Controller
                     ];
                 });
                 $singleArray = array_merge(...$official_time_applications_result);
-            return response()->json(['message' => 'Official Business Application has been sucessfully saved','data' => $singleArray ], Response::HTTP_OK);
+            return response()->json(['message' => 'Official Time Application has been sucessfully saved','data' => $singleArray ], Response::HTTP_OK);
         }catch(\Throwable $th){
             DB::rollBack();
             return response()->json(['message' => $th->getMessage()], 500);
