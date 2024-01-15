@@ -22,8 +22,8 @@ class ProfileUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'employee_profile_id' => 'required|string|size:36',
-            'approved_by' => 'required|string|size:36',
+            'employee_profile_id' => 'required|integer',
+            'approved_by' => 'required|integer',
             'request_at' => 'required|date:Y-m-d',
             'approved_at' => 'required|date:Y-m-d'
         ];
