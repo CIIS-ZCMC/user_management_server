@@ -327,6 +327,7 @@ class OfficialTimeApplicationController extends Controller
                 })
                 ->where('status', 'for-approval-department-head')
                 ->orWhere('status', 'for-approval-division-head')
+                ->orWhere('status', 'approved')
                 ->orwhere('status', 'declined')
                 ->get();
                 if($OfficialTimeApplication->isNotEmpty())
@@ -461,6 +462,7 @@ class OfficialTimeApplicationController extends Controller
                 })
                 ->where('status', 'for-approval-section-head')
                 ->orWhere('status', 'for-approval-division-head')
+                ->orWhere('status', 'approved')
                 ->orwhere('status', 'declined')
                 ->get();
                 if($official_time_applications->isNotEmpty())
