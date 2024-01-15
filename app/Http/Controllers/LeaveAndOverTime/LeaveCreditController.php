@@ -4,6 +4,7 @@ namespace App\Http\Controllers\LeaveAndOverTime;
 
 use App\Models\LeaveCredit;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\DTR\DTRcontroller;
 use App\Http\Resources\EmployeeLeaveCredit;
 use App\Http\Resources\EmployeeProfile;
 use App\Http\Resources\LeaveApplication;
@@ -47,7 +48,6 @@ class LeaveCreditController extends Controller
         if($employees)
         {
             foreach ($employees as $employee) {
-
                     $leaveTypes = LeaveType::where('is_special', '=', '0')->get();
                         foreach ($leaveTypes as $leaveType) {
                             if($leaveType->is_special == 0)
@@ -74,22 +74,12 @@ class LeaveCreditController extends Controller
     public function deductUndertimefirsthalf(Request $request)
     {
         $currentMonth = date('m');
+        $currentYear = date('Y');
         $currentDate = date('Y-m-d');
         $pastMonth = date('m', strtotime('-1 month'));
-       // Subtract one month to get the last month
         $lastMonthDate = date('Y-m-d', strtotime('-1 month', strtotime($currentDate)));
-        // Get the first day of the last month
-        $firstDayOfLastMonth = date('Y-m-01', strtotime($lastMonthDate));
-        // Get the last day of the last month
-        $lastDayOfLastMonth = date('Y-m-t', strtotime($lastMonthDate));
-        $currentDate = date('Y-m-d');
-        // Subtract one month to get the last month
-        $lastMonthDate = date('Y-m-d', strtotime('-1 month', strtotime($currentDate)));
-         // Get the first day of the last month
-        $firstDayOfLastMonth = date('Y-m-01', strtotime($lastMonthDate));
-         // Get the last day of the last month
-        $lastDayOfLastMonth = date('Y-m-t', strtotime($lastMonthDate));
         $employees=[];
+
         $employees = ModelsEmployeeProfile::whereHas('employmentType', function ($query) {
             $query->where('name', 'Regular Full-Time')
                   ->orWhere('name', 'Regular Part-Time');
@@ -97,15 +87,15 @@ class LeaveCreditController extends Controller
         if($employees)
         {
             foreach ($employees as $employee) {
-                $month = $currentMonth;
-                    $total_absences="0";
                     $total_undertime="0";
-                    $total_working_hours="150";
-                    $leaveTypes=[];
                     $vl_leave=[];
-                    $leaveTypes = LeaveType::where('is_special', '=', '0')->get();
                     $vl_leave = LeaveType::where('id', '=', '1')->first();
                     $employee_leave_credits= ModelsEmployeeLeaveCredit::where('employee_profile_id',$employee->id)->get();
+                    $biometric_id=$employee->biometric_id;
+                    $undertimeController = new DTRcontroller();
+                    $undertime_request = new Request(['biometric_id' => $biometric_id, 'monthof' => $currentMonth, 'yearof' => $currentYear, 'is15thdays' => '1','firsthalf' => '1', 'secondhalf' => '0']);
+                    $undertime_total = $undertimeController->dtrUTOTReport($undertime_request);
+                    $employee_undertime=$undertime_total[''];
 
                         $totalLeaveCredits = $employee_leave_credits->mapToGroups(function ($credit) {
                             return [$credit->operation => $credit->credit_value];
