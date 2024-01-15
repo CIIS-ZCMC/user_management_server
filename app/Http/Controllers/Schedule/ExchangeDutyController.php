@@ -12,10 +12,6 @@ use App\Services\RequestLogger;
 use App\Helpers\Helpers;
 
 use Illuminate\Http\Response;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 
 use Carbon\Carbon;
@@ -31,17 +27,10 @@ class ExchangeDutyController extends Controller
     private $PLURAL_MODULE_NAME = 'exchange duties';
     private $SINGULAR_MODULE_NAME = 'exchange duty';
 
-    protected $requestLogger;
-
-    public function __construct(RequestLogger $requestLogger)
-    {
-        $this->requestLogger = $requestLogger;
-    }
-    
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
             
@@ -50,7 +39,7 @@ class ExchangeDutyController extends Controller
 
         } catch (\Throwable $th) {
 
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -130,8 +119,7 @@ class ExchangeDutyController extends Controller
             return response()->json(['data' => $data ,'message' => $msg], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-            
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -153,8 +141,7 @@ class ExchangeDutyController extends Controller
             return response()->json(['data' => $data], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -198,8 +185,7 @@ class ExchangeDutyController extends Controller
             return response()->json(['data' => $approve_by ,'message' => 'Success'], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-                        
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
 
         }
@@ -227,7 +213,7 @@ class ExchangeDutyController extends Controller
             return response()->json(['data' => $data], Response::HTTP_OK);
         } catch (\Throwable $th) {
 
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -281,7 +267,7 @@ class ExchangeDutyController extends Controller
 
         } catch (\Throwable $th) {
 
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'approve', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'approve', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

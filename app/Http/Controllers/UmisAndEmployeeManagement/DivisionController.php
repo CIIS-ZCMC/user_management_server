@@ -10,7 +10,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
-use App\Services\RequestLogger;
+use App\Helpers\Helpers;
 use App\Services\FileValidationAndUpload;
 use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\DivisionRequest;
@@ -26,12 +26,10 @@ class DivisionController extends Controller
     private $PLURAL_MODULE_NAME = 'divisions';
     private $SINGULAR_MODULE_NAME = 'division';
 
-    protected $requestLogger;
     protected $file_validation_and_upload;
 
-    public function __construct(RequestLogger $requestLogger, FileValidationAndUpload $file_validation_and_upload)
+    public function __construct(FileValidationAndUpload $file_validation_and_upload)
     {
-        $this->requestLogger = $requestLogger;
         $this->file_validation_and_upload = $file_validation_and_upload;
     }
 
@@ -44,14 +42,12 @@ class DivisionController extends Controller
                 return Division::all();
             });
 
-            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in deleting '.$this->PLURAL_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => DivisionResource::collection($divisions), 
                 'message' => 'Division record retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -94,14 +90,14 @@ class DivisionController extends Controller
 
             $division->update($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in assigning division chief '.$this->PLURAL_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in assigning division chief '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => new DivisionResource($division), 
                 'message' => 'New chief assigned in department.'], 
                 Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'assignChiefByEmployeeID', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'assignChiefByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -149,14 +145,14 @@ class DivisionController extends Controller
 
             $division->update($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in assigning chief '.$this->PLURAL_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in assigning chief '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => new DivisionResource($division),
                 'message' => 'New officer incharge assign in department.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'assignOICByEmployeeID', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'assignOICByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -183,14 +179,14 @@ class DivisionController extends Controller
 
             $division = Division::create($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $division['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $division['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => new DivisionResource($division),
                 'message' => 'Division created successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -205,14 +201,12 @@ class DivisionController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => new DivisionResource($division),
                 'message' => 'Division details found.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -245,14 +239,14 @@ class DivisionController extends Controller
             }
             $division -> update($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => new DivisionResource($division),
                 'message' => 'Division updated successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -284,11 +278,11 @@ class DivisionController extends Controller
 
             $division -> delete();
             
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['message' => 'Division deleted successfully.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

@@ -22,7 +22,9 @@ class TimeShiftRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'first_in'      => 'required|date_format:H:i:s',
+            'first_out'     => 'required|date_format:H:i:s',
+            'section_name'  => 'required|string',
         ];
     }
 }

@@ -13,7 +13,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Cache;
-use App\Services\RequestLogger;
+use App\Helpers\Helpers;
 use App\Services\FileValidationAndUpload;
 use App\Http\Requests\SectionRequest;
 use App\Http\Requests\SectionAssignSupervisorRequest;
@@ -28,12 +28,10 @@ class SectionController extends Controller
     private $PLURAL_MODULE_NAME = 'sections';
     private $SINGULAR_MODULE_NAME = 'section';
 
-    protected $requestLogger;
     protected $file_validation_and_upload;
 
-    public function __construct(RequestLogger $requestLogger, FileValidationAndUpload $file_validation_and_upload)
+    public function __construct(FileValidationAndUpload $file_validation_and_upload)
     {
-        $this->requestLogger = $requestLogger;
         $this->file_validation_and_upload = $file_validation_and_upload;
     }
 
@@ -46,14 +44,12 @@ class SectionController extends Controller
                 return Section::all();
             });
 
-            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => SectionResource::collection($sections),
                 'message' => 'Section list retrieved'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+             Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -96,14 +92,14 @@ class SectionController extends Controller
 
             $section->update($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in assigning supervisor '.$this->PLURAL_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in assigning supervisor '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => new SectionResource($section),
                 'message' => 'Section supervisor registered.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'assignSupervisorByEmployeeID', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'assignSupervisorByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -161,14 +157,14 @@ class SectionController extends Controller
 
             $section->update($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in assigning officer in charge '.$this->PLURAL_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in assigning officer in charge '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => new SectionResource($section),
                 'message' => 'Section officer incharge registered.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'assignOICByEmployeeID', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'assignOICByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -229,14 +225,14 @@ class SectionController extends Controller
 
             $section = Section::create($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([
                 'data' =>  new SectionResource($section),
                 'message' => 'Section created successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+             Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -251,14 +247,12 @@ class SectionController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => new SectionResource($section), 'message' => 
                 'Section record found.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+             Helpers::errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -326,14 +320,14 @@ class SectionController extends Controller
 
             $section -> update($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([
                 'data' =>  new SectionResource($section),
                 'message' => 'Section updated successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+             Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -360,11 +354,11 @@ class SectionController extends Controller
 
             $section -> delete();
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['message' => 'Section deleted successfully.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

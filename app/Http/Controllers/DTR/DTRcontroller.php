@@ -30,10 +30,10 @@ class DTRcontroller extends Controller
         $this->helper = new Helpers();
         $this->device = new BioControl();
         $this->bioms = new BioMSController();
-        try{
+        try {
             $content = $this->bioms->operatingDevice()->getContent();
-            $this->devices = $content !== null?json_decode($content, true)['data']:[];
-        }catch(\Throwable $th){
+            $this->devices = $content !== null ? json_decode($content, true)['data'] : [];
+        } catch (\Throwable $th) {
             Log::channel("custom-dtr-log-error")->error($th->getMessage());
         }
     }
@@ -307,6 +307,7 @@ class DTRcontroller extends Controller
 
             $emp_name = '';
             $biometric_id = $id[0];
+
             if ($this->helper->isEmployee($id[0])) {
                 $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
                 $emp_name = $employee->name();
@@ -373,7 +374,7 @@ class DTRcontroller extends Controller
 
             return $this->PrintDtr($month_of, $year_of, $biometric_id, $emp_Details, $view);
         } catch (\Throwable $th) {
-
+            return $th;
             return response()->json(['message' =>  $th->getMessage()]);
         }
     }
@@ -563,6 +564,7 @@ class DTRcontroller extends Controller
                 $dompdf->stream($filename);
             }
         } catch (\Throwable $th) {
+
             return response()->json(['message' =>  $th->getMessage()]);
         }
     }
@@ -886,6 +888,7 @@ class DTRcontroller extends Controller
             $dt_records = [];
             $is_Half_Schedule = false;
             $dtr = [];
+            $mdtr = [];
             if (count($bio) >= 1) {
                 foreach ($bio as $biometric_id) {
                     if ($this->helper->isEmployee($biometric_id)) {
@@ -903,7 +906,7 @@ class DTRcontroller extends Controller
                         } else {
                             $dt_records = $this->generateMonthly($month_of, $year_of, $biometric_id);
                         }
-                        $mdtr = [];
+
                         $no_Sched_dtr = [];
                         $number_Of_Days = 0;
                         $number_Of_all_Days_past = 0;
@@ -964,7 +967,7 @@ class DTRcontroller extends Controller
                         }
                         $total_Hours_of_Duty = 0;
                         foreach ($Time_Records as $record) {
-                            $total_Hours_of_Duty += floor($record['total_working_minutes'] - $record['undertime_minutes']);
+                            $total_Hours_of_Duty += floor($record['total_working_minutes'] - $record['undertime_minutes']); ////
                         }
                         $total_Hours_of_Duty = floor($total_Hours_of_Duty / 60);
                         $total_minutes_of_Duty = floor($total_Hours_of_Duty * 60);
@@ -1013,6 +1016,7 @@ class DTRcontroller extends Controller
                                 $days_present[] = $value;
                             }
                         }
+
 
                         $numeric_days = array_map(function ($res) {
                             $timestamp = strtotime($res);
@@ -1084,6 +1088,8 @@ class DTRcontroller extends Controller
                         } else {
                             $dt_records = $this->generateMonthly($month_of, $year_of, $biometric_id);
                         }
+
+
                         $mdtr = [];
                         $no_Sched_dtr = [];
                         $number_Of_Days = 0;
@@ -1250,12 +1256,48 @@ class DTRcontroller extends Controller
 
 
 
+            $days_In_Month = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
+            $mdt = [];
+            for ($i = 1; $i <= $days_In_Month; $i++) {
+                $found = false;
+                foreach ($mdtr as $d) {
+                    if (date('d', strtotime($d['first_in'])) == $i) {
+                        $mdt[] = $d;  // Use the day from $mdtr   
+                        $found = true;
+                    }
+                }
+                if (!$found) {
+                    $mdt[] =  [
+                        'dtr_ID' => '',
+                        'first_in' => '',
+                        'first_out' => '',
+                        'second_in' => '',
+                        'second_out' => '',
+                        'interval_req' => '',
+                        'required_working_hours' => '',
+                        'required_working_minutes' => '',
+                        'total_working_hours' => '',
+                        'total_working_minutes' => '',
+                        'overtime' => '',
+                        'overtime_minutes' => '',
+                        'undertime' => '',
+                        'undertime_minutes' => '',
+                        'overall_minutes_rendered' => '',
+                        'total_minutes_reg' => '',
+                        'day' => $i,
+                        'created_at' => '',
+                        'weekStatus' => '',
+                        'isHoliday' => ''
+                    ];
+                }
+            }
 
-
+            $dtr[0]['AllRecords'] = $mdt;
 
             return $dtr;
         } catch (\Throwable $th) {
-            return response()->json(['message' => 'Invalid Month']);
+
+            return response()->json(['message' => $th->getMessage()]);
         }
     }
 
@@ -1331,6 +1373,7 @@ class DTRcontroller extends Controller
 
     private function mDTR($value)
     {
+
         return   [
             'dtr_ID' => $value->id,
             'first_in' => $this->FormatDate($value->first_in),

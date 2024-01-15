@@ -14,15 +14,19 @@ class EmploymentTypeSeeder extends Seeder
     public function run(): void
     {
         EmploymentType::create([
-            'name' => "Full-Time Employment"
+            'name' => "Regular Full-Time"
+        ]);
+
+        EmploymentType::create([
+            'name' => "Regular Part Time"
         ]);
         
         EmploymentType::create([
-            'name' => "Part-Time Employment"
+            'name' => "Contractual Full-Time"
         ]);
         
         EmploymentType::create([
-            'name' => "Contractual Employment"
+            'name' => "Contractual Part-Time"
         ]);
         
         EmploymentType::create([

@@ -319,5 +319,145 @@ class ModulePermissionSeeder extends Seeder
             'permission_id' => $permission_request['id'],
             'system_module_id' => $system_module_personal_account_management['id']
         ]);
+        
+        /**
+         * Overtime Management
+         */
+        $system_module_overtime_management = SystemModule::find(7);
+
+        ModulePermission::create([
+            'code' => $system_module_overtime_management['code'].' '.$permission_read_all['action'],
+            'permission_id' => $permission_read_all['id'],
+            'system_module_id' => $system_module_overtime_management['id']
+        ]);
+
+        ModulePermission::create([
+            'code' => $system_module_overtime_management['code'].' '.$permission_write['action'],
+            'permission_id' => $permission_write['id'],
+            'system_module_id' => $system_module_overtime_management['id']
+        ]);
+        
+        ModulePermission::create([
+            'code' => $system_module_overtime_management['code'].' '.$permission_read['action'],
+            'permission_id' => $permission_read['id'],
+            'system_module_id' => $system_module_overtime_management['id']
+        ]);
+        
+        ModulePermission::create([
+            'code' => $system_module_overtime_management['code'].' '.$permission_update['action'],
+            'permission_id' => $permission_update['id'],
+            'system_module_id' => $system_module_overtime_management['id']
+        ]);
+        
+        ModulePermission::create([
+            'code' => $system_module_overtime_management['code'].' '.$permission_request['action'],
+            'permission_id' => $permission_request['id'],
+            'system_module_id' => $system_module_overtime_management['id']
+        ]);
+        
+        /**
+         * Official Business
+         */
+        $system_module_official_business = SystemModule::find(8);
+
+        ModulePermission::create([
+            'code' => $system_module_official_business['code'].' '.$permission_read_all['action'],
+            'permission_id' => $permission_read_all['id'],
+            'system_module_id' => $system_module_official_business['id']
+        ]);
+
+        ModulePermission::create([
+            'code' => $system_module_official_business['code'].' '.$permission_write['action'],
+            'permission_id' => $permission_write['id'],
+            'system_module_id' => $system_module_official_business['id']
+        ]);
+        
+        ModulePermission::create([
+            'code' => $system_module_official_business['code'].' '.$permission_read['action'],
+            'permission_id' => $permission_read['id'],
+            'system_module_id' => $system_module_official_business['id']
+        ]);
+        
+        ModulePermission::create([
+            'code' => $system_module_official_business['code'].' '.$permission_update['action'],
+            'permission_id' => $permission_update['id'],
+            'system_module_id' => $system_module_official_business['id']
+        ]);
+        
+        ModulePermission::create([
+            'code' => $system_module_official_business['code'].' '.$permission_request['action'],
+            'permission_id' => $permission_request['id'],
+            'system_module_id' => $system_module_official_business['id']
+        ]);
+        
+        /**
+         * Official Time
+         */
+        $system_module_official_time = SystemModule::find(9);
+
+        ModulePermission::create([
+            'code' => $system_module_official_time['code'].' '.$permission_read_all['action'],
+            'permission_id' => $permission_read_all['id'],
+            'system_module_id' => $system_module_official_time['id']
+        ]);
+
+        ModulePermission::create([
+            'code' => $system_module_official_time['code'].' '.$permission_write['action'],
+            'permission_id' => $permission_write['id'],
+            'system_module_id' => $system_module_official_time['id']
+        ]);
+        
+        ModulePermission::create([
+            'code' => $system_module_official_time['code'].' '.$permission_read['action'],
+            'permission_id' => $permission_read['id'],
+            'system_module_id' => $system_module_official_time['id']
+        ]);
+        
+        ModulePermission::create([
+            'code' => $system_module_official_time['code'].' '.$permission_update['action'],
+            'permission_id' => $permission_update['id'],
+            'system_module_id' => $system_module_official_time['id']
+        ]);
+        
+        ModulePermission::create([
+            'code' => $system_module_official_time['code'].' '.$permission_request['action'],
+            'permission_id' => $permission_request['id'],
+            'system_module_id' => $system_module_official_time['id']
+        ]);
+        
+        /**
+         * Compensatory Time
+         */
+        $system_module_compensatory_time = SystemModule::find(10);
+
+        ModulePermission::create([
+            'code' => $system_module_compensatory_time['code'].' '.$permission_read_all['action'],
+            'permission_id' => $permission_read_all['id'],
+            'system_module_id' => $system_module_compensatory_time['id']
+        ]);
+
+        ModulePermission::create([
+            'code' => $system_module_compensatory_time['code'].' '.$permission_write['action'],
+            'permission_id' => $permission_write['id'],
+            'system_module_id' => $system_module_compensatory_time['id']
+        ]);
+        
+        ModulePermission::create([
+            'code' => $system_module_compensatory_time['code'].' '.$permission_read['action'],
+            'permission_id' => $permission_read['id'],
+            'system_module_id' => $system_module_compensatory_time['id']
+        ]);
+        
+        ModulePermission::create([
+            'code' => $system_module_compensatory_time['code'].' '.$permission_update['action'],
+            'permission_id' => $permission_update['id'],
+            'system_module_id' => $system_module_compensatory_time['id']
+        ]);
+        
+        ModulePermission::create([
+            'code' => $system_module_compensatory_time['code'].' '.$permission_request['action'],
+            'permission_id' => $permission_request['id'],
+            'system_module_id' => $system_module_compensatory_time['id']
+        ]);
     }
 }

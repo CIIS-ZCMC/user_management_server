@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Cache;
 use App\Http\Requests\PasswordApprovalRequest;
-use App\Services\RequestLogger;
+use App\Helpers\Helpers;
 use App\Models\SystemLogs;
 use App\Http\Resources\SystemLogsResource;
 
@@ -20,13 +20,6 @@ class SystemLogsController extends Controller
     private $CONTROLLER_NAME = 'System Logs';
     private $PLURAL_MODULE_NAME = 'system logs';
     private $SINGULAR_MODULE_NAME = 'system log';
-
-    protected $requestLogger;
-
-    public function __construct(RequestLogger $requestLogger)
-    {
-        $this->requestLogger = $requestLogger;
-    }
     
     public function index(Request $request)
     {
@@ -43,7 +36,7 @@ class SystemLogsController extends Controller
                 'message' => 'System logs retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], 500);
         }
     }
@@ -57,15 +50,13 @@ class SystemLogsController extends Controller
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
-
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => new SystemLogsResource($system_log),
                 'message' => 'System Log record retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], 500);
         }
     }
@@ -79,15 +70,13 @@ class SystemLogsController extends Controller
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
-
-            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => SystemLogsResource::collection($system_logs),
                 'message' => 'System Log record retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'findByAccessRights', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'findByAccessRights', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], 500);
         }
     }
@@ -114,11 +103,11 @@ class SystemLogsController extends Controller
 
             $system_log -> delete();
             
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['message' => 'System Log deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], 500);
         }
     }

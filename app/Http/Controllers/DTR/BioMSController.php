@@ -60,7 +60,7 @@ class BioMSController extends Controller
             $data = Devices::where('is_registration', 0)->get();
 
             return response()->json([
-                'data' => $data
+                'data' => $data ?? []
             ]);
         } catch (\Throwable $th) {
             return response()->json(['message' =>  $th->getMessage()]);

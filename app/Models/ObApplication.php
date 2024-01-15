@@ -11,20 +11,21 @@ class ObApplication extends Model
     protected $table = 'ob_applications';
 
     public $fillable = [
-        'user_id',
+        'employee_profile_id',
         'date_from',
         'date_to',
         'time_from',
         'time_to',
         'reason',
         'status',
-    ];      
+    ];
+    public function employeeProfile() {
+        return $this->belongsTo(EmployeeProfile::class);
+    }
         public function logs()
         {
             return $this->hasMany(ObApplicationLog::class);
         }
 
-        public function employeeProfile() {
-            return $this->belongsTo(EmployeeProfile::class);
-        }
+
 }

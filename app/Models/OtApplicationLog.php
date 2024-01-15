@@ -13,12 +13,16 @@ class OtApplicationLog extends Model
     public $fillable = [
         'action_by_id',
         'official_time_application_id',
-        'process_name',
-        'status',
+        'action',
         'date',
-      
+        'time',
+        'fields'
+
     ];
         public function official_time_application(){
             return $this->belongsTo(OfficialTimeApplication::class);
+        }
+        public function employeeProfile() {
+            return $this->belongsTo(EmployeeProfile::class, 'action_by_id');
         }
 }

@@ -28,8 +28,10 @@ class FamilyBackGroundResource extends JsonResource
             'telephone_no' => $this->telephone_no??'NONE',
             'tin_no' => $tin_no,
             'rdo_no' => $rdo_no,
-            'father_name' => $this->fatherName(),
-            'mother_name' => $this->motherName()
+            'father' => $this->fatherName(),
+            'extension' => $this->father_ext_name??'NONE',
+            'mother' => $this->motherName(),
+            'maiden' => $this->mother_maiden_name??'NONE'
         ];
     }
 }

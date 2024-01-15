@@ -10,7 +10,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
-use App\Services\RequestLogger;
+use App\Helpers\Helpers;
 use App\Services\FileValidationAndUpload;
 use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\DepartmentRequest;
@@ -27,13 +27,10 @@ class DepartmentController extends Controller
     private $CONTROLLER_NAME = 'Department';
     private $PLURAL_MODULE_NAME = 'departments';
     private $SINGULAR_MODULE_NAME = 'department';
-
-    protected $requestLogger;
     protected $file_validation_and_upload;
 
-    public function __construct(RequestLogger $requestLogger, FileValidationAndUpload $file_validation_and_upload)
+    public function __construct(FileValidationAndUpload $file_validation_and_upload)
     {
-        $this->requestLogger = $requestLogger;
         $this->file_validation_and_upload = $file_validation_and_upload;
     }
 
@@ -46,14 +43,12 @@ class DepartmentController extends Controller
                 return Department::all();
             });
 
-            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => DepartmentResource::collection($departments),
                 'message' => 'Department records retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+             Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -96,14 +91,14 @@ class DepartmentController extends Controller
 
             $department->update($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in assigning head'.$this->PLURAL_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in assigning head'.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => new DepartmentResource($department), 
                 'message' => 'New department head assigned.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'assignHeadByEmployeeID', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'assignHeadByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -147,14 +142,14 @@ class DepartmentController extends Controller
 
             $department->update($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in assigning head'.$this->PLURAL_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in assigning head'.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => new DepartmentResource($department), 
                 'message' => 'New training officer assigned.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'assignHeadByEmployeeID', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'assignHeadByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -212,13 +207,13 @@ class DepartmentController extends Controller
 
             $department->update($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in assigning officer in charge '.$this->PLURAL_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in assigning officer in charge '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => new DepartmentResource($department), 
                 'message' => 'New officer incharge assigned.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'assignOICByEmployeeID', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'assignOICByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -252,14 +247,14 @@ class DepartmentController extends Controller
 
             $department = Department::create($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([
                 'data' =>  new DepartmentResource($department),
                 'message' => 'Department created successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+             Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -274,14 +269,12 @@ class DepartmentController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => new DepartmentResource($department), 
                 'message' => 'Department record found.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+             Helpers::errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -321,14 +314,14 @@ class DepartmentController extends Controller
 
             $department -> update($cleanData);
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([
                 'data' =>  new DepartmentResource($department),
                 'message' => 'Department updated successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-             $this->requestLogger->errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+             Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -355,11 +348,11 @@ class DepartmentController extends Controller
 
             $department -> delete();
 
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json(['message' => 'Department deleted successfully.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

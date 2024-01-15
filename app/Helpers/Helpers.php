@@ -3,34 +3,34 @@
 namespace App\Helpers;
 
 use App\Models\SystemLogs;
-use App\Models\Permission;
 use App\Models\TimeShift;
 
 use DateTime;
 use DateInterval;
 use DatePeriod;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 
 class Helpers {
-
     public static function registerSystemLogs($request, $moduleID, $status, $remarks)
     {
         $ip = $request->ip();
         $user = $request->user;
         $permission = $request->permission;
-        $action = Permission::where('name', $permission)->first();
-        // list($action, $module) = explode(' ', $permission);
+        list($module, $action) = explode(' ', $permission);
 
         SystemLogs::create([
-            'employee_profile_id' => $user,
+            'employee_profile_id' => $user->id,
             'module_id' => $moduleID,
             'action' => $action,
+            'module' => $module,
             'status' => $status,
             'remarks' => $remarks,
             'ip_address' => $ip
         ]);
     }
-    
 
     public static function randomHexColor()
     {
@@ -77,13 +77,60 @@ class Helpers {
                     $dates[] = $date->format('Y');
                     break;
 
-                default:
+                case 'Days of Week':
                     $dates[] = $date->format('Y-m-d D');
+                    break;
+
+                default:
+                    $dates[] = $date->format('Y-m-d');
                     break;
             }
         }
 
         return $dates;
     }
+
+    public static function checkSaveFile($attachment, $FILE_URL)
+    {
+        $fileName = '';
+
+        if ($attachment->isValid()) {
+            $file = $attachment;
+            $filePath = $file->getRealPath();
+
+            $finfo = new \finfo(FILEINFO_MIME);
+            $mime = $finfo->file($filePath);
+            $mime = explode(';', $mime)[0];
+
+            $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
+
+            if (!in_array($mime, $allowedMimeTypes)) {
+                return response()->json(['message' => 'Invalid file type'], Response::HTTP_BAD_REQUEST);
+            }
+
+            // Check for potential malicious content
+            $fileContent = file_get_contents($filePath);
+
+            if (preg_match('/<\s*script|eval|javascript|vbscript|onload|onerror/i', $fileContent)) {
+                return response()->json(['message' => 'File contains potential malicious content'], Response::HTTP_BAD_REQUEST);
+            }
+
+            $file = $attachment;
+            $fileName = Hash::make(time()) . '.' . $file->getClientOriginalExtension();
+
+            $file->move(public_path($FILE_URL), $fileName);
+        }
+        
+        return $fileName;
+    }
+
+    public static function infoLog($controller, $module, $message)
+    {
+        Log::channel('custom-info')->info($controller.' Controller ['.$module.']: message: '.$message);
+    }
     
+    public static function errorLog($controller, $module, $errorMessage)
+    {
+        Log::channel('custom-error')->error($controller.' Controller ['.$module.']: message: '.$errorMessage);
+    }
 }

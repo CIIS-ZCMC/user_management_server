@@ -15,17 +15,20 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('description')->nullable();
-            $table->string('period');
+            $table->double('period');
             $table->string('file_date');
             $table->string('code');
             $table->string('attachment')->nullable();
             $table->boolean('is_active')->default(false);
             $table->boolean('is_special')->default(false);
+            $table->boolean('is_country')->default(false);
+            $table->boolean('is_illness')->default(false);
+            $table->boolean('is_days_recommended')->default(false);
             $table->string('leave_credit_year')->nullable();
             $table->string('date')->nullable();
             $table->string('time')->nullable();
             $table->timestamps();
-            
+
         });
     }
 

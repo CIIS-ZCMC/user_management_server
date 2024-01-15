@@ -25,7 +25,7 @@ class TimeShiftResource extends JsonResource
             'deleted_at'    => (string) $this->deleted_at,
             'created_at'    => (string) $this->created_at,
             'updated_at'    => (string) $this->updated_at,
-            'section'       => $this->section
+            'section'       => $this->section ? SectionResource::collection($this->section) : []
         ];
     }
 }

@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('leave_type_requirements', function (Blueprint $table) {
+        Schema::create('leave_type_requirement', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('leave_type_id')->unsigned();
             $table->foreign('leave_type_id')->references('id')->on('leave_types')->onDelete('cascade');;
@@ -26,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('leave_type_requirements');
+        Schema::dropIfExists('leave_type_requirement');
     }
 };

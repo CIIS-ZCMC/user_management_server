@@ -19,7 +19,7 @@ use App\Models\WorkExperience;
 use App\Services\FileValidationAndUpload;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use App\Services\RequestLogger;
+use App\Helpers\Helpers;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Requests\PasswordApprovalRequest;
@@ -32,12 +32,10 @@ class ProfileUpdateRequestController extends Controller
     private $PLURAL_MODULE_NAME = 'profile update requests';
     private $SINGULAR_MODULE_NAME = 'profile update request';
 
-    protected $requestLogger;
     protected $fileValidateAndUpload;
 
-    public function __construct(RequestLogger $requestLogger, FileValidationAndUpload $fileValidateAndUpload)
+    public function __construct(FileValidationAndUpload $fileValidateAndUpload)
     {
-        $this->requestLogger = $requestLogger;
         $this->fileValidateAndUpload = $fileValidateAndUpload;
     }
 
@@ -51,7 +49,7 @@ class ProfileUpdateRequestController extends Controller
                 'message' => 'Request records retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -66,7 +64,7 @@ class ProfileUpdateRequestController extends Controller
                 'message' => 'Request records retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -149,11 +147,11 @@ class ProfileUpdateRequestController extends Controller
                 'type_new_or_replace' => $request->type_new_or_replace === 1? true:false
             ]);
             
-            $this->requestLogger->registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return $profile_update_request;
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'requestUpdatePersonalInformation', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'requestUpdatePersonalInformation', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -184,11 +182,11 @@ class ProfileUpdateRequestController extends Controller
                 'type_new_or_replace' => $request->type_new_or_replace
             ]);
             
-            $this->requestLogger->registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
            
             return $profile_update_request;
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'requestUpdateEducationalBackground', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'requestUpdateEducationalBackground', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -219,11 +217,11 @@ class ProfileUpdateRequestController extends Controller
                 'type_new_or_replace' => $request->type_new_or_replace
             ]);
 
-            $this->requestLogger->registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return $profile_update_request;
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'requestUpdateChildInformation', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'requestUpdateChildInformation', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -254,11 +252,11 @@ class ProfileUpdateRequestController extends Controller
                 'type_new_or_replace' => $request->type_new_or_replace
             ]);
 
-            $this->requestLogger->registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return $profile_update_request;
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'requestUpdateAddressInformation', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'requestUpdateAddressInformation', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -289,11 +287,11 @@ class ProfileUpdateRequestController extends Controller
                 'type_new_or_replace' => $request->type_new_or_replace
             ]);
 
-            $this->requestLogger->registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return $profile_update_request;
         }catch(\Throwable $th){
-           $this->requestLogger->errorLog($this->CONTROLLER_NAME,'requestUpdateContactInformation', $th->getMessage());
+           Helpers::errorLog($this->CONTROLLER_NAME,'requestUpdateContactInformation', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -330,11 +328,11 @@ class ProfileUpdateRequestController extends Controller
                 'type_new_or_replace' => $request->type_new_or_replace
             ]);
 
-            $this->requestLogger->registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return $profile_update_request;
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'requestUpdateFamilyBackgroundInformation', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'requestUpdateFamilyBackgroundInformation', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -364,11 +362,11 @@ class ProfileUpdateRequestController extends Controller
                 'type_new_or_replace' => $request->type_new_or_replace
             ]);
             
-            $this->requestLogger->registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
  
             return $profile_update_request;
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'requestUpdateIdentificationInformation', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'requestUpdateIdentificationInformation', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -399,11 +397,11 @@ class ProfileUpdateRequestController extends Controller
                 'type_new_or_replace' => $request->type_new_or_replace
             ]);
 
-            $this->requestLogger->registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return $profile_update_request;
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'requestUpdateEligibilityInformation', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'requestUpdateEligibilityInformation', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -433,11 +431,11 @@ class ProfileUpdateRequestController extends Controller
                 'type_new_or_replace' => $request->type_new_or_replace
             ]);
 
-            $this->requestLogger->registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return $profile_update_request;
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'requestUpdateTrainingInformation', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'requestUpdateTrainingInformation', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -467,11 +465,11 @@ class ProfileUpdateRequestController extends Controller
                 'type_new_or_replace' => $request->type_new_or_replace
             ]);
 
-            $this->requestLogger->registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
  
             return $profile_update_request;
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'requestUpdateVoluntaryWorkInformation', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'requestUpdateVoluntaryWorkInformation', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -501,11 +499,11 @@ class ProfileUpdateRequestController extends Controller
                 'type_new_or_replace' => $request->type_new_or_replace
             ]);
 
-            $this->requestLogger->registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return $profile_update_request;
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -534,11 +532,11 @@ class ProfileUpdateRequestController extends Controller
                 'type_new_or_replace' => $request->type_new_or_replace
             ]);
 
-            $this->requestLogger->registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $request->employee_profile_id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return $profile_update_request;
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'requestUpdateOtherInformation', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'requestUpdateOtherInformation', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -607,7 +605,7 @@ class ProfileUpdateRequestController extends Controller
 
             return response()->json(['message' => 'Request approved and changes applied.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'approveRequest', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'approveRequest', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -790,11 +788,11 @@ class ProfileUpdateRequestController extends Controller
 
             $profile_update_request->delete();
             
-            $this->requestLogger->registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json(['message' => 'Profile update record deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
