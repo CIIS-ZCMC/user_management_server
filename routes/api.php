@@ -1492,11 +1492,9 @@ Route::middleware('auth.cookie')->group(function(){
             Route::post('print-leave-form/{id}', 'LeaveApplicationController@printLeaveForm');
         });
 
-
         Route::middleware(['auth.permission:UMIS-LM write'])->group(function(){
             Route::post('add-monthly', 'LeaveCreditController@addMonthlyLeaveCredit');
         });
-
 
         Route::middleware(['auth.permission:UMIS-OB view-all'])->group(function(){
             Route::get('ob-application-all', 'ObApplicationController@index');
