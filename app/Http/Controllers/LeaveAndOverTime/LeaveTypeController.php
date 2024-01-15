@@ -157,6 +157,7 @@ class LeaveTypeController extends Controller
                 'leave_types.description',
                 'leave_types.file_date',
                 'leave_types.period',
+                'leave_types.is_special',
                 'leave_types.is_country',
                 'leave_types.is_illness',
                 'leave_types.is_days_recommended',
@@ -168,6 +169,7 @@ class LeaveTypeController extends Controller
                 'leave_types.description',
                 'leave_types.file_date',
                 'leave_types.period',
+                'leave_types.is_special',
                 'leave_types.is_country',
                 'leave_types.is_illness',
                 'leave_types.is_days_recommended'
