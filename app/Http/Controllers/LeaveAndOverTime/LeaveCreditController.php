@@ -69,6 +69,7 @@ class LeaveCreditController extends Controller
             }
             return response()->json(['message' => 'success.'], Response::HTTP_OK);
         }
+     
 
         return response()->json(['message' => 'No employee records available.'], Response::HTTP_OK);
     }
@@ -88,7 +89,7 @@ class LeaveCreditController extends Controller
         if($employees)
         {
             foreach ($employees as $employee) {
-                    $total_undertime="0";
+
                     $vl_leave=[];
                     $vl_leave = LeaveType::where('id', '=', '1')->first();
                     $employee_leave_credits= ModelsEmployeeLeaveCredit::where('employee_profile_id',$employee->id)->get();
@@ -96,7 +97,7 @@ class LeaveCreditController extends Controller
                     $undertimeController = new DTRcontroller();
                     $undertime_request = new Request(['biometric_id' => $biometric_id, 'monthof' => $currentMonth, 'yearof' => $currentYear, 'is15thdays' => '1','firsthalf' => '1', 'secondhalf' => '0']);
                     $undertime_total = $undertimeController->dtrUTOTReport($undertime_request);
-                    $employee_undertime=$undertime_total[''];
+                    $employee_undertime=$undertime_total['undertime_minutes'];
 
                         $totalLeaveCredits = $employee_leave_credits->mapToGroups(function ($credit) {
                             return [$credit->operation => $credit->credit_value];
@@ -106,7 +107,7 @@ class LeaveCreditController extends Controller
 
                         if($vl_leave)
                         {
-                            $undertime_credit_value = $total_undertime / 480;
+                            $undertime_credit_value = $employee_undertime / 480;
                         }
 
                         if($totalLeaveCredits != 0 )
@@ -118,7 +119,7 @@ class LeaveCreditController extends Controller
                                 $employeeCredit->employee_profile_id = $employee->id;
                                 $employeeCredit->operation = "deduct";
                                 $employeeCredit->reason = "Undertime";
-                                $employeeCredit->undertime_total = $total_undertime;
+                                $employeeCredit->undertime_total = $employee_undertime;
                                 $employeeCredit->credit_value = $undertime_credit_value;
                                 $employeeCredit->date = date('Y-m-d');
                                 $employeeCredit->time =  date('H:i:s');
@@ -131,7 +132,7 @@ class LeaveCreditController extends Controller
                                 $employeeCredit->employee_profile_id = $employee->id;
                                 $employeeCredit->operation = "deduct";
                                 $employeeCredit->reason = "Undertime";
-                                $employeeCredit->undertime_total = $total_undertime;
+                                $employeeCredit->undertime_total = $employee_undertime;
                                 $employeeCredit->credit_value = $totalLeaveCredits;
                                 $employeeCredit->true_credit_value = $undertime_credit_value;
                                 $employeeCredit->date = date('Y-m-d');
@@ -145,25 +146,16 @@ class LeaveCreditController extends Controller
         return response()->json(['data' => $employee_leave_credits], Response::HTTP_OK);
 
     }
+
     public function deductUndertimesecondhalf(Request $request)
     {
         $currentMonth = date('m');
+        $currentYear = date('Y');
         $currentDate = date('Y-m-d');
         $pastMonth = date('m', strtotime('-1 month'));
-       // Subtract one month to get the last month
         $lastMonthDate = date('Y-m-d', strtotime('-1 month', strtotime($currentDate)));
-        // Get the first day of the last month
-        $firstDayOfLastMonth = date('Y-m-01', strtotime($lastMonthDate));
-        // Get the last day of the last month
-        $lastDayOfLastMonth = date('Y-m-t', strtotime($lastMonthDate));
-        $currentDate = date('Y-m-d');
-        // Subtract one month to get the last month
-        $lastMonthDate = date('Y-m-d', strtotime('-1 month', strtotime($currentDate)));
-         // Get the first day of the last month
-        $firstDayOfLastMonth = date('Y-m-01', strtotime($lastMonthDate));
-         // Get the last day of the last month
-        $lastDayOfLastMonth = date('Y-m-t', strtotime($lastMonthDate));
         $employees=[];
+
         $employees = ModelsEmployeeProfile::whereHas('employmentType', function ($query) {
             $query->where('name', 'Regular Full-Time')
                   ->orWhere('name', 'Regular Part-Time');
@@ -171,15 +163,15 @@ class LeaveCreditController extends Controller
         if($employees)
         {
             foreach ($employees as $employee) {
-                $month = $currentMonth;
-                    $total_absences="0";
-                    $total_undertime="0";
-                    $total_working_hours="150";
-                    $leaveTypes=[];
+
                     $vl_leave=[];
-                    $leaveTypes = LeaveType::where('is_special', '=', '0')->get();
                     $vl_leave = LeaveType::where('id', '=', '1')->first();
                     $employee_leave_credits= ModelsEmployeeLeaveCredit::where('employee_profile_id',$employee->id)->get();
+                    $biometric_id=$employee->biometric_id;
+                    $undertimeController = new DTRcontroller();
+                    $undertime_request = new Request(['biometric_id' => $biometric_id, 'monthof' => $pastMonth, 'yearof' => $currentYear, 'is15thdays' => '1','firsthalf' => '1', 'secondhalf' => '1']);
+                    $undertime_total = $undertimeController->dtrUTOTReport($undertime_request);
+                    $employee_undertime=$undertime_total['undertime_minutes'];
 
                         $totalLeaveCredits = $employee_leave_credits->mapToGroups(function ($credit) {
                             return [$credit->operation => $credit->credit_value];
@@ -189,7 +181,7 @@ class LeaveCreditController extends Controller
 
                         if($vl_leave)
                         {
-                            $undertime_credit_value = $total_undertime / 480;
+                            $undertime_credit_value = $employee_undertime / 480;
                         }
 
                         if($totalLeaveCredits != 0 )
@@ -201,7 +193,7 @@ class LeaveCreditController extends Controller
                                 $employeeCredit->employee_profile_id = $employee->id;
                                 $employeeCredit->operation = "deduct";
                                 $employeeCredit->reason = "Undertime";
-                                $employeeCredit->undertime_total = $total_undertime;
+                                $employeeCredit->undertime_total = $employee_undertime;
                                 $employeeCredit->credit_value = $undertime_credit_value;
                                 $employeeCredit->date = date('Y-m-d');
                                 $employeeCredit->time =  date('H:i:s');
@@ -214,7 +206,7 @@ class LeaveCreditController extends Controller
                                 $employeeCredit->employee_profile_id = $employee->id;
                                 $employeeCredit->operation = "deduct";
                                 $employeeCredit->reason = "Undertime";
-                                $employeeCredit->undertime_total = $total_undertime;
+                                $employeeCredit->undertime_total = $employee_undertime;
                                 $employeeCredit->credit_value = $totalLeaveCredits;
                                 $employeeCredit->true_credit_value = $undertime_credit_value;
                                 $employeeCredit->date = date('Y-m-d');
@@ -228,6 +220,7 @@ class LeaveCreditController extends Controller
         return response()->json(['data' => $employee_leave_credits], Response::HTTP_OK);
 
     }
+
 
     Public function addYearlyLeaveCredit(Request $request)
     {
