@@ -26,8 +26,8 @@ class VoluntaryWorkRequest extends FormRequest
             'name_address_organization' => 'required|string|max:255',
             'inclusive_from' => 'required|date:Y-m-d',
             'inclusive_to' => 'required|date:Y-m-d',
-            'hours' => 'required|integer',
-            'position' => 'required|string|max:255',
+            'hours' => 'required|string|max:255',
+            'position' => 'nullable|string|max:255',
         ];
     }
 }
