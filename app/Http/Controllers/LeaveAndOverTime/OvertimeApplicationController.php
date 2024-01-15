@@ -152,6 +152,7 @@ class OvertimeApplicationController extends Controller
                                                 'ovt_employee_id' => $employee->ovt_application_datetime_id,
                                                 'employee_id' => $employee->employee_profile_id,
                                                 'employee_name' => "{$first_name} {$last_name}",
+                                                'position' => $employee->employeeProfile->assignedArea->designation->name ?? null
 
                                             ];
                                         }),
@@ -175,6 +176,7 @@ class OvertimeApplicationController extends Controller
                                         'ovt_employee_id' => $employee->ovt_application_datetime_id,
                                         'employee_id' => $employee->employee_profile_id,
                                         'employee_name' => "{$first_name} {$last_name}",
+                                        'position' => $employee->employeeProfile->assignedArea->designation->name ?? null
 
                                     ];
                                 }),
@@ -362,18 +364,18 @@ class OvertimeApplicationController extends Controller
 
     public function getOvertimeApplications(Request $request)
     {
-            try{
-                $user=$request->user;
-                $OvertimeApplication = [];
-                $division = AssignArea::where('employee_profile_id',$user->id)->value('division_id');
-                $divisionHeadId = Division::where('id', $division)->value('chief_employee_profile_id');
-                $department = AssignArea::where('employee_profile_id',$user->id)->value('department_id');
-                $departmentHeadId = Department::where('id', $department)->value('head_employee_profile_id');
-                $section = AssignArea::where('employee_profile_id',$user->id)->value('section_id');
-                $sectionHeadId = Section::where('id', $section)->value('supervisor_employee_profile_id');
-                $training_officer_id = Department::where('id', $department)->value('training_officer_employee_profile_id');
-                if($divisionHeadId == $user->id) {
-                    $OvertimeApplication = OvertimeApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','logs','activities'])
+        try {
+            $user = $request->user;
+            $OvertimeApplication = [];
+            $division = AssignArea::where('employee_profile_id', $user->id)->value('division_id');
+            $divisionHeadId = Division::where('id', $division)->value('chief_employee_profile_id');
+            $department = AssignArea::where('employee_profile_id', $user->id)->value('department_id');
+            $departmentHeadId = Department::where('id', $department)->value('head_employee_profile_id');
+            $section = AssignArea::where('employee_profile_id', $user->id)->value('section_id');
+            $sectionHeadId = Section::where('id', $section)->value('supervisor_employee_profile_id');
+            $training_officer_id = Department::where('id', $department)->value('training_officer_employee_profile_id');
+            if ($divisionHeadId == $user->id) {
+                $OvertimeApplication = OvertimeApplication::with(['employeeProfile.assignedArea.division', 'employeeProfile.personalInformation', 'logs', 'activities'])
                     ->whereHas('employeeProfile.assignedArea', function ($query) use ($division) {
                         $query->where('division_id', $division);
                     })
@@ -531,17 +533,14 @@ class OvertimeApplicationController extends Controller
                                 ];
                             }),
 
-                            ];
-                            });
-                            return response()->json(['data' => $overtime_applications_result]);
-                    }
-                    else
-                    {
-                        return response()->json(['message' => 'No records available'], Response::HTTP_OK);
-                    }
+                        ];
+                    });
+                    return response()->json(['data' => $overtime_applications_result]);
+                } else {
+                    return response()->json(['message' => 'No records available'], Response::HTTP_OK);
                 }
-                else if($departmentHeadId == $user->id || $training_officer_id == $user->id) {
-                    $OvertimeApplication = OvertimeApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','logs','activities'])
+            } else if ($departmentHeadId == $user->id || $training_officer_id == $user->id) {
+                $OvertimeApplication = OvertimeApplication::with(['employeeProfile.assignedArea.division', 'employeeProfile.personalInformation', 'logs', 'activities'])
                     ->whereHas('employeeProfile.assignedArea', function ($query) use ($department) {
                         $query->where('department_id', $department);
                     })
@@ -673,40 +672,37 @@ class OvertimeApplicationController extends Controller
                                                 ];
                                             }),
 
-                                            ];
-                                        }),
-                                    ];
-                                }),
-                                'dates' => $datesData->map(function ($date) {
-                                    return [
-                                                'id' => $date->id,
-                                                'ovt_activity_id' =>$date->ovt_application_activity_id,
-                                                'time_from' => $date->time_from,
-                                                'time_to' => $date->time_to,
-                                                'date' => $date->date,
-                                                'employees' => $date->employees->map(function ($employee) {
-                                                    $first_name = optional($employee->employeeProfile->personalInformation)->first_name ?? null;
-                                                    $last_name = optional($employee->employeeProfile->personalInformation)->last_name ?? null;
-                                                return [
-                                                        'id' => $employee->id,
-                                                        'ovt_employee_id' =>$employee->ovt_application_datetime_id,
-                                                        'employee_id' => $employee->employee_profile_id,
-                                                        'employee_name' =>"{$first_name} {$last_name}",
-                                                    ];
-                                                }),
-                                    ];
-                                }),
-                            ];
-                            });
-                        return response()->json(['data' => $overtime_applications_result]);
-                    }
-                    else
-                    {
-                        return response()->json(['message' => 'No records available'], Response::HTTP_OK);
-                    }
+                                        ];
+                                    }),
+                                ];
+                            }),
+                            'dates' => $datesData->map(function ($date) {
+                                return [
+                                    'id' => $date->id,
+                                    'ovt_activity_id' => $date->ovt_application_activity_id,
+                                    'time_from' => $date->time_from,
+                                    'time_to' => $date->time_to,
+                                    'date' => $date->date,
+                                    'employees' => $date->employees->map(function ($employee) {
+                                        $first_name = optional($employee->employeeProfile->personalInformation)->first_name ?? null;
+                                        $last_name = optional($employee->employeeProfile->personalInformation)->last_name ?? null;
+                                        return [
+                                            'id' => $employee->id,
+                                            'ovt_employee_id' => $employee->ovt_application_datetime_id,
+                                            'employee_id' => $employee->employee_profile_id,
+                                            'employee_name' => "{$first_name} {$last_name}",
+                                        ];
+                                    }),
+                                ];
+                            }),
+                        ];
+                    });
+                    return response()->json(['data' => $overtime_applications_result]);
+                } else {
+                    return response()->json(['message' => 'No records available'], Response::HTTP_OK);
                 }
-                else if($sectionHeadId == $user->id) {
-                    $overtime_applications = OvertimeApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','logs','activities'])
+            } else if ($sectionHeadId == $user->id) {
+                $overtime_applications = OvertimeApplication::with(['employeeProfile.assignedArea.division', 'employeeProfile.personalInformation', 'logs', 'activities'])
                     ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
                         $query->where('section_id', $section);
                     })
@@ -1684,7 +1680,7 @@ class OvertimeApplicationController extends Controller
     public function store(Request $request)
     {
         try {
-            return "ok";
+
             $validatedData = $request->validate([
                 'dates.*' => 'required|date_format:Y-m-d',
                 'time_from.*' => 'required|date_format:H:i',
@@ -1702,7 +1698,7 @@ class OvertimeApplicationController extends Controller
                 //   'letter_of_request' => 'required|image|mimes:jpeg,png,jpg,pdf|max:2048',
                 'purpose.*' => 'required|string|max:512',
                 'activities.*' => 'required',
-                'remarks.*' => 'required|string|max:512',
+                // 'remarks.*' => 'required|string|max:512',
                 'quantities.*' => 'required',
                 'employees' => 'required|array',
                 'employees.*' => 'required|integer|exists:employee_profiles,id',
@@ -1711,7 +1707,7 @@ class OvertimeApplicationController extends Controller
             $user = $request->user;
             $area = AssignArea::where('employee_profile_id', $user->id)->value('division_id');
             // $division = Division::where('id', $area)->value('is_medical');
-            $division = true;
+            $division = 1;
             DB::beginTransaction();
             $path = "";
             if ($request->hasFile('letter_of_request')) {
@@ -1720,88 +1716,85 @@ class OvertimeApplicationController extends Controller
                 $imageName = time() . '.' . $image->getClientOriginalExtension();
                 $image->storeAs('images', $imageName, 'public');
 
-                        Storage::makeDirectory('public/' . $folderName);
-                        $path =  $image->storeAs('public/' . $folderName, $imageName);
+                Storage::makeDirectory('public/' . $folderName);
+                $path =  $image->storeAs('public/' . $folderName, $imageName);
+            }
 
-                }
-                if($division  === true)
-                {
-                    $status='for-approval-department-head';
-                }
-                else
-                {
-                    $status='for-approval-section-head';
-                }
-                $overtime_application = OvertimeApplication::create([
-                    'employee_profile_id' => $user->id,
-                    'status' => $status,
-                    'purpose' => $request->purpose,
-                    'date' => date('Y-m-d'),
-                    'time' => date('H:i:s'),
-                    'overtime_letter_of_request' =>  $imageName,
-                    'path' =>  $path
+            if ($division  === true) {
+                $status = 'for-approval-department-head';
+            } else {
+                $status = 'for-approval-section-head';
+            }
+            $overtime_application = OvertimeApplication::create([
+                'employee_profile_id' => $user->id,
+                'status' => $status,
+                'purpose' => $request->purpose,
+                'date' => date('Y-m-d'),
+                'time' => date('H:i:s'),
+                'overtime_letter_of_request' =>  $imageName,
+                'path' =>  $path
+            ]);
+            $ovt_id = $overtime_application->id;
+            // $activities = $request->input('activities');
+            // $quantities = $request->input('quantities');
+            // $manhours = $request->input('manhours');
+            // $periods = $request->input('periods');
+            // for ($i = 0; $i < count($activities); $i++) {
+            //     $activity_application = OvtApplicationActivity::create([
+            //         'overtime_application_id' => $ovt_id,
+            //         'name' => $activities[$i],
+            //         'quantity' => $quantities[$i],
+            //         // 'man_hour' => $manhours[$i],
+            //         // 'period_covered' => $periods[$i],
+            //     ]);
+            // }
+            foreach ($validatedData['activities'] as $index => $activities) {
+                $activity_application = OvtApplicationActivity::create([
+                    'overtime_application_id' => $ovt_id,
+                    'name' => $activities,
+                    'quantity' => $validatedData['quantities'][$index],
                 ]);
-                $ovt_id=$overtime_application->id;
-                // $activities = $request->input('activities');
-                // $quantities = $request->input('quantities');
-                // $manhours = $request->input('manhours');
-                // $periods = $request->input('periods');
-                // for ($i = 0; $i < count($activities); $i++) {
-                //     $activity_application = OvtApplicationActivity::create([
-                //         'overtime_application_id' => $ovt_id,
-                //         'name' => $activities[$i],
-                //         'quantity' => $quantities[$i],
-                //         // 'man_hour' => $manhours[$i],
-                //         // 'period_covered' => $periods[$i],
-                //     ]);
-                // }
-                foreach ($validatedData['activities'] as $index => $activities) {
-                    $activity_application = OvtApplicationActivity::create([
-                        'overtime_application_id' => $ovt_id,
-                        'name' => $activities,
-                        'quantity' => $validatedData['quantities'][$index],
-                    ]);
-                }
-                $activity_id=$activity_application->id;
-                // $time_from = $request->input('time_from');
-                // $time_to = $request->input('time_to');
-                // $date = $request->input('dates');
-                // for ($i = 0; $i < count($date); $i++) {
-                //    $date_application = OvtApplicationDatetime::create([
-                //         'ovt_application_activity_id' => $activity_id,
-                //         'time_from' => $time_from[$i],
-                //         'time_to' => $time_to[$i],
-                //         'date' => $date[$i],
-                //     ]);
-                // }
-                foreach ($validatedData['dates'] as $index => $date) {
-                    $date_application = OvtApplicationDatetime::create([
-                        'ovt_application_activity_id' => $activity_id,
-                        'time_from' =>  $validatedData['time_from'][$index],
-                        'time_to' =>  $validatedData['time_to'][$index],
-                        'date' =>  $date,
-                    ]);
-                }
-                $date_id=$date_application->id;
-                // $remarks = $request->input('remarks');
-                // $selectedEmployees = $request->input('employees');
-                // for ($i = 0; $i < count($selectedEmployees); $i++) {
-                //     OvtApplicationEmployee::create([
-                //         'ovt_application_datetime_id' => $date_id,
-                //         'employee_profile_id' => $selectedEmployees[$i],
-                //         'remarks' => $remarks[$i],
-                //     ]);
-                // }
-                foreach ($validatedData['employees'] as $index => $employees) {
-                    OvtApplicationEmployee::create([
-                        'ovt_application_datetime_id' => $date_id,
-                        'employee_profile_id' =>  $validatedData['employees'][$index],
-                        'remarks' =>  $validatedData['remarks'][$index],
-                    ]);
-                }
-                $columnsString="";
-                $process_name="Applied";
-                $this->storeOvertimeApplicationLog($ovt_id,$process_name,$columnsString,$user->id);
+            }
+            $activity_id = $activity_application->id;
+            // $time_from = $request->input('time_from');
+            // $time_to = $request->input('time_to');
+            // $date = $request->input('dates');
+            // for ($i = 0; $i < count($date); $i++) {
+            //    $date_application = OvtApplicationDatetime::create([
+            //         'ovt_application_activity_id' => $activity_id,
+            //         'time_from' => $time_from[$i],
+            //         'time_to' => $time_to[$i],
+            //         'date' => $date[$i],
+            //     ]);
+            // }
+            foreach ($validatedData['dates'] as $index => $date) {
+                $date_application = OvtApplicationDatetime::create([
+                    'ovt_application_activity_id' => $activity_id,
+                    'time_from' =>  $validatedData['time_from'][$index],
+                    'time_to' =>  $validatedData['time_to'][$index],
+                    'date' =>  $date,
+                ]);
+            }
+            $date_id = $date_application->id;
+            // $remarks = $request->input('remarks');
+            // $selectedEmployees = $request->input('employees');
+            // for ($i = 0; $i < count($selectedEmployees); $i++) {
+            //     OvtApplicationEmployee::create([
+            //         'ovt_application_datetime_id' => $date_id,
+            //         'employee_profile_id' => $selectedEmployees[$i],
+            //         'remarks' => $remarks[$i],
+            //     ]);
+            // }
+            foreach ($validatedData['employees'] as $index => $employees) {
+                OvtApplicationEmployee::create([
+                    'ovt_application_datetime_id' => $date_id,
+                    'employee_profile_id' =>  $validatedData['employees'][$index],
+                    'remarks' => null,
+                ]);
+            }
+            $columnsString = "";
+            $process_name = "Applied";
+            $this->storeOvertimeApplicationLog($ovt_id, $process_name, $columnsString, $user->id);
             DB::commit();
             $overtime_applications = OvertimeApplication::with(['employeeProfile.assignedArea.division', 'employeeProfile.personalInformation', 'logs', 'directDates'])
                 ->where('id', $ovt_id)->get();
@@ -1851,7 +1844,7 @@ class OvertimeApplicationController extends Controller
                 return [
                     'id' => $overtime_application->id,
                     'reason' => $overtime_application->reason,
-                    'remarks' => $overtime_application->remarks,
+                    'remarks' => null,
                     'purpose' => $overtime_application->purpose,
                     'status' => $overtime_application->status,
                     'overtime_letter' => $overtime_application->overtime_letter_of_request,
@@ -1956,8 +1949,9 @@ class OvertimeApplicationController extends Controller
             });
 
             return response()->json([
-                'message' => 'Overtime Application has been sucessfully saved', 
-                'data' => $overtime_applications_result], Response::HTTP_OK);
+                'message' => 'Overtime Application has been sucessfully saved',
+                'data' => $overtime_applications_result
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             DB::rollBack();
             return response()->json(['message' => $th->getMessage()], 500);
@@ -1969,8 +1963,8 @@ class OvertimeApplicationController extends Controller
         try {
             //  return $request->dates;
             $user = $request->user;
-            $area = AssignArea::where('employee_profile_id',$user->id)->value('division_id');
-            $division = Division::where('id',$area)->value('is_medical');
+            $area = AssignArea::where('employee_profile_id', $user->id)->value('division_id');
+            $division = 1; // Division::where('id',$area)->value('is_medical');
             $validatedData = $request->validate([
                 'dates.*' => 'required|date_format:Y-m-d',
                 'time_from.*' => 'required|date_format:H:i',
@@ -1990,63 +1984,60 @@ class OvertimeApplicationController extends Controller
                 'employees.*' => 'required|integer|exists:employee_profiles,id',
             ]);
             DB::beginTransaction();
-                $path="";
-                if($division === true)
-                {
-                    $status='for-approval-department-head';
-                }
-                else
-                {
-                    $status='for-approval-section-head';
-                }
-                $overtime_application = OvertimeApplication::create([
-                    'employee_profile_id' => $user->id,
-                    'reference_number' => '123',
-                    'status' => $status,
-                    'purpose' => $request->purpose,
-                    'date' => date('Y-m-d'),
-                    'time' => date('H:i:s'),
+            $path = "";
+            if ($division === true) {
+                $status = 'for-approval-department-head';
+            } else {
+                $status = 'for-approval-section-head';
+            }
+            $overtime_application = OvertimeApplication::create([
+                'employee_profile_id' => $user->id,
+                'reference_number' => '123',
+                'status' => $status,
+                'purpose' => $request->purpose,
+                'date' => date('Y-m-d'),
+                'time' => date('H:i:s'),
+            ]);
+            $ovt_id = $overtime_application->id;
+            // $time_from = $request->input('time_from');
+            // $time_to = $request->input('time_to');
+            // $date = $request->input('dates');
+            // for ($i = 0; $i < count($date); $i++) {
+            //    $date_application = OvtApplicationDatetime::create([
+            //         'overtime_application_id' => $ovt_id,
+            //         'time_from' => $time_from[$i],
+            //         'time_to' => $time_to[$i],
+            //         'date' => $date[$i],
+            //     ]);
+            // }
+            foreach ($validatedData['dates'] as $index => $date) {
+                $date_application = OvtApplicationDatetime::create([
+                    'overtime_application_id' => $ovt_id,
+                    'time_from' =>  $validatedData['time_from'][$index],
+                    'time_to' =>  $validatedData['time_to'][$index],
+                    'date' =>  $date,
                 ]);
-                $ovt_id=$overtime_application->id;
-                // $time_from = $request->input('time_from');
-                // $time_to = $request->input('time_to');
-                // $date = $request->input('dates');
-                // for ($i = 0; $i < count($date); $i++) {
-                //    $date_application = OvtApplicationDatetime::create([
-                //         'overtime_application_id' => $ovt_id,
-                //         'time_from' => $time_from[$i],
-                //         'time_to' => $time_to[$i],
-                //         'date' => $date[$i],
-                //     ]);
-                // }
-                foreach ($validatedData['dates'] as $index => $date) {
-                    $date_application = OvtApplicationDatetime::create([
-                        'overtime_application_id' => $ovt_id,
-                        'time_from' =>  $validatedData['time_from'][$index],
-                        'time_to' =>  $validatedData['time_to'][$index],
-                        'date' =>  $date,
-                    ]);
-                }
-                $date_id=$date_application->id;
-                // $remarks = $request->input('remarks');
-                // $employees = $request->input('employees');
-                // for ($i = 0; $i < count($employees); $i++) {
-                //     $employee_application = OvtApplicationEmployee::create([
-                //         'ovt_application_datetime_id' => $date_id,
-                //         'remarks' => $remarks[$i],
-                //         'employee_profile_id' => $employees[$i],
-                //     ]);
-                // }
-                foreach ($validatedData['employees'] as $index => $employees) {
-                    OvtApplicationEmployee::create([
-                        'ovt_application_datetime_id' => $date_id,
-                        'employee_profile_id' =>  $validatedData['employees'][$index],
-                        'remarks' =>  $validatedData['remarks'][$index],
-                    ]);
-                }
-                $columnsString="";
-                $process_name="Applied";
-                $this->storeOvertimeApplicationLog($ovt_id,$process_name,$columnsString,$user->id);
+            }
+            $date_id = $date_application->id;
+            // $remarks = $request->input('remarks');
+            // $employees = $request->input('employees');
+            // for ($i = 0; $i < count($employees); $i++) {
+            //     $employee_application = OvtApplicationEmployee::create([
+            //         'ovt_application_datetime_id' => $date_id,
+            //         'remarks' => $remarks[$i],
+            //         'employee_profile_id' => $employees[$i],
+            //     ]);
+            // }
+            foreach ($validatedData['employees'] as $index => $employees) {
+                OvtApplicationEmployee::create([
+                    'ovt_application_datetime_id' => $date_id,
+                    'employee_profile_id' =>  $validatedData['employees'][$index],
+                    'remarks' =>  $validatedData['remarks'][$index],
+                ]);
+            }
+            $columnsString = "";
+            $process_name = "Applied";
+            $this->storeOvertimeApplicationLog($ovt_id, $process_name, $columnsString, $user->id);
             DB::commit();
 
             $overtime_applications = OvertimeApplication::with(['employeeProfile.assignedArea', 'employeeProfile.personalInformation', 'logs', 'directDates'])

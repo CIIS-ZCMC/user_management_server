@@ -287,6 +287,13 @@ class DTRcontroller extends Controller
     }
 
     /* ----------------------------------------------------------------GENERATION OF DAILY TIME RECORDS----------------------------------------------------------------------------------------------------------------------------- */
+
+    /***
+     * Table Requirements
+     * time-shifts | schedules | biometrics | employee_profiles | employee_profile_schedule
+     * Each of these tables should contain data linked to the biometric_id below in order to generate records
+
+     */
     public function generateDTR(Request $request)
     {
         try {
@@ -374,7 +381,7 @@ class DTRcontroller extends Controller
 
             return $this->PrintDtr($month_of, $year_of, $biometric_id, $emp_Details, $view);
         } catch (\Throwable $th) {
-            return $th;
+
             return response()->json(['message' =>  $th->getMessage()]);
         }
     }
