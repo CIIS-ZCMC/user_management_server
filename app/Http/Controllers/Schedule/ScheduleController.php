@@ -139,12 +139,6 @@ class ScheduleController extends Controller
                 }
 
                 if (is_array($value)) {
-                    // $array_value = [];
-
-                    // foreach ($request->all() as $key => $val) {
-                    //     $array_value[$key] = $val;
-                    // }
-
                     $cleanData[$key] = $value;
                     continue;
                 }
@@ -162,15 +156,15 @@ class ScheduleController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            // $user = $request->user;
-            // if ($user != null && $user->position()) {
-            //     $position = $user->position();
+            $user = $request->user;
+            if ($user != null && $user->position()) {
+                $position = $user->position();
 
-            //     if ($position->position === "Chief" || $position->position === "Department OIC" || $position->position === "Supervisor" || $position->position === "Section OIC" || $position->position === "Unit Head" || $position->position === "Unit OIC") {
-                    $date_start     = $cleanData['date_start'];    // Replace with your start date
-                    $date_end       = $cleanData['date_end'];      // Replace with your end date
-                    $selected_days  = $cleanData['selected_days'];                // Replace with your selected days
-                    $selected_dates = [];                                         // Replace with your selected dates
+                if ($position->position === "Chief" || $position->position === "Department OIC" || $position->position === "Supervisor" || $position->position === "Section OIC" || $position->position === "Unit Head" || $position->position === "Unit OIC") {
+                    $date_start     = $cleanData['date_start'];     // Replace with your start date
+                    $date_end       = $cleanData['date_end'];       // Replace with your end date
+                    $selected_days  = $cleanData['selected_days'];  // Replace with your selected days
+                    $selected_dates = [];                           // Replace with your selected dates
         
                     switch ($selected_days) {
                         //If Toggle Date Period On
@@ -185,25 +179,27 @@ class ScheduleController extends Controller
                         
                         //If Toggle Show Day on
                         case ($selected_days >=1 && $date_start === null && $date_end === null ) :
-                            $year   = Carbon::now()->year;  // Replace with your desired year
+                            $date   = Carbon::now();  // Replace with your desired year
                             $month  = Carbon::parse($cleanData['month'])->month;  // Replace with your desired month
 
-                            //To Update
-                            $start_date = Carbon::create($year, $month, 1)->startOfMonth(); // Calculate the first day of the month
-                            $end_date   = $start_date->copy()->endOfMonth();                // Calculate the last day of the month
-        
+                            $firstDayOfMonth = $date->firstOfMonth();
+
+                            // If you want to get the first day of a specific month, you can do something like this:
+                            $specificMonth = $month; // Replace with the desired month
+                            $start_date = Carbon::create($date->year, $month, 1)->firstOfMonth();
+                            $end_date = $start_date->copy()->endOfMonth();
+                            
                             $current_date = $start_date->copy();
-        
-                            while ($current_date->lte($end_date)) {
+                            
+                            while ($current_date->lte($end_date->startOfDay())) {
                                 if (in_array($current_date->englishDayOfWeek, $selected_days)) {
                                     $selected_dates[] = $current_date->toDateString();
                                 }
                                 $current_date->addDay();
                             }
-
-                            return $selected_dates;
                         break;
         
+                        //If Toggle Date Period && Toggle Show Day On
                         default:
                             $current_date = $date_start->copy();
                                 
@@ -262,14 +258,14 @@ class ScheduleController extends Controller
                     
 
                     
-                    // Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
-                    // return response()->json(['data' => $data ,'message' => $msg], Response::HTTP_OK);
-            //     } else {
-            //         return response()->json(['message' => 'User not allowed to create'], Response::HTTP_OK);
-            //     }
-            // } else {
-            //     return response()->json(['message' => 'User no position'], Response::HTTP_OK);
-            // }
+                    Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+                    return response()->json(['data' => $data ,'message' => $msg], Response::HTTP_OK);
+                } else {
+                    return response()->json(['message' => 'User not allowed to create'], Response::HTTP_OK);
+                }
+            } else {
+                return response()->json(['message' => 'User no position'], Response::HTTP_OK);
+            }
 
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
