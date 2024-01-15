@@ -69,7 +69,7 @@ class LeaveCreditController extends Controller
             }
             return response()->json(['message' => 'success.'], Response::HTTP_OK);
         }
-        return response()->json(['data' => $employeeCredit], Response::HTTP_OK);
+     
 
         return response()->json(['message' => 'No employee records available.'], Response::HTTP_OK);
     }

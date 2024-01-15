@@ -1721,7 +1721,6 @@ class OvertimeApplicationController extends Controller
                 $image = $request->file('letter_of_request');
                 $imageName = time() . '.' . $image->getClientOriginalExtension();
                 $image->storeAs('images', $imageName, 'public');
-
                         Storage::makeDirectory('public/' . $folderName);
                         $path =  $image->storeAs('public/' . $folderName, $imageName);
 
@@ -1745,51 +1744,6 @@ class OvertimeApplicationController extends Controller
                 ]);
 
                 $ovt_id=$overtime_application->id;
-                // $activities = $request->input('activities');
-                // $quantities = $request->input('quantities');
-                // $manhours = $request->input('manhours');
-                // $periods = $request->input('periods');
-                // for ($i = 0; $i < count($activities); $i++) {
-                //     $activity_application = OvtApplicationActivity::create([
-                //         'overtime_application_id' => $ovt_id,
-                //         'name' => $activities[$i],
-                //         'quantity' => $quantities[$i],
-                //         // 'man_hour' => $manhours[$i],
-                //         // 'period_covered' => $periods[$i],
-                //     ]);
-                // $time_from = $request->input('time_from');
-                // $time_to = $request->input('time_to');
-                // $date = $request->input('dates');
-                //     for ($i = 0; $i < count($date); $i++) {
-                //            $date_application = OvtApplicationDatetime::create([
-                //                 'ovt_application_activity_id' => $activity_application->id,
-                //                 'time_from' => $time_from[$i],
-                //                 'time_to' => $time_to[$i],
-                //                 'date' => $date[$i],
-                //             ]);
-                //         }
-
-                // }
-                 // $time_from = $request->input('time_from');
-                // $time_to = $request->input('time_to');
-                // $date = $request->input('dates');
-                // for ($i = 0; $i < count($date); $i++) {
-                //    $date_application = OvtApplicationDatetime::create([
-                //         'ovt_application_activity_id' => $activity_id,
-                //         'time_from' => $time_from[$i],
-                //         'time_to' => $time_to[$i],
-                //         'date' => $date[$i],
-                //     ]);
-                // }
-                // $remarks = $request->input('remarks');
-                // $selectedEmployees = $request->input('employees');
-                // for ($i = 0; $i < count($selectedEmployees); $i++) {
-                //     OvtApplicationEmployee::create([
-                //         'ovt_application_datetime_id' => $date_id,
-                //         'employee_profile_id' => $selectedEmployees[$i],
-                //         'remarks' => $remarks[$i],
-                //     ]);
-                // }
                 foreach ($validatedData['activities'] as $index => $activities) {
                     $activity_application = OvtApplicationActivity::create([
                         'overtime_application_id' => $ovt_id,
