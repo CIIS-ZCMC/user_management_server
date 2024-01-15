@@ -2789,7 +2789,7 @@ class LeaveApplicationController extends Controller
 
                                     }
 
-                                    if($leave_applications->without_pay === 1)
+                                    if($leave_applications->without_pay == 0)
                                     {
                                         $employee_leave_credits = new EmployeeLeaveCredit();
                                         $employee_leave_credits->employee_profile_id = $leave_applications->employee_profile_id;
@@ -3260,7 +3260,7 @@ class LeaveApplicationController extends Controller
                                 $total_days += $numberOfDays;
                             }
 
-                            if ($request->without_pay == 1)
+                            if ($request->without_pay == 0)
                             {
 
                                 if($total_leave_credit > $total_days)
@@ -3342,7 +3342,7 @@ class LeaveApplicationController extends Controller
 
                                             }
 
-                                            if($request->without_pay == 1)
+                                            if($request->without_pay == 0)
                                             {
                                                 $employee_leave_credits = new EmployeeLeaveCredit();
                                                 $employee_leave_credits->employee_profile_id = $user->id;
