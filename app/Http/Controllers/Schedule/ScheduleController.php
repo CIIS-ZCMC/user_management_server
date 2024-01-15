@@ -93,24 +93,17 @@ class ScheduleController extends Controller
             })->get()->toArray();
 
             $data = [];
-            
             foreach ($array as $key => $value) {
-                // foreach ($dates as $date) {
-                    // foreach ($value['schedule'] as $schedule) {
-                        // if ($schedule['date_start'] === $date) {
-                            $data[] = [
-                                'id'            => $value['id'],
-                                'employee_id'   => $value['employee_id'],
-                                'biometric_id'  => $value['biometric_id'],
-                                'first_name'    => $value['first_name'],
-                                'middle_name'   => $value['middle_name'],
-                                'last_name'     => $value['last_name'],
-                                'assigned_area' => $value['assigned_area'],
-                                'schedule'      => $value['schedule'],
-                            ];
-                        // }
-                    // }
-                // }
+                $data[] = [
+                    'id'            => $value['id'],
+                    'employee_id'   => $value['employee_id'],
+                    'biometric_id'  => $value['biometric_id'],
+                    'first_name'    => $value['first_name'],
+                    'middle_name'   => $value['middle_name'],
+                    'last_name'     => $value['last_name'],
+                    'assigned_area' => $value['assigned_area'],
+                    'schedule'      => $value['schedule'],
+                ];
             }
         
             return response()->json(['data' => $data,'dates' => $dates_with_day], Response::HTTP_OK);
