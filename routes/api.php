@@ -686,6 +686,12 @@ Route::middleware('auth.cookie')->group(function(){
             Route::post('educational-background', 'EducationalBackgroundController@store');
         });
 
+        // Kriz
+          Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('educational-background-many', 'EducationalBackgroundController@storeMany');
+        });
+
+
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
             Route::get('educational-background/{id}', 'EducationalBackgroundController@show');
         });
@@ -945,6 +951,11 @@ Route::middleware('auth.cookie')->group(function(){
             Route::post('legal-information', 'LegalInformationController@store');
         });
 
+        // Kriz
+         Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('legal-information-many', 'LegalInformationController@storeMany');
+        });
+
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
             Route::get('legal-information/{id}', 'LegalInformationController@show');
         });
@@ -1077,6 +1088,11 @@ Route::middleware('auth.cookie')->group(function(){
 
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
             Route::get('plantilla/find-by-designation/{id}', 'PlantillaController@findByDesignationID');
+        });
+
+
+         Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('plantilla-with-designation/{id}', 'PlantillaController@plantillaWithDesignation');
         });
 
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
