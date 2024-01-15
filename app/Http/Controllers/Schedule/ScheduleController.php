@@ -255,9 +255,6 @@ class ScheduleController extends Controller
                         }
                     }
 
-                    
-
-                    
                     Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
                     return response()->json(['data' => $data ,'message' => $msg], Response::HTTP_OK);
                 } else {
@@ -409,14 +406,14 @@ class ScheduleController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $user = null;
-            // if ($user != null && $user->position()) {
-            //     $position = $user->position();
+            $user = $request->user;
+            if ($user != null && $user->position()) {
+                $position = $user->position();
 
-                // if ($position->position === "Chief" || $position->position === "Department OIC" || $position->position === "Supervisor" || $position->position === "Section OIC" || $position->position === "Unit Head" || $position->position === "Unit OIC") {
+                if ($position->position === "Chief" || $position->position === "Department OIC" || $position->position === "Supervisor" || $position->position === "Section OIC" || $position->position === "Unit Head" || $position->position === "Unit OIC") {
                     
-                    $month  = 01;  // Replace with the desired month (1 to 12)
-                    $year   = 2024;   // Replace with the desired year
+                    $month  = Carbon::parse($cleanData['month'])->month;    // Replace with the desired month (1 to 12)
+                    $year   = Carbon::parse($cleanData['year'])->year;      // Replace with the desired year
 
                     $days   = Helpers::getDatesInMonth($year, $month, "Day");
                     $weeks  = Helpers::getDatesInMonth($year, $month, "Week");
@@ -436,40 +433,39 @@ class ScheduleController extends Controller
 
                     $pull_out = PullOut::all();
 
-                    
                     $chief      = null;
                     $head       = null;
                     $supervisor = null;
                     $unit_head  = null;
 
-                    // $area = $user->assignedArea->findDetails();
-                    // if ($area != null) {
-                    //     if($area['sector'] === 'Division'){
-                    //         $chief = $user->assignedArea->division->divisionHead;
-                    //     }
+                    $area = $user->assignedArea->findDetails();
+                    if ($area != null) {
+                        if($area['sector'] === 'Division'){
+                            $chief = $user->assignedArea->division->divisionHead;
+                        }
 
-                    //     if($area['sector'] === 'Department'){
-                    //         $head = $user->assignedArea->department->head;
-                    //     }
+                        if($area['sector'] === 'Department'){
+                            $head = $user->assignedArea->department->head;
+                        }
 
-                    //     if($area['sector'] === 'Section'){
-                    //         // $supervisor = $user->assignedArea->department->supervisor;
-                    //     }
+                        if($area['sector'] === 'Section'){
+                            $supervisor = $user->assignedArea->department->supervisor;
+                        }
 
-                    //     if($area['sector'] === 'Unit'){
-                    //         $unit_head = $user->assignedArea->department->head;
-                    //     }
-                    // }
+                        if($area['sector'] === 'Unit'){
+                            $unit_head = $user->assignedArea->department->head;
+                        }
+                    }
 
-                    // Helpers::registerSystemLogs($request, $data->id, true, 'Success in generate '.$this->SINGULAR_MODULE_NAME.'.');
+                    Helpers::registerSystemLogs($request, $data->id, true, 'Success in generate '.$this->SINGULAR_MODULE_NAME.'.');
                     return view('generate_schedule/section-schedule', compact('data', 'holiday', 'pull_out', 'month', 'year', 'days', 'weeks', 'dates','user', 'chief', 'head', 'supervisor', 'unit_head'));
-            //     } else {
-            //         return response()->json(['message' => 'User not allowed to create'], Response::HTTP_OK);
-            //     }
+                } else {
+                    return response()->json(['message' => 'User not allowed to create'], Response::HTTP_OK);
+                }
                 
-            // } else {
-            //     return response()->json(['message' => 'User no position'], Response::HTTP_OK);
-            // }
+            } else {
+                return response()->json(['message' => 'User no position'], Response::HTTP_OK);
+            }
 
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
