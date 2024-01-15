@@ -95,11 +95,10 @@ class ScheduleController extends Controller
             $data = [];
             
             foreach ($array as $key => $value) {
-                foreach ($dates as $date) {
-                    foreach ($value['schedule'] as $schedule) {
-                        if ($schedule['date_start'] === $date) {
+                // foreach ($dates as $date) {
+                    // foreach ($value['schedule'] as $schedule) {
+                        // if ($schedule['date_start'] === $date) {
                             $data[] = [
-                                'date'          => $date,
                                 'id'            => $value['id'],
                                 'employee_id'   => $value['employee_id'],
                                 'biometric_id'  => $value['biometric_id'],
@@ -107,11 +106,11 @@ class ScheduleController extends Controller
                                 'middle_name'   => $value['middle_name'],
                                 'last_name'     => $value['last_name'],
                                 'assigned_area' => $value['assigned_area'],
-                                'schedule'      => $schedule,
+                                'schedule'      => $value['schedule'],
                             ];
-                        }
-                    }
-                }
+                        // }
+                    // }
+                // }
             }
         
             return response()->json(['data' => $data,'dates' => $dates_with_day], Response::HTTP_OK);
@@ -233,7 +232,7 @@ class ScheduleController extends Controller
                             $data = $schedule;
                         }
                         
-                        $employee = $request['employee'];
+                        $employee = $cleanData['employee'];
                         foreach ($employee as $key => $value) {
                             $employee_id  = EmployeeProfile::select('id')->where('id', $value['employee_id'])->first();
 
