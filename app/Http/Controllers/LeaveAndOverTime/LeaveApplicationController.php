@@ -498,6 +498,7 @@ class LeaveApplicationController extends Controller
         $section = AssignArea::where('employee_profile_id',$user->id)->value('section_id');
         $sectionHeadId = Section::where('id', $section)->value('supervisor_employee_profile_id');
         $section_oic_id = Section::where('id', $section)->value('supervisor_employee_profile_id');
+        
         if($hr_head_id === $user->id || $hr_oic_id === $user->id) {
             $leave_applications = LeaveApplication::with(['employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
             // ->where('status', 'applied')
@@ -883,6 +884,7 @@ class LeaveApplicationController extends Controller
             })
             ->where('status', 'for-approval-department-head')
             ->orwhere('status', 'for-approval-division-head')
+            ->orwhere('status', 'approved')
             ->orwhere('status', 'declined')
             ->get();
             if($leave_applications->isNotEmpty())
@@ -1067,15 +1069,16 @@ class LeaveApplicationController extends Controller
             }
         }
         else if($sectionHeadId === $user->id || $section_oic_id === $user->id) {
-
             $leave_applications = LeaveApplication::with(['employeeProfile.assignedArea.section','employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
             ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
                 $query->where('section_id', $section);
             })
             ->where('status', 'for-approval-section-head')
             ->orwhere('status', 'for-approval-division-head')
+            ->orwhere('status', 'approved')
             ->orwhere('status', 'declined')
             ->get();
+            return $leave_applications;
             if($leave_applications->isNotEmpty())
             {
                 $leave_applications_result = $leave_applications->map(function ($leave_application) {
