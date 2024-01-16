@@ -498,7 +498,7 @@ class LeaveApplicationController extends Controller
         $section = AssignArea::where('employee_profile_id',$user->id)->value('section_id');
         $sectionHeadId = Section::where('id', $section)->value('supervisor_employee_profile_id');
         $section_oic_id = Section::where('id', $section)->value('supervisor_employee_profile_id');
-        
+
         if($hr_head_id === $user->id || $hr_oic_id === $user->id) {
             $leave_applications = LeaveApplication::with(['employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
             // ->where('status', 'applied')
@@ -3266,7 +3266,7 @@ class LeaveApplicationController extends Controller
                             if ($request->without_pay == 0)
                             {
 
-                                if($total_leave_credit > $total_days)
+                                if($total_leave_credit >= $total_days)
                                 {
 
 

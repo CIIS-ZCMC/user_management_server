@@ -191,6 +191,7 @@ class CtoApplicationController extends Controller
             ]);
             $employee_overtime_credit=EmployeeOvertimeCredit::where('employee_profile_id','=',$user->id)
             ->get();
+
             $total_time_in_minutes = 0;
             $total_overtime_credit = $employee_overtime_credit->mapToGroups(function ($credit) {
                 return [$credit->operation => $credit->credit_value];
@@ -213,7 +214,7 @@ class CtoApplicationController extends Controller
                 $total_hours = floor($total_time_in_minutes / 60);
                 $total_minutes = $total_time_in_minutes % 60;
 
-            if($total_overtime_credit > $total_hours)
+            if($total_overtime_credit >= $total_hours)
                 {
                     DB::beginTransaction();
                         $cto_application = new CtoApplication();
@@ -274,7 +275,7 @@ class CtoApplicationController extends Controller
 
                     DB::commit();
 
-                    $cto_applications = CtoApplication::with(['employeeProfile.personalInformation','dates','logs'])
+                $cto_applications = CtoApplication::with(['employeeProfile.personalInformation','dates','logs'])
                 ->where('id',$cto_application->id)->get();
                 $cto_applications_result = $cto_applications->map(function ($cto_application) {
                     $datesData = $cto_application->dates ? $cto_application->dates : collect();
@@ -983,11 +984,12 @@ class CtoApplicationController extends Controller
         $training_officer_id = Department::where('id', $department)->value('training_officer_employee_profile_id');
         $section = AssignArea::where('employee_profile_id',$user->id)->value('section_id');
         $sectionHeadId = Section::where('id', $section)->value('supervisor_employee_profile_id');
+
         $division_oic_Id = Division::where('id', $division)->value('chief_employee_profile_id');
         $department_oic_Id = Division::where('id', $division)->value('chief_employee_profile_id');
         $section_oic_id = Section::where('id', $section)->value('supervisor_employee_profile_id');
         if($divisionHeadId === $user->id || $division_oic_Id === $user->id) {
-            $cto_applications = CtoApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','logs'])
+            $cto_applications = CtoApplication::with(['employeeProfile.assignedArea','employeeProfile.personalInformation','logs'])
             ->whereHas('employeeProfile.assignedArea', function ($query) use ($division) {
                 $query->where('division_id', $division);
             })
@@ -1134,18 +1136,19 @@ class CtoApplicationController extends Controller
             {
                 return response()->json(['message' => 'No records available'], Response::HTTP_OK);
             }
-
-
         }
         else if($sectionHeadId === $user->id || $section_oic_id === $user->id) {
-            $cto_applications = ctoApplication::with(['employeeProfile.assignedArea.section','employeeProfile.personalInformation','logs'])
+
+            $cto_applications = ctoApplication::with(['employeeProfile.assignedArea','employeeProfile.personalInformation','logs'])
             ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
                 $query->where('section_id', $section);
             })
-            ->where('status', 'for-approval-division-head')
+            ->where('status', 'for-approval-section-head')
             ->orwhere('status', 'approved')
             ->orwhere('status', 'declined')
             ->get();
+
+
             if($cto_applications->isNotEmpty())
             {
                 $cto_applications_result = $cto_applications->map(function ($cto_application) {
@@ -1286,7 +1289,7 @@ class CtoApplicationController extends Controller
 
         }
         else  if($departmentHeadId === $user->id || $training_officer_id === $user->id || $department_oic_Id === $user->id) {
-            $cto_applications = CtoApplication::with(['employeeProfile.assignedArea.department','employeeProfile.personalInformation','logs'])
+            $cto_applications = CtoApplication::with(['employeeProfile.assignedArea','employeeProfile.personalInformation','logs'])
             ->whereHas('employeeProfile.assignedArea', function ($query) use ($department) {
                 $query->where('department_id', $department);
             })
