@@ -86,6 +86,8 @@ class TimeAdjusmentController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
+            $data = null;
+            
             $dates = $cleanData['dates'];
             foreach ($dates as $key => $date) {
                 $find = DailyTimeRecords::where([
