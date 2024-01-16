@@ -80,17 +80,25 @@ class ScheduleController extends Controller
 
             $month  = $cleanData['month'];  // Replace with the desired month (1 to 12)
             $year   = $cleanData['year'];   // Replace with the desired year
-
-            $dates          = Helpers::getDatesInMonth($year, $month, "");
             $dates_with_day = Helpers::getDatesInMonth($year, $month, "Days of Week");
+
+            $user = $request->user->assignedArea;
 
             $array = EmployeeProfile::join('personal_informations as PI', 'employee_profiles.personal_information_id', '=', 'PI.id')
             ->select('employee_profiles.id','employee_id','biometric_id', 'PI.first_name','PI.middle_name', 'PI.last_name')
             ->with(['assignedArea', 'schedule' => function ($query) use ($year, $month) {
                 $query->with(['timeShift', 'holiday'])->whereYear('date_start', '=', $year)->whereMonth('date_start', '=', $month);
-            }])->whereHas('assignedArea', function ($query) use ($cleanData) {
-                $query->where('section_id', $cleanData['section']);
+            }])->whereHas('assignedArea', function ($query) use ($user) {
+                $query->where('id', $user->id);
             })->get()->toArray();
+
+            $employee = EmployeeProfile::join('personal_informations as PI', 'employee_profiles.personal_information_id', '=', 'PI.id')
+                            ->select('employee_profiles.id', 'employee_id', 'biometric_id', DB::raw("CONCAT(PI.first_name, ' ', COALESCE(PI.middle_name, ''), '', PI.last_name) AS name"))
+                            ->with(['assignedArea'])
+                            ->whereHas('assignedArea', function ($query) use ($user) {
+                                $query->where('id', $user->id);
+                            })
+                            ->get();
 
             $data = [];
             foreach ($array as $key => $value) {
@@ -106,7 +114,7 @@ class ScheduleController extends Controller
                 ];
             }
         
-            return response()->json(['data' => $data,'dates' => $dates_with_day], Response::HTTP_OK);
+            return response()->json(['data' => $data, 'dates' => $dates_with_day, 'employee' => $employee], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
