@@ -4,19 +4,16 @@ namespace App\Http\Controllers\Schedule;
 
 
 use App\Models\TimeAdjusment;
-use App\Models\daily_time_records;
+use App\Models\DailyTimeRecords;
 
 use App\Http\Resources\TimeAdjustmentResource;
 use App\Http\Requests\TimeAdjustmentRequest;
 use App\Helpers\Helpers;
 
 use Illuminate\Http\Response;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+Use DateTime;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -91,7 +88,7 @@ class TimeAdjusmentController extends Controller
 
             $dates = $cleanData['dates'];
             foreach ($dates as $key => $date) {
-                $find = daily_time_records::where([
+                $find = DailyTimeRecords::where([
                     ['dtr_date',    '=', $date['dtr_date']],
                     ['first_in', '=', $date['first_in']],
                     ['first_out', '=', $date['first_out']],
@@ -105,7 +102,7 @@ class TimeAdjusmentController extends Controller
             // $data = TimeAdjusment::create($cleanData);
 
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
-            return response()->json(['data' => $data ,'message' => $msg], Response::HTTP_OK);
+            return response()->json(['data' => $data], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 

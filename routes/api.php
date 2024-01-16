@@ -1692,6 +1692,13 @@ Route::middleware('auth.cookie')->group(function(){
         });
 
         /**
+         * Employee Schedule Module
+         */
+        Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function(){
+            Route::get('employee-schedule', 'EmployeeScheduleController@create');
+        });
+
+        /**
          * Exchange Schedule Module
          */
         Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function(){
@@ -1781,3 +1788,4 @@ Route::middleware('auth.cookie')->group(function(){
         });
     });
 });
+

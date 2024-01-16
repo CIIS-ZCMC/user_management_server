@@ -14,9 +14,6 @@ use App\Helpers\Helpers;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 
-use Carbon\Carbon;
-use DateTime;
-
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
@@ -182,7 +179,7 @@ class ExchangeDutyController extends Controller
             $data->update($cleanData);
 
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in updating.'.$this->SINGULAR_MODULE_NAME.'.');
-            return response()->json(['data' => $approve_by ,'message' => 'Success'], Response::HTTP_OK);
+            return response()->json(['data' => $data ,'message' => 'Success'], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
