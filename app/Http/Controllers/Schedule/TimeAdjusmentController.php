@@ -87,7 +87,7 @@ class TimeAdjusmentController extends Controller
             }
 
             $data = null;
-            
+
             $dates = $cleanData['dates'];
             foreach ($dates as $key => $date) {
                 $find = DailyTimeRecords::where([
@@ -103,7 +103,7 @@ class TimeAdjusmentController extends Controller
 
             // $data = TimeAdjusment::create($cleanData);
 
-            Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             return response()->json(['data' => $data], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
