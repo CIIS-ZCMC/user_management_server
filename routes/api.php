@@ -121,6 +121,17 @@ Route::middleware('auth.cookie')->group(function(){
         Route::middleware('auth.permission:UMIS-SM delete')->group(function(){
             Route::delete('news/{id}', 'NewsController@delete');
         });
+
+        /**
+         * Dashboard Module
+         */
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('birthday-celebrants', 'DashboardController@listOfBirthdayCelebrant');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
+            Route::get('human-resources', 'DashboardController@humanResource');
+        });
     });
 
     Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function(){
@@ -1097,6 +1108,10 @@ Route::middleware('auth.cookie')->group(function(){
 
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
             Route::post('plantilla-assign-area/{id}', 'PlantillaController@assignPlantillaToAreas');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
+            Route::post('plantilla-assign-area-random/{id}', 'PlantillaController@assignMultiplePlantillaToArea');
         });
 
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function(){
