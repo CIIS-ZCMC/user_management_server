@@ -3269,7 +3269,6 @@ class LeaveApplicationController extends Controller
                                 if($total_leave_credit >= $total_days)
                                 {
 
-
                                         DB::beginTransaction();
                                             $leave_application = new Leaveapplication();
                                             $leave_application->leave_type_id = $leave_type_id;

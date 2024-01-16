@@ -112,6 +112,7 @@ class EmployeeOvertimeCreditController extends Controller
                                         // Store the total overtime hours for each unique combination in the database
                                         $date_compare=$date->date;
                                         $total =  $this->calculateTotal($date_compare);
+                                        $totalOvertimeHoursFormatted = number_format($totalOvertimeHours / 60, 1);
                                         $employeeregular = EmployeeProfile::where('id', $employee->employee_profile_id)
                                         ->whereHas('employmentType', function ($query) {
                                             $query->where('name', 'Regular Full-Time')
@@ -125,8 +126,8 @@ class EmployeeOvertimeCreditController extends Controller
                                                 'date' => date('Y-m-d'),
                                                 'operation' => 'add',
                                                 'overtime_application_id' =>$overtimeApplication->id,
-                                                'credit_value' => $totalOvertimeHours * $total / 60,
-                                                'overtime_hours' => $totalOvertimeHours * $total / 60,
+                                                'credit_value' =>  $totalOvertimeHoursFormatted,
+                                                'overtime_hours' =>  $totalOvertimeHoursFormatted,
                                             ]);
                                         }
 
@@ -181,6 +182,7 @@ class EmployeeOvertimeCreditController extends Controller
                                         // Store the total overtime hours for each unique combination in the database
                                         $date_compare=$date->date;
                                         $total =  $this->calculateTotal($date_compare);
+                                        $totalOvertimeHoursFormatted = number_format($totalOvertimeHours / 60, 1);
                                         $employeeregular = EmployeeProfile::where('id', $employee->employee_profile_id)
                                         ->whereHas('employmentType', function ($query) {
                                             $query->where('name', 'Regular Full-Time')
@@ -195,8 +197,8 @@ class EmployeeOvertimeCreditController extends Controller
                                                 'date' => date('Y-m-d'),
                                                 'operation' => 'add',
                                                 'overtime_application_id' =>$overtimeApplication->id,
-                                                'credit_value' => $totalOvertimeHours * $total / 60,
-                                                'overtime_hours' => $totalOvertimeHours * $total / 60,
+                                                'credit_value' => $totalOvertimeHoursFormatted,
+                                                'overtime_hours' => $totalOvertimeHoursFormatted,
                                             ]);
                                         }
                                     }
