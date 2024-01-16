@@ -1026,6 +1026,7 @@ class CtoApplicationController extends Controller
                             }
                         }
 
+
                         return response()->json(['data' => $cto_applications_result,'balance' => $totalOvertimeCredits], Response::HTTP_OK);
 
             }
@@ -1153,6 +1154,18 @@ class CtoApplicationController extends Controller
                             } else {
                                 $result = sprintf('%d hours', $hours);
                             }
+
+                            $OvertimeCredits = EmployeeOvertimeCredit::where('employee_profile_id', $cto_application->employee_profile_id)
+                            ->whereYear('created_at', '=', Carbon::now()->year)
+                            ->whereMonth('created_at', '=', Carbon::now()->month)
+                            ->where('operation', '=', 'add') // Filter only 'add' operations
+                            ->get();
+
+                            $totalOvertimeCredits = 0;
+
+                            foreach ($OvertimeCredits as $credit) {
+                            $totalOvertimeCredits += $credit->credit_value;
+                            }
                     $first_name = optional($cto_application->employeeProfile->personalInformation)->first_name ?? null;
                     $last_name = optional($cto_application->employeeProfile->personalInformation)->last_name ?? null;
                     return [
@@ -1162,6 +1175,7 @@ class CtoApplicationController extends Controller
                         'status' => $cto_application->status,
                         'total_days'=> $total_days,
                         'total_hours'=>$result,
+                        'total_hours_month'=>$totalOvertimeCredits .'/40 hrs',
                         'employee_id' => $cto_application->employee_profile_id,
                         'employee_name' => "{$first_name} {$last_name}" ,
                         'position_code' => $cto_application->employeeProfile->assignedArea->designation->code ?? null,
@@ -1325,6 +1339,18 @@ class CtoApplicationController extends Controller
                             } else {
                                 $result = sprintf('%d hours', $hours);
                             }
+
+                            $OvertimeCredits = EmployeeOvertimeCredit::where('employee_profile_id', $cto_application->employee_profile_id)
+                            ->whereYear('created_at', '=', Carbon::now()->year)
+                            ->whereMonth('created_at', '=', Carbon::now()->month)
+                            ->where('operation', '=', 'add') // Filter only 'add' operations
+                            ->get();
+
+                            $totalOvertimeCredits = 0;
+
+                            foreach ($OvertimeCredits as $credit) {
+                            $totalOvertimeCredits += $credit->credit_value;
+                            }
                     $first_name = optional($cto_application->employeeProfile->personalInformation)->first_name ?? null;
                     $last_name = optional($cto_application->employeeProfile->personalInformation)->last_name ?? null;
                     return [
@@ -1334,6 +1360,7 @@ class CtoApplicationController extends Controller
                         'status' => $cto_application->status,
                         'total_days'=> $total_days,
                         'total_hours'=> $result,
+                        'total_hours_month'=> $totalOvertimeCredits. '/40 hrs',
                         'employee_id' => $cto_application->employee_profile_id,
                         'employee_name' => "{$first_name} {$last_name}" ,
                         'position_code' => $cto_application->employeeProfile->assignedArea->designation->code ?? null,
@@ -1493,6 +1520,18 @@ class CtoApplicationController extends Controller
                             } else {
                                 $result = sprintf('%d hours', $hours);
                             }
+
+                            $OvertimeCredits = EmployeeOvertimeCredit::where('employee_profile_id', $cto_application->employee_profile_id)
+                            ->whereYear('created_at', '=', Carbon::now()->year)
+                            ->whereMonth('created_at', '=', Carbon::now()->month)
+                            ->where('operation', '=', 'add') // Filter only 'add' operations
+                            ->get();
+
+                            $totalOvertimeCredits = 0;
+
+                            foreach ($OvertimeCredits as $credit) {
+                            $totalOvertimeCredits += $credit->credit_value;
+                            }
                     $first_name = optional($cto_application->employeeProfile->personalInformation)->first_name ?? null;
                     $last_name = optional($cto_application->employeeProfile->personalInformation)->last_name ?? null;
                     return [
@@ -1502,6 +1541,7 @@ class CtoApplicationController extends Controller
                         'status' => $cto_application->status,
                         'total_days'=> $total_days,
                         'total_hours'=>$result,
+                        'total_hours_month'=>$totalOvertimeCredits. '/40 hrs',
                         'employee_id' => $cto_application->employee_profile_id,
                         'employee_name' => "{$first_name} {$last_name}" ,
                         'position_code' => $cto_application->employeeProfile->assignedArea->designation->code ?? null,

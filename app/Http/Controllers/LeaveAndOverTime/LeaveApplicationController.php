@@ -1265,6 +1265,7 @@ class LeaveApplicationController extends Controller
                 $query->where('section_id', $section);
             })
             ->where('status', 'for-approval-omcc-head')
+            ->orwhere('status', 'approved')
             ->get();
             if($leave_applications->isNotEmpty())
             {
