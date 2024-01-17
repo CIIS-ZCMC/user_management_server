@@ -196,6 +196,11 @@ class PullOutController extends Controller
                     continue;
                 }
 
+                if (is_array($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
                 $cleanData[$key] = strip_tags($value);
             }
 
