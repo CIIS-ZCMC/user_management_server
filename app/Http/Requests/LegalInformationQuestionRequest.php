@@ -24,7 +24,7 @@ class LegalInformationQuestionRequest extends FormRequest
         return [
             'order_by' => 'required|integer',
             'content_question' => 'required|string|max:255',
-            'legal_iq_id' => 'nullable|string|size:36',
+            'legal_iq_id' => 'nullable|integer',
         ];
     }
 }

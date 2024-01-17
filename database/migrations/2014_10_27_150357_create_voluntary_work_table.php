@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('name_address_organization');
             $table->date('inclusive_from');
             $table->date('inclusive_to');
-            $table->integer('hours');
+            $table->string('hours');
             $table->string('position');
             $table->timestamps();
         });
