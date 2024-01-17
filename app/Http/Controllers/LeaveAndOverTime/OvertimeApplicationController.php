@@ -3257,10 +3257,12 @@ class OvertimeApplicationController extends Controller
     {
         try {
             $user = $request->user;
-            $user_password = $user->password_encrypted;
-            $password = $request->password;
-            if ($user_password == $password) {
-
+            $password_decrypted = Crypt::decryptString($user['password_encrypted']);
+            $password = strip_tags($request->password);
+                if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                    return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+                }
+                else{
                 $message_action = '';
                 $action = '';
                 $new_status = '';
@@ -3503,8 +3505,6 @@ class OvertimeApplicationController extends Controller
 
                     return response(['message' => 'Application has been sucessfully ' . $message_action, 'data' => $overtime_applications_result], Response::HTTP_CREATED);
                 }
-            } else {
-                return response()->json(['message' => 'Incorrect Password'], Response::HTTP_OK);
             }
         } catch (\Exception $e) {
             DB::rollBack();
