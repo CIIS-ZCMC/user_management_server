@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\LeaveAndOverTime;
 
+use App\Helpers\Helpers;
 use App\Models\OvertimeApplication;
 use App\Http\Controllers\Controller;
 use App\Models\AssignArea;
@@ -243,7 +244,7 @@ class OvertimeApplicationController extends Controller
                 });
                 return response()->json(['data' => $overtime_applications_result], Response::HTTP_OK);
             } else {
-                return response()->json(['message' => 'No records available'], Response::HTTP_OK);
+                return response()->json(['data'=> $overtime_applications,'message' => 'No records available'], Response::HTTP_OK);
             }
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], 500);
@@ -253,7 +254,7 @@ class OvertimeApplicationController extends Controller
     public function getUserOvertimeApplication(Request $request)
     {
         try {
-            $user = $request->id;
+            $user = $request->user;
             $overtime_applications = [];
             $overtime_applications = OvertimeApplication::with(['employeeProfile.assignedArea.division', 'employeeProfile.personalInformation', 'logs', 'activities'])
                 ->where('employee_profile_id', $user->id)->get();
@@ -467,7 +468,7 @@ class OvertimeApplicationController extends Controller
                 });
                 return response()->json(['data' => $overtime_applications_result], Response::HTTP_OK);
             } else {
-                return response()->json(['message' => 'No records available'], Response::HTTP_OK);
+                return response()->json(['data'=> $overtime_applications,'message' => 'No records available'], Response::HTTP_OK);
             }
         } catch (\Throwable $th) {
 
@@ -2206,6 +2207,8 @@ class OvertimeApplicationController extends Controller
     public function store(Request $request)
     {
         try {
+            $user = $request->user;
+            $area = AssignArea::where('employee_profile_id',$user->id)->value('division_id');
             $validatedData = $request->validate([
                'dates.*' => 'required|date_format:Y-m-d',
                 'activities.*' => 'required',
@@ -2221,7 +2224,7 @@ class OvertimeApplicationController extends Controller
                         }
                     },
                 ],
-                'letter_of_request' => 'required|image|mimes:jpeg,png,jpg,pdf|max:2048',
+                'letter_of_request' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
                 'purpose.*' => 'required|string|max:512',
                 'remarks.*' => 'required|string|max:512',
                 'quantities.*' => 'required',
@@ -2232,23 +2235,24 @@ class OvertimeApplicationController extends Controller
             $divisions = Division::where('id',$area)->first();
             DB::beginTransaction();
             $path = "";
-            if ($request->hasFile('letter_of_request')) {
-                $folderName = 'Letter';
-                $image = $request->file('letter_of_request');
-                $imageName = time() . '.' . $image->getClientOriginalExtension();
-                $image->storeAs('images', $imageName, 'public');
-                        Storage::makeDirectory('public/' . $folderName);
-                        $path =  $image->storeAs('public/' . $folderName, $imageName);
 
-                }
+            if ($request->hasFile('letter_of_request')) {
+                $fileName=pathinfo($request->file('letter_of_request')->getClientOriginalName(), PATHINFO_FILENAME);
+                $size = filesize($request->file('letter_of_request'));
+                $file_name_encrypted = Helpers::checkSaveFile($request->file('letter_of_request'), '/overtime_application');
+
+
+            }
                 $status='for-approval-division-head';
                 $overtime_application = OvertimeApplication::create([
-                    'employee_profile_id' => '1',
+                    'employee_profile_id' => $user->id,
                     'status' => $status,
                     'purpose' => $request->purpose,
                     'date' => date('Y-m-d'),
                     'time' => date('H:i:s'),
-                    'overtime_letter_of_request' =>  $imageName,
+                    'overtime_letter_of_request' =>  $fileName,
+                    'overtime_letter_of_request_path' =>  $file_name_encrypted,
+                    'overtime_letter_of_request_size' =>  $size,
                     'path' =>  $path
                 ]);
 

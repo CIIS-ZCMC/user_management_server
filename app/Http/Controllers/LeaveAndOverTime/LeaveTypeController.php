@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\LeaveAndOverTime;
 
+use App\Helpers\Helpers;
 use Intervention\Image\Facades\Image;
 use Carbon\Carbon;
 use App\Models\LeaveType;
@@ -246,19 +247,14 @@ class LeaveTypeController extends Controller
             if($request->hasFile('attachments'))
             {
                 foreach ($request->file('attachments') as $file) {
-                    $folderName = 'attachments';
-                    $fileName = $file->getClientOriginalName();
-                    // $fileName=pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-                    $extension  = $file->getClientOriginalName();
-                    $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
-                    Storage::makeDirectory('public/' . $folderName);
-                    $file->storeAs('public/' . $folderName, $uniqueFileName);
-                    $size = $file->getSize();
-                    $path = $folderName .'/'. $uniqueFileName;
+                    $fileName=pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+                    $size = filesize($file);
+                    $file_name_encrypted = Helpers::checkSaveFile($file, '/attachments');
+
                     $leave_attachment= new LeaveAttachment();
                     $leave_attachment->file_name= $fileName;
                     $leave_attachment->leave_type_id = $leave_type_id;
-                    $leave_attachment->path = $path;
+                    $leave_attachment->path = $file_name_encrypted;
                     $leave_attachment->size = $size;
                     $leave_attachment->save();
                 }

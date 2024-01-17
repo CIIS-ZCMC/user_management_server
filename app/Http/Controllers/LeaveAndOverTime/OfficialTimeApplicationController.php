@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\LeaveAndOverTime;
 
+use App\Helpers\Helpers;
 use Illuminate\Http\Response;
 use App\Models\OfficialTimeApplication;
 use App\Http\Controllers\Controller;
@@ -86,6 +87,17 @@ class OfficialTimeApplicationController extends Controller
                             $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
                         }
                     }
+                    $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                    if($omcc)
+                    {
+
+                        if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                        {
+                            $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
+                            $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
+                            $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
+                        }
+                    }
                 $first_name = optional($official_time_application->employeeProfile->personalInformation)->first_name ?? null;
                 $last_name = optional($official_time_application->employeeProfile->personalInformation)->last_name ?? null;
                 $startDate = Carbon::createFromFormat('Y-m-d', $official_time_application->date_from);
@@ -120,6 +132,9 @@ class OfficialTimeApplicationController extends Controller
                         'section_head' =>$supervisor_name,
                         'section_head_position' =>$supervisor_position,
                         'section_head_code' =>$supervisor_code,
+                        'omcc_head' =>$omcc_name,
+                        'omcc_head_position' =>$omcc_position,
+                        'omcc_head_code' =>$omcc_code,
                         'division_name' => $official_time_application->employeeProfile->assignedArea->division->name ?? null,
                         'department_name' => $official_time_application->employeeProfile->assignedArea->department->name ?? null,
                         'section_name' => $official_time_application->employeeProfile->assignedArea->section->name ?? null,
@@ -161,7 +176,7 @@ class OfficialTimeApplicationController extends Controller
             }
             else
             {
-                return response()->json(['message' => 'No records available'], Response::HTTP_OK);
+                return response()->json(['data'=> $official_time_applications,'message' => 'No records available'], Response::HTTP_OK);
             }
         }catch(\Throwable $th){
 
@@ -241,6 +256,17 @@ class OfficialTimeApplicationController extends Controller
                                 $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
                             }
                         }
+                        $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                        if($omcc)
+                        {
+
+                            if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                            {
+                                $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
+                                $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
+                            }
+                        }
                     $first_name = optional($official_time_application->employeeProfile->personalInformation)->first_name ?? null;
                     $last_name = optional($official_time_application->employeeProfile->personalInformation)->last_name ?? null;
                     $startDate = Carbon::createFromFormat('Y-m-d', $official_time_application->date_from);
@@ -275,6 +301,9 @@ class OfficialTimeApplicationController extends Controller
                         'section_head' =>$supervisor_name,
                         'section_head_position' =>$supervisor_position,
                         'section_head_code' =>$supervisor_code,
+                        'omcc_head' =>$omcc_name,
+                        'omcc_head_position' =>$omcc_position,
+                        'omcc_head_code' =>$omcc_code,
                         'division_name' => $official_time_application->employeeProfile->assignedArea->division->name ?? null,
                         'department_name' => $official_time_application->employeeProfile->assignedArea->department->name ?? null,
                         'section_name' => $official_time_application->employeeProfile->assignedArea->section->name ?? null,
@@ -376,6 +405,17 @@ class OfficialTimeApplicationController extends Controller
                                 $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
                             }
                         }
+                        $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                        if($omcc)
+                        {
+
+                            if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                            {
+                                $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
+                                $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
+                            }
+                        }
                         $first_name = optional($official_time_application->employeeProfile->personalInformation)->first_name ?? null;
                         $last_name = optional($official_time_application->employeeProfile->personalInformation)->last_name ?? null;
                         $startDate = Carbon::createFromFormat('Y-m-d', $official_time_application->date_from);
@@ -410,6 +450,9 @@ class OfficialTimeApplicationController extends Controller
                             'section_head' =>$supervisor_name,
                             'section_head_position' =>$supervisor_position,
                             'section_head_code' =>$supervisor_code,
+                            'omcc_head' =>$omcc_name,
+                            'omcc_head_position' =>$omcc_position,
+                            'omcc_head_code' =>$omcc_code,
                             'division_name' => $official_time_application->employeeProfile->assignedArea->division->name ?? null,
                             'department_name' => $official_time_application->employeeProfile->assignedArea->department->name ?? null,
                             'section_name' => $official_time_application->employeeProfile->assignedArea->section->name ?? null,
@@ -511,6 +554,17 @@ class OfficialTimeApplicationController extends Controller
                                 $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
                             }
                         }
+                        $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                        if($omcc)
+                        {
+
+                            if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                            {
+                                $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
+                                $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
+                            }
+                        }
                         $first_name = optional($official_time_application->employeeProfile->personalInformation)->first_name ?? null;
                         $last_name = optional($official_time_application->employeeProfile->personalInformation)->last_name ?? null;
                         $startDate = Carbon::createFromFormat('Y-m-d', $official_time_application->date_from);
@@ -545,6 +599,9 @@ class OfficialTimeApplicationController extends Controller
                             'section_head' =>$supervisor_name,
                             'section_head_position' =>$supervisor_position,
                             'section_head_code' =>$supervisor_code,
+                            'omcc_head' =>$omcc_name,
+                            'omcc_head_position' =>$omcc_position,
+                            'omcc_head_code' =>$omcc_code,
                             'division_name' => $official_time_application->employeeProfile->assignedArea->division->name ?? null,
                             'department_name' => $official_time_application->employeeProfile->assignedArea->department->name ?? null,
                             'section_name' => $official_time_application->employeeProfile->assignedArea->section->name ?? null,
@@ -654,6 +711,17 @@ class OfficialTimeApplicationController extends Controller
                             $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
                         }
                     }
+                    $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                    if($omcc)
+                    {
+
+                        if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                        {
+                            $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
+                            $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
+                            $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
+                        }
+                    }
                     $first_name = optional($ot_application->employeeProfile->personalInformation)->first_name ?? null;
                     $last_name = optional($ot_application->employeeProfile->personalInformation)->last_name ?? null;
                     $startDate = Carbon::createFromFormat('Y-m-d', $ot_application->date_from);
@@ -691,6 +759,9 @@ class OfficialTimeApplicationController extends Controller
                         'section_head_last' =>$supervisor_last_name,
                         'section_head_position' =>$supervisor_position,
                         'section_head_code' =>$supervisor_code,
+                        'omcc_head' =>$omcc_name,
+                        'omcc_head_position' =>$omcc_position,
+                        'omcc_head_code' =>$omcc_code,
                         'division_name' => $ot_application->employeeProfile->assignedArea->division->name ?? null,
                         'department_name' => $ot_application->employeeProfile->assignedArea->department->name ?? null,
                         'section_name' => $ot_application->employeeProfile->assignedArea->section->name ?? null,
@@ -733,7 +804,7 @@ class OfficialTimeApplicationController extends Controller
             }
             else
             {
-                return response()->json(['message' => 'No records available'], Response::HTTP_OK);
+                return response()->json(['data'=> $ot_applications,'message' => 'No records available'], Response::HTTP_OK);
             }
         }catch(\Throwable $th){
             return response()->json(['message' => $th->getMessage()], 500);
@@ -765,19 +836,34 @@ class OfficialTimeApplicationController extends Controller
             // $division = Division::where('id',$area)->value('is_medical');
             $division=true;
             DB::beginTransaction();
+            $division_head=Division::where('chief_employee_profile_id',$user->id)->count();
+            $section_head=Section::where('supervisor_employee_profile_id',$user->id)->count();
+            $department_head=Department::where('head_employee_profile_id',$user->id)->count();
                 $official_time_application = new OfficialTimeApplication();
                 $official_time_application->employee_profile_id = $user->id;
                 $official_time_application->date_from = $request->date_from;
                 $official_time_application->date_to = $request->date_to;
                 // $official_time_application->time_from = $request->time_from;
                 // $official_time_application->time_to = $request->time_to;
-                $divisions = Division::where('id',$area)->first();
-                if ($divisions->code === 'NS' || $divisions->code === 'MS') {
-                    $status='for-approval-department-head';
+
+                if ($division_head > 0) {
+                    $status='for-approval-omcc-head';
                 }
-                else
+                else if($section_head > 0 || $department_head > 0)
                 {
-                    $status='for-approval-section-head';
+                    $status='for-approval-division-head';
+                }
+                else{
+                    $divisions = Division::where('id',$area)->first();
+                    if ($divisions->code === 'NS' || $divisions->code === 'MS') {
+                        $status='for-approval-department-head';
+
+                    }
+                    else
+                    {
+                        $status='for-approval-section-head';
+
+                    }
                 }
                 $official_time_application->status = $status;
                 $official_time_application->reason =$request->reason;
@@ -785,29 +871,21 @@ class OfficialTimeApplicationController extends Controller
                 $official_time_application->time =  date('H:i:s');
 
                 if ($request->hasFile('personal_order')) {
-                    $folderName = 'official_time';
                     $fileName=pathinfo($request->file('personal_order')->getClientOriginalName(), PATHINFO_FILENAME);
-                    $extension  = $request->file('personal_order')->getClientOriginalName();
-                    $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
-                    Storage::makeDirectory('public/' . $folderName);
-                    $request->file('personal_order')->storeAs('public/' . $folderName, $uniqueFileName);
-                    $path = $folderName .'/'. $uniqueFileName;
-                    $size = $request->file('personal_order')->getSize();
-                    $official_time_application->personal_order = $uniqueFileName;
-                    $official_time_application->personal_order_path = $path;
+                    $size = filesize($request->file('personal_order'));
+                    $file_name_encrypted = Helpers::checkSaveFile($request->file('personal_order'), '/official_time');
+
+                    $official_time_application->personal_order = $fileName;
+                    $official_time_application->personal_order_path = $file_name_encrypted;
                     $official_time_application->personal_order_size = $size;
                 }
                 if ($request->hasFile('certificate_of_appearance')) {
-                    $folderName = 'official_time';
-                    $fileName=pathinfo($request->file('certificate_of_appearance')->getClientOriginalName(), PATHINFO_FILENAME);
-                    $extension  = $request->file('certificate_of_appearance')->getClientOriginalName();
-                    $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
-                    Storage::makeDirectory('public/' . $folderName);
-                    $request->file('certificate_of_appearance')->storeAs('public/' . $folderName, $uniqueFileName);
-                    $path = $folderName .'/'. $uniqueFileName;
-                    $size = $request->file('certificate_of_appearance')->getSize();
-                    $official_time_application->certificate_of_appearance = $uniqueFileName;
-                    $official_time_application->certificate_of_appearance_path = $path;
+                    $fileName=pathinfo($request->file('personal_order')->getClientOriginalName(), PATHINFO_FILENAME);
+                    $size = filesize($request->file('certificate_of_appearance'));
+                    $file_name_encrypted = Helpers::checkSaveFile($request->file('certificate_of_appearance'), '/official_time');
+
+                    $official_time_application->certificate_of_appearance = $fileName;
+                    $official_time_application->certificate_of_appearance_path = $file_name_encrypted;
                     $official_time_application->certificate_of_appearance_size = $size;
                 }
 
@@ -870,6 +948,17 @@ class OfficialTimeApplicationController extends Controller
                             $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
                         }
                     }
+                    $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                    if($omcc)
+                    {
+
+                        if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                        {
+                            $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
+                            $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
+                            $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
+                        }
+                    }
                 $first_name = optional($official_time_application->employeeProfile->personalInformation)->first_name ?? null;
                 $last_name = optional($official_time_application->employeeProfile->personalInformation)->last_name ?? null;
                 $startDate = Carbon::createFromFormat('Y-m-d', $official_time_application->date_from);
@@ -906,6 +995,9 @@ class OfficialTimeApplicationController extends Controller
                         'section_head_last' =>$supervisor_last_name,
                         'section_head_position' =>$supervisor_position,
                         'section_head_code' =>$supervisor_code,
+                        'omcc_head' =>$omcc_name,
+                        'omcc_head_position' =>$omcc_position,
+                        'omcc_head_code' =>$omcc_code,
                         'division_name' => $official_time_application->employeeProfile->assignedArea->division->name ?? null,
                         'department_name' => $official_time_application->employeeProfile->assignedArea->department->name ?? null,
                         'section_name' => $official_time_application->employeeProfile->assignedArea->section->name ?? null,
@@ -1027,6 +1119,17 @@ class OfficialTimeApplicationController extends Controller
                                                 $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
                                             }
                                         }
+                                        $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                                        if($omcc)
+                                        {
+
+                                            if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                                            {
+                                                $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
+                                                $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                                $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
+                                            }
+                                        }
                                     $first_name = optional($official_time_application->employeeProfile->personalInformation)->first_name ?? null;
                                     $last_name = optional($official_time_application->employeeProfile->personalInformation)->last_name ?? null;
                                     $startDate = Carbon::createFromFormat('Y-m-d', $official_time_application->date_from);
@@ -1061,6 +1164,9 @@ class OfficialTimeApplicationController extends Controller
                                             'section_head' =>$supervisor_name,
                                             'section_head_position' =>$supervisor_position,
                                             'section_head_code' =>$supervisor_code,
+                                            'omcc_head' =>$omcc_name,
+                                            'omcc_head_position' =>$omcc_position,
+                                            'omcc_head_code' =>$omcc_code,
                                             'division_name' => $official_time_application->employeeProfile->assignedArea->division->name ?? null,
                                             'department_name' => $official_time_application->employeeProfile->assignedArea->department->name ?? null,
                                             'section_name' => $official_time_application->employeeProfile->assignedArea->section->name ?? null,
@@ -1297,7 +1403,11 @@ class OfficialTimeApplicationController extends Controller
                                 $new_status='approved';
                                 $message_action="Approved";
                             }
-
+                            else if($status == 'for-approval-omcc-head'){
+                                $action = 'Aprroved by OMCC Head';
+                                $new_status='approved';
+                                $message_action="Approved";
+                            }
                             $ot_applications = OfficialTimeApplication::where('id','=', $id)
                                                                     ->first();
                             if($ot_applications){
@@ -1361,6 +1471,17 @@ class OfficialTimeApplicationController extends Controller
                                                 $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
                                             }
                                         }
+                                        $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                                        if($omcc)
+                                        {
+
+                                            if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                                            {
+                                                $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
+                                                $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                                $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
+                                            }
+                                        }
                                     $first_name = optional($official_time_application->employeeProfile->personalInformation)->first_name ?? null;
                                     $last_name = optional($official_time_application->employeeProfile->personalInformation)->last_name ?? null;
                                     $startDate = Carbon::createFromFormat('Y-m-d', $official_time_application->date_from);
@@ -1394,6 +1515,9 @@ class OfficialTimeApplicationController extends Controller
                                             'section_head' =>$supervisor_name,
                                             'section_head_position' =>$supervisor_position,
                                             'section_head_code' =>$supervisor_code,
+                                            'omcc_head' =>$omcc_name,
+                                            'omcc_head_position' =>$omcc_position,
+                                            'omcc_head_code' =>$omcc_code,
                                             'division_name' => $official_time_application->employeeProfile->assignedArea->division->name ?? null,
                                             'department_name' => $official_time_application->employeeProfile->assignedArea->department->name ?? null,
                                             'section_name' => $official_time_application->employeeProfile->assignedArea->section->name ?? null,

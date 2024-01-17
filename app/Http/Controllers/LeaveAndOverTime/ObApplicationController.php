@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\LeaveAndOverTime;
 
+use App\Helpers\Helpers;
 use App\Models\ObApplication;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ObApplication as ResourcesObApplication;
 use App\Http\Resources\ObApplicationLog as ResourcesObApplicationLog;
+use App\Http\Resources\ObApplicationResource;
 use App\Http\Resources\OfficialBusinessApplication;
 use App\Models\AssignArea;
 use App\Models\Department;
@@ -57,6 +59,7 @@ class ObApplicationController extends Controller
                                 $supervisor_name=null;
                                 $supervisor_position=null;
                                 $supervisor_code=null;
+
                             if($division) {
                                 $division_name = Division::with('chief.personalInformation')->find($division);
 
@@ -85,6 +88,17 @@ class ObApplicationController extends Controller
                                     $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
                                     $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
                                     $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
+                                }
+                            }
+                            $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                            if($omcc)
+                            {
+
+                                if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                                {
+                                    $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
+                                    $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                    $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
                                 }
                             }
                         $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
@@ -121,6 +135,9 @@ class ObApplicationController extends Controller
                                 'section_head' =>$supervisor_name,
                                 'section_head_position' =>$supervisor_position,
                                 'section_head_code' =>$supervisor_code,
+                                'omcc_head' =>$omcc_name,
+                                'omcc_head_position' =>$omcc_position,
+                                'omcc_head_code' =>$omcc_code,
                                 'division_name' => $official_business_application->employeeProfile->assignedArea->division->name ?? null,
                                 'department_name' => $official_business_application->employeeProfile->assignedArea->department->name ?? null,
                                 'section_name' => $official_business_application->employeeProfile->assignedArea->section->name ?? null,
@@ -163,7 +180,7 @@ class ObApplicationController extends Controller
                 }
                 else
                 {
-                    return response()->json(['message' => 'No records available'], Response::HTTP_OK);
+                    return response()->json(['data'=> $official_business_applications,'message' => 'No records available'], Response::HTTP_OK);
                 }
             }catch(\Throwable $th){
                 return response()->json(['message' => $th->getMessage()], 500);
@@ -229,6 +246,17 @@ class ObApplicationController extends Controller
                                     $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
                                 }
                             }
+                            $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                            if($omcc)
+                            {
+
+                                if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                                {
+                                    $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
+                                    $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                    $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
+                                }
+                            }
                     $first_name = optional($ob_application->employeeProfile->personalInformation)->first_name ?? null;
                     $last_name = optional($ob_application->employeeProfile->personalInformation)->last_name ?? null;
                     $startDate = Carbon::createFromFormat('Y-m-d', $ob_application->date_from);
@@ -266,6 +294,9 @@ class ObApplicationController extends Controller
                         'section_head_last' =>$supervisor_last_name,
                         'section_head_position' =>$supervisor_position,
                         'section_head_code' =>$supervisor_code,
+                        'omcc_head' =>$omcc_name,
+                        'omcc_head_position' =>$omcc_position,
+                        'omcc_head_code' =>$omcc_code,
                         'division_name' => $ob_application->employeeProfile->assignedArea->division->name ?? null,
                         'department_name' => $ob_application->employeeProfile->assignedArea->department->name ?? null,
                         'section_name' => $ob_application->employeeProfile->assignedArea->section->name ?? null,
@@ -308,10 +339,10 @@ class ObApplicationController extends Controller
             }
             else
             {
-                return response()->json(['message' => 'No records available'], Response::HTTP_OK);
+                return response()->json(['data'=> $ob_applications,'message' => 'No records available'], Response::HTTP_OK);
             }
         }catch(\Throwable $th){
-            return response()->json(['message' => $th->getMessage()], 500);
+            return response()->json(['data'=> $ob_applications,'message' => $th->getMessage()], 500);
         }
     }
     public function getObApplications(Request $request)
@@ -385,6 +416,17 @@ class ObApplicationController extends Controller
                                 $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
                             }
                         }
+                        $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                        if($omcc)
+                        {
+
+                            if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                            {
+                                $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
+                                $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
+                            }
+                        }
                         $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
                         $last_name = optional($official_business_application->employeeProfile->personalInformation)->last_name ?? null;
                         $startDate = Carbon::createFromFormat('Y-m-d', $official_business_application->date_from);
@@ -419,6 +461,9 @@ class ObApplicationController extends Controller
                             'section_head' =>$supervisor_name,
                             'section_head_position' =>$supervisor_position,
                             'section_head_code' =>$supervisor_code,
+                            'omcc_head' =>$omcc_name,
+                            'omcc_head_position' =>$omcc_position,
+                            'omcc_head_code' =>$omcc_code,
                             'division_name' => $official_business_application->employeeProfile->assignedArea->division->name ?? null,
                             'department_name' => $official_business_application->employeeProfile->assignedArea->department->name ?? null,
                             'section_name' => $official_business_application->employeeProfile->assignedArea->section->name ?? null,
@@ -519,6 +564,17 @@ class ObApplicationController extends Controller
                                     $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
                                 }
                             }
+                            $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                            if($omcc)
+                            {
+
+                                if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                                {
+                                    $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
+                                    $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                    $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
+                                }
+                            }
                             $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
                             $last_name = optional($official_business_application->employeeProfile->personalInformation)->last_name ?? null;
                             $startDate = Carbon::createFromFormat('Y-m-d', $official_business_application->date_from);
@@ -553,6 +609,9 @@ class ObApplicationController extends Controller
                                 'section_head' =>$supervisor_name,
                                 'section_head_position' =>$supervisor_position,
                                 'section_head_code' =>$supervisor_code,
+                                'omcc_head' =>$omcc_name,
+                                'omcc_head_position' =>$omcc_position,
+                                'omcc_head_code' =>$omcc_code,
                                 'division_name' => $official_business_application->employeeProfile->assignedArea->division->name ?? null,
                                 'department_name' => $official_business_application->employeeProfile->assignedArea->department->name ?? null,
                                 'section_name' => $official_business_application->employeeProfile->assignedArea->section->name ?? null,
@@ -655,6 +714,17 @@ class ObApplicationController extends Controller
                                     $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
                                 }
                             }
+                            $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                            if($omcc)
+                            {
+
+                                if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                                {
+                                    $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
+                                    $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                    $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
+                                }
+                            }
                             $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
                             $last_name = optional($official_business_application->employeeProfile->personalInformation)->last_name ?? null;
                             $startDate = Carbon::createFromFormat('Y-m-d', $official_business_application->date_from);
@@ -690,6 +760,9 @@ class ObApplicationController extends Controller
                                 'section_head' =>$supervisor_name,
                                 'section_head_position' =>$supervisor_position,
                                 'section_head_code' =>$supervisor_code,
+                                'omcc_head' =>$omcc_name,
+                                'omcc_head_position' =>$omcc_position,
+                                'omcc_head_code' =>$omcc_code,
                                 'division_name' => $official_business_application->employeeProfile->assignedArea->division->name ?? null,
                                 'department_name' => $official_business_application->employeeProfile->assignedArea->department->name ?? null,
                                 'section_name' => $official_business_application->employeeProfile->assignedArea->section->name ?? null,
@@ -1306,7 +1379,6 @@ class ObApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], 500);
         }
     }
-
     public function updateObApplicationStatus ($id,$status,Request $request)
     {
         try {
@@ -1334,6 +1406,11 @@ class ObApplicationController extends Controller
                             }
                             else if($status == 'for-approval-division-head'){
                                 $action = 'Aprroved by Department Head';
+                                $new_status='approved';
+                                $message_action="Approved";
+                            }
+                            else if($status == 'for-approval-omcc-head'){
+                                $action = 'Aprroved by OMCC Head';
                                 $new_status='approved';
                                 $message_action="Approved";
                             }
@@ -1398,6 +1475,17 @@ class ObApplicationController extends Controller
                                                     $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
                                                 }
                                             }
+                                            $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                                            if($omcc)
+                                            {
+
+                                                if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                                                {
+                                                    $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
+                                                    $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                                    $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
+                                                }
+                                            }
                                         $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
                                         $last_name = optional($official_business_application->employeeProfile->personalInformation)->last_name ?? null;
                                         $startDate = Carbon::createFromFormat('Y-m-d', $official_business_application->date_from);
@@ -1432,6 +1520,9 @@ class ObApplicationController extends Controller
                                                 'section_head' =>$supervisor_name,
                                                 'section_head_position' =>$supervisor_position,
                                                 'section_head_code' =>$supervisor_code,
+                                                'omcc_head' =>$omcc_name,
+                                                'omcc_head_position' =>$omcc_position,
+                                                'omcc_head_code' =>$omcc_code,
                                                 'division_name' => $official_business_application->employeeProfile->assignedArea->division->name ?? null,
                                                 'department_name' => $official_business_application->employeeProfile->assignedArea->department->name ?? null,
                                                 'section_name' => $official_business_application->employeeProfile->assignedArea->section->name ?? null,
@@ -1484,6 +1575,7 @@ class ObApplicationController extends Controller
         }
 
     }
+
     public function update($id,Request $request)
     {
         try{
@@ -1567,52 +1659,69 @@ class ObApplicationController extends Controller
             ]);
 
             DB::beginTransaction();
+            $division_head=Division::where('chief_employee_profile_id',$user->id)->count();
+            $section_head=Section::where('supervisor_employee_profile_id',$user->id)->count();
+            $department_head=Department::where('head_employee_profile_id',$user->id)->count();
                 $official_business_application = new ObApplication();
                 $official_business_application->employee_profile_id = $user->id;
                 $official_business_application->date_from = $request->date_from;
                 $official_business_application->date_to = $request->date_to;
                 $official_business_application->time_from = $request->time_from;
                 $official_business_application->time_to = $request->time_to;
-                        $divisions = Division::where('id',$area)->first();
-                            if ($divisions->code === 'NS' || $divisions->code === 'MS') {
-                                $status='for-approval-department-head';
-                                $message_action="verified";
-                            }
-                            else
-                            {
-                                $status='for-approval-section-head';
-                                $message_action="verified";
-                            }
+                if ($division_head > 0) {
+                    $status='for-approval-omcc-head';
+                }
+                else if($section_head > 0 || $department_head > 0)
+                {
+                    $status='for-approval-division-head';
+                }
+                else{
+                    $divisions = Division::where('id',$area)->first();
+                    $divisions = Division::where('id',$area)->first();
+                    if ($divisions->code === 'NS' || $divisions->code === 'MS') {
+                        $status='for-approval-department-head';
+
+                    }
+                    else
+                    {
+                        $status='for-approval-section-head';
+
+                    }
+                }
+
                 $official_business_application->status =$status;
                 $official_business_application->reason =$request->reason;
                 $official_business_application->date = date('Y-m-d');
                 $official_business_application->time =  date('H:i:s');
+
+                $official_business_application->personal_order = null;
+                $official_business_application->personal_order_path = null;
+                $official_business_application->personal_order_size = null;
+
                 if ($request->hasFile('personal_order')) {
-                    $folderName = 'official_business';
                     $fileName=pathinfo($request->file('personal_order')->getClientOriginalName(), PATHINFO_FILENAME);
-                    $extension  = $request->file('personal_order')->getClientOriginalName();
-                    $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
-                    Storage::makeDirectory('public/' . $folderName);
-                    $request->file('personal_order')->storeAs('public/' . $folderName, $uniqueFileName);
-                    $path = $folderName .'/'. $uniqueFileName;
-                    $size = $request->file('personal_order')->getSize();
-                    $official_business_application->personal_order = $uniqueFileName;
-                    $official_business_application->personal_order_path = $path;
+                    $size = filesize($request->file('personal_order'));
+                    $file_name_encrypted = Helpers::checkSaveFile($request->file('personal_order'), '/official_business');
+
+                    $official_business_application->personal_order = $fileName;
+                    $official_business_application->personal_order_path = $file_name_encrypted;
                     $official_business_application->personal_order_size = $size;
                 }
+
+                $official_business_application->certificate_of_appearance = null;
+                $official_business_application->certificate_of_appearance_path = null;
+                $official_business_application->certificate_of_appearance_size = null;
+
                 if ($request->hasFile('certificate_of_appearance')) {
-                    $folderName = 'official_business';
-                    $fileName=pathinfo($request->file('certificate_of_appearance')->getClientOriginalName(), PATHINFO_FILENAME);
-                    $extension  = $request->file('certificate_of_appearance')->getClientOriginalName();
-                    $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
-                    Storage::makeDirectory('public/' . $folderName);
-                    $request->file('certificate_of_appearance')->storeAs('public/' . $folderName, $uniqueFileName);
-                    $size = $request->file('certificate_of_appearance')->getSize();
-                    $path = $folderName .'/'. $uniqueFileName;
-                    $official_business_application->certificate_of_appearance = $uniqueFileName;
-                    $official_business_application->certificate_of_appearance_path = $path;
+                    $fileName=pathinfo($request->file('personal_order')->getClientOriginalName(), PATHINFO_FILENAME);
+                    $size = filesize($request->file('certificate_of_appearance'));
+                    $file_name_encrypted = Helpers::checkSaveFile($request->file('certificate_of_appearance'), '/official_business');
+
+                    $official_business_application->certificate_of_appearance = $fileName;
+                    $official_business_application->certificate_of_appearance_path = $file_name_encrypted;
                     $official_business_application->certificate_of_appearance_size = $size;
                 }
+
                 $official_business_application->save();
                 $ob_id=$official_business_application->id;
                 $columnsString="";
@@ -1670,6 +1779,17 @@ class ObApplicationController extends Controller
                             $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
                         }
                     }
+                    $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                    if($omcc)
+                    {
+
+                        if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                        {
+                            $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
+                            $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
+                            $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
+                        }
+                    }
                 $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
                 $last_name = optional($official_business_application->employeeProfile->personalInformation)->last_name ?? null;
                 $startDate = Carbon::createFromFormat('Y-m-d', $official_business_application->date_from);
@@ -1707,6 +1827,9 @@ class ObApplicationController extends Controller
                         'section_head_last' =>$supervisor_last_name,
                         'section_head_position' =>$supervisor_position,
                         'section_head_code' =>$supervisor_code,
+                        'omcc_head' =>$omcc_name,
+                        'omcc_head_position' =>$omcc_position,
+                        'omcc_head_code' =>$omcc_code,
                         'division_name' => $official_business_application->employeeProfile->assignedArea->division->name ?? null,
                         'department_name' => $official_business_application->employeeProfile->assignedArea->department->name ?? null,
                         'section_name' => $official_business_application->employeeProfile->assignedArea->section->name ?? null,
@@ -1829,6 +1952,17 @@ class ObApplicationController extends Controller
                                                 $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
                                             }
                                         }
+                                        $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                                        if($omcc)
+                                        {
+
+                                            if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                                            {
+                                                $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
+                                                $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                                $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
+                                            }
+                                        }
                                     $first_name = optional($official_business_application->employeeProfile->personalInformation)->first_name ?? null;
                                     $last_name = optional($official_business_application->employeeProfile->personalInformation)->last_name ?? null;
                                     $startDate = Carbon::createFromFormat('Y-m-d', $official_business_application->date_from);
@@ -1863,6 +1997,9 @@ class ObApplicationController extends Controller
                                             'section_head' =>$supervisor_name,
                                             'section_head_position' =>$supervisor_position,
                                             'section_head_code' =>$supervisor_code,
+                                            'omcc_head' =>$omcc_name,
+                                            'omcc_head_position' =>$omcc_position,
+                                            'omcc_head_code' =>$omcc_code,
                                             'division_name' => $official_business_application->employeeProfile->assignedArea->division->name ?? null,
                                             'department_name' => $official_business_application->employeeProfile->assignedArea->department->name ?? null,
                                             'section_name' => $official_business_application->employeeProfile->assignedArea->section->name ?? null,

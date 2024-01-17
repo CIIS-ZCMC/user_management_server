@@ -81,7 +81,9 @@ class LeaveApplicationController extends Controller
                     $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
                     $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
                     $hr = Section::with('supervisor.personalInformation')->where('code','HRMO')->first();
-
+                    $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                    $omcc_head_id = Division::where('code', 'OMCC')->value('chief_employee_profile_id');
+                    $omcc_oic_id = Division::where('code', 'OMCC')->value('oic_employee_profile_id');
                     $chief_name=null;
                     $chief_position=null;
                     $chief_code=null;
@@ -94,6 +96,9 @@ class LeaveApplicationController extends Controller
                     $hr_name=null;
                     $hr_position=null;
                     $hr_code=null;
+                    $omcc_name=null;
+                    $omcc_position=null;
+                    $omcc_code=null;
                     if($division) {
                         $division_name = Division::with('chief.personalInformation')->find($division);
 
@@ -132,6 +137,17 @@ class LeaveApplicationController extends Controller
                             $hr_name = optional($hr->supervisor->personalInformation)->first_name . ' ' . optional($hr->supervisor->personalInformation)->last_name;
                             $hr_position = $hr->supervisor->assignedArea->designation->name ?? null;
                             $hr_code = $hr->supervisor->assignedArea->designation->code ?? null;
+                        }
+                    }
+
+                    if($omcc)
+                    {
+
+                        if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                        {
+                            $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
+                            $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
+                            $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
                         }
                     }
 
@@ -182,6 +198,9 @@ class LeaveApplicationController extends Controller
                         'hr_head' =>$hr_name,
                         'hr_head_position' =>$hr_position,
                         'hr_head_code' =>$hr_code,
+                        'omcc_head' =>$omcc_name,
+                        'omcc_head_position' =>$omcc_position,
+                        'omcc_head_code' =>$omcc_code,
                         'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
                         'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
                         'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,
@@ -243,7 +262,8 @@ class LeaveApplicationController extends Controller
             }
             else
             {
-                return response()->json(['message' => 'No records available'], Response::HTTP_OK);
+
+                return response()->json(['data'=> $leave_applications,'message' => 'No records available'], Response::HTTP_OK);
             }
         }catch(\Throwable $th){
 
@@ -337,6 +357,17 @@ class LeaveApplicationController extends Controller
                             $hr_code = $hr->supervisor->assignedArea->designation->code ?? null;
                         }
                     }
+                    $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                    if($omcc)
+                    {
+
+                        if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                        {
+                            $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
+                            $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
+                            $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
+                        }
+                    }
 
                         $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
                         $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
@@ -388,6 +419,9 @@ class LeaveApplicationController extends Controller
                             'hr_head_last' =>$hr_last_name,
                             'hr_head_position' =>$hr_position,
                             'hr_head_code' =>$hr_code,
+                            'omcc_head' =>$omcc_name,
+                            'omcc_head_position' =>$omcc_position,
+                            'omcc_head_code' =>$omcc_code,
                             'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
                             'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
                             'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,
@@ -472,7 +506,28 @@ class LeaveApplicationController extends Controller
                 }
                 else
                 {
-                    return response()->json(['message' => 'No records available'], Response::HTTP_OK);
+
+                    $leaveCredits = EmployeeLeaveCredit::with('leaveType')
+                    ->where('employee_profile_id', $user->id)
+                    ->get();
+
+                    $totalLeaveCredits = [];
+                    foreach ($leaveCredits as $credit) {
+                        $leaveTypeName = $credit->leaveType->name;
+                        $operation = $credit->operation;
+                        $creditTotal = $credit->credit_value;
+                        if (!isset($totalLeaveCredits[$leaveTypeName])) {
+                            $totalLeaveCredits[$leaveTypeName] = 0;
+                        }
+
+                        if ($operation === 'add') {
+                            $totalLeaveCredits[$leaveTypeName] += $creditTotal;
+                        } elseif ($operation === 'deduct') {
+                            $totalLeaveCredits[$leaveTypeName] -= $creditTotal;
+                        }
+                    }
+
+                    return response()->json(['data'=> $leave_applications,'message' => 'No records available','balance' => $totalLeaveCredits], Response::HTTP_OK);
                 }
         }catch(\Throwable $th){
 
@@ -574,7 +629,17 @@ class LeaveApplicationController extends Controller
                             $hr_code = $hr->supervisor->assignedArea->designation->code ?? null;
                         }
                     }
+                    $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                    if($omcc)
+                    {
 
+                        if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                        {
+                            $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
+                            $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
+                            $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
+                        }
+                    }
                     $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
                     $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
                     $total_days=0;
@@ -621,6 +686,9 @@ class LeaveApplicationController extends Controller
                         'hr_head' =>$hr_name,
                         'hr_head_position' =>$hr_position,
                         'hr_head_code' =>$hr_code,
+                        'omcc_head' =>$omcc_name,
+                        'omcc_head_position' =>$omcc_position,
+                        'omcc_head_code' =>$omcc_code,
                         'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
                         'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
                         'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,
@@ -770,6 +838,17 @@ class LeaveApplicationController extends Controller
                         }
                     }
 
+                    $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                    if($omcc)
+                    {
+
+                        if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                        {
+                            $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
+                            $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
+                            $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
+                        }
+                    }
                     $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
                     $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
                     $total_days=0;
@@ -816,6 +895,9 @@ class LeaveApplicationController extends Controller
                         'hr_head' =>$hr_name,
                         'hr_head_position' =>$hr_position,
                         'hr_head_code' =>$hr_code,
+                        'omcc_head' =>$omcc_name,
+                        'omcc_head_position' =>$omcc_position,
+                        'omcc_head_code' =>$omcc_code,
                         'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
                         'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
                         'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,
@@ -960,6 +1042,17 @@ class LeaveApplicationController extends Controller
                         }
                     }
 
+                    $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                    if($omcc)
+                    {
+
+                        if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                        {
+                            $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
+                            $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
+                            $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
+                        }
+                    }
                     $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
                     $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
                     $total_days=0;
@@ -1006,6 +1099,9 @@ class LeaveApplicationController extends Controller
                         'hr_head' =>$hr_name,
                         'hr_head_position' =>$hr_position,
                         'hr_head_code' =>$hr_code,
+                        'omcc_head' =>$omcc_name,
+                        'omcc_head_position' =>$omcc_position,
+                        'omcc_head_code' =>$omcc_code,
                         'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
                         'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
                         'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,
@@ -1151,6 +1247,17 @@ class LeaveApplicationController extends Controller
                             $hr_code = $hr->supervisor->assignedArea->designation->code ?? null;
                         }
                     }
+                    $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                    if($omcc)
+                    {
+
+                        if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                        {
+                            $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
+                            $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
+                            $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
+                        }
+                    }
 
                     $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
                     $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
@@ -1198,6 +1305,9 @@ class LeaveApplicationController extends Controller
                         'hr_head' =>$hr_name,
                         'hr_head_position' =>$hr_position,
                         'hr_head_code' =>$hr_code,
+                        'omcc_head' =>$omcc_name,
+                        'omcc_head_position' =>$omcc_position,
+                        'omcc_head_code' =>$omcc_code,
                         'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
                         'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
                         'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,
@@ -1340,6 +1450,17 @@ class LeaveApplicationController extends Controller
                         }
                     }
 
+                    $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                    if($omcc)
+                    {
+
+                        if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                        {
+                            $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
+                            $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
+                            $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
+                        }
+                    }
                     $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
                     $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
                     $total_days=0;
@@ -1386,6 +1507,9 @@ class LeaveApplicationController extends Controller
                         'hr_head' =>$hr_name,
                         'hr_head_position' =>$hr_position,
                         'hr_head_code' =>$hr_code,
+                        'omcc_head' =>$omcc_name,
+                        'omcc_head_position' =>$omcc_position,
+                        'omcc_head_code' =>$omcc_code,
                         'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
                         'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
                         'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,
@@ -2472,7 +2596,6 @@ class LeaveApplicationController extends Controller
                 $division_head=Division::where('chief_employee_profile_id',$leave_applications->employee_profile_id)->count();
                 $section_head=Section::where('supervisor_employee_profile_id',$leave_applications->employee_profile_id)->count();
                 $department_head=Department::where('head_employee_profile_id',$leave_applications->employee_profile_id)->count();
-                $division=true;
                 $password_decrypted = Crypt::decryptString($user['password_encrypted']);
                 $password = strip_tags($request->password);
                 if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
@@ -2640,6 +2763,18 @@ class LeaveApplicationController extends Controller
                                         }
                                     }
 
+                                    $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                                    if($omcc)
+                                    {
+
+                                        if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                                        {
+                                            $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
+                                            $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                            $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
+                                        }
+                                    }
+
                                     $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
                                     $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
                                     $total_days=0;
@@ -2686,6 +2821,9 @@ class LeaveApplicationController extends Controller
                                         'hr_head' =>$hr_name,
                                         'hr_head_position' =>$hr_position,
                                         'hr_head_code' =>$hr_code,
+                                        'omcc_head' =>$omcc_name,
+                                        'omcc_head_position' =>$omcc_position,
+                                        'omcc_head_code' =>$omcc_code,
                                         'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
                                         'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
                                         'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,
@@ -2879,7 +3017,17 @@ class LeaveApplicationController extends Controller
                                             $hr_code = $hr->supervisor->assignedArea->designation->code ?? null;
                                         }
                                     }
+                                    $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                                    if($omcc)
+                                    {
 
+                                        if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                                        {
+                                            $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
+                                            $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                            $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
+                                        }
+                                    }
                                     $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
                                     $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
                                     $total_days=0;
@@ -2926,6 +3074,9 @@ class LeaveApplicationController extends Controller
                                         'hr_head' =>$hr_name,
                                         'hr_head_position' =>$hr_position,
                                         'hr_head_code' =>$hr_code,
+                                        'omcc_head' =>$omcc_name,
+                                        'omcc_head_position' =>$omcc_position,
+                                        'omcc_head_code' =>$omcc_code,
                                         'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
                                         'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
                                         'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,
@@ -3289,17 +3440,6 @@ class LeaveApplicationController extends Controller
                                             $leave_application->leave_type_id =$leave_type_id;
                                             $leave_application->save();
                                             $leave_application_id = $leave_application->id;
-                                            // if($fromDates)
-                                            // {
-                                            //     for ($i = 0; $i < count($fromDates); $i++) {
-                                            //         LeaveApplicationDateTime::create([
-                                            //             'leave_application_id' => $leave_application->id,
-                                            //             'date_to' => $fromDates[$i],
-                                            //             'date_from' => $toDates[$i],
-
-                                            //         ]);
-                                            //     }
-                                            // }
 
                                             foreach ($validatedData['date_from'] as $index => $dateFrom) {
                                                 LeaveApplicationDateTime::create([
@@ -3313,22 +3453,16 @@ class LeaveApplicationController extends Controller
                                             $name = $request->input('name');
                                             $leave_application_id = $leave_application->id;
                                             if ($request->hasFile('requirements')) {
-
                                                     foreach ($request->file('requirements') as $key => $file) {
-                                                        $fileName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-                                                        $extension = $file->getClientOriginalExtension();
-                                                        $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
-                                                        $folderName = 'requirements';
-                                                        Storage::makeDirectory('public/' . $folderName);
-                                                        $file->storeAs('public/' . $folderName, $uniqueFileName);
-                                                        $path = $folderName .'/'. $uniqueFileName;
-                                                        $size = $file->getSize();
+                                                        $fileName=pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+                                                        $size = filesize($file);
+                                                        $file_name_encrypted = Helpers::checkSaveFile($file, '/requirements');
                                                         $name_array = $name[$key] ?? null;
                                                             LeaveApplicationRequirement::create([
                                                                 'leave_application_id' => $leave_application->id,
-                                                                'file_name' => $uniqueFileName,
+                                                                'file_name' => $fileName,
                                                                 'name' => $name_array,
-                                                                'path' => $path,
+                                                                'path' => $file_name_encrypted,
                                                                 'size' => $size,
                                                             ]);
                                                 }
@@ -3455,6 +3589,18 @@ class LeaveApplicationController extends Controller
                                                     }
                                                 }
 
+                                                $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                                                if($omcc)
+                                                {
+
+                                                    if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                                                    {
+                                                        $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
+                                                        $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                                        $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
+                                                    }
+                                                }
+
                                                 $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
                                                 $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
                                                 $total_days=0;
@@ -3505,6 +3651,9 @@ class LeaveApplicationController extends Controller
                                                                         'hr_head_last' =>$hr_last_name,
                                                                         'hr_head_position' =>$hr_position,
                                                                         'hr_head_code' =>$hr_code,
+                                                                        'omcc_head' =>$omcc_name,
+                                                                        'omcc_head_position' =>$omcc_position,
+                                                                        'omcc_head_code' =>$omcc_code,
                                                                         'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
                                                                         'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
                                                                         'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,
@@ -3603,25 +3752,18 @@ class LeaveApplicationController extends Controller
                                             $name = $request->input('name');
                                             $leave_application_id = $leave_application->id;
                                             if ($request->hasFile('requirements')) {
-                                                     foreach ($request->file('requirements') as $key => $file) {
-                                                        $file_name = Helpers::checkSaveFile($file, '/leave-application');
-                                                        $fileName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-                                                        $extension = $file->getClientOriginalExtension();
-                                                        $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
-                                                        $folderName = 'requirements';
-                                                        Storage::makeDirectory('public/' . $folderName);
-                                                        $file->storeAs('public/' . $folderName, $uniqueFileName);
-                                                        $path = $folderName .'/'. $uniqueFileName;
-                                                        $size = $file->getSize();
-                                                        $name_array = $name[$key] ?? null;
-
-                                                            LeaveApplicationRequirement::create([
-                                                                'leave_application_id' => $leave_application->id,
-                                                                'file_name' => $file_name,
-                                                                'name' => $name_array,
-                                                                'path' => $path,
-                                                                'size' => $size,
-                                                            ]);
+                                                foreach ($request->file('requirements') as $key => $file) {
+                                                    $fileName=pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+                                                    $size = filesize($file);
+                                                    $file_name_encrypted = Helpers::checkSaveFile($file, '/requirements');
+                                                    $name_array = $name[$key] ?? null;
+                                                        LeaveApplicationRequirement::create([
+                                                            'leave_application_id' => $leave_application->id,
+                                                            'file_name' => $fileName,
+                                                            'name' => $name_array,
+                                                            'path' => $file_name_encrypted,
+                                                            'size' => $size,
+                                                        ]);
                                                 }
 
                                             }
@@ -3718,6 +3860,18 @@ class LeaveApplicationController extends Controller
                                                         $hr_code = $hr->supervisor->assignedArea->designation->code ?? null;
                                                     }
                                                 }
+
+                                                $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                                                if($omcc)
+                                                {
+
+                                                    if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                                                    {
+                                                        $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
+                                                        $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                                        $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
+                                                    }
+                                                }
                                                 $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
                                                 $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
                                                 $total_days=0;
@@ -3768,6 +3922,9 @@ class LeaveApplicationController extends Controller
                                                                         'hr_head_last' =>$hr_last_name,
                                                                         'hr_head_position' =>$hr_position,
                                                                         'hr_head_code' =>$hr_code,
+                                                                        'omcc_head' =>$omcc_name,
+                                                                        'omcc_head_position' =>$omcc_position,
+                                                                        'omcc_head_code' =>$omcc_code,
                                                                         'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
                                                                         'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
                                                                         'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,
@@ -3973,6 +4130,17 @@ class LeaveApplicationController extends Controller
                                 }
                             }
 
+                            $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                            if($omcc)
+                            {
+
+                                if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                                {
+                                    $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
+                                    $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                    $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
+                                }
+                            }
                             $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
                             $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
                             $total_days=0;
@@ -4019,6 +4187,9 @@ class LeaveApplicationController extends Controller
                                                     'hr_head' =>$hr_name,
                                                     'hr_head_position' =>$hr_position,
                                                     'hr_head_code' =>$hr_code,
+                                                    'omcc_head' =>$omcc_name,
+                                                    'omcc_head_position' =>$omcc_position,
+                                                    'omcc_head_code' =>$omcc_code,
                                                     'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
                                                     'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
                                                     'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,
@@ -4198,6 +4369,18 @@ class LeaveApplicationController extends Controller
                                         }
                                     }
 
+                                    $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                                    if($omcc)
+                                    {
+
+                                        if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                                        {
+                                            $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
+                                            $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                            $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
+                                        }
+                                    }
+
                                     $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
                                     $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
                                     $total_days=0;
@@ -4244,6 +4427,9 @@ class LeaveApplicationController extends Controller
                                         'hr_head' =>$hr_name,
                                         'hr_head_position' =>$hr_position,
                                         'hr_head_code' =>$hr_code,
+                                        'omcc_head' =>$omcc_name,
+                                        'omcc_head_position' =>$omcc_position,
+                                        'omcc_head_code' =>$omcc_code,
                                         'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
                                         'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
                                         'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,

@@ -180,7 +180,7 @@ class CtoApplicationController extends Controller
             }
             else {
 
-                return response()->json(['message' => 'No records available'], Response::HTTP_OK);
+                return response()->json(['data'=> $cto_applications,'message' => 'No records available'], Response::HTTP_OK);
             }
         }catch(\Throwable $th){
 
@@ -1048,7 +1048,7 @@ class CtoApplicationController extends Controller
                     }
                 }
 
-                return response()->json(['message' => 'No records available','balance' => $totalOvertimeCredits], Response::HTTP_OK);
+                return response()->json(['data'=> $cto_applications,'message' => 'No records available','balance' => $totalOvertimeCredits], Response::HTTP_OK);
             }
 
         }catch(\Throwable $th){
