@@ -84,12 +84,12 @@ class TimeAdjusmentController extends Controller
             $dates = $cleanData['dates'];
             foreach ($dates as $key => $value) {
                 $find = DailyTimeRecords::where([
-                    ['biometric_id',    '=', $value['biometric_id']],
+                    ['biometric_id',    '=', $cleanData['biometric_id']],
                     ['dtr_date',        '=', $value['dtr_date']],
                 ])->first();
 
                 if ($find) {
-                    $find_employee = EmployeeProfile::find($value['employee_profile_id'])->first();
+                    $find_employee = EmployeeProfile::find($cleanData['employee_profile_id'])->first();
                     if ($find_employee) {
                         $employee_area =  $find_employee->assignedArea->findDetails();
 
@@ -120,12 +120,12 @@ class TimeAdjusmentController extends Controller
                     $data->daily_time_record_id = $find->id;
                     $data->recommended_by       = $user->id;
                     $data->approve_by           = $approving_officer;
-                    $data->employee_profile_id  = $value['employee_profile_id'];
+                    $data->employee_profile_id  = $cleanData['employee_profile_id'];
+                    $data->remarks              = $cleanData['remarks'];
                     $data->first_in             = $value['first_in'];
                     $data->first_out            = $value['first_out'];
                     $data->second_in            = $value['second_in'];
                     $data->second_out           = $value['second_out'];
-                    $data->remarks              = $value['remarks'];
                     $data->save();
                 }
             }
