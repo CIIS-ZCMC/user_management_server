@@ -208,7 +208,8 @@ class EmployeeProfileController extends Controller
                 'date_hired' => $employee_profile->date_hired,
                 'job_type' => $employee_profile->employmentType->name,
                 'years_of_service' => $employee_profile->personalInformation->years_of_service,
-                'last_login' => $last_login === null ? null : $last_login->created_at
+                'last_login' => $last_login === null ? null : $last_login->created_at,
+                'biometric_Id' => $employee_profile->biometric_id
             ];
 
             $personal_information_data = [
@@ -228,6 +229,7 @@ class EmployeeProfileController extends Controller
                 'blood_type' => $personal_information->blood_type === null ? 'NONE' : $personal_information->blood_type,
                 'height' => $personal_information->height,
                 'weight' => $personal_information->weight,
+              
             ];
 
             $address = [
@@ -311,7 +313,7 @@ class EmployeeProfileController extends Controller
     private function buildSidebarDetails($employee_profile, $designation, $special_access_roles)
     {
         $sidebar_cache = Cache::get($designation['name']);
-
+    
         if ($sidebar_cache === null) {
             /**
              * Relation of table
@@ -337,10 +339,9 @@ class EmployeeProfileController extends Controller
                     ]);
                 }
             ])->where('designation_id', $designation['id'])->get();
-
+               
             $side_bar_details['designation_id'] = $designation['id'];
             $side_bar_details['designation_name'] = $designation['name'];
-            $side_bar_details['system'] = [];
 
             /**
              * Convert to meet sidebar data format.
@@ -383,6 +384,7 @@ class EmployeeProfileController extends Controller
          * Validate if employee has Special Access Roles
          * Update Sidebar Details.
          */
+
         if (!empty($special_access_roles)) {
             $special_access_permissions = SpecialAccessRole::with([
                 'systemRole' => function ($query) {
