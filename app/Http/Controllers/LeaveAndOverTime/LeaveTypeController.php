@@ -158,6 +158,7 @@ class LeaveTypeController extends Controller
                 'leave_types.description',
                 'leave_types.file_date',
                 'leave_types.period',
+                'leave_types.is_special',
                 'leave_types.is_country',
                 'leave_types.is_illness',
                 'leave_types.is_days_recommended',
@@ -169,6 +170,7 @@ class LeaveTypeController extends Controller
                 'leave_types.description',
                 'leave_types.file_date',
                 'leave_types.period',
+                'leave_types.is_special',
                 'leave_types.is_country',
                 'leave_types.is_illness',
                 'leave_types.is_days_recommended'
@@ -373,7 +375,7 @@ class LeaveTypeController extends Controller
             $user=$request->user;
             $validatedData = $request->validate([
                 'name' => 'required|string',
-                'attachments.*' => 'required|mimes:jpeg,png,jpg,pdf|max:2048',
+                'attachments.*' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048'
             ]);
             $leave_type = LeaveType::findOrFail($id);
             $originalValues = $leave_type->getOriginal();

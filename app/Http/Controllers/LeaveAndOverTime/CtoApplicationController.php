@@ -32,45 +32,101 @@ class CtoApplicationController extends Controller
                     $division = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('division_id');
                     $department = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('department_id');
                     $section = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('section_id');
-                            $chief_name=null;
-                            $chief_position=null;
-                            $chief_code=null;
-                            $head_name=null;
-                            $head_position=null;
-                            $head_code=null;
-                            $supervisor_name=null;
-                            $supervisor_position=null;
-                            $supervisor_code=null;
-                            if($division) {
-                                $division_name = Division::with('chief.personalInformation')->find($division);
+                    $recommending_name=null;
+                    $recommending_position=null;
+                    $recommending_code=null;
+                    $approving_name=null;
+                    $approving_position=null;
+                    $approving_code=null;
+                    $division_head=Division::where('chief_employee_profile_id',$cto_application->employee_profile_id)->count();
+                    $section_head=Section::where('supervisor_employee_profile_id',$cto_application->employee_profile_id)->count();
+                    $department_head=Department::where('head_employee_profile_id',$cto_application->employee_profile_id)->count();
+                    $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                    if ($division_head > 0) {
 
-                                if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
-                                {
-                                    $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
-                                    $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
-                                    $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
-                                }
-                            }
-                            if($department)
+                        if($omcc)
+                        {
+
+                            if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
                             {
-                                $department_name = Department::with('head.personalInformation')->find($department);
-                                if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
-                                {
-                                    $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
-                                    $head_position = $department_name->head->assignedArea->designation->name ?? null;
-                                    $head_code = $department_name->head->assignedArea->designation->code ?? null;
-                                }
+                                $recommending_name = optional($omcc->chief->personalInformation)->last_name . ', ' . optional($omcc->chief->personalInformation)->first_name;
+                                $recommending_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                $recommending_code = $omcc->chief->assignedArea->designation->code ?? null;
+
+                                $approving_name = optional($omcc->chief->personalInformation)->last_name . ', ' . optional($omcc->chief->personalInformation)->first_name;
+                                $approving_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                $approving_code = $omcc->chief->assignedArea->designation->code ?? null;
                             }
-                            if($section)
+                        }
+                    }
+                    else if($section_head > 0 || $department_head > 0)
+                    {
+
+                        if($department)
+                        {
+                            $division_name = Division::with('chief.personalInformation')->find($division);
+                            if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
                             {
-                                $section_name = Section::with('supervisor.personalInformation')->find($section);
-                                if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
-                                {
-                                    $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
-                                    $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
-                                    $supervisor_code =$section_name->supervisor->assignedArea->designation->code ?? null;
-                                }
+                                $recommending_name = optional($division_name->chief->personalInformation)->last_name . ', ' . optional($division_name->chief->personalInformation)->first_name;
+                                $recommending_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                $recommending_code = $division_name->chief->assignedArea->designation->code ?? null;
                             }
+                        }
+                        if($section)
+                        {
+                            $division_name = Division::with('chief.personalInformation')->find($division);
+                            if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
+                            {
+                                $recommending_name = optional($division_name->chief->personalInformation)->last_name . ', ' . optional($division_name->chief->personalInformation)->first_name;
+                                $recommending_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                $recommending_code = $division_name->chief->assignedArea->designation->code ?? null;
+                            }
+                        }
+                        if($omcc) {
+                            if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                            {
+                                $approving_name = optional($omcc->chief->personalInformation)->last_name . ', ' . optional($omcc->chief->personalInformation)->first_name;
+                                $approving_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                $approving_code = $omcc->chief->assignedArea->designation->code ?? null;
+                            }
+                        }
+
+                    }
+                    else
+                    {
+                        
+                        if($division) {
+                            $division_name = Division::with('chief.personalInformation')->find($division);
+
+                            if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
+                            {
+                                $approving_name = optional($division_name->chief->personalInformation)->last_name . ', ' . optional($division_name->chief->personalInformation)->first_name;
+                                $approving_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                $approving_code = $division_name->chief->assignedArea->designation->code ?? null;
+                            }
+                        }
+                        if($department)
+                        {
+                            $department_name = Department::with('head.personalInformation')->find($department);
+                            if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
+                            {
+                                $recommending_name = optional($department_name->head->personalInformation)->last_name . ', ' . optional($department_name->head->personalInformation)->first_name;
+                                $recommending_position = $department_name->head->assignedArea->designation->name ?? null;
+                                $recommending_code = $department_name->head->assignedArea->designation->code ?? null;
+                            }
+                        }
+                        if($section)
+                        {
+                            $section_name = Section::with('supervisor.personalInformation')->find($section);
+                            if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
+                            {
+                                $recommending_name = optional($section_name->supervisor->personalInformation)->last_name . ', ' . optional($section_name->supervisor->personalInformation)->first_name;
+                                $recommending_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                                $recommending_code = $section_name->supervisor->assignedArea->designation->code ?? null;
+                            }
+                        }
+
+                    }
                             $cto_application_date_times=CtoApplicationDate::where('cto_application_id',$cto_application->id)->get();
                             if($cto_application_date_times)
                             {
@@ -112,15 +168,12 @@ class CtoApplicationController extends Controller
                         'position_code' => $cto_application->employeeProfile->assignedArea->designation->code ?? null,
                         'position_name' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
                         'date_created' => $cto_application->created_at,
-                        'division_head' =>$chief_name,
-                        'division_head_position'=> $chief_position,
-                        'division_head_code'=> $chief_code,
-                        'department_head' =>$head_name,
-                        'department_head_position' =>$head_position,
-                        'department_head_code' =>$head_code,
-                        'section_head' =>$supervisor_name,
-                        'section_head_position' =>$supervisor_position,
-                        'section_head_code' =>$supervisor_code,
+                        'recommending_head' =>$recommending_name,
+                        'recommending_head_position'=> $recommending_position,
+                        'recommending_head_code'=> $recommending_code,
+                        'approving_head' =>$approving_name,
+                        'approving_head_position' =>$approving_position,
+                        'approving_head_code' =>$approving_code,
                         'division_name' => $cto_application->employeeProfile->assignedArea->division->name ?? null,
                         'department_name' => $cto_application->employeeProfile->assignedArea->department->name ?? null,
                         'section_name' => $cto_application->employeeProfile->assignedArea->section->name ?? null,
@@ -305,45 +358,100 @@ class CtoApplicationController extends Controller
                     $division = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('division_id');
                     $department = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('department_id');
                     $section = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('section_id');
-                    $chief_name=null;
-                    $chief_position=null;
-                    $chief_code=null;
-                    $head_name=null;
-                    $head_position=null;
-                    $head_code=null;
-                    $supervisor_name=null;
-                    $supervisor_position=null;
-                    $supervisor_code=null;
-                            if($division) {
-                                $division_name = Division::with('chief.personalInformation')->find($division);
+                    $recommending_name=null;
+                                $recommending_position=null;
+                                $recommending_code=null;
+                                $approving_name=null;
+                                $approving_position=null;
+                                $approving_code=null;
+                                $division_head=Division::where('chief_employee_profile_id',$cto_application->employee_profile_id)->count();
+                                $section_head=Section::where('supervisor_employee_profile_id',$cto_application->employee_profile_id)->count();
+                                $department_head=Department::where('head_employee_profile_id',$cto_application->employee_profile_id)->count();
+                                $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                                if ($division_head > 0) {
 
-                                if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
-                                {
-                                    $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
-                                    $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
-                                    $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
+                                    if($omcc)
+                                    {
+
+                                        if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                                        {
+                                            $recommending_name = optional($omcc->chief->personalInformation)->last_name . ', ' . optional($omcc->chief->personalInformation)->first_name;
+                                            $recommending_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                            $recommending_code = $omcc->chief->assignedArea->designation->code ?? null;
+
+                                            $approving_name = optional($omcc->chief->personalInformation)->last_name . ', ' . optional($omcc->chief->personalInformation)->first_name;
+                                            $approving_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                            $approving_code = $omcc->chief->assignedArea->designation->code ?? null;
+                                        }
+                                    }
                                 }
-                            }
-                            if($department)
-                            {
-                                $department_name = Department::with('head.personalInformation')->find($department);
-                                if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
+                                else if($section_head > 0 || $department_head > 0)
                                 {
-                                    $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
-                                    $head_position = $department_name->head->assignedArea->designation->name ?? null;
-                                    $head_code = $department_name->head->assignedArea->designation->code ?? null;
+
+                                    if($department)
+                                    {
+                                        $division_name = Division::with('chief.personalInformation')->find($division);
+                                        if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
+                                        {
+                                            $recommending_name = optional($division_name->chief->personalInformation)->last_name . ', ' . optional($division_name->chief->personalInformation)->first_name;
+                                            $recommending_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                            $recommending_code = $division_name->chief->assignedArea->designation->code ?? null;
+                                        }
+                                    }
+                                    if($section)
+                                    {
+                                        $division_name = Division::with('chief.personalInformation')->find($division);
+                                        if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
+                                        {
+                                            $recommending_name = optional($division_name->chief->personalInformation)->last_name . ', ' . optional($division_name->chief->personalInformation)->first_name;
+                                            $recommending_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                            $recommending_code = $division_name->chief->assignedArea->designation->code ?? null;
+                                        }
+                                    }
+                                    if($omcc) {
+                                        if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                                        {
+                                            $approving_name = optional($omcc->chief->personalInformation)->last_name . ', ' . optional($omcc->chief->personalInformation)->first_name;
+                                            $approving_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                            $approving_code = $omcc->chief->assignedArea->designation->code ?? null;
+                                        }
+                                    }
+
                                 }
-                            }
-                            if($section)
-                            {
-                                $section_name = Section::with('supervisor.personalInformation')->find($section);
-                                if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
+                                else
                                 {
-                                    $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
-                                    $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
-                                    $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
+                                    if($division) {
+                                        $division_name = Division::with('chief.personalInformation')->find($division);
+
+                                        if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
+                                        {
+                                            $approving_name = optional($division_name->chief->personalInformation)->last_name . ', ' . optional($division_name->chief->personalInformation)->first_name;
+                                            $approving_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                            $approving_code = $division_name->chief->assignedArea->designation->code ?? null;
+                                        }
+                                    }
+                                    if($department)
+                                    {
+                                        $department_name = Department::with('head.personalInformation')->find($department);
+                                        if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
+                                        {
+                                            $recommending_name = optional($department_name->head->personalInformation)->last_name . ', ' . optional($department_name->head->personalInformation)->first_name;
+                                            $recommending_position = $department_name->head->assignedArea->designation->name ?? null;
+                                            $recommending_code = $department_name->head->assignedArea->designation->code ?? null;
+                                        }
+                                    }
+                                    if($section)
+                                    {
+                                        $section_name = Section::with('supervisor.personalInformation')->find($section);
+                                        if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
+                                        {
+                                            $recommending_name = optional($section_name->supervisor->personalInformation)->last_name . ', ' . optional($section_name->supervisor->personalInformation)->first_name;
+                                            $recommending_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                                            $recommending_code = $section_name->supervisor->assignedArea->designation->code ?? null;
+                                        }
+                                    }
+
                                 }
-                            }
                             $cto_application_date_times=CtoApplicationDate::where('cto_application_id',$cto_application->id)->get();
                             if($cto_application_date_times)
                             {
@@ -385,15 +493,12 @@ class CtoApplicationController extends Controller
                                 'position_code' => $cto_application->employeeProfile->assignedArea->designation->code ?? null,
                                 'position_name' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
                                 'date_created' => $cto_application->created_at,
-                                'division_head' =>$chief_name,
-                                'division_head_position'=> $chief_position,
-                                'division_head_code'=> $chief_code,
-                                'department_head' =>$head_name,
-                                'department_head_position' =>$head_position,
-                                'department_head_code' =>$head_code,
-                                'section_head' =>$supervisor_name,
-                                'section_head_position' =>$supervisor_position,
-                                'section_head_code' =>$supervisor_code,
+                                'recommending_head' =>$recommending_name,
+                                'recommending_head_position'=> $recommending_position,
+                                'recommending_head_code'=> $recommending_code,
+                                'approving_head' =>$approving_name,
+                                'approving_head_position' =>$approving_position,
+                                'approving_head_code' =>$approving_code,
                                 'division_name' => $cto_application->employeeProfile->assignedArea->division->name ?? null,
                                 'department_name' => $cto_application->employeeProfile->assignedArea->department->name ?? null,
                                 'section_name' => $cto_application->employeeProfile->assignedArea->section->name ?? null,
@@ -525,45 +630,100 @@ class CtoApplicationController extends Controller
                                     $division = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('division_id');
                                     $department = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('department_id');
                                     $section = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('section_id');
-                                    $chief_name=null;
-                                    $chief_position=null;
-                                    $chief_code=null;
-                                    $head_name=null;
-                                    $head_position=null;
-                                    $head_code=null;
-                                    $supervisor_name=null;
-                                    $supervisor_position=null;
-                                    $supervisor_code=null;
-                                            if($division) {
-                                                $division_name = Division::with('chief.personalInformation')->find($division);
+                                    $recommending_name=null;
+                                $recommending_position=null;
+                                $recommending_code=null;
+                                $approving_name=null;
+                                $approving_position=null;
+                                $approving_code=null;
+                                $division_head=Division::where('chief_employee_profile_id',$cto_application->employee_profile_id)->count();
+                                $section_head=Section::where('supervisor_employee_profile_id',$cto_application->employee_profile_id)->count();
+                                $department_head=Department::where('head_employee_profile_id',$cto_application->employee_profile_id)->count();
+                                $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                                if ($division_head > 0) {
 
-                                                if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
-                                                {
-                                                    $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
-                                                    $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
-                                                    $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
-                                                }
-                                            }
-                                            if($department)
-                                            {
-                                                $department_name = Department::with('head.personalInformation')->find($department);
-                                                if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
-                                                {
-                                                    $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
-                                                    $head_position = $department_name->head->assignedArea->designation->name ?? null;
-                                                    $head_code = $department_name->head->assignedArea->designation->code ?? null;
-                                                }
-                                            }
-                                            if($section)
-                                            {
-                                                $section_name = Section::with('supervisor.personalInformation')->find($section);
-                                                if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
-                                                {
-                                                    $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
-                                                    $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
-                                                    $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
-                                                }
-                                            }
+                                    if($omcc)
+                                    {
+
+                                        if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                                        {
+                                            $recommending_name = optional($omcc->chief->personalInformation)->last_name . ', ' . optional($omcc->chief->personalInformation)->first_name;
+                                            $recommending_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                            $recommending_code = $omcc->chief->assignedArea->designation->code ?? null;
+
+                                            $approving_name = optional($omcc->chief->personalInformation)->last_name . ', ' . optional($omcc->chief->personalInformation)->first_name;
+                                            $approving_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                            $approving_code = $omcc->chief->assignedArea->designation->code ?? null;
+                                        }
+                                    }
+                                }
+                                else if($section_head > 0 || $department_head > 0)
+                                {
+
+                                    if($department)
+                                    {
+                                        $division_name = Division::with('chief.personalInformation')->find($division);
+                                        if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
+                                        {
+                                            $recommending_name = optional($division_name->chief->personalInformation)->last_name . ', ' . optional($division_name->chief->personalInformation)->first_name;
+                                            $recommending_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                            $recommending_code = $division_name->chief->assignedArea->designation->code ?? null;
+                                        }
+                                    }
+                                    if($section)
+                                    {
+                                        $division_name = Division::with('chief.personalInformation')->find($division);
+                                        if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
+                                        {
+                                            $recommending_name = optional($division_name->chief->personalInformation)->last_name . ', ' . optional($division_name->chief->personalInformation)->first_name;
+                                            $recommending_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                            $recommending_code = $division_name->chief->assignedArea->designation->code ?? null;
+                                        }
+                                    }
+                                    if($omcc) {
+                                        if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                                        {
+                                            $approving_name = optional($omcc->chief->personalInformation)->last_name . ', ' . optional($omcc->chief->personalInformation)->first_name;
+                                            $approving_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                            $approving_code = $omcc->chief->assignedArea->designation->code ?? null;
+                                        }
+                                    }
+
+                                }
+                                else
+                                {
+                                    if($division) {
+                                        $division_name = Division::with('chief.personalInformation')->find($division);
+
+                                        if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
+                                        {
+                                            $approving_name = optional($division_name->chief->personalInformation)->last_name . ', ' . optional($division_name->chief->personalInformation)->first_name;
+                                            $approving_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                            $approving_code = $division_name->chief->assignedArea->designation->code ?? null;
+                                        }
+                                    }
+                                    if($department)
+                                    {
+                                        $department_name = Department::with('head.personalInformation')->find($department);
+                                        if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
+                                        {
+                                            $recommending_name = optional($department_name->head->personalInformation)->last_name . ', ' . optional($department_name->head->personalInformation)->first_name;
+                                            $recommending_position = $department_name->head->assignedArea->designation->name ?? null;
+                                            $recommending_code = $department_name->head->assignedArea->designation->code ?? null;
+                                        }
+                                    }
+                                    if($section)
+                                    {
+                                        $section_name = Section::with('supervisor.personalInformation')->find($section);
+                                        if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
+                                        {
+                                            $recommending_name = optional($section_name->supervisor->personalInformation)->last_name . ', ' . optional($section_name->supervisor->personalInformation)->first_name;
+                                            $recommending_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                                            $recommending_code = $section_name->supervisor->assignedArea->designation->code ?? null;
+                                        }
+                                    }
+
+                                }
                                             $cto_application_date_times=CtoApplicationDate::where('cto_application_id',$cto_application->id)->get();
                                             if($cto_application_date_times)
                                             {
@@ -604,15 +764,12 @@ class CtoApplicationController extends Controller
                                                 'position_code' => $cto_application->employeeProfile->assignedArea->designation->code ?? null,
                                                 'position_name' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
                                                 'date_created' => $cto_application->created_at,
-                                                'division_head' =>$chief_name,
-                                                'division_head_position'=> $chief_position,
-                                                'division_head_code'=> $chief_code,
-                                                'department_head' =>$head_name,
-                                                'department_head_position' =>$head_position,
-                                                'department_head_code' =>$head_code,
-                                                'section_head' =>$supervisor_name,
-                                                'section_head_position' =>$supervisor_position,
-                                                'section_head_code' =>$supervisor_code,
+                                                'recommending_head' =>$recommending_name,
+                                                'recommending_head_position'=> $recommending_position,
+                                                'recommending_head_code'=> $recommending_code,
+                                                'approving_head' =>$approving_name,
+                                                'approving_head_position' =>$approving_position,
+                                                'approving_head_code' =>$approving_code,
                                                 'division_name' => $cto_application->employeeProfile->assignedArea->division->name ?? null,
                                                 'department_name' => $cto_application->employeeProfile->assignedArea->department->name ?? null,
                                                 'section_name' => $cto_application->employeeProfile->assignedArea->section->name ?? null,
@@ -867,45 +1024,100 @@ class CtoApplicationController extends Controller
                     $division = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('division_id');
                     $department = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('department_id');
                     $section = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('section_id');
-                    $chief_name=null;
-                    $chief_position=null;
-                    $chief_code=null;
-                    $head_name=null;
-                    $head_position=null;
-                    $head_code=null;
-                    $supervisor_name=null;
-                    $supervisor_position=null;
-                    $supervisor_code=null;
-                            if($division) {
-                                $division_name = Division::with('chief.personalInformation')->find($division);
+                    $recommending_name=null;
+                                $recommending_position=null;
+                                $recommending_code=null;
+                                $approving_name=null;
+                                $approving_position=null;
+                                $approving_code=null;
+                                $division_head=Division::where('chief_employee_profile_id',$cto_application->employee_profile_id)->count();
+                                $section_head=Section::where('supervisor_employee_profile_id',$cto_application->employee_profile_id)->count();
+                                $department_head=Department::where('head_employee_profile_id',$cto_application->employee_profile_id)->count();
+                                $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                                if ($division_head > 0) {
 
-                                if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
-                                {
-                                    $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
-                                    $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
-                                    $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
+                                    if($omcc)
+                                    {
+
+                                        if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                                        {
+                                            $recommending_name = optional($omcc->chief->personalInformation)->last_name . ', ' . optional($omcc->chief->personalInformation)->first_name;
+                                            $recommending_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                            $recommending_code = $omcc->chief->assignedArea->designation->code ?? null;
+
+                                            $approving_name = optional($omcc->chief->personalInformation)->last_name . ', ' . optional($omcc->chief->personalInformation)->first_name;
+                                            $approving_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                            $approving_code = $omcc->chief->assignedArea->designation->code ?? null;
+                                        }
+                                    }
                                 }
-                            }
-                            if($department)
-                            {
-                                $department_name = Department::with('head.personalInformation')->find($department);
-                                if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
+                                else if($section_head > 0 || $department_head > 0)
                                 {
-                                    $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
-                                    $head_position = $department_name->head->assignedArea->designation->name ?? null;
-                                    $head_code = $department_name->head->assignedArea->designation->code ?? null;
+
+                                    if($department)
+                                    {
+                                        $division_name = Division::with('chief.personalInformation')->find($division);
+                                        if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
+                                        {
+                                            $recommending_name = optional($division_name->chief->personalInformation)->last_name . ', ' . optional($division_name->chief->personalInformation)->first_name;
+                                            $recommending_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                            $recommending_code = $division_name->chief->assignedArea->designation->code ?? null;
+                                        }
+                                    }
+                                    if($section)
+                                    {
+                                        $division_name = Division::with('chief.personalInformation')->find($division);
+                                        if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
+                                        {
+                                            $recommending_name = optional($division_name->chief->personalInformation)->last_name . ', ' . optional($division_name->chief->personalInformation)->first_name;
+                                            $recommending_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                            $recommending_code = $division_name->chief->assignedArea->designation->code ?? null;
+                                        }
+                                    }
+                                    if($omcc) {
+                                        if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                                        {
+                                            $approving_name = optional($omcc->chief->personalInformation)->last_name . ', ' . optional($omcc->chief->personalInformation)->first_name;
+                                            $approving_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                            $approving_code = $omcc->chief->assignedArea->designation->code ?? null;
+                                        }
+                                    }
+
                                 }
-                            }
-                            if($section)
-                            {
-                                $section_name = Section::with('supervisor.personalInformation')->find($section);
-                                if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
+                                else
                                 {
-                                    $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
-                                    $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
-                                    $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
+                                    if($division) {
+                                        $division_name = Division::with('chief.personalInformation')->find($division);
+
+                                        if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
+                                        {
+                                            $approving_name = optional($division_name->chief->personalInformation)->last_name . ', ' . optional($division_name->chief->personalInformation)->first_name;
+                                            $approving_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                            $approving_code = $division_name->chief->assignedArea->designation->code ?? null;
+                                        }
+                                    }
+                                    if($department)
+                                    {
+                                        $department_name = Department::with('head.personalInformation')->find($department);
+                                        if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
+                                        {
+                                            $recommending_name = optional($department_name->head->personalInformation)->last_name . ', ' . optional($department_name->head->personalInformation)->first_name;
+                                            $recommending_position = $department_name->head->assignedArea->designation->name ?? null;
+                                            $recommending_code = $department_name->head->assignedArea->designation->code ?? null;
+                                        }
+                                    }
+                                    if($section)
+                                    {
+                                        $section_name = Section::with('supervisor.personalInformation')->find($section);
+                                        if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
+                                        {
+                                            $recommending_name = optional($section_name->supervisor->personalInformation)->last_name . ', ' . optional($section_name->supervisor->personalInformation)->first_name;
+                                            $recommending_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                                            $recommending_code = $section_name->supervisor->assignedArea->designation->code ?? null;
+                                        }
+                                    }
+
                                 }
-                            }
                             $cto_application_date_times=CtoApplicationDate::where('cto_application_id',$cto_application->id)->get();
                             if($cto_application_date_times)
                             {
@@ -946,15 +1158,12 @@ class CtoApplicationController extends Controller
                                     'position_code' => $cto_application->employeeProfile->assignedArea->designation->code ?? null,
                                     'position_name' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
                                     'date_created' => $cto_application->created_at,
-                                    'division_head' =>$chief_name,
-                                    'division_head_position'=> $chief_position,
-                                    'division_head_code'=> $chief_code,
-                                    'department_head' =>$head_name,
-                                    'department_head_position' =>$head_position,
-                                    'department_head_code' =>$head_code,
-                                    'section_head' =>$supervisor_name,
-                                    'section_head_position' =>$supervisor_position,
-                                    'section_head_code' =>$supervisor_code,
+                                    'recommending_head' =>$recommending_name,
+                                    'recommending_head_position'=> $recommending_position,
+                                    'recommending_head_code'=> $recommending_code,
+                                    'approving_head' =>$approving_name,
+                                    'approving_head_position' =>$approving_position,
+                                    'approving_head_code' =>$approving_code,
                                     'division_name' => $cto_application->employeeProfile->assignedArea->division->name ?? null,
                                     'department_name' => $cto_application->employeeProfile->assignedArea->department->name ?? null,
                                     'section_name' => $cto_application->employeeProfile->assignedArea->section->name ?? null,
@@ -1089,45 +1298,100 @@ class CtoApplicationController extends Controller
                     $division = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('division_id');
                     $department = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('department_id');
                     $section = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('section_id');
-                    $chief_name=null;
-                    $chief_position=null;
-                    $chief_code=null;
-                    $head_name=null;
-                    $head_position=null;
-                    $head_code=null;
-                    $supervisor_name=null;
-                    $supervisor_position=null;
-                    $supervisor_code=null;
-                            if($division) {
-                                $division_name = Division::with('chief.personalInformation')->find($division);
+                    $recommending_name=null;
+                    $recommending_position=null;
+                    $recommending_code=null;
+                    $approving_name=null;
+                    $approving_position=null;
+                    $approving_code=null;
+                    $division_head=Division::where('chief_employee_profile_id',$cto_application->employee_profile_id)->count();
+                    $section_head=Section::where('supervisor_employee_profile_id',$cto_application->employee_profile_id)->count();
+                    $department_head=Department::where('head_employee_profile_id',$cto_application->employee_profile_id)->count();
+                    $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                    if ($division_head > 0) {
 
-                                if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
-                                {
-                                    $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
-                                    $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
-                                    $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
-                                }
-                            }
-                            if($department)
+                        if($omcc)
+                        {
+
+                            if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
                             {
-                                $department_name = Department::with('head.personalInformation')->find($department);
-                                if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
-                                {
-                                    $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
-                                    $head_position = $department_name->head->assignedArea->designation->name ?? null;
-                                    $head_code = $department_name->head->assignedArea->designation->code ?? null;
-                                }
+                                $recommending_name = optional($omcc->chief->personalInformation)->last_name . ', ' . optional($omcc->chief->personalInformation)->first_name;
+                                $recommending_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                $recommending_code = $omcc->chief->assignedArea->designation->code ?? null;
+
+                                $approving_name = optional($omcc->chief->personalInformation)->last_name . ', ' . optional($omcc->chief->personalInformation)->first_name;
+                                $approving_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                $approving_code = $omcc->chief->assignedArea->designation->code ?? null;
                             }
-                            if($section)
+                        }
+                    }
+                    else if($section_head > 0 || $department_head > 0)
+                    {
+
+                        if($department)
+                        {
+                            $division_name = Division::with('chief.personalInformation')->find($division);
+                            if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
                             {
-                                $section_name = Section::with('supervisor.personalInformation')->find($section);
-                                if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
-                                {
-                                    $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
-                                    $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
-                                    $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
-                                }
+                                $recommending_name = optional($division_name->chief->personalInformation)->last_name . ', ' . optional($division_name->chief->personalInformation)->first_name;
+                                $recommending_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                $recommending_code = $division_name->chief->assignedArea->designation->code ?? null;
                             }
+                        }
+                        if($section)
+                        {
+                            $division_name = Division::with('chief.personalInformation')->find($division);
+                            if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
+                            {
+                                $recommending_name = optional($division_name->chief->personalInformation)->last_name . ', ' . optional($division_name->chief->personalInformation)->first_name;
+                                $recommending_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                $recommending_code = $division_name->chief->assignedArea->designation->code ?? null;
+                            }
+                        }
+                        if($omcc) {
+                            if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                            {
+                                $approving_name = optional($omcc->chief->personalInformation)->last_name . ', ' . optional($omcc->chief->personalInformation)->first_name;
+                                $approving_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                $approving_code = $omcc->chief->assignedArea->designation->code ?? null;
+                            }
+                        }
+
+                    }
+                    else
+                    {
+                        if($division) {
+                            $division_name = Division::with('chief.personalInformation')->find($division);
+
+                            if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
+                            {
+                                $approving_name = optional($division_name->chief->personalInformation)->last_name . ', ' . optional($division_name->chief->personalInformation)->first_name;
+                                $approving_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                $approving_code = $division_name->chief->assignedArea->designation->code ?? null;
+                            }
+                        }
+                        if($department)
+                        {
+                            $department_name = Department::with('head.personalInformation')->find($department);
+                            if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
+                            {
+                                $recommending_name = optional($department_name->head->personalInformation)->last_name . ', ' . optional($department_name->head->personalInformation)->first_name;
+                                $recommending_position = $department_name->head->assignedArea->designation->name ?? null;
+                                $recommending_code = $department_name->head->assignedArea->designation->code ?? null;
+                            }
+                        }
+                        if($section)
+                        {
+                            $section_name = Section::with('supervisor.personalInformation')->find($section);
+                            if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
+                            {
+                                $recommending_name = optional($section_name->supervisor->personalInformation)->last_name . ', ' . optional($section_name->supervisor->personalInformation)->first_name;
+                                $recommending_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                                $recommending_code = $section_name->supervisor->assignedArea->designation->code ?? null;
+                            }
+                        }
+
+                    }
                             $cto_application_date_times=CtoApplicationDate::where('cto_application_id',$cto_application->id)->get();
                             if($cto_application_date_times)
                             {
@@ -1181,15 +1445,12 @@ class CtoApplicationController extends Controller
                         'position_code' => $cto_application->employeeProfile->assignedArea->designation->code ?? null,
                         'position_name' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
                         'date_created' => $cto_application->created_at,
-                        'division_head' =>$chief_name,
-                        'division_head_position'=> $chief_position,
-                        'division_head_code'=> $chief_code,
-                        'department_head' =>$head_name,
-                        'department_head_position' =>$head_position,
-                        'department_head_code' =>$head_code,
-                        'section_head' =>$supervisor_name,
-                        'section_head_position' =>$supervisor_position,
-                        'section_head_code' =>$supervisor_code,
+                        'recommending_head' =>$recommending_name,
+                        'recommending_head_position'=> $recommending_position,
+                        'recommending_head_code'=> $recommending_code,
+                        'approving_head' =>$approving_name,
+                        'approving_head_position' =>$approving_position,
+                        'approving_head_code' =>$approving_code,
                         'division_name' => $cto_application->employeeProfile->assignedArea->division->name ?? null,
                         'department_name' => $cto_application->employeeProfile->assignedArea->department->name ?? null,
                         'section_name' => $cto_application->employeeProfile->assignedArea->section->name ?? null,
@@ -1255,7 +1516,6 @@ class CtoApplicationController extends Controller
             }
         }
         else if($sectionHeadId === $user->id || $section_oic_id === $user->id) {
-
             $cto_applications = ctoApplication::with(['employeeProfile.assignedArea','employeeProfile.personalInformation','logs'])
             ->whereHas('employeeProfile.assignedArea', function ($query) use ($section) {
                 $query->where('section_id', $section);
@@ -1274,45 +1534,100 @@ class CtoApplicationController extends Controller
                     $division = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('division_id');
                     $department = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('department_id');
                     $section = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('section_id');
-                    $chief_name=null;
-                    $chief_position=null;
-                    $chief_code=null;
-                    $head_name=null;
-                    $head_position=null;
-                    $head_code=null;
-                    $supervisor_name=null;
-                    $supervisor_position=null;
-                    $supervisor_code=null;
-                            if($division) {
-                                $division_name = Division::with('chief.personalInformation')->find($division);
+                    $recommending_name=null;
+                    $recommending_position=null;
+                    $recommending_code=null;
+                    $approving_name=null;
+                    $approving_position=null;
+                    $approving_code=null;
+                    $division_head=Division::where('chief_employee_profile_id',$cto_application->employee_profile_id)->count();
+                    $section_head=Section::where('supervisor_employee_profile_id',$cto_application->employee_profile_id)->count();
+                    $department_head=Department::where('head_employee_profile_id',$cto_application->employee_profile_id)->count();
+                    $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                    if ($division_head > 0) {
 
-                                if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
-                                {
-                                    $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
-                                    $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
-                                    $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
-                                }
-                            }
-                            if($department)
+                        if($omcc)
+                        {
+
+                            if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
                             {
-                                $department_name = Department::with('head.personalInformation')->find($department);
-                                if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
-                                {
-                                    $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
-                                    $head_position = $department_name->head->assignedArea->designation->name ?? null;
-                                    $head_code = $department_name->head->assignedArea->designation->code ?? null;
-                                }
+                                $recommending_name = optional($omcc->chief->personalInformation)->last_name . ', ' . optional($omcc->chief->personalInformation)->first_name;
+                                $recommending_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                $recommending_code = $omcc->chief->assignedArea->designation->code ?? null;
+
+                                $approving_name = optional($omcc->chief->personalInformation)->last_name . ', ' . optional($omcc->chief->personalInformation)->first_name;
+                                $approving_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                $approving_code = $omcc->chief->assignedArea->designation->code ?? null;
                             }
-                            if($section)
+                        }
+                    }
+                    else if($section_head > 0 || $department_head > 0)
+                    {
+
+                        if($department)
+                        {
+                            $division_name = Division::with('chief.personalInformation')->find($division);
+                            if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
                             {
-                                $section_name = Section::with('supervisor.personalInformation')->find($section);
-                                if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
-                                {
-                                    $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
-                                    $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
-                                    $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
-                                }
+                                $recommending_name = optional($division_name->chief->personalInformation)->last_name . ', ' . optional($division_name->chief->personalInformation)->first_name;
+                                $recommending_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                $recommending_code = $division_name->chief->assignedArea->designation->code ?? null;
                             }
+                        }
+                        if($section)
+                        {
+                            $division_name = Division::with('chief.personalInformation')->find($division);
+                            if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
+                            {
+                                $recommending_name = optional($division_name->chief->personalInformation)->last_name . ', ' . optional($division_name->chief->personalInformation)->first_name;
+                                $recommending_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                $recommending_code = $division_name->chief->assignedArea->designation->code ?? null;
+                            }
+                        }
+                        if($omcc) {
+                            if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                            {
+                                $approving_name = optional($omcc->chief->personalInformation)->last_name . ', ' . optional($omcc->chief->personalInformation)->first_name;
+                                $approving_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                $approving_code = $omcc->chief->assignedArea->designation->code ?? null;
+                            }
+                        }
+
+                    }
+                    else
+                    {
+                        if($division) {
+                            $division_name = Division::with('chief.personalInformation')->find($division);
+
+                            if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
+                            {
+                                $approving_name = optional($division_name->chief->personalInformation)->last_name . ', ' . optional($division_name->chief->personalInformation)->first_name;
+                                $approving_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                $approving_code = $division_name->chief->assignedArea->designation->code ?? null;
+                            }
+                        }
+                        if($department)
+                        {
+                            $department_name = Department::with('head.personalInformation')->find($department);
+                            if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
+                            {
+                                $recommending_name = optional($department_name->head->personalInformation)->last_name . ', ' . optional($department_name->head->personalInformation)->first_name;
+                                $recommending_position = $department_name->head->assignedArea->designation->name ?? null;
+                                $recommending_code = $department_name->head->assignedArea->designation->code ?? null;
+                            }
+                        }
+                        if($section)
+                        {
+                            $section_name = Section::with('supervisor.personalInformation')->find($section);
+                            if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
+                            {
+                                $recommending_name = optional($section_name->supervisor->personalInformation)->last_name . ', ' . optional($section_name->supervisor->personalInformation)->first_name;
+                                $recommending_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                                $recommending_code = $section_name->supervisor->assignedArea->designation->code ?? null;
+                            }
+                        }
+
+                    }
                             $cto_application_date_times=CtoApplicationDate::where('cto_application_id',$cto_application->id)->get();
                             if($cto_application_date_times)
                             {
@@ -1366,15 +1681,12 @@ class CtoApplicationController extends Controller
                         'position_code' => $cto_application->employeeProfile->assignedArea->designation->code ?? null,
                         'position_name' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
                         'date_created' => $cto_application->created_at,
-                        'division_head' =>$chief_name,
-                        'division_head_position'=> $chief_position,
-                        'division_head_code'=> $chief_code,
-                        'department_head' =>$head_name,
-                        'department_head_position' =>$head_position,
-                        'department_head_code' =>$head_code,
-                        'section_head' =>$supervisor_name,
-                        'section_head_position' =>$supervisor_position,
-                        'section_head_code' =>$supervisor_code,
+                        'recommending_head' =>$recommending_name,
+                        'recommending_head_position'=> $recommending_position,
+                        'recommending_head_code'=> $recommending_code,
+                        'approving_head' =>$approving_name,
+                        'approving_head_position' =>$approving_position,
+                        'approving_head_code' =>$approving_code,
                         'division_name' => $cto_application->employeeProfile->assignedArea->division->name ?? null,
                         'department_name' => $cto_application->employeeProfile->assignedArea->department->name ?? null,
                         'section_name' => $cto_application->employeeProfile->assignedArea->section->name ?? null,
@@ -1438,6 +1750,7 @@ class CtoApplicationController extends Controller
             }
 
         }
+
         else  if($departmentHeadId === $user->id || $training_officer_id === $user->id || $department_oic_Id === $user->id) {
             $cto_applications = CtoApplication::with(['employeeProfile.assignedArea','employeeProfile.personalInformation','logs'])
             ->whereHas('employeeProfile.assignedArea', function ($query) use ($department) {
@@ -1455,45 +1768,100 @@ class CtoApplicationController extends Controller
                     $division = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('division_id');
                     $department = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('department_id');
                     $section = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('section_id');
-                    $chief_name=null;
-                    $chief_position=null;
-                    $chief_code=null;
-                    $head_name=null;
-                    $head_position=null;
-                    $head_code=null;
-                    $supervisor_name=null;
-                    $supervisor_position=null;
-                    $supervisor_code=null;
-                            if($division) {
-                                $division_name = Division::with('chief.personalInformation')->find($division);
+                    $recommending_name=null;
+                    $recommending_position=null;
+                    $recommending_code=null;
+                    $approving_name=null;
+                    $approving_position=null;
+                    $approving_code=null;
+                    $division_head=Division::where('chief_employee_profile_id',$cto_application->employee_profile_id)->count();
+                    $section_head=Section::where('supervisor_employee_profile_id',$cto_application->employee_profile_id)->count();
+                    $department_head=Department::where('head_employee_profile_id',$cto_application->employee_profile_id)->count();
+                    $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                    if ($division_head > 0) {
 
-                                if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
-                                {
-                                    $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
-                                    $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
-                                    $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
-                                }
-                            }
-                            if($department)
+                        if($omcc)
+                        {
+
+                            if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
                             {
-                                $department_name = Department::with('head.personalInformation')->find($department);
-                                if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
-                                {
-                                    $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
-                                    $head_position = $department_name->head->assignedArea->designation->name ?? null;
-                                    $head_code = $department_name->head->assignedArea->designation->code ?? null;
-                                }
+                                $recommending_name = optional($omcc->chief->personalInformation)->last_name . ', ' . optional($omcc->chief->personalInformation)->first_name;
+                                $recommending_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                $recommending_code = $omcc->chief->assignedArea->designation->code ?? null;
+
+                                $approving_name = optional($omcc->chief->personalInformation)->last_name . ', ' . optional($omcc->chief->personalInformation)->first_name;
+                                $approving_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                $approving_code = $omcc->chief->assignedArea->designation->code ?? null;
                             }
-                            if($section)
+                        }
+                    }
+                    else if($section_head > 0 || $department_head > 0)
+                    {
+
+                        if($department)
+                        {
+                            $division_name = Division::with('chief.personalInformation')->find($division);
+                            if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
                             {
-                                $section_name = Section::with('supervisor.personalInformation')->find($section);
-                                if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
-                                {
-                                    $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
-                                    $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
-                                    $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
-                                }
+                                $recommending_name = optional($division_name->chief->personalInformation)->last_name . ', ' . optional($division_name->chief->personalInformation)->first_name;
+                                $recommending_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                $recommending_code = $division_name->chief->assignedArea->designation->code ?? null;
                             }
+                        }
+                        if($section)
+                        {
+                            $division_name = Division::with('chief.personalInformation')->find($division);
+                            if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
+                            {
+                                $recommending_name = optional($division_name->chief->personalInformation)->last_name . ', ' . optional($division_name->chief->personalInformation)->first_name;
+                                $recommending_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                $recommending_code = $division_name->chief->assignedArea->designation->code ?? null;
+                            }
+                        }
+                        if($omcc) {
+                            if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                            {
+                                $approving_name = optional($omcc->chief->personalInformation)->last_name . ', ' . optional($omcc->chief->personalInformation)->first_name;
+                                $approving_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                $approving_code = $omcc->chief->assignedArea->designation->code ?? null;
+                            }
+                        }
+
+                    }
+                    else
+                    {
+                        if($division) {
+                            $division_name = Division::with('chief.personalInformation')->find($division);
+
+                            if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
+                            {
+                                $approving_name = optional($division_name->chief->personalInformation)->last_name . ', ' . optional($division_name->chief->personalInformation)->first_name;
+                                $approving_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                $approving_code = $division_name->chief->assignedArea->designation->code ?? null;
+                            }
+                        }
+                        if($department)
+                        {
+                            $department_name = Department::with('head.personalInformation')->find($department);
+                            if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
+                            {
+                                $recommending_name = optional($department_name->head->personalInformation)->last_name . ', ' . optional($department_name->head->personalInformation)->first_name;
+                                $recommending_position = $department_name->head->assignedArea->designation->name ?? null;
+                                $recommending_code = $department_name->head->assignedArea->designation->code ?? null;
+                            }
+                        }
+                        if($section)
+                        {
+                            $section_name = Section::with('supervisor.personalInformation')->find($section);
+                            if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
+                            {
+                                $recommending_name = optional($section_name->supervisor->personalInformation)->last_name . ', ' . optional($section_name->supervisor->personalInformation)->first_name;
+                                $recommending_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                                $recommending_code = $section_name->supervisor->assignedArea->designation->code ?? null;
+                            }
+                        }
+
+                    }
                             $cto_application_date_times=CtoApplicationDate::where('cto_application_id',$cto_application->id)->get();
                             if($cto_application_date_times)
                             {
@@ -1547,15 +1915,12 @@ class CtoApplicationController extends Controller
                         'position_code' => $cto_application->employeeProfile->assignedArea->designation->code ?? null,
                         'position_name' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
                         'date_created' => $cto_application->created_at,
-                        'division_head' =>$chief_name,
-                        'division_head_position'=> $chief_position,
-                        'division_head_code'=> $chief_code,
-                        'department_head' =>$head_name,
-                        'department_head_position' =>$head_position,
-                        'department_head_code' =>$head_code,
-                        'section_head' =>$supervisor_name,
-                        'section_head_position' =>$supervisor_position,
-                        'section_head_code' =>$supervisor_code,
+                        'recommending_head' =>$recommending_name,
+                        'recommending_head_position'=> $recommending_position,
+                        'recommending_head_code'=> $recommending_code,
+                        'approving_head' =>$approving_name,
+                        'approving_head_position' =>$approving_position,
+                        'approving_head_code' =>$approving_code,
                         'division_name' => $cto_application->employeeProfile->assignedArea->division->name ?? null,
                         'department_name' => $cto_application->employeeProfile->assignedArea->department->name ?? null,
                         'section_name' => $cto_application->employeeProfile->assignedArea->section->name ?? null,
@@ -2324,45 +2689,100 @@ class CtoApplicationController extends Controller
                                     $division = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('division_id');
                                     $department = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('department_id');
                                     $section = AssignArea::where('employee_profile_id',$cto_application->employee_profile_id)->value('section_id');
-                                    $chief_name=null;
-                                    $chief_position=null;
-                                    $chief_code=null;
-                                    $head_name=null;
-                                    $head_position=null;
-                                    $head_code=null;
-                                    $supervisor_name=null;
-                                    $supervisor_position=null;
-                                    $supervisor_code=null;
-                                            if($division) {
-                                                $division_name = Division::with('chief.personalInformation')->find($division);
+                                    $recommending_name=null;
+                                $recommending_position=null;
+                                $recommending_code=null;
+                                $approving_name=null;
+                                $approving_position=null;
+                                $approving_code=null;
+                                $division_head=Division::where('chief_employee_profile_id',$cto_application->employee_profile_id)->count();
+                                $section_head=Section::where('supervisor_employee_profile_id',$cto_application->employee_profile_id)->count();
+                                $department_head=Department::where('head_employee_profile_id',$cto_application->employee_profile_id)->count();
+                                $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                                if ($division_head > 0) {
 
-                                                if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
-                                                {
-                                                    $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
-                                                    $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
-                                                    $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
-                                                }
-                                            }
-                                            if($department)
-                                            {
-                                                $department_name = Department::with('head.personalInformation')->find($department);
-                                                if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
-                                                {
-                                                    $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
-                                                    $head_position = $department_name->head->assignedArea->designation->name ?? null;
-                                                    $head_code = $department_name->head->assignedArea->designation->code ?? null;
-                                                }
-                                            }
-                                            if($section)
-                                            {
-                                                $section_name = Section::with('supervisor.personalInformation')->find($section);
-                                                if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
-                                                {
-                                                    $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
-                                                    $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
-                                                    $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
-                                                }
-                                            }
+                                    if($omcc)
+                                    {
+
+                                        if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                                        {
+                                            $recommending_name = optional($omcc->chief->personalInformation)->last_name . ', ' . optional($omcc->chief->personalInformation)->first_name;
+                                            $recommending_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                            $recommending_code = $omcc->chief->assignedArea->designation->code ?? null;
+
+                                            $approving_name = optional($omcc->chief->personalInformation)->last_name . ', ' . optional($omcc->chief->personalInformation)->first_name;
+                                            $approving_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                            $approving_code = $omcc->chief->assignedArea->designation->code ?? null;
+                                        }
+                                    }
+                                }
+                                else if($section_head > 0 || $department_head > 0)
+                                {
+
+                                    if($department)
+                                    {
+                                        $division_name = Division::with('chief.personalInformation')->find($division);
+                                        if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
+                                        {
+                                            $recommending_name = optional($division_name->chief->personalInformation)->last_name . ', ' . optional($division_name->chief->personalInformation)->first_name;
+                                            $recommending_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                            $recommending_code = $division_name->chief->assignedArea->designation->code ?? null;
+                                        }
+                                    }
+                                    if($section)
+                                    {
+                                        $division_name = Division::with('chief.personalInformation')->find($division);
+                                        if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
+                                        {
+                                            $recommending_name = optional($division_name->chief->personalInformation)->last_name . ', ' . optional($division_name->chief->personalInformation)->first_name;
+                                            $recommending_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                            $recommending_code = $division_name->chief->assignedArea->designation->code ?? null;
+                                        }
+                                    }
+                                    if($omcc) {
+                                        if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                                        {
+                                            $approving_name = optional($omcc->chief->personalInformation)->last_name . ', ' . optional($omcc->chief->personalInformation)->first_name;
+                                            $approving_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                            $approving_code = $omcc->chief->assignedArea->designation->code ?? null;
+                                        }
+                                    }
+
+                                }
+                                else
+                                {
+                                    if($division) {
+                                        $division_name = Division::with('chief.personalInformation')->find($division);
+
+                                        if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
+                                        {
+                                            $approving_name = optional($division_name->chief->personalInformation)->last_name . ', ' . optional($division_name->chief->personalInformation)->first_name;
+                                            $approving_position = $division_name->chief->assignedArea->designation->name ?? null;
+                                            $approving_code = $division_name->chief->assignedArea->designation->code ?? null;
+                                        }
+                                    }
+                                    if($department)
+                                    {
+                                        $department_name = Department::with('head.personalInformation')->find($department);
+                                        if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
+                                        {
+                                            $recommending_name = optional($department_name->head->personalInformation)->last_name . ', ' . optional($department_name->head->personalInformation)->first_name;
+                                            $recommending_position = $department_name->head->assignedArea->designation->name ?? null;
+                                            $recommending_code = $department_name->head->assignedArea->designation->code ?? null;
+                                        }
+                                    }
+                                    if($section)
+                                    {
+                                        $section_name = Section::with('supervisor.personalInformation')->find($section);
+                                        if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
+                                        {
+                                            $recommending_name = optional($section_name->supervisor->personalInformation)->last_name . ', ' . optional($section_name->supervisor->personalInformation)->first_name;
+                                            $recommending_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                                            $recommending_code = $section_name->supervisor->assignedArea->designation->code ?? null;
+                                        }
+                                    }
+
+                                }
                                             $cto_application_date_times=CtoApplicationDate::where('cto_application_id',$cto_application->id)->get();
                                             if($cto_application_date_times)
                                             {
@@ -2403,15 +2823,12 @@ class CtoApplicationController extends Controller
                                                 'position_code' => $cto_application->employeeProfile->assignedArea->designation->code ?? null,
                                                 'position_name' => $cto_application->employeeProfile->assignedArea->designation->name ?? null,
                                                 'date_created' => $cto_application->created_at,
-                                                'division_head' =>$chief_name,
-                                                'division_head_position'=> $chief_position,
-                                                'division_head_code'=> $chief_code,
-                                                'department_head' =>$head_name,
-                                                'department_head_position' =>$head_position,
-                                                'department_head_code' =>$head_code,
-                                                'section_head' =>$supervisor_name,
-                                                'section_head_position' =>$supervisor_position,
-                                                'section_head_code' =>$supervisor_code,
+                                                'recommending_head' =>$recommending_name,
+                                                'recommending_head_position'=> $recommending_position,
+                                                'recommending_head_code'=> $recommending_code,
+                                                'approving_head' =>$approving_name,
+                                                'approving_head_position' =>$approving_position,
+                                                'approving_head_code' =>$approving_code,
                                                 'division_name' => $cto_application->employeeProfile->assignedArea->division->name ?? null,
                                                 'department_name' => $cto_application->employeeProfile->assignedArea->department->name ?? null,
                                                 'section_name' => $cto_application->employeeProfile->assignedArea->section->name ?? null,
