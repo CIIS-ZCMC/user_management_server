@@ -30,7 +30,7 @@ class DTRcontroller extends Controller
         $this->helper = new Helpers();
         $this->device = new BioControl();
         $this->bioms = new BioMSController();
-        try {
+        
         try {
             $content = $this->bioms->operatingDevice()->getContent();
             $this->devices = $content !== null ? json_decode($content, true)['data'] : [];

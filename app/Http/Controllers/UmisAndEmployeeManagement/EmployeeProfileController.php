@@ -313,7 +313,7 @@ class EmployeeProfileController extends Controller
     private function buildSidebarDetails($employee_profile, $designation, $special_access_roles)
     {
         $sidebar_cache = Cache::get($designation['name']);
-    
+
         if ($sidebar_cache === null) {
             /**
              * Relation of table
@@ -339,9 +339,10 @@ class EmployeeProfileController extends Controller
                     ]);
                 }
             ])->where('designation_id', $designation['id'])->get();
-               
+
             $side_bar_details['designation_id'] = $designation['id'];
             $side_bar_details['designation_name'] = $designation['name'];
+            $side_bar_details['system'] = [];
 
             /**
              * Convert to meet sidebar data format.
@@ -384,7 +385,6 @@ class EmployeeProfileController extends Controller
          * Validate if employee has Special Access Roles
          * Update Sidebar Details.
          */
-
         if (!empty($special_access_roles)) {
             $special_access_permissions = SpecialAccessRole::with([
                 'systemRole' => function ($query) {
