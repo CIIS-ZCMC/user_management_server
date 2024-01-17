@@ -208,7 +208,8 @@ class EmployeeProfileController extends Controller
                 'date_hired' => $employee_profile->date_hired,
                 'job_type' => $employee_profile->employmentType->name,
                 'years_of_service' => $employee_profile->personalInformation->years_of_service,
-                'last_login' => $last_login === null ? null : $last_login->created_at
+                'last_login' => $last_login === null ? null : $last_login->created_at,
+                'biometric_id' => $employee_profile->biometric_id
             ];
 
             $personal_information_data = [
@@ -454,7 +455,7 @@ class EmployeeProfileController extends Controller
 
         return [
             'id' => $system_role->id,
-            'name' => $system_role->name,
+            'name' => $system_role->role->name,
             'modules' => array_values($modules), // Resetting array keys
         ];
     }
@@ -517,7 +518,8 @@ class EmployeeProfileController extends Controller
                 'date_hired' => $employee_profile->date_hired,
                 'job_type' => $employee_profile->employmentType->name,
                 'years_of_service' => $employee_profile->personalInformation->years_of_service,
-                'last_login' => $last_login === null ? null : $last_login->created_at
+                'last_login' => $last_login === null ? null : $last_login->created_at,
+                'biometric_id' => $employee_profile->biometric_id
             ];
 
             $personal_information_data = [
@@ -665,7 +667,8 @@ class EmployeeProfileController extends Controller
                 'date_hired' => $employee_profile->date_hired,
                 'job_type' => $employee_profile->employmentType->name,
                 'years_of_service' => $employee_profile->personalInformation->years_of_service,
-                'last_login' => $last_login === null ? null : $last_login->created_at
+                'last_login' => $last_login === null ? null : $last_login->created_at,
+                'biometric_id' => $employee_profile->biometric_id
             ];
 
             $personal_information_data = [
