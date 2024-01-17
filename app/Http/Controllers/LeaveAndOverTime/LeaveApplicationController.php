@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\LeaveAndOverTime;
 
+use App\Helpers\Helpers;
 use Illuminate\Http\Response;
 use App\Models\LeaveApplication;
 use App\Http\Controllers\Controller;
@@ -3602,8 +3603,8 @@ class LeaveApplicationController extends Controller
                                             $name = $request->input('name');
                                             $leave_application_id = $leave_application->id;
                                             if ($request->hasFile('requirements')) {
-
-                                                    foreach ($request->file('requirements') as $key => $file) {
+                                                     foreach ($request->file('requirements') as $key => $file) {
+                                                        $file_name = Helpers::checkSaveFile($file, '/leave-application');
                                                         $fileName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
                                                         $extension = $file->getClientOriginalExtension();
                                                         $uniqueFileName = $fileName . '_' . time() . '.' . $extension;
@@ -3613,9 +3614,10 @@ class LeaveApplicationController extends Controller
                                                         $path = $folderName .'/'. $uniqueFileName;
                                                         $size = $file->getSize();
                                                         $name_array = $name[$key] ?? null;
+
                                                             LeaveApplicationRequirement::create([
                                                                 'leave_application_id' => $leave_application->id,
-                                                                'file_name' => $uniqueFileName,
+                                                                'file_name' => $file_name,
                                                                 'name' => $name_array,
                                                                 'path' => $path,
                                                                 'size' => $size,
@@ -3832,9 +3834,6 @@ class LeaveApplicationController extends Controller
                     }
                     else
                     {
-
-                        // $fromDates = $request->input('date_from');
-                        // $toDates = $request->input('date_to');
                         DB::beginTransaction();
                         $total_days = 0;
                         $leave_application = new Leaveapplication();

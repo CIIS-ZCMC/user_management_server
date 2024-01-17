@@ -2241,15 +2241,6 @@ class OvertimeApplicationController extends Controller
                         $path =  $image->storeAs('public/' . $folderName, $imageName);
 
                 }
-                // $divisions = Division::where('id',$area)->first();
-                // if ($divisions->code === 'NS' || $divisions->code === 'MS') {
-
-                //     $status='for-approval-department-head';
-                // }
-                // else
-                // {
-                //     $status='for-approval-section-head';
-                // }
                 $status='for-approval-division-head';
                 $overtime_application = OvertimeApplication::create([
                     'employee_profile_id' => '1',
