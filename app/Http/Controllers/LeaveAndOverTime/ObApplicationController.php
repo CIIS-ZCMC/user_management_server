@@ -59,6 +59,30 @@ class ObApplicationController extends Controller
                                 $supervisor_name=null;
                                 $supervisor_position=null;
                                 $supervisor_code=null;
+                                $division_head=Division::where('chief_employee_profile_id',$official_business_application->employee_profile_id)->count();
+                                $section_head=Section::where('supervisor_employee_profile_id',$official_business_application->employee_profile_id)->count();
+                                $department_head=Department::where('head_employee_profile_id',$official_business_application->employee_profile_id)->count();
+                                if ($division_head > 0) {
+                                    $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                                    if($omcc)
+                                    {
+
+                                        if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                                        {
+                                            $recommending_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
+                                            $recommending_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                            $recommending_code = $omcc->chief->assignedArea->designation->code ?? null;
+
+                                            $approving_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
+                                            $approving_position = $omcc->chief->assignedArea->designation->name ?? null;
+                                            $approving_code = $omcc->chief->assignedArea->designation->code ?? null;
+                                        }
+                                    }
+                                }
+                                else if($section_head > 0 || $department_head > 0)
+                                {
+                                    $status='for-approval-division-head';
+                                }
 
                             if($division) {
                                 $division_name = Division::with('chief.personalInformation')->find($division);

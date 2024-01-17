@@ -139,7 +139,6 @@ class LeaveApplicationController extends Controller
                             $hr_code = $hr->supervisor->assignedArea->designation->code ?? null;
                         }
                     }
-
                     if($omcc)
                     {
 
@@ -348,7 +347,6 @@ class LeaveApplicationController extends Controller
                     }
                     if($hr)
                     {
-
                         if($hr && $hr->supervisor  && $hr->supervisor->personalInformation != null)
                         {
                             $hr_first_name = optional($hr->supervisor->personalInformation)->first_name ?? null;
@@ -368,7 +366,6 @@ class LeaveApplicationController extends Controller
                             $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
                         }
                     }
-
                         $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
                         $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
                         $total_days=0;
@@ -3389,7 +3386,7 @@ class LeaveApplicationController extends Controller
                                                     ->get();
 
                 $leavetype=LeaveType::where('id',$leave_type_id)->first();
-
+                
                     if($leavetype->is_special == 0)
                     {
                         if($employee_leave_credit)
