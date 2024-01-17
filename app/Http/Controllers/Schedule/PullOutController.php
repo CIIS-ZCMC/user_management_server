@@ -68,39 +68,64 @@ class PullOutController extends Controller
                     continue;
                 }
 
-                if(is_array($value))
-                {
-                    $section_data = [];
-
-                    foreach ($request->all() as $key => $value) {
-                        $section_data[$key] = $value;
-                    }        
-                    $cleanData[$key] = $section_data;
+                if (is_array($value)) {
+                    $cleanData[$key] = $value;
                     continue;
                 }
 
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $data = PullOut::create($cleanData);
+            $user               = $request->user;
+            $data               = null;
+            $msg                = null;
+            $approving_officer  = null;
 
-            $variable = $request['employee'];
-            foreach ($variable as $key => $value) {
-                $employee = EmployeeProfile::select('id')->where('id', $value['employee_id'])->first();
+            $selectedEmployeeIds = array_column($cleanData['employee'], 'employee_id');
+            $employees = EmployeeProfile::whereIn('id', $selectedEmployeeIds)->get();
 
-                if ($employee != null) {
-                    $query = DB::table('pull_out_employee')->where([
-                        ['pull_out_id', '=', $data->id],
-                        ['employee_profile_id', '=', $employee->id],
-                    ])->first();
+            foreach ($employees as $employee) {
+                $employeeArea = $employee->assignedArea->findDetails();
 
-                    if ($query) {
-                        $msg = 'pull out request already exist';
+                if ($employeeArea) {
+                    switch ($employeeArea['sector']) {
+                        case 'Division':
+                            $approving_officer = $employee->assignedArea->division->divisionHead;
+                            break;
 
-                    } else {    
-                        $data->employee()->attach($employee);
-                        $msg = 'New pull out requested.';
+                        case 'Department':
+                            $approving_officer = $employee->assignedArea->department->head;
+                            break;
+
+                        case 'Section':
+                            $approving_officer = $employee->assignedArea->department->supervisor;
+                            break;
+
+                        case 'Unit':
+                            $approving_officer = $employee->assignedArea->department->head;
+                            break;
+
+                        default:
+                            $approving_officer = 1;
                     }
+                }
+
+                $selectedEmployees[] = $employee;
+            }
+
+            $data = PullOut::create(array_merge($cleanData, ['requested_employee_id' => $user->id, 'approve_by_employee_id' => $approving_officer]));
+        
+            foreach ($selectedEmployees as $employee) {
+                $query = DB::table('pull_out_employee')->where([
+                    ['pull_out_id', '=', $data->id],
+                    ['employee_profile_id', '=', $employee->id],
+                ])->first();
+        
+                if ($query) {
+                    $msg = 'Pull-out request already exists.';
+                } else {
+                    $data->employee()->attach($employee);
+                    $msg = 'New pull-out requested.';
                 }
             }
 

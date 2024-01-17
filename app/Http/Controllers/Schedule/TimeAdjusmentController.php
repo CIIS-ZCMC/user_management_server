@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Schedule;
 
 
+use App\Models\EmployeeProfile;
 use App\Models\TimeAdjusment;
 use App\Models\DailyTimeRecords;
 
@@ -63,45 +64,71 @@ class TimeAdjusmentController extends Controller
                     continue;
                 }
 
-                if (DateTime::createFromFormat('Y-m-d', $value)) {
-                    $cleanData[$key] = Carbon::parse($value);
-                    continue;
-                }
-
                 if (is_int($value)) {
                     $cleanData[$key] = $value;
                     continue;
                 }
 
                 if(is_array($value)) {
-                    $section_data = [];
-
-                    foreach ($request->all() as $key => $value) {
-                        $section_data[$key] = $value;
-                    }        
-                    $cleanData[$key] = $section_data;
+                    $cleanData[$key] = $value;
                     continue;
                 }
 
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $data = null;
+            $user               = $request->user;
+            $data               = null;
+            $approving_officer  = null;
 
             $dates = $cleanData['dates'];
-            foreach ($dates as $key => $date) {
+            foreach ($dates as $key => $value) {
                 $find = DailyTimeRecords::where([
-                    ['dtr_date',    '=', $date['dtr_date']],
-                    ['first_in', '=', $date['first_in']],
-                    ['first_out', '=', $date['first_out']],
-                    ['second_in', '=', $date['second_in']],
-                    ['second_out', '=', $date['second_out']],
+                    ['biometric_id',    '=', $value['biometric_id']],
+                    ['dtr_date',        '=', $value['dtr_date']],
                 ])->first();
 
-                $data = TimeAdjusment::create($date);
-            }
+                if ($find) {
+                    $find_employee = EmployeeProfile::find($value['employee_profile_id'])->first();
+                    if ($find_employee) {
+                        $employee_area =  $find_employee->assignedArea->findDetails();
 
-            // $data = TimeAdjusment::create($cleanData);
+                        switch ($employee_area['sector']) {
+                            case 'Division':
+                                $approving_officer = $find_employee->assignedArea->division->divisionHead;
+                            break;
+            
+                            case 'Department':
+                                $approving_officer = $find_employee->assignedArea->department->head;
+                            break;
+            
+                            case 'Section':
+                                $approving_officer = $find_employee->assignedArea->department->supervisor;
+                            break;
+            
+                            case 'Unit':
+                                $approving_officer = $employee_area->assignedArea->department->head;
+                            break;
+                            
+                            default:
+                                $approving_officer = 1;
+                        }
+                    }
+
+                    $data = new TimeAdjusment;
+
+                    $data->daily_time_record_id = $find->id;
+                    $data->recommended_by       = $user->id;
+                    $data->approve_by           = $approving_officer;
+                    $data->employee_profile_id  = $value['employee_profile_id'];
+                    $data->first_in             = $value['first_in'];
+                    $data->first_out            = $value['first_out'];
+                    $data->second_in            = $value['second_in'];
+                    $data->second_out           = $value['second_out'];
+                    $data->remarks              = $value['remarks'];
+                    $data->save();
+                }
+            }
 
             Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             return response()->json(['data' => $data], Response::HTTP_OK);
@@ -161,11 +188,6 @@ class TimeAdjusmentController extends Controller
             foreach ($request->all() as $key => $value) {
                 if(empty($value)){
                     $cleanData[$key] = $value;
-                    continue;
-                }
-
-                if (DateTime::createFromFormat('Y-m-d', $value)) {
-                    $cleanData[$key] = Carbon::parse($value);
                     continue;
                 }
 
