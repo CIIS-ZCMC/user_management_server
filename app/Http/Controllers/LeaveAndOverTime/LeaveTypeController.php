@@ -379,7 +379,7 @@ class LeaveTypeController extends Controller
             $user=$request->user;
             $validatedData = $request->validate([
                 'name' => 'required|string',
-                'attachments.*' => 'required|mimes:jpeg,png,jpg,pdf|max:2048',
+                'attachments.*' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048'
             ]);
             $leave_type = LeaveType::findOrFail($id);
             $originalValues = $leave_type->getOriginal();
