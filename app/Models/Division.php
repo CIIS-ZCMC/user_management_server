@@ -44,6 +44,11 @@ class Division extends Model
         return $this->hasMany(Department::class);
     }
 
+    public function sections()
+    {
+        return $this->hasMany(Section::class);
+    }
+
     public function chief()
     {
         return $this->belongsTo(EmployeeProfile::class, 'chief_employee_profile_id');
@@ -63,9 +68,11 @@ class Division extends Model
     {
         return $this->hasMany(OfficerInChargeTrail::class);
     }
-   
+
     public function divisionHead()
     {
         return $this->belongsTo(EmployeeProfile::class, 'chief_employee_profile_id');
     }
+
+   
 }

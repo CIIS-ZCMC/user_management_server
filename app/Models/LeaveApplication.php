@@ -45,7 +45,8 @@ class LeaveApplication extends Model
         {
             return $this->hasMany(LeaveApplicationDateTime::class);
         }
-        public function employeeProfile() {
-            return $this->belongsTo(EmployeeProfile::class);
+        public function employeeProfile()
+        {
+            return $this->belongsTo(EmployeeProfile::class, 'employee_profile_id');
         }
 }
