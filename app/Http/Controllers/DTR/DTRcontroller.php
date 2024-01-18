@@ -38,6 +38,37 @@ class DTRcontroller extends Controller
         }
     }
 
+
+    public function pullDTRuser(Request $request)
+    {
+        try {
+            $user = $request->user;
+            $today = date('Y-m-d');
+            $biometric_id = $user->biometric_id;
+            $selfRecord = DailyTimeRecords::where('biometric_id', $biometric_id)->where('dtr_date', $today)->first();
+
+            if ($selfRecord) {
+                return [
+                    'dtr_date' => $selfRecord->dtr_date,
+                    'first_in' => date('H:i', strtotime($selfRecord->first_in)),
+                    'first_out' => $selfRecord->first_out ? date('H:i', strtotime($selfRecord->first_out)) : ' --:--',
+                    'second_in' => $selfRecord->second_in ? date('H:i', strtotime($selfRecord->second_in)) : ' --:--',
+                    'second_out' => $selfRecord->second_out ? date('H:i', strtotime($selfRecord->second_out)) : ' --:--',
+                ];
+            } else {
+                return [
+                    'dtr_date' => $today,
+                    'first_in' => ' --:--',
+                    'first_out' => ' --:--',
+                    'second_in' => ' --:--',
+                    'second_out' => ' --:--',
+                ];
+            }
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], 401);
+        }
+    }
+
     public function fetchDTRFromDevice()
     {
 
@@ -64,6 +95,8 @@ class DTRcontroller extends Controller
                         });
 
                         if (count($check_Records) >= 1) {
+
+
                             //Normal pull
                             $this->helper->saveDTRRecords($check_Records, false);
                             /* Save DTR Logs */
@@ -381,7 +414,7 @@ class DTRcontroller extends Controller
 
             return $this->PrintDtr($month_of, $year_of, $biometric_id, $emp_Details, $view);
         } catch (\Throwable $th) {
-
+            return $th;
             return response()->json(['message' =>  $th->getMessage()]);
         }
     }

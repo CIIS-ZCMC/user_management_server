@@ -2197,12 +2197,11 @@ class OvertimeApplicationController extends Controller
     {
         try {
             $validatedData = $request->validate([
-                'dates.*' => 'required|date_format:Y-m-d',
+                'dates.*' => 'required',
                 'activities.*' => 'required',
-                'time_from.*' => 'required|date_format:H:i',
+                'time_from.*' => 'required',
                 'time_to.*' => [
                     'required',
-                    'date_format:H:i',
                     function ($attribute, $value, $fail) use ($request) {
                         $index = explode('.', $attribute)[1];
                         $timeFrom = $request->input('time_from.*' . $index);
@@ -2215,7 +2214,7 @@ class OvertimeApplicationController extends Controller
                 'purpose.*' => 'required|string|max:512',
                 'remarks.*' => 'required|string|max:512',
                 'quantities.*' => 'required',
-                'employees.*' => 'required|integer|exists:employee_profiles,id',
+                'employees.*' => 'required',
             ]);
             $user = $request->user;
             $area = AssignArea::where('employee_profile_id', $user->id)->value('division_id');
@@ -2497,6 +2496,7 @@ class OvertimeApplicationController extends Controller
                 'data' => $overtime_applications_result
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
+
             DB::rollBack();
             return response()->json(['message' => $th->getMessage()], 500);
         }
@@ -2556,15 +2556,17 @@ class OvertimeApplicationController extends Controller
                     'time_to' =>  $validatedData['time_to'][$index],
                     'date' =>  $date,
                 ]);
+
+                $date_id = $date_application->id;
+                foreach ($validatedData['employees'] as $index => $employees) {
+                    OvtApplicationEmployee::create([
+                        'ovt_application_datetime_id' => $date_id,
+                        'employee_profile_id' =>  $validatedData['employees'][$index],
+                        'remarks' =>  $validatedData['remarks'][$index],
+                    ]);
+                }
             }
-            $date_id = $date_application->id;
-            foreach ($validatedData['employees'] as $index => $employees) {
-                OvtApplicationEmployee::create([
-                    'ovt_application_datetime_id' => $date_id,
-                    'employee_profile_id' =>  $validatedData['employees'][$index],
-                    'remarks' =>  $validatedData['remarks'][$index],
-                ]);
-            }
+
             $columnsString = "";
             $process_name = "Applied";
             $this->storeOvertimeApplicationLog($ovt_id, $process_name, $columnsString, $user->id);

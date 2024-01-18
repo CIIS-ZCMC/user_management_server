@@ -22,7 +22,7 @@ class Authorization
      */
     public function handle(Request $request, Closure $next, $routePermission): Response
     {
-        return $next($request);
+
         list($module, $action) = explode(' ', $routePermission);
 
         $system_module = SystemModule::where('code', $module)->first();

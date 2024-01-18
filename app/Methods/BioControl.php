@@ -33,10 +33,13 @@ class BioControl
                 return $tad;
             }
         } catch (\Throwable $th) {
-            Devices::findorFail($device['id'])->update([
-                'serial_number' => null,
-                'mac_address' => null,
-            ]);
+            if (isset($device['id'])) {
+                Devices::findorFail($device['id'])->update([
+                    'serial_number' => null,
+                    'mac_address' => null,
+                ]);
+            }
+
             return false;
         }
     }

@@ -23,7 +23,7 @@ class BioController extends Controller
         $this->device = new BioControl();
         $this->bioms = new BioMSController();
         $this->device_ids = [
-            1
+            2
         ];
         $this->ip_registration = json_decode($this->bioms->registrationDevice()->getContent(), true)['data'];
     }
@@ -142,11 +142,15 @@ class BioController extends Controller
             $biometric_id = $request->biometric_id;
             $unset = $request->unset;
             foreach ($this->device_ids as $dv) {
-                $bios = Devices::where('id', $dv)->get();
 
-                $this->device->setSuperAdmin($bios[0], $biometric_id, $unset);
+                $bios = Devices::where('id', $dv)->get();
+                if (count($bios) >= 1) {
+                    $this->device->setSuperAdmin($bios[0], $biometric_id, $unset);
+                    return response()->json(['message' => 'Settings saved successfully!']);
+                }
             }
-            return response()->json(['message' => 'Settings saved successfully!']);
+
+            return response()->json(['message' => 'No device found']);
         } catch (\Throwable $th) {
             return response()->json(['message' =>  $th->getMessage()]);
         }
@@ -158,10 +162,15 @@ class BioController extends Controller
             $biometric_id = $request->biometric_id;
             foreach ($this->device_ids as $dv) {
                 $bios = Devices::where('id', $dv)->get();
-                $this->device->deleteDataFromDevice($bios[0], $biometric_id);
+
+                if (count($bios) >= 1) {
+                    $this->device->deleteDataFromDevice($bios[0], $biometric_id);
+                    return response()->json(['message' => 'User data from this device has been deleted successfully']);
+                }
             }
-            return response()->json(['message' => 'User data from this device has been deleted successfully']);
+            return response()->json(['message' => 'No device found']);
         } catch (\Throwable $th) {
+
             return response()->json(['message' =>  $th->getMessage()]);
         }
     }
@@ -172,9 +181,13 @@ class BioController extends Controller
         try {
             foreach ($this->device_ids as $dv) {
                 $bios = Devices::where('id', $dv)->get();
-                $this->device->deleteAllDataFromDevice($bios[0]);
+
+                if (count($bios) >= 1) {
+                    $this->device->deleteAllDataFromDevice($bios[0]);
+                    return response()->json(['message' => 'All data from device has been deleted successfully']);
+                }
             }
-            return response()->json(['message' => 'All data from device has been deleted successfully']);
+            return response()->json(['message' => 'No device found']);
         } catch (\Throwable $th) {
             return response()->json(['message' =>  $th->getMessage()]);
         }
