@@ -36,7 +36,7 @@ class ExchangeDuty extends Model
 
     public function employee()
     {
-        return $this->belongsToMany(EmployeeProfile::class);
+        return $this->belongsTo(EmployeeProfile::class);
     }
 
     public function approval()
