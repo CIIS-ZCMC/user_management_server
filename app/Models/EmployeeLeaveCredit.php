@@ -21,6 +21,7 @@ class EmployeeLeaveCredit extends Model
         'true_credit_value',
         'date',
     ];
+    
     public function employeeProfile()
     {
         return $this->belongsTo(EmployeeProfile::class);

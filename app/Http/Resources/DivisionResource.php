@@ -45,6 +45,8 @@ class DivisionResource extends JsonResource
                 'name' => $name,
                 'code' => $code,
                 'chief' => $chief,
+                'chief_designation' => $this->chief->assignedArea->designation,
+                'chief_profile_url' => $this->chief->profile_url,
                 'chief_status' => $chief_status,
                 'approving_officer' => $approving_officer,
                 'officer_in_charge' => $officer_in_charge
@@ -55,7 +57,9 @@ class DivisionResource extends JsonResource
             'id' => $this->id,
             'code' => $this->code,
             'name' => $this->name,
-            'chief' => 'NONE',
+            'chief' => 'NONE',  
+            'chief_profile_url' => 'NONE',
+            'chief_designation' => 'NONE',
             'chief_status' => 'No Chief',
             'approving_officer' => 'NONE',
             'officer_in_charge' => 'NONE'

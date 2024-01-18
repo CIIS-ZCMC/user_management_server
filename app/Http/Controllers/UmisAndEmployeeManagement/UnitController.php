@@ -211,6 +211,7 @@ class UnitController extends Controller
     
     public function update($id, UnitRequest $request)
     {
+
         try{
             $password = strip_tags($request->password);
 

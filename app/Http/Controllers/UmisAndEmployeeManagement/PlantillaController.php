@@ -82,14 +82,33 @@ class PlantillaController extends Controller
     public function findByDesignationID($id, Request $request)
     {
         try{
-            $sector_employees = Plantilla::with('assigned_areas')->findOrFail($id);
+            $designation = Designation::find($id);
 
+            if(!$designation){
+                return response()->json(['message' => 'No record found for designation with id '.$id], Response::HTTP_NOT_FOUND);
+            }
+
+            $plantillas = $designation->plantilla;
+            $plantilla_numbers = [];
+
+            foreach($plantillas as $plantilla){
+                foreach($plantilla->plantillaNumbers as $value){
+                    if($value->assigned_at === null){
+                        $plantilla_numbers[] = $value;
+                    }
+                }
+            }
+            
             return response()->json([
-                'data' => DesignationEmployeesResource::collection($sector_employees),
-                'message' => 'Plantilla record retrieved.'
+                'data' => [
+                    'plantilla_numbers' => PlantillaWithDesignationResource::collection($plantilla_numbers),
+                    'total_vacant_items' => count($designation->plantilla) === 0? 0: PlantillaNumber::where('plantilla_id', $designation->plantilla[0]->id)->where('assigned_at', null)->count(),
+                    'total_plantilla' => count($designation->plantilla) === 0? 0:PlantillaNumber::where('plantilla_id', $designation->plantilla[0]->id)->count()
+                ],
+                'message' => 'Plantilla number by designation.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'employeesOfSector', $th->getMessage());
+             Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -219,7 +238,7 @@ class PlantillaController extends Controller
                 $area = [
                     'area' => $unit->id,
                     'name' => $unit->name,
-                    'sector' => 'section'
+                    'sector' => 'unit'
                 ];
                 $all_areas[] = $area;
             }            
