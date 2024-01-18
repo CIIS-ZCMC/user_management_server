@@ -754,12 +754,34 @@ class LeaveApplicationController extends Controller
         }
         else if($divisionHeadId === $user->id || $division_oic_Id === $user->id)
         {
-
+            // $leave_applications = LeaveApplication::with(['employeeProfile.assignedArea', 'employeeProfile.personalInformation', 'dates', 'logs', 'requirements', 'leaveType'])
+            // ->whereHas('employeeProfile.assignedArea', function ($query) use ($section, $department, $sectionHeadId, $departmentHeadId) {
+            //     $query->where(function ($subquery) use ($section, $sectionHeadId) {
+            //         // Include employees under the same section as the section head or those without a section ID
+            //         $subquery->where('section_id', $section)
+            //             ->orWhere('employee_profile_id', $sectionHeadId)
+            //             ->orWhereNull('section_id');
+            //     })->where(function ($subquery) use ($department, $departmentHeadId) {
+            //         // Include employees under the same department as the department head or those without a department ID
+            //         $subquery->where('department_id', $department)
+            //             ->orWhere('employee_profile_id', $departmentHeadId)
+            //             ->orWhereNull('department_id');
+            //     });
+            // })
+            // ->where(function ($query) {
+            //     $query->where('status', 'for-approval-section-head')
+            //           ->orWhere('status', 'for-approval-division-head')
+            //           ->orWhere('status', 'approved')
+            //           ->orWhere('status', 'declined');
+            // })
+            // ->get();
+            // return $leave_applications;
                 $divisionHeadCheck = Division::find($divisionHeadId);
                 $division_head = Division::find($divisionHeadId);
                 $divisionHeadHasSections = $divisionHeadCheck->sections()->exists();
                 $divisionHeadHasDepartments = $divisionHeadCheck->departments()->exists();
                 $divisionHeadCode = $divisionHeadCheck->code;
+
                 if ($divisionHeadHasSections || $divisionHeadHasDepartments) {
                      $division = Division::find($division_head);
                      $leave_applications = LeaveApplication::with(['employeeProfile.assignedArea', 'employeeProfile.personalInformation', 'dates', 'logs', 'requirements', 'leaveType'])
@@ -1005,14 +1027,14 @@ class LeaveApplicationController extends Controller
                         }
 
                         // Get all section heads and department heads with their leave applications
-                        $sectionHeads = Section::whereNotNull('supervisor_id')
+                        $sectionHeads = Section::whereNotNull('supervisor_employee_profile_id ')
                             ->with(['supervisor.leaveApplications' => function ($query) {
                                 $query->with(['employeeProfile.assignedArea', 'employeeProfile.personalInformation', 'dates', 'logs', 'requirements', 'leaveType'])
                                     ->where('status', 'for-approval-division-head');
                             }])
                             ->get();
 
-                        $departmentHeads = Department::whereNotNull('head_id')
+                        $departmentHeads = Department::whereNotNull('head_employee_profile_id ')
                             ->with(['head.leaveApplications' => function ($query) {
                                 $query->with(['employeeProfile.assignedArea', 'employeeProfile.personalInformation', 'dates', 'logs', 'requirements', 'leaveType'])
                                     ->where('status', 'for-approval-division-head');
@@ -1218,8 +1240,7 @@ class LeaveApplicationController extends Controller
 
                     else
                     {
-
-                            $divisionApplications = LeaveApplication::with(['employeeProfile.assignedArea.division'])
+                            $divisionApplications = LeaveApplication::with(['employeeProfile.assignedArea', 'employeeProfile.personalInformation', 'dates', 'logs', 'requirements', 'leaveType'])
                             ->whereHas('employeeProfile.assignedArea', function ($query) {
                                 // Check if there is a division, but no department or section
                                 $query->whereNotNull('division_id')
@@ -1429,8 +1450,7 @@ class LeaveApplicationController extends Controller
         else if ($departmentHeadId === $user->id || $training_officer_id == $user->id || $department_oic_Id === $user->id) {
             $leave_applications = LeaveApplication::with(['employeeProfile.assignedArea.department','employeeProfile.personalInformation','dates','logs', 'requirements', 'leaveType'])
             ->whereHas('employeeProfile.assignedArea', function ($query) use ($department, $divisionHeadId, $departmentHeadId, $sectionHeadId) {
-                $query->where('department_id', $department)
-                      ->whereNotIn('employee_profile_id', [$divisionHeadId, $departmentHeadId, $sectionHeadId]); // Exclude division head, department head, and section head
+                $query->where('department_id', $department);
             })
             ->where('status', 'for-approval-department-head')
             ->orWhere('status', 'for-approval-division-head')
