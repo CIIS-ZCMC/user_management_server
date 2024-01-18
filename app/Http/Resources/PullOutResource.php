@@ -19,7 +19,7 @@ class PullOutResource extends JsonResource
             'date'          => $this->date,
             'reason'        => $this->reason,
             'status'        => $this->status,
-            'employee'      => $this->employee ? new EmployeeProfileResource($this->employee) : null,
+            'employee'      => $this->employee ? EmployeeProfileResource::collection($this->employee) : [],
             'requested_by'  => $this->requested_by,
             'approve_by'    => $this->approve_by,
             'deleted_at'    => (string) $this->deleted_at,
