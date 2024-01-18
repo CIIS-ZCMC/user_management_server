@@ -1786,6 +1786,13 @@ Route::middleware('auth.cookie')->group(function(){
         Route::middleware(['auth.permission:UMIS-ScM approve'])->group(function(){
             Route::put('time-adjustment/approval/{id}', 'TimeAdjusmentController@approve');
         });
+
+        /**
+         * On Call Schedule Module
+         */
+        Route::middleware(['auth.permission:UMIS-ScM write'])->group(function(){
+            Route::post('on-call', 'OnCallController@store');
+        });
     });
 });
 

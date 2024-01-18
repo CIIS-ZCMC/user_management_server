@@ -83,7 +83,7 @@ class ScheduleController extends Controller
             $array = EmployeeProfile::join('personal_informations as PI', 'employee_profiles.personal_information_id', '=', 'PI.id')
             ->select('employee_profiles.id','employee_id','biometric_id', 'PI.first_name','PI.middle_name', 'PI.last_name')
             ->with(['assignedArea', 'schedule' => function ($query) use ($year, $month) {
-                $query->with(['timeShift', 'holiday'])->whereYear('date_start', '=', $year)->whereMonth('date_start', '=', $month);
+                $query->with(['timeShift', 'holiday'])->whereYear('date', '=', $year)->whereMonth('date', '=', $month);
             }])->whereHas('assignedArea', function ($query) use ($user) {
                 $query->where('id', $user->id);
             })->get()->toArray();
@@ -152,7 +152,10 @@ class ScheduleController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $user = $request->user;
+            $user       = $request->user;
+            $msg        = null;
+            $is_weekend = 0;
+
             if ($user != null && $user->position()) {
                 $position = $user->position();
 
@@ -210,19 +213,22 @@ class ScheduleController extends Controller
                     
                     foreach ($selected_dates as $key => $date) {
                         $schedule = Schedule::where('time_shift_id',$cleanData['time_shift_id'])
-                                            ->where('month',        $cleanData['month'])
-                                            ->where('date_start',   $date)
-                                            ->where('date_end',     $date)
+                                            ->where('date', $date)
                                             ->first();
 
                         if (!$schedule) {
+                            $date = Carbon::parse($date);
+                            $isWeekend = $date->dayOfWeek === 6 || $date->dayOfWeek === 0;
+    
+                            if ($isWeekend) {
+                                $is_weekend = 1;
+                            }
+
                             $data = new Schedule;
 
                             $data->time_shift_id    = $cleanData['time_shift_id'];
-                            $data->month            = $cleanData['month'];
-                            $data->date_start       = $date;
-                            $data->date_end         = $date;
-                            $data->is_weekend       = $cleanData['is_weekend'];
+                            $data->is_weekend       = $is_weekend;
+                            $data->date             = $date;
                             $data->save();
                         } else {
 
@@ -236,7 +242,7 @@ class ScheduleController extends Controller
                             if ($employee != null) {
 
                                 $query = DB::table('employee_profile_schedule')->where([
-                                    ['employee_profile_id', '=', $employee_id->id],
+                                    ['employee_profile_id', '=', $employee_id],
                                     ['schedule_id', '=', $data->id],
                                 ])->first();
             
@@ -253,11 +259,7 @@ class ScheduleController extends Controller
 
                     Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
                     return response()->json(['data' => $data ,'message' => $msg], Response::HTTP_OK);
-                } else {
-                    return response()->json(['message' => 'User not allowed to create'], Response::HTTP_OK);
                 }
-            } else {
-                return response()->json(['message' => 'User no position'], Response::HTTP_OK);
             }
 
         } catch (\Throwable $th) {
@@ -331,10 +333,7 @@ class ScheduleController extends Controller
 
             $data->time_shift_id    = $cleanData['time_shift_id'];
             $data->holiday_id       = $cleanData['holiday_id'];
-            
-            $data->month            = $cleanData['month'];
-            $data->date_start       = $cleanData['date_start'];
-            $data->date_end         = $cleanData['date_end'];
+            $data->date             = $cleanData['date'];
             $data->is_weekend       = $cleanData['is_weekend'];
             $data->status           = $cleanData['status'];
             $data->remarks          = $cleanData['remarks'];
@@ -417,7 +416,7 @@ class ScheduleController extends Controller
 
                     $data = EmployeeProfile::join('personal_informations as PI', 'employee_profiles.personal_information_id', '=', 'PI.id')
                     ->with(['assignedArea', 'schedule' => function ($query) use ($year, $month) {
-                        $query->with(['timeShift', 'holiday'])->whereYear('date_start', '=', $year)->whereMonth('date_start', '=', $month);
+                        $query->with(['timeShift', 'holiday'])->whereYear('date', '=', $year)->whereMonth('date', '=', $month);
                     }])
                     ->whereHas('assignedArea', function ($query) use ($cleanData) {
                         $query->where('section_id', 1);

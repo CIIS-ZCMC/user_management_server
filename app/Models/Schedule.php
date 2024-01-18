@@ -19,9 +19,7 @@ class Schedule extends Model
     protected $primaryKey = 'id';
 
     protected $fillable = [
-        'month',
-        'date_start',
-        'date_end',
+        'date',
         'is_weekend',
         'status',
         'remarks',

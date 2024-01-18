@@ -237,18 +237,13 @@ class ExchangeDutyController extends Controller
                     $cleanData[$key] = $value;
                     continue;
                 }
-                
-                if (is_bool($value)) {
-                    $cleanData[$key] = $value;
-                    continue;
-                }
 
                 $cleanData[$key] = strip_tags($value);
             }
-            
+            $user = $request->user;
             $data = DB::table('exchange_duty_approval')->where([
                 ['exchange_duty_id',    '=', $id],
-                ['employee_profile_id', '=', $cleanData['user']],
+                ['employee_profile_id', '=', $user->id],
             ])->first();
 
             if(!$data) {
