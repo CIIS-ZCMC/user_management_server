@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Schedule;
 
+use App\Models\Division;
 use App\Models\ExchangeDuty;
 use App\Models\Schedule;
 use App\Models\EmployeeProfile;
@@ -30,8 +31,9 @@ class ExchangeDutyController extends Controller
     public function index(Request $request)
     {
         try {
-            
-            Helpers::registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+
+           
+
             return response()->json(['data' => ExchangeDutyResource::collection(ExchangeDuty::all())], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
@@ -43,9 +45,44 @@ class ExchangeDutyController extends Controller
 
     public function create(Request $request) {
         try {
-            //code...
+            
+            $user           = $request->user;
+            $assigned_area  = $user->assignedArea->findDetails();
+            $head           = null;
+
+            switch ($assigned_area['sector']) {
+                case 'Division':
+                    $head = $user->assignedArea->division->divisionHead;
+                    // If employee is Division head
+                    if(Division::find($assigned_area->details->id)->chief_employee_profile_id === $user->id){
+                        $recommending_officer = $user->id;
+                        $approving_office = $user->id;
+                        break;
+                    }
+                break;
+
+                case 'Department':
+                    $head = $user->assignedArea->department->head;
+                break;
+
+                case 'Section':
+                    $head = $user->assignedArea->department->supervisor;
+                break;
+
+                case 'Unit':
+                    $head = $user->assignedArea->department->head;
+                break;
+                
+                default:
+                    $head = 1;
+            }
+
+            // return response()->json(['data' => ExchangeDutyResource::collection(ExchangeDuty::all())], Response::HTTP_OK);
+
         } catch (\Throwable $th) {
-            //throw $th;
+
+            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     

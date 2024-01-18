@@ -16,6 +16,7 @@ class ExchangeDutyResource extends JsonResource
     {
         return [
             'id'                    => $this->id,
+            'status'                => $this->status,
             'reason'                => $this->reason,
             'schedule'              => $this->schedule,
             'requested_employee'    => $this->requestedEmployee ? new EmployeeProfileResource($this->requestedEmployee) : null,
