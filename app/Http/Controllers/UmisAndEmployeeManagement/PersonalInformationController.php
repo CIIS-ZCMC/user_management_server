@@ -28,7 +28,7 @@ class PersonalInformationController extends Controller
     {
         $this->fileValidateAndUpload = $fileValidateAndUpload;
     }
-    
+
     public function index(Request $request)
     {
         try{

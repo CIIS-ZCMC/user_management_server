@@ -208,7 +208,8 @@ class EmployeeProfileController extends Controller
                 'date_hired' => $employee_profile->date_hired,
                 'job_type' => $employee_profile->employmentType->name,
                 'years_of_service' => $employee_profile->personalInformation->years_of_service,
-                'last_login' => $last_login === null ? null : $last_login->created_at
+                'last_login' => $last_login === null ? null : $last_login->created_at,
+                'biometric_id' => $employee_profile->biometric_id
             ];
 
             $personal_information_data = [
@@ -301,7 +302,7 @@ class EmployeeProfileController extends Controller
 
             return response()
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
-                ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), true);
+                ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), false);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME,'signIn', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -454,7 +455,7 @@ class EmployeeProfileController extends Controller
 
         return [
             'id' => $system_role->id,
-            'name' => $system_role->name,
+            'name' => $system_role->role->name,
             'modules' => array_values($modules), // Resetting array keys
         ];
     }
@@ -517,7 +518,8 @@ class EmployeeProfileController extends Controller
                 'date_hired' => $employee_profile->date_hired,
                 'job_type' => $employee_profile->employmentType->name,
                 'years_of_service' => $employee_profile->personalInformation->years_of_service,
-                'last_login' => $last_login === null ? null : $last_login->created_at
+                'last_login' => $last_login === null ? null : $last_login->created_at,
+                'biometric_id' => $employee_profile->biometric_id
             ];
 
             $personal_information_data = [
@@ -665,7 +667,8 @@ class EmployeeProfileController extends Controller
                 'date_hired' => $employee_profile->date_hired,
                 'job_type' => $employee_profile->employmentType->name,
                 'years_of_service' => $employee_profile->personalInformation->years_of_service,
-                'last_login' => $last_login === null ? null : $last_login->created_at
+                'last_login' => $last_login === null ? null : $last_login->created_at,
+                'biometric_id' => $employee_profile->biometric_id
             ];
 
             $personal_information_data = [

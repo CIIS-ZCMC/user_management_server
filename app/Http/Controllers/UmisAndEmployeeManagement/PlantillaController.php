@@ -309,6 +309,79 @@ class PlantillaController extends Controller
            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+    
+    public function assignMultiplePlantillaToArea($id, Request $request)
+    {
+        try{
+            $plantilla = Plantilla::find($id);
+
+            if(!$plantilla)
+            {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $total_of_plantilla_to_distribute = strip_tags($request->total_of_plantilla_to_distribute);
+            $sector = strip_tags($request->sector);
+            $area_id = strip_tags($request->area_id);
+
+            $cleanData = [];
+            
+            switch($sector){
+                case 'division':
+                    $key = 'division_id';
+                    $division = Division::find($area_id);
+                    if(!$division) return response()->json(['message' => 'No division record found with ID '.$area_id.'.'], Response::HTTP_NOT_FOUND);
+                    break;
+                case 'department':
+                    $key = 'department_id';
+                    $department = Department::find($area_id);
+                    if(!$department) return response()->json(['message' => 'No department record found with ID '.$area_id.'.'], Response::HTTP_NOT_FOUND);
+                    break;
+                case 'section':
+                    $key = 'section_id';
+                    $section = Section::find($area_id);
+                    if(!$section) return response()->json(['message' => 'No section record found with ID '.$area_id.'.'], Response::HTTP_NOT_FOUND);
+                    break;
+                case 'unit':
+                    $key = 'unit_id';
+                    $unit = Unit::find($area_id);
+                    if(!$unit) return response()->json(['message' => 'No unit record found with ID '.$area_id.'.'], Response::HTTP_NOT_FOUND);
+                    break;
+                default:
+                    return response()->json(['message' => 'In valid area ID.'], Response::HTTP_BAD_REQUEST);
+            }
+
+            $cleanData[$key] =  strip_tags($request->area_id);
+
+            $key_list = ['division_id', 'department_id', 'section_id', 'unit_id'];
+
+            foreach($key_list as $value){
+                if($value === $key) continue;
+                $cleanData[$value] = null;
+            }
+
+            $plantilla_numbers = PlantillaNumber::where('plantilla_id', $plantilla->id)
+                ->where('is_vacant', 1)->limit($total_of_plantilla_to_distribute)->get();
+
+            $plantilla_result = [];
+
+            foreach($plantilla_numbers as $plantilla_number){
+                $cleanData['plantilla_number_id'] = $plantilla_number->id;
+                $plantilla_assign_area = PlantillaAssignedArea::create($cleanData);
+                $plantilla_number->update(['assigned_at' => now(), 'is_vacant' => 0]);
+                $plantilla_number['plantilla_assign_area'] = $plantilla_assign_area;
+                $plantilla_result[] = $plantilla_number;
+            }
+
+            return response() -> json([
+                'data' => $plantilla_result,
+                'message' => 'Plantilla assign successfully.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME,'assignPlantillaToAreas', $th->getMessage());
+           return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 
     public function show($id, Request $request)
     {
