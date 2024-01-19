@@ -418,8 +418,8 @@ class ScheduleController extends Controller
                     ->with(['assignedArea', 'schedule' => function ($query) use ($year, $month) {
                         $query->with(['timeShift', 'holiday'])->whereYear('date', '=', $year)->whereMonth('date', '=', $month);
                     }])
-                    ->whereHas('assignedArea', function ($query) use ($cleanData) {
-                        $query->where('section_id', 1);
+                    ->whereHas('assignedArea', function ($query) use ($user) {
+                        $query->where('id', $user->id);
                     })
                     ->select('employee_profiles.id','employee_id','biometric_id', 'PI.first_name','PI.middle_name', 'PI.last_name')
                     ->get();

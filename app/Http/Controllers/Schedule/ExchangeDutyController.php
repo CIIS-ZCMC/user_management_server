@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Schedule;
 
+use App\Models\Department;
 use App\Models\Division;
 use App\Models\ExchangeDuty;
 use App\Models\Schedule;
@@ -9,6 +10,8 @@ use App\Models\EmployeeProfile;
 
 use App\Http\Resources\ExchangeDutyResource;
 use App\Http\Requests\ExchangeDutyRequest;
+use App\Models\Section;
+use App\Models\Unit;
 use App\Services\RequestLogger;
 use App\Helpers\Helpers;
 
@@ -31,10 +34,18 @@ class ExchangeDutyController extends Controller
     public function index(Request $request)
     {
         try {
+            $user           = $request->user;
+            $assigned_area  = $user->assignedArea->findDetails();
 
-           
+            $model = ExchangeDuty::with(['requestedEmployee' => function ($query) {
+                $query->with(['assignedArea']);
+            }])->whereHas('requestedEmployee', function ($query) use ($user, $assigned_area) {
+                $query->whereHas('assignedArea', function ($innerQuery) use ($user, $assigned_area) {
+                    $innerQuery->where([strtolower($assigned_area['sector']).'_id' => $user->assignedArea->id]);
+                });
+            })->get();
 
-            return response()->json(['data' => ExchangeDutyResource::collection(ExchangeDuty::all())], Response::HTTP_OK);
+            return response()->json(['data' => ExchangeDutyResource::collection($model)], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
@@ -46,38 +57,9 @@ class ExchangeDutyController extends Controller
     public function create(Request $request) {
         try {
             
-            $user           = $request->user;
-            $assigned_area  = $user->assignedArea->findDetails();
-            $head           = null;
-
-            switch ($assigned_area['sector']) {
-                case 'Division':
-                    $head = $user->assignedArea->division->divisionHead;
-                    // If employee is Division head
-                    if(Division::find($assigned_area->details->id)->chief_employee_profile_id === $user->id){
-                        $recommending_officer = $user->id;
-                        $approving_office = $user->id;
-                        break;
-                    }
-                break;
-
-                case 'Department':
-                    $head = $user->assignedArea->department->head;
-                break;
-
-                case 'Section':
-                    $head = $user->assignedArea->department->supervisor;
-                break;
-
-                case 'Unit':
-                    $head = $user->assignedArea->department->head;
-                break;
-                
-                default:
-                    $head = 1;
-            }
-
-            // return response()->json(['data' => ExchangeDutyResource::collection(ExchangeDuty::all())], Response::HTTP_OK);
+            $user = $request->user;
+            $model = ExchangeDuty::where('requested_employee_id', $user->id)->get();
+            return response()->json(['data' => ExchangeDutyResource::collection($model)], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
@@ -112,6 +94,9 @@ class ExchangeDutyController extends Controller
 
                 $cleanData[$key] = strip_tags($value);
             }
+
+            $data = null;
+            $msg = null;
 
             $schedule = Schedule::where('id', $cleanData['schedule_id'])->first();
 
@@ -149,7 +134,7 @@ class ExchangeDutyController extends Controller
                 return response()->json(['message' => 'No schedule found.'], Response::HTTP_NOT_FOUND);
             }
            
-            Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating.'.$this->SINGULAR_MODULE_NAME.'.');
+            // Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating.'.$this->SINGULAR_MODULE_NAME.'.');
             return response()->json(['data' => $data ,'message' => $msg], Response::HTTP_OK);
 
         } catch (\Throwable $th) {

@@ -1725,6 +1725,9 @@ Route::middleware('auth.cookie')->group(function(){
             Route::put('exchange-duties/approval/{id}', 'ExchangeDutyController@approve');
         });
 
+        Route::middleware(['auth.permission:UMIS-ScM view'])->group(function(){
+            Route::get('exchange-duty', 'ExchangeDutyController@create');
+        });
 
         /**
          * Pull Out Module
