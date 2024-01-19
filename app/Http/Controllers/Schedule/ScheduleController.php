@@ -37,22 +37,7 @@ class ScheduleController extends Controller
     public function index(Request $request)
     {
         try {
-            
-            return response()->json(['data' => ScheduleResource::collection(Schedule::all())], Response::HTTP_OK);
 
-        } catch (\Throwable $th) {
-
-            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create(Request $request)
-    {
-        try {
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
@@ -111,6 +96,22 @@ class ScheduleController extends Controller
             }
         
             return response()->json(['data' => $data, 'dates' => $dates_with_day, 'employee' => $employee], Response::HTTP_OK);
+
+        } catch (\Throwable $th) {
+
+            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create(Request $request)
+    {
+        try {
+            
+            return response()->json(['data' => ScheduleResource::collection(Schedule::all())], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 

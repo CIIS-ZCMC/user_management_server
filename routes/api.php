@@ -1668,7 +1668,7 @@ Route::middleware('auth.cookie')->group(function(){
          * Schedule Module
          */
         Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function(){
-            Route::get('schedule', 'ScheduleController@index');
+            Route::get('schedules', 'ScheduleController@index');
         });
 
         Route::middleware(['auth.permission:UMIS-ScM write'])->group(function(){
@@ -1688,7 +1688,7 @@ Route::middleware('auth.cookie')->group(function(){
         });
 
         Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function(){
-            Route::get('schedules', 'ScheduleController@create');
+            Route::get('schedule', 'ScheduleController@create');
         });
 
         /**
@@ -1793,6 +1793,10 @@ Route::middleware('auth.cookie')->group(function(){
         /**
          * On Call Schedule Module
          */
+        Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function(){
+            Route::get('on-call', 'OnCallController@index');
+        });
+
         Route::middleware(['auth.permission:UMIS-ScM write'])->group(function(){
             Route::post('on-call', 'OnCallController@store');
         });
