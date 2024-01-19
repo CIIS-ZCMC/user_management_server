@@ -15,19 +15,11 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('employee_profile_id')->unsigned();
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles')->onDelete('cascade');
-            $table->unsignedBigInteger('leave_type_id')->unsigned();
-            $table->foreign('leave_type_id')->references('id')->on('leave_types')->onDelete('cascade');
-            $table->unsignedBigInteger('leave_application_id')->unsigned()->nullable();
-            $table->foreign('leave_application_id')->references('id')->on('leave_applications')->onDelete('cascade');
-            $table->string('operation');
-            $table->string('absent_total')->nullable();
-            $table->string('undertime_total')->nullable();
-            $table->string('working_hours_total')->nullable();
-            $table->string('credit_value');
-            $table->string('true_credit_value')->nullable();
-            $table->string('reason');
-            $table->string('date');
-            $table->string('time')->nullable();
+            $table->integer('total_absences')->default(0);
+            $table->string('total_undertime')->nullable();
+            $table->string('total_working_hours')->nullable();
+            $table->datetime('date_from');
+            $table->datetime('date_to');
             $table->timestamps();
         });
     }

@@ -11,12 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('leave_type_requirement', function (Blueprint $table) {
+        Schema::create('leave_requirement_logs', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('leave_type_id')->unsigned();
-            $table->foreign('leave_type_id')->references('id')->on('leave_types')->onDelete('cascade');;
             $table->unsignedBigInteger('requirement_id')->unsigned();
-            $table->foreign('requirement_id')->references('id')->on('requirements')->onDelete('cascade');;
+            $table->foreign('requirement_id')->references('id')->on('requirements')->onDelete('cascade');
+            $table->unsignedBigInteger('action_by')->unsigned();
+            $table->foreign('action_by')->references('id')->on('employee_profiles')->onDelete('cascade');
+            $table->string('action')->nullable();
             $table->timestamps();
         });
     }
@@ -26,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('leave_type_requirement');
+        Schema::dropIfExists('leave_requirement_logs');
     }
 };

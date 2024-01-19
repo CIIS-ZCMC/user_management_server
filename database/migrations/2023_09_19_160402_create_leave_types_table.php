@@ -14,19 +14,17 @@ return new class extends Migration
         Schema::create('leave_types', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('code');
             $table->string('description')->nullable();
             $table->double('period');
             $table->string('file_date');
-            $table->string('code');
-            $table->string('attachment')->nullable();
+            $table->float('month_value');
+            $table->float('annual_credit');
             $table->boolean('is_active')->default(false);
             $table->boolean('is_special')->default(false);
             $table->boolean('is_country')->default(false);
             $table->boolean('is_illness')->default(false);
             $table->boolean('is_days_recommended')->default(false);
-            $table->string('leave_credit_year')->nullable();
-            $table->string('date')->nullable();
-            $table->string('time')->nullable();
             $table->timestamps();
 
         });

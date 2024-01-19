@@ -73,7 +73,7 @@ class EmployeeProfileController extends Controller
      * Create Access Token
      * Retrieve Personal Information
      * Job Details (Plantilla or Not)
-     * 
+     *
      */
     public function signIn(SignInRequest $request)
     {
@@ -1167,8 +1167,8 @@ class EmployeeProfileController extends Controller
             Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([
-                'data' => new EmployeeProfileResource($employee_profile), 
-                'message' => 'Newly employee registered.'], 
+                'data' => new EmployeeProfileResource($employee_profile),
+                'message' => 'Newly employee registered.'],
             Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
@@ -1444,7 +1444,7 @@ class EmployeeProfileController extends Controller
             $employee_profile->delete();
 
             Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in deleting a '.$this->SINGULAR_MODULE_NAME.'.');
-            
+
             return response()->json(['message' => 'Employee profile deleted.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
