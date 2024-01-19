@@ -2225,7 +2225,7 @@ class OvertimeApplicationController extends Controller
                 $folderName = 'Letter';
                 $image = $request->file('letter_of_request');
                 $imageName = time() . '.' . $image->getClientOriginalExtension();
-                $image->storeAs('images', $imageName, 'public');
+                $image->storeAs('Letter', $imageName, 'public');
                 Storage::makeDirectory('public/' . $folderName);
                 $path =  $image->storeAs($folderName, $imageName);
             }
