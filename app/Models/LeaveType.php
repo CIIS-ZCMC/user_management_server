@@ -12,41 +12,47 @@ class LeaveType extends Model
     use HasFactory;
 
     protected $table = 'leave_types';
+
     protected $casts = [
         'is_special' => 'boolean',
         'is_active' => 'boolean',
         'is_country' => 'boolean',
         'is_illness' => 'boolean',
+        'is_days_recommended' => 'boolean'
     ];
 
     public $fillable = [
+        'name',
+        'code',
+        'description',
+        'period',
+        'file_date',
+        'month_value',
+        'annual_credit',
         'is_special',
         'is_active',
         'is_country',
         'is_illness',
-        'name',
-        'description',
-        'leave_credit_id',
-        'period',
-        'file_date',
+        'is_days_recommended'
     ];
 
-        public function leave_credit(){
-             return $this->belongsTo(LeaveCredit::class, 'leave_credit_id', 'id');
-        }
-        public function requirements(){
-            return $this->belongsToMany(Requirement::class);
-        }
-        public function employeeLeaveCredits()
-        {
-            return $this->hasMany(EmployeeLeaveCredit::class);
-        }
-        public function logs()
-        {
-            return $this->hasMany(ModelsLeaveTypeLog::class);
-        }
-        public function attachments()
-        {
-            return $this->hasMany(LeaveAttachment::class);
-        }
+    public function requirements()
+    {
+        return $this->belongsToMany(Requirement::class);
+    }
+
+    public function employeeLeaveCredits()
+    {
+        return $this->hasMany(EmployeeLeaveCredit::class);
+    }
+
+    public function logs()
+    {
+        return $this->hasMany(ModelsLeaveTypeLog::class);
+    }
+
+    public function attachments()
+    {
+        return $this->hasMany(LeaveAttachment::class);
+    }
 }

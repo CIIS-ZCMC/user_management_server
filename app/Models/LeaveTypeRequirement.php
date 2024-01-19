@@ -9,13 +9,10 @@ class LeaveTypeRequirement extends Model
 {
     protected $table = 'leave_type_requirement';
 
-    // public function leaveType()
-    // {
-    //     return $this->belongsTo(LeaveType::class, 'leave_type_id');
-    // }
+    public $fillable = [
+        'leave_type_id',
+        'leave_requirement_id'
+    ];
 
-    // public function requirement()
-    // {
-    //     return $this->hasMany(Requirement::class, 'requirement_id');
-    // }
+    public $timestamps = true;
 }
