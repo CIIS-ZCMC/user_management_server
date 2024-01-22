@@ -81,76 +81,41 @@ class LeaveApplicationController extends Controller
                     $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
                     $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
                     $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                    $hr = Section::with('supervisor.personalInformation')->where('code','HRMO')->first();
-                    $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
-                    $omcc_head_id = Division::where('code', 'OMCC')->value('chief_employee_profile_id');
-                    $omcc_oic_id = Division::where('code', 'OMCC')->value('oic_employee_profile_id');
-                    $chief_name=null;
-                    $chief_position=null;
-                    $chief_code=null;
-                    $head_name=null;
-                    $head_position=null;
-                    $head_code=null;
-                    $supervisor_name=null;
-                    $supervisor_position=null;
-                    $supervisor_code=null;
+                    $hrmo = EmployeeProfile::where('id',$leave_application->hrmo_officer_id)->first();
+                    $recommending = EmployeeProfile::where('id',$leave_application->recommending_officer_id)->first();
+                    $approving = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
+
+                    $recommending_name=null;
+                    $recommending_position=null;
+                    $recommending_code=null;
+                    $approving_name=null;
+                    $approving_position=null;
+                    $approving_code=null;
                     $hr_name=null;
                     $hr_position=null;
                     $hr_code=null;
-                    $omcc_name=null;
-                    $omcc_position=null;
-                    $omcc_code=null;
-                    if($division) {
-                        $division_name = Division::with('chief.personalInformation')->find($division);
 
-                        if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
-                        {
-                            $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
-                            $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
-                            $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
-                        }
-                    }
-                    if($department)
+                    if($hrmo)
                     {
-                        $department_name = Department::with('head.personalInformation')->find($department);
-                        if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
-                        {
-                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
-                            $head_position = $department_name->head->assignedArea->designation->name ?? null;
-                            $head_code = $department_name->head->assignedArea->designation->code ?? null;
-                        }
-                    }
-                    if($section)
-                    {
-                        $section_name = Section::with('supervisor.personalInformation')->find($section);
-                        if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
-                        {
-                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
-                            $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
-                            $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
-                        }
-                    }
-                    if($hr)
-                    {
+                            $hr_name = $hrmo->last_name . ', ' . $hrmo->last_name;
+                            $hr_position = $hrmo->assignedArea->designation->name ?? null;
+                            $hr_code = $hrmo->assignedArea->designation->code ?? null;
 
-                        if($hr && $hr->supervisor  && $hr->supervisor->personalInformation != null)
-                        {
-                            $hr_name = optional($hr->supervisor->personalInformation)->first_name . ' ' . optional($hr->supervisor->personalInformation)->last_name;
-                            $hr_position = $hr->supervisor->assignedArea->designation->name ?? null;
-                            $hr_code = $hr->supervisor->assignedArea->designation->code ?? null;
-                        }
                     }
-                    if($omcc)
+                    if($recommending)
                     {
+                            $recommending_name = $recommending->last_name . ', ' . $recommending->first_name;
+                            $recommending_position = $recommending->assignedArea->designation->name ?? null;
+                            $recommending_code = $recommending->assignedArea->designation->code ?? null;
 
-                        if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
-                        {
-                            $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
-                            $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
-                            $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
-                        }
                     }
+                    if($approving)
+                    {
+                            $approving_name = $approving->last_name . ', ' . $approving->first_name;
+                            $approving_position = $approving->assignedArea->designation->name ?? null;
+                            $approving_code = $approving->assignedArea->designation->code ?? null;
 
+                    }
                     $total_days=0;
                     foreach($leave_application->dates as $date)
                     {
@@ -186,21 +151,15 @@ class LeaveApplicationController extends Controller
                         'position_code' => $leave_application->employeeProfile->assignedArea->designation->code ?? null,
                         'position_name' => $leave_application->employeeProfile->assignedArea->designation->name ?? null,
                         'date_created' => $leave_application->date,
-                        'division_head' =>$chief_name,
-                        'division_head_position'=> $chief_position,
-                        'division_head_code'=> $chief_code,
-                        'department_head' =>$head_name,
-                        'department_head_position' =>$head_position,
-                        'department_head_code' =>$head_code,
-                        'section_head' =>$supervisor_name,
-                        'section_head_position' =>$supervisor_position,
-                        'section_head_code' =>$supervisor_code,
-                        'hr_head' =>$hr_name,
-                        'hr_head_position' =>$hr_position,
-                        'hr_head_code' =>$hr_code,
-                        'omcc_head' =>$omcc_name,
-                        'omcc_head_position' =>$omcc_position,
-                        'omcc_head_code' =>$omcc_code,
+                        'recommending_name' =>$recommending_name,
+                        'recommending_position' =>$recommending_position,
+                        'recommending_code' =>$recommending_code,
+                        'hr_name' =>$hr_name,
+                        'hr_position' =>$hr_position,
+                        'hr_code' =>$hr_code,
+                        'approving_name' =>$approving_name,
+                        'approving_position' =>$approving_position,
+                        'approving_code' =>$approving_code,
                         'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
                         'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
                         'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,
@@ -293,80 +252,41 @@ class LeaveApplicationController extends Controller
                         $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
                         $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
                         $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                        $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
-                        $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
-                        $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                        $hr = Section::with('supervisor.personalInformation')->where('code','HRMO')->first();
-                    $chief_first_name=null;
-                    $chief_last_name=null;
-                    $chief_position=null;
-                    $chief_code=null;
-                    $head_first_name=null;
-                    $head_last_name=null;
-                    $head_position=null;
-                    $head_code=null;
-                    $supervisor_first_name=null;
-                    $supervisor_last_name=null;
-                    $supervisor_position=null;
-                    $supervisor_code=null;
-                    $hr_last_name=null;
-                    $hr_first_name=null;
-                    $hr_position=null;
-                    $hr_code=null;
-                    if($division) {
-                        $division_name = Division::with('chief.personalInformation')->find($division);
+                        $hrmo = EmployeeProfile::where('id',$leave_application->hrmo_officer_id)->first();
+                        $recommending = EmployeeProfile::where('id',$leave_application->recommending_officer_id)->first();
+                        $approving = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
 
-                        if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
-                        {
-                            $chief_first_name = optional($division_name->chief->personalInformation)->first_name ?? null;
-                            $chief_last_name =optional($division_name->chief->personalInformation)->last_name ?? null;
-                            $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
-                            $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
-                        }
-                    }
-                    if($department)
-                    {
-                        $department_name = Department::with('head.personalInformation')->find($department);
-                        if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
-                        {
-                            $head_first_name = optional($department_name->head->personalInformation)->first_name ?? null;
-                            $head_last_name = optional($department_name->head->personalInformation)->last_name ?? null;
-                            $head_position = $department_name->head->assignedArea->designation->name ?? null;
-                            $head_code = $department_name->head->assignedArea->designation->code ?? null;
-                        }
-                    }
-                    if($section)
-                    {
-                        $section_name = Section::with('supervisor.personalInformation')->find($section);
-                        if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
-                        {
-                            $supervisor_first_name = optional($section_name->supervisor->personalInformation)->first_name ?? null;
-                            $supervisor_last_name = optional($section_name->supervisor->personalInformation)->last_name ?? null;
-                            $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
-                            $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
-                        }
-                    }
-                    if($hr)
-                    {
-                        if($hr && $hr->supervisor  && $hr->supervisor->personalInformation != null)
-                        {
-                            $hr_first_name = optional($hr->supervisor->personalInformation)->first_name ?? null;
-                            $hr_last_name = optional($hr->supervisor->personalInformation)->last_name ?? null;
-                            $hr_position = $hr->supervisor->assignedArea->designation->name ?? null;
-                            $hr_code = $hr->supervisor->assignedArea->designation->code ?? null;
-                        }
-                    }
-                    $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
-                    if($omcc)
-                    {
+                        $recommending_name=null;
+                        $recommending_position=null;
+                        $recommending_code=null;
+                        $approving_name=null;
+                        $approving_position=null;
+                        $approving_code=null;
+                        $hr_name=null;
+                        $hr_position=null;
+                        $hr_code=null;
 
-                        if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                        if($hrmo)
                         {
-                            $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
-                            $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
-                            $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
+                                $hr_name = $hrmo->last_name . ', ' . $hrmo->last_name;
+                                $hr_position = $hrmo->assignedArea->designation->name ?? null;
+                                $hr_code = $hrmo->assignedArea->designation->code ?? null;
+
                         }
-                    }
+                        if($recommending)
+                        {
+                                $recommending_name = $recommending->last_name . ', ' . $recommending->first_name;
+                                $recommending_position = $recommending->assignedArea->designation->name ?? null;
+                                $recommending_code = $recommending->assignedArea->designation->code ?? null;
+
+                        }
+                        if($approving)
+                        {
+                                $approving_name = $approving->last_name . ', ' . $approving->first_name;
+                                $approving_position = $approving->assignedArea->designation->name ?? null;
+                                $approving_code = $approving->assignedArea->designation->code ?? null;
+
+                        }
                         $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
                         $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
                         $total_days=0;
@@ -401,25 +321,15 @@ class LeaveApplicationController extends Controller
                             'position_code' => $leave_application->employeeProfile->assignedArea->designation->code ?? null,
                             'position_name' => $leave_application->employeeProfile->assignedArea->designation->name ?? null,
                             'date_created' => $leave_application->date,
-                            'division_head_first' =>$chief_first_name,
-                            'division_head_last' =>$chief_last_name,
-                            'division_head_position'=> $chief_position,
-                            'division_head_code'=> $chief_code,
-                            'department_head_first' =>$head_first_name,
-                            'department_head_last' =>$head_last_name,
-                            'department_head_position' =>$head_position,
-                            'department_head_code' =>$head_code,
-                            'section_head_first' =>$supervisor_first_name,
-                            'section_head_last' =>$supervisor_last_name,
-                            'section_head_position' =>$supervisor_position,
-                            'section_head_code' =>$supervisor_code,
-                            'hr_head_first' =>$hr_first_name,
-                            'hr_head_last' =>$hr_last_name,
-                            'hr_head_position' =>$hr_position,
-                            'hr_head_code' =>$hr_code,
-                            'omcc_head' =>$omcc_name,
-                            'omcc_head_position' =>$omcc_position,
-                            'omcc_head_code' =>$omcc_code,
+                            'recommending_name' =>$recommending_name,
+                            'recommending_position' =>$recommending_position,
+                            'recommending_code' =>$recommending_code,
+                            'hr_name' =>$hr_name,
+                            'hr_position' =>$hr_position,
+                            'hr_code' =>$hr_code,
+                            'approving_name' =>$approving_name,
+                            'approving_position' =>$approving_position,
+                            'approving_code' =>$approving_code,
                             'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
                             'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
                             'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,
@@ -535,7 +445,6 @@ class LeaveApplicationController extends Controller
 
     public function getLeaveApplications(Request $request)
     {
-
         $user = $request->user;
         $leave_applications = [];
         $hr_head_id = Section::where('code', 'HRMO')->value('supervisor_employee_profile_id');
@@ -1867,7 +1776,6 @@ class LeaveApplicationController extends Controller
 
         }
 
-
     }
 
     public function getHRLeaveApplications(Request $request)
@@ -2883,6 +2791,304 @@ class LeaveApplicationController extends Controller
     public function updateLeaveApplicationStatus ($id,$status,Request $request)
     {
         try {
+                // $user = $request->user;
+                // $leave_applications = LeaveApplication::where('id','=', $id)
+                // ->first();
+                // $area = AssignArea::where('employee_profile_id',$leave_applications->employee_profile_id)->value('division_id');
+                // // $division = Division::where('id',$area)->value('is_medical');
+                // $division_head=Division::where('chief_employee_profile_id',$leave_applications->employee_profile_id)->count();
+                // $section_head=Section::where('supervisor_employee_profile_id',$leave_applications->employee_profile_id)->count();
+                // $department_head=Department::where('head_employee_profile_id',$leave_applications->employee_profile_id)->count();
+                // $password_decrypted = Crypt::decryptString($user['password_encrypted']);
+                // $password = strip_tags($request->password);
+                // if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                //     return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+                // }
+                // else{
+                //             $message_action = '';
+                //             $action = '';
+                //             $new_status = '';
+                //             if($status == 'for-approval-section-head' ){
+                //                 $action = 'Aprroved by Supervisor';
+                //                 $new_status='for-approval-division-head';
+                //                 $message_action="Approved";
+                //             }
+                //             else if($status == 'for-approval-department-head'){
+                //                 $action = 'Aprroved by Supervisor';
+                //                 $new_status='for-approval-division-head';
+                //                 $message_action="Approved";
+                //             }
+                //             else if($status == 'for-approval-division-head'){
+                //                 $action = 'Aprroved by Division Head';
+                //                 $new_status='approved';
+                //                 $message_action="Approved";
+                //             }
+                //             else if($status == 'for-approval-omcc-head'){
+                //                 $action = 'Aprroved by OMCC Head';
+                //                 $new_status='approved';
+                //                 $message_action="Approved";
+                //             }
+                //             else if($status == 'applied'){
+                //                 $action = 'Verified by HRMO';
+
+                //                 // if ($division_head > 0) {
+                //                 //     $new_status='for-approval-omcc-head';
+                //                 //     $message_action="verified";
+                //                 // }
+                //                 // else if($section_head > 0 || $department_head > 0)
+                //                 // {
+                //                 //     $new_status='for-approval-division-head';
+                //                 //     $message_action="verified";
+                //                 // }
+                //                 // else{
+                //                     $divisions = Division::where('id',$area)->first();
+                //                     if ($divisions->code === 'NS' || $divisions->code === 'MS') {
+                //                         $new_status='for-approval-department-head';
+                //                         $message_action="verified";
+                //                     }
+                //                     else
+                //                     {
+                //                         $new_status='for-approval-section-head';
+                //                         $message_action="verified";
+                //                     }
+                //                 // }
+                //             }
+
+
+                //             if($leave_applications){
+                //                 DB::beginTransaction();
+                //                     $leave_application_log = new LeaveApplicationLog();
+                //                     $leave_application_log->action = $action;
+                //                     $leave_application_log->leave_application_id = $id;
+                //                     $leave_application_log->action_by_id = $user->id;
+                //                     $leave_application_log->date = date('Y-m-d');
+                //                     $leave_application_log->time = date('h-i-s');
+                //                     $leave_application_log->save();
+
+                //                     $leave_application = LeaveApplication::findOrFail($id);
+                //                     $leave_application->status = $new_status;
+                //                     $leave_application->update();
+
+                //                     // if($new_status=="approved")
+                //                     // {
+                //                     //     $leave_application_date_time=LeaveApplicationDateTime::where('leave_application_id',$id)->get();
+                //                     //     $total_days = 0;
+
+                //                     //     foreach ($leave_application_date_time as $leave_date_time) {
+                //                     //         $date_from = Carbon::parse($leave_date_time->date_from);
+                //                     //         $date_to = Carbon::parse($leave_date_time->date_to);
+                //                     //         $total_days += $date_to->diffInDays($date_from) + 1; // Add 1 to include both the start and end dates
+
+                //                     //     }
+
+                //                     //     $employee_leave_credits = new EmployeeLeaveCredit();
+                //                     //     $employee_leave_credits->employee_profile_id = $leave_applications->employee_profile_id;
+                //                     //     $employee_leave_credits->leave_application_id = $id;
+                //                     //     $employee_leave_credits->operation = "deduct";
+                //                     //     $employee_leave_credits->reason = "Leave";
+                //                     //     $employee_leave_credits->leave_credit = $total_days;
+                //                     //     $employee_leave_credits->date = date('Y-m-d');
+                //                     //     $employee_leave_credits->save();
+
+                //                     // }
+
+                //                 DB::commit();
+                //                 $leave_applications =LeaveApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','dates','logs', 'requirements','employeeProfile.leaveCredits.leaveType'])
+                //                 ->where('id',$leave_application->id)->get();
+                //                 $leave_applications_result = $leave_applications->map(function ($leave_application) {
+                //                     $datesData = $leave_application->dates ? $leave_application->dates : collect();
+                //                     $logsData = $leave_application->logs ? $leave_application->logs : collect();
+                //                     $requirementsData = $leave_application->requirements ? $leave_application->requirements : collect();
+                //                     $add=EmployeeLeaveCredit::where('employee_profile_id',$leave_application->employee_profile_id)->where('leave_type_id',$leave_application->leave_type_id)
+                //                     ->where('operation', 'add')
+                //                     ->sum('credit_value');
+                //                     $deduct=EmployeeLeaveCredit::where('employee_profile_id',$leave_application->employee_profile_id)->where('leave_type_id',$leave_application->leave_type_id)
+                //                     ->where('operation', 'deduct')
+                //                     ->sum('credit_value');
+                //                     $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
+                //                     $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
+                //                     $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
+                //                     $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
+                //                     $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
+                //                     $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
+                //                     $hr = Section::with('supervisor.personalInformation')->where('code','HRMO')->orWhere('name','Human Resource')->first();
+
+                //                     $chief_name=null;
+                //                     $chief_position=null;
+                //                     $chief_code=null;
+                //                     $head_name=null;
+                //                     $head_position=null;
+                //                     $head_code=null;
+                //                     $supervisor_name=null;
+                //                     $supervisor_position=null;
+                //                     $supervisor_code=null;
+                //                     $hr_name=null;
+                //                     $hr_position=null;
+                //                     $hr_code=null;
+                //                     if($division) {
+                //                         $division_name = Division::with('chief.personalInformation')->find($division);
+
+                //                         if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
+                //                         {
+                //                             $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
+                //                             $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
+                //                             $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
+                //                         }
+                //                     }
+                //                     if($department)
+                //                     {
+                //                         $department_name = Department::with('head.personalInformation')->find($department);
+                //                         if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
+                //                         {
+                //                             $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
+                //                             $head_position = $department_name->head->assignedArea->designation->name ?? null;
+                //                             $head_code = $department_name->head->assignedArea->designation->code ?? null;
+                //                         }
+                //                     }
+                //                     if($section)
+                //                     {
+                //                         $section_name = Section::with('supervisor.personalInformation')->find($section);
+                //                         if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
+                //                         {
+                //                             $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
+                //                             $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
+                //                             $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
+                //                         }
+                //                     }
+                //                     if($hr)
+                //                     {
+
+                //                         if($hr && $hr->supervisor  && $hr->supervisor->personalInformation != null)
+                //                         {
+                //                             $hr_name = optional($hr->supervisor->personalInformation)->first_name . ' ' . optional($hr->supervisor->personalInformation)->last_name;
+                //                             $hr_position = $hr->supervisor->assignedArea->designation->name ?? null;
+                //                             $hr_code = $hr->supervisor->assignedArea->designation->code ?? null;
+                //                         }
+                //                     }
+
+                //                     $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
+                //                     if($omcc)
+                //                     {
+
+                //                         if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
+                //                         {
+                //                             $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
+                //                             $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
+                //                             $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
+                //                         }
+                //                     }
+
+                //                     $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
+                //                     $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
+                //                     $total_days=0;
+                //                     foreach($leave_application->dates as $date)
+                //                     {
+                //                         $startDate = Carbon::createFromFormat('Y-m-d', $date->date_from);
+                //                         $endDate = Carbon::createFromFormat('Y-m-d', $date->date_to);
+
+                //                         $numberOfDays = $startDate->diffInDays($endDate) + 1;
+                //                         $total_days += $numberOfDays;
+                //                     }
+                //                     return [
+                //                         'id' => $leave_application->id,
+                //                         'leave_type_name' => $leave_application->leaveType->name,
+                //                         'is_special' => $leave_application->leaveType->is_special,
+                //                         'reference_number' => $leave_application->reference_number,
+                //                         'country' => $leave_application->country,
+                //                         'city' => $leave_application->city,
+                //                         'zip_code' => $leave_application->zip_code,
+                //                         'patient_type' => $leave_application->patient_type,
+                //                         'illness' => $leave_application->illness,
+                //                         'reason' => $leave_application->reason,
+                //                         'leave_credit_total' => $leave_application->leave_credit_total ,
+                //                         'leave_credit_balance' => $add - $deduct,
+                //                         'days_total' => $total_days ,
+                //                         'status' => $leave_application->status ,
+                //                         'remarks' => $leave_application->remarks ,
+                //                         'date' => $leave_application->created_at ,
+                //                         'with_pay' => $leave_application->with_pay ,
+                //                          'employee_id' => $leave_application->employeeProfile->employee_id,
+                //                         'employee_name' => "{$first_name} {$last_name}" ,
+                //                         'position_code' => $leave_application->employeeProfile->assignedArea->designation->code ?? null,
+                //                         'position_name' => $leave_application->employeeProfile->assignedArea->designation->name ?? null,
+                //                         'date_created' => $leave_application->date,
+                //                         'division_head' =>$chief_name,
+                //                         'division_head_position'=> $chief_position,
+                //                         'division_head_code'=> $chief_code,
+                //                         'department_head' =>$head_name,
+                //                         'department_head_position' =>$head_position,
+                //                         'department_head_code' =>$head_code,
+                //                         'section_head' =>$supervisor_name,
+                //                         'section_head_position' =>$supervisor_position,
+                //                         'section_head_code' =>$supervisor_code,
+                //                         'hr_head' =>$hr_name,
+                //                         'hr_head_position' =>$hr_position,
+                //                         'hr_head_code' =>$hr_code,
+                //                         'omcc_head' =>$omcc_name,
+                //                         'omcc_head_position' =>$omcc_position,
+                //                         'omcc_head_code' =>$omcc_code,
+                //                         'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
+                //                         'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
+                //                         'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,
+                //                         'unit_name' => $leave_application->employeeProfile->assignedArea->unit->name ?? null,
+                //                         'logs' => $logsData->map(function ($log) {
+                //                             $process_name=$log->action;
+                //                             $action ="";
+                //                             $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
+                //                             $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
+                //                             if($log->action_by_id  === optional($log->employeeProfile->assignedArea->division)->chief_employee_profile_id )
+                //                             {
+                //                                 $action =  $process_name . ' by ' . 'Division Head';
+                //                             }
+                //                             else if ($log->action_by_id === optional($log->employeeProfile->assignedArea->department)->head_employee_profile_id || optional($log->employeeProfile->assignedArea->section)->supervisor_employee_profile_id)
+                //                             {
+                //                                 $action =  $process_name . ' by ' . 'Supervisor';
+                //                             }
+                //                             else{
+                //                                 $action=  $process_name . ' by ' . $first_name .' '. $last_name;
+                //                             }
+
+                //                             $date=$log->date;
+                //                             $formatted_date=Carbon::parse($date)->format('M d,Y');
+                //                             return [
+                //                                 'id' => $log->id,
+                //                                 'leave_application_id' => $log->leave_application_id,
+                //                                 'action_by' => "{$first_name} {$last_name}" ,
+                //                                 'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
+                //                                 'position_code' => $log->employeeProfile->assignedArea->designation->code ?? null,
+                //                                 'action' => $log->action,
+                //                                 'date' => $formatted_date,
+                //                                 'time' => $log->time,
+                //                                 'process' => $action
+                //                             ];
+                //                         }),
+                //                         'requirements' => $requirementsData->map(function ($requirement) {
+                //                             return [
+                //                                 'id' => $requirement->id,
+                //                                 'leave_application_id' => $requirement->leave_application_id,
+                //                                 'name' => $requirement->name,
+                //                                 'file_name' => $requirement->file_name,
+                //                                 'path' => $requirement->path,
+                //                                 'size' => $requirement->size,
+                //                             ];
+                //                         }),
+                //                         'dates' => $datesData->map(function ($date) {
+                //                             $formatted_date_from=Carbon::parse($date->date_from)->format('M d,Y');
+                //                             $formatted_date_to=Carbon::parse($date->date_to)->format('M d,Y');
+                //                             return [
+                //                                 'id' => $date->id,
+                //                                 'leave_application_id' => $date->leave_application_id,
+                //                                 'date_from' => $formatted_date_from,
+                //                                 'date_to' => $formatted_date_to,
+                //                             ];
+                //                         }),
+                //                     ];
+                //                 });
+                //                 $singleArray = array_merge(...$leave_applications_result);
+                //                 return response(['message' => 'Application has been sucessfully '.$message_action, 'data' => $singleArray], Response::HTTP_OK);
+                //             }
+                // }
+
                 $user = $request->user;
                 $leave_applications = LeaveApplication::where('id','=', $id)
                 ->first();
@@ -2900,52 +3106,23 @@ class LeaveApplicationController extends Controller
                             $message_action = '';
                             $action = '';
                             $new_status = '';
-                            if($status == 'for-approval-section-head' ){
-                                $action = 'Aprroved by Supervisor';
-                                $new_status='for-approval-division-head';
+                            if($status == 'for-approval-recommending-officer' ){
+                                $action = 'Aprroved by Recommending Officer';
+                                $new_status='for-approval-approving-officer';
                                 $message_action="Approved";
                             }
-                            else if($status == 'for-approval-department-head'){
-                                $action = 'Aprroved by Supervisor';
-                                $new_status='for-approval-division-head';
-                                $message_action="Approved";
-                            }
-                            else if($status == 'for-approval-division-head'){
-                                $action = 'Aprroved by Division Head';
+                            else if($status == 'for-approval-approving-officer'){
+                                $action = 'Aprroved by Approving Officer';
                                 $new_status='approved';
                                 $message_action="Approved";
                             }
-                            else if($status == 'for-approval-omcc-head'){
-                                $action = 'Aprroved by OMCC Head';
-                                $new_status='approved';
-                                $message_action="Approved";
-                            }
+
                             else if($status == 'applied'){
-                                $action = 'Verified by HRMO';
+                                        $action = 'Verified by HRMO';
+                                        $new_status='for-approval-recommending-officer';
+                                        $message_action="verified";
 
-                                // if ($division_head > 0) {
-                                //     $new_status='for-approval-omcc-head';
-                                //     $message_action="verified";
-                                // }
-                                // else if($section_head > 0 || $department_head > 0)
-                                // {
-                                //     $new_status='for-approval-division-head';
-                                //     $message_action="verified";
-                                // }
-                                // else{
-                                    $divisions = Division::where('id',$area)->first();
-                                    if ($divisions->code === 'NS' || $divisions->code === 'MS') {
-                                        $new_status='for-approval-department-head';
-                                        $message_action="verified";
-                                    }
-                                    else
-                                    {
-                                        $new_status='for-approval-section-head';
-                                        $message_action="verified";
-                                    }
-                                // }
                             }
-
 
                             if($leave_applications){
                                 DB::beginTransaction();
@@ -2960,29 +3137,6 @@ class LeaveApplicationController extends Controller
                                     $leave_application = LeaveApplication::findOrFail($id);
                                     $leave_application->status = $new_status;
                                     $leave_application->update();
-
-                                    // if($new_status=="approved")
-                                    // {
-                                    //     $leave_application_date_time=LeaveApplicationDateTime::where('leave_application_id',$id)->get();
-                                    //     $total_days = 0;
-
-                                    //     foreach ($leave_application_date_time as $leave_date_time) {
-                                    //         $date_from = Carbon::parse($leave_date_time->date_from);
-                                    //         $date_to = Carbon::parse($leave_date_time->date_to);
-                                    //         $total_days += $date_to->diffInDays($date_from) + 1; // Add 1 to include both the start and end dates
-
-                                    //     }
-
-                                    //     $employee_leave_credits = new EmployeeLeaveCredit();
-                                    //     $employee_leave_credits->employee_profile_id = $leave_applications->employee_profile_id;
-                                    //     $employee_leave_credits->leave_application_id = $id;
-                                    //     $employee_leave_credits->operation = "deduct";
-                                    //     $employee_leave_credits->reason = "Leave";
-                                    //     $employee_leave_credits->leave_credit = $total_days;
-                                    //     $employee_leave_credits->date = date('Y-m-d');
-                                    //     $employee_leave_credits->save();
-
-                                    // }
 
                                 DB::commit();
                                 $leave_applications =LeaveApplication::with(['employeeProfile.assignedArea.division','employeeProfile.personalInformation','dates','logs', 'requirements','employeeProfile.leaveCredits.leaveType'])
@@ -3000,76 +3154,41 @@ class LeaveApplicationController extends Controller
                                     $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
                                     $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
                                     $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                                    $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
-                                    $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
-                                    $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                                    $hr = Section::with('supervisor.personalInformation')->where('code','HRMO')->orWhere('name','Human Resource')->first();
+                                    $hrmo = EmployeeProfile::where('id',$leave_application->hrmo_officer_id)->first();
+                            $recommending = EmployeeProfile::where('id',$leave_application->recommending_officer_id)->first();
+                            $approving = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
 
-                                    $chief_name=null;
-                                    $chief_position=null;
-                                    $chief_code=null;
-                                    $head_name=null;
-                                    $head_position=null;
-                                    $head_code=null;
-                                    $supervisor_name=null;
-                                    $supervisor_position=null;
-                                    $supervisor_code=null;
-                                    $hr_name=null;
-                                    $hr_position=null;
-                                    $hr_code=null;
-                                    if($division) {
-                                        $division_name = Division::with('chief.personalInformation')->find($division);
+                            $recommending_name=null;
+                            $recommending_position=null;
+                            $recommending_code=null;
+                            $approving_name=null;
+                            $approving_position=null;
+                            $approving_code=null;
+                            $hr_name=null;
+                            $hr_position=null;
+                            $hr_code=null;
 
-                                        if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
-                                        {
-                                            $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
-                                            $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
-                                            $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
-                                        }
-                                    }
-                                    if($department)
-                                    {
-                                        $department_name = Department::with('head.personalInformation')->find($department);
-                                        if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
-                                        {
-                                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
-                                            $head_position = $department_name->head->assignedArea->designation->name ?? null;
-                                            $head_code = $department_name->head->assignedArea->designation->code ?? null;
-                                        }
-                                    }
-                                    if($section)
-                                    {
-                                        $section_name = Section::with('supervisor.personalInformation')->find($section);
-                                        if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
-                                        {
-                                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
-                                            $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
-                                            $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
-                                        }
-                                    }
-                                    if($hr)
-                                    {
+                            if($hrmo)
+                            {
+                                    $hr_name = $hrmo->last_name . ', ' . $hrmo->last_name;
+                                    $hr_position = $hrmo->assignedArea->designation->name ?? null;
+                                    $hr_code = $hrmo->assignedArea->designation->code ?? null;
 
-                                        if($hr && $hr->supervisor  && $hr->supervisor->personalInformation != null)
-                                        {
-                                            $hr_name = optional($hr->supervisor->personalInformation)->first_name . ' ' . optional($hr->supervisor->personalInformation)->last_name;
-                                            $hr_position = $hr->supervisor->assignedArea->designation->name ?? null;
-                                            $hr_code = $hr->supervisor->assignedArea->designation->code ?? null;
-                                        }
-                                    }
+                            }
+                            if($recommending)
+                            {
+                                    $recommending_name = $recommending->last_name . ', ' . $recommending->first_name;
+                                    $recommending_position = $recommending->assignedArea->designation->name ?? null;
+                                    $recommending_code = $recommending->assignedArea->designation->code ?? null;
 
-                                    $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
-                                    if($omcc)
-                                    {
+                            }
+                            if($approving)
+                            {
+                                    $approving_name = $approving->last_name . ', ' . $approving->first_name;
+                                    $approving_position = $approving->assignedArea->designation->name ?? null;
+                                    $approving_code = $approving->assignedArea->designation->code ?? null;
 
-                                        if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
-                                        {
-                                            $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
-                                            $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
-                                            $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
-                                        }
-                                    }
-
+                            }
                                     $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
                                     $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
                                     $total_days=0;
@@ -3104,21 +3223,15 @@ class LeaveApplicationController extends Controller
                                         'position_code' => $leave_application->employeeProfile->assignedArea->designation->code ?? null,
                                         'position_name' => $leave_application->employeeProfile->assignedArea->designation->name ?? null,
                                         'date_created' => $leave_application->date,
-                                        'division_head' =>$chief_name,
-                                        'division_head_position'=> $chief_position,
-                                        'division_head_code'=> $chief_code,
-                                        'department_head' =>$head_name,
-                                        'department_head_position' =>$head_position,
-                                        'department_head_code' =>$head_code,
-                                        'section_head' =>$supervisor_name,
-                                        'section_head_position' =>$supervisor_position,
-                                        'section_head_code' =>$supervisor_code,
-                                        'hr_head' =>$hr_name,
-                                        'hr_head_position' =>$hr_position,
-                                        'hr_head_code' =>$hr_code,
-                                        'omcc_head' =>$omcc_name,
-                                        'omcc_head_position' =>$omcc_position,
-                                        'omcc_head_code' =>$omcc_code,
+                                        'recommending_name' =>$recommending_name,
+                                        'recommending_position' =>$recommending_position,
+                                        'recommending_code' =>$recommending_code,
+                                        'hr_name' =>$hr_name,
+                                        'hr_position' =>$hr_position,
+                                        'hr_code' =>$hr_code,
+                                        'approving_name' =>$approving_name,
+                                        'approving_position' =>$approving_position,
+                                        'approving_code' =>$approving_code,
                                         'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
                                         'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
                                         'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,
@@ -3255,73 +3368,40 @@ class LeaveApplicationController extends Controller
                                     $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
                                     $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
                                     $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                                    $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
-                                    $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
-                                    $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                                    $hr = Section::with('supervisor.personalInformation')->where('code','HRMO')->first();
+                                    $hrmo = EmployeeProfile::where('id',$leave_application->hrmo_officer_id)->first();
+                                    $recommending = EmployeeProfile::where('id',$leave_application->recommending_officer_id)->first();
+                                    $approving = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
 
-                                    $chief_name=null;
-                                    $chief_position=null;
-                                    $chief_code=null;
-                                    $head_name=null;
-                                    $head_position=null;
-                                    $head_code=null;
-                                    $supervisor_name=null;
-                                    $supervisor_position=null;
-                                    $supervisor_code=null;
+                                    $recommending_name=null;
+                                    $recommending_position=null;
+                                    $recommending_code=null;
+                                    $approving_name=null;
+                                    $approving_position=null;
+                                    $approving_code=null;
                                     $hr_name=null;
                                     $hr_position=null;
                                     $hr_code=null;
-                                    if($division) {
-                                        $division_name = Division::with('chief.personalInformation')->find($division);
 
-                                        if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
-                                        {
-                                            $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
-                                            $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
-                                            $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
-                                        }
-                                    }
-                                    if($department)
+                                    if($hrmo)
                                     {
-                                        $department_name = Department::with('head.personalInformation')->find($department);
-                                        if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
-                                        {
-                                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
-                                            $head_position = $department_name->head->assignedArea->designation->name ?? null;
-                                            $head_code = $department_name->head->assignedArea->designation->code ?? null;
-                                        }
-                                    }
-                                    if($section)
-                                    {
-                                        $section_name = Section::with('supervisor.personalInformation')->find($section);
-                                        if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
-                                        {
-                                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
-                                            $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
-                                            $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
-                                        }
-                                    }
-                                    if($hr)
-                                    {
+                                            $hr_name = $hrmo->last_name . ', ' . $hrmo->last_name;
+                                            $hr_position = $hrmo->assignedArea->designation->name ?? null;
+                                            $hr_code = $hrmo->assignedArea->designation->code ?? null;
 
-                                        if($hr && $hr->supervisor  && $hr->supervisor->personalInformation != null)
-                                        {
-                                            $hr_name = optional($hr->supervisor->personalInformation)->first_name . ' ' . optional($hr->supervisor->personalInformation)->last_name;
-                                            $hr_position = $hr->supervisor->assignedArea->designation->name ?? null;
-                                            $hr_code = $hr->supervisor->assignedArea->designation->code ?? null;
-                                        }
                                     }
-                                    $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
-                                    if($omcc)
+                                    if($recommending)
                                     {
+                                            $recommending_name = $recommending->last_name . ', ' . $recommending->first_name;
+                                            $recommending_position = $recommending->assignedArea->designation->name ?? null;
+                                            $recommending_code = $recommending->assignedArea->designation->code ?? null;
 
-                                        if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
-                                        {
-                                            $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
-                                            $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
-                                            $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
-                                        }
+                                    }
+                                    if($approving)
+                                    {
+                                            $approving_name = $approving->last_name . ', ' . $approving->first_name;
+                                            $approving_position = $approving->assignedArea->designation->name ?? null;
+                                            $approving_code = $approving->assignedArea->designation->code ?? null;
+
                                     }
                                     $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
                                     $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
@@ -3357,21 +3437,15 @@ class LeaveApplicationController extends Controller
                                         'position_code' => $leave_application->employeeProfile->assignedArea->designation->code ?? null,
                                         'position_name' => $leave_application->employeeProfile->assignedArea->designation->name ?? null,
                                         'date_created' => $leave_application->date,
-                                        'division_head' =>$chief_name,
-                                        'division_head_position'=> $chief_position,
-                                        'division_head_code'=> $chief_code,
-                                        'department_head' =>$head_name,
-                                        'department_head_position' =>$head_position,
-                                        'department_head_code' =>$head_code,
-                                        'section_head' =>$supervisor_name,
-                                        'section_head_position' =>$supervisor_position,
-                                        'section_head_code' =>$supervisor_code,
-                                        'hr_head' =>$hr_name,
-                                        'hr_head_position' =>$hr_position,
-                                        'hr_head_code' =>$hr_code,
-                                        'omcc_head' =>$omcc_name,
-                                        'omcc_head_position' =>$omcc_position,
-                                        'omcc_head_code' =>$omcc_code,
+                                        'recommending_name' =>$recommending_name,
+                                        'recommending_position' =>$recommending_position,
+                                        'recommending_code' =>$recommending_code,
+                                        'hr_name' =>$hr_name,
+                                        'hr_position' =>$hr_position,
+                                        'hr_code' =>$hr_code,
+                                        'approving_name' =>$approving_name,
+                                        'approving_position' =>$approving_position,
+                                        'approving_code' =>$approving_code,
                                         'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
                                         'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
                                         'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,
@@ -3485,63 +3559,41 @@ class LeaveApplicationController extends Controller
                                     $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
                                     $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
                                     $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                                    $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
-                                    $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
-                                    $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                                    $hr = Section::with('supervisor.personalInformation')->where('code','HRMO')->first();
+                                    $hrmo = EmployeeProfile::where('id',$leave_application->hrmo_officer_id)->first();
+                            $recommending = EmployeeProfile::where('id',$leave_application->recommending_officer_id)->first();
+                            $approving = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
 
-                                    $chief_name=null;
-                                    $chief_position=null;
-                                    $chief_code=null;
-                                    $head_name=null;
-                                    $head_position=null;
-                                    $head_code=null;
-                                    $supervisor_name=null;
-                                    $supervisor_position=null;
-                                    $supervisor_code=null;
-                                    $hr_name=null;
-                                    $hr_position=null;
-                                    $hr_code=null;
-                                    if($division) {
-                                        $division_name = Division::with('chief.personalInformation')->find($division);
+                            $recommending_name=null;
+                            $recommending_position=null;
+                            $recommending_code=null;
+                            $approving_name=null;
+                            $approving_position=null;
+                            $approving_code=null;
+                            $hr_name=null;
+                            $hr_position=null;
+                            $hr_code=null;
 
-                                        if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
-                                        {
-                                            $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
-                                            $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
-                                            $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
-                                        }
-                                    }
-                                    if($department)
-                                    {
-                                        $department_name = Department::with('head.personalInformation')->find($department);
-                                        if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
-                                        {
-                                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
-                                            $head_position = $department_name->head->assignedArea->designation->name ?? null;
-                                            $head_code = $department_name->head->assignedArea->designation->code ?? null;
-                                        }
-                                    }
-                                    if($section)
-                                    {
-                                        $section_name = Section::with('supervisor.personalInformation')->find($section);
-                                        if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
-                                        {
-                                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
-                                            $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
-                                            $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
-                                        }
-                                    }
-                                    if($hr)
-                                    {
+                            if($hrmo)
+                            {
+                                    $hr_name = $hrmo->last_name . ', ' . $hrmo->last_name;
+                                    $hr_position = $hrmo->assignedArea->designation->name ?? null;
+                                    $hr_code = $hrmo->assignedArea->designation->code ?? null;
 
-                                        if($hr && $hr->supervisor  && $hr->supervisor->personalInformation != null)
-                                        {
-                                            $hr_name = optional($hr->supervisor->personalInformation)->first_name . ' ' . optional($hr->supervisor->personalInformation)->last_name;
-                                            $hr_position = $hr->supervisor->assignedArea->designation->name ?? null;
-                                            $hr_code = $hr->supervisor->assignedArea->designation->code ?? null;
-                                        }
-                                    }
+                            }
+                            if($recommending)
+                            {
+                                    $recommending_name = $recommending->last_name . ', ' . $recommending->first_name;
+                                    $recommending_position = $recommending->assignedArea->designation->name ?? null;
+                                    $recommending_code = $recommending->assignedArea->designation->code ?? null;
+
+                            }
+                            if($approving)
+                            {
+                                    $approving_name = $approving->last_name . ', ' . $approving->first_name;
+                                    $approving_position = $approving->assignedArea->designation->name ?? null;
+                                    $approving_code = $approving->assignedArea->designation->code ?? null;
+
+                            }
 
                                     $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
                                     $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
@@ -3577,18 +3629,15 @@ class LeaveApplicationController extends Controller
                                         'position_code' => $leave_application->employeeProfile->assignedArea->designation->code ?? null,
                                         'position_name' => $leave_application->employeeProfile->assignedArea->designation->name ?? null,
                                         'date_created' => $leave_application->date,
-                                        'division_head' =>$chief_name,
-                                        'division_head_position'=> $chief_position,
-                                        'division_head_code'=> $chief_code,
-                                        'department_head' =>$head_name,
-                                        'department_head_position' =>$head_position,
-                                        'department_head_code' =>$head_code,
-                                        'section_head' =>$supervisor_name,
-                                        'section_head_position' =>$supervisor_position,
-                                        'section_head_code' =>$supervisor_code,
-                                        'hr_head' =>$hr_name,
-                                        'hr_head_position' =>$hr_position,
-                                        'hr_head_code' =>$hr_code,
+                                        'recommending_name' =>$recommending_name,
+                                        'recommending_position' =>$recommending_position,
+                                        'recommending_code' =>$recommending_code,
+                                        'hr_name' =>$hr_name,
+                                        'hr_position' =>$hr_position,
+                                        'hr_code' =>$hr_code,
+                                        'approving_name' =>$approving_name,
+                                        'approving_position' =>$approving_position,
+                                        'approving_code' =>$approving_code,
                                         'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
                                         'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
                                         'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,
@@ -3733,6 +3782,51 @@ class LeaveApplicationController extends Controller
                 ],
                 'requirements.*' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048'
             ]);
+                $user = $request->user;
+                $assigned_area = $user->assignedArea->findDetails();
+                $hrmo = Section::where('code', 'HRMO')->value('supervisor_employee_profile_id');
+                $approving_office = Division::where('code', 'OMCC')->value('chief_employee_profile_id');
+                $recommending_officer = null;
+
+                switch($assigned_area['sector']){
+                    case 'Division':
+                        // If employee is Division head
+                        if(Division::find($assigned_area['details']->id)->chief_employee_profile_id === $user->id){
+                            $recommending_officer = $approving_office;
+                            $approving_office = $approving_office;
+                            break;
+                        }
+                        $recommending_officer = Division::find($assigned_area['details']->id)->chief_employee_profile_id;
+                        break;
+                    case 'Department':
+                        // If employee is Department head
+                        if(Department::find($assigned_area['details']->id)->head_employee_profile_id === $user->id){
+                            $recommending_officer = Department::find($assigned_area['details']->id)->division->chief_employee_profile_id;
+                            break;
+                        }
+                        $recommending_officer = Department::find($assigned_area['details']->id)->head_employee_profile_id;
+                        break;
+                    case 'Section':
+                        // If employee is Section head
+                        $section = Section::find($assigned_area['details']->id);
+                        if($section->head_employee_profile_id === $user->id){
+                            if($section->division_id !== null){
+                                $recommending_officer = Division::find($section->division_id)->chief_employee_profile_id;
+                                break;
+                            }
+                            $recommending_officer = Department::find($section->department_id)->head_employee_profile_id;
+                            break;
+                        }
+                        $recommending_officer = $section->supervisor_employee_profile_id;
+                        break;
+                    case 'Unit':
+                        // If employee is Unit head
+                        $section = Unit::find($assigned_area['details']->id)->section;
+                        $recommending_officer = $section->supervisor_employee_profile_id;
+                        break;
+                    default:
+                        return response()->json(['message' => 'Invalid request'], Response::HTTP_BAD_REQUEST);
+                }
                 $leave_type_id = $request->leave_type_id;
                 $user=$request->user;
                 $division = AssignArea::where('employee_profile_id',$user->id)->value('division_id');
@@ -3783,6 +3877,9 @@ class LeaveApplicationController extends Controller
                                             $leave_application->reason = $request->reason;
                                             $leave_application->without_pay =  $request->without_pay;
                                             $leave_application->leave_credit_total = $total_days;
+                                            $leave_application->hrmo_officer_id =  $hrmo;
+                                            $leave_application->approving_officer_id = $approving_office;
+                                            $leave_application->recommending_officer_id = $recommending_officer;
                                             $leave_application->status = "applied";
                                             $leave_application->date = date('Y-m-d');
                                             $leave_application->time =  date('H:i:s');
@@ -4080,6 +4177,9 @@ class LeaveApplicationController extends Controller
                                             $leave_application->reason = $request->reason;
                                             $leave_application->without_pay =   $request->without_pay;
                                             $leave_application->leave_credit_total = $total_days;
+                                            $leave_application->hrmo_officer_id =  $hrmo;
+                                            $leave_application->approving_officer_id = $approving_office;
+                                            $leave_application->recommending_officer_id = $recommending_officer;
                                             $leave_application->status = "applied";
                                             $leave_application->date = date('Y-m-d');
                                             $leave_application->time =  date('H:i:s');
@@ -4350,6 +4450,9 @@ class LeaveApplicationController extends Controller
                         $leave_application->illness = $request->illness;
                         $leave_application->reason = $request->reason;
                         $leave_application->without_pay =   $request->without_pay;
+                        $leave_application->hrmo_officer_id =  $hrmo;
+                        $leave_application->approving_officer_id = $approving_office;
+                        $leave_application->recommending_officer_id = $recommending_officer;
                         $leave_application->status = "applied";
                         $leave_application->date = date('Y-m-d');
                         $leave_application->time =  date('H:i:s');
@@ -4417,86 +4520,41 @@ class LeaveApplicationController extends Controller
                             $deduct=EmployeeLeaveCredit::where('employee_profile_id',$leave_application->employee_profile_id)->where('leave_type_id',$leave_application->leave_type_id)
                             ->where('operation', 'deduct')
                             ->sum('credit_value');
-                            $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
-                            $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
-                            $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                            $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
-                            $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
-                            $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                            $hr = Section::with('supervisor.personalInformation')->where('code','HRMO')->first();
-                            $chief_first_name=null;
-                            $chief_last_name=null;
-                            $chief_position=null;
-                            $chief_code=null;
-                            $head_first_name=null;
-                            $head_last_name=null;
-                            $head_position=null;
-                            $head_code=null;
-                            $supervisor_first_name=null;
-                            $supervisor_last_name=null;
-                            $supervisor_position=null;
-                            $supervisor_code=null;
-                            $hr_last_name=null;
-                            $hr_first_name=null;
+
+                            $hrmo = EmployeeProfile::where('id',$leave_application->hrmo_officer_id)->first();
+                            $recommending = EmployeeProfile::where('id',$leave_application->recommending_officer_id)->first();
+                            $approving = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
+
+                            $recommending_name=null;
+                            $recommending_position=null;
+                            $recommending_code=null;
+                            $approving_name=null;
+                            $approving_position=null;
+                            $approving_code=null;
+                            $hr_name=null;
                             $hr_position=null;
                             $hr_code=null;
-                            if($division) {
-                                $division_name = Division::with('chief.personalInformation')->find($division);
 
-                                if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
-                                {
-                                    $chief_first_name = optional($division_name->chief->personalInformation)->first_name ?? null;
-                                    $chief_last_name =optional($division_name->chief->personalInformation)->last_name ?? null;
-                                    $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
-                                    $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
-                                }
-                            }
-                            if($department)
+                            if($hrmo)
                             {
-                                $department_name = Department::with('head.personalInformation')->find($department);
-                                if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
-                                {
-                                    $head_first_name = optional($department_name->head->personalInformation)->first_name ?? null;
-                                    $head_last_name = optional($department_name->head->personalInformation)->last_name ?? null;
-                                    $head_position = $department_name->head->assignedArea->designation->name ?? null;
-                                    $head_code = $department_name->head->assignedArea->designation->code ?? null;
-                                }
+                                    $hr_name = $hrmo->last_name . ', ' . $hrmo->last_name;
+                                    $hr_position = $hrmo->assignedArea->designation->name ?? null;
+                                    $hr_code = $hrmo->assignedArea->designation->code ?? null;
+
                             }
-                            if($section)
+                            if($recommending)
                             {
-                                $section_name = Section::with('supervisor.personalInformation')->find($section);
-                                if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
-                                {
+                                    $recommending_name = $recommending->last_name . ', ' . $recommending->first_name;
+                                    $recommending_position = $recommending->assignedArea->designation->name ?? null;
+                                    $recommending_code = $recommending->assignedArea->designation->code ?? null;
 
-                            $supervisor_first_name = optional($section_name->supervisor->personalInformation)->first_name ?? null;
-                            $supervisor_last_name = optional($section_name->supervisor->personalInformation)->last_name ?? null;
-                            $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
-                            $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
-
-                                }
                             }
-                            if($hr)
+                            if($approving)
                             {
+                                    $approving_name = $approving->last_name . ', ' . $approving->first_name;
+                                    $approving_position = $approving->assignedArea->designation->name ?? null;
+                                    $approving_code = $approving->assignedArea->designation->code ?? null;
 
-                                if($hr && $hr->supervisor  && $hr->supervisor->personalInformation != null)
-                                {
-                                    $hr_first_name = optional($hr->supervisor->personalInformation)->first_name ?? null;
-                                    $hr_last_name = optional($hr->supervisor->personalInformation)->last_name ?? null;
-                                    $hr_position = $hr->supervisor->assignedArea->designation->name ?? null;
-                                    $hr_code = $hr->supervisor->assignedArea->designation->code ?? null;
-                                }
-                            }
-
-                            $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
-                            if($omcc)
-                            {
-
-                                if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
-                                {
-                                    $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
-                                    $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
-                                    $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
-                                }
                             }
                             $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
                             $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
@@ -4532,25 +4590,15 @@ class LeaveApplicationController extends Controller
                                                     'position_code' => $leave_application->employeeProfile->assignedArea->designation->code ?? null,
                                                     'position_name' => $leave_application->employeeProfile->assignedArea->designation->name ?? null,
                                                     'date_created' => $leave_application->date,
-                                                    'division_head_first' =>$chief_first_name,
-                                                    'division_head_last' =>$chief_last_name,
-                                                    'division_head_position'=> $chief_position,
-                                                    'division_head_code'=> $chief_code,
-                                                    'department_head_first' =>$head_first_name,
-                                                    'department_head_last' =>$head_last_name,
-                                                    'department_head_position' =>$head_position,
-                                                    'department_head_code' =>$head_code,
-                                                    'section_head_first' =>$supervisor_first_name,
-                                                    'section_head_last' =>$supervisor_last_name,
-                                                    'section_head_position' =>$supervisor_position,
-                                                    'section_head_code' =>$supervisor_code,
-                                                    'hr_head_first' =>$hr_first_name,
-                                                    'hr_head_last' =>$hr_last_name,
-                                                    'hr_head_position' =>$hr_position,
-                                                    'hr_head_code' =>$hr_code,
-                                                    'omcc_head' =>$omcc_name,
-                                                    'omcc_head_position' =>$omcc_position,
-                                                    'omcc_head_code' =>$omcc_code,
+                                                    'recommending_name' =>$recommending_name,
+                                                    'recommending_position' =>$recommending_position,
+                                                    'recommending_code' =>$recommending_code,
+                                                    'hr_name' =>$hr_name,
+                                                    'hr_position' =>$hr_position,
+                                                    'hr_code' =>$hr_code,
+                                                    'approving_name' =>$approving_name,
+                                                    'approving_position' =>$approving_position,
+                                                    'approving_code' =>$approving_code,
                                                     'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
                                                     'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
                                                     'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,
@@ -4672,76 +4720,41 @@ class LeaveApplicationController extends Controller
                                     $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
                                     $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
                                     $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                                    $division = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('division_id');
-                                    $department = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('department_id');
-                                    $section = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
-                                    $hr = Section::with('supervisor.personalInformation')->where('code','HRMO')->orWhere('name','Human Resource')->first();
+                                    $hrmo = EmployeeProfile::where('id',$leave_application->hrmo_officer_id)->first();
+                            $recommending = EmployeeProfile::where('id',$leave_application->recommending_officer_id)->first();
+                            $approving = AssignArea::where('employee_profile_id',$leave_application->employee_profile_id)->value('section_id');
 
-                                    $chief_name=null;
-                                    $chief_position=null;
-                                    $chief_code=null;
-                                    $head_name=null;
-                                    $head_position=null;
-                                    $head_code=null;
-                                    $supervisor_name=null;
-                                    $supervisor_position=null;
-                                    $supervisor_code=null;
-                                    $hr_name=null;
-                                    $hr_position=null;
-                                    $hr_code=null;
-                                    if($division) {
-                                        $division_name = Division::with('chief.personalInformation')->find($division);
+                            $recommending_name=null;
+                            $recommending_position=null;
+                            $recommending_code=null;
+                            $approving_name=null;
+                            $approving_position=null;
+                            $approving_code=null;
+                            $hr_name=null;
+                            $hr_position=null;
+                            $hr_code=null;
 
-                                        if($division_name && $division_name->chief  && $division_name->chief->personalInformation != null)
-                                        {
-                                            $chief_name = optional($division_name->chief->personalInformation)->first_name . ' ' . optional($division_name->chief->personalInformation)->last_name;
-                                            $chief_position = $division_name->chief->assignedArea->designation->name ?? null;
-                                            $chief_code = $division_name->chief->assignedArea->designation->code ?? null;
-                                        }
-                                    }
-                                    if($department)
-                                    {
-                                        $department_name = Department::with('head.personalInformation')->find($department);
-                                        if($department_name && $department_name->head  && $department_name->head->personalInformation != null)
-                                        {
-                                            $head_name = optional($department_name->head->personalInformation)->first_name . ' ' . optional($department_name->head->personalInformation)->last_name;
-                                            $head_position = $department_name->head->assignedArea->designation->name ?? null;
-                                            $head_code = $department_name->head->assignedArea->designation->code ?? null;
-                                        }
-                                    }
-                                    if($section)
-                                    {
-                                        $section_name = Section::with('supervisor.personalInformation')->find($section);
-                                        if($section_name && $section_name->supervisor  && $section_name->supervisor->personalInformation != null)
-                                        {
-                                            $supervisor_name = optional($section_name->supervisor->personalInformation)->first_name . ' ' . optional($section_name->supervisor->personalInformation)->last_name;
-                                            $supervisor_position = $section_name->supervisor->assignedArea->designation->name ?? null;
-                                            $supervisor_code = $section_name->supervisor->assignedArea->designation->code ?? null;
-                                        }
-                                    }
-                                    if($hr)
-                                    {
+                            if($hrmo)
+                            {
+                                    $hr_name = $hrmo->last_name . ', ' . $hrmo->last_name;
+                                    $hr_position = $hrmo->assignedArea->designation->name ?? null;
+                                    $hr_code = $hrmo->assignedArea->designation->code ?? null;
 
-                                        if($hr && $hr->supervisor  && $hr->supervisor->personalInformation != null)
-                                        {
-                                            $hr_name = optional($hr->supervisor->personalInformation)->first_name . ' ' . optional($hr->supervisor->personalInformation)->last_name;
-                                            $hr_position = $hr->supervisor->assignedArea->designation->name ?? null;
-                                            $hr_code = $hr->supervisor->assignedArea->designation->code ?? null;
-                                        }
-                                    }
+                            }
+                            if($recommending)
+                            {
+                                    $recommending_name = $recommending->last_name . ', ' . $recommending->first_name;
+                                    $recommending_position = $recommending->assignedArea->designation->name ?? null;
+                                    $recommending_code = $recommending->assignedArea->designation->code ?? null;
 
-                                    $omcc = Division::with('chief.personalInformation')->where('code','OMCC')->first();
-                                    if($omcc)
-                                    {
+                            }
+                            if($approving)
+                            {
+                                    $approving_name = $approving->last_name . ', ' . $approving->first_name;
+                                    $approving_position = $approving->assignedArea->designation->name ?? null;
+                                    $approving_code = $approving->assignedArea->designation->code ?? null;
 
-                                        if($omcc && $omcc->chief  && $omcc->chief->personalInformation != null)
-                                        {
-                                            $omcc_name = optional($omcc->chief->personalInformation)->first_name . ' ' . optional($omcc->chief->personalInformation)->last_name;
-                                            $omcc_position = $omcc->chief->assignedArea->designation->name ?? null;
-                                            $omcc_code = $omcc->chief->assignedArea->designation->code ?? null;
-                                        }
-                                    }
-
+                            }
                                     $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
                                     $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
                                     $total_days=0;
@@ -4776,21 +4789,15 @@ class LeaveApplicationController extends Controller
                                         'position_code' => $leave_application->employeeProfile->assignedArea->designation->code ?? null,
                                         'position_name' => $leave_application->employeeProfile->assignedArea->designation->name ?? null,
                                         'date_created' => $leave_application->date,
-                                        'division_head' =>$chief_name,
-                                        'division_head_position'=> $chief_position,
-                                        'division_head_code'=> $chief_code,
-                                        'department_head' =>$head_name,
-                                        'department_head_position' =>$head_position,
-                                        'department_head_code' =>$head_code,
-                                        'section_head' =>$supervisor_name,
-                                        'section_head_position' =>$supervisor_position,
-                                        'section_head_code' =>$supervisor_code,
-                                        'hr_head' =>$hr_name,
-                                        'hr_head_position' =>$hr_position,
-                                        'hr_head_code' =>$hr_code,
-                                        'omcc_head' =>$omcc_name,
-                                        'omcc_head_position' =>$omcc_position,
-                                        'omcc_head_code' =>$omcc_code,
+                                        'recommending_name' =>$recommending_name,
+                                        'recommending_position' =>$recommending_position,
+                                        'recommending_code' =>$recommending_code,
+                                        'hr_name' =>$hr_name,
+                                        'hr_position' =>$hr_position,
+                                        'hr_code' =>$hr_code,
+                                        'approving_name' =>$approving_name,
+                                        'approving_position' =>$approving_position,
+                                        'approving_code' =>$approving_code,
                                         'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
                                         'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
                                         'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,

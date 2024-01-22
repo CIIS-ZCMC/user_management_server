@@ -17,6 +17,9 @@ return new class extends Migration
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->string('reference_number')->nullable();
             $table->string('status');
+            $table->string('hrmo_officer_id')->nullable();
+            $table->string('recommending_officer_id')->nullable();
+            $table->string('approving_officer_id')->nullable();
             $table->string('remarks')->nullable();
             $table->string('purpose')->nullable();
             $table->string('overtime_letter_of_request')->nullable();

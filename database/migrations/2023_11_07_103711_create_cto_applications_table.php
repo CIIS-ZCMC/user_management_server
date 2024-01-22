@@ -21,6 +21,9 @@ return new class extends Migration
             $table->string('purpose');
             $table->text('remarks')->nullable();
             $table->string('status')->nullable();
+            $table->string('hrmo_officer_id')->nullable();
+            $table->string('recommending_officer_id')->nullable();
+            $table->string('approving_officer_id')->nullable();
             $table->timestamps();
         });
     }
