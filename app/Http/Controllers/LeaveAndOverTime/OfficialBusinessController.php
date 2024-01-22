@@ -22,7 +22,7 @@ class OfficialBusinessController extends Controller
     private $SINGULAR_MODULE_NAME = 'official business';
 
     /**
-     * Display a listing of the resource.
+     * Display a listing of the resource.   
      */
     public function index(Request $request)
     {
@@ -40,9 +40,19 @@ class OfficialBusinessController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
-        //
+        try {
+
+            $user = $request->user;
+            $sql = OfficialBusiness::where('employee_profile_id', $user->id)->get();
+            return response()->json(['data' => OfficialBusinessResource::collection($sql)], Response::HTTP_OK);
+
+        } catch (\Throwable $th) {
+            
+            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**

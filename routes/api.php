@@ -1534,6 +1534,10 @@ Route::middleware('auth.cookie')->group(function(){
             Route::get('ob-application-all', 'OfficialBusinessController@index');
         });
 
+        Route::middleware(['auth.permission:UMIS-OB view'])->group(function(){
+            Route::get('user-ob-application', 'OfficialBusinessController@create');
+        });
+
         Route::middleware(['auth.permission:UMIS-OB request'])->group(function(){
             Route::post('ob-application', 'OfficialBusinessController@store');
         });
@@ -1548,10 +1552,6 @@ Route::middleware('auth.cookie')->group(function(){
 
         Route::middleware(['auth.permission:UMIS-OB approve'])->group(function(){
             Route::post('ob-application-update/{id}/{status}', 'ObApplicationController@updateObApplicationStatus');
-        });
-
-        Route::middleware(['auth.permission:UMIS-OB view'])->group(function(){
-            Route::get('user-ob-application', 'ObApplicationController@getUserObApplication');
         });
 
         Route::middleware(['auth.permission:UMIS-OB view'])->group(function(){
