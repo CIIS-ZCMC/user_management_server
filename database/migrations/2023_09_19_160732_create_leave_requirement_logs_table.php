@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('leave_requirement_logs', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('requirement_id')->unsigned();
-            $table->foreign('requirement_id')->references('id')->on('requirements')->onDelete('cascade');
+            $table->unsignedBigInteger('leave_requirement_id')->unsigned();
+            $table->foreign('leave_requirement_id')->references('id')->on('leave_requirements')->onDelete('cascade');
             $table->unsignedBigInteger('action_by')->unsigned();
             $table->foreign('action_by')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->string('action')->nullable();

@@ -36,9 +36,9 @@ class LeaveType extends Model
         'is_days_recommended'
     ];
 
-    public function requirements()
+    public function leaveTypeRequirements()
     {
-        return $this->belongsToMany(Requirement::class);
+        return $this->hasmany(LeaveTypeRequirement::class);
     }
 
     public function employeeLeaveCredits()
@@ -46,13 +46,18 @@ class LeaveType extends Model
         return $this->hasMany(EmployeeLeaveCredit::class);
     }
 
+    public function leaveApplications()
+    {
+        $this->hasMany(LeaveApplication::class);
+    }
+
+    public function leaveTypeAttachments()
+    {
+        return $this->hasMany(LeaveAttachment::class);
+    }
+
     public function logs()
     {
         return $this->hasMany(ModelsLeaveTypeLog::class);
-    }
-
-    public function attachments()
-    {
-        return $this->hasMany(LeaveAttachment::class);
     }
 }

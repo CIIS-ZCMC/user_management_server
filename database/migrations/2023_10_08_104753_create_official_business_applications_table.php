@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ob_applications', function (Blueprint $table) {
+        Schema::create('official_business_applications', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('employee_profile_id')->unsigned();
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles')->onDelete('cascade');
@@ -20,6 +20,9 @@ return new class extends Migration
             $table->string('time_from');
             $table->string('time_to');
             $table->string('status');
+            $table->string('hrmo_officer_id')->nullable();
+            $table->string('recommending_officer_id')->nullable();
+            $table->string('approving_officer_id')->nullable();
             $table->string('purpose')->nullable();
             $table->string('personal_order_file')->nullable();
             $table->string('personal_order_path')->nullable();
@@ -28,6 +31,12 @@ return new class extends Migration
             $table->string('certificate_of_appearance_path')->nullable();
             $table->string('certificate_of_appearance_size')->nullable();
             $table->text('remarks')->nullable();
+            $table->unsignedBigInteger('hrmo_officer')->unsigned()->nullable();
+            $table->foreign('hrmo_officer')->references('id')->on('employee_profiles')->onDelete('cascade');
+            $table->unsignedBigInteger('recommending_officer')->unsigned()->nullable();
+            $table->foreign('recommending_officer')->references('id')->on('employee_profiles')->onDelete('cascade');
+            $table->unsignedBigInteger('approving')->unsigned()->nullable();
+            $table->foreign('approving')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->timestamps();
         });
     }

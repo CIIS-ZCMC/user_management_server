@@ -16,6 +16,9 @@ return new class extends Migration
             $table->datetime('date_from');
             $table->datetime('date_to');
             $table->string('status');
+            $table->string('hrmo_officer_id')->nullable();
+            $table->string('recommending_officer_id')->nullable();
+            $table->string('approving_officer_id')->nullable();
             $table->string('purpose')->nullable();
             $table->string('personal_order_file')->nullable();
             $table->string('personal_order_path')->nullable();

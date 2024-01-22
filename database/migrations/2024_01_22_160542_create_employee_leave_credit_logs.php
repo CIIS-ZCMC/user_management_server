@@ -11,16 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('employee_overtime_credit_logs', function (Blueprint $table) {
+        Schema::create('employee_leave_credit_logs', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('employee_ot_credit_id')->unsigned();
             $table->foreign('employee_ot_credit_id')->references('id')->on('employee_overtime_credits');
-            $table->unsignedBigInteger('overtime_application_id')->unsigned();
-            $table->foreign('overtime_application_id')->references('id')->on('overtime_applications');
-            $table->string('action');
-            $table->integer('previous_overtime_hours');
-            $table->integer('hours');
-            $table->boolean('is_deduction');
+            $table->float('previous_credit');
+            $table->float('leave_credits'); // Earned or Deduct
             $table->timestamps();
         });
     }
@@ -30,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('employee_overtime_credit_logs');
+        Schema::dropIfExists('employee_leave_credit_logs');
     }
 };
