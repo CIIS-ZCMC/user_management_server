@@ -11,10 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ob_application_logs', function (Blueprint $table) {
+        Schema::create('official_business_application_logs', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('ob_application_id')->unsigned();
-            $table->foreign('ob_application_id')->references('id')->on('ob_applications')->onDelete('cascade');
+            $table->foreign('ob_application_id')->references('id')->on('official_business_applications')->onDelete('cascade');
             $table->unsignedBigInteger('action_by')->unsigned();
             $table->foreign('action_by')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->string('action')->nullable();

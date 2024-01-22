@@ -25,7 +25,6 @@ return new class extends Migration
             $table->string('hrmo_officer_id')->nullable();
             $table->string('recommending_officer_id')->nullable();
             $table->string('approving_officer_id')->nullable();
-            $table->string('remarks')->nullable();
             $table->boolean('without_pay')->default(false);
             $table->unsignedBigInteger('employee_profile_id')->unsigned();
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles')->onDelete('cascade');
