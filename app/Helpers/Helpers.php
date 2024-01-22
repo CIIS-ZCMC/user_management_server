@@ -4,6 +4,7 @@ namespace App\Helpers;
 
 use App\Models\SystemLogs;
 use App\Models\TimeShift;
+use App\Models\OfficialBusinessLog;
 
 use DateTime;
 use DateInterval;
@@ -29,6 +30,15 @@ class Helpers {
             'status' => $status,
             'remarks' => $remarks,
             'ip_address' => $ip
+        ]);
+    }
+
+    public static function registerOfficialBusinessLogs($data_id, $user_id, $action)
+    {
+        OfficialBusinessLog::create([
+            'ob_application_id' => $data_id,
+            'action_by' => $user_id,
+            'action' => $action
         ]);
     }
 
