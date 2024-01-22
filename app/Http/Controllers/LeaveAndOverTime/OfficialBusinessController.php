@@ -87,7 +87,6 @@ class OfficialBusinessController extends Controller
            
             $user                   = $request->user;
             $assigned_area          = $user->assignedArea->findDetails();
-            $hrmo_officer           = Section::where('code', 'HRMO')->first()->supervisor_employee_profile_id;
             $approving_officer      = Division::where('code', 'OMCC')->first()->chief_employee_profile_id;
             $recommending_officer   = null;
 
@@ -144,10 +143,8 @@ class OfficialBusinessController extends Controller
             $data->certificate_of_appearance        = $cleanData['certificate_of_appearance']->getClientOriginalName();;
             $data->certificate_of_appearance_path   = $cleanData['certificate_of_appearance']->store('public/official_business');
             $data->certificate_of_appearance_size   = $cleanData['certificate_of_appearance']->getSize();
-            $data->hrmo_officer                     = $hrmo_officer;
             $data->approving_officer                = $approving_officer;
             $data->recommending_officer             = $recommending_officer;
-            $data->remarks                          = $cleanData['remarks'];
             $data->save();
 
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in storing '.$this->PLURAL_MODULE_NAME.'.');

@@ -30,7 +30,6 @@ class OfficialBusinessResource extends JsonResource
             'certificate_of_appearance_size'    => $this->certificate_of_appearance_size,
             'remarks'                           => $this->remarks,
             'employee'                          => $this->employee ? new EmployeeProfileResource($this->employee) : null,
-            'hrmo_officer'                      => $this->hrmoOfficer ? new EmployeeProfileResource($this->hrmoOfficer) : null,
             'recommending_officer'              => $this->recommendingOfficer ? new EmployeeProfileResource($this->recommendingOfficer) : null,
             'approving_officer'                 => $this->approvingOfficer ? new EmployeeProfileResource($this->approvingOfficer) : null,
             'created_at'                        => (string) $this->created_at,
