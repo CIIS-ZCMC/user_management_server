@@ -444,7 +444,7 @@ class LeaveApplicationController extends Controller
                                 return [
                                     'id' => $log->id,
                                     'leave_application_id' => $log->leave_application_id,
-                                    'action_by' => "{$first_name} {$last_name}" ,
+                                     'action_by' => "{$first_name} {$last_name}" ,
                                     'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
                                     'position_code' => $log->employeeProfile->assignedArea->designation->code ?? null,
                                     'action' => $log->action,
