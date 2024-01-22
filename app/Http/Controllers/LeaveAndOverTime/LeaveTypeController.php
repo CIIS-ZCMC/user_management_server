@@ -3,25 +3,15 @@
 namespace App\Http\Controllers\LeaveAndOverTime;
 
 use App\Helpers\Helpers;
-use Intervention\Image\Facades\Image;
 use Carbon\Carbon;
 use App\Models\LeaveType;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\EmployeeLeaveCredit;
-use App\Http\Resources\LeaveType as ResourcesLeaveType;
-use App\Models\EmployeeLeaveCredit as ModelsEmployeeLeaveCredit;
-use App\Models\EmployeeProfile;
 use App\Models\LeaveAttachment;
 use App\Models\LeaveCredit;
 use App\Models\LeaveTypeLog;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
-use \Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
