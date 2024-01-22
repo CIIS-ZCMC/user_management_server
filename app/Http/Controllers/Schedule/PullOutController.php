@@ -280,13 +280,13 @@ class PullOutController extends Controller
             }
 
             
-            $data = TimeAdjusment::findOrFail($id);
+            $data = PullOut::findOrFail($id);
 
             if(!$data) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $query = TimeAdjusment::where('id', $data->id)->update([
+            $query = PullOut::where('id', $data->id)->update([
                 'status'            => $cleanData['status'],
                 'approval_date'     => now(),
                 'updated_at'        => now()

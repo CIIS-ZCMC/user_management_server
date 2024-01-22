@@ -95,41 +95,51 @@ class ExchangeDutyController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $data = null;
-            $msg = null;
+            $data           = null;
+            $msg            = null;
+            $selected_dates = null;
+            $date_start     = $cleanData['date_start'];
+            $date_end       = $cleanData['date_end'];
+
+            // Get all date selected
+            $current_date = $date_start->copy();
+            while ($current_date->lte($date_end)) {
+                $selected_dates[] = $current_date->toDateString();
+                $current_date->addDay();
+            }
+
+            foreach ($selected_dates as $key => $date) {
+            
+            }
+
 
             $schedule = Schedule::where('id', $cleanData['schedule_id'])->first();
-
             if ($schedule) {
                 $reliever = EmployeeProfile::where('id', $cleanData['reliever_employee_id'])->first();
 
-                if ($reliever) {
-                    $query = DB::table('employee_profile_schedule')->where([
-                        ['employee_profile_id', '=', $reliever->id],
-                        ['schedule_id', '=', $schedule->id],
-                    ])->first();
+                $query = DB::table('employee_profile_schedule')->where([
+                    ['employee_profile_id', '=', $reliever->id],
+                    ['schedule_id', '=', $schedule->id],
+                ])->first();
 
-                    if ($query) {
-                        $data = ExchangeDuty::create($cleanData);
+                if ($query) {
+                    $data = ExchangeDuty::create($cleanData);
 
-                        $variable = $cleanData['approve_by'];
-                        foreach ($variable as $key => $value) {
-                            $approve_by = EmployeeProfile::select('id')->where('id', $value['employee_id'])->first();
+                    $variable = $cleanData['approve_by'];
+                    foreach ($variable as $key => $value) {
+                        $approve_by = EmployeeProfile::select('id')->where('id', $value['employee_id'])->first();
 
-                            if (!$approve_by) {
-                                $msg = 'No Employee Found (Approve By)';
+                        if (!$approve_by) {
+                            $msg = 'No Employee Found (Approve By)';
 
-                            } else { 
+                        } else { 
 
-                                $data->approval()->attach($approve_by);
-                                $msg = 'New exchange duty requested.';
-                            }
+                            $data->approval()->attach($approve_by);
+                            $msg = 'New exchange duty requested.';
                         }
                     }
-                    
-                } else {
-                    return response()->json(['message' => 'No employee found.'], Response::HTTP_NOT_FOUND);
                 }
+
             } else {
                 return response()->json(['message' => 'No schedule found.'], Response::HTTP_NOT_FOUND);
             }

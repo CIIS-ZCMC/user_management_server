@@ -20,9 +20,10 @@ return new class extends Migration
             $table->unsignedBigInteger('approve_by_employee_id');
             $table->foreign('approve_by_employee_id')->references('id')->on('employee_profiles');
 
-            $table->date('date');
-            $table->string('reason');
+            $table->date('pull_out_date');
+            $table->date('approval_date');
             $table->boolean('status')->default(false);
+            $table->string('reason');
             $table->softDeletes();
             $table->timestamps();
         });
