@@ -63,15 +63,21 @@ class ScheduleController extends Controller
             $year   = $cleanData['year'];   // Replace with the desired year
             $dates_with_day = Helpers::getDatesInMonth($year, $month, "Days of Week");
 
-            $user = $request->user->assignedArea;
+            $user           = $request->user;
+            $assigned_area  = $user->assignedArea->findDetails();
 
-            $array = EmployeeProfile::join('personal_informations as PI', 'employee_profiles.personal_information_id', '=', 'PI.id')
-            ->select('employee_profiles.id','employee_id','biometric_id', 'PI.first_name','PI.middle_name', 'PI.last_name')
-            ->with(['assignedArea', 'schedule' => function ($query) use ($year, $month) {
-                $query->with(['timeShift', 'holiday'])->whereYear('date', '=', $year)->whereMonth('date', '=', $month);
-            }])->whereHas('assignedArea', function ($query) use ($user) {
-                $query->where('id', $user->id);
-            })->get()->toArray();
+            // $array = EmployeeProfile::join('personal_informations as PI', 'employee_profiles.personal_information_id', '=', 'PI.id')
+            // ->select('employee_profiles.id','employee_id','biometric_id', 'PI.first_name','PI.middle_name', 'PI.last_name')
+            // ->with(['assignedArea', 'schedule' => function ($query) use ($year, $month) {
+            //     $query->with(['timeShift', 'holiday'])->whereYear('date', '=', $year)->whereMonth('date', '=', $month);
+            // }])->whereHas('assignedArea', function ($query) use ($user) {
+            //     $query->where('id', $user->id);
+            // })->get()->toArray();
+
+           return $model = EmployeeProfile::with(['assignedArea'])->whereHas('assignedArea', function ($query) use ($user, $assigned_area) {
+                    $query->where([strtolower($assigned_area['sector']).'_id' => $user->assignedArea->id]);
+            })->get();
+
 
             $employee = EmployeeProfile::join('personal_informations as PI', 'employee_profiles.personal_information_id', '=', 'PI.id')
                             ->select('employee_profiles.id', 'employee_id', 'biometric_id', DB::raw("CONCAT(PI.first_name, ' ', COALESCE(PI.middle_name, ''), '', PI.last_name) AS name"))
@@ -157,10 +163,10 @@ class ScheduleController extends Controller
             $msg        = null;
             $is_weekend = 0;
 
-            if ($user != null && $user->position()) {
-                $position = $user->position();
+            // if ($user != null && $user->position()) {
+            //     $position = $user->position();
 
-                if ($position->position === "Chief" || $position->position === "Department OIC" || $position->position === "Supervisor" || $position->position === "Section OIC" || $position->position === "Unit Head" || $position->position === "Unit OIC") {
+            //     if ($position->position === "Chief" || $position->position === "Department OIC" || $position->position === "Supervisor" || $position->position === "Section OIC" || $position->position === "Unit Head" || $position->position === "Unit OIC") {
                     $date_start     = $cleanData['date_start'];     // Replace with your start date
                     $date_end       = $cleanData['date_end'];       // Replace with your end date
                     $selected_days  = $cleanData['selected_days'];  // Replace with your selected days
@@ -255,8 +261,8 @@ class ScheduleController extends Controller
                                     $msg = 'New employee schedule registered.';
                                 }
                             }
-                        }
-                    }
+                    //     }
+                    // }
 
                     Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
                     return response()->json(['data' => $data ,'message' => $msg], Response::HTTP_OK);
