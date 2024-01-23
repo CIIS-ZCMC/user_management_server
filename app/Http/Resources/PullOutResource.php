@@ -16,12 +16,13 @@ class PullOutResource extends JsonResource
     {
         return [
             'id'            => $this->id,
-            'date'          => $this->date,
-            'reason'        => $this->reason,
-            'status'        => $this->status,
             'employee'      => $this->employee ? EmployeeProfileResource::collection($this->employee) : [],
             'requested_by'  => $this->requested_by,
             'approve_by'    => $this->approve_by,
+            'pull_out_date' => $this->pull_out_date,
+            'approval_date' => $this->approval_date,
+            'status'        => $this->status,
+            'reason'        => $this->reason,
             'deleted_at'    => (string) $this->deleted_at,
             'created_at'    => (string) $this->created_at,
             'updated_at'    => (string) $this->updated_at,

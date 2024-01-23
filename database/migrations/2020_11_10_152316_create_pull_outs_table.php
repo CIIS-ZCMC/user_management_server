@@ -21,8 +21,8 @@ return new class extends Migration
             $table->foreign('approve_by_employee_id')->references('id')->on('employee_profiles');
 
             $table->date('pull_out_date');
-            $table->date('approval_date');
-            $table->boolean('status')->default(false);
+            $table->date('approval_date')->nullable();
+            $table->string('status')->default('pending');
             $table->string('reason');
             $table->softDeletes();
             $table->timestamps();
