@@ -44,4 +44,8 @@ class OfficialBusiness extends Model
     public function approvingOfficer() {
         return $this->belongsTo(EmployeeProfile::class, 'approving_officer');
     }
+
+    public function totalDays() {
+
+    }
 }
