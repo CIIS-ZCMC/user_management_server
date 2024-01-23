@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Http\Resources\LeaveTypeLog;
-use App\Models\LeaveTypeLog as ModelsLeaveTypeLog;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -58,6 +57,6 @@ class LeaveType extends Model
 
     public function logs()
     {
-        return $this->hasMany(ModelsLeaveTypeLog::class);
+        return $this->hasMany(LeaveTypeLog::class);
     }
 }

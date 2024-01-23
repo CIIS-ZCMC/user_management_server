@@ -2,20 +2,21 @@
 
 namespace App\Http\Controllers\LeaveAndOverTime;
 
+use App\Helpers\Helpers;
 use App\Models\LeaveType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LeaveTypeRequest;
 use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Resources\EmployeeLeaveCredit;
 use App\Http\Resources\LeaveTypeResource;
+use App\Models\EmployeeLeaveCredit as ModelsEmployeeLeaveCredit;
+use App\Models\LeaveAttachment;
 use App\Models\LeaveTypeLog;
 use App\Models\LeaveTypeRequirement;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\DB;
-use PDO;
 
 class LeaveTypeController extends Controller
 {
@@ -70,6 +71,20 @@ class LeaveTypeController extends Controller
         }
     }
 
+    public function employeeLeaveCredit(Request $request)
+    {
+        try{
+            $employee_leave_credit = $request->user->leaveCredits;
+
+            return response()->json([
+                'data' => new EmployeeLeaveCredit($employee_leave_credit),
+                'message' => 'Retrieve employee leave credit'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            return response()->json(['message' => ''], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public function store(LeaveTypeRequest $request)
     {
         try{
@@ -101,6 +116,21 @@ class LeaveTypeController extends Controller
                     'leave_type_id' => $leave_type->id,
                     'leave_requirement_id' => $value
                 ]);
+            }
+
+            if ($value->hasFile('attachments')) {
+                foreach ($value->file('attachments') as $key => $file) {
+                    $fileName=pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+                    $size = filesize($file);
+                    $file_name_encrypted = Helpers::checkSaveFile($file, '/requirements');
+
+                    LeaveAttachment::create([
+                        'leave_type_id' => $leave_type->id,
+                        'file_name' => $fileName,
+                        'path' => $file_name_encrypted,
+                        'size' => $size,
+                    ]);
+                }
             }
 
             LeaveTypeLog::create([

@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreign('employee_ot_credit_id')->references('id')->on('employee_overtime_credits');
             $table->float('previous_credit');
             $table->float('leave_credits'); // Earned or Deduct
+            $table->string('reason')->nullable();
             $table->timestamps();
         });
     }

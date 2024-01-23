@@ -23,7 +23,8 @@ class LeaveTypeResource extends JsonResource
             'is_country' => $this->is_country,
             'is_illness' => $this->is_illness,
             'is_days_recommended' => $this->is_days_recommended,
-            'leave_type_requirements' => LeaveTypeRequirementResource::collection($this->leaveTypeRequirements)
+            'leave_type_requirements' => LeaveTypeRequirementResource::collection($this->leaveTypeRequirements),
+            'logs' => $this->logs
         ];
     }
 }

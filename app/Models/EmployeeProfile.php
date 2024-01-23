@@ -133,11 +133,12 @@ class EmployeeProfile extends Authenticatable
         return $fullName;
     }
 
-    public function leaveCredits()
+    public function leaveCredit()
     {
         return $this->hasMany(EmployeeLeaveCredit::class);
     }
-    public function leaveLogs() {
+    public function leaveLogs()
+    {
         return $this->hasMany(LeaveTypeLog::class);
     }
 
@@ -151,31 +152,38 @@ class EmployeeProfile extends Authenticatable
         return $this->hasMany(LeaveApplication::class, 'employee_profile_id');
     }
 
-    public function leaveApplicationLogs() {
+    public function leaveApplicationLogs()
+    {
         return $this->hasMany(LeaveApplicationLog::class);
     }
 
-    public function obApplications() {
+    public function obApplications()
+    {
         return $this->hasMany(ObApplication::class);
     }
 
-    public function obApplicationLogs() {
+    public function obApplicationLogs()
+    {
         return $this->hasMany(ObApplicationLog::class);
     }
 
-    public function otApplications() {
+    public function otApplications()
+    {
         return $this->hasMany(OfficialTimeApplication::class);
     }
 
-    public function otApplicationLogs() {
+    public function otApplicationLogs()
+    {
         return $this->hasMany(OvtApplicationLog::class);
     }
 
-    public function overtimeApplication() {
+    public function overtimeApplication()
+    {
         return $this->hasMany(OvertimeApplication::class);
     }
 
-    public function ovtApplicationLogs() {
+    public function ovtApplicationLogs()
+    {
         return $this->hasMany(OvtApplicationLog::class);
     }
 

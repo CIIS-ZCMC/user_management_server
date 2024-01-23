@@ -36,6 +36,8 @@ class LeaveTypeRequest extends FormRequest
             'is_days_recommended' => 'required|boolean',
             'leave_type_requirements' => 'required|array',
             'update_leave_type_requirements' => 'nullable|array',
+            'attachments' => 'required|array',
+            'attachments.*' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
         ];
     }
 }

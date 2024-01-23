@@ -2,11 +2,6 @@
 
 namespace App\Http\Resources;
 
-use App\Http\Resources\LeaveApplicationDateTime as ResourcesLeaveApplicationDateTime;
-use App\Http\Resources\LeaveApplicationRequirement as ResourcesLeaveApplicationRequirement;
-use App\Models\LeaveApplicationDateTime;
-use App\Models\LeaveApplicationRequirement;
-use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class LeaveApplicationResource extends JsonResource
@@ -53,7 +48,9 @@ class LeaveApplicationResource extends JsonResource
                 "hrmo_full_name" => $this->approvingOfficer->personalInformation->fullName(),
                 "designation" => $this->approvingOfficer->designation->name,
                 "designation_code" => $this->approvingOfficer->designation->code
-            ]
+            ],
+            'attachments' => LeaveApplicationAttachmentResource::collection($this->leaveApplicationRequirements),
+            "logs" => $this->logs
         ];
     }
 }

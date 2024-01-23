@@ -23,6 +23,11 @@ class Helpers {
         return Section::where('code', 'HRMO')->first()->supervisor_employee_profile_id;
     }
 
+    public static function getChiefOfficer()
+    {
+        return Division::where('code', 'OMCC')->first()->chief_employee_profile_id;
+    }
+
     public static function getRecommendingAndApprovingOfficer($assigned_area, $employee_profile_id)
     {
         switch($assigned_area->sector){

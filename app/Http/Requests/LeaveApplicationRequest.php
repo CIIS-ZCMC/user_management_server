@@ -23,18 +23,25 @@ class LeaveApplicationRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            'leave_type_id' => 'required|integer',
-            'date_from' => 'required|date:Y-m-d',
-            'date_to' => 'required|date:Y-m-d',
-            'country' => 'nullable|string|max:255',
-            'city' => 'nullable|string|max:255',
-            'patient_type' => 'nullable|string|max:255',
-            'illness' => 'nullable|string|max:255',
-            'status' => 'nullable|string|max:255',
-            'remarks' => 'nullable|string|max:255',
-            'without_pay' => 'nullable|boolean',
-            'reason' => 'nullable|string'
-        ];
+        $rules = [];
+
+        foreach ($this->input() as $index => $data) {
+            $rules["$index.leave_type_id"] = 'required|integer';
+            $rules["$index.date_from"] = 'required|date_format:Y-m-d';
+            $rules["$index.date_to"] = 'required|date_format:Y-m-d';
+            $rules["$index.country"] = 'nullable|string|max:255';
+            $rules["$index.city"] = 'nullable|string|max:255';
+            $rules["$index.patient_type"] = 'nullable|string|max:255';
+            $rules["$index.illness"] = 'nullable|string|max:255';
+            $rules["$index.applied_credits"] = 'nullable|numeric';
+            $rules["$index.status"] = 'nullable|string|max:255';
+            $rules["$index.remarks"] = 'nullable|string|max:255';
+            $rules["$index.without_pay"] = 'nullable|boolean';
+            $rules["$index.reason"] = 'nullable|string';
+            $rules["$index.attachments.*.attachment"] = 'required|file|mimes:jpeg,png,jpg,pdf|max:2048';
+            $rules["$index.attachments.*.name"] = 'required|string|max:255';
+        }
+
+        return $rules;
     }
 }

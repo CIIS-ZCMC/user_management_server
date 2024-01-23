@@ -14,7 +14,8 @@ class EmployeeLeaveCreditLogs extends Model
     public $fillable = [
         'employee_leave_credit_id',
         'previous_credit',
-        'leave_credits'
+        'leave_credits',
+        'reason'
     ];
 
     public $timestamps = true;

@@ -1623,7 +1623,7 @@ Route::middleware('auth.cookie')->group(function(){
 
 
         Route::post('add-monthly-overtime', 'EmployeeOvertimeCreditController@store');
-        
+
 
         Route::middleware(['auth.permission:UMIS-CT view-all'])->group(function(){
             Route::get('cto-application-all', 'CtoApplicationController@index');
