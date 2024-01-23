@@ -4,133 +4,65 @@ namespace App\Http\Controllers\LeaveAndOverTime;
 
 use App\Models\Requirement;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\LeaveType;
-use App\Models\EmployeeProfile;
-use App\Models\LeaveType as ModelsLeaveType;
+use App\Http\Requests\PasswordApprovalRequest;
+use App\Http\Requests\RequirementRequest;
+use App\Http\Resources\LeaveRequirementResource;
 use App\Models\RequirementLog;
 use Illuminate\Http\Request;
-use Carbon\Carbon;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 
 class RequirementController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function index(Request $request)
     {
-            try{
+        try{
+            $leave_requirements = Requirement::all();
 
-            $requirements = Requirement::with('logs.employeeProfile.personalInformation') // Eager load relationships
-                ->get();
-
-            $result = $requirements->map(function ($requirement) {
-                // Access requirement details
-                $requirementDetails = $requirement->toArray();
-
-                // Access logs for the current requirement
-                $logs = $requirement->logs->map(function ($log) {
-                    // Check if the employeeProfile relation is present
-                    if ($log->employeeProfile) {
-                        // Access employee name for the current log
-                        $first_name = optional($log->employeeProfile->personalInformation)->first_name ;
-                        $last_name = optional($log->employeeProfile->personalInformation)->last_name;
-                        $date=$log->date;
-                        $formatted_date=Carbon::parse($date)->format('M d,Y');
-                        return [
-                            'id' => $log->id,
-                            'action_by' => "{$last_name}, {$first_name}" ,
-                            'position' => $log->employeeProfile->assignedArea->designation->code ?? null,
-                            'action' => $log->action,
-                            'date' => $formatted_date,
-                            'time' => $log->time,
-
-                        ];
-                    }
-
-                    return null; // or handle this case according to your logic
-                })->filter(); // Remove null values from the result
-
-                return [
-                    'id' => $requirementDetails['id'],
-                    'name' => $requirementDetails['name'],
-                    'description' => $requirementDetails['description'],
-                    'logs' => $logs,
-                ];
-            });
-
-                return response()->json(['data' => $result ], Response::HTTP_OK);
-                }catch(\Throwable $th){
-
-                    return response()->json(['message' => $th->getMessage()], 500);
-                }
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
+            return response()->json([
+                'data' => LeaveRequirementResource::collection($leave_requirements),
+                'message' => 'Retrieve leave requirement records.'
+            ],Response::HTTP_OK);
+        }catch(\Throwable $th){
+            return response()->json(['message' => $th->getMessage()], 500);
+        }
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(RequirementRequest $request)
     {
         try{
-            $request->validate([
-                'name' => 'required|string',
-                // 'is_special' => 'required|boolean',
+            $employee_profile = $request->user;
 
+            if(!$employee_profile){
+                return response()->json(['message' => 'Unauthorized.'], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $cleanData = [];
+
+            foreach($request->all() as $key => $value){
+                if($value === null){
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+                $cleanData[$key] = strip_tags($value);
+            }
+
+            $leave_requirement = Requirement::create($cleanData);
+
+            RequirementLog::create([
+                'leave_requirement_id' => $leave_requirement->id,
+                'employee_profile_id' => $employee_profile->id,
+                'action' => 'Register new leave requirement.'
             ]);
-            $requirement = new Requirement();
-            $requirement->name = ucwords($request->name);
-            $requirement->description = $request->description;
-            $requirement->save();
 
-            $requirement_log = new RequirementLog();
-            $requirement_log->requirement_id = $requirement->id;
-            $requirement_log->action_by_id = '1';
-            $requirement_log->action = 'Add';
-            $requirement_log->date = date('Y-m-d');
-            $requirement_log->time = date('H:i:s');
-            $requirement_log->save();
-
-            $id=$requirement->id;
-            $requirements = Requirement::with('logs.employeeProfile.personalInformation')
-            ->where('id',$id)->get();
-            $requirement_types_result = $requirements->map(function ($requirement) {
-                return [
-                    'id' => $requirement->id,
-                    'name' => $requirement->name,
-                    'description' => $requirement->description,
-                    'logs' => $requirement->logs->map(function ($log) {
-                        $process_name=$log->action;
-                        $action ="";
-                        $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
-                        $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
-
-                        $date=$log->date;
-                        $formatted_date=Carbon::parse($date)->format('M d,Y');
-                        return [
-                            'id' => $log->id,
-                            'leave_application_id' => $log->leave_application_id,
-                            'action_by' => "{$last_name}, {$first_name}" ,
-                            'position' => $log->employeeProfile->assignedArea->designation->code ?? null,
-                            'action' => $log->action,
-                            'date' => $formatted_date,
-                            'time' => $log->time,
-
-                        ];
-                    }),
-
-                ];
-            });
-            $single_array = array_merge(...$requirement_types_result);
-            return response()->json(['message' => 'Requirement has been sucessfully saved','data' => $single_array ], Response::HTTP_OK);
+            return response()->json([
+                'data' => new LeaveRequirementResource($leave_requirement),
+                'message' => 'Requirement has been sucessfully saved'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
 
             return response()->json(['message' => $th->getMessage()], 500);
@@ -140,51 +72,56 @@ class RequirementController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show($id,Requirement $requirement)
+    public function show($id,Request $requirement)
     {
         try{
-            $data = Requirement::find($id);
+            $leave_requirements = Requirement::find($id);
 
-            return response() -> json(['data' => $data], 200);
+            return response()->json([
+                'data' => new LeaveRequirementResource($leave_requirements),
+                'message' => 'Retrieve leave requirement records.'
+            ],Response::HTTP_OK);
         }catch(\Throwable $th){
-
-            return response() -> json(['message' => $th -> getMessage()], 500);
+            return response()->json(['message' => $th->getMessage()], 500);
         }
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Requirement $requirement)
-    {
-        //
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update($id,Request $request)
+    public function update($id, RequirementRequest $request)
     {
         try{
-            $request->validate([
-                'name' => 'required|string',
-                // 'is_special' => 'required|boolean',
+            $employee_profile = $request->user;
 
+            if(!$employee_profile){
+                return response()->json(['message' => 'Unauthorized.'], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $leave_requirement = Requirement::find($id);
+
+            $cleanData = [];
+
+            foreach($request->all() as $key => $value){
+                if($value === null){
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+                $cleanData[$key] = strip_tags($value);
+            }
+
+            $leave_requirement->update($cleanData);
+
+            RequirementLog::create([
+                'leave_requirement_id' => $leave_requirement->id,
+                'employee_profile_id' => $employee_profile->id,
+                'action' => 'Update leave requirement.'
             ]);
-            $requirement = Requirement::findOrFail($id);
-            $requirement->name = ucwords($request->name);
-            $requirement->description = $request->description;
-            $requirement->update();
 
-            $requirement_log = new RequirementLog();
-            $requirement_log->requirement_id = $requirement->id;
-            $requirement_log->action_by_id = '1';
-            $requirement_log->action = 'Update';
-            $requirement_log->date = date('Y-m-d');
-            $requirement_log->time = date('H:i:s');
-            $requirement_log->save();
-
-            return response()->json(['message' => 'Requirement has been sucessfully updated','data' => $requirement,'logs' => $requirement_log], Response::HTTP_OK);
+            return response()->json([
+                'data' => new LeaveRequirementResource($leave_requirement),
+                'message' => 'Requirement has been sucessfully saved'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
 
             return response() -> json(['message' => $th -> getMessage()], 500);
@@ -194,12 +131,33 @@ class RequirementController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Requirement $requirement)
+    public function destroy($id, PasswordApprovalRequest $request)
     {
-        //
+        try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $leave_requirements = Requirement::find($id);
+
+            if(count($leave_requirements->leaveTypeRequirements) > 0){
+                return response()->json(['message' => "Other records is using this leave requirement deletion is prohibited."], Response::HTTP_BAD_REQUEST);
+            }
+
+            RequirementLog::where('leave_requirement_id', $leave_requirements->id)->delete();
+
+            return response()->json([
+                'data' => new LeaveRequirementResource($leave_requirements),
+                'message' => 'Retrieve leave requirement records.'
+            ],Response::HTTP_OK);
+        }catch(\Throwable $th){
+            return response()->json(['message' => $th->getMessage()], 500);
+        }
     }
-
-
-
-
 }
