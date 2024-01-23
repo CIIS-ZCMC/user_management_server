@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -45,7 +46,14 @@ class OfficialBusiness extends Model
         return $this->belongsTo(EmployeeProfile::class, 'approving_officer');
     }
 
-    public function totalDays() {
+    public function totalDays()
+    {
+        $dateFrom = Carbon::parse($this->date_from);
+        $dateTo = Carbon::parse($this->date_to);
 
+        // Calculate the difference in days
+        $totalDays = $dateTo->diffInDays($dateFrom);
+
+        return $totalDays;
     }
 }

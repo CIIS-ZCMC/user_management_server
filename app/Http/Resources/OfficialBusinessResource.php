@@ -16,6 +16,7 @@ class OfficialBusinessResource extends JsonResource
     {
         return [
             'id'                                => $this->id,
+            'total_days'                        => $this->totalDays(),
             'date_from'                         => $this->date_from,
             'date_to'                           => $this->date_to,
             'time_from'                         => $this->time_from,
