@@ -29,7 +29,7 @@ class OfficialBusinessController extends Controller
     public function index(Request $request)
     {
         try {
-            
+            return $model = OfficialBusiness::with(['employee'])->get();
             return response()->json(['data' => OfficialBusinessResource::collection(OfficialBusiness::all())], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
@@ -112,7 +112,7 @@ class OfficialBusinessController extends Controller
 
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in storing '.$this->PLURAL_MODULE_NAME.'.');
             Helpers::registerOfficialBusinessLogs($data->id, $user['id'], 'store');
-            return response()->json(['data' =>OfficialBusinessResource::collection(OfficialBusiness::where('id', $data->id)->get())], Response::HTTP_OK);
+            return response()->json(['data' =>OfficialBusinessResource::collection(OfficialBusiness::where('id', $data->id)->get()), 'msg' => 'Request Complete.'], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
