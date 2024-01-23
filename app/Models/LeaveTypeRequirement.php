@@ -15,4 +15,14 @@ class LeaveTypeRequirement extends Model
     ];
 
     public $timestamps = true;
+
+    public function leaveType()
+    {
+        return $this->belongsTo(LeaveType::class);
+    }
+
+    public function leaveRequirement()
+    {
+        return $this->belongsTo(LeaveTypeRequirement::class);
+    }
 }

@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Http\Resources\LeaveTypeLog;
-use App\Models\LeaveTypeLog as ModelsLeaveTypeLog;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -36,9 +35,9 @@ class LeaveType extends Model
         'is_days_recommended'
     ];
 
-    public function requirements()
+    public function leaveTypeRequirements()
     {
-        return $this->belongsToMany(Requirement::class);
+        return $this->hasmany(LeaveTypeRequirement::class);
     }
 
     public function employeeLeaveCredits()
@@ -46,13 +45,18 @@ class LeaveType extends Model
         return $this->hasMany(EmployeeLeaveCredit::class);
     }
 
-    public function logs()
+    public function leaveApplications()
     {
-        return $this->hasMany(ModelsLeaveTypeLog::class);
+        $this->hasMany(LeaveApplication::class);
     }
 
-    public function attachments()
+    public function leaveTypeAttachments()
     {
         return $this->hasMany(LeaveAttachment::class);
+    }
+
+    public function logs()
+    {
+        return $this->hasMany(LeaveTypeLog::class);
     }
 }

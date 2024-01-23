@@ -2,9 +2,12 @@
 
 namespace App\Helpers;
 
+use App\Models\Department;
+use App\Models\Division;
+use App\Models\Section;
 use App\Models\SystemLogs;
 use App\Models\TimeShift;
-
+use App\Models\Unit;
 use DateTime;
 use DateInterval;
 use DatePeriod;
@@ -14,6 +17,107 @@ use Illuminate\Support\Facades\Log;
 
 
 class Helpers {
+
+    public static function getHrmoOfficer()
+    {
+        return Section::where('code', 'HRMO')->first()->supervisor_employee_profile_id;
+    }
+
+    public static function getChiefOfficer()
+    {
+        return Division::where('code', 'OMCC')->first()->chief_employee_profile_id;
+    }
+
+    public static function getRecommendingAndApprovingOfficer($assigned_area, $employee_profile_id)
+    {
+        switch($assigned_area->sector){
+            case 'Division':
+                // If employee is not Division head
+                if(Division::find($assigned_area->details->id)->chief_employee_profile_id === $employee_profile_id->id){
+                    $chief_officer = Division::where('code', 'OMCC')->chief_employee_profile_id;
+                    return [
+                        "recommending_officer" => $chief_officer,
+                        "approving_officer" => $chief_officer
+                    ];
+                }
+
+                $division_head = Division::find($assigned_area->details->id)->chief_employee_profile_id;
+
+                return [
+                    "recommending_officer" => $division_head,
+                    "approving_officer" => $division_head
+                ];
+                break;
+            case 'Department':
+                // If employee is Department head
+                if(Department::find($assigned_area->details->id)->head_employee_profile_id === $employee_profile_id->id){
+                    $division = Department::find($assigned_area->details->id)->division_id;
+
+                    $division_head = Division::find($division)->chief_employee_profile_id;
+
+                    return [
+                        "recommending_officer" => $division_head,
+                        "approving_officer" => $division_head
+                    ];
+                    break;
+                }
+
+                $department_head = Department::find($assigned_area->details->id)->head_employee_profile_id;
+
+                return [
+                    "recommending_officer" => $department_head,
+                    "approving_officer" => Division::where('code', 'OMCC')->chief_employee_profile_id
+                ];
+                break;
+            case 'Section':
+                // If employee is Section head
+                $section = Section::find($assigned_area->details->id);
+
+                if($section->division !== null){
+                    $division = $section->division;
+                    if(!$section->supervisor_employee_profile_id === $employee_profile_id){
+                        return [
+                            "recommending_officer" => $division->chief_employee_profile_id,
+                            "approving_officer" => $division->chief_employee_profile_id
+                        ];
+                    }
+
+                    return [
+                        "recommending_officer" => $section->supervisor_employee_profile_id,
+                        "approving_officer" => $division->chief_employee_profile_id
+                    ];
+                }
+
+                $department = $section->department;
+
+                return [
+                    "recommending_officer" => $department->head_employee_profile_id,
+                    "approving_officer" => $department->division->chief_employee_profile_id
+                ];
+                break;
+            case 'Unit':
+                // If employee is Unit head
+                $section = Unit::find($assigned_area->details->id)->section;
+                if($section->department_id !== null){
+                    $department = $section->department;
+
+                    return [
+                        "recommending_officer" => $department->head_employee_profile_id,
+                        "approving_officer" => $department->division->chief_employee_profile_id
+                    ];
+                }
+
+                return [
+                    "recommending_officer" => $section->supervisor_employee_profile_id,
+                    "approving_officer" => $section->division->chief_employee_profile_id
+                ];
+
+                break;
+            default:
+                return null;
+        }
+    }
+
     public static function registerSystemLogs($request, $moduleID, $status, $remarks)
     {
         $ip = $request->ip();
@@ -120,7 +224,7 @@ class Helpers {
 
             $file->move(public_path($FILE_URL), $fileName);
         }
-        
+
         return $fileName;
     }
 
@@ -128,9 +232,10 @@ class Helpers {
     {
         Log::channel('custom-info')->info($controller.' Controller ['.$module.']: message: '.$message);
     }
-    
+
     public static function errorLog($controller, $module, $errorMessage)
     {
         Log::channel('custom-error')->error($controller.' Controller ['.$module.']: message: '.$errorMessage);
     }
+
 }
