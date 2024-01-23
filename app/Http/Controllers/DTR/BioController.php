@@ -9,6 +9,9 @@ use App\Http\Controllers\DTR\BioMSController;
 use App\Models\Devices;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Http\Response;
 
 
 class BioController extends Controller
@@ -194,9 +197,10 @@ class BioController extends Controller
     }
 
 
-    public function syncTime()
+    public function syncTime(Request $request)
     {
         try {
+            $this->device_ids = $request->deviceID;
 
             foreach ($this->device_ids as $dv) {
                 $bios = Devices::where('id', $dv)->get();
@@ -226,6 +230,14 @@ class BioController extends Controller
     public function restartORShutdown(Request $request)
     {
         try {
+            $user = $request->user;
+            $password_decrypted = Crypt::decryptString($user['password_encrypted']);
+            $password = strip_tags($request->password);
+            if (!Hash::check($password . env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $this->device_ids = $request->deviceID;
             $type_of_action = $request->TypeofAction;
             foreach ($this->device_ids as $dv) {
                 $bios = Devices::where('id', $dv)->get();
@@ -241,6 +253,7 @@ class BioController extends Controller
     public function setTime(Request $request)
     {
         try {
+            $this->device_ids = $request->deviceID;
             $time = $request->time;
             foreach ($this->device_ids as $dv) {
                 $bios = Devices::where('id', $dv)->get();
