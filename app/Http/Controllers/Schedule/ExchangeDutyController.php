@@ -16,6 +16,7 @@ use App\Services\RequestLogger;
 use App\Helpers\Helpers;
 
 use Illuminate\Http\Response;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 use App\Http\Controllers\Controller;
@@ -74,6 +75,10 @@ class ExchangeDutyController extends Controller
     public function store(ExchangeDutyRequest $request)
     {
         try {
+            
+            $user           = $request->user;
+            $assigned_area  = $user->assignedArea->findDetails();
+
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
@@ -95,58 +100,40 @@ class ExchangeDutyController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $data           = null;
-            $msg            = null;
-            $selected_dates = null;
-            $date_start     = $cleanData['date_start'];
-            $date_end       = $cleanData['date_end'];
+            $data       = null;
+            $schedule   = null;
+            $date_from  =  Carbon::parse($cleanData['date_from']);
+            $date_to    =  Carbon::parse($cleanData['date_to']);
 
-            $schedule = Schedule::where('id', $cleanData['schedule_id'])->first();
-            if ($schedule) {
-                $reliever = EmployeeProfile::where('id', $cleanData['reliever_employee_id'])->first();
-                
-                // Get all date selected
-                $current_date = $date_start->copy();
-                while ($current_date->lte($date_end)) {
-                    $selected_dates[] = $current_date->toDateString();
-                    $current_date->addDay();
-                }
-
-                foreach ($selected_dates as $key => $date) {
-                    $schedule = Schedule::where('time_shift_id',$cleanData['time_shift_id'])->where('date', $date)->first();
-                }
-
-                $query = DB::table('employee_profile_schedule')->where([
-                    ['employee_profile_id', '=', $reliever->id],
-                    ['schedule_id', '=', $schedule->id],
-                ])->first();
-
-                if ($query) {
-                    $data = ExchangeDuty::create($cleanData);
-
-                    $variable = $cleanData['approve_by'];
-                    foreach ($variable as $key => $value) {
-                        $approve_by = EmployeeProfile::select('id')->where('id', $value['employee_id'])->first();
-
-                        if (!$approve_by) {
-                            $msg = 'No Employee Found (Approve By)';
-
-                        } else { 
-
-                            $data->approval()->attach($approve_by);
-                            $msg = 'New exchange duty requested.';
-                        }
-                    }
-                }
-
-            } else {
-                return response()->json(['message' => 'No schedule found.'], Response::HTTP_NOT_FOUND);
+            $reliever = EmployeeProfile::where('id', $cleanData['reliever_employee_id'])->first();
+            
+            // Get all date selected
+            $current_date = $date_from->copy();
+            $selected_dates = [];
+            while ($current_date->lte($date_to)) {
+                $selected_dates[] = $current_date->toDateString();
+                $current_date->addDay();
             }
-           
-            // Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating.'.$this->SINGULAR_MODULE_NAME.'.');
-            return response()->json(['data' => $data ,'message' => $msg], Response::HTTP_OK);
+
+            foreach ($selected_dates as $key => $date) {
+                $schedule = Schedule::where('date', $date)->first();
+                
+                $approve_by = Helpers::ExchangeDutyApproval($assigned_area, $user->id);
+
+                $data = new ExchangeDuty;
+                $data->schedule_id              = $schedule->id;
+                $data->requested_employee_id    = $user->id;
+                $data->reliever_employee_id     = $cleanData['reliever_employee_id'];
+                $data->approve_by               = $approve_by['approve_by'];
+                $data->reason                   = $cleanData['reason'];
+                $data->save();
+            }
+
+            Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating.'.$this->SINGULAR_MODULE_NAME.'.');
+            return response()->json(['data' => $data ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
+            
             Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
