@@ -1794,7 +1794,7 @@ Route::middleware('auth.cookie')->group(function(){
          * On Call Schedule Module
          */
         Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function(){
-            Route::get('on-call', 'OnCallController@index');
+            Route::get('on-calls', 'OnCallController@index');
         });
 
         Route::middleware(['auth.permission:UMIS-ScM write'])->group(function(){

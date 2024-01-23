@@ -71,9 +71,9 @@ class ScheduleController extends Controller
             foreach ($array as $key => $value) {
                 $data[] = [
                     'id'            => $value['id'],
+                    'name'          => $value->name(),
                     'employee_id'   => $value['employee_id'],
                     'biometric_id'  => $value['biometric_id'],
-                    'name'          => $value->name(),
                     'assigned_area' => $value->assignedArea,
                     'schedule'      => $value['schedule'],
                 ];

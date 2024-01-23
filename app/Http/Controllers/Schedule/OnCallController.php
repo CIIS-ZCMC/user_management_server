@@ -29,8 +29,27 @@ class OnCallController extends Controller
     public function index(Request $request)
     {
         try {
-            // Follow on call design
-            // return response()->json(['data' => ScheduleResource::collection(Schedule::all())], Response::HTTP_OK);
+            $user           = $request->user;
+            $assigned_area  = $user->assignedArea->findDetails();
+
+            $array = EmployeeProfile::with(['personalInformation', 'assignedArea','schedule' => function ($query) use ($request)  {
+                $query->with(['timeShift'])->where('is_on_call', true)->whereYear('date', '=', $request->year)->whereMonth('date', '=', $request->month);
+            }])->whereHas('assignedArea', function ($query) use ($user, $assigned_area) {
+                $query->where([strtolower($assigned_area['sector']).'_id' => $user->assignedArea->id]);
+            })->get();
+
+            $data = [];
+            foreach ($array as $key => $value) {
+                $data[] = [
+                    'id'            => $value['id'],
+                    'name'          => $value->name(),
+                    'employee_id'   => $value['employee_id'],
+                    'biometric_id'  => $value['biometric_id'],
+                    'schedule'      => $value['schedule'],
+                ];
+            }
+
+            return response()->json(['data' => $data], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
@@ -118,10 +137,11 @@ class OnCallController extends Controller
                         $query = DB::table('employee_profile_schedule')->where([
                             ['employee_profile_id', '=', $employee_id],
                             ['schedule_id', '=', $data->id],
+                            ['is_on_call', '=', true],
                         ])->first();
     
                         if ($query) {
-                            $msg = 'employee schedule already exist';
+                            $msg = 'request already exist';
 
                         } else {
                             $data->employee()->attach($employee_id, ['is_on_call' => true]);
