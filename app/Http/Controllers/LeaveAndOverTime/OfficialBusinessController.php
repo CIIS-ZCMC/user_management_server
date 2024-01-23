@@ -177,9 +177,61 @@ class OfficialBusinessController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, $id)
     {
-        //
+        try {            
+            $data = OfficialBusiness::findOrFail($id);
+
+            if(!$data) {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            foreach ($request->all() as $key => $value) {
+                if (empty($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                $cleanData[$key] = strip_tags($value);
+            }
+
+            $user   = $request->user;
+            $status = null;
+
+            if ($cleanData['status'] === 'declined') {
+                $status = 'declined';
+            } else {
+                switch ($data->status) {
+                    case 'pending':
+                    $status = 'for recommending approval';
+                    break;
+
+                    case 'for recommending approval':
+                        $status = 'for approving approval';
+                    break;
+
+                    case 'for approving approval':
+                        $status = 'approved';
+                    break;
+                    
+                    default:
+                        $status = 'declined';
+                    break;
+                }
+            }
+
+            $data->update(['status' => $status]);
+
+            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerOfficialBusinessLogs($data->id, $user['id'], 'update');
+            return response()->json(['data' => $data], Response::HTTP_OK);
+
+        } catch (\Throwable $th) {
+            //throw $th;
+            
+            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**

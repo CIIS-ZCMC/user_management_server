@@ -20,7 +20,7 @@ return new class extends Migration
             $table->time('time_from');
             $table->time('time_to');
             $table->string('purpose');
-            $table->string('status')->default('pending');
+            $table->string('status')->default('applied');
             $table->string('personal_order_file')->nullable();
             $table->string('personal_order_path')->nullable();
             $table->string('personal_order_size')->nullable();
