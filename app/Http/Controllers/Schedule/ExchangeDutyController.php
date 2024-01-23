@@ -101,21 +101,20 @@ class ExchangeDutyController extends Controller
             $date_start     = $cleanData['date_start'];
             $date_end       = $cleanData['date_end'];
 
-            // Get all date selected
-            $current_date = $date_start->copy();
-            while ($current_date->lte($date_end)) {
-                $selected_dates[] = $current_date->toDateString();
-                $current_date->addDay();
-            }
-
-            foreach ($selected_dates as $key => $date) {
-            
-            }
-
-
             $schedule = Schedule::where('id', $cleanData['schedule_id'])->first();
             if ($schedule) {
                 $reliever = EmployeeProfile::where('id', $cleanData['reliever_employee_id'])->first();
+                
+                // Get all date selected
+                $current_date = $date_start->copy();
+                while ($current_date->lte($date_end)) {
+                    $selected_dates[] = $current_date->toDateString();
+                    $current_date->addDay();
+                }
+
+                foreach ($selected_dates as $key => $date) {
+                    $schedule = Schedule::where('time_shift_id',$cleanData['time_shift_id'])->where('date', $date)->first();
+                }
 
                 $query = DB::table('employee_profile_schedule')->where([
                     ['employee_profile_id', '=', $reliever->id],

@@ -46,11 +46,6 @@ class ScheduleController extends Controller
                     continue;
                 }
 
-                if (DateTime::createFromFormat('Y-m-d', $value)) {
-                    $cleanData[$key] = Carbon::parse($value);
-                    continue;
-                }
-
                 if (is_int($value)) {
                     $cleanData[$key] = $value;
                     continue;
@@ -66,26 +61,11 @@ class ScheduleController extends Controller
             $user           = $request->user;
             $assigned_area  = $user->assignedArea->findDetails();
 
-            // $array = EmployeeProfile::join('personal_informations as PI', 'employee_profiles.personal_information_id', '=', 'PI.id')
-            // ->select('employee_profiles.id','employee_id','biometric_id', 'PI.first_name','PI.middle_name', 'PI.last_name')
-            // ->with(['assignedArea', 'schedule' => function ($query) use ($year, $month) {
-            //     $query->with(['timeShift', 'holiday'])->whereYear('date', '=', $year)->whereMonth('date', '=', $month);
-            // }])->whereHas('assignedArea', function ($query) use ($user) {
-            //     $query->where('id', $user->id);
-            // })->get()->toArray();
-
-           return $model = EmployeeProfile::with(['assignedArea'])->whereHas('assignedArea', function ($query) use ($user, $assigned_area) {
-                    $query->where([strtolower($assigned_area['sector']).'_id' => $user->assignedArea->id]);
+            $array = EmployeeProfile::with(['personalInformation', 'assignedArea','schedule' => function ($query) use ($year, $month)  {
+                $query->with(['timeShift', 'holiday'])->whereYear('date', '=', $year)->whereMonth('date', '=', $month);
+            }])->whereHas('assignedArea', function ($query) use ($user, $assigned_area) {
+                $query->where([strtolower($assigned_area['sector']).'_id' => $user->assignedArea->id]);
             })->get();
-
-
-            $employee = EmployeeProfile::join('personal_informations as PI', 'employee_profiles.personal_information_id', '=', 'PI.id')
-                            ->select('employee_profiles.id', 'employee_id', 'biometric_id', DB::raw("CONCAT(PI.first_name, ' ', COALESCE(PI.middle_name, ''), '', PI.last_name) AS name"))
-                            ->with(['assignedArea'])
-                            ->whereHas('assignedArea', function ($query) use ($user) {
-                                $query->where('id', $user->id);
-                            })
-                            ->get();
 
             $data = [];
             foreach ($array as $key => $value) {
@@ -93,15 +73,13 @@ class ScheduleController extends Controller
                     'id'            => $value['id'],
                     'employee_id'   => $value['employee_id'],
                     'biometric_id'  => $value['biometric_id'],
-                    'first_name'    => $value['first_name'],
-                    'middle_name'   => $value['middle_name'],
-                    'last_name'     => $value['last_name'],
-                    'assigned_area' => $value['assigned_area'],
+                    'name'          => $value->name(),
+                    'assigned_area' => $value->assignedArea,
                     'schedule'      => $value['schedule'],
                 ];
             }
         
-            return response()->json(['data' => $data, 'dates' => $dates_with_day, 'employee' => $employee], Response::HTTP_OK);
+            return response()->json(['data' => $data, 'dates' => $dates_with_day], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
@@ -163,10 +141,10 @@ class ScheduleController extends Controller
             $msg        = null;
             $is_weekend = 0;
 
-            // if ($user != null && $user->position()) {
-            //     $position = $user->position();
+            if ($user != null && $user->position()) {
+                $position = $user->position();
 
-            //     if ($position->position === "Chief" || $position->position === "Department OIC" || $position->position === "Supervisor" || $position->position === "Section OIC" || $position->position === "Unit Head" || $position->position === "Unit OIC") {
+                if ($position->position === "Chief" || $position->position === "Department OIC" || $position->position === "Supervisor" || $position->position === "Section OIC" || $position->position === "Unit Head" || $position->position === "Unit OIC") {
                     $date_start     = $cleanData['date_start'];     // Replace with your start date
                     $date_end       = $cleanData['date_end'];       // Replace with your end date
                     $selected_days  = $cleanData['selected_days'];  // Replace with your selected days
@@ -261,8 +239,8 @@ class ScheduleController extends Controller
                                     $msg = 'New employee schedule registered.';
                                 }
                             }
-                    //     }
-                    // }
+                        }
+                    }
 
                     Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
                     return response()->json(['data' => $data ,'message' => $msg], Response::HTTP_OK);
