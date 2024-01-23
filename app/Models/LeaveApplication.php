@@ -29,6 +29,7 @@ class LeaveApplication extends Model
         'status',
         'remarks',
         'without_pay',
+        'reason',
         'hrmo_officer',
         'recommending_officer',
         'approving_officer'

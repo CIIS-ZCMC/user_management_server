@@ -22,10 +22,8 @@ return new class extends Migration
             $table->string('applied_credits')->nullable();
             $table->string('status')->nullable();
             $table->string('remarks')->nullable();
-            $table->string('hrmo_officer_id')->nullable();
-            $table->string('recommending_officer_id')->nullable();
-            $table->string('approving_officer_id')->nullable();
             $table->boolean('without_pay')->default(false);
+            $table->text('reason')->nullable();
             $table->unsignedBigInteger('employee_profile_id')->unsigned();
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->unsignedBigInteger('leave_type_id')->unsigned();

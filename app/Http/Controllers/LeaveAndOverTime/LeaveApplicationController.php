@@ -6,6 +6,10 @@ use App\Helpers\Helpers;
 use Illuminate\Http\Response;
 use App\Models\LeaveApplication;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\LeaveApplicationRequest;
+use App\Http\Requests\PasswordApprovalRequest;
+use App\Http\Resources\LeaveApplicationResource;
+use App\Http\Resources\LeaveTypeResource;
 use App\Models\AssignArea;
 use App\Models\Department;
 use App\Models\Division;
@@ -21,12 +25,115 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use App\Services\FileService;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
+
 class LeaveApplicationController extends Controller
 {
+
+    public function leaveApplications(Request $request)
+    {
+        try{
+            $leave_types = LeaveApplication::all();
+
+            return response()->json([
+                'data' => LeaveApplicationResource::collection($leave_types),
+                'message' => 'Retrieve all leave application records.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function leaveApplicationStore(LeaveApplicationRequest $request)
+    {
+        try{
+            $employee_profile = $request->user;
+
+            $cleanData = [];
+
+            $recommending_and_approving = Helpers::getRecommendingAndApprovingOfficer($employee_profile->assignedArea->findDetails(), $employee_profile->id);
+            $cleanData['employee_profile_id'] = $employee_profile->id;
+            $cleanData['hrmo_officer'] = Helpers::getHrmoOfficer();
+            $cleanData['recommending_officer'] = $recommending_and_approving['recommending_officer'];
+            $cleanData['approving_officer'] = $recommending_and_approving['approving_officer'];
+            $cleanData['status'] = 'Applied';
+
+            foreach($request->all() as $key => $value){
+                if($key === 'user') continue;
+                if($value === 'null'){
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+                $cleanData[$key] = strip_tags($value);
+            }
+
+            $leave_application = LeaveApplication::create($cleanData);
+
+            LeaveApplicationLog::create([
+                'action_by' => $employee_profile->id,
+                'leave_application_id' => $leave_application->id,
+                'action' => 'Applied'
+            ]);
+
+            return response()->json([
+                'data' => LeaveApplicationResource::collection($leave_application),
+                'message' => 'Retrieve all leave application records.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function leaveApplication($id, Request $request)
+    {
+        try{
+            $leave_types = LeaveApplication::find($id);
+
+            return response()->json([
+                'data' => new LeaveApplicationResource($leave_types),
+                'message' => 'Retrieve leave application record.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function leaveApplicationDeclined($id, PasswordApprovalRequest $request)
+    {
+        try{
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $leave_application = LeaveApplication::find($id);
+            $leave_application -> update([
+                'status' => 'Declined',
+                'reason' => strip_tags($request->reason)
+            ]);
+
+            LeaveApplicationLog::create([
+                'action_by' => $employee_profile->id,
+                'leave_application_id' => $leave_application->id,
+                'action' => 'Declined'
+            ]);
+
+            return response()->json([
+                'data' => new LeaveApplicationResource($leave_application),
+                'message' => 'Retrieve leave application record.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     protected $file_service;
 
     public function __construct(FileService $file_service)
@@ -3714,45 +3821,6 @@ class LeaveApplicationController extends Controller
         //     $approving_office = Division::where('code', 'OMCC')->chief_employee_profile_id;
         //     $recommending_officer = null;
 
-        //     switch($assigned_area->sector){
-        //         case 'Division':
-        //             // If employee is Division head
-        //             if(Division::find($assigned_area->details->id)->chief_employee_profile_id === $user->id){
-        //                 $recommending_officer = $user->id;
-        //                 $approving_office = $user->id;
-        //                 break;
-        //             }
-        //             $recommending_officer = Division::find($assigned_area->details->id)->chief_employee_profile_id;
-        //             break;
-        //         case 'Department':
-        //             // If employee is Department head
-        //             if(Department::find($assigned_area->details->id)->head_employee_profile_id === $user->id){
-        //                 $recommending_officer = Department::find($assigned_area->details->id)->division->chief_employee_profile_id;
-        //                 break;
-        //             }
-        //             $recommending_officer = Department::find($assigned_area->details->id)->head_employee_profile_id;
-        //             break;
-        //         case 'Section':
-        //             // If employee is Section head
-        //             $section = Section::find($assigned_area->details->id);
-        //             if($section->head_employee_profile_id === $user->id){
-        //                 if($section->division_id !== null){
-        //                     $recommending_officer = Division::find($section->division_id)->chief_employee_profile_id;
-        //                     break;
-        //                 }
-        //                 $recommending_officer = Department::find($section->department_id)->head_employee_profile_id;
-        //                 break;
-        //             }
-        //             $recommending_officer = $section->supervisor_employee_profile_id;
-        //             break;
-        //         case 'Unit':
-        //             // If employee is Unit head
-        //             $section = Unit::find($assigned_area->details->id)->section;
-        //             $recommending_officer = $section->supervisor_employee_profile_id;
-        //             break;
-        //         default:
-        //             return response()->json(['message' => 'Invalid request'], Response::HTTP_BAD_REQUEST);
-        //     }
 
         //     // LeaveApplication::create([
         //     //     'hrmo' => $hrmo,

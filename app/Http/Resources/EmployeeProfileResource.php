@@ -37,6 +37,7 @@ class EmployeeProfileResource extends JsonResource
             'area' => $area,
             'is_regular_employee' => $is_regular_employee,
             'designation' => $designation,
+            'designation_code' => $designation->code,
             'date_hired' => $this->date_hired,
             'employment_status' => $employment_status,
             'account_status' => $account_status
