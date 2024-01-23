@@ -276,7 +276,7 @@ class LeaveCreditController extends Controller
                     $employeeCredit->employee_profile_id = $employee->id;
                     $employeeCredit->operation = "add";
                     $employeeCredit->reason = "Biannual SPL Credits";
-                    $employeeCredit->credit_value = '3';`
+                    $employeeCredit->credit_value = '3';
                     $employeeCredit->date = date('Y-m-d');
                     $employeeCredit->save();
                 }
@@ -385,9 +385,4 @@ class LeaveCreditController extends Controller
             return response() -> json(['message' => $th -> getMessage()], 500);
         }
     }
-
-
-
-
 }
-

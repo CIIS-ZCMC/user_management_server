@@ -63,6 +63,9 @@ class OfficialBusinessController extends Controller
     public function store(OfficialBusinessRequest $request)
     {
         try {
+            $user           = $request->user;
+            $assigned_area  = $user->assignedArea->findDetails();
+
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
@@ -85,49 +88,9 @@ class OfficialBusinessController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
            
-            $user                   = $request->user;
-            $assigned_area          = $user->assignedArea->findDetails();
-            $approving_officer      = Division::where('code', 'OMCC')->first()->chief_employee_profile_id;
-            $recommending_officer   = null;
-
-            switch($assigned_area['sector']){
-                case 'Division':
-                    // If employee is Division head
-                    if(Division::find($assigned_area['details']['id'])->chief_employee_profile_id === $user->id){
-                        $recommending_officer = $user->id;
-                        break;
-                    }
-                    $recommending_officer = Division::find($assigned_area['details']['id'])->chief_employee_profile_id;
-                    break;
-                case 'Department':
-                    // If employee is Department head
-                    if(Department::find($assigned_area['details']['id'])->head_employee_profile_id === $user->id){
-                        $recommending_officer = Department::find($assigned_area['details']['id'])->division->chief_employee_profile_id;
-                        break;
-                    }
-                    $recommending_officer = Department::find($assigned_area['details']['id'])->head_employee_profile_id;
-                    break;
-                case 'Section':
-                    // If employee is Section head
-                    $section = Section::find($assigned_area['details']['id']);
-                    if($section->supervisor_employee_profile_id === $user->id){
-                        if($section->division_id !== null){
-                            $recommending_officer = Division::find($section->division_id)->chief_employee_profile_id;
-                            break;
-                        }
-                        $recommending_officer = Department::find($section->department_id)->head_employee_profile_id;
-                        break;
-                    }
-                    $recommending_officer = $section->supervisor_employee_profile_id;
-                    break;
-                case 'Unit':
-                    // If employee is Unit head
-                    $section = Unit::find($assigned_area->details->id)->section;
-                    $recommending_officer = $section->supervisor_employee_profile_id;
-                    break;
-                default:
-                    return response()->json(['message' => 'Invalid request'], Response::HTTP_BAD_REQUEST);
-            }
+            $officers = Helpers::getRecommendingAndApprovingOfficer($assigned_area, $user->id);
+            $recommending_officer   = $officers['recommending_officer'];
+            $approving_officer      = $officers['approving_officer'];
 
             $data = new OfficialBusiness;
 
