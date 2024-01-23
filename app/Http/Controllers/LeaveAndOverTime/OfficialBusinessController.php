@@ -86,7 +86,7 @@ class OfficialBusinessController extends Controller
             }
            
             $user                   = $request->user;
-            $assigned_area          = $user->assignedArea->findDetails();
+           $assigned_area          = $user->assignedArea->findDetails();
             $approving_officer      = Division::where('code', 'OMCC')->first()->chief_employee_profile_id;
             $recommending_officer   = null;
 
@@ -110,7 +110,7 @@ class OfficialBusinessController extends Controller
                 case 'Section':
                     // If employee is Section head
                     $section = Section::find($assigned_area['details']['id']);
-                    if($section->head_employee_profile_id === $user->id){
+                    if($section->supervisor_employee_profile_id === $user->id){
                         if($section->division_id !== null){
                             $recommending_officer = Division::find($section->division_id)->chief_employee_profile_id;
                             break;
@@ -202,7 +202,7 @@ class OfficialBusinessController extends Controller
                 $status = 'declined';
             } else {
                 switch ($data->status) {
-                    case 'pending':
+                    case 'applied':
                     $status = 'for recommending approval';
                     break;
 
@@ -224,7 +224,7 @@ class OfficialBusinessController extends Controller
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
             Helpers::registerOfficialBusinessLogs($data->id, $user['id'], 'update');
-            return response()->json(['data' => $data], Response::HTTP_OK);
+            return response()->json(['data' =>OfficialBusinessResource::collection(OfficialBusiness::where('id', $data->id)->get())], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
             //throw $th;
