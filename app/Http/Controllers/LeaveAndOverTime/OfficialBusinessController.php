@@ -131,7 +131,7 @@ class OfficialBusinessController extends Controller
 
             $data = new OfficialBusiness;
 
-            $data->employee_profile_id              = $user->id ;
+            $data->employee_profile_id              = $user->id;
             $data->date_from                        = $cleanData['date_from'];
             $data->date_to                          = $cleanData['date_to'];
             $data->time_from                        = $cleanData['time_from'];
@@ -149,7 +149,7 @@ class OfficialBusinessController extends Controller
 
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in storing '.$this->PLURAL_MODULE_NAME.'.');
             Helpers::registerOfficialBusinessLogs($data->id, $user['id'], 'store');
-            return response()->json(['data' => $data], Response::HTTP_OK);
+            return response()->json(['data' =>OfficialBusinessResource::collection(OfficialBusiness::where('id', $data->id)->get())], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
