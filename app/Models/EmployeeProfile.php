@@ -110,7 +110,7 @@ class EmployeeProfile extends Authenticatable
         AccessToken::where('employee_profile_id', $this->id)->delete();
 
 
-        $token  = hash('sha256', Str::random(40));
+        $token = hash('sha256', Str::random(40));
         $token_exp = Carbon::now()->addHour();
 
         $accessToken = AccessToken::create([
@@ -193,7 +193,7 @@ class EmployeeProfile extends Authenticatable
     {
         $assign_area = $this->assignedArea;
 
-        $designation = $assign_area->plantilla_id  === null?$assign_area->designation:$assign_area->plantilla->designation;
+        $designation = $assign_area->plantilla_id === null ? $assign_area->designation : $assign_area->plantilla->designation;
 
         return $designation;
     }
@@ -208,7 +208,7 @@ class EmployeeProfile extends Authenticatable
         /** Division Chief */
         $chief = Division::where('chief_employee_profile_id', $this->id)->first();
 
-        if($chief){
+        if ($chief) {
             return [
                 'position' => 'Chief',
                 'area' => $chief
@@ -218,7 +218,7 @@ class EmployeeProfile extends Authenticatable
         /** Division Officer in Charge */
         $division_oic = Division::where('oic_employee_profile_id', $this->id)->first();
 
-        if($division_oic){
+        if ($division_oic) {
             return [
                 'position' => 'Division OIC',
                 'area' => $division_oic
@@ -228,7 +228,7 @@ class EmployeeProfile extends Authenticatable
         /** Department Chief */
         $head = Department::where('head_employee_profile_id', $this->id)->first();
 
-        if($head){
+        if ($head) {
             return [
                 'position' => 'Chief',
                 'area' => $head
@@ -238,7 +238,7 @@ class EmployeeProfile extends Authenticatable
         /** Training Officer */
         $training_officer = Department::where('training_officer_employee_profile_id', $this->id)->first();
 
-        if($head){
+        if ($head) {
             return [
                 'position' => 'Training Officer',
                 'area' => $training_officer
@@ -248,7 +248,7 @@ class EmployeeProfile extends Authenticatable
         /** Department Officer in Charge */
         $department_oic = Department::where('oic_employee_profile_id', $this->id)->first();
 
-        if($department_oic){
+        if ($department_oic) {
             return [
                 'position' => 'Department OIC',
                 'area' => $department_oic
@@ -258,7 +258,7 @@ class EmployeeProfile extends Authenticatable
         /** Section Supervisor */
         $supervisor = Section::where('supervisor_employee_profile_id', $this->id)->first();
 
-        if($supervisor){
+        if ($supervisor) {
             return [
                 'position' => 'Supervisor',
                 'area' => $supervisor
@@ -268,7 +268,7 @@ class EmployeeProfile extends Authenticatable
         /** Section Officer in Charge */
         $section_oic = Section::where('oic_employee_profile_id', $this->id)->first();
 
-        if($section_oic){
+        if ($section_oic) {
             return [
                 'position' => 'Section OIC',
                 'area' => $section_oic
@@ -278,7 +278,7 @@ class EmployeeProfile extends Authenticatable
         /** Unit Head */
         $head = Unit::where('head_employee_profile_id', $this->id)->first();
 
-        if($head){
+        if ($head) {
             return [
                 'position' => 'Unit Head',
                 'area' => $supervisor
@@ -288,7 +288,7 @@ class EmployeeProfile extends Authenticatable
         /** Unit Officer in Charge */
         $unit_oic = Unit::where('oic_employee_profile_id', $this->id)->first();
 
-        if($unit_oic){
+        if ($unit_oic) {
             return [
                 'position' => 'Unit OIC',
                 'area' => $unit_oic
@@ -298,7 +298,8 @@ class EmployeeProfile extends Authenticatable
         return null;
     }
 
-    public function schedule() {
+    public function schedule()
+    {
         return $this->belongsToMany(Schedule::class, 'employee_profile_schedule')->withPivot('employee_profile_id');
     }
     public function GetPersonalInfo()

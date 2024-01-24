@@ -16,7 +16,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
 
-class Helpers {
+class Helpers
+{
 
     public static function getHrmoOfficer()
     {
@@ -30,10 +31,10 @@ class Helpers {
 
     public static function getRecommendingAndApprovingOfficer($assigned_area, $employee_profile_id)
     {
-        switch($assigned_area->sector){
+        switch ($assigned_area->sector) {
             case 'Division':
                 // If employee is not Division head
-                if(Division::find($assigned_area->details->id)->chief_employee_profile_id === $employee_profile_id->id){
+                if (Division::find($assigned_area->details->id)->chief_employee_profile_id === $employee_profile_id->id) {
                     $chief_officer = Division::where('code', 'OMCC')->chief_employee_profile_id;
                     return [
                         "recommending_officer" => $chief_officer,
@@ -47,19 +48,17 @@ class Helpers {
                     "recommending_officer" => $division_head,
                     "approving_officer" => $division_head
                 ];
-                break;
             case 'Department':
                 // If employee is Department head
-                if(Department::find($assigned_area->details->id)->head_employee_profile_id === $employee_profile_id->id){
+                if (Department::find($assigned_area->details->id)->head_employee_profile_id === $employee_profile_id->id) {
                     $division = Department::find($assigned_area->details->id)->division_id;
 
                     $division_head = Division::find($division)->chief_employee_profile_id;
 
                     return [
                         "recommending_officer" => $division_head,
-                        "approving_officer" => $division_head
+                        "approving_officer" => Helpers::getChiefOfficer()
                     ];
-                    break;
                 }
 
                 $department_head = Department::find($assigned_area->details->id)->head_employee_profile_id;
@@ -68,17 +67,16 @@ class Helpers {
                     "recommending_officer" => $department_head,
                     "approving_officer" => Division::where('code', 'OMCC')->chief_employee_profile_id
                 ];
-                break;
             case 'Section':
                 // If employee is Section head
                 $section = Section::find($assigned_area->details->id);
 
-                if($section->division !== null){
+                if ($section->division !== null) {
                     $division = $section->division;
-                    if(!$section->supervisor_employee_profile_id === $employee_profile_id){
+                    if (!$section->supervisor_employee_profile_id === $employee_profile_id) {
                         return [
                             "recommending_officer" => $division->chief_employee_profile_id,
-                            "approving_officer" => $division->chief_employee_profile_id
+                            "approving_officer" => Helpers::getChiefOfficer()
                         ];
                     }
 
@@ -94,11 +92,10 @@ class Helpers {
                     "recommending_officer" => $department->head_employee_profile_id,
                     "approving_officer" => $department->division->chief_employee_profile_id
                 ];
-                break;
             case 'Unit':
                 // If employee is Unit head
                 $section = Unit::find($assigned_area->details->id)->section;
-                if($section->department_id !== null){
+                if ($section->department_id !== null) {
                     $department = $section->department;
 
                     return [
@@ -111,8 +108,6 @@ class Helpers {
                     "recommending_officer" => $section->supervisor_employee_profile_id,
                     "approving_officer" => $section->division->chief_employee_profile_id
                 ];
-
-                break;
             default:
                 return null;
         }
@@ -155,11 +150,11 @@ class Helpers {
 
     public static function getDatesInMonth($year, $month, $value)
     {
-        $start  = new DateTime("{$year}-{$month}-01");
-        $end    = new DateTime("{$year}-{$month}-" . $start->format('t'));
+        $start = new DateTime("{$year}-{$month}-01");
+        $end = new DateTime("{$year}-{$month}-" . $start->format('t'));
 
-        $interval   = new DateInterval('P1D');
-        $period     = new DatePeriod($start, $interval, $end->modify('+1 day'));
+        $interval = new DateInterval('P1D');
+        $period = new DatePeriod($start, $interval, $end->modify('+1 day'));
 
         $dates = [];
 
@@ -230,12 +225,12 @@ class Helpers {
 
     public static function infoLog($controller, $module, $message)
     {
-        Log::channel('custom-info')->info($controller.' Controller ['.$module.']: message: '.$message);
+        Log::channel('custom-info')->info($controller . ' Controller [' . $module . ']: message: ' . $message);
     }
 
     public static function errorLog($controller, $module, $errorMessage)
     {
-        Log::channel('custom-error')->error($controller.' Controller ['.$module.']: message: '.$errorMessage);
+        Log::channel('custom-error')->error($controller . ' Controller [' . $module . ']: message: ' . $errorMessage);
     }
 
 }
