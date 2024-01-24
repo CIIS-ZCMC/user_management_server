@@ -18,9 +18,11 @@ return new class extends Migration
             $table->datetime('date');
             $table->string('time_from');
             $table->string('time_to');
-            $table->string('purpose');
+            $table->string('purpose')->nullable();
             $table->text('remarks')->nullable();
             $table->string('status')->nullable();
+            $table->string('reaosn')->nullable();
+            $table->string('applied_credits')->nullable();
             $table->unsignedBigInteger('hrmo_officer')->unsigned()->nullable();
             $table->foreign('hrmo_officer')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->unsignedBigInteger('recommending_officer')->unsigned()->nullable();

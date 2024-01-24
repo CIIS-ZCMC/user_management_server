@@ -13,16 +13,21 @@ class CtoApplication extends Model
 
     public $fillable = [
         'employee_profile_id',
-        'reference_number',
+        'date',
+        'time_from',
+        'time_to',
         'status',
         'remarks',
         'purpose',
+        'hrmo_officer',
+        'recommending_officer',
+        'approving_officer'
     ];
 
-    public function dates()
-    {
-        return $this->hasMany(CtoApplicationDate::class);
-    }
+    // public function dates()
+    // {
+    //     return $this->hasMany(CtoApplicationDate::class);
+    // }
     public function logs()
     {
         return $this->hasMany(CtoApplicationLog::class);
