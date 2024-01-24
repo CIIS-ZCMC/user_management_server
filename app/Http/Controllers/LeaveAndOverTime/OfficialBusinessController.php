@@ -10,6 +10,7 @@ use App\Helpers\Helpers;
 use App\Models\OfficialBusiness;
 
 use App\Http\Controllers\Controller;
+use App\Models\OfficialBusinessLog;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
@@ -131,7 +132,7 @@ class OfficialBusinessController extends Controller
 
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in storing '.$this->PLURAL_MODULE_NAME.'.'); //System Logs
             return response()->json(['data' => OfficialBusinessResource::collection(OfficialBusiness::where('id', $data->id)->get()),
-                                    'logs' =>  Helpers::registerOfficialBusinessLogs($data->id, $user['id'], 'store'), 
+                                    'logs' =>  Helpers::registerOfficialBusinessLogs($data->id, $user['id'], 'for recommending approval'), 
                                     'msg' => 'Request Complete.'], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
@@ -169,12 +170,14 @@ class OfficialBusinessController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $password   = strip_tags($request->password);
-            $user       = $request->user;
             $status     = null;
-    
-            $password_decrypted = Crypt::decryptString($user['password_encrypted']);
-    
+
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
             if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
                 return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
             } else {
@@ -201,7 +204,7 @@ class OfficialBusinessController extends Controller
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.'); //System Logs
             return response()->json(['data' => OfficialBusinessResource::collection(OfficialBusiness::where('id', $data->id)->get()),
-                                    'logs' => Helpers::registerOfficialBusinessLogs($data->id, $user['id'], 'store'),
+                                    'logs' => Helpers::registerOfficialBusinessLogs($data->id, $employee_profile['id'], 'store'),
                                     'msg' => $status, ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {

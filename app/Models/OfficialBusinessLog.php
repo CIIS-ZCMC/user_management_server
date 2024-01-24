@@ -21,10 +21,6 @@ class OfficialBusinessLog extends Model
 
     public $timestamps = TRUE;
 
-    public function officialBusinessLogs() {
-        return $this->hasMany(OfficialBusinessLog::class, 'official_business_application_logs');
-    }
-
     public function officialBusiness() {
         return $this->belongsTo(OfficialBusiness::class, 'official_business_id');
     }
