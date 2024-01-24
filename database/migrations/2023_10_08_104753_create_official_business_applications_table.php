@@ -28,6 +28,9 @@ return new class extends Migration
             $table->string('certificate_of_appearance_path')->nullable();
             $table->string('certificate_of_appearance_size')->nullable();
 
+            $table->unsignedBigInteger('hrmo_officer')->nullable();
+            $table->foreign('hrmo_officer')->references('id')->on('employee_profiles');
+
             $table->unsignedBigInteger('recommending_officer')->nullable();
             $table->foreign('recommending_officer')->references('id')->on('employee_profiles');
 

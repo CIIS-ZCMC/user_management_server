@@ -6,13 +6,10 @@ use App\Http\Resources\OfficialBusinessResource;
 use App\Http\Requests\OfficialBusinessRequest;
 use App\Helpers\Helpers;
 
-use App\Models\Department;
-use App\Models\Division;
 use App\Models\OfficialBusiness;
 
 use App\Http\Controllers\Controller;
 use App\Models\Section;
-use App\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -29,8 +26,31 @@ class OfficialBusinessController extends Controller
     public function index(Request $request)
     {
         try {
-            return $model = OfficialBusiness::with(['employee'])->get();
-            return response()->json(['data' => OfficialBusinessResource::collection(OfficialBusiness::all())], Response::HTTP_OK);
+            $user                   = $request->user;
+            $sql                    = OfficialBusiness::all();
+            $model                  = null;
+
+            foreach ($sql as $key => $value) {
+                switch ($value->status) {
+                    case 'applied':
+                        $model = OfficialBusiness::where('hrmo_officer', $user->id)->get();
+                    break; 
+    
+                    case 'for recommending approval':
+                        $model = OfficialBusiness::where('recommending_officer', $user->id)->get();
+                    break;
+                    
+                    case 'for approving approval':
+                        $model = OfficialBusiness::where('approving_officer', $user->id)->get();
+                    break;
+                    
+                    default:
+                        $model = OfficialBusiness::where('employee_profile_id', $user->id)->get();
+                    break;
+                }
+            }
+
+            return response()->json(['data' => OfficialBusinessResource::collection($model)], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
             
@@ -88,7 +108,9 @@ class OfficialBusinessController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
            
-            $officers = Helpers::getRecommendingAndApprovingOfficer($assigned_area, $user->id);
+            $officers   = Helpers::getRecommendingAndApprovingOfficer($assigned_area, $user->id);
+
+            $hrmo_officer           = Section::where('code', 'HRMO')->first()->supervisor_employee_profile_id;
             $recommending_officer   = $officers['recommending_officer'];
             $approving_officer      = $officers['approving_officer'];
 
@@ -101,11 +123,12 @@ class OfficialBusinessController extends Controller
             $data->time_to                          = $cleanData['time_to'];
             $data->purpose                          = $cleanData['purpose'];
             $data->personal_order_file              = $cleanData['personal_order_file']->getClientOriginalName();;
-            $data->personal_order_path              = $cleanData['personal_order_file']->store('public/official_business');
             $data->personal_order_size              = $cleanData['personal_order_file']->getSize();
-            $data->certificate_of_appearance        = $cleanData['certificate_of_appearance']->getClientOriginalName();;
-            $data->certificate_of_appearance_path   = $cleanData['certificate_of_appearance']->store('public/official_business');
+            $data->personal_order_path              = Helpers::checkSaveFile($cleanData['personal_order_file'], 'official_business');
+            $data->certificate_of_appearance        = $cleanData['certificate_of_appearance']->getClientOriginalName();
             $data->certificate_of_appearance_size   = $cleanData['certificate_of_appearance']->getSize();
+            $data->certificate_of_appearance_path   = Helpers::checkSaveFile($cleanData['certificate_of_appearance'], 'official_business');
+            $data->hrmo_officer                     = $hrmo_officer;
             $data->approving_officer                = $approving_officer;
             $data->recommending_officer             = $recommending_officer;
             $data->save();
