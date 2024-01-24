@@ -36,11 +36,13 @@ class OfficialBusinessController extends Controller
             foreach ($sql as $key => $value) {
                 switch ($value->status) {
                     case 'for recommending approval':
-                        $model = OfficialBusiness::where('recommending_officer', $user->id)->get();
+                        case 'for approving approval':
+                            $model = OfficialBusiness::where('recommending_officer', $user->id)->get();# code...
                     break;
                     
                     case 'for approving approval':
-                        $model = OfficialBusiness::where('approving_officer', $user->id)->get();
+                        case 'approved':
+                            $model = OfficialBusiness::where('approving_officer', $user->id)->get();
                     break;
                     
                     default:
@@ -161,9 +163,9 @@ class OfficialBusinessController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update($id, Request $request,)
+    public function update($id, Request $request)
     {
-        try {            
+        try {        
             $data = OfficialBusiness::findOrFail($id);
 
             if(!$data) {
@@ -180,25 +182,26 @@ class OfficialBusinessController extends Controller
 
             if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
                 return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
-            } else {
-                if ($request->status === 'approved') {
-                    switch ($data->status) {
-                        case 'for recommending approval':
-                            $status = 'for approving approval';
-                        break;
-    
-                        case 'for approving approval':
-                            $status = 'approved';
-                        break;
-                        
-                        default:
-                            $status = 'declined';
-                        break;
-                    }
-                } else if ($request->status === 'declined') {
-                    $status = 'declined';
-                }
             }
+
+            if ($request->status === 'approved') {
+                switch ($data->status) {
+                    case 'for recommending approval':
+                        $status = 'for approving approval';
+                    break;
+
+                    case 'for approving approval':
+                        $status = 'approved';
+                    break;
+                    
+                    default:
+                        $status = 'declined';
+                    break;
+                }
+            } else if ($request->status === 'declined') {
+                $status = 'declined';
+            }
+            
 
             $data->update(['status' => $status, 'remarks' => $request->remarks]);
 

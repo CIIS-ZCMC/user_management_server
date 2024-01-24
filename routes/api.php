@@ -1543,7 +1543,7 @@ Route::middleware('auth.cookie')->group(function(){
         });
 
         Route::middleware(['auth.permission:UMIS-OB approve'])->group(function(){
-            Route::put('ob-application/{id}', 'OfficialBusinessController@update');
+            Route::post('ob-application/{id}', 'OfficialBusinessController@update');
         });
 
         Route::middleware(['auth.permission:UMIS-OB approve'])->group(function(){
