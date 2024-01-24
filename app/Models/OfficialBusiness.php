@@ -33,7 +33,7 @@ class OfficialBusiness extends Model
     ];
 
     public $timestamps = TRUE;
-
+    
     public function employee() {
         return $this->belongsTo(EmployeeProfile::class, 'employee_profile_id');
     }
@@ -45,6 +45,12 @@ class OfficialBusiness extends Model
     public function approvingOfficer() {
         return $this->belongsTo(EmployeeProfile::class, 'approving_officer');
     }
+
+    public function officialBusinessLogs()
+    {
+        return $this->belongsToMany(OfficialBusiness::class, 'official_business_application_logs', 'official_business_id')->withPivot('official_business_id');
+    }
+
 
     public function totalDays()
     {

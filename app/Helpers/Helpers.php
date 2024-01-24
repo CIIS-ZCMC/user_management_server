@@ -134,7 +134,7 @@ class Helpers {
     public static function registerOfficialBusinessLogs($data_id, $user_id, $action)
     {
         OfficialBusinessLog::create([
-            'ob_application_id' => $data_id,
+            'official_business_id' => $data_id,
             'action_by' => $user_id,
             'action' => $action
         ]);

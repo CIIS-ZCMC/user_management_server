@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\LeaveAndOvertime;
 
+use App\Http\Resources\OfficialBusinessLogResource;
 use App\Http\Resources\OfficialBusinessResource;
 use App\Http\Requests\OfficialBusinessRequest;
 use App\Helpers\Helpers;
@@ -9,9 +10,10 @@ use App\Helpers\Helpers;
 use App\Models\OfficialBusiness;
 
 use App\Http\Controllers\Controller;
-use App\Models\Section;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 
 
 class OfficialBusinessController extends Controller
@@ -46,7 +48,7 @@ class OfficialBusinessController extends Controller
                 }
             }
 
-            return response()->json(['data' => OfficialBusinessResource::collection($model)], Response::HTTP_OK);
+            return response()->json([ 'data' => OfficialBusinessResource::collection($model)], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
             
@@ -127,9 +129,10 @@ class OfficialBusinessController extends Controller
             $data->recommending_officer             = $recommending_officer;
             $data->save();
 
-            Helpers::registerSystemLogs($request, $data->id, true, 'Success in storing '.$this->PLURAL_MODULE_NAME.'.');
-            Helpers::registerOfficialBusinessLogs($data->id, $user['id'], 'store');
-            return response()->json(['data' =>OfficialBusinessResource::collection(OfficialBusiness::where('id', $data->id)->get()), 'msg' => 'Request Complete.'], Response::HTTP_OK);
+            Helpers::registerSystemLogs($request, $data->id, true, 'Success in storing '.$this->PLURAL_MODULE_NAME.'.'); //System Logs
+            return response()->json(['data' => OfficialBusinessResource::collection(OfficialBusiness::where('id', $data->id)->get()),
+                                    'logs' =>  Helpers::registerOfficialBusinessLogs($data->id, $user['id'], 'store'), 
+                                    'msg' => 'Request Complete.'], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
@@ -166,49 +169,43 @@ class OfficialBusinessController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            foreach ($request->all() as $key => $value) {
-                if (empty($value)) {
-                    $cleanData[$key] = $value;
-                    continue;
-                }
-
-                $cleanData[$key] = strip_tags($value);
-            }
-
-            $user   = $request->user;
-            $status = null;
-
-            if ($cleanData['status'] === 'declined') {
-                $status = 'declined';
+            $password   = strip_tags($request->password);
+            $user       = $request->user;
+            $status     = null;
+    
+            $password_decrypted = Crypt::decryptString($user['password_encrypted']);
+    
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
             } else {
-                switch ($data->status) {
-                    case 'applied':
-                    $status = 'for recommending approval';
-                    break;
-
-                    case 'for recommending approval':
-                        $status = 'for approving approval';
-                    break;
-
-                    case 'for approving approval':
-                        $status = 'approved';
-                    break;
-                    
-                    default:
-                        $status = 'declined';
-                    break;
+                if ($request->status === 'approved') {
+                    switch ($data->status) {
+                        case 'for recommending approval':
+                            $status = 'for approving approval';
+                        break;
+    
+                        case 'for approving approval':
+                            $status = 'approved';
+                        break;
+                        
+                        default:
+                            $status = 'declined';
+                        break;
+                    }
+                } else if ($request->status === 'declined') {
+                    $status = 'declined';
                 }
             }
 
-            $data->update(['status' => $status]);
+            $data->update(['status' => $status, 'remarks' => $request->remarks]);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
-            Helpers::registerOfficialBusinessLogs($data->id, $user['id'], 'update');
-            return response()->json(['data' =>OfficialBusinessResource::collection(OfficialBusiness::where('id', $data->id)->get())], Response::HTTP_OK);
+            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.'); //System Logs
+            return response()->json(['data' => OfficialBusinessResource::collection(OfficialBusiness::where('id', $data->id)->get()),
+                                    'logs' => Helpers::registerOfficialBusinessLogs($data->id, $user['id'], 'store'),
+                                    'msg' => $status, ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-            //throw $th;
-            
+
             Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }

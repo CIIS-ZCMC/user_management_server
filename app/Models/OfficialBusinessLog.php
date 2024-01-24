@@ -14,10 +14,22 @@ class OfficialBusinessLog extends Model
     protected $primaryKey = 'id';
 
     protected $fillable = [
-        'ob_application_id',
+        'official_business_id',
         'action_by',
         'action',
     ];
 
     public $timestamps = TRUE;
+
+    public function officialBusinessLogs() {
+        return $this->hasMany(OfficialBusinessLog::class, 'official_business_application_logs');
+    }
+
+    public function officialBusiness() {
+        return $this->belongsTo(OfficialBusiness::class, 'official_business_id');
+    }
+
+    public function employee() {
+        return $this->belongsTo(EmployeeProfile::class, 'action_by');
+    }
 }
