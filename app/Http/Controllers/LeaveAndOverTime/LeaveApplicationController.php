@@ -162,85 +162,57 @@ class LeaveApplicationController extends Controller
             $employee_profile = $request->user;
             $recommending_and_approving = Helpers::getRecommendingAndApprovingOfficer($employee_profile->assignedArea->findDetails(), $employee_profile->id);
             $hrmo_officer = Helpers::getHrmoOfficer();
-            $leave_applications = [];
 
-            $reason = [];
-            $failed = [];
+            $employee_credit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)
+                ->where('leave_type_id', $request->leave_type_id)->first();
 
-            foreach ($request->leave_applications as $value) {
+            if ($employee_credit->total_leave_credits < $request['applied_credits']) {
+                $reason[] = 'Insuficient leave credit.';
+            }
 
-                $employee_credit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)
-                    ->where('leave_type_id', $value->leave_type_id)->first();
+            $cleanData = [];
+            $cleanData['employee_profile_id'] = $employee_profile->id;
+            $cleanData['hrmo_officer'] = $hrmo_officer;
+            $cleanData['recommending_officer'] = $recommending_and_approving['recommending_officer'];
+            $cleanData['approving_officer'] = $recommending_and_approving['approving_officer'];
+            $cleanData['status'] = 'Applied';
 
-                if ($employee_credit->total_leave_credits < $value['applied_credits']) {
-                    $failed[] = $value;
-                    $reason[] = 'Insuficient leave credit.';
+            foreach ($request->all() as $key => $leave) {
+                if ($key === 'user' || $key === 'requirements')
+                    continue;
+                if ($leave === 'null') {
+                    $cleanData[$key] = $leave;
                     continue;
                 }
+                $cleanData[$key] = strip_tags($leave);
+            }
 
-                $cleanData = [];
-                $cleanData['employee_profile_id'] = $employee_profile->id;
-                $cleanData['hrmo_officer'] = $hrmo_officer;
-                $cleanData['recommending_officer'] = $recommending_and_approving['recommending_officer'];
-                $cleanData['approving_officer'] = $recommending_and_approving['approving_officer'];
-                $cleanData['status'] = 'Applied';
+            $leave_application = LeaveApplication::create($cleanData);
+            $employee_credit->update(['total_leave_credits' => $employee_credit->total_leave_credits - $cleanData['applied_credits']]);
 
-                foreach ($value->all() as $key => $leave) {
-                    if ($key === 'user' || $key === 'attachments')
-                        continue;
-                    if ($leave === 'null') {
-                        $cleanData[$key] = $leave;
-                        continue;
-                    }
-                    $cleanData[$key] = strip_tags($leave);
+            if ($request->hasFile('requirements')) {
+                $index = 0;
+                foreach ($request->file('requirements') as $key => $file) {
+                    $fileName = pathinfo($file->attachment->getClientOriginalName(), PATHINFO_FILENAME);
+                    $size = filesize($file->attachment);
+                    $file_name_encrypted = Helpers::checkSaveFile($file->attachment, '/requirements');
+
+                    LeaveApplicationRequirement::create([
+                        'leave_application_id' => $leave_application->id,
+                        'file_name' => $fileName,
+                        'name' => $request->requirement_names[$index],
+                        'path' => $file_name_encrypted,
+                        'size' => $size,
+                    ]);
+                    $index++;
                 }
-
-                $leave_application = LeaveApplication::create($cleanData);
-                $employee_credit->update(['total_leave_credits' => $employee_credit->total_leave_credits - $cleanData['applied_credits']]);
-
-                if ($value->hasFile('requirements')) {
-                    foreach ($value->file('requirements') as $key => $file) {
-                        $fileName = pathinfo($file->attachment->getClientOriginalName(), PATHINFO_FILENAME);
-                        $size = filesize($file->attachment);
-                        $file_name_encrypted = Helpers::checkSaveFile($file->attachment, '/requirements');
-
-                        LeaveApplicationRequirement::create([
-                            'leave_application_id' => $leave_application->id,
-                            'file_name' => $fileName,
-                            'name' => $file->name,
-                            'path' => $file_name_encrypted,
-                            'size' => $size,
-                        ]);
-                    }
-                }
-
-                LeaveApplicationLog::create([
-                    'action_by' => $employee_profile->id,
-                    'leave_application_id' => $leave_application->id,
-                    'action' => 'Applied'
-                ]);
-
-                $leave_applications[] = $leave_application;
             }
 
-            if (count($failed) === count($request->leave_applications)) {
-                return response()->json([
-                    'data' => LeaveApplicationResource::collection($leave_application),
-                    'reason' => $reason,
-                    'message' => 'Application request failed reason of failure.'
-                ], Response::HTTP_OK);
-            }
-
-            /**
-             * This return is inteded for having some failed registration of request with reason of insufficient credits.
-             */
-            if (count($failed) > 0 && count($failed) !== count($request->leave_applications)) {
-                return response()->json([
-                    'data' => LeaveApplicationResource::collection($leave_application),
-                    'failed_request' => $failed,
-                    'message' => 'Some request has successfully registered.'
-                ], Response::HTTP_OK);
-            }
+            LeaveApplicationLog::create([
+                'action_by' => $employee_profile->id,
+                'leave_application_id' => $leave_application->id,
+                'action' => 'Applied'
+            ]);
 
             return response()->json([
                 'data' => LeaveApplicationResource::collection($leave_application),

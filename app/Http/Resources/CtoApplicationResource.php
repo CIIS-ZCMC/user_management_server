@@ -22,12 +22,6 @@ class CtoApplicationResource extends JsonResource
             'remarks' => $this->remarks,
             'status' => $this->status,
             'purpose' => $this->purpose,
-            "hrmo_officer" => [
-                "employee_id" => $this->hrmoOfficer->employee_id,
-                "hrmo_full_name" => $this->hrmoOfficer->personalInformation->fullName(),
-                "designation" => $this->hrmoOfficer->designation->name,
-                "designation_code" => $this->hrmoOfficer->designation->code
-            ],
             "recommending_officer" => [
                 "employee_id" => $this->recommendingOfficer->employee_id,
                 "hrmo_full_name" => $this->recommendingOfficer->personalInformation->fullName(),

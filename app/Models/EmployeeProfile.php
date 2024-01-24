@@ -230,7 +230,7 @@ class EmployeeProfile extends Authenticatable
 
         if ($head) {
             return [
-                'position' => 'Chief',
+                'position' => 'Department Head',
                 'area' => $head
             ];
         }
