@@ -32,10 +32,6 @@ class OfficialBusinessController extends Controller
 
             foreach ($sql as $key => $value) {
                 switch ($value->status) {
-                    case 'applied':
-                        $model = OfficialBusiness::where('hrmo_officer', $user->id)->get();
-                    break; 
-    
                     case 'for recommending approval':
                         $model = OfficialBusiness::where('recommending_officer', $user->id)->get();
                     break;
@@ -110,7 +106,6 @@ class OfficialBusinessController extends Controller
            
             $officers   = Helpers::getRecommendingAndApprovingOfficer($assigned_area, $user->id);
 
-            $hrmo_officer           = Section::where('code', 'HRMO')->first()->supervisor_employee_profile_id;
             $recommending_officer   = $officers['recommending_officer'];
             $approving_officer      = $officers['approving_officer'];
 
@@ -128,7 +123,6 @@ class OfficialBusinessController extends Controller
             $data->certificate_of_appearance        = $cleanData['certificate_of_appearance']->getClientOriginalName();
             $data->certificate_of_appearance_size   = $cleanData['certificate_of_appearance']->getSize();
             $data->certificate_of_appearance_path   = Helpers::checkSaveFile($cleanData['certificate_of_appearance'], 'official_business');
-            $data->hrmo_officer                     = $hrmo_officer;
             $data->approving_officer                = $approving_officer;
             $data->recommending_officer             = $recommending_officer;
             $data->save();

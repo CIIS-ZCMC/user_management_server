@@ -27,7 +27,6 @@ class OfficialBusiness extends Model
         'certificate_of_appearance',
         'certificate_of_appearance_path',
         'certificate_of_appearance_size',
-        'hrmo_officer',
         'recommending_officer',
         'approving_officer',
         'remarks'
@@ -37,11 +36,6 @@ class OfficialBusiness extends Model
 
     public function employee() {
         return $this->belongsTo(EmployeeProfile::class, 'employee_profile_id');
-    }
-
-    
-    public function hrmoOfficer() {
-        return $this->belongsTo(EmployeeProfile::class, 'hrmo_officer');
     }
 
     public function recommendingOfficer() {
