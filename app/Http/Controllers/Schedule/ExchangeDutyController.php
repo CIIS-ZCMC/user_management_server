@@ -17,10 +17,12 @@ use App\Helpers\Helpers;
 
 use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 
 class ExchangeDutyController extends Controller
@@ -236,29 +238,11 @@ class ExchangeDutyController extends Controller
     /**
      * Update Approval of Request
      */
-    public function approve(Request $request, $id) {
+    public function approve($id, Request $request) {
         try {
-            $cleanData = [];
 
-            foreach ($request->all() as $key => $value) {
-                if (empty($value)) {
-                    $cleanData[$key] = $value;
-                    continue;
-                }
-
-                if (is_array($value)) {
-                    $cleanData[$key] = $value;
-                    continue;
-                }
-
-                if (is_int($value)) {
-                    $cleanData[$key] = $value;
-                    continue;
-                }
-
-                $cleanData[$key] = strip_tags($value);
-            }
             $user = $request->user;
+
             $data = DB::table('exchange_duty_approval')->where([
                 ['exchange_duty_id',    '=', $id],
                 ['employee_profile_id', '=', $user->id],
@@ -268,8 +252,18 @@ class ExchangeDutyController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
+            $password = strip_tags($request->password);
+
+            $employee_profile = $request->user;
+
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $query = DB::table('exchange_duty_approval')->where('id', $data->id)->update([
-                'approval_status' => $cleanData['approval_status']
+                'approval_status' => $request->approval_status
             ]);
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in approve '.$this->SINGULAR_MODULE_NAME.'.');
