@@ -1435,11 +1435,12 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-DTRM view-all'])->group(function () {
             Route::get('dtr-self', 'DTRcontroller@pullDTRuser');
             Route::get('dtr-device-devices', 'BioMSController@index');
-            Route::get('dtr-pushuser-to-devices', 'BioController@fetchUserToDevice');
-            Route::get('dtr-pulluser-from-devices', 'BioController@fetchUserFromDevice');
-            Route::get('dtr-fetchall-bio', 'BioController@fetchBIOToDevice');
+            Route::post('dtr-pushuser-to-devices', 'BioController@fetchUserToDevice');
+            Route::post('dtr-pulluser-from-devices', 'BioController@fetchUserFromDevice');
+            Route::post('dtr-fetchall-bio', 'BioController@fetchBIOToDevice');
             Route::get('dtr-generate', 'DTRcontroller@generateDTR');
             Route::get('dtr-holidays', 'DTRcontroller@getHolidays');
+            Route::get('dtr-fetchuser-Biometrics', 'BioMSController@fetchBiometrics');
         });
 
         Route::middleware(['auth.permission:UMIS-DTRM view'])->group(function () {
@@ -1451,13 +1452,13 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-DTRM write'])->group(function () {
             Route::post('dtr-device-registerdevice', 'BioMSController@addDevice');
-            Route::get('dtr-registerbio', 'BioController@registerBio');
+            Route::post('dtr-registerbio', 'BioController@registerBio');
             Route::post('dtr-synctime', 'BioController@syncTime');
             Route::get('dtr-setholidays', 'DTRcontroller@setHolidays');
         });
 
         Route::middleware(['auth.permission:UMIS-DTRM update'])->group(function () {
-            Route::get('dtr-device-updatedevice', 'BioMSController@updateDevice');
+            Route::post('dtr-device-updatedevice', 'BioMSController@updateDevice');
             Route::get('dtr-device-enable-disable', 'BioController@enableORDisable');
             Route::get('dtr-device-setsuper-admin', 'BioController@setUserSuperAdmin');
             Route::post('dtr-device-shutdown', 'BioController@restartORShutdown');
@@ -1468,7 +1469,7 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-DTRM delete'])->group(function () {
             Route::post('dtr-device-delete', 'BioMSController@deleteDevice');
             Route::get('dtr-device-deleteall-bio', 'BioController@deleteAllBIOFromDevice');
-            Route::get('dtr-device-deleteuser-bio', 'BioController@deleteSpecificBIOFromDevice');
+            Route::post('dtr-device-deleteuser-bio', 'BioController@deleteSpecificBIOFromDevice');
         });
     });
 

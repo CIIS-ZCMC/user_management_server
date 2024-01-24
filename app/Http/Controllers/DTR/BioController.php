@@ -34,6 +34,16 @@ class BioController extends Controller
     /* ----------------------------- THIS IS FOR REGISTRATION OF BIOMETRICS----------------------------------- */
     public function registerBio(Request $request)
     {
+
+        $user = $request->user;
+
+        $password_decrypted = Crypt::decryptString($user['password_encrypted']);
+        $password = strip_tags($request->password);
+        if (!Hash::check($password . env("SALT_VALUE"), $password_decrypted)) {
+            return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+        }
+
+
         $biometric_id = $request->biometric_id;
         $name = $request->name;
         $privilege = $request->privilege;
@@ -72,7 +82,7 @@ class BioController extends Controller
     public function fetchUserFromDevice(Request $request)
     {
         try {
-            $biometric_id = $request->biometric_id;
+            $biometric_id = $request->biometricIDs;
             $dvc = [];
 
             if (isset($this->ip_registration[0])) {
@@ -83,13 +93,16 @@ class BioController extends Controller
                 return response()->json(['message' => 'Failed to pull data']);
             }
 
-
-            if ($this->device->fetchUserDataFromDeviceToDB($dvc, $biometric_id)) {
-                if ($this->device->validateTemplate($dvc, $biometric_id)) {
-                    $this->device->deleteDataFromDevice($dvc, $biometric_id); //DELETE USER INFO , IF FINGERPRINT DETECTED
+            foreach ($biometric_id as $key => $value) {
+                if ($this->device->fetchUserDataFromDeviceToDB($dvc, $value)) {
+                    if ($this->device->validateTemplate($dvc, $value)) {
+                        $this->device->deleteDataFromDevice($dvc, $value); //DELETE USER INFO , IF FINGERPRINT DETECTED
+                    }
                 }
-                return response()->json(['message' => 'User Data from Device has been pulled successfully!']);
             }
+
+
+            return response()->json(['message' => 'User Data from Device has been pulled successfully!']);
         } catch (\Throwable $th) {
 
             return response()->json(['message' =>  $th->getMessage()]);
@@ -99,7 +112,9 @@ class BioController extends Controller
     public function fetchUserToDevice(Request $request)
     {
         try {
-            $biometric_id = $request->biometric_id;
+
+
+            $biometric_id = $request->biometricIDs;
 
             $dvc = [];
 
@@ -110,10 +125,11 @@ class BioController extends Controller
             if (!$dvc) {
                 return response()->json(['message' => 'Failed to push data']);
             }
-
-            if ($this->device->fetchUserDataFromDBToDevice($dvc, $biometric_id)) {
-                return response()->json(['message' => 'User Data fetched to device successfully!']);
+            foreach ($biometric_id as $key => $value) {
+                $this->device->fetchUserDataFromDBToDevice($dvc, $value);
             }
+
+            return response()->json(['message' => 'User Data fetched to device successfully!']);
         } catch (\Throwable $th) {
             return response()->json(['message' =>  $th->getMessage()]);
         }
@@ -129,9 +145,12 @@ class BioController extends Controller
     public function fetchBIOToDevice()
     {
         try {
-            foreach ($this->device_ids as $dv) {
-                $bios = Devices::where('id', $dv)->get();
-                $this->device->fetchAllDataToDevice($bios[0]);
+
+            $devices = Devices::where('is_registration', 0)->get();
+
+            foreach ($devices as $dv) {
+                // $bios = Devices::where('id', $dv)->get();
+                $this->device->fetchAllDataToDevice($dv);
             }
             return response()->json(['message' => 'User Data has been fetched to device successfully']);
         } catch (\Throwable $th) {
@@ -162,16 +181,17 @@ class BioController extends Controller
     public function deleteSpecificBIOFromDevice(Request $request)
     {
         try {
-            $biometric_id = $request->biometric_id;
-            foreach ($this->device_ids as $dv) {
-                $bios = Devices::where('id', $dv)->get();
+            $biometric_id = $request->biometricIDs;
 
-                if (count($bios) >= 1) {
-                    $this->device->deleteDataFromDevice($bios[0], $biometric_id);
-                    return response()->json(['message' => 'User data from this device has been deleted successfully']);
+            $devices = Devices::where('is_registration', 0)->get();
+            foreach ($devices as $dv) {
+
+                foreach ($biometric_id as $key => $value) {
+                    $this->device->deleteDataFromDevice($dv, $value);
                 }
             }
-            return response()->json(['message' => 'No device found']);
+            return response()->json(['message' => 'User data from this device has been deleted successfully']);
+            // return response()->json(['message' => 'No device found']);
         } catch (\Throwable $th) {
 
             return response()->json(['message' =>  $th->getMessage()]);

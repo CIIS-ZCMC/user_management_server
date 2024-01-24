@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Response;
+use App\Models\Biometrics;
 
 class BioMSController extends Controller
 {
@@ -162,6 +163,14 @@ class BioMSController extends Controller
     public function updateDevice(Request $request)
     {
         try {
+
+            $user = $request->user;
+            $password_decrypted = Crypt::decryptString($user['password_encrypted']);
+            $password = strip_tags($request->password);
+            if (!Hash::check($password . env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $device_id = $request->device_id;
             $device_name = $request->device_name;
             $ip_address = $request->ip_address;
@@ -228,6 +237,16 @@ class BioMSController extends Controller
             $device_id = $request->device_id;
             Devices::findorFail($device_id)->delete();
             return response()->json(['message' => 'Device Deleted Successfully!']);
+        } catch (\Throwable $th) {
+            return response()->json(['message' =>  $th->getMessage()]);
+        }
+    }
+
+    public function fetchBiometrics(Request $request)
+    {
+        try {
+            $data = Biometrics::all();
+            return $data;
         } catch (\Throwable $th) {
             return response()->json(['message' =>  $th->getMessage()]);
         }
