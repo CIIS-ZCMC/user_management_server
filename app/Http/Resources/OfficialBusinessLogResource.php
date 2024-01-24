@@ -16,7 +16,7 @@ class OfficialBusinessLogResource extends JsonResource
     {
         return [
             'id'                    => $this->id,
-            'official_business_id'  => $this->officialBusiness ? new OfficialBusinessResource($this->officialBusiness) : null,
+            'official_business'     => $this->officialBusiness ? new OfficialBusinessResource($this->officialBusiness) : null,
             'action_by'             => $this->employee ? new EmployeeProfileResource($this->employee) : null,
             'action'                => $this->action,
             'created_at'            => (string) $this->created_at,
