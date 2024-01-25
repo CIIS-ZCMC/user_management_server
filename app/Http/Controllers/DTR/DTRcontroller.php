@@ -15,8 +15,14 @@ use App\Http\Controllers\DTR\BioMSController;
 use App\Models\Holidaylist;
 use App\Models\EmployeeProfile;
 use App\Http\Controllers\Controller;
+use App\Models\DailyTimeRecordLogs;
 use Illuminate\Support\Facades\Log;
+<<<<<<< Updated upstream
 use Carbon\Carbon;
+=======
+use App\Models\Section;
+
+>>>>>>> Stashed changes
 
 
 class DTRcontroller extends Controller
@@ -26,11 +32,15 @@ class DTRcontroller extends Controller
     protected $ip;
     protected $bioms;
     protected $devices;
+
+    protected $emp;
+
     public function __construct()
     {
         $this->helper = new Helpers();
         $this->device = new BioControl();
         $this->bioms = new BioMSController();
+
         try {
             $content = $this->bioms->operatingDevice()->getContent();
             $this->devices = $content !== null ? json_decode($content, true)['data'] : [];
@@ -82,11 +92,15 @@ class DTRcontroller extends Controller
                     $attendance = simplexml_load_string($logs);
                     $user_Inf = simplexml_load_string($all_user_info);
                     $attendance_Logs =  $this->helper->getAttendance($attendance);
+
                     $Employee_Info  = $this->helper->getEmployee($user_Inf);
+
                     $Employee_Attendance = $this->helper->getEmployeeAttendance(
                         $attendance_Logs,
                         $Employee_Info
                     );
+
+
                     $date_and_timeD = simplexml_load_string($tad->get_date());
                     if ($this->helper->validatedDeviceDT($date_and_timeD)) { //Validating Time of server and time of device
                         $date_now = date('Y-m-d');
@@ -139,8 +153,9 @@ class DTRcontroller extends Controller
                 } // End Checking if Connected to Device
             }
         } catch (\Throwable $th) {
-            Log::channel("custom-dtr-log-error")->error($th->getMessage());
-            return response()->json(['message' => 'Unable to connect to device', 'Throw error' => $th->getMessage()]);
+            return $th;
+            // Log::channel("custom-dtr-log-error")->error($th->getMessage());
+            // return response()->json(['message' => 'Unable to connect to device', 'Throw error' => $th->getMessage()]);
         }
     }
 
@@ -1450,6 +1465,71 @@ class DTRcontroller extends Controller
             return date('d', strtotime($value->second_in));
         }
     }
+
+    public function getUsersLogs(Request $request)
+    {
+        try {
+            $biometric_ids = DB::select('SELECT biometric_id FROM `employee_profiles` WHERE biometric_id in (SELECT biometric_id FROM `biometrics`) and personal_information_id in (select id from personal_informations)');
+            $data = [];
+            $date = '';
+            $logs = [];
+            $dtrstatus = '';
+            $recentlog = '';
+            foreach ($biometric_ids as $ids) {
+                $emp =  EmployeeProfile::where('biometric_id', $ids->biometric_id)->first();
+                $dtrlogs =  DailyTimeRecordLogs::where('biometric_id', $ids->biometric_id)->get();
+
+                $latestDate = null;
+
+                foreach ($dtrlogs as $dtr) {
+                    $date = $dtr->dtr_date;
+
+                    $jlogs = json_decode($dtr->json_logs);
+                    if ($latestDate === null || $date > $latestDate) {
+                        $latestDate = $date;
+                        $dtrstatus = $jlogs[count($jlogs) - 1]->status_description->description;
+                        $recentlog = $jlogs[count($jlogs) - 1];
+                    }
+                    $employeeProfileId = $emp->id;
+                    $sections = Section::select('name', 'code as sectcode')
+                        ->whereIn('id', function ($query) use ($employeeProfileId) {
+                            $query->select('section_id')
+                                ->from('assigned_areas')
+                                ->where('employee_profile_id', $employeeProfileId);
+                        })
+                        ->first();
+                    $logs[] = [
+                        'DTR_date' => $date,
+                        'Logs' => $jlogs,
+                    ];
+                }
+                /**
+                 * Just Returning Records with logs
+                 */
+                if (count($logs) >= 1) {
+                    usort($logs, function ($a, $b) {
+                        return strtotime($a['DTR_date']) - strtotime($b['DTR_date']);
+                    });
+                    $data[] = [
+                        'id' => $emp->id,
+                        'biometric_id' => $ids->biometric_id,
+                        'name' =>  $emp->name(),
+                        'position' => $emp->findDesignation()->name,
+                        'designation' =>  $sections,
+                        'recentDTRdates' => $recentlog->date_time,
+                        'device' => $recentlog->device_name,
+                        'status' => $dtrstatus,
+                        'Records' => $logs,
+                        // 'recentBiometricLog'=>
+                    ];
+                }
+            }
+            return $data;
+        } catch (\Throwable $th) {
+            //throw $th;
+        }
+    }
+
     public function test()
     {
         /*

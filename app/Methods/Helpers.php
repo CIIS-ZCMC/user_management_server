@@ -875,6 +875,7 @@ class Helpers
         $status_description = '';
         $Status_Entry = '';
         $active_entry = 'f1';
+        $biometric_id = 0;
         $on_Active_Status = date('Y-m-d H:i:s', strtotime($attendance_Log['date_time'] . '-5 minutes'));
         switch ($attendance_Log['status']) {
             case 0:
@@ -1120,6 +1121,7 @@ class Helpers
 
     public function getEmployeeAttendance($attendance_Logs, $Employee_Info)
     {
+
         $Employee_Attendance = [];
         foreach ($attendance_Logs as $key =>  $attendance_Log) {
             $employee_ID = $attendance_Log['biometric_id'];

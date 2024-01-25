@@ -1442,6 +1442,7 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('dtr-generate', 'DTRcontroller@generateDTR');
             Route::get('dtr-holidays', 'DTRcontroller@getHolidays');
             Route::get('dtr-fetchuser-Biometrics', 'BioMSController@fetchBiometrics');
+            Route::get('dtr-getusers-Logs', 'DTRcontroller@getUsersLogs');
         });
 
         Route::middleware(['auth.permission:UMIS-DTRM view'])->group(function () {
