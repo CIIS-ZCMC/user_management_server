@@ -14,7 +14,7 @@ class OfficialTimeLog extends Model
     protected $primaryKey = 'id';
 
     protected $fillable = [
-        'official_business_id',
+        'official_time_id',
         'action_by',
         'action',
     ];
@@ -22,7 +22,7 @@ class OfficialTimeLog extends Model
     public $timestamps = TRUE;
 
     public function officialTime() {
-        return $this->belongsTo(OfficialTime::class, 'official_business_id');
+        return $this->belongsTo(OfficialTime::class, 'official_time_id');
     }
 
     public function employee() {

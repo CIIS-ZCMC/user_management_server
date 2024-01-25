@@ -148,7 +148,7 @@ class Helpers
     public static function registerOfficialTimeLogs($data_id, $user_id, $action)
     {
         OfficialTimeLog::create([
-            'official_business_id' => $data_id,
+            'official_time_id' => $data_id,
             'action_by' => $user_id,
             'action' => $action
         ]);
