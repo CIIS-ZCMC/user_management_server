@@ -43,31 +43,31 @@ class OfficialTimeController extends Controller
              */
             
              /** FOR NORMAL EMPLOYEE */
-            if($employee_profile->position() === null){
-                $official_time_applications = OfficialTime::where('employee_profile_id', $employee_profile->id)->get();
+             if($employee_profile->position() === null){
+                $official_time_application = OfficialTime::where('employee_profile_id', $employee_profile->id)->get();
                  
                 return response()->json([
-                    'data' => OfficialTimeResource::collection($official_time_applications),
+                    'data' => OfficialTimeResource::collection($official_time_application),
                     'message' => 'Retrieved all offical time application'
                 ], Response::HTTP_OK);
             }
 
-            $official_time_applications = OfficialTime::select('official_time_applications.*')
-                ->join('official_time_applications_logs as obal', 'obal.official_business_id', 'official_time_applications.id')
+            $official_time_application = OfficialTime::select('official_time_applications.*')
+                ->join('official_time_application_logs as obal', 'obal.official_time_id', 'official_time_applications.id')
                 ->where('obal.action', 'Applied')
                 ->whereIn('official_time_applications.status', $recommending)
                 ->where('official_time_applications.recommending_officer', $employee_profile->id)->get();
                 
-            $official_time_applications_approving = OfficialTime::select('official_time_applications.*')
-                ->join('official_time_applications_logs as obal', 'obal.official_business_id', 'official_time_applications.id')
+            $official_time_application_approving = OfficialTime::select('official_time_applications.*')
+                ->join('official_time_application_logs as obal', 'obal.official_time_id', 'official_time_applications.id')
                 ->whereIn('obal.action', ['official_time_applications.status', 'Approved by Approving Officer'])
                 ->whereIn('official_time_applications.status', $approving)
                 ->where('official_time_applications.approving_officer', $employee_profile->id)->get();
 
-            $official_time_applications = [...$official_time_applications, ...$official_time_applications_approving];
+            $official_time_application = [...$official_time_application, ...$official_time_application_approving];
 
             return response()->json([
-                'data' => OfficialTimeResource::collection($official_time_applications),
+                'data' => OfficialTimeResource::collection($official_time_application),
                 'message' => 'Retrieved all offical time application'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
