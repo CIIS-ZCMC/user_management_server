@@ -30,82 +30,52 @@ class OfficialBusinessController extends Controller
     public function index(Request $request)
     {
         try {
-            $user   = $request->user;
-            $area   = $user->assignedArea->findDetails();
-            $model  = null;
+            $employee_profile   = $request->user;
+            $recommending = ["for recommending approval", "for approving approval", "approved", "declined"];
+            $approving = ["for approving approval", "approved", "declined"];
 
-                switch ($area['sector']) {
-                    case 'Division':
-                        // $model1 = OfficialBusiness::where('recommending_officer', $user->id)
-                        // ->where(function ($query) {
-                        //     $query->orWhere('status', 'for recommending approval')
-                        //     ->orWhere('status', 'for approving approval')
-                        //     ->orWhere('status', 'approved')
-                        //     ->orWhere('status', 'declined');
-                        // })->get();
+            /**
+             * Division Head [approving, recommending] - applications of assigned area
+             *  - recommending => [for recommending approval, for approving approval, approved, declined]
+             *  - approving => [ for approving approval, approved, declined]
+             * 
+             * Department Head [recommending] - applications of assigned area
+             *  - recommending => [for recommending approval, for approving approval, approved, declined]
+             * 
+             * Section Supervisor [recommending] - applications of assigned area
+             *  - recommending => [for recommending approval, for approving approval, approved, declined]
+             * 
+             */
+            
+             /** FOR NORMAL EMPLOYEE */
+            if($employee_profile->position() === null){
+                $official_business_application = OfficialBusiness::where('employee_profile_id', $employee_profile->id)->get();
+                 
+                return response()->json([
+                    'data' => OfficialBusinessResource::collection($official_business_application),
+                    'message' => 'Retrieved all offical business application'
+                ], Response::HTTP_OK);
+            }
 
-                        //  $model2 = OfficialBusiness::where('approving_officer', $user->id)
-                        // ->where(function ($query) {
-                        //     $query->orWhere('status', 'for approving approval')
-                        //     ->orWhere('status', 'approved')
-                        //     ->orWhere('status', 'declined');
-                        // })->get();
+            $official_business_application = OfficialBusiness::select('official_business_applications.*')
+                ->join('official_business_application_logs as obal', 'obal.official_business_id', 'official_business_applications.id')
+                ->where('obal.action', 'Applied')
+                ->whereIn('official_business_applications.status', $recommending)
+                ->where('official_business_applications.recommending_officer', $employee_profile->id)->get();
+                
+            $official_business_application_approving = OfficialBusiness::select('official_business_applications.*')
+                ->join('official_business_application_logs as obal', 'obal.official_business_id', 'official_business_applications.id')
+                ->whereIn('obal.action', ['official_business_applications.status', 'Approved by Approving Officer'])
+                ->whereIn('official_business_applications.status', $approving)
+                ->where('official_business_applications.approving_officer', $employee_profile->id)->get();
 
+            $official_business_application = [...$official_business_application, ...$official_business_application_approving];
 
-
-                        $model = OfficialBusiness::
-                        where(function ($query) use ($user) {
-                            $query->orWhere('recommending_officer', $user->id)
-                            ->orWhere('approving_officer', $user->id);
-                        })
-                        ->where(function ($query) {
-                            $query
-                            ->orWhere('status', 'for recommending approval')
-                            ->orWhere('status', 'for approving approval')
-                            ->orWhere('status', 'approved')
-                            ->orWhere('status', 'declined');
-                        })
-                        ->get();
-                     
-                        // $model = [...$model1,$model2];
-                    break;
-
-                    case 'Department':
-                        $model = OfficialBusiness::where('recommending_officer', $user->id)
-                        ->where(function ($query) {
-                            $query->orWhere('status', 'for recommending approval')
-                            ->orWhere('status', 'for approving approval')
-                            ->orWhere('status', 'approved')
-                            ->orWhere('status', 'declined');
-                        })->get();
-                    break;
-
-                    case 'Section':
-                        $model = OfficialBusiness::where('recommending_officer', $user->id)
-                        ->where(function ($query) {
-                            $query->orWhere('status', 'for recommending approval')
-                            ->orWhere('status', 'for approving approval')
-                            ->orWhere('status', 'approved')
-                            ->orWhere('status', 'declined');
-                        })->get();
-                    break;
-                    
-                    case 'Unit':
-                        $model = OfficialBusiness::where('recommending_officer', $user->id)
-                        ->where(function ($query) {
-                            $query->orWhere('status', 'for recommending approval')
-                            ->orWhere('status', 'for approving approval')
-                            ->orWhere('status', 'approved')
-                            ->orWhere('status', 'declined');
-                        })->get();
-                    break;
-                }
-
-
-            return response()->json([ 'data' => OfficialBusinessResource::collection($model)], Response::HTTP_OK);
-
+            return response()->json([
+                'data' => OfficialBusinessResource::collection($official_business_application),
+                'message' => 'Retrieved all offical business application'
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
-
             Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -183,10 +153,11 @@ class OfficialBusinessController extends Controller
             $data->save();
 
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in storing '.$this->PLURAL_MODULE_NAME.'.'); //System Logs
-            return response()->json(['data' => OfficialBusinessResource::collection(OfficialBusiness::where('id', $data->id)->get()),
-                                    'logs' =>  Helpers::registerOfficialBusinessLogs($data->id, $user['id'], 'for recommending approval'), 
-                                    'msg' => 'Request Complete.'], Response::HTTP_OK);
 
+            return response()->json([
+                'data' => OfficialBusinessResource::collection(OfficialBusiness::where('id', $data->id)->get()),
+                'logs' =>  Helpers::registerOfficialBusinessLogs($data->id, $user['id'], 'Applied'), 
+                'msg' => 'Request Complete.'], Response::HTTP_OK);
         } catch (\Throwable $th) {
 
             Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
@@ -223,6 +194,7 @@ class OfficialBusinessController extends Controller
             }
 
             $status     = null;
+            $log_action = null;
 
             $password = strip_tags($request->password);
 
@@ -238,18 +210,22 @@ class OfficialBusinessController extends Controller
                 switch ($data->status) {
                     case 'for recommending approval':
                         $status = 'for approving approval';
+                        $log_action = 'Approved by Recommending Officer';
                     break;
 
                     case 'for approving approval':
                         $status = 'approved';
+                        $log_action = 'Approved by Approving Officer';
                     break;
                     
                     default:
                         $status = 'declined';
+                        $log_action = 'Request Declined';
                     break;
                 }
             } else if ($request->status === 'declined') {
                 $status = 'declined';
+                $log_action = 'Request Declined';
             }
             
 
@@ -257,8 +233,8 @@ class OfficialBusinessController extends Controller
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.'); //System Logs
             return response()->json(['data' => OfficialBusinessResource::collection(OfficialBusiness::where('id', $data->id)->get()),
-                                    'logs' => Helpers::registerOfficialBusinessLogs($data->id, $employee_profile['id'], 'store'),
-                                    'msg' => $status, ], Response::HTTP_OK);
+                                    'logs' => Helpers::registerOfficialBusinessLogs($data->id, $employee_profile['id'], $log_action),
+                                    'msg' => $log_action, ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 

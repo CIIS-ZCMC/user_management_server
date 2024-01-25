@@ -48,9 +48,8 @@ class OfficialBusiness extends Model
 
     public function officialBusinessLogs()
     {
-        return $this->belongsToMany(OfficialBusiness::class, 'official_business_application_logs', 'official_business_id')->withPivot('official_business_id');
+        return $this->hasMany(OfficialBusinessLog::class);
     }
-
 
     public function totalDays()
     {

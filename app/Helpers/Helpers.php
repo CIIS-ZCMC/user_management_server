@@ -36,7 +36,7 @@ class Helpers
         switch($assigned_area['sector']){
             case 'Division':
                 // If employee is not Division head
-                if(Division::find($assigned_area->details->id)->chief_employee_profile_id === $employee_profile_id){
+                if(Division::find($assigned_area['details']->id)->chief_employee_profile_id === $employee_profile_id){
                     $chief_officer = Division::where('code', 'OMCC')->first()->chief_employee_profile_id;
                     return [
                         "recommending_officer" => $chief_officer,
@@ -44,7 +44,7 @@ class Helpers
                     ];
                 }
 
-                $division_head = Division::find($assigned_area->details->id)->chief_employee_profile_id;
+                $division_head = Division::find($assigned_area['details']->id)->chief_employee_profile_id;
 
                 return [
                     "recommending_officer" => $division_head,
@@ -53,8 +53,8 @@ class Helpers
 
             case 'Department':
                 // If employee is Department head
-                if(Department::find($assigned_area->details->id)->head_employee_profile_id === $employee_profile_id){
-                    $division = Department::find($assigned_area->details->id)->division_id;
+                if(Department::find($assigned_area['details']->id)->head_employee_profile_id === $employee_profile_id){
+                    $division = Department::find($assigned_area['details']->id)->division_id;
 
                     $division_head = Division::find($division)->chief_employee_profile_id;
 
@@ -64,7 +64,7 @@ class Helpers
                     ];
                 }
 
-                $department_head = Department::find($assigned_area->details->id)->head_employee_profile_id;
+                $department_head = Department::find($assigned_area['details']->id)->head_employee_profile_id;
 
                 return [
                     "recommending_officer" => $department_head,
@@ -72,11 +72,11 @@ class Helpers
                 ];
             case 'Section':
                 // If employee is Section head
-                $section = Section::find($assigned_area->details->id);
+                $section = Section::find($assigned_area['details']->id);
 
                 if ($section->division !== null) {
                     $division = $section->division;
-                    if (!$section->supervisor_employee_profile_id === $employee_profile_id) {
+                    if ($section->supervisor_employee_profile_id === $employee_profile_id) {
                         return [
                             "recommending_officer" => $division->chief_employee_profile_id,
                             "approving_officer" => Helpers::getChiefOfficer()
@@ -98,7 +98,7 @@ class Helpers
 
             case 'Unit':
                 // If employee is Unit head
-                $section = Unit::find($assigned_area->details->id)->section;
+                $section = Unit::find($assigned_area['details']->id)->section;
                 if($section->department_id !== null){
                     $department = $section->department;
 

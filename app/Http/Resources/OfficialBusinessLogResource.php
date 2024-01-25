@@ -14,11 +14,20 @@ class OfficialBusinessLogResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $employee = [
+            'name'=> $this->employee->personalInformation->name(),
+            'profile_url' => $this->profile_url,
+            'designation' => [
+                'name' => $this->employee->assignedArea->designation->name,
+                'code' => $this->employee->assignedArea->designation->code,
+            ],
+            'area' => $this->employee->assignedArea->findDetails()['details']->name,
+        ];
+
         return [
             'id'                    => $this->id,
-            'official_business'     => $this->officialBusiness ? new OfficialBusinessResource($this->officialBusiness) : null,
-            'action_by'             => $this->employee ? new EmployeeProfileResource($this->employee) : null,
             'action'                => $this->action,
+            'action_by'             => $employee,
             'created_at'            => (string) $this->created_at,
             'updated_at'            => (string) $this->updated_at,
         ];
