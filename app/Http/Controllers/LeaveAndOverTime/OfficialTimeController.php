@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Controllers\LeaveAndOvertime;
+namespace App\Http\Controllers\LeaveAndOverTime;
 
-use App\Http\Resources\OfficialBusinessResource;
-use App\Http\Requests\OfficialBusinessRequest;
+use App\Http\Resources\OfficialTimeResource;
+use App\Http\Requests\OfficialTimeRequest;
 use App\Helpers\Helpers;
 
-use App\Models\OfficialBusiness;
+use App\Models\OfficialTime;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -14,15 +14,13 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 
-
-class OfficialBusinessController extends Controller
+class OfficialTimeController extends Controller
 {
-    private $CONTROLLER_NAME = 'Official Business';
-    private $PLURAL_MODULE_NAME = 'official businesses';
-    private $SINGULAR_MODULE_NAME = 'official business';
-
+    private $CONTROLLER_NAME = 'Official Time';
+    private $PLURAL_MODULE_NAME = 'official times';
+    private $SINGULAR_MODULE_NAME = 'official time';
     /**
-     * Display a listing of the resource.   
+     * Display a listing of the resource.
      */
     public function index(Request $request)
     {
@@ -46,33 +44,31 @@ class OfficialBusinessController extends Controller
             
              /** FOR NORMAL EMPLOYEE */
             if($employee_profile->position() === null){
-                $official_business_application = OfficialBusiness::where('employee_profile_id', $employee_profile->id)->get();
+                $official_time_applications = OfficialTime::where('employee_profile_id', $employee_profile->id)->get();
                  
                 return response()->json([
-                    'data' => OfficialBusinessResource::collection($official_business_application),
-                    'message' => 'Retrieved all offical business application'
+                    'data' => OfficialTimeResource::collection($official_time_applications),
+                    'message' => 'Retrieved all offical time application'
                 ], Response::HTTP_OK);
             }
 
-            $official_business_application = OfficialBusiness::select('official_business_applications.*')
-                ->join('official_business_application_logs as obal', 'obal.official_business_id', 'official_business_applications.id')
+            $official_time_applications = OfficialTime::select('official_time_applications.*')
+                ->join('official_time_applications_logs as obal', 'obal.official_business_id', 'official_time_applications.id')
                 ->where('obal.action', 'Applied')
-                ->whereIn('official_business_applications.status', $recommending)
-                ->where('official_business_applications.recommending_officer', $employee_profile->id)
-                ->orderBy('official_business_applications.created_at', 'desc')->get();
+                ->whereIn('official_time_applications.status', $recommending)
+                ->where('official_time_applications.recommending_officer', $employee_profile->id)->get();
                 
-            $official_business_application_approving = OfficialBusiness::select('official_business_applications.*')
-                ->join('official_business_application_logs as obal', 'obal.official_business_id', 'official_business_applications.id')
-                ->whereIn('obal.action', ['official_business_applications.status', 'Approved by Approving Officer'])
-                ->whereIn('official_business_applications.status', $approving)
-                ->where('official_business_applications.approving_officer', $employee_profile->id)
-                ->orderBy('official_business_applications.created_at', 'desc')->get();
+            $official_time_applications_approving = OfficialTime::select('official_time_applications.*')
+                ->join('official_time_applications_logs as obal', 'obal.official_business_id', 'official_time_applications.id')
+                ->whereIn('obal.action', ['official_time_applications.status', 'Approved by Approving Officer'])
+                ->whereIn('official_time_applications.status', $approving)
+                ->where('official_time_applications.approving_officer', $employee_profile->id)->get();
 
-            $official_business_application = [...$official_business_application, ...$official_business_application_approving];
+            $official_time_applications = [...$official_time_applications, ...$official_time_applications_approving];
 
             return response()->json([
-                'data' => OfficialBusinessResource::collection($official_business_application),
-                'message' => 'Retrieved all offical business application'
+                'data' => OfficialTimeResource::collection($official_time_applications),
+                'message' => 'Retrieved all offical time application'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
@@ -83,25 +79,15 @@ class OfficialBusinessController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create(Request $request)
+    public function create()
     {
-        try {
-
-            $user = $request->user;
-            $sql = OfficialBusiness::where('employee_profile_id', $user->id)->get();
-            return response()->json(['data' => OfficialBusinessResource::collection($sql)], Response::HTTP_OK);
-
-        } catch (\Throwable $th) {
-            
-            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
+        //
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(OfficialBusinessRequest $request)
+    public function store(OfficialTimeRequest $request)
     {
         try {
             $user           = $request->user;
@@ -133,13 +119,11 @@ class OfficialBusinessController extends Controller
             $recommending_officer   = $officers['recommending_officer'];
             $approving_officer      = $officers['approving_officer'];
 
-            $data = new OfficialBusiness;
+            $data = new OfficialTime;
 
             $data->employee_profile_id              = $user->id;
             $data->date_from                        = $cleanData['date_from'];
             $data->date_to                          = $cleanData['date_to'];
-            $data->time_from                        = $cleanData['time_from'];
-            $data->time_to                          = $cleanData['time_to'];
             $data->purpose                          = $cleanData['purpose'];
             $data->personal_order_file              = $cleanData['personal_order_file']->getClientOriginalName();;
             $data->personal_order_size              = $cleanData['personal_order_file']->getSize();
@@ -154,8 +138,8 @@ class OfficialBusinessController extends Controller
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in storing '.$this->PLURAL_MODULE_NAME.'.'); //System Logs
 
             return response()->json([
-                'data' => OfficialBusinessResource::collection(OfficialBusiness::where('id', $data->id)->get()),
-                'logs' =>  Helpers::registerOfficialBusinessLogs($data->id, $user['id'], 'Applied'), 
+                'data' => OfficialTimeResource::collection(OfficialTime::where('id', $data->id)->get()),
+                'logs' =>  Helpers::registerOfficialTimeLogs($data->id, $user['id'], 'Applied'), 
                 'msg' => 'Request Complete.'], Response::HTTP_OK);
         } catch (\Throwable $th) {
 
@@ -186,7 +170,7 @@ class OfficialBusinessController extends Controller
     public function update($id, Request $request)
     {
         try {        
-            $data = OfficialBusiness::findOrFail($id);
+            $data = OfficialTime::findOrFail($id);
 
             if(!$data) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
@@ -231,8 +215,8 @@ class OfficialBusinessController extends Controller
             $data->update(['status' => $status, 'remarks' => $request->remarks]);
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.'); //System Logs
-            return response()->json(['data' => OfficialBusinessResource::collection(OfficialBusiness::where('id', $data->id)->get()),
-                                    'logs' => Helpers::registerOfficialBusinessLogs($data->id, $employee_profile['id'], $log_action),
+            return response()->json(['data' => OfficialTimeResource::collection(OfficialTime::where('id', $data->id)->get()),
+                                    'logs' => Helpers::registerOfficialTimeLogs($data->id, $employee_profile['id'], $log_action),
                                     'msg' => $log_action, ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
