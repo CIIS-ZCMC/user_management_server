@@ -1550,6 +1550,10 @@ Route::middleware('auth.cookie')->group(function(){
             Route::get('ot-application-all', 'OfficialTimeController@index');
         });
 
+        Route::middleware(['auth.permission:UMIS-OB view'])->group(function(){
+            Route::get('user-ot-application', 'OfficialTimeController@create');
+        });
+
         Route::middleware(['auth.permission:UMIS-OT request'])->group(function(){
             Route::post('ot-application', 'OfficialTimeController@store');
         });
