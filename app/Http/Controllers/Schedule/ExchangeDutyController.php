@@ -241,12 +241,7 @@ class ExchangeDutyController extends Controller
     /**
      * Update Approval of Request
      */
-<<<<<<< HEAD
     public function approve($id, Request $request) {
-=======
-    public function approve(Request $request, $id)
-    {
->>>>>>> a1b53bf56fa8548331e9f0fd4b7cc6b70931188b
         try {
 
             $user = $request->user;
