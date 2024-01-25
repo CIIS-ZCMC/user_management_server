@@ -53,14 +53,14 @@ class OfficialTimeController extends Controller
             }
 
             $official_time_applications = OfficialTime::select('official_time_applications.*')
-                ->join('official_time_applications_logs as obal', 'obal.official_business_id', 'official_time_applications.id')
+                ->join('official_time_application_logs as obal', 'obal.official_time_id', 'official_time_applications.id')
                 ->where('obal.action', 'Applied')
                 ->whereIn('official_time_applications.status', $recommending)
                 ->where('official_time_applications.recommending_officer', $employee_profile->id)->get();
                 
             $official_time_applications_approving = OfficialTime::select('official_time_applications.*')
-                ->join('official_time_applications_logs as obal', 'obal.official_business_id', 'official_time_applications.id')
-                ->whereIn('obal.action', ['official_time_applications.status', 'Approved by Approving Officer'])
+                ->join('official_time_application_logs as obal', 'obal.official_time_id', 'official_time_applications.id')
+                ->where('obal.action','Approved by Recommending Officer')
                 ->whereIn('official_time_applications.status', $approving)
                 ->where('official_time_applications.approving_officer', $employee_profile->id)->get();
 
@@ -127,10 +127,10 @@ class OfficialTimeController extends Controller
             $data->purpose                          = $cleanData['purpose'];
             $data->personal_order_file              = $cleanData['personal_order_file']->getClientOriginalName();;
             $data->personal_order_size              = $cleanData['personal_order_file']->getSize();
-            $data->personal_order_path              = Helpers::checkSaveFile($cleanData['personal_order_file'], 'official_business');
+            $data->personal_order_path              = Helpers::checkSaveFile($cleanData['personal_order_file'], 'official_time');
             $data->certificate_of_appearance        = $cleanData['certificate_of_appearance']->getClientOriginalName();
             $data->certificate_of_appearance_size   = $cleanData['certificate_of_appearance']->getSize();
-            $data->certificate_of_appearance_path   = Helpers::checkSaveFile($cleanData['certificate_of_appearance'], 'official_business');
+            $data->certificate_of_appearance_path   = Helpers::checkSaveFile($cleanData['certificate_of_appearance'], 'official_time');
             $data->approving_officer                = $approving_officer;
             $data->recommending_officer             = $recommending_officer;
             $data->save();

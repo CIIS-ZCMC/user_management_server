@@ -1555,7 +1555,7 @@ Route::middleware('auth.cookie')->group(function(){
         });
         
         Route::middleware(['auth.permission:UMIS-OB approve'])->group(function(){
-            Route::post('ob-application/{id}', 'OfficialTimeController@update');
+            Route::post('ot-application/{id}', 'OfficialTimeController@update');
         });
 
 
