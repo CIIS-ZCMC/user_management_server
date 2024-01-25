@@ -33,11 +33,11 @@ class OnCallController extends Controller
             $assigned_area  = $user->assignedArea->findDetails();
 
             $array = EmployeeProfile::with(['personalInformation', 'assignedArea','schedule' => function ($query) use ($request)  {
-                $query->with(['timeShift'])->where('is_on_call', true)->whereYear('date', '=', $request->year)->whereMonth('date', '=', $request->month);
+                $query->with(['timeShift'])->where('is_on_call', 1)->whereYear('date', '=', $request->year)->whereMonth('date', '=', $request->month);
             }])->whereHas('assignedArea', function ($query) use ($user, $assigned_area) {
                 $query->where([strtolower($assigned_area['sector']).'_id' => $user->assignedArea->id]);
             })->get();
-
+            
             $data = [];
             foreach ($array as $key => $value) {
                 $data[] = [
