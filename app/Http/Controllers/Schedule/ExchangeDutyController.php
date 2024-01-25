@@ -135,33 +135,14 @@ class ExchangeDutyController extends Controller
             }
 
             Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating.' . $this->SINGULAR_MODULE_NAME . '.');
-            return response()->json(['data' => $data], Response::HTTP_OK);
+            return response()->json(['data' =>  ExchangeDutyResource::collection(ExchangeDuty::where('id', $data->id)),
+                                    'logs' =>  Helpers::registerExchangeDutyLogs($data->id, $user->id, 'Applied'), 
+                                    'msg' => 'Request Complete.'], Response::HTTP_OK);
+
 
         } catch (\Throwable $th) {
 
-            return $th;
-            // Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
-            // return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Request $request, $id)
-    {
-        try {
-            $data = new ExchangeDutyResource(ExchangeDuty::findOrFail($id));
-
-            if (!$data) {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in fetching ' . $this->SINGULAR_MODULE_NAME . '.');
-            return response()->json(['data' => $data], Response::HTTP_OK);
-
-        } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'show', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -178,31 +159,42 @@ class ExchangeDutyController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $cleanData = [];
+            $password = strip_tags($request->password);
 
-            foreach ($request->all() as $key => $value) {
-                if (empty($value)) {
-                    $cleanData[$key] = $value;
-                    continue;
-                }
+            $employee_profile = $request->user;
 
-                if (is_array($value)) {
-                    $cleanData[$key] = $value;
-                    continue;
-                }
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
 
-                if (is_int($value)) {
-                    $cleanData[$key] = $value;
-                    continue;
-                }
-
-                $cleanData[$key] = strip_tags($value);
+            if (!Hash::check($password . env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
             }
 
-            $data->update($cleanData);
+            $status = null;
+            $logs = null;
+
+            if ($request->status === 'approved') {
+                switch ($data->status) {
+                    case 'applied':
+                        $status = 'approved';
+                    break;
+
+                    case 'declined' :
+                        $status = 'declined';
+    
+                    default:
+                       $status = 'approved';
+                    break;
+                }
+            } else if ($data->status === 'declined') {
+                $status = 'declined';
+            }
+
+            $data->update(['status' => $status, 'remarks' => $request->remarks]);
 
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in updating.' . $this->SINGULAR_MODULE_NAME . '.');
-            return response()->json(['data' => $data, 'message' => 'Success'], Response::HTTP_OK);
+            return response()->json(['data' =>  ExchangeDutyResource::collection(ExchangeDuty::where('id', $data->id)),
+                                    'logs' =>  Helpers::registerExchangeDutyLogs($data->id, $employee_profile->id, $status), 
+                                    'msg' => 'Approved Complete.'], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
@@ -230,7 +222,10 @@ class ExchangeDutyController extends Controller
             }
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in delete.' . $this->SINGULAR_MODULE_NAME . '.');
-            return response()->json(['data' => $data], Response::HTTP_OK);
+            return response()->json(['data' =>  ExchangeDutyResource::collection(ExchangeDuty::where('id', $data->id)),
+                                    'logs' =>  Helpers::registerExchangeDutyLogs($data->id, $request->user->id, 'Delete'), 
+                                    'msg' => 'Delete Complete.'], Response::HTTP_OK);
+
         } catch (\Throwable $th) {
 
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());

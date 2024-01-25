@@ -4,6 +4,7 @@ namespace App\Helpers;
 
 use App\Models\Department;
 use App\Models\Division;
+use App\Models\ExchangeDutyLog;
 use App\Models\Section;
 use App\Models\SystemLogs;
 use App\Models\TimeShift;
@@ -34,6 +35,14 @@ class Helpers
             'status' => $status,
             'remarks' => $remarks,
             'ip_address' => $ip
+        ]);
+    }
+    public static function registerExchangeDutyLogs($data_id, $user_id, $action)
+    {
+        ExchangeDutyLog::create([
+            'exchange_duty_id' => $data_id,
+            'action_by' => $user_id,
+            'action' => $action
         ]);
     }
 
