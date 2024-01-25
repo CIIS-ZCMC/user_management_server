@@ -1546,6 +1546,22 @@ Route::middleware('auth.cookie')->group(function(){
             Route::post('ob-application/{id}', 'OfficialBusinessController@update');
         });
 
+         /**
+         * Official Time Module
+         */
+        Route::middleware(['auth.permission:UMIS-OT view-all'])->group(function(){
+            Route::get('ot-application-all', 'OfficialTimeController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-OT request'])->group(function(){
+            Route::post('ot-application', 'OfficialTimeController@store');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-OB approve'])->group(function(){
+            Route::post('ob-application/{id}', 'OfficialTimeController@update');
+        });
+
+
         Route::middleware(['auth.permission:UMIS-OB approve'])->group(function(){
             Route::post('ob-application-decline/{id}', 'ObApplicationController@declineObApplication');
         });
@@ -1562,13 +1578,6 @@ Route::middleware('auth.cookie')->group(function(){
             Route::get('access-level-ob-application', 'ObApplicationController@getObApplications');
         });
 
-        Route::middleware(['auth.permission:UMIS-OT view-all'])->group(function(){
-            Route::get('ot-application-all', 'OfficialTimeApplicationController@index');
-        });
-
-        Route::middleware(['auth.permission:UMIS-OT request'])->group(function(){
-            Route::post('ot-application', 'OfficialTimeApplicationController@store');
-        });
 
         Route::middleware(['auth.permission:UMIS-OT approve'])->group(function(){
             Route::post('ot-application-decline/{id}', 'OfficialTimeApplicationController@declineOtApplication');

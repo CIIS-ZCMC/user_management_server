@@ -13,22 +13,26 @@ return new class extends Migration
     {
         Schema::create('official_time_applications', function (Blueprint $table) {
             $table->id();
-            $table->datetime('date_from');
-            $table->datetime('date_to');
-            $table->string('status');
-            $table->string('hrmo_officer_id')->nullable();
-            $table->string('recommending_officer_id')->nullable();
-            $table->string('approving_officer_id')->nullable();
-            $table->string('purpose')->nullable();
+            $table->unsignedBigInteger('employee_profile_id')->unsigned();
+            $table->foreign('employee_profile_id')->references('id')->on('employee_profiles')->onDelete('cascade');
+            $table->date('date_from');
+            $table->date('date_to');
+            $table->string('purpose');
+            $table->string('status')->default('for recommending approval');
             $table->string('personal_order_file')->nullable();
             $table->string('personal_order_path')->nullable();
             $table->string('personal_order_size')->nullable();
             $table->string('certificate_of_appearance')->nullable();
             $table->string('certificate_of_appearance_path')->nullable();
             $table->string('certificate_of_appearance_size')->nullable();
+
+            $table->unsignedBigInteger('recommending_officer')->nullable();
+            $table->foreign('recommending_officer')->references('id')->on('employee_profiles');
+
+            $table->unsignedBigInteger('approving_officer')->nullable();
+            $table->foreign('approving_officer')->references('id')->on('employee_profiles');
+
             $table->text('remarks')->nullable();
-            $table->unsignedBigInteger('employee_profile_id')->unsigned();
-            $table->foreign('employee_profile_id')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->timestamps();
         });
     }

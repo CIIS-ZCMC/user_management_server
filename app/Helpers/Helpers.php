@@ -4,6 +4,7 @@ namespace App\Helpers;
 
 use App\Models\Department;
 use App\Models\Division;
+use App\Models\OfficialTimeLog;
 use App\Models\Section;
 use App\Models\SystemLogs;
 use App\Models\TimeShift;
@@ -138,6 +139,15 @@ class Helpers
     public static function registerOfficialBusinessLogs($data_id, $user_id, $action)
     {
         OfficialBusinessLog::create([
+            'official_business_id' => $data_id,
+            'action_by' => $user_id,
+            'action' => $action
+        ]);
+    }
+    
+    public static function registerOfficialTimeLogs($data_id, $user_id, $action)
+    {
+        OfficialTimeLog::create([
             'official_business_id' => $data_id,
             'action_by' => $user_id,
             'action' => $action

@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class OfficialBusinessResource extends JsonResource
+class OfficialTimeResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -19,8 +19,6 @@ class OfficialBusinessResource extends JsonResource
             'total_days'                        => $this->totalDays(),
             'date_from'                         => $this->date_from,
             'date_to'                           => $this->date_to,
-            'time_from'                         => $this->time_from,
-            'time_to'                           => $this->time_to,
             'purpose'                           => $this->purpose,
             'status'                            => $this->status,
             'personal_order_file'               => $this->personal_order_file,
@@ -35,7 +33,7 @@ class OfficialBusinessResource extends JsonResource
             'approving_officer'                 => $this->approvingOfficer ? new EmployeeProfileResource($this->approvingOfficer) : null,
             'created_at'                        => (string) $this->created_at,
             'updated_at'                        => (string) $this->updated_at,
-            'logs'                              => $this->officialBusinessLogs ? OfficialBusinessLogResource::collection($this->officialBusinessLogs) : [],
+            'logs'                              => $this->officialTimeLogs ? OfficialTimeLogResource::collection($this->officialTimeLogs) : [],
         ];
     }
 }
