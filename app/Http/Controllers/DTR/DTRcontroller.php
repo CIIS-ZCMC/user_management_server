@@ -16,6 +16,7 @@ use App\Models\Holidaylist;
 use App\Models\EmployeeProfile;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 
 class DTRcontroller extends Controller
@@ -1302,6 +1303,7 @@ class DTRcontroller extends Controller
                 $found = false;
                 foreach ($mdtr as $d) {
                     if (date('d', strtotime($d['first_in'])) == $i) {
+                        $d['date'] = Carbon::create("$year_of-$month_of-$i")->format('Y-m-d');
                         $mdt[] = $d;  // Use the day from $mdtr
                         $found = true;
                     }
@@ -1327,7 +1329,8 @@ class DTRcontroller extends Controller
                         'day' => $i,
                         'created_at' => '',
                         'weekStatus' => '',
-                        'isHoliday' => ''
+                        'isHoliday' => '',
+                        'date' => Carbon::create("$year_of-$month_of-$i")->format('Y-m-d')
                     ];
                 }
             }
