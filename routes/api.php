@@ -1467,8 +1467,16 @@ Route::middleware('auth.cookie')->group(function(){
             Route::post('requirement/{id}', 'RequirementController@update');
         });
 
+        Route::middleware(['auth.permission:UMIS-LM delete'])->group(function(){
+            Route::post('requirement/{id}', 'RequirementController@destroy');
+        });
+
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function(){
             Route::get('leave-type-all', 'LeaveTypeController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-LM view'])->group(function(){
+            Route::get('leave-type/{id}', 'LeaveTypeController@show');
         });
 
         Route::middleware(['auth.permission:UMIS-LM update'])->group(function(){
@@ -1480,19 +1488,23 @@ Route::middleware('auth.cookie')->group(function(){
         });
 
         Route::middleware(['auth.permission:UMIS-LM view'])->group(function(){
-            Route::get('leave-type-select', 'LeaveTypeController@select');
+            Route::get('leave-type-select', 'LeaveTypeController@leaveTypeOptionWithEmployeeCreditsRecord');
         });
 
         Route::middleware(['auth.permission:UMIS-LM update'])->group(function(){
-            Route::post('leave-type-deactivate-password/{id}', 'LeaveTypeController@deactivateLeaveType');
+            Route::post('leave-type-deactivate-password/{id}', 'LeaveTypeController@deactivateLeaveTypes');
         });
 
         Route::middleware(['auth.permission:UMIS-LM update'])->group(function(){
-            Route::post('leave-type-activate-password/{id}', 'LeaveTypeController@reactivateLeaveType');
+            Route::post('leave-type-activate-password/{id}', 'LeaveTypeController@reactivateLeaveTypes');
         });
 
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function(){
             Route::get('leave-application-all', 'LeaveApplicationController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-LM view'])->group(function(){
+            Route::get('leave-application/{id}', 'LeaveApplicationController@show');
         });
 
         Route::middleware(['auth.permission:UMIS-LM request'])->group(function(){
@@ -1500,32 +1512,17 @@ Route::middleware('auth.cookie')->group(function(){
         });
 
         Route::middleware(['auth.permission:UMIS-LM approve'])->group(function(){
-            Route::post('leave-application-decline/{id}', 'LeaveApplicationController@declineLeaveApplication');
+            Route::post('leave-application-decline/{id}', 'LeaveApplicationController@declined');
         });
 
         Route::middleware(['auth.permission:UMIS-LM approve'])->group(function(){
-            Route::post('leave-application-cancel/{id}', 'LeaveApplicationController@cancelLeaveApplication');
-        });
-
-        Route::middleware(['auth.permission:UMIS-LM approve'])->group(function(){
-            Route::post('leave-application-update/{id}/{status}', 'LeaveApplicationController@updateLeaveApplicationStatus');
-        });
-
-        Route::middleware(['auth.permission:UMIS-LM view'])->group(function(){
-            Route::get('user-leave-application', 'LeaveApplicationController@getUserLeaveApplication');
-        });
-
-        Route::middleware(['auth.permission:UMIS-LM view'])->group(function(){
-            Route::get('access-level-leave-application', 'LeaveApplicationController@getLeaveApplications');
+            Route::post('leave-application-approved/{id}', 'LeaveApplicationController@approved');
         });
 
         Route::middleware(['auth.permission:UMIS-LM download'])->group(function(){
             Route::post('print-leave-form/{id}', 'LeaveApplicationController@printLeaveForm');
         });
 
-        Route::middleware(['auth.permission:UMIS-LM write'])->group(function(){
-            Route::post('add-monthly', 'LeaveCreditController@addMonthlyLeaveCredit');
-        });
 
         /**
          * Official Business Module
@@ -1658,7 +1655,7 @@ Route::middleware('auth.cookie')->group(function(){
         });
 
 
-    
+
 
     });
 
