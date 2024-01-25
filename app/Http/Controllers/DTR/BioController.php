@@ -136,6 +136,7 @@ class BioController extends Controller
     }
 
 
+
     /* ------------------------------------------------------------------------------------------- */
 
     /* 
@@ -158,22 +159,36 @@ class BioController extends Controller
         }
     }
 
-    public function setUserSuperAdmin(Request $request)
+
+    public function fetchUserToOPDevice(Request $request)
     {
         try {
-            $biometric_id = $request->biometric_id;
-            $unset = $request->unset;
-            foreach ($this->device_ids as $dv) {
-
-                $bios = Devices::where('id', $dv)->get();
-                if (count($bios) >= 1) {
-                    $this->device->setSuperAdmin($bios[0], $biometric_id, $unset);
-                    return response()->json(['message' => 'Settings saved successfully!']);
-                }
+            $biometricIDs = $request->biometricIDs;
+            $devices = Devices::where('is_registration', 0)->get();
+            foreach ($devices as $dv) {
+                $this->device->fetchSpecificDataToDevice($dv, $biometricIDs);
             }
-
-            return response()->json(['message' => 'No device found']);
         } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+
+    public function setUserSuperAdmin(Request $request)
+    {
+
+        try {
+            $biometric_id = $request->biometricIDs;
+            $unset = $request->unset;
+            $devices = Devices::where('is_registration', 0)->get();
+
+
+            foreach ($devices as $dv) {
+                $this->device->setSuperAdmin($dv, $biometric_id, $unset);
+            }
+            // return response()->json(['message' => 'Settings saved successfully!']);
+            // return response()->json(['message' => 'No device found']);
+        } catch (\Throwable $th) {
+            return $th;
             return response()->json(['message' =>  $th->getMessage()]);
         }
     }

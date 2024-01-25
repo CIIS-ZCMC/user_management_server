@@ -1437,6 +1437,7 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('dtr-device-devices', 'BioMSController@index');
             Route::post('dtr-pushuser-to-devices', 'BioController@fetchUserToDevice');
             Route::post('dtr-pulluser-from-devices', 'BioController@fetchUserFromDevice');
+            Route::post('dtr-pushuser-to-opdevices', 'BioController@fetchUserToOPDevice');
             Route::post('dtr-fetchall-bio', 'BioController@fetchBIOToDevice');
             Route::get('dtr-generate', 'DTRcontroller@generateDTR');
             Route::get('dtr-holidays', 'DTRcontroller@getHolidays');
@@ -1460,7 +1461,7 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-DTRM update'])->group(function () {
             Route::post('dtr-device-updatedevice', 'BioMSController@updateDevice');
             Route::get('dtr-device-enable-disable', 'BioController@enableORDisable');
-            Route::get('dtr-device-setsuper-admin', 'BioController@setUserSuperAdmin');
+            Route::post('dtr-device-setsuper-admin', 'BioController@setUserSuperAdmin');
             Route::post('dtr-device-shutdown', 'BioController@restartORShutdown');
             Route::get('dtr-device-settime', 'BioController@setTime');
             Route::get('dtr-modifyHoliday', 'DTRcontroller@modifyHolidays');
