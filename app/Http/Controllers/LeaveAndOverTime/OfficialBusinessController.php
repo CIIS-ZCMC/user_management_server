@@ -7,6 +7,7 @@ use App\Http\Resources\OfficialBusinessResource;
 use App\Http\Requests\OfficialBusinessRequest;
 use App\Helpers\Helpers;
 
+use App\Models\Division;
 use App\Models\OfficialBusiness;
 
 use App\Http\Controllers\Controller;
@@ -29,27 +30,60 @@ class OfficialBusinessController extends Controller
     public function index(Request $request)
     {
         try {
-            $user                   = $request->user;
-            $sql                    = OfficialBusiness::all();
-            $model                  = null;
+            $user   = $request->user;
+            $area   = $user->assignedArea->findDetails();
+            $model  = null;
 
-            foreach ($sql as $key => $value) {
-                switch ($value->status) {
-                    case 'for recommending approval':
-                        case 'for approving approval':
-                            $model = OfficialBusiness::where('recommending_officer', $user->id)->get();# code...
+                switch ($area) {
+                    case 'Division':
+                        $model = OfficialBusiness::where('recommending_officer', $user->id)
+                        ->where(function ($query) {
+                            $query->orWhere('status', 'for recommending approval')
+                            ->orWhere('status', 'for approving approval')
+                            ->orWhere('status', 'approved')
+                            ->orWhere('status', 'declined');
+                        })->get();
+                        
+                        $model1 = OfficialBusiness::where('approving_officer', $user->id)
+                        ->where(function ($query) {
+                            $query->orWhere('status', 'for approving approval')
+                            ->orWhere('status', 'approved')
+                            ->orWhere('status', 'declined');
+                        })->get();
+
+                        $model = [...$model,$model1];
+                    break;
+
+                    case 'Department':
+                        $model = OfficialBusiness::where('recommending_officer', $user->id)
+                        ->where(function ($query) {
+                            $query->orWhere('status', 'for recommending approval')
+                            ->orWhere('status', 'for approving approval')
+                            ->orWhere('status', 'approved')
+                            ->orWhere('status', 'declined');
+                        })->get();
+                    break;
+
+                    case 'Section':
+                        $model = OfficialBusiness::where('recommending_officer', $user->id)
+                        ->where(function ($query) {
+                            $query->orWhere('status', 'for recommending approval')
+                            ->orWhere('status', 'for approving approval')
+                            ->orWhere('status', 'approved')
+                            ->orWhere('status', 'declined');
+                        })->get();
                     break;
                     
-                    case 'for approving approval':
-                        case 'approved':
-                            $model = OfficialBusiness::where('approving_officer', $user->id)->get();
-                    break;
-                    
-                    default:
-                        $model = OfficialBusiness::where('employee_profile_id', $user->id)->get();
+                    case 'Unit':
+                        $model = OfficialBusiness::where('recommending_officer', $user->id)
+                        ->where(function ($query) {
+                            $query->orWhere('status', 'for recommending approval')
+                            ->orWhere('status', 'for approving approval')
+                            ->orWhere('status', 'approved')
+                            ->orWhere('status', 'declined');
+                        })->get();
                     break;
                 }
-            }
 
             return response()->json([ 'data' => OfficialBusinessResource::collection($model)], Response::HTTP_OK);
 
