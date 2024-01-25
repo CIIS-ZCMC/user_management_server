@@ -60,7 +60,7 @@ class OfficialTimeController extends Controller
                 
             $official_time_application_approving = OfficialTime::select('official_time_applications.*')
                 ->join('official_time_application_logs as obal', 'obal.official_time_id', 'official_time_applications.id')
-                ->whereIn('obal.action', ['official_time_applications.status', 'Approved by Approving Officer'])
+                ->where('obal.action', 'Approved by Recommending Officer')
                 ->whereIn('official_time_applications.status', $approving)
                 ->where('official_time_applications.approving_officer', $employee_profile->id)->get();
 
