@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Schedule;
 
+use App\Models\EmployeeSchedule;
 use App\Models\PullOut;
 use App\Models\Holiday;
 use App\Models\Schedule;
@@ -94,12 +95,14 @@ class ScheduleController extends Controller
 
     /**
      * Show the form for creating a new resource.
-     */
+     */ 
     public function create(Request $request)
     {
         try {
-
-            return response()->json(['data' => ScheduleResource::collection(Schedule::all())], Response::HTTP_OK);
+            $user = $request->user;
+            // API For Personal Calendar
+            $model = EmployeeSchedule::where('employee_profile_id', $user->id)->get();
+            return response()->json(['data' => ScheduleResource::collection($model)], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
