@@ -127,10 +127,10 @@ class OfficialTimeController extends Controller
             $data->purpose                          = $cleanData['purpose'];
             $data->personal_order_file              = $cleanData['personal_order_file']->getClientOriginalName();;
             $data->personal_order_size              = $cleanData['personal_order_file']->getSize();
-            $data->personal_order_path              = Helpers::checkSaveFile($cleanData['personal_order_file'], 'official_business');
+            $data->personal_order_path              = Helpers::checkSaveFile($cleanData['personal_order_file'], 'official_time');
             $data->certificate_of_appearance        = $cleanData['certificate_of_appearance']->getClientOriginalName();
             $data->certificate_of_appearance_size   = $cleanData['certificate_of_appearance']->getSize();
-            $data->certificate_of_appearance_path   = Helpers::checkSaveFile($cleanData['certificate_of_appearance'], 'official_business');
+            $data->certificate_of_appearance_path   = Helpers::checkSaveFile($cleanData['certificate_of_appearance'], 'official_time');
             $data->approving_officer                = $approving_officer;
             $data->recommending_officer             = $recommending_officer;
             $data->save();
