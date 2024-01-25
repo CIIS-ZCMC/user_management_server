@@ -71,9 +71,19 @@ class OnCallController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
-        //
+        try {
+
+            $user = $request->user;
+            $data = EmployeeSchedule::where('requested_employee_id', $user->id)->get();
+            return response()->json(['data' => $data], Response::HTTP_OK);
+
+        } catch (\Throwable $th) {
+
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**
