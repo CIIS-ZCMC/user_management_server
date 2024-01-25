@@ -241,7 +241,8 @@ class ExchangeDutyController extends Controller
     /**
      * Update Approval of Request
      */
-    public function approve($id, Request $request) {
+    public function approve($id, Request $request)
+    {
         try {
 
             $user = $request->user;
@@ -261,7 +262,7 @@ class ExchangeDutyController extends Controller
 
             $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
 
-            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+            if (!Hash::check($password . env("SALT_VALUE"), $password_decrypted)) {
                 return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
             }
 

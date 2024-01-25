@@ -13,7 +13,7 @@ use App\Models\EmployeeProfile;
 class Schedule extends Model
 {
     use HasFactory, SoftDeletes;
-    
+
     protected $table = 'schedules';
 
     protected $primaryKey = 'id';
@@ -44,5 +44,10 @@ class Schedule extends Model
     public function employee()
     {
         return $this->belongsToMany(EmployeeProfile::class, 'employee_profile_schedule')->withPivot('employee_profile_id');
+    }
+
+    public function isOnCall()
+    {
+        return $this->belongsToMany(EmployeeProfile::class, 'employee_profile_schedule');
     }
 }

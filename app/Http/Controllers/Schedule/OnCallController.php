@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Schedule;
 
+use App\Models\EmployeeSchedule;
 use App\Models\Schedule;
 use App\Models\EmployeeProfile;
 
@@ -29,23 +30,32 @@ class OnCallController extends Controller
     public function index(Request $request)
     {
         try {
-            $user           = $request->user;
-            $assigned_area  = $user->assignedArea->findDetails();
+            $user = $request->user;
+            $assigned_area = $user->assignedArea->findDetails();
 
-            $array = EmployeeProfile::with(['personalInformation', 'assignedArea','schedule' => function ($query) use ($request)  {
-                $query->with(['timeShift'])->where('is_on_call', 1)->whereYear('date', '=', $request->year)->whereMonth('date', '=', $request->month);
-            }])->whereHas('assignedArea', function ($query) use ($user, $assigned_area) {
-                $query->where([strtolower($assigned_area['sector']).'_id' => $user->assignedArea->id]);
+            $array = EmployeeProfile::with([
+                'personalInformation',
+                'assignedArea',
+                'schedule' => function ($query) use ($request) {
+                    $query->with([
+                        'timeShift',
+                        'isOnCall' => function ($innerQuery) use ($request) {
+                            $innerQuery->select('*')->where('is_on_call', 1);
+                        }
+                    ])->whereYear('date', '=', $request->year)->whereMonth('date', '=', $request->month);
+                }
+            ])->whereHas('assignedArea', function ($query) use ($user, $assigned_area) {
+                $query->where([strtolower($assigned_area['sector']) . '_id' => $user->assignedArea->id]);
             })->get();
-            
+
             $data = [];
             foreach ($array as $key => $value) {
                 $data[] = [
-                    'id'            => $value['id'],
-                    'name'          => $value->name(),
-                    'employee_id'   => $value['employee_id'],
-                    'biometric_id'  => $value['biometric_id'],
-                    'schedule'      => $value['schedule'],
+                    'id' => $value['id'],
+                    'name' => $value->name(),
+                    'employee_id' => $value['employee_id'],
+                    'biometric_id' => $value['biometric_id'],
+                    'schedule' => $value['schedule'],
                 ];
             }
 
@@ -53,7 +63,7 @@ class OnCallController extends Controller
 
         } catch (\Throwable $th) {
 
-            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -99,19 +109,19 @@ class OnCallController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $user       = $request->user;
-            $data       = null;
-            $msg        = null;
+            $user = $request->user;
+            $data = null;
+            $msg = null;
             $is_weekend = 0;
-            
+
             if ($user != null && $user->position()) {
                 $position = $user->position();
 
                 if ($position->position === "Chief" || $position->position === "Department OIC" || $position->position === "Supervisor" || $position->position === "Section OIC" || $position->position === "Unit Head" || $position->position === "Unit OIC") {
-                    
+
                     $schedule = Schedule::where('time_shift_id', $cleanData['time_shift_id'])
-                                        ->where('date', $cleanData['date'])
-                                        ->first();
+                        ->where('date', $cleanData['date'])
+                        ->first();
 
                     if (!$schedule) {
                         $date = Carbon::parse($cleanData['date']);
@@ -122,16 +132,16 @@ class OnCallController extends Controller
                         }
 
                         $data = new Schedule;
-                        $data->time_shift_id    = $cleanData['time_shift_id'];
-                        $data->date             = $cleanData['date'];
-                        $data->remarks          = $cleanData['remarks'];
-                        $data->is_weekend       = $is_weekend;
+                        $data->time_shift_id = $cleanData['time_shift_id'];
+                        $data->date = $cleanData['date'];
+                        $data->remarks = $cleanData['remarks'];
+                        $data->is_weekend = $is_weekend;
                         $data->save();
-                    } else { 
+                    } else {
                         $data = $schedule;
                     }
 
-                    $employee_id  = EmployeeProfile::select('id')->where('id', $cleanData['employee_id'])->first();
+                    $employee_id = EmployeeProfile::select('id')->where('id', $cleanData['employee_id'])->first();
                     if ($employee_id != null) {
 
                         $query = DB::table('employee_profile_schedule')->where([
@@ -139,7 +149,7 @@ class OnCallController extends Controller
                             ['schedule_id', '=', $data->id],
                             ['is_on_call', '=', true],
                         ])->first();
-    
+
                         if ($query) {
                             $msg = 'request already exist';
 
@@ -149,13 +159,13 @@ class OnCallController extends Controller
                         }
                     }
 
-                    Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
-                    return response()->json(['data' => $data ,'message' => $msg], Response::HTTP_OK);
-                } 
-            } 
+                    Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
+                    return response()->json(['data' => $data, 'message' => $msg], Response::HTTP_OK);
+                }
+            }
 
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -190,11 +200,7 @@ class OnCallController extends Controller
     public function destroy($id, Request $request)
     {
         try {
-            $data = Schedule::with(['employee' => function ($query) use ($request) {
-                $query->where(['employee_profile_id' => $request->employee_id,
-                                'schedule_id' => $request->schedule_id,
-                                'is_on_call' => 1]);
-            }])->first();
+            $data = EmployeeSchedule::find($id);
 
             if (!$data) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
@@ -204,7 +210,7 @@ class OnCallController extends Controller
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in delete ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json(['data' => $data], Response::HTTP_OK);
-            
+
         } catch (\Throwable $th) {
 
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
