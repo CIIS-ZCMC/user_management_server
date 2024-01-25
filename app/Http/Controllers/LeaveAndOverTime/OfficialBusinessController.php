@@ -61,13 +61,15 @@ class OfficialBusinessController extends Controller
                 ->join('official_business_application_logs as obal', 'obal.official_business_id', 'official_business_applications.id')
                 ->where('obal.action', 'Applied')
                 ->whereIn('official_business_applications.status', $recommending)
-                ->where('official_business_applications.recommending_officer', $employee_profile->id)->get();
+                ->where('official_business_applications.recommending_officer', $employee_profile->id)
+                ->orderBy('official_business_applications.created_at', 'desc')->get();
                 
             $official_business_application_approving = OfficialBusiness::select('official_business_applications.*')
                 ->join('official_business_application_logs as obal', 'obal.official_business_id', 'official_business_applications.id')
                 ->whereIn('obal.action', ['official_business_applications.status', 'Approved by Approving Officer'])
                 ->whereIn('official_business_applications.status', $approving)
-                ->where('official_business_applications.approving_officer', $employee_profile->id)->get();
+                ->where('official_business_applications.approving_officer', $employee_profile->id)
+                ->orderBy('official_business_applications.created_at', 'desc')->get();
 
             $official_business_application = [...$official_business_application, ...$official_business_application_approving];
 
