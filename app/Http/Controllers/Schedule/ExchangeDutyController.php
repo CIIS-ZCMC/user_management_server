@@ -129,7 +129,7 @@ class ExchangeDutyController extends Controller
                 $data->schedule_id = $schedule->id;
                 $data->requested_employee_id = $user->id;
                 $data->reliever_employee_id = $cleanData['reliever_employee_id'];
-                $data->approve_by = $approve_by['approve_by'];
+                $data->approve_by = $approve_by;
                 $data->reason = $cleanData['reason'];
                 $data->save();
             }
