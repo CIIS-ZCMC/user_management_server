@@ -1637,21 +1637,13 @@ Route::middleware('auth.cookie')->group(function(){
             Route::post('cto-application-decline/{id}', 'CtoApplicationController@declineCtoApplication');
         });
 
-        Route::middleware(['auth.permission:UMIS-CT approve'])->group(function(){
-            Route::post('cto-application-cancel/{id}', 'CtoApplicationController@cancelCtoApplication');
-        });
 
         Route::middleware(['auth.permission:UMIS-CT approve'])->group(function(){
-            Route::post('cto-application-update/{id}/{status}', 'CtoApplicationController@updateStatus');
+            Route::post('cto-application-approve/{id}', 'CtoApplicationController@approved');
         });
 
-        Route::middleware(['auth.permission:UMIS-CT view'])->group(function(){
-            Route::get('user-cto-application', 'CtoApplicationController@getUserCtoApplication');
-        });
 
-        Route::middleware(['auth.permission:UMIS-CT view'])->group(function(){
-            Route::get('access-level-cto-application', 'CtoApplicationController@getCtoApplications');
-        });
+    
 
     });
 

@@ -179,6 +179,7 @@ class CtoApplicationController extends Controller
     public function store(CtoApplicationRequest $request)
     {
         try {
+
             $employee_profile = $request->user;
             $recommending_and_approving = Helpers::getRecommendingAndApprovingOfficer($employee_profile->assignedArea->findDetails(), $employee_profile->id);
             $cto_applications = [];
@@ -330,4 +331,6 @@ class CtoApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+
 }
