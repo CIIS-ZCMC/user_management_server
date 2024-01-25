@@ -34,24 +34,40 @@ class OfficialBusinessController extends Controller
             $area   = $user->assignedArea->findDetails();
             $model  = null;
 
-                switch ($area) {
+                switch ($area['sector']) {
                     case 'Division':
-                        $model = OfficialBusiness::where('recommending_officer', $user->id)
+                        // $model1 = OfficialBusiness::where('recommending_officer', $user->id)
+                        // ->where(function ($query) {
+                        //     $query->orWhere('status', 'for recommending approval')
+                        //     ->orWhere('status', 'for approving approval')
+                        //     ->orWhere('status', 'approved')
+                        //     ->orWhere('status', 'declined');
+                        // })->get();
+
+                        //  $model2 = OfficialBusiness::where('approving_officer', $user->id)
+                        // ->where(function ($query) {
+                        //     $query->orWhere('status', 'for approving approval')
+                        //     ->orWhere('status', 'approved')
+                        //     ->orWhere('status', 'declined');
+                        // })->get();
+
+
+
+                        $model = OfficialBusiness::
+                        where(function ($query) use ($user) {
+                            $query->orWhere('recommending_officer', $user->id)
+                            ->orWhere('approving_officer', $user->id);
+                        })
                         ->where(function ($query) {
-                            $query->orWhere('status', 'for recommending approval')
+                            $query
+                            ->orWhere('status', 'for recommending approval')
                             ->orWhere('status', 'for approving approval')
                             ->orWhere('status', 'approved')
                             ->orWhere('status', 'declined');
-                        })->get();
-                        
-                        $model1 = OfficialBusiness::where('approving_officer', $user->id)
-                        ->where(function ($query) {
-                            $query->orWhere('status', 'for approving approval')
-                            ->orWhere('status', 'approved')
-                            ->orWhere('status', 'declined');
-                        })->get();
-
-                        $model = [...$model,$model1];
+                        })
+                        ->get();
+                     
+                        // $model = [...$model1,$model2];
                     break;
 
                     case 'Department':
@@ -85,10 +101,11 @@ class OfficialBusinessController extends Controller
                     break;
                 }
 
+
             return response()->json([ 'data' => OfficialBusinessResource::collection($model)], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-            
+
             Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -142,7 +159,6 @@ class OfficialBusinessController extends Controller
 
                 $cleanData[$key] = strip_tags($value);
             }
-           
             $officers   = Helpers::getRecommendingAndApprovingOfficer($assigned_area, $user->id);
 
             $recommending_officer   = $officers['recommending_officer'];
