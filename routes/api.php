@@ -1527,12 +1527,23 @@ Route::middleware('auth.cookie')->group(function(){
             Route::post('add-monthly', 'LeaveCreditController@addMonthlyLeaveCredit');
         });
 
+        /**
+         * Official Business Module
+         */
         Route::middleware(['auth.permission:UMIS-OB view-all'])->group(function(){
-            Route::get('ob-application-all', 'ObApplicationController@index');
+            Route::get('ob-application-all', 'OfficialBusinessController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-OB view'])->group(function(){
+            Route::get('user-ob-application', 'OfficialBusinessController@create');
         });
 
         Route::middleware(['auth.permission:UMIS-OB request'])->group(function(){
-            Route::post('ob-application', 'ObApplicationController@store');
+            Route::post('ob-application', 'OfficialBusinessController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-OB approve'])->group(function(){
+            Route::post('ob-application/{id}', 'OfficialBusinessController@update');
         });
 
         Route::middleware(['auth.permission:UMIS-OB approve'])->group(function(){
@@ -1548,13 +1559,8 @@ Route::middleware('auth.cookie')->group(function(){
         });
 
         Route::middleware(['auth.permission:UMIS-OB view'])->group(function(){
-            Route::get('user-ob-application', 'ObApplicationController@getUserObApplication');
-        });
-
-        Route::middleware(['auth.permission:UMIS-OB view'])->group(function(){
             Route::get('access-level-ob-application', 'ObApplicationController@getObApplications');
         });
-
 
         Route::middleware(['auth.permission:UMIS-OT view-all'])->group(function(){
             Route::get('ot-application-all', 'OfficialTimeApplicationController@index');

@@ -52,7 +52,7 @@ class PersonalInformation extends Model
         $nameExtension = $this->name_extension===NULL?'':' '.$this->name_extion.' ';
         $nameTitle = $this->name_title===NULL?'': ' '.$this->name_title;
 
-        $name = $this->first_name.' '.$this->last_name.$nameExtension.$nameTitle;
+        $name = $this->last_name.$nameExtension.$nameTitle. ', ' .$this->first_name;
 
         return $name;
     }

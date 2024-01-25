@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('official_business_application_logs', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('ob_application_id')->unsigned();
-            $table->foreign('ob_application_id')->references('id')->on('official_business_applications')->onDelete('cascade');
+            $table->unsignedBigInteger('official_business_id')->unsigned();
+            $table->foreign('official_business_id')->references('id')->on('official_business_applications')->onDelete('cascade');
             $table->unsignedBigInteger('action_by')->unsigned();
             $table->foreign('action_by')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->string('action')->nullable();
