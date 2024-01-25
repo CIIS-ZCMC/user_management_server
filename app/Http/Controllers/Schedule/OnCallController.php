@@ -187,8 +187,28 @@ class OnCallController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy($id, Request $request)
     {
-        //
+        try {
+            $data = Schedule::with(['employee' => function ($query) use ($request) {
+                $query->where(['employee_profile_id' => $request->employee_id,
+                                'schedule_id' => $request->schedule_id,
+                                'is_on_call' => 1]);
+            }])->first();
+
+            if (!$data) {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $data->delete();
+
+            Helpers::registerSystemLogs($request, $id, true, 'Success in delete ' . $this->SINGULAR_MODULE_NAME . '.');
+            return response()->json(['data' => $data], Response::HTTP_OK);
+            
+        } catch (\Throwable $th) {
+
+            Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 }
