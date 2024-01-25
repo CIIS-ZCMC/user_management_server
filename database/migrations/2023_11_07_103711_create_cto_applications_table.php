@@ -21,10 +21,7 @@ return new class extends Migration
             $table->string('purpose')->nullable();
             $table->text('remarks')->nullable();
             $table->string('status')->nullable();
-            $table->string('reaosn')->nullable();
             $table->string('applied_credits')->nullable();
-            $table->unsignedBigInteger('hrmo_officer')->unsigned()->nullable();
-            $table->foreign('hrmo_officer')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->unsignedBigInteger('recommending_officer')->unsigned()->nullable();
             $table->foreign('recommending_officer')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->unsignedBigInteger('approving')->unsigned()->nullable();
