@@ -9,6 +9,7 @@ use App\Helpers\Helpers;
 use App\Models\OfficialTime;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
@@ -52,22 +53,40 @@ class OfficialTimeController extends Controller
                 ], Response::HTTP_OK);
             }
 
+            /**
+             * Applied
+             * Approved by Recommending Officer
+             */
+
             $official_time_application = OfficialTime::select('official_time_applications.*')
                 ->join('official_time_application_logs as obal', 'obal.official_time_id', 'official_time_applications.id')
                 ->where('obal.action', 'Applied')
                 ->whereIn('official_time_applications.status', $recommending)
                 ->where('official_time_applications.recommending_officer', $employee_profile->id)->get();
-                
+             
+            $official_time_application = $official_time_application->sortBy('id');
+
             $official_time_application_approving = OfficialTime::select('official_time_applications.*')
                 ->join('official_time_application_logs as obal', 'obal.official_time_id', 'official_time_applications.id')
                 ->where('obal.action', 'Approved by Recommending Officer')
                 ->whereIn('official_time_applications.status', $approving)
                 ->where('official_time_applications.approving_officer', $employee_profile->id)->get();
 
-            $official_time_application = [...$official_time_application, ...$official_time_application_approving];
+            $official_time_application_approving = $official_time_application_approving->sortBy('id');
+
+            // $official_time_application = [...$official_time_application, ...$official_time_application_approving];
+            $official_time_application = array_replace($official_time_application->toArray(), $official_time_application_approving->toArray());
+
+            $official_time_objects = collect($official_time_application)->map(function ($item) {
+                // Assuming $item is an associative array representing an OfficialTime model
+                $officialTimeModel = new OfficialTime;
+                $officialTimeModel->forceFill($item); // Fill the model's attributes
+            
+                return $officialTimeModel;
+            });
 
             return response()->json([
-                'data' => OfficialTimeResource::collection($official_time_application),
+                'data' => OfficialTimeResource::collection($official_time_objects),
                 'message' => 'Retrieved all offical time application'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {

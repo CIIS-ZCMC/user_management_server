@@ -1592,9 +1592,9 @@ Route::middleware('auth.cookie')->group(function(){
             Route::post('ot-application-update/{id}/{status}', 'OfficialTimeApplicationController@updateStatus');
         });
 
-        Route::middleware(['auth.permission:UMIS-OT view'])->group(function(){
-            Route::get('user-ot-application', 'OfficialTimeApplicationController@getUserOtApplication');
-        });
+        // Route::middleware(['auth.permission:UMIS-OT view'])->group(function(){
+        //     Route::get('user-ot-application', 'OfficialTimeApplicationController@getUserOtApplication');
+        // });
 
         Route::middleware(['auth.permission:UMIS-OT view'])->group(function(){
             Route::get('access-level-ot-application', 'OfficialTimeApplicationController@getOtApplications');
