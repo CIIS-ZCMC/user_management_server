@@ -81,6 +81,25 @@ class InActiveEmployeeController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    public function reEmployment($id,Request $request)
+    {
+        try{
+            $employee = InActiveEmployee::find($id);
+
+            if(!$employee){
+                return response()->json(['message' => 'No record found for in active employee with id '.$id], Response::HTTP_BAD_REQUEST);
+            }
+
+            return response()->json([
+                'data' => '',
+                'message' => 'Successfully re-employed employee.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME,'reEmployment', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
     
     public function show($id, Request $request)
     {

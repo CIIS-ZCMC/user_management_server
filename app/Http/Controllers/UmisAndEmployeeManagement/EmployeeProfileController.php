@@ -1468,10 +1468,29 @@ class EmployeeProfileController extends Controller
                 $plantilla_number->update(['employee_profile_id' => $employee_profile->id, 'is_vacant' => false, 'assigned_at' => now()]);
             }
 
+            $email_message_status = '';
+                
+            $data = $request->data;
+
+            $body = view('mail.new_email', ['employee_id' => $employee_profile->employee_id, 'password' => $last_password->password]);
+            $data = [
+                'Subject' => 'NEW ACCOUNT',
+                'To_receiver' => $employee_profile->personalinformation->contact->email_address,
+                'Receiver_Name' => $employee_profile->personalInformation->name(),
+                'Body' => $body
+            ];
+
+            if ($this->mail->send($data)) {
+                $email_message_status = 'Employee acount details has been sent to employee email.';
+            }else{
+                $email_message_status = 'Failed to send account details.';
+            }
+
             Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([
-                'data' => new EmployeeProfileResource($employee_profile), 
+                'data' => new EmployeeProfileResource($employee_profile),
+                'email_status' => $email_message_status,
                 'message' => 'Newly employee registered.'], 
             Response::HTTP_OK);
         }catch(\Throwable $th){

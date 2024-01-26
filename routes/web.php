@@ -86,6 +86,11 @@ Route::get('/', function () {
 });
 
 
+Route::get('/new-account', function () {
+    return view('mail/new_account');
+});
+
+
 Route::namespace('App\Http\Controllers\Schedule')->group(function(){
     Route::get('/generate', 'ScheduleController@generate');
 });
