@@ -382,6 +382,8 @@ class DTRcontroller extends Controller
                         ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
                 })
                 ->get();
+
+
             $arrival_Departure = [];
             $time_stamps_req = [
                 'total_hours' => 8
@@ -424,7 +426,7 @@ class DTRcontroller extends Controller
                 'DTRFile_Name' => $emp_name,
                 'biometric_ID' => $biometric_id
             ];
-
+            return $month_of . $year_of;
             return $this->PrintDtr($month_of, $year_of, $biometric_id, $emp_Details, $view);
         } catch (\Throwable $th) {
             return $th;
@@ -440,6 +442,7 @@ class DTRcontroller extends Controller
 
     public function printDtr($month_of, $year_of, $biometric_id, $emp_Details, $view)
     {
+
         try {
             $dtr = DB::table('daily_time_records')
                 ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
@@ -617,7 +620,7 @@ class DTRcontroller extends Controller
                 $dompdf->stream($filename);
             }
         } catch (\Throwable $th) {
-
+            return $th;
             return response()->json(['message' =>  $th->getMessage()]);
         }
     }
@@ -937,6 +940,8 @@ class DTRcontroller extends Controller
             $bio = json_decode($request->biometric_id);
             $month_of = $request->monthof;
             $year_of = $request->yearof;
+
+
             $is_15th_days = $request->is15thdays;
             $dt_records = [];
             $is_Half_Schedule = false;
@@ -945,6 +950,14 @@ class DTRcontroller extends Controller
             if (count($bio) >= 1) {
                 foreach ($bio as $biometric_id) {
                     if ($this->helper->isEmployee($biometric_id)) {
+
+                        $data = new Request([
+                            'biometric_id' => json_encode([$biometric_id]),
+                            'monthof' => $month_of,
+                            'yearof' => $year_of,
+                            'view' => 1
+                        ]);
+                        $this->generateDTR($data);
 
                         if ($is_15th_days) {
                             $first_half = $request->firsthalf;
@@ -1351,7 +1364,7 @@ class DTRcontroller extends Controller
 
             return $dtr;
         } catch (\Throwable $th) {
-
+            return $th;
             return response()->json(['message' => $th->getMessage()]);
         }
     }
@@ -1539,7 +1552,7 @@ class DTRcontroller extends Controller
 
         for ($i = 1; $i <= 30; $i++) {
 
-            $date = date('Y-m-d', strtotime('2023-11-' . $i));
+            $date = date('Y-m-d', strtotime('2023-12-' . $i));
 
             if (date('D', strtotime($date)) != 'Sun') {
                 $firstin = date('H:i:s', strtotime('today') + rand(25200, 30600));

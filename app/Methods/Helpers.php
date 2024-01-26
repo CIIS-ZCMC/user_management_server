@@ -729,6 +729,7 @@ class Helpers
                 /* Overtime */
                 $overTime_inWords = $this->toWordsMinutes($ot)['Inwords'];
                 $overTime_Minutes =  $this->toWordsMinutes($ot)['InMinutes'];
+
                 /* Undertime  */
                 $underTime_inWords = $this->toWordsMinutes($ut)['Inwords'];
                 $underTime_Minutes =  $this->toWordsMinutes($ut)['InMinutes'];
@@ -1216,6 +1217,7 @@ class Helpers
     {
         $in_Words = '';
         $entry = $minutes;
+        $seconds = '';
         if ($minutes >= 60) {
             $hours = floor($minutes / 60);
             $minutes = $minutes % 60;
@@ -1242,15 +1244,22 @@ class Helpers
             $um = $minutes;
         } else {
             $in_Words = $minutes . ' minute';
+            $seconds = floor(($minutes % 60) * 60);
             if ($minutes > 1) {
                 $in_Words .= 's';
             }
         }
+
+
         return [
             'Inwords' => $in_Words,
-            'InMinutes' => $entry
+            'InMinutes' => $entry,
+
         ];
     }
+
+
+
 
     /**
      * This Function backups selected table in database.
