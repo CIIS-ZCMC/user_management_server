@@ -21,6 +21,7 @@ use Carbon\Carbon;
 use App\Models\Section;
 
 
+
 class DTRcontroller extends Controller
 {
     protected $helper;
@@ -1467,16 +1468,18 @@ class DTRcontroller extends Controller
         try {
             $biometric_ids = DB::select('SELECT biometric_id FROM `employee_profiles` WHERE biometric_id in (SELECT biometric_id FROM `biometrics`) and personal_information_id in (select id from personal_informations)');
             $data = [];
-            $date = '';
-            $logs = [];
-            $dtrstatus = '';
-            $recentlog = '';
+
+
             foreach ($biometric_ids as $ids) {
                 $emp =  EmployeeProfile::where('biometric_id', $ids->biometric_id)->first();
                 $dtrlogs =  DailyTimeRecordLogs::where('biometric_id', $ids->biometric_id)->get();
 
                 $latestDate = null;
+                $logs = [];
+                $recentlog = '';
+                $date = '';
 
+                $dtrstatus = '';
                 foreach ($dtrlogs as $dtr) {
                     $date = $dtr->dtr_date;
 
