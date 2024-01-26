@@ -45,7 +45,7 @@ class ExchangeDuty extends Model
 
     public function approveBy()
     {
-        return $this->belongsTo(EmployeeProfile::class, 'approve_by');
+        return $this->hasOne(EmployeeProfile::class, 'approve_by');
     }
 
     public function approval()
