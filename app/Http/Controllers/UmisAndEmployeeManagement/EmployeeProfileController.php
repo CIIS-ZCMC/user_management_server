@@ -13,6 +13,7 @@ use App\Http\Resources\EducationalBackgroundResource;
 use App\Http\Resources\FamilyBackGroundResource;
 use App\Http\Resources\IdentificationNumberResource;
 use App\Http\Resources\PersonalInformationResource;
+use App\Http\Resources\OtherInformationResource;
 use App\Http\Resources\TrainingResource;
 use App\Http\Resources\VoluntaryWorkResource;
 use App\Http\Resources\WorkExperienceResource;
@@ -335,7 +336,7 @@ class EmployeeProfileController extends Controller
                         'work_experience' => WorkExperienceResource::collection($personal_information->workExperience),
                         'voluntary_work_or_involvement' => VoluntaryWorkResource::collection($personal_information->voluntaryWork),
                         'training' => TrainingResource::collection($personal_information->training),
-                        'other' => $personal_information->other == null ?? []
+                        'other' => OtherInformationResource::collection($personal_information->otherInformation),
                     ],
                     'issuance' => $employee_profile->issuanceInformation,
                     'reference' => $employee_profile->personalInformation->references,
@@ -653,7 +654,7 @@ class EmployeeProfileController extends Controller
                         'work_experience' => WorkExperienceResource::collection($personal_information->workExperience),
                         'voluntary_work_or_involvement' => VoluntaryWorkResource::collection($personal_information->voluntaryWork),
                         'training' => TrainingResource::collection($personal_information->training),
-                        'other' => $personal_information->other == null ?? []
+                        'other' => OtherInformationResource::collection($personal_information->otherInformation),
                     ],
                     'issuance' => $employee_profile->issuanceInformation,
                     'reference' => $employee_profile->personalInformation->references,
@@ -810,7 +811,7 @@ class EmployeeProfileController extends Controller
                         'work_experience' => WorkExperienceResource::collection($personal_information->workExperience),
                         'voluntary_work_or_involvement' => VoluntaryWorkResource::collection($personal_information->voluntaryWork),
                         'training' => TrainingResource::collection($personal_information->training),
-                        'other' => $personal_information->other == null ?? []
+                        'other' => OtherInformationResource::collection($personal_information->otherInformation),
                     ],
                     'issuance' => $employee_profile->issuanceInformation,
                     'reference' => $employee_profile->personalInformation->references,
@@ -1042,7 +1043,7 @@ class EmployeeProfileController extends Controller
                         'work_experience' => WorkExperienceResource::collection($personal_information->workExperience),
                         'voluntary_work_or_involvement' => VoluntaryWorkResource::collection($personal_information->voluntaryWork),
                         'training' => TrainingResource::collection($personal_information->training),
-                        'other' => $personal_information->other == null ?? []
+                        'other' => OtherInformationResource::collection($personal_information->otherInformation),
                     ],
                     'issuance' => $employee_profile->issuanceInformation,
                     'reference' => $employee_profile->personalInformation->references,
@@ -1122,7 +1123,7 @@ class EmployeeProfileController extends Controller
 
             $now = Carbon::now();
             // $fortyDaysFromNow = $now->addDays(40);
-            $fortyDaysExpiration = $now->addDays(40)->toDateTimeString();;
+            $fortyDaysExpiration = $now->addMinutes(5)->toDateTimeString();
 
             $old_password = PasswordTrail::create([
                 'old_password' => $employee_profile->password_encrypted,
@@ -1139,7 +1140,7 @@ class EmployeeProfileController extends Controller
                 'password_encrypted' => $encryptedPassword,
                 'password_created_at' => now(),
                 'password_expiration_at' => $fortyDaysExpiration,
-                '2fa' => $request->two_factor
+                'is_2fa' => $request->two_factor
             ]);
 
             $agent = new Agent();
@@ -1265,7 +1266,7 @@ class EmployeeProfileController extends Controller
                         'work_experience' => WorkExperienceResource::collection($personal_information->workExperience),
                         'voluntary_work_or_involvement' => VoluntaryWorkResource::collection($personal_information->voluntaryWork),
                         'training' => TrainingResource::collection($personal_information->training),
-                        'other' => $personal_information->other == null ?? []
+                        'other' => OtherInformationResource::collection($personal_information->otherInformation),
                     ],
                     'issuance' => $employee_profile->issuanceInformation,
                     'reference' => $employee_profile->personalInformation->references,
@@ -1400,7 +1401,7 @@ class EmployeeProfileController extends Controller
             $now = Carbon::now();
             // $fortyDaysFromNow = $now->addDays(40);
             
-            $fortyDaysExpiration = $now->addDays(40)->toDateTimeString();
+            $fortyDaysExpiration = $now->addMinutes(5)->toDateTimeString();
 
             $new_biometric_id = $last_registered_employee->biometric_id + 1;
             $new_employee_id = $date_hired_string . $employee_id_random_digit;
