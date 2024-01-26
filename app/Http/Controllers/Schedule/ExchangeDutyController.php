@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Schedule;
 
 use App\Models\Department;
 use App\Models\Division;
+use App\Models\EmployeeSchedule;
 use App\Models\ExchangeDuty;
 use App\Models\Schedule;
 use App\Models\EmployeeProfile;
@@ -106,10 +107,11 @@ class ExchangeDutyController extends Controller
 
             $data = null;
             $schedule = null;
+            $reliever = null;
             $date_from = Carbon::parse($cleanData['date_from']);
             $date_to = Carbon::parse($cleanData['date_to']);
 
-            $reliever = EmployeeProfile::where('id', $cleanData['reliever_employee_id'])->first();
+            $find_reliever = EmployeeProfile::where('id', $cleanData['reliever_employee_id'])->first();
 
             // Get all date selected
             $current_date = $date_from->copy();
@@ -120,24 +122,40 @@ class ExchangeDutyController extends Controller
             }
 
             foreach ($selected_dates as $key => $date) {
-                $schedule = Schedule::where('date', $date)->first();
+                $find_schedule = Schedule::where('date', $date)->first();
 
-                $approve_by = Helpers::ExchangeDutyApproval($assigned_area, $user->id);
+                if ($find_schedule) {
+                    $reliever_schedule = EmployeeSchedule::where([
+                        ['employee_profile_id' => $find_reliever->id],
+                        ['schedule_id' => $find_schedule->id]
+                    ])->first();
 
-                $data = new ExchangeDuty;
-                $data->schedule_id = $schedule->id;
-                $data->requested_employee_id = $user->id;
-                $data->reliever_employee_id = $cleanData['reliever_employee_id'];
-                $data->approve_by = $approve_by;
-                $data->reason = $cleanData['reason'];
-                $data->save();
+                    if ($reliever_schedule) {
+                        $reliever = $reliever_schedule->employee_profile_id;
+                        $schedule = $reliever_schedule->schedule_id;
+                    } else {
+                        $reliever = $find_reliever->id;
+                        $schedule = $find_schedule->id;
+                    }
+
+                    $approve_by = Helpers::ExchangeDutyApproval($assigned_area, $user->id);
+
+                    $data = new ExchangeDuty;
+                    $data->schedule_id              = $schedule;
+                    $data->requested_employee_id    = $user->id;
+                    $data->reliever_employee_id     = $reliever;
+                    $data->approve_by               = $approve_by;
+                    $data->reason                   = $cleanData['reason'];
+                    $data->save();
+                } else {
+                    return response()->json(['message' => 'Schedule['. $date .'] is not yet registered.'], Response::HTTP_OK);
+                }
             }
 
             Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating.' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json(['data' =>  ExchangeDutyResource::collection(ExchangeDuty::where('id', $data->id)->get()),
                                     'logs' =>  Helpers::registerExchangeDutyLogs($data->id, $user->id, 'Applied'), 
                                     'msg' => 'Request Complete.'], Response::HTTP_OK);
-
 
         } catch (\Throwable $th) {
 
@@ -186,7 +204,7 @@ class ExchangeDutyController extends Controller
                 $status = 'declined';
             }
 
-            $data->update(['status' => $status, 'remarks' => $request->remarks]);
+            $data->update(['status' => $status, 'remarks' => $request->remarks, 'approval_date' => Carbon::now()]);
 
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in updating.' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json(['data' =>  ExchangeDutyResource::collection(ExchangeDuty::where('id', $data->id)->get()),
