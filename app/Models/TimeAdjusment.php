@@ -33,4 +33,16 @@ class TimeAdjusment extends Model
 
     public $timestamps = true;
 
+    public function employee() {
+        return $this->belongsTo(EmployeeProfile::class, 'employee_profile_id');
+    }
+
+    public function recommendedBy() {
+        return $this->belongsTo(EmployeeProfile::class, 'recommended_by');
+    }
+
+    public function approveBy() {
+        return $this->belongsTo(EmployeeProfile::class, 'approve_by');
+    }
+
 }

@@ -24,6 +24,10 @@ class TimeAdjustmentResource extends JsonResource
             'area' => $this->employee->assignedArea->findDetails()['details']->name,
         ];
 
+        $recommendedBy = $employee;
+        $approveBy = $employee;
+
+
         $daily_time_record = [
             'id'=> $this->id,
             'biometric_id'=> $this->biometric_id,
@@ -34,8 +38,8 @@ class TimeAdjustmentResource extends JsonResource
             'id'                    => $this->id,
             'daily_time_record'     => $daily_time_record,
             'employee_profile'      => $employee,
-            'recommended_by'        => $employee,
-            'approve_by'            => $employee,
+            'recommended_by'        => $recommendedBy,
+            'approve_by'            => $approveBy,
             'approval_date'         => $this->approval_date,
             'first_in'              => $this->first_in,
             'first_out'             => $this->first_out,
