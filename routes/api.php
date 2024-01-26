@@ -20,6 +20,12 @@ Route::get('/initialize-storage', function () {
     Artisan::call('storage:link');
 });
 
+Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
+    Route::post('test-03', 'DesignationController@test');
+});
+
+
+
 Route::namespace('App\Http\Controllers')->group(function () {
     Route::get('announcements', 'AnnouncementsController@index');
     Route::get('announcements-search', 'AnnouncementsController@searchAnnouncement');
@@ -41,6 +47,7 @@ Route::namespace('App\Http\Controllers')->group(function () {
 
 Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
     Route::post('sign-in', 'EmployeeProfileController@signIn');
+    Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
     Route::post('verify-email-and-send-otp', 'EmployeeProfileController@verifyEmailAndSendOTP');
     Route::post('verify-otp', 'EmployeeProfileController@verifyOTP');
     Route::post('new-password', 'EmployeeProfileController@newPassword');
@@ -647,6 +654,11 @@ Route::middleware('auth.cookie')->group(function(){
             Route::delete('designation/{id}', 'DesignationController@destroy');
         });
 
+        // KRIZ
+         Route::middleware(['auth.permission:UMIS-SM write'])->group(function(){
+            Route::post('designation-assign-system-role', 'DesignationController@assignSystemRole');
+        });
+
         /**
          * Division Module
          */
@@ -978,9 +990,7 @@ Route::middleware('auth.cookie')->group(function(){
         /**
          * Legal Information Question Module
          */
-        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function(){
-            Route::get('legal-information-question-all', 'LegalInformationQuestionController@index');
-        });
+        Route::get('legal-information-question-all', 'LegalInformationQuestionController@index');
 
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function(){
             Route::post('legal-information-question', 'LegalInformationQuestionController@store');

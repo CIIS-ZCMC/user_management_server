@@ -19,7 +19,8 @@ class PlantillaWithDesignationResource extends JsonResource
             'is_vacant' => $this->is_vacant,
             'number' => $this->number,
             'assigned_at' => $this->assigned_at,
-            'area' => $this->assignArea === null?'NONE': $this->assignArea->area()
+            'area' => $this->assignedArea === null ? 'NONE': $this->assignedArea->area()
+          
         ];
     }
 }

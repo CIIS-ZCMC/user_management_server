@@ -3268,7 +3268,7 @@ class LeaveApplicationController extends Controller
                         return response()->json(['error' => 'Mismatched date to and date from '], 400);
                     }
 
-                    for ($i = 0; $i < count($fromDates); $i++) {
+                    for ($i = 0; $i < count($fromDates); $i++) { 
                         $startDate = Carbon::createFromFormat('Y-m-d', $fromDates[$i]);
                         $endDate = Carbon::createFromFormat('Y-m-d', $toDates[$i]);
 
