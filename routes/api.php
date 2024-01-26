@@ -1712,16 +1712,12 @@ Route::middleware('auth.cookie')->group(function () {
             Route::post('exchange-duties', 'ExchangeDutyController@store');
         });
 
-        Route::middleware(['auth.permission:UMIS-ScM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-ScM approved'])->group(function () {
             Route::put('exchange-duties/{id}', 'ExchangeDutyController@update');
         });
 
         Route::middleware(['auth.permission:UMIS-ScM delete'])->group(function () {
             Route::delete('exchange-duties/{id}', 'ExchangeDutyController@destroy');
-        });
-
-        Route::middleware(['auth.permission:UMIS-ScM approve'])->group(function () {
-            Route::put('exchange-duties/approval/{id}', 'ExchangeDutyController@approve');
         });
 
         Route::middleware(['auth.permission:UMIS-ScM view'])->group(function () {

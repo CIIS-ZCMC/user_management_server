@@ -170,8 +170,6 @@ class ExchangeDutyController extends Controller
             }
 
             $status = null;
-            $logs = null;
-
             if ($request->status === 'approved') {
                 switch ($data->status) {
                     case 'applied':
