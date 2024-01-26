@@ -14,12 +14,28 @@ class TimeAdjustmentResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $employee = [
+            'name'=> $this->employee->personalInformation->name(),
+            'profile_url' => $this->profile_url,
+            'designation' => [
+                'name' => $this->employee->assignedArea->designation->name,
+                'code' => $this->employee->assignedArea->designation->code,
+            ],
+            'area' => $this->employee->assignedArea->findDetails()['details']->name,
+        ];
+
+        $daily_time_record = [
+            'id'=> $this->id,
+            'biometric_id'=> $this->biometric_id,
+            'dtr_date' => $this->dtr_date,
+        ];
+
         return [
             'id'                    => $this->id,
-            'employee_profile_id'   => $this->employee,
-            'daily_time_record_id'  => $this->daily_time_record,
-            'recommended_by'        => $this->recommended_by,
-            'approve_by'            => $this->approve_by,
+            'daily_time_record'     => $daily_time_record,
+            'employee_profile'      => $employee,
+            'recommended_by'        => $employee,
+            'approve_by'            => $employee,
             'approval_date'         => $this->approval_date,
             'first_in'              => $this->first_in,
             'first_out'             => $this->first_out,
