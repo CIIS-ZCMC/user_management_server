@@ -170,7 +170,7 @@ class ExchangeDutyController extends Controller
             }
 
             $status = null;
-            if ($request->status === 'approved') {
+            if ($request->approval_status === 'approved') {
                 switch ($data->status) {
                     case 'applied':
                         $status = 'approved';
@@ -183,7 +183,7 @@ class ExchangeDutyController extends Controller
                        $status = 'approved';
                     break;
                 }
-            } else if ($data->status === 'declined') {
+            } else if ($data->approval_status === 'declined') {
                 $status = 'declined';
             }
 
