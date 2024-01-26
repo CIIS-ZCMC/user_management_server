@@ -17,12 +17,8 @@ use App\Models\EmployeeProfile;
 use App\Http\Controllers\Controller;
 use App\Models\DailyTimeRecordLogs;
 use Illuminate\Support\Facades\Log;
-<<<<<<< Updated upstream
 use Carbon\Carbon;
-=======
 use App\Models\Section;
-
->>>>>>> Stashed changes
 
 
 class DTRcontroller extends Controller
