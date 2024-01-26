@@ -42,15 +42,9 @@ class ExchangeDuty extends Model
     {
         return $this->belongsTo(EmployeeProfile::class, 'reliever_employee_id');
     }
-
+    
     public function approveBy()
     {
-        return $this->hasOne(EmployeeProfile::class, 'approve_by');
+        return $this->belongsTo(EmployeeProfile::class, 'approve_by');
     }
-
-    public function approval()
-    {
-        return $this->belongsToMany(EmployeeProfile::class, 'exchange_duty_approvals');
-    }
-    
 }

@@ -1712,7 +1712,7 @@ Route::middleware('auth.cookie')->group(function () {
             Route::post('exchange-duties', 'ExchangeDutyController@store');
         });
 
-        Route::middleware(['auth.permission:UMIS-ScM approved'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-ScM update'])->group(function () {
             Route::put('exchange-duties/{id}', 'ExchangeDutyController@update');
         });
 

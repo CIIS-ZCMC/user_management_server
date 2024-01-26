@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             
             $table->unsignedBigInteger('exchange_duty_id')->unsigned();
-            $table->foreign('exchange_duty_id')->references('id')->on('exchange_duty')->onDelete('cascade');
+            $table->foreign('exchange_duty_id')->references('id')->on('exchange_duties')->onDelete('cascade');
 
             $table->unsignedBigInteger('action_by')->unsigned();
             $table->foreign('action_by')->references('id')->on('employee_profiles')->onDelete('cascade');

@@ -46,7 +46,7 @@ class ExchangeDutyController extends Controller
                 $query->whereHas('assignedArea', function ($innerQuery) use ($user, $assigned_area) {
                     $innerQuery->where([strtolower($assigned_area['sector']) . '_id' => $user->assignedArea->id]);
                 });
-            })->where('approve_by', $user->id)->get();
+            })->get();
 
             return response()->json(['data' => ExchangeDutyResource::collection($model)], Response::HTTP_OK);
 

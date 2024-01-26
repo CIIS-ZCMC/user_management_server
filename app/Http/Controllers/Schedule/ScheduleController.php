@@ -39,32 +39,15 @@ class ScheduleController extends Controller
     {
         try {
 
-            $cleanData = [];
 
-            foreach ($request->all() as $key => $value) {
-                if (empty($value)) {
-                    $cleanData[$key] = $value;
-                    continue;
-                }
-
-                if (is_int($value)) {
-                    $cleanData[$key] = $value;
-                    continue;
-                }
-
-                $cleanData[$key] = strip_tags($value);
-            }
-
-            $month = $cleanData['month'];  // Replace with the desired month (1 to 12)
-            $year = $cleanData['year'];   // Replace with the desired year
+            $month = $request->month;   // Replace with the desired month (1 to 12)
+            $year = $request->year;     // Replace with the desired year
             $dates_with_day = Helpers::getDatesInMonth($year, $month, "Days of Week");
 
             $user = $request->user;
             $assigned_area = $user->assignedArea->findDetails();
 
-            $array = EmployeeProfile::with([
-                'personalInformation',
-                'assignedArea',
+            $array = EmployeeProfile::with(['personalInformation','assignedArea',
                 'schedule' => function ($query) use ($year, $month) {
                     $query->with(['timeShift', 'holiday'])->whereYear('date', '=', $year)->whereMonth('date', '=', $month);
                 }
