@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Schedule;
 
 
 use App\Models\EmployeeProfile;
+use App\Models\Section;
 use App\Models\TimeAdjusment;
 use App\Models\DailyTimeRecords;
 
@@ -79,54 +80,53 @@ class TimeAdjusmentController extends Controller
 
             $user = $request->user;
             $data = null;
-            $approving_officer = null;
+            $recommending_officer = null;
+            $approving_officer = Section::where('code', 'HRMO')->first()->supervisor_employee_profile_id;
 
             $dates = $cleanData['dtr_date'];
             foreach ($dates as $key => $value) {
-                $find = DailyTimeRecords::where([
+                $daily_time_record = DailyTimeRecords::where([
                     ['biometric_id', '=', $cleanData['biometric_id']],
                     ['dtr_date', '=', $value['date']],
                 ])->first();
 
-                if ($find) {
-                    $find_employee = EmployeeProfile::find($cleanData['employee_profile_id'])->first();
-                    if ($find_employee) {
-                        $employee_area = $find_employee->assignedArea->findDetails();
+                if (!$daily_time_record) {
+                    return response()->json(['message' => 'No DTR record found.'], Response::HTTP_NOT_FOUND);
+                }
+
+                if ($daily_time_record) {
+                    $employee = EmployeeProfile::find($cleanData['employee_profile_id'])->first();
+                    if ($employee) {
+                        $employee_area = $employee->assignedArea->findDetails();
 
                         switch ($employee_area['sector']) {
                             case 'Division':
-                                $approving_officer = $find_employee->assignedArea->division->divisionHead;
+                                $recommending_officer = $employee->assignedArea->division->divisionHead;
                                 break;
 
                             case 'Department':
-                                $approving_officer = $find_employee->assignedArea->department->head;
+                                $recommending_officer = $employee->assignedArea->department->head;
                                 break;
 
                             case 'Section':
-                                $approving_officer = $find_employee->assignedArea->department->supervisor;
+                                $recommending_officer = $employee->assignedArea->section->supervisor_employee_profile_id;
                                 break;
 
                             case 'Unit':
-                                $approving_officer = $employee_area->assignedArea->department->head;
+                                $recommending_officer = $employee->assignedArea->department->head;
                                 break;
 
                             default:
-                                $approving_officer = 1;
+                                return response()->json(['message' => 'User has no sector'], Response::HTTP_NOT_FOUND);
                         }
                     }
 
-                    $data = new TimeAdjusment;
-
-                    $data->daily_time_record_id = $find->id;
-                    $data->recommended_by = $user->id;
-                    $data->approve_by = $approving_officer;
-                    $data->employee_profile_id = $cleanData['employee_profile_id'];
-                    $data->remarks = $cleanData['remarks'];
-                    $data->first_in = $value['firstIn'];
-                    $data->first_out = $value['firstOut'];
-                    $data->second_in = $value['secondIn'];
-                    $data->second_out = $value['secondOut'];
-                    $data->save();
+                    $data = TimeAdjusment::create(array_merge($value, [
+                        'employee_profile_id' => $employee->id,
+                        'daily_time_record_id' => $daily_time_record->id,
+                        'recommended_by' => $user->id,
+                        'approve_by' => $approving_officer,
+                    ]));
                 }
             }
 
