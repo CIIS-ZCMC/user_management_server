@@ -40,11 +40,11 @@ class ExchangeDutyController extends Controller
             $user = $request->user;
             $assigned_area = $user->assignedArea->findDetails();
 
-            $model = ExchangeDuty::with([
-                'requestedEmployee' => function ($query) {
+            $model = ExchangeDuty::with(['requestedEmployee' => function ($query) {
                     $query->with(['assignedArea']);
-                }
-            ])->whereHas('requestedEmployee', function ($query) use ($user, $assigned_area) {
+            }, 'approveBy' => function ($query) use ($user) {
+                $query->where('approve_by', $user->id);
+            }])->whereHas('requestedEmployee', function ($query) use ($user, $assigned_area) {
                 $query->whereHas('assignedArea', function ($innerQuery) use ($user, $assigned_area) {
                     $innerQuery->where([strtolower($assigned_area['sector']) . '_id' => $user->assignedArea->id]);
                 });

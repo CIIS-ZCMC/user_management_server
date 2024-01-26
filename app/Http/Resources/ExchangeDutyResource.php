@@ -14,14 +14,27 @@ class ExchangeDutyResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $requestedEmployee = [
+            'name'=> $this->employee->personalInformation->name(),
+            'profile_url' => $this->profile_url,
+            'designation' => [
+                'name' => $this->employee->assignedArea->designation->name,
+                'code' => $this->employee->assignedArea->designation->code,
+            ],
+            'area' => $this->employee->assignedArea->findDetails()['details']->name,
+        ];
+
+        $relieverEmployee = $requestedEmployee;
+        $approveBy = $requestedEmployee;
+
         return [
             'id'                    => $this->id,
             'status'                => $this->status,
             'reason'                => $this->reason,
             'schedule'              => $this->schedule,
-            'requested_employee'    => $this->requestedEmployee ? new EmployeeProfileResource($this->requestedEmployee) : null,
-            'reliever_employee'     => $this->relieverEmployee ? new EmployeeProfileResource($this->relieverEmployee) : null,
-            'approve_by'            => $this->approval ? EmployeeProfileResource::collection($this->approval) : [],
+            'requested_employee'    => $requestedEmployee,
+            'reliever_employee'     => $relieverEmployee,
+            'approve_by'            => $approveBy,
             'deleted_at'            => (string) $this->deleted_at,
             'created_at'            => (string) $this->created_at,
             'updated_at'            => (string) $this->updated_at,
