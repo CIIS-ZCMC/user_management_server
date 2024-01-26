@@ -27,7 +27,6 @@ class TimeAdjustmentResource extends JsonResource
         $recommendedBy = $employee;
         $approveBy = $employee;
 
-
         $dailyTimeRecord = [
             'id' => $this->id,
             'biometric_id' => $this->biometric_id,
