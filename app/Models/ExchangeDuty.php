@@ -29,7 +29,7 @@ class ExchangeDuty extends Model
     public $timestamps = true;
 
     public function exchangeDuty() {
-        return $this->hasMany(ExchangeDuty::class);
+        return $this->hasOne(ExchangeDuty::class, 'approve_by');
     }
 
     public function schedule()
