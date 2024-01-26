@@ -7,10 +7,6 @@ use App\Models\PullOut;
 use App\Models\Holiday;
 use App\Models\Schedule;
 use App\Models\EmployeeProfile;
-use App\Models\Department;
-use App\Models\Division;
-use App\Models\Section;
-use App\Models\Unit;
 
 
 use App\Http\Resources\ScheduleResource;
@@ -50,10 +46,9 @@ class ScheduleController extends Controller
             $array = EmployeeProfile::with(['personalInformation','assignedArea',
                 'schedule' => function ($query) use ($year, $month) {
                     $query->with(['timeShift', 'holiday'])->whereYear('date', '=', $year)->whereMonth('date', '=', $month);
-                }
-            ])->whereHas('assignedArea', function ($query) use ($user, $assigned_area) {
-                $query->where([strtolower($assigned_area['sector']) . '_id' => $user->assignedArea->id]);
-            })->get();
+                }])->whereHas('assignedArea', function ($query) use ($user, $assigned_area) {
+                    $query->where([strtolower($assigned_area['sector']) . '_id' => $user->assignedArea->id]);
+                })->get();
 
             $data = [];
             foreach ($array as $key => $value) {

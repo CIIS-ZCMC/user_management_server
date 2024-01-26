@@ -28,6 +28,10 @@ class ExchangeDuty extends Model
 
     public $timestamps = true;
 
+    public function exchangeDuty() {
+        return $this->hasMany(ExchangeDuty::class);
+    }
+
     public function schedule()
     {
         return $this->belongsTo(Schedule::class);
