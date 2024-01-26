@@ -11,15 +11,11 @@ use App\Models\EmployeeProfile;
 
 use App\Http\Resources\ExchangeDutyResource;
 use App\Http\Requests\ExchangeDutyRequest;
-use App\Models\Section;
-use App\Models\Unit;
-use App\Services\RequestLogger;
 use App\Helpers\Helpers;
 
 use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\DB;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -41,14 +37,16 @@ class ExchangeDutyController extends Controller
             $user = $request->user;
             $assigned_area = $user->assignedArea->findDetails();
 
-            $model = ExchangeDuty::with(['requestedEmployee' => function ($query) {
+            $model = ExchangeDuty::with([
+                'requestedEmployee' => function ($query) {
                     $query->with(['assignedArea']);
-            }])->where('approve_by', $user->id)
-            ->whereHas('requestedEmployee', function ($query) use ($user, $assigned_area) {
-                $query->whereHas('assignedArea', function ($innerQuery) use ($user, $assigned_area) {
-                    $innerQuery->where([strtolower($assigned_area['sector']) . '_id' => $user->assignedArea->id]);
-                });
-            })->get();
+                }
+            ])->where('approve_by', $user->id)
+                ->whereHas('requestedEmployee', function ($query) use ($user, $assigned_area) {
+                    $query->whereHas('assignedArea', function ($innerQuery) use ($user, $assigned_area) {
+                        $innerQuery->where([strtolower($assigned_area['sector']) . '_id' => $user->assignedArea->id]);
+                    });
+                })->get();
 
             return response()->json(['data' => ExchangeDutyResource::collection($model)], Response::HTTP_OK);
 
@@ -126,8 +124,8 @@ class ExchangeDutyController extends Controller
 
                 if ($find_schedule) {
                     $reliever_schedule = EmployeeSchedule::where([
-                        ['employee_profile_id' => $find_reliever->id],
-                        ['schedule_id' => $find_schedule->id]
+                        ['employee_profile_id', '=', $find_reliever->id],
+                        ['schedule_id', '=', $find_schedule->id]
                     ])->first();
 
                     if ($reliever_schedule) {
@@ -141,21 +139,24 @@ class ExchangeDutyController extends Controller
                     $approve_by = Helpers::ExchangeDutyApproval($assigned_area, $user->id);
 
                     $data = new ExchangeDuty;
-                    $data->schedule_id              = $schedule;
-                    $data->requested_employee_id    = $user->id;
-                    $data->reliever_employee_id     = $reliever;
-                    $data->approve_by               = $approve_by;
-                    $data->reason                   = $cleanData['reason'];
+                    $data->schedule_id = $schedule;
+                    $data->requested_employee_id = $user->id;
+                    $data->reliever_employee_id = $reliever;
+                    $data->approve_by = $approve_by['approve_by'];
+                    $data->reason = $cleanData['reason'];
                     $data->save();
+
+                    Helpers::registerExchangeDutyLogs($data->id, $user->id, 'Applied');
                 } else {
-                    return response()->json(['message' => 'Schedule['. $date .'] is not yet registered.'], Response::HTTP_OK);
+                    return response()->json(['message' => 'Schedule[' . $date . '] is not yet registered.'], Response::HTTP_OK);
                 }
             }
 
             Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating.' . $this->SINGULAR_MODULE_NAME . '.');
-            return response()->json(['data' =>  ExchangeDutyResource::collection(ExchangeDuty::where('id', $data->id)->get()),
-                                    'logs' =>  Helpers::registerExchangeDutyLogs($data->id, $user->id, 'Applied'), 
-                                    'msg' => 'Request Complete.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => ExchangeDutyResource::collection(ExchangeDuty::where('id', $data->id)->get()),
+                'msg' => 'Request Complete.'
+            ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
@@ -191,14 +192,14 @@ class ExchangeDutyController extends Controller
                 switch ($data->status) {
                     case 'applied':
                         $status = 'approved';
-                    break;
+                        break;
 
-                    case 'declined' :
+                    case 'declined':
                         $status = 'declined';
-    
+
                     default:
-                       $status = 'approved';
-                    break;
+                        $status = 'approved';
+                        break;
                 }
             } else if ($request->approval_status === 'declined') {
                 $status = 'declined';
@@ -207,9 +208,11 @@ class ExchangeDutyController extends Controller
             $data->update(['status' => $status, 'remarks' => $request->remarks, 'approval_date' => Carbon::now()]);
 
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in updating.' . $this->SINGULAR_MODULE_NAME . '.');
-            return response()->json(['data' =>  ExchangeDutyResource::collection(ExchangeDuty::where('id', $data->id)->get()),
-                                    'logs' =>  Helpers::registerExchangeDutyLogs($data->id, $employee_profile->id, $status), 
-                                    'msg' => 'Approved Complete.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => ExchangeDutyResource::collection(ExchangeDuty::where('id', $data->id)->get()),
+                'logs' => Helpers::registerExchangeDutyLogs($data->id, $employee_profile->id, $status),
+                'msg' => 'Approved Complete.'
+            ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
@@ -237,9 +240,11 @@ class ExchangeDutyController extends Controller
             }
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in delete.' . $this->SINGULAR_MODULE_NAME . '.');
-            return response()->json(['data' =>  ExchangeDutyResource::collection(ExchangeDuty::where('id', $data->id)->get()),
-                                    'logs' =>  Helpers::registerExchangeDutyLogs($data->id, $request->user->id, 'Delete'), 
-                                    'msg' => 'Delete Complete.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => ExchangeDutyResource::collection(ExchangeDuty::where('id', $data->id)->get()),
+                'logs' => Helpers::registerExchangeDutyLogs($data->id, $request->user->id, 'Delete'),
+                'msg' => 'Delete Complete.'
+            ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
