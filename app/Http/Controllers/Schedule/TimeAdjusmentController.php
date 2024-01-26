@@ -121,12 +121,16 @@ class TimeAdjusmentController extends Controller
                         }
                     }
 
-                    $data = TimeAdjusment::create(array_merge($value, [
+                    $data = TimeAdjusment::create([
+                        'first_in' => $value['firstIn'] ?? null,
+                        'first_out' => $value['firstOut'] ?? null,
+                        'second_in' => $value['secondIn'] ?? null,
+                        'second_out' => $value['secondOut'] ?? null,
                         'employee_profile_id' => $employee->id,
                         'daily_time_record_id' => $daily_time_record->id,
                         'recommended_by' => $user->id,
                         'approve_by' => $approving_officer,
-                    ]));
+                    ]);
                 }
             }
 

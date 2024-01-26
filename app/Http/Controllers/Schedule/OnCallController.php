@@ -124,55 +124,55 @@ class OnCallController extends Controller
             $msg = null;
             $is_weekend = 0;
 
-            if ($user != null && $user->position()) {
-                $position = $user->position();
+            // if ($user != null && $user->position()) {
+            //     $position = $user->position();
 
-                if ($position->position === "Chief" || $position->position === "Department OIC" || $position->position === "Supervisor" || $position->position === "Section OIC" || $position->position === "Unit Head" || $position->position === "Unit OIC") {
+            //     if ($position->position === "Chief" || $position->position === "Department OIC" || $position->position === "Supervisor" || $position->position === "Section OIC" || $position->position === "Unit Head" || $position->position === "Unit OIC") {
 
-                    $schedule = Schedule::where('time_shift_id', $cleanData['time_shift_id'])
-                        ->where('date', $cleanData['date'])
-                        ->first();
+            $schedule = Schedule::where('time_shift_id', $cleanData['time_shift_id'])
+                ->where('date', $cleanData['date'])
+                ->first();
 
-                    if (!$schedule) {
-                        $date = Carbon::parse($cleanData['date']);
-                        $isWeekend = $date->dayOfWeek === 6 || $date->dayOfWeek === 0;
+            if (!$schedule) {
+                $date = Carbon::parse($cleanData['date']);
+                $isWeekend = $date->dayOfWeek === 6 || $date->dayOfWeek === 0;
 
-                        if ($isWeekend) {
-                            $is_weekend = 1;
-                        }
+                if ($isWeekend) {
+                    $is_weekend = 1;
+                }
 
-                        $data = new Schedule;
-                        $data->time_shift_id = $cleanData['time_shift_id'];
-                        $data->date = $cleanData['date'];
-                        $data->remarks = $cleanData['remarks'];
-                        $data->is_weekend = $is_weekend;
-                        $data->save();
-                    } else {
-                        $data = $schedule;
-                    }
+                $data = new Schedule;
+                $data->time_shift_id = $cleanData['time_shift_id'];
+                $data->date = $cleanData['date'];
+                $data->remarks = $cleanData['remarks'];
+                $data->is_weekend = $is_weekend;
+                $data->save();
+            } else {
+                $data = $schedule;
+            }
 
-                    $employee_id = EmployeeProfile::select('id')->where('id', $cleanData['employee_id'])->first();
-                    if ($employee_id != null) {
+            $employee_id = EmployeeProfile::select('id')->where('id', $cleanData['employee_id'])->first();
+            if ($employee_id != null) {
 
-                        $query = DB::table('employee_profile_schedule')->where([
-                            ['employee_profile_id', '=', $employee_id],
-                            ['schedule_id', '=', $data->id],
-                            ['is_on_call', '=', true],
-                        ])->first();
+                $query = DB::table('employee_profile_schedule')->where([
+                    ['employee_profile_id', '=', $employee_id],
+                    ['schedule_id', '=', $data->id],
+                    ['is_on_call', '=', true],
+                ])->first();
 
-                        if ($query) {
-                            $msg = 'request already exist';
+                if ($query) {
+                    $msg = 'request already exist';
 
-                        } else {
-                            $data->employee()->attach($employee_id, ['is_on_call' => true]);
-                            $msg = 'New employee schedule registered.';
-                        }
-                    }
-
-                    Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
-                    return response()->json(['data' => $data, 'message' => $msg], Response::HTTP_OK);
+                } else {
+                    $data->employee()->attach($employee_id, ['is_on_call' => true]);
+                    $msg = 'New employee schedule registered.';
                 }
             }
+
+            Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
+            return response()->json(['data' => $data, 'message' => $msg], Response::HTTP_OK);
+            //     }
+            // }
 
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
