@@ -33,10 +33,13 @@ class BioControl
                 return $tad;
             }
         } catch (\Throwable $th) {
-            Devices::findorFail($device['id'])->update([
-                'serial_number' => null,
-                'mac_address' => null,
-            ]);
+            if (isset($device['id'])) {
+                Devices::findorFail($device['id'])->update([
+                    'serial_number' => null,
+                    'mac_address' => null,
+                ]);
+            }
+
             return false;
         }
     }
@@ -61,24 +64,27 @@ class BioControl
         ]);
     }
 
-    public function setSuperAdmin($device, $biometric_id, $unset)
+    public function setSuperAdmin($device, $biometric_ids, $unset)
     {
 
         if ($tad = $this->bIO($device)) {
 
-            $user_data = Biometrics::where('biometric_id', $biometric_id)->get();
+            // 
 
             function saveSettings($biometric_id, $user_data, $tad, $is_Admin, $priv)
             {
                 Biometrics::where('biometric_id', $biometric_id)->update([
                     'privilege' => $priv
                 ]);
+
                 $added =  $tad->set_user_info([
-                    'pin' => $user_data[0]->biometric_id,
-                    'name' => $user_data[0]->name,
+                    'pin' => $user_data->biometric_id,
+                    'name' => $user_data->name,
                     'privilege' => $is_Admin
                 ]);
-                $biometric_Data = json_decode($user_data[0]->biometric);
+
+
+                $biometric_Data = json_decode($user_data->biometric);
                 if ($added) {
                     if ($biometric_Data !== null) {
                         foreach ($biometric_Data as $row) {
@@ -87,7 +93,7 @@ class BioControl
                             $valid = $row->Valid;
                             $template = $row->Template;
                             $tad->set_user_template([
-                                'pin' => $user_data[0]->biometric_id,
+                                'pin' => $user_data->biometric_id,
                                 'finger_id' => $fingerid,
                                 'size' => $size,
                                 'valid' => $valid,
@@ -97,15 +103,23 @@ class BioControl
                     }
                 }
             }
-            if (count($user_data) >= 1) {
-                if ($unset) {
-                    saveSettings($biometric_id, $user_data, $tad, 0, 0);
-                } else {
-                    saveSettings($biometric_id, $user_data, $tad, 14, 1);
+            foreach ($biometric_ids as $ids) {
+                $user_data = Biometrics::where('biometric_id', $ids)->get();
+
+                if (count($user_data) >= 1) {
+                    foreach ($user_data as $data) {
+                        if ($unset) {
+
+                            saveSettings($ids, $data, $tad, 0, 0);
+                        } else {
+
+                            saveSettings($ids, $data, $tad, 14, 1);
+                        }
+                    }
                 }
-                return true;
             }
-            return false;
+
+            //return false;
         }
     }
 
@@ -277,45 +291,72 @@ class BioControl
         return false;
     }
 
+    public function saveUsersToDevices($tad, $emp, $is_Admin)
+    {
+        $added =  $tad->set_user_info([
+            'pin' => $emp->biometric_id,
+            'name' => $emp->name,
+            'privilege' => $is_Admin
+        ]);
+        $biometric_Data = json_decode($emp->biometric);
+        if ($added) {
+            if ($biometric_Data !== null) {
+                foreach ($biometric_Data as $row) {
+                    $fingerid = $row->Finger_ID;
+                    $size = $row->Size;
+                    $valid = $row->Valid;
+                    $template = $row->Template;
+                    $tad->set_user_template([
+                        'pin' => $emp->biometric_id,
+                        'finger_id' => $fingerid,
+                        'size' => $size,
+                        'valid' => $valid,
+                        'template' => $template
+                    ]);
+                }
+            }
+        }
+    }
     public function fetchAllDataToDevice($device)
     {
         try {
             if ($tad = $this->bIO($device)) {
                 $data = Biometrics::Where('biometric', '!=', 'NOT_YET_REGISTERED')->whereNotNull('biometric')->get();
-                function saveSettings($tad, $emp, $is_Admin)
-                {
-                    $added =  $tad->set_user_info([
-                        'pin' => $emp->biometric_id,
-                        'name' => $emp->name,
-                        'privilege' => $is_Admin
-                    ]);
-                    $biometric_Data = json_decode($emp->biometric);
-                    if ($added) {
-                        if ($biometric_Data !== null) {
-                            foreach ($biometric_Data as $row) {
-                                $fingerid = $row->Finger_ID;
-                                $size = $row->Size;
-                                $valid = $row->Valid;
-                                $template = $row->Template;
-                                $tad->set_user_template([
-                                    'pin' => $emp->biometric_id,
-                                    'finger_id' => $fingerid,
-                                    'size' => $size,
-                                    'valid' => $valid,
-                                    'template' => $template
-                                ]);
-                            }
-                        }
-                    }
-                }
+
                 foreach ($data as $key => $emp) {
                     if ($emp->privilege) {
-                        saveSettings($tad, $emp, 14);
+                        $this->saveUsersToDevices($tad, $emp, 14);
                     } else {
-                        saveSettings($tad, $emp, 0);
+                        $this->saveUsersToDevices($tad, $emp, 0);
                     }
                 }
                 return true;
+            }
+            return false;
+        } catch (\Throwable $th) {
+            return false;
+        }
+    }
+
+    public function fetchSpecificDataToDevice($device, $biometricIDs)
+    {
+        try {
+            if ($tad = $this->bIO($device)) {
+
+                foreach ($biometricIDs as $ids) {
+                    $data = Biometrics::Where('biometric', '!=', 'NOT_YET_REGISTERED')
+                        ->whereNotNull('biometric')
+                        ->where('biometric_id', $ids)
+                        ->get();
+
+                    foreach ($data as $key => $emp) {
+                        if ($emp->privilege) {
+                            $this->saveUsersToDevices($tad, $emp, 14);
+                        } else {
+                            $this->saveUsersToDevices($tad, $emp, 0);
+                        }
+                    }
+                }
             }
             return false;
         } catch (\Throwable $th) {
