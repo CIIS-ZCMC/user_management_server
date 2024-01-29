@@ -413,7 +413,7 @@ class ScheduleController extends Controller
                         }
                     }
 
-                    Helpers::registerSystemLogs($request, $data->id, true, 'Success in generate ' . $this->SINGULAR_MODULE_NAME . '.');
+                    // Helpers::registerSystemLogs($request, $data->id, true, 'Success in generate ' . $this->SINGULAR_MODULE_NAME . '.');
                     return view('generate_schedule/section-schedule', compact('data', 'month', 'year', 'days', 'weeks', 'dates', 'user', 'chief', 'head', 'supervisor', 'unit_head'));
             //     } else {
             //         return response()->json(['message' => 'User not allowed to create'], Response::HTTP_OK);

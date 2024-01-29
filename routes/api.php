@@ -1781,11 +1781,7 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-ScM delete'])->group(function () {
             Route::delete('pull-out/{id}', 'PullOutController@destroy');
         });
-
-        Route::middleware(['auth.permission:UMIS-ScM approve'])->group(function () {
-            Route::put('pull-out/approval/{id}', 'PullOutController@approve');
-        });
-
+        
         /**
          * Generate Schedule Module
          */
