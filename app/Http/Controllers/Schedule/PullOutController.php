@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Schedule;
 
 use App\Models\PullOut;
 use App\Models\EmployeeProfile;
+use App\Models\Section;
 use App\Models\TimeAdjusment;
 
 use App\Http\Resources\PullOutResource;
@@ -11,6 +12,7 @@ use App\Http\Requests\PullOutRequest;
 use App\Helpers\Helpers;
 
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 
 use Carbon\Carbon;
@@ -18,6 +20,7 @@ use DateTime;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class PullOutController extends Controller
 {
@@ -55,6 +58,8 @@ class PullOutController extends Controller
     public function store(PullOutRequest $request)
     {
         try {
+            $user = $request->user;
+
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
@@ -76,61 +81,53 @@ class PullOutController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $user = $request->user;
             $data = null;
-            $msg = null;
             $approving_officer = null;
 
             $selectedEmployeeIds = array_column($cleanData['employee'], 'employee_id');
             $employees = EmployeeProfile::whereIn('id', $selectedEmployeeIds)->get();
-
             foreach ($employees as $employee) {
                 $employeeArea = $employee->assignedArea->findDetails();
 
                 if ($employeeArea) {
                     switch ($employeeArea['sector']) {
-                        // case 'Division':
-                        //     $approving_officer = $employee->assignedArea->division->divisionHead;
-                        //     break;
+                        case 'Division':
+                            $approving_officer = $employee->assignedArea->division->chief_employee_profile_id;
+                            break;
 
-                        // case 'Department':
-                        //     $approving_officer = $employee->assignedArea->department->head;
-                        //     break;
+                        case 'Department':
+                            $approving_officer = $employee->assignedArea->department->head_employee_profile_id;
+                            break;
 
-                        // case 'Section':
-                        //     $approving_officer = $employee->assignedArea->department->supervisor;
-                        //     break;
+                        case 'Section':
+                            $section = Section::find($employeeArea['details']->id);
+                            if ($section->division !== null) {
+                                $approving_officer = $section->division->chief_employee_profile_id;
+                            }
 
-                        // case 'Unit':
-                        //     $approving_officer = $employee->assignedArea->department->head;
-                        //     break;
+                            $approving_officer = $employee->assignedArea->department->head_employee_profile_id ;
+                            break;
+
+                        case 'Unit':
+                            $approving_officer = $employee->assignedArea->department->head_employee_profile_id ;
+                            break;
 
                         default:
-                            $approving_officer = 1;
+                            return null;
                     }
                 }
 
                 $selectedEmployees[] = $employee;
             }
 
-            $data = PullOut::create(array_merge($cleanData, ['requested_employee_id' => $user->id, 'approve_by_employee_id' => $approving_officer]));
-
             foreach ($selectedEmployees as $employee) {
-                $query = DB::table('pull_out_employee')->where([
-                    ['pull_out_id', '=', $data->id],
-                    ['employee_profile_id', '=', $employee->id],
-                ])->first();
-
-                if ($query) {
-                    $msg = 'Pull-out request already exists.';
-                } else {
-                    $data->employee()->attach($employee);
-                    $msg = 'New pull-out requested.';
-                }
+                $data = PullOut::create(array_merge($cleanData, ['requesting_officer' => $user->id, 'approving_officer' => $approving_officer]));
             }
-
+            
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
-            return response()->json(['data' => $data, 'message' => $msg], Response::HTTP_OK);
+            return response()->json(['data' => PullOutResource::collection(PullOut::where('id', $data->id)->get()),
+                                    'logs' => Helpers::registerPullOutLogs($data->id, $user->id, 'Store'),
+                                    'msg' => 'Pull out requested'], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
@@ -140,41 +137,12 @@ class PullOutController extends Controller
     }
 
     /**
-     * Display the specified resource.
-     */
-    public function show(Request $request, $id)
-    {
-        try {
-            $data = new PullOutResource(PullOut::findOrFail($id));
-
-            if (!$data) {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in fetching ' . $this->SINGULAR_MODULE_NAME . '.');
-            return response()->json(['data' => $data], Response::HTTP_OK);
-
-        } catch (\Throwable $th) {
-
-            Helpers::errorLog($this->CONTROLLER_NAME, 'show', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(PullOut $pullOut)
-    {
-        //
-    }
-
-    /**
      * Update the specified resource in storage.
      */
-    public function update(PullOutRequest $request, $id)
+    public function update($id, Request $request)
     {
         try {
+            $user = $request->user;
 
             $data = PullOut::findOrFail($id);
 
@@ -182,37 +150,45 @@ class PullOutController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $cleanData = [];
+            $password = strip_tags($request->password);
 
-            foreach ($request->all() as $key => $value) {
-                if (empty($value)) {
-                    $cleanData[$key] = $value;
-                    continue;
-                }
+            $employee_profile = $request->user;
 
-                if (is_int($value)) {
-                    $cleanData[$key] = $value;
-                    continue;
-                }
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
 
-                if (is_array($value)) {
-                    $cleanData[$key] = $value;
-                    continue;
-                }
-
-                $cleanData[$key] = strip_tags($value);
+            if (!Hash::check($password . env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
             }
 
-            $data->update($cleanData);
+            $status = null;
+            if ($request->approval_status === 'approved') {
+                switch ($data->status) {
+                    case 'applied':
+                        $status = 'approved';
+                        break;
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating ' . $this->SINGULAR_MODULE_NAME . '.');
-            return response()->json(['data' => $data], Response::HTTP_OK);
+                    case 'declined':
+                        $status = 'declined';
+
+                    default:
+                        $status = 'approved';
+                        break;
+                }
+            } else if ($request->approval_status === 'declined') {
+                $status = 'declined';
+            }
+
+            $data->update(['status' => $status, 'remarks' => $request->remarks, 'approval_date' => Carbon::now()]);
+
+            Helpers::registerSystemLogs($request, $data->id, true, 'Success in updating.' . $this->SINGULAR_MODULE_NAME . '.');
+            return response()->json(['data' => PullOutResource::collection(PullOut::where('id', $data->id)->get()),
+                                    'logs' => Helpers::registerPullOutLogs($data->id, $user->id, $status),
+                                    'msg' => 'Pull out is '.$status], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
-            Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-
         }
     }
 
@@ -231,69 +207,15 @@ class PullOutController extends Controller
             }
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in delete ' . $this->SINGULAR_MODULE_NAME . '.');
-            return response()->json(['data' => $data], Response::HTTP_OK);
+            return response()->json(['data' => $data,
+                                    'logs' => Helpers::registerPullOutLogs($data->id, $request->user->id,'Destroy'),
+                                    'msg' => 'Request successfully deleted.', Response::HTTP_OK]);
 
         } catch (\Throwable $th) {
 
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
 
-        }
-    }
-
-    /**
-     * Update Approval of Request
-     */
-    public function approve(Request $request, $id)
-    {
-        try {
-
-            $cleanData = [];
-
-            foreach ($request->all() as $key => $value) {
-                if (empty($value)) {
-                    $cleanData[$key] = $value;
-                    continue;
-                }
-
-                if (is_int($value)) {
-                    $cleanData[$key] = $value;
-                    continue;
-                }
-
-                if (is_array($value)) {
-                    $section_data = [];
-
-                    foreach ($request->all() as $key => $value) {
-                        $section_data[$key] = $value;
-                    }
-                    $cleanData[$key] = $section_data;
-                    continue;
-                }
-
-                $cleanData[$key] = strip_tags($value);
-            }
-
-
-            $data = PullOut::findOrFail($id);
-
-            if (!$data) {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }
-
-            $query = PullOut::where('id', $data->id)->update([
-                'status' => $cleanData['status'],
-                'approval_date' => now(),
-                'updated_at' => now()
-            ]);
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in approve ' . $this->SINGULAR_MODULE_NAME . '.');
-            return response()->json(['data' => $query, 'message' => 'Success'], Response::HTTP_OK);
-
-        } catch (\Throwable $th) {
-
-            Helpers::errorLog($this->CONTROLLER_NAME, 'approve', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 }

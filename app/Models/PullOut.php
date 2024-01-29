@@ -16,12 +16,12 @@ class PullOut extends Model
 
     protected $fillable = [
         'employee_profile_id',
-        'requested_employee_id',
-        'approve_by_employee_id',
+        'requesting_officer',
+        'approving_officer',
         'pull_out_date',
         'approval_date',
-        'reason',
         'status',
+        'reason',
     ];
     
     protected $softDelete = true;
@@ -35,11 +35,11 @@ class PullOut extends Model
 
     public function requestedBy()
     {
-        return $this->belongsToMany(EmployeeProfile::class, 'requested_by');
+        return $this->belongsToMany(EmployeeProfile::class, 'requesting_officer');
     }
 
     public function approveBy()
     {
-        return $this->belongsToMany(EmployeeProfile::class, 'approve_by');
+        return $this->belongsToMany(EmployeeProfile::class, 'approving_officer');
     }
 }

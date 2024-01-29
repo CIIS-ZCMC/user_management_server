@@ -5,6 +5,8 @@ namespace App\Helpers;
 use App\Models\Department;
 use App\Models\Division;
 use App\Models\ExchangeDutyLog;
+use App\Models\PullOut;
+use App\Models\PullOutLog;
 use App\Models\Section;
 use App\Models\SystemLogs;
 use App\Models\TimeShift;
@@ -41,6 +43,15 @@ class Helpers
     {
         ExchangeDutyLog::create([
             'exchange_duty_id' => $data_id,
+            'action_by' => $user_id,
+            'action' => $action
+        ]);
+    }
+
+    public static function registerPullOutLogs($data_id, $user_id, $action)
+    {
+        PullOutLog::create([
+            'pull_out_id' => $data_id,
             'action_by' => $user_id,
             'action' => $action
         ]);

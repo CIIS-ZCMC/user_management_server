@@ -155,7 +155,8 @@ class ExchangeDutyController extends Controller
             Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating.' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json([
                 'data' => ExchangeDutyResource::collection(ExchangeDuty::where('id', $data->id)->get()),
-                'msg' => 'Request Complete.'
+                'logs' => Helpers::registerExchangeDutyLogs($data->id, $user->id, 'Store'),
+                'msg' => 'Exchange Duty requested.'
             ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
@@ -241,9 +242,9 @@ class ExchangeDutyController extends Controller
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in delete.' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json([
-                'data' => ExchangeDutyResource::collection(ExchangeDuty::where('id', $data->id)->get()),
-                'logs' => Helpers::registerExchangeDutyLogs($data->id, $request->user->id, 'Delete'),
-                'msg' => 'Delete Complete.'
+                'data' => $data,
+                'logs' => Helpers::registerExchangeDutyLogs($data->id, $request->user->id, 'Destroy'),
+                'msg' => 'Request successfully deleted.'
             ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
