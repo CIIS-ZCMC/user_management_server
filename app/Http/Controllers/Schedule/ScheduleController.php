@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Schedule;
 
+use App\Http\Resources\EmployeeScheduleResource;
 use App\Models\EmployeeSchedule;
 use App\Models\PullOut;
 use App\Models\Holiday;
@@ -43,12 +44,15 @@ class ScheduleController extends Controller
             $user = $request->user;
             $assigned_area = $user->assignedArea->findDetails();
 
-            $array = EmployeeProfile::with(['personalInformation','assignedArea',
+            $array = EmployeeProfile::with([
+                'personalInformation',
+                'assignedArea',
                 'schedule' => function ($query) use ($year, $month) {
                     $query->with(['timeShift', 'holiday'])->whereYear('date', '=', $year)->whereMonth('date', '=', $month);
-                }])->whereHas('assignedArea', function ($query) use ($user, $assigned_area) {
-                    $query->where([strtolower($assigned_area['sector']) . '_id' => $user->assignedArea->id]);
-                })->get();
+                }
+            ])->whereHas('assignedArea', function ($query) use ($user, $assigned_area) {
+                $query->where([strtolower($assigned_area['sector']) . '_id' => $user->assignedArea->id]);
+            })->get();
 
             $data = [];
             foreach ($array as $key => $value) {
@@ -73,14 +77,14 @@ class ScheduleController extends Controller
 
     /**
      * Show the form for creating a new resource.
-     */ 
+     */
     public function create(Request $request)
     {
         try {
             $user = $request->user;
             // API For Personal Calendar
             $model = EmployeeSchedule::where('employee_profile_id', $user->id)->get();
-            return response()->json(['data' => ScheduleResource::collection($model)], Response::HTTP_OK);
+            return response()->json(['data' => EmployeeScheduleResource::collection($model)], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
@@ -137,7 +141,7 @@ class ScheduleController extends Controller
 
             switch ($selected_days) {
                 //If Toggle Date Period On
-                case ($selected_days <= 0 && $date_start != null && $date_end != null):
+                case($selected_days <= 0 && $date_start != null && $date_end != null):
                     $current_date = $date_start->copy();
 
                     while ($current_date->lte($date_end)) {
@@ -147,7 +151,7 @@ class ScheduleController extends Controller
                     break;
 
                 //If Toggle Show Day on
-                case ($selected_days >= 1 && $date_start === null && $date_end === null):
+                case($selected_days >= 1 && $date_start === null && $date_end === null):
                     $date = Carbon::now();  // Replace with your desired year
                     $month = Carbon::parse($cleanData['month'])->month;  // Replace with your desired month
 
@@ -207,18 +211,17 @@ class ScheduleController extends Controller
 
                 $employee = $cleanData['employee'];
                 foreach ($employee as $key => $value) {
-                    $employee_id = EmployeeProfile::select('id')->where('id', $value['employee_id'])->first();
+                    $employee_ids = $value['employee_id']; // Array of employee IDs
+                    $existing_employee_ids = EmployeeProfile::whereIn('id', $employee_ids)->pluck('id')->toArray();
 
-                    if ($employee != null) {
-
+                    foreach ($existing_employee_ids as $employee_id) {
                         $query = DB::table('employee_profile_schedule')->where([
                             ['employee_profile_id', '=', $employee_id],
                             ['schedule_id', '=', $data->id],
                         ])->first();
 
                         if ($query) {
-                            $msg = 'employee schedule already exist';
-
+                            $msg = 'Employee schedule already exists.';
                         } else {
                             $data->employee()->attach($employee_id, ['is_on_call' => $value['is_on_call']]);
                             $msg = 'New employee schedule registered.';

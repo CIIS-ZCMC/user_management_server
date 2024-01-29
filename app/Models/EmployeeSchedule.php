@@ -19,4 +19,16 @@ class EmployeeSchedule extends Model
         'is_on_call',
     ];
 
+    public $timestamps = true;
+
+    public function employee()
+    {
+        return $this->belongsTo(EmployeeProfile::class, 'employee_profile_id');
+    }
+
+    public function schedule()
+    {
+        return $this->belongsTo(Schedule::class, 'schedule_id');
+    }
+
 }
