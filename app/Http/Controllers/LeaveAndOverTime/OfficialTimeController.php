@@ -29,6 +29,7 @@ class OfficialTimeController extends Controller
             $employee_profile   = $request->user;
             $recommending = ["for recommending approval", "for approving approval", "approved", "declined"];
             $approving = ["for approving approval", "approved", "declined"];
+            $employeeId = $employee_profile->id;
 
             /**
              * Division Head [approving, recommending] - applications of assigned area
@@ -58,37 +59,42 @@ class OfficialTimeController extends Controller
              * Approved by Recommending Officer
              */
 
-            $official_time_application = OfficialTime::select('official_time_applications.*')
-                ->join('official_time_application_logs as obal', 'obal.official_time_id', 'official_time_applications.id')
-                ->where('obal.action', 'Applied')
-                ->whereIn('official_time_applications.status', $recommending)
-                ->where('official_time_applications.recommending_officer', $employee_profile->id)->get();
-             
-            $official_time_application = $official_time_application->sortBy('id');
-
-            $official_time_application_approving = OfficialTime::select('official_time_applications.*')
-                ->join('official_time_application_logs as obal', 'obal.official_time_id', 'official_time_applications.id')
-                ->where('obal.action', 'Approved by Recommending Officer')
-                ->whereIn('official_time_applications.status', $approving)
-                ->where('official_time_applications.approving_officer', $employee_profile->id)->get();
-
-            $official_time_application_approving = $official_time_application_approving->sortBy('id');
-
-            // $official_time_application = [...$official_time_application, ...$official_time_application_approving];
-            $official_time_application = array_replace($official_time_application->toArray(), $official_time_application_approving->toArray());
-
-            $official_time_objects = collect($official_time_application)->map(function ($item) {
-                // Assuming $item is an associative array representing an OfficialTime model
-                $officialTimeModel = new OfficialTime;
-                $officialTimeModel->forceFill($item); // Fill the model's attributes
-            
-                return $officialTimeModel;
-            });
+             $official_time_application = OfficialTime::select('official_time_applications.*')
+                ->where(function ($query) use ($recommending, $approving, $employeeId) {
+                    $query->whereIn('official_time_applications.status', $recommending)
+                        ->where('official_time_applications.recommending_officer', $employeeId);
+                })
+                ->orWhere(function ($query) use ($recommending, $approving, $employeeId) {
+                    $query->whereIn('official_time_applications.status', $approving)
+                        ->where('official_time_applications.approving_officer', $employeeId);
+                })
+                ->groupBy(
+                    'official_time_applications.id',
+                    'official_time_applications.date_from',
+                    'official_time_applications.date_to',
+                    'official_time_applications.status',
+                    'official_time_applications.purpose',
+                    'official_time_applications.personal_order_file',
+                    'official_time_applications.personal_order_path',
+                    'official_time_applications.personal_order_size',
+                    'official_time_applications.certificate_of_appearance',
+                    'official_time_applications.certificate_of_appearance_path',
+                    'official_time_applications.certificate_of_appearance_size',
+                    'official_time_applications.recommending_officer',
+                    'official_time_applications.approving_officer',
+                    'official_time_applications.remarks',
+                    'official_time_applications.employee_profile_id',
+                    'user_management_db.official_time_applications.created_at',
+                    'user_management_db.official_time_applications.updated_at',
+                )
+                ->get();
 
             return response()->json([
-                'data' => OfficialTimeResource::collection($official_time_objects),
-                'message' => 'Retrieved all offical time application'
+                'data' => OfficialTimeResource::collection($official_time_application),
+                'message' => 'Retrieved all official business application'
             ], Response::HTTP_OK);
+
+
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

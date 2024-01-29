@@ -14,12 +14,10 @@ class CtoApplication extends Model
     public $fillable = [
         'employee_profile_id',
         'date',
-        'time_from',
-        'time_to',
-        'status',
-        'remarks',
+        'applied_credits',
         'purpose',
-        'hrmo_officer',
+        'remarks',
+        'status',
         'recommending_officer',
         'approving_officer'
     ];
@@ -33,47 +31,52 @@ class CtoApplication extends Model
         return $this->hasMany(CtoApplicationLog::class);
     }
     public function employeeProfile() {
-        return $this->belongsTo(EmployeeProfile::class);
+        return $this->belongsTo(EmployeeProfile::class, 'employee_profile_id');
     }
 
-    public function hrmoOfficer()
-    {
-        return $this->belongsTo(EmployeeProfile::class, 'hrmo_officer');
+    public function employeeCredit() {
+        return $this->belongsTo(EmployeeOvertimeCredit::class, 'employee_overtime_credits');
     }
 
-    /** Must pass an argument of division code which must be HRMO for HR head and OMCC for Chief */
-    public function isApprovedByChief()
-    {
-        $division_head = Division::where('code', 'OMCC')->first()->chief();
 
-        /**
-         * Validate if Logs has record for hrmo approving the leave application by
-         * looking for specification of Chief division head employee id and action Approved
-         * does if nothing returns it will considered as false;
-         */
-        if(!LeaveApplicationLog::where('action_by', $division_head->id)->where('action', 'Approved')->first()){
-            return false;
-        }
+    // public function hrmoOfficer()
+    // {
+    //     return $this->belongsTo(EmployeeProfile::class, 'hrmo_officer');
+    // }
 
-        return true;
-    }
+    // /** Must pass an argument of division code which must be HRMO for HR head and OMCC for Chief */
+    // public function isApprovedByChief()
+    // {
+    //     $division_head = Division::where('code', 'OMCC')->first()->chief();
 
-    /** Must pass an argument of section code which must be HRMO for HR head and OMCC for Chief */
-    public function isApprovedByHrmo()
-    {
-        $section_supervisor = Section::where('code', 'HRMO')->first()->chief();
+    //     /**
+    //      * Validate if Logs has record for hrmo approving the leave application by
+    //      * looking for specification of Chief division head employee id and action Approved
+    //      * does if nothing returns it will considered as false;
+    //      */
+    //     if(!LeaveApplicationLog::where('action_by', $division_head->id)->where('action', 'Approved')->first()){
+    //         return false;
+    //     }
 
-        /**
-         * Validate if Logs has record for hrmo approving the leave application by
-         * looking for specification of HRMO division head employee id and action Approved
-         * does if nothing returns it will considered as false;
-         */
-        if(!LeaveApplicationLog::where('action_by', $section_supervisor->id)->where('action', 'Approved')->first()){
-            return false;
-        }
+    //     return true;
+    // }
 
-        return true;
-    }
+    // /** Must pass an argument of section code which must be HRMO for HR head and OMCC for Chief */
+    // public function isApprovedByHrmo()
+    // {
+    //     $section_supervisor = Section::where('code', 'HRMO')->first()->chief();
+
+    //     /**
+    //      * Validate if Logs has record for hrmo approving the leave application by
+    //      * looking for specification of HRMO division head employee id and action Approved
+    //      * does if nothing returns it will considered as false;
+    //      */
+    //     if(!LeaveApplicationLog::where('action_by', $section_supervisor->id)->where('action', 'Approved')->first()){
+    //         return false;
+    //     }
+
+    //     return true;
+    // }
 
 
     public function recommendingOfficer()

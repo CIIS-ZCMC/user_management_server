@@ -1649,6 +1649,11 @@ Route::middleware('auth.cookie')->group(function(){
             Route::post('cto-application', 'CtoApplicationController@store');
         });
 
+        Route::middleware(['auth.permission:UMIS-CT view'])->group(function(){
+            Route::get('user-cto-application', 'CtoApplicationController@create');
+        });
+
+
         Route::middleware(['auth.permission:UMIS-CT approve'])->group(function(){
             Route::post('cto-application-decline/{id}', 'CtoApplicationController@declineCtoApplication');
         });

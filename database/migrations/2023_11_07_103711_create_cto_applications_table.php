@@ -16,16 +16,14 @@ return new class extends Migration
             $table->unsignedBigInteger('employee_profile_id')->unsigned();
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->datetime('date');
-            $table->string('time_from');
-            $table->string('time_to');
+            $table->integer('applied_credits');
             $table->string('purpose')->nullable();
             $table->text('remarks')->nullable();
             $table->string('status')->nullable();
-            $table->string('applied_credits')->nullable();
             $table->unsignedBigInteger('recommending_officer')->unsigned()->nullable();
             $table->foreign('recommending_officer')->references('id')->on('employee_profiles')->onDelete('cascade');
-            $table->unsignedBigInteger('approving')->unsigned()->nullable();
-            $table->foreign('approving')->references('id')->on('employee_profiles')->onDelete('cascade');
+            $table->unsignedBigInteger('approving_officer')->unsigned()->nullable();
+            $table->foreign('approving_officer')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->timestamps();
         });
     }

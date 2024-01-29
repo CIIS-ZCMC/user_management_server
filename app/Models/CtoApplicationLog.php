@@ -10,7 +10,7 @@ class CtoApplicationLog extends Model
     use HasFactory;
     protected $table = 'cto_application_logs';
     public $fillable = [
-        'action_by_id',
+        'action_by',
         'cto_application_id',
         'action',
         'date',

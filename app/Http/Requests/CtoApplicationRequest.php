@@ -11,7 +11,7 @@ class CtoApplicationRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -21,16 +21,13 @@ class CtoApplicationRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            'remarks' => 'required|string|max:255',
-            'reason' => 'nullable|string|max:255',
-            'status' => 'required|string|max:255',
-            'time_from' => 'required|date_format:H:i',
-            'time_to' => 'required|date_format:H:i',
-            'date' => 'required|date_format:Y-m-d',
-            'purpose' => 'required|string|max:512',
-            'applied_credits' => 'nullable|numeric',
+        $rules = [
+            'cto_applications.*.date' => 'required|date_format:Y-m-d',
+            'cto_applications.*.applied_credits' => 'required|integer',
+            'cto_applications.*.purpose' => 'required|string|max:512',
+            'cto_applications.*.remarks' => 'required|string|max:255'
         ];
 
+        return $rules;
     }
 }

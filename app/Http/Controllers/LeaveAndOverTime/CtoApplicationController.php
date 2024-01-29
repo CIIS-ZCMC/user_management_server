@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\LeaveAndOverTime;
 
 use App\Helpers\Helpers;
+use App\Http\Resources\EmployeeOvertimeCreditResource;
+use DateTime;
 use Illuminate\Support\Facades\DB;
 use App\Models\CtoApplication;
 use App\Http\Controllers\Controller;
@@ -24,66 +26,89 @@ class CtoApplicationController extends Controller
     public function index(Request $request)
     {
         try {
-            $employee_profile = $request->user;
-
-            $is_division_head_or_oic = Division::where('chief_employee_profile_id', $employee_profile->id)
-                ->orWhere('oic_employee_profile_id', $employee_profile->id)->first();
-
-            /**
-             * For Division Head
-             */
-            if ($is_division_head_or_oic !== null) {
-                $cto_applications = [];
-
-                $cto_applications = CtoApplication::where('approving_officer', $is_division_head_or_oic->chief_employee_profile_id)
-                    ->orWhere('recommending_officer', $is_division_head_or_oic->chief_employee_profile_id)->get();
-
-                return response()->json([
-                    'data' => CtoApplicationResource::collection($cto_applications),
-                    'message' => 'Retrieve all compensatory time off application records.'
-                ], Response::HTTP_OK);
-            }
-
+            $employee_profile   = $request->user;
+            $recommending = ["for recommending approval", "for approving approval", "approved", "declined"];
+            $approving = ["for approving approval", "approved", "declined"];
             $position = $employee_profile->position();
+            $employeeId = $employee_profile->id;
 
             /**
-             * For Employee Applications
+             * Division Head [approving, recommending] - applications of assigned area
+             *  - recommending => [for recommending approval, for approving approval, approved, declined]
+             *  - approving => [ for approving approval, approved, declined]
+             * 
+             * Department Head [recommending] - applications of assigned area
+             *  - recommending => [for recommending approval, for approving approval, approved, declined]
+             * 
+             * Section Supervisor [recommending] - applications of assigned area
+             *  - recommending => [for recommending approval, for approving approval, approved, declined]
+             * 
              */
-            if (!$position) {
-                $cto_applications = CtoApplication::where('employee_profile_id', $employee_profile->id)->get();
-
+            
+           
+             /** FOR NORMAL EMPLOYEE */
+            if($employee_profile->position() === null){
+                $cto_application = CtoApplication::where('employee_profile_id', $employee_profile->id)->get();
+                 
                 return response()->json([
-                    'data' => CtoApplicationResource::collection($cto_applications),
-                    'message' => 'Retrieve all compensatory time off application records.'
+                    'data' => CtoApplicationResource::collection($cto_application),
+                    'message' => 'Retrieved all CTO application'
                 ], Response::HTTP_OK);
             }
 
-            if (str_contains($position->position, "Unit")) {
-                return response()->json(['message' => 'Forbidden.'], Response::HTTP_FORBIDDEN);
-            }
-
-            /**
-             * For Department Head
-             */
-            if (str_contains($position->position, 'Department') && $position->position !== "Training Officer") {
-                $cto_applications = CtoApplication::where('recommending_officer', $position->area->head_employee_profile_id)->get();
-
-                return response()->json([
-                    'data' => CtoApplicationResource::collection($cto_applications),
-                    'message' => 'Retrieve all compensatory time off application records.'
-                ], Response::HTTP_OK);
-            }
-
-            /**
-             * For Section Head
-             */
-            $cto_applications = CtoApplication::where('recommending_officer', $position->area->supervisor_employee_profile_id)->get();
+            $cto_application = CtoApplication::select('cto_applications.*')
+                ->where(function ($query) use ($recommending, $approving, $employeeId) {
+                    $query->whereIn('cto_applications.status', $recommending)
+                        ->where('cto_applications.recommending_officer', $employeeId);
+                })
+                ->orWhere(function ($query) use ($recommending, $approving, $employeeId) {
+                    $query->whereIn('cto_applications.status', $approving)
+                        ->where('cto_applications.approving_officer', $employeeId);
+                })
+                ->groupBy(
+                    'cto_applications.id',
+                    'cto_applications.date_from',
+                    'cto_applications.date_to',
+                    'cto_applications.time_from',
+                    'cto_applications.time_to',
+                    'cto_applications.status',
+                    'cto_applications.purpose',
+                    'cto_applications.personal_order_file',
+                    'cto_applications.personal_order_path',
+                    'cto_applications.personal_order_size',
+                    'cto_applications.certificate_of_appearance',
+                    'cto_applications.certificate_of_appearance_path',
+                    'cto_applications.certificate_of_appearance_size',
+                    'cto_applications.recommending_officer',
+                    'cto_applications.approving_officer',
+                    'cto_applications.remarks',
+                    'cto_applications.employee_profile_id',
+                    'user_management_db.cto_applications.created_at',
+                    'user_management_db.cto_applications.updated_at',
+                )
+                ->get();
 
             return response()->json([
-                'data' => CtoApplicationResource::collection($cto_applications),
-                'message' => 'Retrieve all compensatory time off application records.'
+                'data' => CtoApplicationResource::collection($cto_application),
+                'message' => 'Retrieved all official business application'
             ], Response::HTTP_OK);
+            
         } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function create(Request $request) {
+        try {
+
+            $user = $request->user;
+            $sql = CtoApplication::where('employee_profile_id', $user->id)->get();
+            $employeeCredit = EmployeeOvertimeCredit::where('employee_profile_id', $user->id)->get();
+            return response()->json(['data' => CtoApplicationResource::collection($sql),
+                                    'employee_credit' => EmployeeOvertimeCreditResource::collection($employeeCredit)], Response::HTTP_OK);
+
+        } catch (\Throwable $th) {
+            
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -173,7 +198,6 @@ class CtoApplicationController extends Controller
     public function store(CtoApplicationRequest $request)
     {
         try {
-
             $employee_profile = $request->user;
             $recommending_and_approving = Helpers::getRecommendingAndApprovingOfficer($employee_profile->assignedArea->findDetails(), $employee_profile->id);
             $cto_applications = [];
@@ -186,44 +210,57 @@ class CtoApplicationController extends Controller
             }
 
             $cleanData = [];
+          
+            foreach ($request->all() as $key => $value) {
+                if (empty($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
 
+                if (is_int($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
 
-            foreach ($request->cto_applications as $value) {
+                if (is_array($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
 
-                $employee_credit = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)->first();
+                $cleanData[$key] = strip_tags($value);
+            }
 
-                if ($employee_credit->earn_credit_by_hour < $value['applied_credits']) {
+            
+            foreach (json_decode($request->cto_applications) as $key=>$value) {
+               
+                if ($employee_credit->earn_credit_by_hour < $value->applied_credits) {
                     $failed[] = $value;
                     $reason[] = 'Insuficient overtime credit.';
                     continue;
                 }
-
-                $cleanData = [];
+            
                 $cleanData['employee_profile_id'] = $employee_profile->id;
+                $cleanData['date'] = $value->date;
+                $cleanData['applied_credits'] = $value->applied_credits;
+                $cleanData['purpose'] = $value->purpose;
+                $cleanData['remarks'] = $value->remarks;
+                $cleanData['status'] = 'Applied';
                 $cleanData['recommending_officer'] = $recommending_and_approving['recommending_officer'];
                 $cleanData['approving_officer'] = $recommending_and_approving['approving_officer'];
-                $cleanData['status'] = 'Applied';
 
-                foreach ($value->all() as $key => $cto) {
-
-                    if ($cto === 'null') {
-                        $cleanData[$key] = $cto;
-                        continue;
-                    }
-                    $cleanData[$key] = strip_tags($cto);
-                }
-
-                $credits = $cleanData['applied_credits'];
+                $credits = $value->applied_credits;
                 $cto_application = CtoApplication::create($cleanData);
-                $current_overtime_credit = $employee_credit->earn_credit_by_hour;
-                $employee_credit->update(['earn_credit_by_hour' => DB::raw("earn_credit_by_hour - $credits")]);
+                
+                $employee_credit = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)->first();
+                $current_overtime_credit = $employee_credit->earned_credit_by_hour;
+                $employee_credit->update(['earned_credit_by_hour' => DB::raw("earned_credit_by_hour - $credits")]);
 
-                EmployeeOvertimeCreditLog::create([
+                $logs =  EmployeeOvertimeCreditLog::create([
                     'employee_ot_credit_id' => $employee_credit->id,
                     'cto_application_id' => $cto_application->id,
                     'action' => 'CTO',
                     'previous_overtime_hours' => $current_overtime_credit,
-                    'hours' => $cleanData['applied_credits'],
+                    'hours' => $value->applied_credits
                 ]);
 
                 CtoApplicationLog::create([
@@ -235,7 +272,7 @@ class CtoApplicationController extends Controller
                 $cto_applications[] = $cto_application;
             }
 
-            if (count($failed) === count($request->cto_applications)) {
+            if (count($failed) === count(json_decode($request->cto_applications, true))) {
                 return response()->json([
                     'failed' => $failed,
                     'reason' => $reason,
@@ -253,7 +290,7 @@ class CtoApplicationController extends Controller
             }
 
             return response()->json([
-                'data' => new CtoApplicationResource($cto_applications),
+                'data' => CtoApplicationResource::collection($cto_applications),
                 'message' => 'Retrieve all Compensatory time off application records.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {

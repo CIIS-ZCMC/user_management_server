@@ -9,30 +9,37 @@ class CtoApplicationResource extends JsonResource
 {
     public function toArray($request)
     {
+        $employeeProfile = [
+            'name'=> $this->employeeProfile->personalInformation->name(),
+            'profile_url' => $this->profile_url,
+            'designation' => [
+                'name' => $this->employeeProfile->assignedArea->designation->name,
+                'code' => $this->employeeProfile->assignedArea->designation->code,
+            ],
+            'area' => $this->employeeProfile->assignedArea->findDetails()['details']->name,
+        ];
+
         return [
             'id' => $this->id,
-            "employee_profile" => [
-                "employee_account" => $this->employeeProfile,
-                "personal_information" => $this->employeeProfile->personalInformation
-            ],
+            "employee_profile" => $employeeProfile,
             'date' => $this->date,
-            'time_from' => $this->time_from,
-            'time_to' => $this->time_to,
-            'file_date' => $this->file_date,
+            'applied_credits' => $this->applied_credits,
             'remarks' => $this->remarks,
             'status' => $this->status,
             'purpose' => $this->purpose,
             "recommending_officer" => [
                 "employee_id" => $this->recommendingOfficer->employee_id,
-                "hrmo_full_name" => $this->recommendingOfficer->personalInformation->fullName(),
-                "designation" => $this->recommendingOfficer->designation->name,
-                "designation_code" => $this->recommendingOfficer->designation->code
+                "name" => $this->recommendingOfficer->personalInformation->name(),
+                "designation" => $this->recommendingOfficer->assignedArea->designation->name,
+                "designation_code" => $this->recommendingOfficer->assignedArea->designation->code,
+                "profile_url" => $this->recommendingOfficer->profile_url,
             ],
             "approving_officer" => [
                 "employee_id" => $this->approvingOfficer->employee_id,
-                "hrmo_full_name" => $this->approvingOfficer->personalInformation->fullName(),
-                "designation" => $this->approvingOfficer->designation->name,
-                "designation_code" => $this->approvingOfficer->designation->code
+                "name" => $this->approvingOfficer->personalInformation->name(),
+                "designation" => $this->approvingOfficer->assignedArea->designation->name,
+                "designation_code" => $this->approvingOfficer->assignedArea->designation->code,
+                "profile_url" => $this->recommendingOfficer->profile_url,
             ],
             'logs' => $this->logs
         ];

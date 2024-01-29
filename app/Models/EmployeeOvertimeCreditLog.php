@@ -9,15 +9,15 @@ class EmployeeOvertimeCreditLog extends Model
 {
     use HasFactory;
 
-    private $table = "employee_overtime_credit_logs";
+    protected $table = "employee_overtime_credit_logs";
 
     public $fillable = [
         'employee_ot_credit_id',
+        'cto_application_id',
         'overtime_application_id',
         'action',
         'previous_overtime_hours',
         'hours',
-        'is_deduction'
     ];
 
     public $timestamps = true;

@@ -30,6 +30,8 @@ class OfficialBusinessController extends Controller
             $employee_profile   = $request->user;
             $recommending = ["for recommending approval", "for approving approval", "approved", "declined"];
             $approving = ["for approving approval", "approved", "declined"];
+            $position = $employee_profile->position();
+            $employeeId = $employee_profile->id;
 
             /**
              * Division Head [approving, recommending] - applications of assigned area
@@ -44,6 +46,7 @@ class OfficialBusinessController extends Controller
              * 
              */
             
+           
              /** FOR NORMAL EMPLOYEE */
             if($employee_profile->position() === null){
                 $official_business_application = OfficialBusiness::where('employee_profile_id', $employee_profile->id)->get();
@@ -55,24 +58,40 @@ class OfficialBusinessController extends Controller
             }
 
             $official_business_application = OfficialBusiness::select('official_business_applications.*')
-                ->join('official_business_application_logs as obal', 'obal.official_business_id', 'official_business_applications.id')
-                ->where('obal.action', 'Applied')
-                ->whereIn('official_business_applications.status', $recommending)
-                ->where('official_business_applications.recommending_officer', $employee_profile->id)
-                ->orderBy('official_business_applications.created_at', 'desc')->get();
-                
-            $official_business_application_approving = OfficialBusiness::select('official_business_applications.*')
-                ->join('official_business_application_logs as obal', 'obal.official_business_id', 'official_business_applications.id')
-                ->where('obal.action', 'Approved by Recommending Officer')
-                ->whereIn('official_business_applications.status', $approving)
-                ->where('official_business_applications.approving_officer', $employee_profile->id)
-                ->orderBy('official_business_applications.created_at', 'desc')->get();
-
-            $official_business_application = [...$official_business_application, ...$official_business_application_approving];
+                ->where(function ($query) use ($recommending, $approving, $employeeId) {
+                    $query->whereIn('official_business_applications.status', $recommending)
+                        ->where('official_business_applications.recommending_officer', $employeeId);
+                })
+                ->orWhere(function ($query) use ($recommending, $approving, $employeeId) {
+                    $query->whereIn('official_business_applications.status', $approving)
+                        ->where('official_business_applications.approving_officer', $employeeId);
+                })
+                ->groupBy(
+                    'official_business_applications.id',
+                    'official_business_applications.date_from',
+                    'official_business_applications.date_to',
+                    'official_business_applications.time_from',
+                    'official_business_applications.time_to',
+                    'official_business_applications.status',
+                    'official_business_applications.purpose',
+                    'official_business_applications.personal_order_file',
+                    'official_business_applications.personal_order_path',
+                    'official_business_applications.personal_order_size',
+                    'official_business_applications.certificate_of_appearance',
+                    'official_business_applications.certificate_of_appearance_path',
+                    'official_business_applications.certificate_of_appearance_size',
+                    'official_business_applications.recommending_officer',
+                    'official_business_applications.approving_officer',
+                    'official_business_applications.remarks',
+                    'official_business_applications.employee_profile_id',
+                    'user_management_db.official_business_applications.created_at',
+                    'user_management_db.official_business_applications.updated_at',
+                )
+                ->get();
 
             return response()->json([
                 'data' => OfficialBusinessResource::collection($official_business_application),
-                'message' => 'Retrieved all offical business application'
+                'message' => 'Retrieved all official business application'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
