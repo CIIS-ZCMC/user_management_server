@@ -141,7 +141,8 @@ class Helpers
             }
 
             $file = $attachment;
-            $fileName = Hash::make(time()) . '.' . $file->getClientOriginalExtension();
+            
+            $fileName = base64_encode(Hash::make(time())) . '.' . $file->getClientOriginalExtension();
 
             $file->move(public_path($FILE_URL), $fileName);
         }

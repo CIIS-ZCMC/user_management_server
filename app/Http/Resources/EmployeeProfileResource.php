@@ -33,7 +33,7 @@ class EmployeeProfileResource extends JsonResource
             'id' => $this->id,
             'employee_id' => $this->employee_id,
             'name' => $name,
-            'profile_url' => $this->profile_url,
+            'profile_url' =>  env('SERVER_DOMAIN')."/photo/profiles/".$this->profile_url,
             'area' => $area,
             'is_regular_employee' => $is_regular_employee,
             'designation' => $designation,

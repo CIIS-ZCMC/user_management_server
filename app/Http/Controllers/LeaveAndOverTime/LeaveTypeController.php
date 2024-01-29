@@ -194,7 +194,7 @@ class LeaveTypeController extends Controller
                                             ];
                                         }),
             ];
-        });
+             });
 
                  return response()->json(['data' => $result], Response::HTTP_OK);
             }catch(\Throwable $th){

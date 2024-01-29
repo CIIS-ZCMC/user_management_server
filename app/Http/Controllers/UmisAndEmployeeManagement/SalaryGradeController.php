@@ -36,7 +36,7 @@ class SalaryGradeController extends Controller
 
             return response()->json([
                 'data' => SalaryGradeResource::collection($salary_grades),
-                'message' => 'Salary grade list retrieved.'
+                'message' => 'Salary grade imported.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());

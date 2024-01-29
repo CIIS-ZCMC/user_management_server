@@ -2,10 +2,11 @@
 
 namespace App\Http\Resources;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class PlantillaWithDesignationResource extends JsonResource
+class BirthdayCelebrantResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -16,11 +17,9 @@ class PlantillaWithDesignationResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'is_vacant' => $this->is_vacant,
-            'number' => $this->number,
-            'assigned_at' => $this->assigned_at,
-            'area' => $this->assignedArea === null ? 'NONE': $this->assignedArea->area()
-          
+            'employee_id' => $this->employeeProfile->employee_id,
+            'name' => $this->name,
+            'age' => Carbon::now()->diffInYears($this->date_of_birth),
         ];
     }
 }
