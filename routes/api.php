@@ -1535,6 +1535,10 @@ Route::middleware('auth.cookie')->group(function(){
             Route::get('user-ob-application', 'OfficialBusinessController@create');
         });
 
+        Route::middleware(['auth.permission:UMIS-OB view-all'])->group(function(){
+            Route::get('hrmo-ob-application', 'OfficialBusinessController@hrmoIndex');
+        });
+
         Route::middleware(['auth.permission:UMIS-OB request'])->group(function(){
             Route::post('ob-application', 'OfficialBusinessController@store');
         });
@@ -1542,6 +1546,7 @@ Route::middleware('auth.cookie')->group(function(){
         Route::middleware(['auth.permission:UMIS-OB approve'])->group(function(){
             Route::post('ob-application/{id}', 'OfficialBusinessController@update');
         });
+
 
          /**
          * Official Time Module
@@ -1552,6 +1557,10 @@ Route::middleware('auth.cookie')->group(function(){
 
         Route::middleware(['auth.permission:UMIS-OB view'])->group(function(){
             Route::get('user-ot-application', 'OfficialTimeController@create');
+        });
+
+        Route::middleware(['auth.permission:UMIS-OB view-all'])->group(function(){
+            Route::get('hrmo-ot-application', 'OfficialTimeController@hrmoIndex');
         });
 
         Route::middleware(['auth.permission:UMIS-OT request'])->group(function(){
@@ -1653,6 +1662,9 @@ Route::middleware('auth.cookie')->group(function(){
             Route::get('user-cto-application', 'CtoApplicationController@create');
         });
 
+        Route::middleware(['auth.permission:UMIS-OB view-all'])->group(function(){
+            Route::get('hrmo-cto-application', 'CtoApplicationController@hrmoIndex');
+        });
 
         Route::middleware(['auth.permission:UMIS-CT approve'])->group(function(){
             Route::post('cto-application-decline/{id}', 'CtoApplicationController@declineCtoApplication');

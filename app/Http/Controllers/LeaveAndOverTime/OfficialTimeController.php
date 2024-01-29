@@ -27,7 +27,6 @@ class OfficialTimeController extends Controller
     {
         try {
             $employee_profile   = $request->user;
-            $employee_area      = $employee_profile->assignedArea->findDetails();
             $recommending = ["for recommending approval", "for approving approval", "approved", "declined"];
             $approving = ["for approving approval", "approved", "declined"];
             $employeeId = $employee_profile->id;
@@ -55,12 +54,6 @@ class OfficialTimeController extends Controller
                 ], Response::HTTP_OK);
             }
 
-            if ($employee_area->sector['Section'] === 'HRMO') {
-                return response()->json([
-                    'data' => OfficialTimeResource::collection(OfficialTime::all()),
-                    'message' => 'Retrieved all offical business application'
-                ], Response::HTTP_OK);
-            }
 
             /**
              * Applied
@@ -124,6 +117,21 @@ class OfficialTimeController extends Controller
             
             Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Show all request for HRMO.
+     */
+    public function hrmoIndex(Request $request) {
+        $employee_profile   = $request->user;
+        $employee_area      = $employee_profile->assignedArea->findDetails();
+        
+        if ($employee_area->sector['Section'] === 'HRMO') {
+            return response()->json([
+                'data' => OfficialTimeResource::collection(OfficialTime::all()),
+                'message' => 'Retrieved all offical business application'
+            ], Response::HTTP_OK);
         }
     }
 
