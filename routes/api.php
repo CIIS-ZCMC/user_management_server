@@ -1571,6 +1571,13 @@ Route::middleware('auth.cookie')->group(function(){
             Route::post('ot-application/{id}', 'OfficialTimeController@update');
         });
 
+         /**
+         * Official Time and Offcial Business HRMO index
+         */
+        Route::middleware(['auth.permission:UMIS-OB view-all'])->group(function(){
+            Route::get('hrmo-ob-ot-application', 'EmployeeApplicationController@hrmoIndex');
+        });
+
 
         Route::middleware(['auth.permission:UMIS-OB approve'])->group(function(){
             Route::post('ob-application-decline/{id}', 'ObApplicationController@declineObApplication');

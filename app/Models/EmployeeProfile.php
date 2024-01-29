@@ -306,4 +306,14 @@ class EmployeeProfile extends Authenticatable
     {
         return $this->personalInformation;
     }
+
+    public function officialBusiness()
+    {
+        return $this->hasMany(OfficialBusiness::class);
+    }
+    
+    public function officialTime()
+    {
+        return $this->hasMany(OfficialTime::class);
+    }
 }
