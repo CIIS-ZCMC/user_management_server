@@ -426,7 +426,7 @@ class DTRcontroller extends Controller
                 'DTRFile_Name' => $emp_name,
                 'biometric_ID' => $biometric_id
             ];
-            return $month_of . $year_of;
+
             return $this->PrintDtr($month_of, $year_of, $biometric_id, $emp_Details, $view);
         } catch (\Throwable $th) {
             return $th;

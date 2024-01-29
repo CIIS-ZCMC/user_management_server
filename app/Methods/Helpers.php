@@ -628,6 +628,7 @@ class Helpers
 
     public function saveTotalWorkingHours($validate, $value, $sequence, $time_stamps_req, $check_for_generate)
     {
+        //return $this->toWordsMinutes(59.71);
 
         foreach ($sequence as $sc) {
             /* Entries */
@@ -711,29 +712,37 @@ class Helpers
                     $undertime_Minutes_4th_entry = $undertime_4th_entry / 60;
                     $overtime_4th_entry = $overtime_4th_entry / 60;
                 }
-                $undertime = floor($undertime_Minutes_1st_entry + $undertime_Minutes_2nd_entry + $undertime_3rd_entry + $undertime_Minutes_4th_entry);
+
+                $undertime = $undertime_Minutes_1st_entry + $undertime_Minutes_2nd_entry + $undertime_3rd_entry + $undertime_Minutes_4th_entry;
 
                 if ($f3_entry && $f4_entry) {
                     $overtime = $overtime_4th_entry;
                 } else {
                     $overtime = $overtime_2nd_entry;
                 }
-                $ot = round($overtime);
-                $ut = round($undertime);
+
+
+                $ot = round($overtime, 2);
+                $ut = round($undertime, 2);
+
+
                 $Schedule_Minutes  = $this->getTotalTimeRegistered(
                     $s1,
                     $s2,
                     $s3,
                     $s4
                 );
+
                 /* Overtime */
-                $overTime_inWords = $this->toWordsMinutes($ot)['Inwords'];
+                $overTime_inWords = $this->toWordsMinutes($ot)['InWords'];
                 $overTime_Minutes =  $this->toWordsMinutes($ot)['InMinutes'];
 
                 /* Undertime  */
-                $underTime_inWords = $this->toWordsMinutes($ut)['Inwords'];
+                $underTime_inWords = $this->toWordsMinutes($ut)['InWords'];
                 $underTime_Minutes =  $this->toWordsMinutes($ut)['InMinutes'];
             }
+
+
             $Registered_minutes = $this->getTotalTimeRegistered(
                 $f1_entry,
                 $f2_entry,
@@ -750,11 +759,11 @@ class Helpers
 
             if ($Schedule_Minutes <= $tWH) {
                 $tWH = floor($Schedule_Minutes - $underTime_Minutes);
-                $total_WH_words = $this->toWordsMinutes($tWH)['Inwords'];
+                $total_WH_words = $this->toWordsMinutes($tWH)['InWords'];
                 $total_WH_minutes = $this->toWordsMinutes($tWH)['InMinutes'];
             } else {
                 $tWH = floor($Schedule_Minutes - $underTime_Minutes);
-                $total_WH_words = $this->toWordsMinutes($tWH)['Inwords'];
+                $total_WH_words = $this->toWordsMinutes($tWH)['InWords'];
                 $total_WH_minutes = $this->toWordsMinutes($tWH)['InMinutes'];
             }
             /* Registered Minutes */
@@ -1213,47 +1222,66 @@ class Helpers
         }
     }
 
-    public function toWordsMinutes($minutes)
+
+
+
+    public function toWordsMinutes($totalMinutes)
     {
-        $in_Words = '';
-        $entry = $minutes;
-        $seconds = '';
+        // $totalMinutes = 40.75;
+        $hours = '';
+        $minutes = floor($totalMinutes);
+        $seconds = fmod($totalMinutes, 1) * 100;
+
+        //   echo 'minutes : ' . $minutes . " seconds : " . $seconds . "\n";
+
+        if ($seconds >= 60) {
+            $extmin = floor($seconds / 60); // Get the whole minutes
+            $extsecs = $seconds % 60; // Get the remaining seconds
+
+            $minutes += $extmin;
+            $seconds = $extsecs;
+        }
+        //  echo $minutes . ' minutes and ' . round($seconds) . ' seconds' . "\n";
         if ($minutes >= 60) {
             $hours = floor($minutes / 60);
-            $minutes = $minutes % 60;
+            $minutes %= 60;
 
             if ($hours > 0) {
-                $in_Words = $hours . ' hour';
+                $inWords = $hours . ' hour';
                 if ($hours > 1) {
-                    $in_Words .= 's';
+                    $inWords .= 's';
                 }
+
                 if ($minutes > 0) {
-                    $in_Words .= ' and ' . $minutes . ' minute';
+                    $inWords .= ' and ' . $minutes . ' minute';
                     if ($minutes > 1) {
-                        $in_Words .= 's';
+                        $inWords .= 's';
                     }
                 }
             } else {
-                $in_Words = $minutes . ' minute';
+                $inWords = $minutes . ' minute';
                 if ($minutes > 1) {
-                    $in_Words .= 's';
+                    $inWords .= 's';
                 }
             }
-            $undertime = $in_Words;
-            $uh = $hours;
-            $um = $minutes;
         } else {
-            $in_Words = $minutes . ' minute';
-            $seconds = floor(($minutes % 60) * 60);
+            $inWords = $minutes . ' minute';
             if ($minutes > 1) {
-                $in_Words .= 's';
+                $inWords .= 's';
+            }
+        }
+
+        if ($seconds) {
+            $inWords .= ' and ' . round($seconds) . ' second';
+            if ($seconds > 1) {
+                $inWords .= 's';
             }
         }
 
 
         return [
-            'Inwords' => $in_Words,
-            'InMinutes' => $entry,
+            'InWords' => $inWords,
+            'InMinutes' => $totalMinutes,
 
         ];
     }
