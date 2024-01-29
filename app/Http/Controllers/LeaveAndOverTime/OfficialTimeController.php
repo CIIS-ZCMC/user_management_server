@@ -27,6 +27,7 @@ class OfficialTimeController extends Controller
     {
         try {
             $employee_profile   = $request->user;
+            $employee_area      = $employee_profile->assignedArea->findDetails();
             $recommending = ["for recommending approval", "for approving approval", "approved", "declined"];
             $approving = ["for approving approval", "approved", "declined"];
             $employeeId = $employee_profile->id;
@@ -51,6 +52,13 @@ class OfficialTimeController extends Controller
                 return response()->json([
                     'data' => OfficialTimeResource::collection($official_time_application),
                     'message' => 'Retrieved all offical time application'
+                ], Response::HTTP_OK);
+            }
+
+            if ($employee_area->sector['Section'] === 'HRMO') {
+                return response()->json([
+                    'data' => OfficialTimeResource::collection(OfficialTime::all()),
+                    'message' => 'Retrieved all offical business application'
                 ], Response::HTTP_OK);
             }
 

@@ -27,6 +27,7 @@ class CtoApplicationController extends Controller
     {
         try {
             $employee_profile   = $request->user;
+            $employee_area      = $employee_profile->assignedArea->findDetails();
             $recommending = ["for recommending approval", "for approving approval", "approved", "declined"];
             $approving = ["for approving approval", "approved", "declined"];
             $position = $employee_profile->position();
@@ -53,6 +54,13 @@ class CtoApplicationController extends Controller
                 return response()->json([
                     'data' => CtoApplicationResource::collection($cto_application),
                     'message' => 'Retrieved all CTO application'
+                ], Response::HTTP_OK);
+            }
+
+            if ($employee_area->sector['Section'] === 'HRMO') {
+                return response()->json([
+                    'data' => CtoApplicationResource::collection(CtoApplication::all()),
+                    'message' => 'Retrieved all offical business application'
                 ], Response::HTTP_OK);
             }
 
