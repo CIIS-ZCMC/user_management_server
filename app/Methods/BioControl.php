@@ -5,6 +5,7 @@ namespace App\Methods;
 use TADPHP\TADFactory;
 use  App\Models\Biometrics;
 use App\Models\Devices;
+use App\Helpers\Helpers;
 
 class BioControl
 {
@@ -33,6 +34,7 @@ class BioControl
                 return $tad;
             }
         } catch (\Throwable $th) {
+            Helpers::errorLog("BioControl", 'checkdevice', $th->getMessage());
             if (isset($device['id'])) {
                 Devices::findorFail($device['id'])->update([
                     'serial_number' => null,
