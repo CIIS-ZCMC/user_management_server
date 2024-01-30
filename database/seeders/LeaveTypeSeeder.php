@@ -24,7 +24,7 @@ class LeaveTypeSeeder extends Seeder
             'name' => "Vacation Leave",
             'code' => "VL",
             'description' => 'Depends on the leave credit balances',
-            'period' => null,
+            'period' => 0,
             'file_date' => 'First 5 days of the month.',
             'month_value' => 12/15,
             'annual_credit' => 15,
@@ -32,7 +32,7 @@ class LeaveTypeSeeder extends Seeder
             'is_special' => 0,
             'is_country' => 0,
             'is_illness' => 0,
-            'is_days_recommended',
+            'is_days_recommended' => 0,
             'created_at' => now(),
             'updated_at' => now()
         ]);
@@ -46,7 +46,7 @@ class LeaveTypeSeeder extends Seeder
             'name' => "Sick Leave",
             'code' => "VL",
             'description' => 'On account of SICKNESS of the EMPLOYEE and IMMEDIATE family members',
-            'period' => null,
+            'period' => 0,
             'file_date' => 'First 3 days after recovery.',
             'month_value' => 12/15,
             'annual_credit' => 15,
@@ -54,7 +54,7 @@ class LeaveTypeSeeder extends Seeder
             'is_special' => 0,
             'is_country' => 0,
             'is_illness' => 0,
-            'is_days_recommended',
+            'is_days_recommended' => 0,
             'created_at' => now(),
             'updated_at' => now()
         ]);
@@ -74,7 +74,7 @@ class LeaveTypeSeeder extends Seeder
             'code' => "SPL",
             'description' => 'Maybe granted after the Probationary period (6 months continuous service)
             Granted to mark personal milestones and/or attend to filial and domestic responsibilities',
-            'period' => null,
+            'period' => 0,
             'file_date' => 'Annual 3 days allocated leave',
             'month_value' => 3,
             'annual_credit' => 3,
@@ -82,7 +82,7 @@ class LeaveTypeSeeder extends Seeder
             'is_special' => 0,
             'is_country' => 0,
             'is_illness' => 0,
-            'is_days_recommended',
+            'is_days_recommended' => 0,
             'created_at' => now(),
             'updated_at' => now()
         ]);
@@ -96,7 +96,7 @@ class LeaveTypeSeeder extends Seeder
             'name' => "Force Leave",
             'code' => "FL",
             'description' => 'Balance of 10 days/more VL',
-            'period' => null,
+            'period' => 0,
             'file_date' => 'Employee will receive 5 credits of force leave upon he/she has reach 10 leave credits.',
             'month_value' => 5,
             'annual_credit' => 5,
@@ -104,7 +104,7 @@ class LeaveTypeSeeder extends Seeder
             'is_special' => 0,
             'is_country' => 0,
             'is_illness' => 0,
-            'is_days_recommended',
+            'is_days_recommended' => 0,
             'created_at' => now(),
             'updated_at' => now()
         ]);
@@ -118,7 +118,7 @@ class LeaveTypeSeeder extends Seeder
             'name' => "Maternity Leave",
             'code' => "ML",
             'description' => 'Granted to a qualified FEMALE public servant in every instance of pregnancy',
-            'period' => null,
+            'period' => 105,
             'file_date' => 'Employee will receive 5 credits of force leave upon he/she has reach 10 leave credits.',
             'month_value' => 5,
             'annual_credit' => 5,
@@ -126,7 +126,7 @@ class LeaveTypeSeeder extends Seeder
             'is_special' => 0,
             'is_country' => 0,
             'is_illness' => 0,
-            'is_days_recommended',
+            'is_days_recommended' => 0,
             'created_at' => now(),
             'updated_at' => now()
         ]);

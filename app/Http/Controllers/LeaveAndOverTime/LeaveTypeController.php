@@ -61,8 +61,37 @@ class LeaveTypeController extends Controller
                     $result_data[] = $leave_type;
                     continue;
                 }
-                $leave_type['total_credits'] = ModelsEmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->where('leave_type_id', $leave_type->id)->first();
-                $result_data[] = $leave_type;
+                $leave_type['total_credits'] = ModelsEmployeeLeaveCredit::with(['leaveType' => function ($query) {
+                                                                        $query->with(['requirements'])->get();                                                                    }])
+                                                                    ->where('employee_profile_id', $employee_profile->id)
+                                                                    ->where('leave_type_id', $leave_type->id)->first();
+                $result_data[] = [
+                    // 'all' => $leave_type,
+                    'value' => $leave_type->id,
+                    'label'=> $leave_type->name,
+                    'description'=> $leave_type->description,
+                    'period'=> $leave_type->period,
+                    'file_date'=> $leave_type->file_date,
+                    'month_value'=> $leave_type->month_value,
+                    'annual_credit'=> $leave_type->annual_credit,
+                    'is_active'=> $leave_type->is_active,
+                    'is_special'=> $leave_type->is_special,
+                    'is_country'=> $leave_type->is_country,
+                    'is_illness'=> $leave_type->is_illness,
+                    'is_days_recommended'=> $leave_type->is_days_recommended,
+                    'created_at'=> $leave_type->created_at,
+                    'updated_at'=> $leave_type->updated_at,
+                    'total_credits'=> [
+                        'id'=> $leave_type->total_credits->id,
+                        'employee_profile_id'=> $leave_type->total_credits->employee_profile_id,
+                        'leave_type_id'=> $leave_type->total_credits->leave_type_id,
+                        'total_leave_credits'=> $leave_type->total_credits->total_leave_credits,
+                        'created_at'=> $leave_type->total_credits->created_at,
+                        'updated_at'=> $leave_type->total_credits->updated_at,
+                    ],
+                    'requirements' => $leave_type->total_credits->leaveType->requirements,
+                    
+                ];
             }
             
 

@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Division;
 use App\Models\EmployeeLeaveCredit;
+use App\Models\LeaveType;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Cache;
@@ -207,6 +208,16 @@ class PersonalInformationSeeder extends Seeder
             'personal_information_id' => $personal_information->id
         ]);
 
+        $leave_types = LeaveType::where('is_special', 0)->get();
+
+        foreach($leave_types as $leave_type){
+            EmployeeLeaveCredit::create([
+                'employee_profile_id' => $employee_profile->id,
+                'leave_type_id' => $leave_type->id,
+                'total_leave_credits' => 5
+            ]);
+        }
+
         IssuanceInformation::create([
             'employee_profile_id' => $employee_profile->id,
             'license_no' => '123456',
@@ -400,6 +411,16 @@ class PersonalInformationSeeder extends Seeder
             'employment_type_id' => EmploymentType::find(3)->id,
             'personal_information_id' => $personal_information->id
         ]);
+
+        $leave_types = LeaveType::where('is_special', 0)->get();
+
+        foreach($leave_types as $leave_type){
+            EmployeeLeaveCredit::create([
+                'employee_profile_id' => $employee_profile->id,
+                'leave_type_id' => $leave_type->id,
+                'total_leave_credits' => 0
+            ]);
+        }
 
         IssuanceInformation::create([
             'employee_profile_id' => $employee_profile->id,
@@ -595,6 +616,16 @@ class PersonalInformationSeeder extends Seeder
             'personal_information_id' => $personal_information->id
         ]);
 
+        $leave_types = LeaveType::where('is_special', 0)->get();
+
+        foreach($leave_types as $leave_type){
+            EmployeeLeaveCredit::create([
+                'employee_profile_id' => $employee_profile->id,
+                'leave_type_id' => $leave_type->id,
+                'total_leave_credits' => 0
+            ]);
+        }
+
         IssuanceInformation::create([
             'employee_profile_id' => $employee_profile->id,
             'license_no' => '123456',
@@ -619,8 +650,8 @@ class PersonalInformationSeeder extends Seeder
 
         //** Department Head */
         $personal_information = PersonalInformation::create([
-            'first_name' => 'Ricah',
-            'last_name' => 'Maque',
+            'first_name' => 'Lui',
+            'last_name' => 'Gallardo',
             'sex' => 'Male',
             'date_of_birth' => Carbon::createFromFormat('Y-m-d', "2001-01-23"),
             'place_of_birth' => 'Zamboanga City',
@@ -788,6 +819,16 @@ class PersonalInformationSeeder extends Seeder
             'employment_type_id' => EmploymentType::find(3)->id,
             'personal_information_id' => $personal_information->id
         ]);
+
+        $leave_types = LeaveType::where('is_special', 0)->get();
+
+        foreach($leave_types as $leave_type){
+            EmployeeLeaveCredit::create([
+                'employee_profile_id' => $employee_profile->id,
+                'leave_type_id' => $leave_type->id,
+                'total_leave_credits' => 5
+            ]);
+        }
 
         IssuanceInformation::create([
             'employee_profile_id' => $employee_profile->id,
@@ -983,6 +1024,16 @@ class PersonalInformationSeeder extends Seeder
             'personal_information_id' => $personal_information->id
         ]);
 
+        $leave_types = LeaveType::where('is_special', 0)->get();
+
+        foreach($leave_types as $leave_type){
+            EmployeeLeaveCredit::create([
+                'employee_profile_id' => $employee_profile->id,
+                'leave_type_id' => $leave_type->id,
+                'total_leave_credits' => 5
+            ]);
+        }
+
         IssuanceInformation::create([
             'employee_profile_id' => $employee_profile->id,
             'license_no' => '123456',
@@ -1166,7 +1217,7 @@ class PersonalInformationSeeder extends Seeder
         $fortyDaysExpiration = $fortyDaysFromNow->toDateTimeString();
 
         $employee_profile = EmployeeProfile::create([
-            'employee_id' => '2022091356',
+            'employee_id' => '2022091357',
             'date_hired' => Carbon::createFromFormat('Y-m-d', "2022-9-13"),
             'password_encrypted' => $encryptedPassword,
             'password_created_at' => now(),
@@ -1176,6 +1227,16 @@ class PersonalInformationSeeder extends Seeder
             'employment_type_id' => EmploymentType::find(3)->id,
             'personal_information_id' => $personal_information->id
         ]);
+
+        $leave_types = LeaveType::where('is_special', 0)->get();
+
+        foreach($leave_types as $leave_type){
+            EmployeeLeaveCredit::create([
+                'employee_profile_id' => $employee_profile->id,
+                'leave_type_id' => $leave_type->id,
+                'total_leave_credits' => 5
+            ]);
+        }
 
         IssuanceInformation::create([
             'employee_profile_id' => $employee_profile->id,

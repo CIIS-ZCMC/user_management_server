@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('code');
             $table->string('description')->nullable();
-            $table->double('period');
+            $table->double('period')->nullable();
             $table->string('file_date');
             $table->float('month_value');
             $table->float('annual_credit');

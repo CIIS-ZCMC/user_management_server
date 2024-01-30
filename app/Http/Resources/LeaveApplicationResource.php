@@ -33,23 +33,23 @@ class LeaveApplicationResource extends JsonResource
             'reason' => $this->reason,
             "hrmo_officer" => [
                 "employee_id" => $this->hrmoOfficer->employee_id,
-                "hrmo_full_name" => $this->hrmoOfficer->personalInformation->fullName(),
-                "designation" => $this->hrmoOfficer->designation->name,
-                "designation_code" => $this->hrmoOfficer->designation->code
+                "hrmo_full_name" => $this->hrmoOfficer->personalInformation->name(),
+                "designation" => $this->hrmoOfficer->assignedArea->designation->name,
+                "designation_code" => $this->hrmoOfficer->assignedArea->designation->code
             ],
             "recommending_officer" => [
                 "employee_id" => $this->recommendingOfficer->employee_id,
-                "hrmo_full_name" => $this->recommendingOfficer->personalInformation->fullName(),
-                "designation" => $this->recommendingOfficer->designation->name,
-                "designation_code" => $this->recommendingOfficer->designation->code
+                "hrmo_full_name" => $this->recommendingOfficer->personalInformation->name(),
+                "designation" => $this->recommendingOfficer->assignedArea->designation->name,
+                "designation_code" => $this->recommendingOfficer->assignedArea->designation->code
             ],
             "approving_officer" => [
                 "employee_id" => $this->approvingOfficer->employee_id,
-                "hrmo_full_name" => $this->approvingOfficer->personalInformation->fullName(),
-                "designation" => $this->approvingOfficer->designation->name,
-                "designation_code" => $this->approvingOfficer->designation->code
+                "hrmo_full_name" => $this->approvingOfficer->personalInformation->name(),
+                "designation" => $this->approvingOfficer->assignedArea->designation->name,
+                "designation_code" => $this->approvingOfficer->assignedArea->designation->code
             ],
-            'attachments' => LeaveApplicationAttachmentResource::collection($this->leaveApplicationRequirements),
+            'attachments' =>$this->leaveApplicationRequirements === null?null: LeaveApplicationAttachmentResource::collection($this->leaveApplicationRequirements),
             "logs" => $this->logs
         ];
     }

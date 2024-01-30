@@ -156,6 +156,22 @@ class LeaveApplicationController extends Controller
         }
     }
 
+    public function userLeaveApplication(Request $request)
+    {
+        try {
+            $employee_profile = $request->user;
+
+            $leave_applications = LeaveApplication::where('employee_profile_id', $employee_profile->id)->get();
+
+            return response()->json([
+                'data' => LeaveApplicationResource::collection($leave_applications),
+                'message' => 'Retrieve all leave application records.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public function store(LeaveApplicationRequest $request)
     {
         try {
@@ -163,14 +179,22 @@ class LeaveApplicationController extends Controller
             $recommending_and_approving = Helpers::getRecommendingAndApprovingOfficer($employee_profile->assignedArea->findDetails(), $employee_profile->id);
             $hrmo_officer = Helpers::getHrmoOfficer();
 
+            $cleanData = [];
+
             $employee_credit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)
                 ->where('leave_type_id', $request->leave_type_id)->first();
 
-            if ($employee_credit->total_leave_credits < $request['applied_credits']) {
-                $reason[] = 'Insuficient leave credit.';
+                
+            $start = Carbon::parse($request->date_from);
+            $end = Carbon::parse($request->date_to);
+
+            $daysDiff = $start->diffInDays($end);
+
+            if ($employee_credit->total_leave_credits < $daysDiff) {
+                return response()->json(['message' => 'Insuficient leave credit.'], Response::HTTP_BAD_REQUEST);
             }
 
-            $cleanData = [];
+
             $cleanData['employee_profile_id'] = $employee_profile->id;
             $cleanData['hrmo_officer'] = $hrmo_officer;
             $cleanData['recommending_officer'] = $recommending_and_approving['recommending_officer'];
@@ -188,7 +212,8 @@ class LeaveApplicationController extends Controller
             }
 
             $leave_application = LeaveApplication::create($cleanData);
-            $employee_credit->update(['total_leave_credits' => $employee_credit->total_leave_credits - $cleanData['applied_credits']]);
+
+            $employee_credit->update(['total_leave_credits' => $employee_credit->total_leave_credits - $daysDiff]);
 
             if ($request->hasFile('requirements')) {
                 $index = 0;
@@ -215,7 +240,7 @@ class LeaveApplicationController extends Controller
             ]);
 
             return response()->json([
-                'data' => LeaveApplicationResource::collection($leave_application),
+                'data' => new LeaveApplicationResource($leave_application),
                 'message' => 'Retrieve all leave application records.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {

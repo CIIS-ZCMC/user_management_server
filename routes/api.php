@@ -1502,6 +1502,10 @@ Route::middleware('auth.cookie')->group(function(){
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function(){
             Route::get('leave-application-all', 'LeaveApplicationController@index');
         });
+        
+        Route::middleware(['auth.permission:UMIS-LM approve'])->group(function(){
+            Route::get('user-leave-application', 'LeaveApplicationController@userLeaveApplication');
+        });
 
         Route::middleware(['auth.permission:UMIS-LM view'])->group(function(){
             Route::get('leave-application/{id}', 'LeaveApplicationController@show');
