@@ -38,6 +38,12 @@ class CtoApplication extends Model
         return $this->belongsTo(EmployeeOvertimeCredit::class, 'employee_overtime_credits');
     }
 
+    public function CtoApplicationLogs()
+    {
+        return $this->hasMany(CtoApplicationLog::class);
+    }
+
+
 
     // public function hrmoOfficer()
     // {

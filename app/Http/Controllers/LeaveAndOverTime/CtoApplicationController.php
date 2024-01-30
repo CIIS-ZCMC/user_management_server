@@ -4,6 +4,7 @@ namespace App\Http\Controllers\LeaveAndOverTime;
 
 use App\Helpers\Helpers;
 use App\Http\Resources\EmployeeOvertimeCreditResource;
+use App\Models\Section;
 use DateTime;
 use Illuminate\Support\Facades\DB;
 use App\Models\CtoApplication;
@@ -57,12 +58,12 @@ class CtoApplicationController extends Controller
                 ], Response::HTTP_OK);
             }
 
-            if ($employee_area->sector['Section'] === 'HRMO') {
-                return response()->json([
-                    'data' => CtoApplicationResource::collection(CtoApplication::all()),
-                    'message' => 'Retrieved all offical business application'
-                ], Response::HTTP_OK);
-            }
+            // if ($employee_area->sector['Section'] === 'HRMO') {
+            //     return response()->json([
+            //         'data' => CtoApplicationResource::collection(CtoApplication::all()),
+            //         'message' => 'Retrieved all offical business application'
+            //     ], Response::HTTP_OK);
+            // }
 
             $cto_application = CtoApplication::select('cto_applications.*')
                 ->where(function ($query) use ($recommending, $approving, $employeeId) {
@@ -75,18 +76,10 @@ class CtoApplicationController extends Controller
                 })
                 ->groupBy(
                     'cto_applications.id',
-                    'cto_applications.date_from',
-                    'cto_applications.date_to',
-                    'cto_applications.time_from',
-                    'cto_applications.time_to',
+                    'cto_applications.date',
+                    'cto_applications.applied_credits',
                     'cto_applications.status',
                     'cto_applications.purpose',
-                    'cto_applications.personal_order_file',
-                    'cto_applications.personal_order_path',
-                    'cto_applications.personal_order_size',
-                    'cto_applications.certificate_of_appearance',
-                    'cto_applications.certificate_of_appearance_path',
-                    'cto_applications.certificate_of_appearance_size',
                     'cto_applications.recommending_officer',
                     'cto_applications.approving_officer',
                     'cto_applications.remarks',
@@ -124,81 +117,55 @@ class CtoApplicationController extends Controller
     public function approved($id, PasswordApprovalRequest $request)
     {
         try {
+            $data = CtoApplication::findOrFail($id);
+
+            if(!$data) {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $status     = null;
+            $log_action = null;
+
             $password = strip_tags($request->password);
 
             $employee_profile = $request->user;
 
             $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
 
-            if (!Hash::check($password . env("SALT_VALUE"), $password_decrypted)) {
+            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
                 return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
             }
 
-            $cto_application = CtoApplication::find($id);
-
-            if (!$cto_application) {
-                return response()->json(["message" => "No leave application with id " . $id], Response::HTTP_NOT_FOUND);
-            }
-
-            $position = $employee_profile->position();
-            $status = '';
-
-            switch ($cto_application->status) {
-                case 'Applied':
-                    if ($position === null || str_contains($position->position, 'Unit')) {
-                        return response()->json(['message' => 'Forbidden'], Response::HTTP_FORBIDDEN);
-                    }
-                    $status = 'For approving approval';
-                    $cto_application->update(['status' => $status]);
+            if ($request->status === 'approved') {
+                switch ($data->status) {
+                    case 'for recommending approval':
+                        $status = 'for approving approval';
+                        $log_action = 'Approved by Recommending Officer';
                     break;
-                case 'For approving approval':
-                    $employee_sector_and_area = $cto_application->employeeProfile->assignedArea;
-                    $division_details = null;
 
-                    switch ($employee_sector_and_area->findDetails()->sector) {
-                        case "Division":
-                            $division_details = $employee_sector_and_area->division;
-                            break;
-                        case "Department":
-                            $division_details = $employee_sector_and_area->department->division;
-                            break;
-                        case "Section":
-                            if ($employee_sector_and_area->section->department_id !== null) {
-                                $division_details = $employee_sector_and_area->section->department->division;
-                                break;
-                            }
-                            $division_details = $employee_sector_and_area->section->division;
-                            break;
-                        case "":
-                            if ($employee_sector_and_area->unit->section->department_id !== null) {
-                                $division_details = $employee_sector_and_area->unit->section->department->division;
-                                break;
-                            }
-                            $division_details = $employee_sector_and_area->unit->section->division;
-                            break;
-
-                    }
-
-                    if ($division_details->chief_employee_profile_id !== $employee_profile->id) {
-                        return response()->json(['message' => 'Forbidden'], Response::HTTP_FORBIDDEN);
-                    }
-
-                    $status = 'Approved';
-                    $cto_application->update(['status' => $status]);
+                    case 'for approving approval':
+                        $status = 'approved';
+                        $log_action = 'Approved by Approving Officer';
                     break;
+                    
+                    default:
+                        $status = 'declined';
+                        $log_action = 'Request Declined';
+                    break;
+                }
+            } else if ($request->status === 'declined') {
+                $status = 'declined';
+                $log_action = 'Request Declined';
             }
+            
 
-            CtoApplicationLog::create([
-                'action_by' => $employee_profile->id,
-                'cto_application_id' => $cto_application->id,
-                'action' => $status
-            ]);
+            $data->update(['status' => $status, 'remarks' => $request->remarks]);
 
-            return response()->json([
-                'data' => new CtoApplicationResource($cto_application),
-                'message' => 'Successfully approved application.'
-            ], Response::HTTP_OK);
+            return response()->json(['data' => CtoApplicationResource::collection(CtoApplication::where('id', $data->id)->get()),
+                                    'msg' => $log_action, ], Response::HTTP_OK);
+
         } catch (\Throwable $th) {
+            
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -240,10 +207,12 @@ class CtoApplicationController extends Controller
 
             
             foreach (json_decode($request->cto_applications) as $key=>$value) {
-               
-                if ($employee_credit->earn_credit_by_hour < $value->applied_credits) {
+
+                $employee_credit = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)->first();
+
+                if ($employee_credit->earned_credit_by_hour < $value->applied_credits) {
                     $failed[] = $value;
-                    $reason[] = 'Insuficient overtime credit.';
+                    $reason[] = 'Insufficient overtime credit.';
                     continue;
                 }
             
@@ -252,17 +221,16 @@ class CtoApplicationController extends Controller
                 $cleanData['applied_credits'] = $value->applied_credits;
                 $cleanData['purpose'] = $value->purpose;
                 $cleanData['remarks'] = $value->remarks;
-                $cleanData['status'] = 'Applied';
-                $cleanData['recommending_officer'] = $recommending_and_approving['recommending_officer'];
+                $cleanData['status'] = 'for recommending approval';
+                $cleanData['recommending_officer'] = Helpers::getHrmoOfficer();
                 $cleanData['approving_officer'] = $recommending_and_approving['approving_officer'];
 
                 $credits = $value->applied_credits;
                 $cto_application = CtoApplication::create($cleanData);
                 
-                $employee_credit = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)->first();
                 $current_overtime_credit = $employee_credit->earned_credit_by_hour;
                 $employee_credit->update(['earned_credit_by_hour' => DB::raw("earned_credit_by_hour - $credits")]);
-
+                $employeeCredit = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)->get();
                 $logs =  EmployeeOvertimeCreditLog::create([
                     'employee_ot_credit_id' => $employee_credit->id,
                     'cto_application_id' => $cto_application->id,
@@ -299,7 +267,8 @@ class CtoApplicationController extends Controller
 
             return response()->json([
                 'data' => CtoApplicationResource::collection($cto_applications),
-                'message' => 'Retrieve all Compensatory time off application records.'
+                'employee_credit' => EmployeeOvertimeCreditResource::collection($employeeCredit),
+                'message' => 'Request submitted sucessfully.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

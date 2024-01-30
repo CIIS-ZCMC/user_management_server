@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('file_date');
             $table->float('month_value');
             $table->float('annual_credit');
-            $table->boolean('is_active')->default(false);
+            $table->boolean('is_active')->default(true);
             $table->boolean('is_special')->default(false);
             $table->boolean('is_country')->default(false);
             $table->boolean('is_illness')->default(false);

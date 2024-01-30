@@ -1479,7 +1479,7 @@ Route::middleware('auth.cookie')->group(function(){
             Route::get('leave-type/{id}', 'LeaveTypeController@show');
         });
 
-        Route::middleware(['auth.permission:UMIS-LM update'])->group(function(){
+        Route::middleware(['auth.permission:UMIS-LM write'])->group(function(){
             Route::post('leave-type', 'LeaveTypeController@store');
         });
 

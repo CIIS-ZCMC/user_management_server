@@ -256,4 +256,17 @@ class Helpers
         Log::channel('custom-error')->error($controller . ' Controller [' . $module . ']: message: ' . $errorMessage);
     }
 
+    public static function generateCodeFromName($name)
+    {
+        // Convert name to uppercase and take the first letter of each word
+        $words = explode(' ', strtoupper($name));
+        $code = '';
+
+        foreach ($words as $word) {
+            $code .= substr($word, 0, 1);
+        }
+
+        return $code;
+    }
+
 }

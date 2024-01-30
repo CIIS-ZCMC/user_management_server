@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\LeaveAndOverTime;
 
+use App\Http\Resources\LeaveTypeRequirementLogsResource;
+use App\Models\LeaveTypeRequirementLog;
 use App\Models\Requirement;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PasswordApprovalRequest;
@@ -52,13 +54,12 @@ class RequirementController extends Controller
             }
 
             $leave_requirement = Requirement::create($cleanData);
-
+       
             RequirementLog::create([
                 'leave_requirement_id' => $leave_requirement->id,
-                'employee_profile_id' => $employee_profile->id,
-                'action' => 'Register new leave requirement.'
+                'action_by' => $employee_profile->id,
+                'action' => 'Add'
             ]);
-
             return response()->json([
                 'data' => new LeaveRequirementResource($leave_requirement),
                 'message' => 'Requirement has been sucessfully saved'

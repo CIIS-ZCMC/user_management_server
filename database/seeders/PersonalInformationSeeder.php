@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Division;
+use App\Models\EmployeeLeaveCredit;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Cache;

@@ -27,6 +27,8 @@ class CtoApplicationResource extends JsonResource
             'remarks' => $this->remarks,
             'status' => $this->status,
             'purpose' => $this->purpose,
+            'created_at' => (string) $this->created_at,
+            'updated_at' => (string) $this->updated_at,
             "recommending_officer" => [
                 "employee_id" => $this->recommendingOfficer->employee_id,
                 "name" => $this->recommendingOfficer->personalInformation->name(),
@@ -41,7 +43,7 @@ class CtoApplicationResource extends JsonResource
                 "designation_code" => $this->approvingOfficer->assignedArea->designation->code,
                 "profile_url" => $this->recommendingOfficer->profile_url,
             ],
-            'logs' => $this->logs
+            'logs'  => $this->CtoApplicationLogs ? CtoApplicationLogResource::collection($this->CtoApplicationLogs) : [],
         ];
     }
 }

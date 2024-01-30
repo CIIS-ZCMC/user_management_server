@@ -15,6 +15,8 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('employee_profile_id')->unsigned();
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles')->onDelete('cascade');
+            $table->unsignedBigInteger('leave_type_id')->unsigned();
+            $table->foreign('leave_type_id')->references('id')->on('leave_types')->onDelete('cascade');
             $table->integer('total_absences')->default(0);
             $table->string('total_undertime')->nullable();
             $table->string('total_working_hours')->nullable();

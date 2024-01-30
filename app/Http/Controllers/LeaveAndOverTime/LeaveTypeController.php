@@ -13,10 +13,12 @@ use App\Models\EmployeeLeaveCredit as ModelsEmployeeLeaveCredit;
 use App\Models\LeaveAttachment;
 use App\Models\LeaveTypeLog;
 use App\Models\LeaveTypeRequirement;
+use App\Models\Requirement;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
+use PHPUnit\Metadata\Api\Requirements;
 
 class LeaveTypeController extends Controller
 {
@@ -47,6 +49,7 @@ class LeaveTypeController extends Controller
             {
                 return response()->json(['message' => 'Unauthorized.'], Response::HTTP_NOT_FOUND);
             }
+            // return response()->json(['message' => $employee_profile], 401);
 
             $leave_types = LeaveType::all();
 
@@ -58,9 +61,10 @@ class LeaveTypeController extends Controller
                     $result_data[] = $leave_type;
                     continue;
                 }
-                $leave_type['total_credits'] = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->where('leave_type_id', $leave_type->id)->first()->total_leave_credits;
+                $leave_type['total_credits'] = ModelsEmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->where('leave_type_id', $leave_type->id)->first();
                 $result_data[] = $leave_type;
             }
+            
 
             return response()->json([
                 'data' => $result_data,
@@ -88,7 +92,7 @@ class LeaveTypeController extends Controller
     public function store(LeaveTypeRequest $request)
     {
         try{
-            $employee_profile = $request->user;
+           $employee_profile = $request->user;
 
             if(!$employee_profile){
                 return response()->json(['message' => 'Unauthorized.'], Response::HTTP_UNAUTHORIZED);
@@ -97,30 +101,52 @@ class LeaveTypeController extends Controller
             $cleanData = [];
 
             foreach($request->all() as $key => $value){
-                if($key === 'leave_type_requirements') continue;
                 if($value === null){
                     $cleanData[$key] = $value;
                     continue;
                 }
+
                 if(is_bool($value)){
-                    $cleanData[$key] = $value?true:false;
+                    $cleanData[$key] = $value === 1? true:false;
                     continue;
                 }
+
+                if (is_array($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                if (is_int($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
                 $cleanData[$key] = strip_tags($value);
             }
 
+            $code = Helpers::generateCodeFromName($cleanData['name']);
+            $month_value = $cleanData['leave_credit_year'] / 12;
+
+            $cleanData['code'] = $code;
+            $cleanData['month_value'] = $month_value;
+            $cleanData['annual_credit'] = $cleanData['leave_credit_year'];
+            $cleanData['is_active'] = true;
+
             $leave_type = LeaveType::create($cleanData);
 
-            foreach($request->leave_type_requirements as $value){
-                LeaveTypeRequirement::create([
-                    'leave_type_id' => $leave_type->id,
-                    'leave_requirement_id' => $value
-                ]);
-            }
+            if($request->requirements){
+                foreach($cleanData['requirements'] as $value){
+                    LeaveTypeRequirement::create([
+                        'leave_type_id' => $leave_type->id,
+                        'leave_requirement_id' => $value
+                    ]);
+                }
 
-            if ($value->hasFile('attachments')) {
-                foreach ($value->file('attachments') as $key => $file) {
-                    $fileName=pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+            }
+            
+            if ($request->attachments) {
+                foreach ($request->file('attachments') as $key => $file) {
+                    $fileName=$file->getClientOriginalName();
                     $size = filesize($file);
                     $file_name_encrypted = Helpers::checkSaveFile($file, '/requirements');
 
@@ -136,7 +162,7 @@ class LeaveTypeController extends Controller
             LeaveTypeLog::create([
                 'leave_type_id' => $leave_type->id,
                 'action_by' => $employee_profile->id,
-                'action' => 'Register new leave type.'
+                'action' => 'Add'
             ]);
 
             return response()->json([
@@ -162,7 +188,7 @@ class LeaveTypeController extends Controller
         }
     }
 
-    public function update($id, LeaveTypeRequest $request)
+    public function update($id, Request $request)
     {
         try{
             $employee_profile = $request->user;
@@ -177,15 +203,50 @@ class LeaveTypeController extends Controller
 
             foreach($request->all() as $key => $value){
                 if($key === 'leave_type_requirements') continue;
+
                 if($value === null){
                     $cleanData[$key] = $value;
                     continue;
                 }
+
                 if(is_bool($value)){
                     $cleanData[$key] = $value?true:false;
                     continue;
                 }
+                
+                if (is_array($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+                
+                if (is_int($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
                 $cleanData[$key] = strip_tags($value);
+            }
+
+            $requirements_array = $request->requirements;
+            foreach ($requirements_array as $key => $value) {
+                if ($value === null) {
+                    $sql = LeaveTypeRequirement::where('leave_type_id', $leave_type->id)->first();
+                    if ($sql) {
+                        $sql->delete();
+                    }
+                } else if ($value) {
+                    $leave_requirements = LeaveTypeRequirement::where('id', $value)->first();
+
+                    if (!$leave_requirements) {
+                        $requirements = Requirement::where('id', $value)->first();
+                        $leave_requirements = $leave_type->requirements()->attach($requirements);  
+
+                    } else {
+                        
+                        $sql = Requirement::where('id', $leave_requirements->leave_requirement_id)->pluck('id')->toArray();
+                        $leave_type->requirements()->sync($sql);
+                    }
+
+                }
             }
 
             $leave_type->update($cleanData);
@@ -212,7 +273,7 @@ class LeaveTypeController extends Controller
             LeaveTypeLog::create([
                 'leave_type_id' => $leave_type->id,
                 'action_by' => $employee_profile->id,
-                'action' => 'Update leave type.'
+                'action' => 'Update'
             ]);
 
             return response()->json([
@@ -241,7 +302,7 @@ class LeaveTypeController extends Controller
             $leave_type->update(['is_active' => 0]);
 
             return response()->json([
-                'data' => LeaveTypeResource::collection($leave_type),
+                'data' => new LeaveTypeResource($leave_type),
                 'message' => 'Leave type record deactivated successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -263,10 +324,10 @@ class LeaveTypeController extends Controller
             }
 
             $leave_type = LeaveType::find($id);
-            $leave_type->update(['is_active' => 1]);
+            $leave_type->update(['is_active' => true]);
 
             return response()->json([
-                'data' => LeaveTypeResource::collection($leave_type),
+                'data' => new LeaveTypeResource($leave_type),
                 'message' => 'Leave type record reactivated successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){

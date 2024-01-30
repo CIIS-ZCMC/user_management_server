@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class LeaveTypeRequirement extends Model
 {
-    protected $table = 'leave_type_requirement';
+    protected $table = 'leave_type_requirements';
 
     public $fillable = [
         'leave_type_id',
@@ -23,6 +23,11 @@ class LeaveTypeRequirement extends Model
 
     public function leaveRequirement()
     {
-        return $this->belongsTo(LeaveTypeRequirement::class);
+        return $this->belongsTo(Requirement::class);
+    }
+
+    public function leaveTypeRequirementLog()
+    {
+        return $this->hasMany(LeaveTypeRequirementLog::class, '');
     }
 }

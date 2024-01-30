@@ -26,7 +26,6 @@ class EmployeeOvertimeCreditResource extends JsonResource
 
         return [
             'id' => $this->id,
-            'employee_profile_id' => $employeeProfile,
             'earned_credit_by_hour' => $this->earned_credit_by_hour,
             'used_credit_by_hour' => $this->used_credit_by_hour,
             'max_credit_monthly' => $this->max_credit_monthly,

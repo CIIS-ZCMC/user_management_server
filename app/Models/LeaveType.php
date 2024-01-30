@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Http\Resources\LeaveTypeLog;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -38,6 +37,14 @@ class LeaveType extends Model
     public function leaveTypeRequirements()
     {
         return $this->hasmany(LeaveTypeRequirement::class);
+    }
+
+    public function requirements() {
+        return $this->belongsToMany(Requirement::class, 'leave_type_requirements', 'leave_type_id', 'leave_requirement_id');
+    }
+
+    public function attachments() {
+        return $this->belongsToMany(LeaveAttachment::class, 'leave_attachments', 'leave_type_id', 'id');
     }
 
     public function employeeLeaveCredits()

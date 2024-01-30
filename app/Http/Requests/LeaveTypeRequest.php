@@ -22,22 +22,17 @@ class LeaveTypeRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'is_special' => 'required|boolean',
             'name' => 'required|string|max:255',
-            'code' => 'required|string|max:255',
             'description' => 'required|string|max:255',
             'period' => 'required|integer',
-            'file_date' => 'required|integer',
-            'monthly' => 'required|numeric',
-            'annual' => 'required|numeric',
-            'is_active' => 'required|boolean',
-            'is_special' => 'required|boolean',
+            'is_days_recommended' => 'required|boolean',
+            'file_date' => 'required|string',
             'is_country' => 'required|boolean',
             'is_illness' => 'required|boolean',
-            'is_days_recommended' => 'required|boolean',
-            'leave_type_requirements' => 'required|array',
-            'update_leave_type_requirements' => 'nullable|array',
-            'attachments' => 'required|array',
-            'attachments.*' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
+            'leave_credit_year' => 'required|numeric',
+            'requirements.*' => 'nullable',
+            'attachments.*' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:5180',
         ];
     }
 }

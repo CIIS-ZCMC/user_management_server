@@ -21,7 +21,9 @@ class CtoApplicationLog extends Model
     public function CtoApplication() {
         return $this->belongsTo(CtoApplication::class);
     }
+
     public function employeeProfile() {
-        return $this->belongsTo(EmployeeProfile::class, 'action_by_id');
+        return $this->belongsTo(EmployeeProfile::class, 'action_by');
     }
+
 }

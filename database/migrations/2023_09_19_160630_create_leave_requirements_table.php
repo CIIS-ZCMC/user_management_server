@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('leave_requirements', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('description')->nullable();
+            $table->text('name');
+            $table->text('description')->nullable();
             $table->timestamps();
         });
     }
