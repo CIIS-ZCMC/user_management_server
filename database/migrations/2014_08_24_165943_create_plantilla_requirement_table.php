@@ -13,11 +13,11 @@ return new class extends Migration
     {
         Schema::create('plantilla_requirements', function (Blueprint $table) {
             $table->id();
-            $table->string('education');
-            $table->string('training')->nullable();
-            $table->string('experience')->nullable();
-            $table->string('eligibility')->nullable();
-            $table->string('competency')->nullable();
+            $table->text('education');
+            $table->text('training')->nullable();
+            $table->text('experience')->nullable();
+            $table->text('eligibility')->nullable();
+            $table->text('competency')->nullable();
             $table->unsignedBigInteger('plantilla_id');
             $table->foreign('plantilla_id')->references('id')->on('plantillas');
             $table->timestamps();

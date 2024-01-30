@@ -67,14 +67,14 @@ class PlantillaNumberAllResource extends JsonResource
             'number' => $this->number,
             'job_position' => $designationData['name'],
             'salary_grade' => $salaryGrade['salary_grade_number'],
-            'is_vacant' => $this->is_vacant,
+            'is_vacant' =>$this->employee_profile_id !==null? 0: $this->is_vacant,
             'assigned_at' => $this->assigned_at,
             'plantilla' => $plantilla,
             'requirement' => $requirement,
             'designation' => $designation,
             'salary' => $salary,
             'area' => $area,
-            'employee' => $this->employee
+            'employee' => $this->employee_profile_id !==null? $this->employeeProfile->personalInformation->name():null
         ];
     }
 }

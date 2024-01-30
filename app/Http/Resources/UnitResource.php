@@ -41,6 +41,7 @@ class UnitResource extends JsonResource
                 'name' => $name,
                 'code' => $code,
                 'head' => $head,
+                'head_designation' => $this->head->assignedArea->designation,
                 'section' => new SectionResource($this->section),
                 'head_status' => $head_status,
                 'approving_officer' => $approving_officer,
@@ -54,6 +55,7 @@ class UnitResource extends JsonResource
             'name' => $this->name,
             'section' => new SectionResource($this->section),
             'head' => 'NONE',
+            'head_designation' => 'NONE',
             'head_status' => 'No Chief',
             'approving_officer' => 'NONE',
             'officer_in_charge' => 'NONE'

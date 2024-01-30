@@ -19,10 +19,11 @@ class WorkExperienceResource extends JsonResource
             'date_from' => $this->date_from,
             'date_to' => $this->date_to,
             'position_title' => $this->position_title,
-            'appointment_status' => $this->appointment_status,
+            'appointment_status' => $this->appointment_status, 'salary' => $this->salary??'NONE',
             'salary_grade' => $this->salary_grade??'NONE',
             'salary_grade_and_step' => $this->salary_grade_and_step??'NONE',
-            'company' => $this->company
+            'company' => $this->company,
+             'government_office' => $this->government_office
         ];
     }
 }

@@ -22,7 +22,14 @@ class TimeAdjustmentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'employee_profile_id' => 'required|integer',
+            'biometric_id' => 'required|integer',
+            'date.*' => 'required|date_format:Y-m-d',
+            'firstIn.*' => 'date_format:H:i|nullable',
+            'firstOut.*' => 'date_format:H:i|nullable',
+            'secondIn.*' => 'date_format:H:i|nullable',
+            'secondOut.*' => 'date_format:H:i|nullable',
+            'remarks.*' => 'required|string|min:10',
         ];
     }
 }

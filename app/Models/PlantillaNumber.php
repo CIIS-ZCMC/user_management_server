@@ -31,7 +31,7 @@ class PlantillaNumber extends Model
         return $this->hasOne(PlantillaAssignedArea::class);
     }
 
-    public function employee()
+    public function employeeProfile()
     {
         return $this->belongsTo(EmployeeProfile::class);
     }

@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class PlantillaWithDesignationResource extends JsonResource
+class DailyTimeRecordResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -16,11 +16,8 @@ class PlantillaWithDesignationResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'is_vacant' => $this->is_vacant,
-            'number' => $this->number,
-            'assigned_at' => $this->assigned_at,
-            'area' => $this->assignedArea === null ? 'NONE': $this->assignedArea->area()
-          
+            'biometric_id' => $this->biometric_id,
+            'dtr_date' => $this->dtr_date,
         ];
     }
 }
