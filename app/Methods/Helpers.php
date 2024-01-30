@@ -470,9 +470,7 @@ class Helpers
                                                     $scheduleEntry = $time_stamps_req['first_entry'];
                                                 }
 
-
-
-                                                return   $this->SaveFirstEntry(
+                                                $this->SaveFirstEntry(
                                                     $this->sequence(0, [$value]),
                                                     $break_Time_Req,
                                                     $biometric_id,
