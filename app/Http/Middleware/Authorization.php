@@ -22,6 +22,7 @@ class Authorization
      */
     public function handle(Request $request, Closure $next, $routePermission): Response
     {
+
         list($module, $action) = explode(' ', $routePermission);
 
         $system_module = SystemModule::where('code', $module)->first();
@@ -29,6 +30,8 @@ class Authorization
         $user = $request->user;
 
         $employe_designation = $user->findDesignation();
+
+
 
         $permissions = Cache::get($employe_designation->name);
 

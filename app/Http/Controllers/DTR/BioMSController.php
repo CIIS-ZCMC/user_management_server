@@ -6,6 +6,10 @@ use Illuminate\Http\Request;
 use App\Models\Devices;
 use App\Methods\BioControl;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Http\Response;
+use App\Models\Biometrics;
 
 class BioMSController extends Controller
 {
@@ -30,7 +34,7 @@ class BioMSController extends Controller
                     $status = "Online";
                 }
 
-                $data[] = [
+                $item = [
                     "id" => $row->id,
                     "device_name" => $row->device_name,
                     "ip_address" => $row->ip_address,
@@ -44,6 +48,13 @@ class BioMSController extends Controller
                     "created_at" => $row->created_at,
                     "updated_at" => $row->updated_at
                 ];
+
+                // If is_registration is 1, add the item to the beginning of the array
+                if ($row->is_registration == 1) {
+                    array_unshift($data, $item);
+                } else {
+                    $data[] = $item;
+                }
             }
             return response()->json([
                 'data' => $data
@@ -152,6 +163,14 @@ class BioMSController extends Controller
     public function updateDevice(Request $request)
     {
         try {
+
+            $user = $request->user;
+            $password_decrypted = Crypt::decryptString($user['password_encrypted']);
+            $password = strip_tags($request->password);
+            if (!Hash::check($password . env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $device_id = $request->device_id;
             $device_name = $request->device_name;
             $ip_address = $request->ip_address;
@@ -208,9 +227,26 @@ class BioMSController extends Controller
     public function deleteDevice(Request $request)
     {
         try {
+            $user = $request->user;
+            $password_decrypted = Crypt::decryptString($user['password_encrypted']);
+            $password = strip_tags($request->password);
+            if (!Hash::check($password . env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
             $device_id = $request->device_id;
             Devices::findorFail($device_id)->delete();
             return response()->json(['message' => 'Device Deleted Successfully!']);
+        } catch (\Throwable $th) {
+            return response()->json(['message' =>  $th->getMessage()]);
+        }
+    }
+
+    public function fetchBiometrics(Request $request)
+    {
+        try {
+            $data = Biometrics::all();
+            return $data;
         } catch (\Throwable $th) {
             return response()->json(['message' =>  $th->getMessage()]);
         }

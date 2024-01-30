@@ -15,7 +15,11 @@ use App\Http\Controllers\DTR\BioMSController;
 use App\Models\Holidaylist;
 use App\Models\EmployeeProfile;
 use App\Http\Controllers\Controller;
+use App\Models\DailyTimeRecordLogs;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
+use App\Models\Section;
+
 
 
 class DTRcontroller extends Controller
@@ -25,16 +29,51 @@ class DTRcontroller extends Controller
     protected $ip;
     protected $bioms;
     protected $devices;
+
+    protected $emp;
+
     public function __construct()
     {
         $this->helper = new Helpers();
         $this->device = new BioControl();
         $this->bioms = new BioMSController();
+
         try {
             $content = $this->bioms->operatingDevice()->getContent();
             $this->devices = $content !== null ? json_decode($content, true)['data'] : [];
         } catch (\Throwable $th) {
             Log::channel("custom-dtr-log-error")->error($th->getMessage());
+        }
+    }
+
+
+    public function pullDTRuser(Request $request)
+    {
+        try {
+            $user = $request->user;
+            $today = date('Y-m-d');
+            $biometric_id = $user->biometric_id;
+            $selfRecord = DailyTimeRecords::where('biometric_id', $biometric_id)->where('dtr_date', $today)->first();
+
+            if ($selfRecord) {
+                return [
+                    'dtr_date' => $selfRecord->dtr_date,
+                    'first_in' => date('H:i', strtotime($selfRecord->first_in)),
+                    'first_out' => $selfRecord->first_out ? date('H:i', strtotime($selfRecord->first_out)) : ' --:--',
+                    'second_in' => $selfRecord->second_in ? date('H:i', strtotime($selfRecord->second_in)) : ' --:--',
+                    'second_out' => $selfRecord->second_out ? date('H:i', strtotime($selfRecord->second_out)) : ' --:--',
+                ];
+            } else {
+                return [
+                    'dtr_date' => $today,
+                    'first_in' => ' --:--',
+                    'first_out' => ' --:--',
+                    'second_in' => ' --:--',
+                    'second_out' => ' --:--',
+                ];
+            }
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], 401);
         }
     }
 
@@ -50,11 +89,15 @@ class DTRcontroller extends Controller
                     $attendance = simplexml_load_string($logs);
                     $user_Inf = simplexml_load_string($all_user_info);
                     $attendance_Logs =  $this->helper->getAttendance($attendance);
+
                     $Employee_Info  = $this->helper->getEmployee($user_Inf);
+
                     $Employee_Attendance = $this->helper->getEmployeeAttendance(
                         $attendance_Logs,
                         $Employee_Info
                     );
+
+
                     $date_and_timeD = simplexml_load_string($tad->get_date());
                     if ($this->helper->validatedDeviceDT($date_and_timeD)) { //Validating Time of server and time of device
                         $date_now = date('Y-m-d');
@@ -64,6 +107,8 @@ class DTRcontroller extends Controller
                         });
 
                         if (count($check_Records) >= 1) {
+
+
                             //Normal pull
                             $this->helper->saveDTRRecords($check_Records, false);
                             /* Save DTR Logs */
@@ -105,8 +150,9 @@ class DTRcontroller extends Controller
                 } // End Checking if Connected to Device
             }
         } catch (\Throwable $th) {
-            Log::channel("custom-dtr-log-error")->error($th->getMessage());
-            return response()->json(['message' => 'Unable to connect to device', 'Throw error' => $th->getMessage()]);
+            return $th;
+            // Log::channel("custom-dtr-log-error")->error($th->getMessage());
+            // return response()->json(['message' => 'Unable to connect to device', 'Throw error' => $th->getMessage()]);
         }
     }
 
@@ -287,6 +333,13 @@ class DTRcontroller extends Controller
     }
 
     /* ----------------------------------------------------------------GENERATION OF DAILY TIME RECORDS----------------------------------------------------------------------------------------------------------------------------- */
+
+    /***
+     * Table Requirements
+     * time-shifts | schedules | biometrics | employee_profiles | employee_profile_schedule
+     * Each of these tables should contain data linked to the biometric_id below in order to generate records
+
+     */
     public function generateDTR(Request $request)
     {
         try {
@@ -329,6 +382,8 @@ class DTRcontroller extends Controller
                         ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
                 })
                 ->get();
+
+
             $arrival_Departure = [];
             $time_stamps_req = [
                 'total_hours' => 8
@@ -387,6 +442,7 @@ class DTRcontroller extends Controller
 
     public function printDtr($month_of, $year_of, $biometric_id, $emp_Details, $view)
     {
+
         try {
             $dtr = DB::table('daily_time_records')
                 ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
@@ -564,7 +620,7 @@ class DTRcontroller extends Controller
                 $dompdf->stream($filename);
             }
         } catch (\Throwable $th) {
-
+            return $th;
             return response()->json(['message' =>  $th->getMessage()]);
         }
     }
@@ -884,6 +940,8 @@ class DTRcontroller extends Controller
             $bio = json_decode($request->biometric_id);
             $month_of = $request->monthof;
             $year_of = $request->yearof;
+
+
             $is_15th_days = $request->is15thdays;
             $dt_records = [];
             $is_Half_Schedule = false;
@@ -892,6 +950,14 @@ class DTRcontroller extends Controller
             if (count($bio) >= 1) {
                 foreach ($bio as $biometric_id) {
                     if ($this->helper->isEmployee($biometric_id)) {
+
+                        $data = new Request([
+                            'biometric_id' => json_encode([$biometric_id]),
+                            'monthof' => $month_of,
+                            'yearof' => $year_of,
+                            'view' => 1
+                        ]);
+                        $this->generateDTR($data);
 
                         if ($is_15th_days) {
                             $first_half = $request->firsthalf;
@@ -1262,6 +1328,7 @@ class DTRcontroller extends Controller
                 $found = false;
                 foreach ($mdtr as $d) {
                     if (date('d', strtotime($d['first_in'])) == $i) {
+                        $d['date'] = Carbon::create("$year_of-$month_of-$i")->format('Y-m-d');
                         $mdt[] = $d;  // Use the day from $mdtr
                         $found = true;
                     }
@@ -1287,7 +1354,8 @@ class DTRcontroller extends Controller
                         'day' => $i,
                         'created_at' => '',
                         'weekStatus' => '',
-                        'isHoliday' => ''
+                        'isHoliday' => '',
+                        'date' => Carbon::create("$year_of-$month_of-$i")->format('Y-m-d')
                     ];
                 }
             }
@@ -1296,7 +1364,7 @@ class DTRcontroller extends Controller
 
             return $dtr;
         } catch (\Throwable $th) {
-
+            return $th;
             return response()->json(['message' => $th->getMessage()]);
         }
     }
@@ -1407,6 +1475,73 @@ class DTRcontroller extends Controller
             return date('d', strtotime($value->second_in));
         }
     }
+
+    public function getUsersLogs(Request $request)
+    {
+        try {
+            $biometric_ids = DB::select('SELECT biometric_id FROM `employee_profiles` WHERE biometric_id in (SELECT biometric_id FROM `biometrics`) and personal_information_id in (select id from personal_informations)');
+            $data = [];
+
+
+            foreach ($biometric_ids as $ids) {
+                $emp =  EmployeeProfile::where('biometric_id', $ids->biometric_id)->first();
+                $dtrlogs =  DailyTimeRecordLogs::where('biometric_id', $ids->biometric_id)->get();
+
+                $latestDate = null;
+                $logs = [];
+                $recentlog = '';
+                $date = '';
+
+                $dtrstatus = '';
+                foreach ($dtrlogs as $dtr) {
+                    $date = $dtr->dtr_date;
+
+                    $jlogs = json_decode($dtr->json_logs);
+                    if ($latestDate === null || $date > $latestDate) {
+                        $latestDate = $date;
+                        $dtrstatus = $jlogs[count($jlogs) - 1]->status_description->description;
+                        $recentlog = $jlogs[count($jlogs) - 1];
+                    }
+                    $employeeProfileId = $emp->id;
+                    $sections = Section::select('name', 'code as sectcode')
+                        ->whereIn('id', function ($query) use ($employeeProfileId) {
+                            $query->select('section_id')
+                                ->from('assigned_areas')
+                                ->where('employee_profile_id', $employeeProfileId);
+                        })
+                        ->first();
+                    $logs[] = [
+                        'DTR_date' => $date,
+                        'Logs' => $jlogs,
+                    ];
+                }
+                /**
+                 * Just Returning Records with logs
+                 */
+                if (count($logs) >= 1) {
+                    usort($logs, function ($a, $b) {
+                        return strtotime($a['DTR_date']) - strtotime($b['DTR_date']);
+                    });
+                    $data[] = [
+                        'id' => $emp->id,
+                        'biometric_id' => $ids->biometric_id,
+                        'name' =>  $emp->name(),
+                        'position' => $emp->findDesignation()->name,
+                        'designation' =>  $sections,
+                        'recentDTRdates' => $recentlog->date_time,
+                        'device' => $recentlog->device_name,
+                        'status' => $dtrstatus,
+                        'Records' => $logs,
+                        // 'recentBiometricLog'=>
+                    ];
+                }
+            }
+            return $data;
+        } catch (\Throwable $th) {
+            //throw $th;
+        }
+    }
+
     public function test()
     {
         /*
@@ -1417,7 +1552,7 @@ class DTRcontroller extends Controller
 
         for ($i = 1; $i <= 30; $i++) {
 
-            $date = date('Y-m-d', strtotime('2023-11-' . $i));
+            $date = date('Y-m-d', strtotime('2023-12-' . $i));
 
             if (date('D', strtotime($date)) != 'Sun') {
                 $firstin = date('H:i:s', strtotime('today') + rand(25200, 30600));

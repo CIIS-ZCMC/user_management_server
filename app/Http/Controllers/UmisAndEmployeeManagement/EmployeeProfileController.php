@@ -98,7 +98,7 @@ class EmployeeProfileController extends Controller
             /**
              * For Persist password even when it expired for set months of expiration.
              */
-            if($request->persist_password !== null && $request->persist_password === 1) {
+            if ($request->persist_password !== null && $request->persist_password === 1) {
                 $fortyDaysFromNow = Carbon::now()->addDays(40);
                 $fortyDaysExpiration = $fortyDaysFromNow->toDateTimeString();
 
@@ -131,7 +131,7 @@ class EmployeeProfileController extends Controller
             /**
              * For new account need to reset the password
              */
-            if(count($employee_profile->loginTrails) === 0) {
+            if (count($employee_profile->loginTrails) === 0) {
                 return response()->json(['message' => 'New account'], Response::HTTP_TEMPORARY_REDIRECT)
                     ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', env('SESSION_DOMAIN'), true); //status 307
             }
@@ -139,9 +139,9 @@ class EmployeeProfileController extends Controller
             /**
              * For password expired.
              */
-            if(Carbon::now()->startOfDay()->gte($employee_profile->password_expiration_at)) {
+            if (Carbon::now()->startOfDay()->gte($employee_profile->password_expiration_at)) {
                 // Mandatory change password for annual.
-                if(Carbon::now()->year > Carbon::parse($employee_profile->password_expiration_at)->year) {
+                if (Carbon::now()->year > Carbon::parse($employee_profile->password_expiration_at)->year) {
                     return response()->json(['message' => 'expired-required'], Response::HTTP_TEMPORARY_REDIRECT)
                         ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', env('SESSION_DOMAIN'), true); //status 307
                 }
@@ -183,16 +183,15 @@ class EmployeeProfileController extends Controller
                     ];
 
                     if ($this->mail->send($data)) {
-                        return response()->json(['message' => 'Account is Signined to other Device.'], Response::HTTP_TEMPORARY_REDIRECT) // status 307
-                            ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', env('SESSION_DOMAIN'), true);
+                        return response()->json(['message' => "You're account is currently signined to other device. A OTP has sent to your email if you want to signout from other device submit the OTP."], Response::HTTP_OK)
+                            ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', env('SESSION_DOMAIN'), false);
                     }
 
                     return response()->json(['message' => "Your account is currently signined to other device, sending otp to your email has failed please try again later."], Response::HTTP_INTERNAL_SERVER_ERROR);
                 }
-
             }
-            
-            if($access_token !== null) {
+
+            if ($access_token !== null) {
                 AccessToken::where('employee_profile_id', $employee_profile->id)->delete();
             }
 
@@ -200,8 +199,8 @@ class EmployeeProfileController extends Controller
              * Validate for 2FA
              * if 2FA is activated send OTP to email to validate ownership
              */
-            if ((boolean) $employee_profile->is_2fa) {
-                
+            if ((bool) $employee_profile->is_2fa) {
+
                 $data = $request->data;
 
                 $body = view('mail.otp', ['otpcode' => $this->two_auth->getOTP($employee_profile)]);
@@ -213,8 +212,8 @@ class EmployeeProfileController extends Controller
                 ];
 
                 if ($this->mail->send($data)) {
-                    return response()->json(['message' => "OTP has sent to your email, submit the OTP to verify that this is your account."], Response::HTTP_CREATED)
-                        ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', env('SESSION_DOMAIN'), true);
+                    return response()->json(['message' => "OTP has sent to your email, submit the OTP to verify that this is your account."], Response::HTTP_OK)
+                        ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', env('SESSION_DOMAIN'), false);
                 }
 
                 return response()->json([
@@ -250,7 +249,7 @@ class EmployeeProfileController extends Controller
             $last_login = LoginTrail::where('employee_profile_id', $employee_profile->id)->orderByDesc('created_at')->first();
 
             $employee = [
-                'profile_url' => env('SERVER_DOMAIN')."/photo/profiles/".$employee_profile->profile_url,
+                'profile_url' => env('SERVER_DOMAIN') . "/photo/profiles/" . $employee_profile->profile_url,
                 'employee_id' => $employee_profile->employee_id,
                 'position' => $position,
                 'job_position' => $designation->name,
@@ -264,7 +263,7 @@ class EmployeeProfileController extends Controller
             $personal_information_data = [
                 'full_name' => $personal_information->nameWithSurnameFirst(),
                 'first_name' => $personal_information->first_name,
-                'last_name' => $personal_information->last_name, 
+                'last_name' => $personal_information->last_name,
                 'middle_name' => $personal_information->middle_name === null ? ' ' : $personal_information->middle_name,
                 'name_extension' => $personal_information->name_extension === null ? 'NONE' : $personal_information->name_extension,
                 'employee_id' => $employee_profile->employee_id,
@@ -318,7 +317,7 @@ class EmployeeProfileController extends Controller
             }
 
 
-       
+
             $data = [
                 'employee_id' => $employee_profile['employee_id'],
                 'name' => $personal_information->employeeName(),
@@ -362,7 +361,7 @@ class EmployeeProfileController extends Controller
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
                 ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), false);
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME,'signIn', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'signIn', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -568,7 +567,7 @@ class EmployeeProfileController extends Controller
             $last_login = LoginTrail::where('employee_profile_id', $employee_profile->id)->orderByDesc('created_at')->first();
 
             $employee = [
-                'profile_url' => env('SERVER_DOMAIN')."/photo/profiles/".$employee_profile->profile_url,
+                'profile_url' => env('SERVER_DOMAIN') . "/photo/profiles/" . $employee_profile->profile_url,
                 'employee_id' => $employee_profile->employee_id,
                 'position' => $position,
                 'job_position' => $designation->name,
@@ -582,7 +581,7 @@ class EmployeeProfileController extends Controller
             $personal_information_data = [
                 'full_name' => $personal_information->nameWithSurnameFirst(),
                 'first_name' => $personal_information->first_name,
-                'last_name' => $personal_information->last_name, 
+                'last_name' => $personal_information->last_name,
                 'middle_name' => $personal_information->middle_name === null ? ' ' : $personal_information->middle_name,
                 'name_extension' => $personal_information->name_extension === null ? 'NONE' : $personal_information->name_extension,
                 'employee_id' => $employee_profile->employee_id,
@@ -636,7 +635,7 @@ class EmployeeProfileController extends Controller
             }
 
 
-       
+
             $data = [
                 'employee_id' => $employee_profile['employee_id'],
                 'name' => $personal_information->employeeName(),
@@ -679,8 +678,8 @@ class EmployeeProfileController extends Controller
             return response()
                 ->json(['data' => $data, 'message' => "Success signout to other device you are now login."], Response::HTTP_OK)
                 ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), true);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'signOutFromOtherDevice', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'signOutFromOtherDevice', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -725,7 +724,7 @@ class EmployeeProfileController extends Controller
             $last_login = LoginTrail::where('employee_profile_id', $employee_profile->id)->orderByDesc('created_at')->first();
 
             $employee = [
-                'profile_url' => env('SERVER_DOMAIN')."/photo/profiles/".$employee_profile->profile_url,
+                'profile_url' => env('SERVER_DOMAIN') . "/photo/profiles/" . $employee_profile->profile_url,
                 'employee_id' => $employee_profile->employee_id,
                 'position' => $position,
                 'job_position' => $designation->name,
@@ -739,7 +738,7 @@ class EmployeeProfileController extends Controller
             $personal_information_data = [
                 'full_name' => $personal_information->nameWithSurnameFirst(),
                 'first_name' => $personal_information->first_name,
-                'last_name' => $personal_information->last_name, 
+                'last_name' => $personal_information->last_name,
                 'middle_name' => $personal_information->middle_name === null ? ' ' : $personal_information->middle_name,
                 'name_extension' => $personal_information->name_extension === null ? 'NONE' : $personal_information->name_extension,
                 'employee_id' => $employee_profile->employee_id,
@@ -793,7 +792,7 @@ class EmployeeProfileController extends Controller
             }
 
 
-       
+
             $data = [
                 'employee_id' => $employee_profile['employee_id'],
                 'name' => $personal_information->employeeName(),
@@ -835,8 +834,8 @@ class EmployeeProfileController extends Controller
 
             return response()
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'revalidateAccessToken', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'revalidateAccessToken', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -853,8 +852,8 @@ class EmployeeProfileController extends Controller
             }
 
             return response()->json(['message' => 'User signout.'], Response::HTTP_OK)->cookie(env('COOKIE_NAME'), '', -1);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'signOut', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'signOut', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -889,8 +888,8 @@ class EmployeeProfileController extends Controller
             return response()->json([
                 'message' => 'Failed to send OTP to your email.'
             ], Response::HTTP_BAD_REQUEST);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'signOut', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'signOut', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -957,7 +956,7 @@ class EmployeeProfileController extends Controller
             $last_login = LoginTrail::where('employee_profile_id', $employee_profile->id)->orderByDesc('created_at')->first();
 
             $employee = [
-                'profile_url' => env('SERVER_DOMAIN')."/photo/profiles/".$employee_profile->profile_url,
+                'profile_url' => env('SERVER_DOMAIN') . "/photo/profiles/" . $employee_profile->profile_url,
                 'employee_id' => $employee_profile->employee_id,
                 'position' => $position,
                 'job_position' => $designation->name,
@@ -971,7 +970,7 @@ class EmployeeProfileController extends Controller
             $personal_information_data = [
                 'full_name' => $personal_information->nameWithSurnameFirst(),
                 'first_name' => $personal_information->first_name,
-                'last_name' => $personal_information->last_name, 
+                'last_name' => $personal_information->last_name,
                 'middle_name' => $personal_information->middle_name === null ? ' ' : $personal_information->middle_name,
                 'name_extension' => $personal_information->name_extension === null ? 'NONE' : $personal_information->name_extension,
                 'employee_id' => $employee_profile->employee_id,
@@ -1025,7 +1024,7 @@ class EmployeeProfileController extends Controller
             }
 
 
-       
+
             $data = [
                 'employee_id' => $employee_profile['employee_id'],
                 'name' => $personal_information->employeeName(),
@@ -1068,12 +1067,12 @@ class EmployeeProfileController extends Controller
             return response()
                 ->json(['data' => $data, 'message' => "Success signin with two factor authentication."], Response::HTTP_OK)
                 ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), true);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'signOut', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'signOut', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function verifyOTP(Request $request)
     {
         try {
@@ -1100,8 +1099,8 @@ class EmployeeProfileController extends Controller
             ]);
 
             return response()->json(['message' => "Valid OTP, redirecting to new password form."], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'signOut', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'signOut', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -1180,7 +1179,7 @@ class EmployeeProfileController extends Controller
             $last_login = LoginTrail::where('employee_profile_id', $employee_profile->id)->orderByDesc('created_at')->first();
 
             $employee = [
-                'profile_url' => env('SERVER_DOMAIN')."/photo/profiles/".$employee_profile->profile_url,
+                'profile_url' => env('SERVER_DOMAIN') . "/photo/profiles/" . $employee_profile->profile_url,
                 'employee_id' => $employee_profile->employee_id,
                 'position' => $position,
                 'job_position' => $designation->name,
@@ -1194,7 +1193,7 @@ class EmployeeProfileController extends Controller
             $personal_information_data = [
                 'full_name' => $personal_information->nameWithSurnameFirst(),
                 'first_name' => $personal_information->first_name,
-                'last_name' => $personal_information->last_name, 
+                'last_name' => $personal_information->last_name,
                 'middle_name' => $personal_information->middle_name === null ? ' ' : $personal_information->middle_name,
                 'name_extension' => $personal_information->name_extension === null ? 'NONE' : $personal_information->name_extension,
                 'employee_id' => $employee_profile->employee_id,
@@ -1248,7 +1247,7 @@ class EmployeeProfileController extends Controller
             }
 
 
-       
+
             $data = [
                 'employee_id' => $employee_profile['employee_id'],
                 'name' => $personal_information->employeeName(),
@@ -1291,8 +1290,8 @@ class EmployeeProfileController extends Controller
             return response()
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
                 ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), true);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'signOut', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'signOut', $th->getMessage());
         }
     }
 
@@ -1321,14 +1320,14 @@ class EmployeeProfileController extends Controller
 
             $employees = AssignArea::with('employeeProfile')->where($key, $area)->get();
 
-            Helpers::registerSystemLogs($request, null, true, 'Success in fetching a '.$this->PLURAL_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, null, true, 'Success in fetching a ' . $this->PLURAL_MODULE_NAME . '.');
 
             return response()->json([
                 'data' => EmployeesByAreaAssignedResource::collection($employees),
                 'message' => 'list of employees retrieved.'
             ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -1350,14 +1349,14 @@ class EmployeeProfileController extends Controller
 
             $employee_profiles = EmployeeProfile::where('employment_type_id', "<", 11)->get();
 
-            Helpers::registerSystemLogs($request, null, true, 'Success in fetching a '.$this->PLURAL_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, null, true, 'Success in fetching a ' . $this->PLURAL_MODULE_NAME . '.');
 
             return response()->json([
                 'data' => EmployeeDTRList::collection($employee_profiles),
                 'message' => 'list of employees retrieved.'
             ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -1375,8 +1374,8 @@ class EmployeeProfileController extends Controller
                 'data' => EmployeeProfileResource::collection($employee_profiles),
                 'message' => 'list of employees retrieved.'
             ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -1384,7 +1383,7 @@ class EmployeeProfileController extends Controller
     public function store(EmployeeProfileRequest $request)
     {
         try {
- 
+
             $cleanData = [];
             $dateString = $request->date_hired;
             $carbonDate = Carbon::parse($dateString);
@@ -1400,7 +1399,7 @@ class EmployeeProfileController extends Controller
             $encryptedPassword = Crypt::encryptString($hashPassword);
             $now = Carbon::now();
             // $fortyDaysFromNow = $now->addDays(40);
-            
+
             $fortyDaysExpiration = $now->addMinutes(5)->toDateTimeString();
 
             $new_biometric_id = $last_registered_employee->biometric_id + 1;
@@ -1469,14 +1468,17 @@ class EmployeeProfileController extends Controller
                 $plantilla_number->update(['employee_profile_id' => $employee_profile->id, 'is_vacant' => false, 'assigned_at' => now()]);
             }
 
-            Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . '.');
 
-            return response()->json([
-                'data' => new EmployeeProfileResource($employee_profile), 
-                'message' => 'Newly employee registered.'], 
-            Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            return response()->json(
+                [
+                    'data' => new EmployeeProfileResource($employee_profile),
+                    'message' => 'Newly employee registered.'
+                ],
+                Response::HTTP_OK
+            );
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -1541,11 +1543,11 @@ class EmployeeProfileController extends Controller
              * Additional content advice employee to register biometrics in IHOMP
              */
 
-            Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a '.$this->SINGULAR_MODULE_NAME.' account.');
+            Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . ' account.');
 
             return response()->json(['message' => 'Employee account created.'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'createEmployeeAccount', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'createEmployeeAccount', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -1602,14 +1604,14 @@ class EmployeeProfileController extends Controller
             $assign_area->delete();
             $employee_profile->delete();
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in fetching a '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in fetching a ' . $this->SINGULAR_MODULE_NAME . '.');
 
             return response()->json([
                 'data' => $in_active_employee,
                 'message' => 'Employee record transfer to in active employees.'
             ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'updateEmployeeToInActiveEmployees', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'updateEmployeeToInActiveEmployees', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -1623,11 +1625,11 @@ class EmployeeProfileController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in fetching a '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in fetching a ' . $this->SINGULAR_MODULE_NAME . '.');
 
             return response()->json(['data' => new EmployeeProfileResource($employee_profile), 'message' => 'Employee details found.'], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -1643,8 +1645,8 @@ class EmployeeProfileController extends Controller
             }
 
             return response()->json(['data' => new EmployeeProfileResource($employee_profile), 'message' => 'Employee details found.'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'findByEmployeeID', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'findByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -1687,11 +1689,11 @@ class EmployeeProfileController extends Controller
 
             $employee_profile->update($cleanData);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating a '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in updating a ' . $this->SINGULAR_MODULE_NAME . '.');
 
-            return response()->json(['data' => new EmployeeProfileResource($employee_profile) ,'message' => 'Employee details updated.'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+            return response()->json(['data' => new EmployeeProfileResource($employee_profile), 'message' => 'Employee details updated.'], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -1720,9 +1722,9 @@ class EmployeeProfileController extends Controller
 
             Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in changing profile picture of an employee profile.');
 
-            return response()->json(['data' => new EmployeeProfileResource($employee_profile),'message' => 'Employee profile picture updated.'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+            return response()->json(['data' => new EmployeeProfileResource($employee_profile), 'message' => 'Employee profile picture updated.'], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -1748,11 +1750,11 @@ class EmployeeProfileController extends Controller
 
             $employee_profile->delete();
 
-            Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in deleting a '.$this->SINGULAR_MODULE_NAME.'.');
-            
+            Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in deleting a ' . $this->SINGULAR_MODULE_NAME . '.');
+
             return response()->json(['message' => 'Employee profile deleted.'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
