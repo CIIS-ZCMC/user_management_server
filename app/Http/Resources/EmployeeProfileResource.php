@@ -22,7 +22,8 @@ class EmployeeProfileResource extends JsonResource
         $area = $area_details;
         $is_regular_employee = $assigned_area->plantilla_id === null? false: true;
         $designation = $assigned_area->plantilla_id===null?$assigned_area->designation:$assigned_area->plantilla->designation;
-        $designation = $designation->name;
+        $designation_name = $designation->name;
+        $designation_code = $designation->code;
 
         $employment_type = $this->employmentType;
         $employment_status = $employment_type->name;
@@ -36,7 +37,8 @@ class EmployeeProfileResource extends JsonResource
             'profile_url' =>  env('SERVER_DOMAIN')."/photo/profiles/".$this->profile_url,
             'area' => $area,
             'is_regular_employee' => $is_regular_employee,
-            'designation' => $designation,
+            'designation' => $designation_name,
+            'designation_code' => $designation_code,
             'date_hired' => $this->date_hired,
             'employment_status' => $employment_status,
             'account_status' => $account_status

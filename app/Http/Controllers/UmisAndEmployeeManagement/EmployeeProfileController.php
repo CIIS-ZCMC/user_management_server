@@ -1140,7 +1140,7 @@ class EmployeeProfileController extends Controller
                 'password_encrypted' => $encryptedPassword,
                 'password_created_at' => now(),
                 'password_expiration_at' => $fortyDaysExpiration,
-                'is_2fa' => $request->two_factor
+                'is_2fa' => $request->two_factor??false
             ]);
 
             $agent = new Agent();
@@ -1407,7 +1407,7 @@ class EmployeeProfileController extends Controller
             $new_employee_id = $date_hired_string . $employee_id_random_digit;
 
             $cleanData['employee_id'] = $new_employee_id;
-            $cleanData['biomentric_id'] = $new_biometric_id;
+            $cleanData['biometric_id'] = $new_biometric_id;
             $cleanData['employment_type_id'] = strip_tags($request->employment_type_id);
             $cleanData['personal_information_id'] = strip_tags($request->personal_information_id);
             $cleanData['profile_url'] = $request->attachment === null ? null : Helpers::checkSaveFile($request->attachment, 'photo/profiles');
