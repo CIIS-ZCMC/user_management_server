@@ -938,13 +938,17 @@ class DTRcontroller extends Controller
             $year_of = $request->yearof;
 
 
+
+
             $is_15th_days = $request->is15thdays;
             $dt_records = [];
             $is_Half_Schedule = false;
             $dtr = [];
             $mdtr = [];
             if (count($bio) >= 1) {
+
                 foreach ($bio as $biometric_id) {
+
                     if ($this->helper->isEmployee($biometric_id)) {
 
                         $data = new Request([
@@ -974,9 +978,14 @@ class DTRcontroller extends Controller
                         $number_Of_all_Days_past = 0;
                         $date_ranges = [];
                         $entryf = '';
+
+
                         foreach ($dt_records as $key => $value) {
                             $schedule = $this->helper->getSchedule($value->biometric_id, $value->first_in);
+
                             $is_Half_Schedule = $this->isHalfEntrySchedule($schedule);
+
+
 
                             if (isset($schedule['date'])) {
 
@@ -989,19 +998,21 @@ class DTRcontroller extends Controller
                                 $current_Date = strtotime('+1 day', $current_Date);
 
 
-
                                 $date_ranges = $date_Range;
-                                $number_Of_Days += count($date_Range) + 1;
+                                $number_Of_Days += count($date_Range);
                                 if ($sdate < $date_now) {
-                                    $number_Of_all_Days_past = count($date_Range) + 1;
+                                    $number_Of_all_Days_past = count($date_Range);
                                 }
                                 if (isset($value->first_in)) {
                                     $entryf = $value->first_in;
                                 } else
-                            if (isset($value->second_in)) {
+                                        if (isset($value->second_in)) {
                                     $entryf = $value->second_in;
                                 }
-                                if ($entryf == $sdate) {
+
+
+
+                                if (date('Y-m-d', strtotime($entryf)) == $sdate) {
                                     $mdtr[] = $this->mDTR($value);
                                 }
                             } else {
@@ -1173,9 +1184,9 @@ class DTRcontroller extends Controller
                                 $date_Range[] = date('Y-m-d', $current_Date);
                                 $current_Date = strtotime('+1 day', $current_Date);
                                 $date_ranges = $date_Range;
-                                $number_Of_Days = count($date_Range) + 1;
+                                $number_Of_Days = count($date_Range);
                                 if ($sdate < $date_now) {
-                                    $number_Of_all_Days_past = count($date_Range) + 1;
+                                    $number_Of_all_Days_past = count($date_Range);
                                 }
                                 if (isset($value->first_in)) {
                                     $entryf = $value->first_in;
@@ -1183,7 +1194,7 @@ class DTRcontroller extends Controller
                                 if (isset($value->second_in)) {
                                     $entryf = $value->second_in;
                                 }
-                                if ($entryf == $sdate) {
+                                if (date('Y-m-d', strtotime($entryf)) == $sdate) {
                                     $mdtr[] = $this->mDTR($value);
                                 }
                             } else {
@@ -1546,7 +1557,7 @@ class DTRcontroller extends Controller
 
         for ($i = 1; $i <= 30; $i++) {
 
-            $date = date('Y-m-d', strtotime('2023-12-' . $i));
+            $date = date('Y-m-d', strtotime('2024-01-' . $i));
 
             if (date('D', strtotime($date)) != 'Sun') {
                 $firstin = date('H:i:s', strtotime('today') + rand(25200, 30600));

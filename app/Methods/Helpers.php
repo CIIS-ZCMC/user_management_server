@@ -59,6 +59,8 @@ class Helpers
         if (!isset($date_now)) {
             $date_now = date('Y-m-d');
         }
+
+        $date_now = date('Y-m-d', strtotime($date_now));
         $get_Sched = DB::select("
  SELECT s.*, 
  CASE 
@@ -83,7 +85,7 @@ FROM time_shifts s
 WHERE s.id IN (
 SELECT time_shift_id 
 FROM schedules 
-WHERE '$date_now'  = date 
+WHERE '$date_now' = date 
 AND status = 1 
 AND id IN (
   SELECT schedule_id 
@@ -97,6 +99,8 @@ AND id IN (
 );
 
     ");
+
+
 
         if ($this->isNurseOrDoctor($biometric_id)) {
             /* Check if Available Schedule */
