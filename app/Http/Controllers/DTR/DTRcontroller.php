@@ -475,13 +475,11 @@ class DTRcontroller extends Controller
                 $schedule = $this->helper->getSchedule($val->biometric_id, date('Y-m-d', strtotime($val->first_in)));
 
                 $is_Half_Schedule = $this->isHalfEntrySchedule($schedule);
-                //return $schedule['date_start'] . $schedule['date_end'];
 
+                if (isset($schedule['date'])) {
 
-                if (isset($schedule['date_start']) && isset($schedule['date_end'])) {
+                    $sdate =  $schedule['date'];
 
-                    $date_start =  $schedule['date_start'];
-                    $date_end =  $schedule['date_end'];
 
                     if (isset($val->first_in)) {
                         $entry = $val->first_in;
@@ -494,7 +492,7 @@ class DTRcontroller extends Controller
 
 
 
-                    if (date('Y-m-d', strtotime($entry)) >= $date_start && date('Y-m-d', strtotime($entry)) <= $date_end) {
+                    if (date('Y-m-d', strtotime($entry)) ==   $sdate) {
                         //   echo $entry;
                         $date_entry = date('Y-m-d H:i', strtotime($entry));
                         $schedule_fEntry = date('Y-m-d H:i', strtotime(date('Y-m-d', strtotime($date_entry)) . ' ' . $schedule['first_entry']));
@@ -730,13 +728,11 @@ class DTRcontroller extends Controller
                         $schedule = $this->helper->getSchedule($val->biometric_id, date('Y-m-d', strtotime($val->first_in)));
 
                         $is_Half_Schedule = $this->isHalfEntrySchedule($schedule);
-                        //return $schedule['date_start'] . $schedule['date_end'];
 
+                        if (isset($schedule['date'])) {
 
-                        if (isset($schedule['date_start']) && isset($schedule['date_end'])) {
+                            $sdate =  $schedule['date'];
 
-                            $date_start =  $schedule['date_start'];
-                            $date_end =  $schedule['date_end'];
 
                             if (isset($val->first_in)) {
                                 $entry = $val->first_in;
@@ -747,7 +743,7 @@ class DTRcontroller extends Controller
                             }
 
 
-                            if (date('Y-m-d', strtotime($entry)) >= $date_start && date('Y-m-d', strtotime($entry)) <= $date_end) {
+                            if (date('Y-m-d', strtotime($entry)) == $sdate) {
                                 //   echo $entry;
                                 $date_entry = date('Y-m-d H:i', strtotime($entry));
                                 $schedule_fEntry = date('Y-m-d H:i', strtotime(date('Y-m-d', strtotime($date_entry)) . ' ' . $schedule['first_entry']));
@@ -982,22 +978,22 @@ class DTRcontroller extends Controller
                             $schedule = $this->helper->getSchedule($value->biometric_id, $value->first_in);
                             $is_Half_Schedule = $this->isHalfEntrySchedule($schedule);
 
-                            if (isset($schedule['date_start']) && isset($schedule['date_end'])) {
-                                $date_now = date('Y-m-d');
-                                $date_start =  $schedule['date_start'];
-                                $date_end =  $schedule['date_end'];
-                                $date_Range = array();
-                                $current_Date = strtotime($date_start);
-                                $end_Date = strtotime($date_end);
+                            if (isset($schedule['date'])) {
 
-                                while ($current_Date <= $end_Date) {
-                                    $date_Range[] = date('Y-m-d', $current_Date);
-                                    $current_Date = strtotime('+1 day', $current_Date);
-                                }
+                                $date_now = date('Y-m-d');
+                                $sdate =  $schedule['date'];
+                                $date_Range = array();
+                                $current_Date = strtotime($sdate);
+
+                                $date_Range[] = date('Y-m-d', $current_Date);
+                                $current_Date = strtotime('+1 day', $current_Date);
+
+
+
                                 $date_ranges = $date_Range;
-                                $number_Of_Days = $this->getDifferenceDate($date_start, $date_end) + 1;
-                                if ($date_end < $date_now) {
-                                    $number_Of_all_Days_past = $this->getDifferenceDate($date_start, $date_end) + 1;
+                                $number_Of_Days += count($date_Range) + 1;
+                                if ($sdate < $date_now) {
+                                    $number_Of_all_Days_past = count($date_Range) + 1;
                                 }
                                 if (isset($value->first_in)) {
                                     $entryf = $value->first_in;
@@ -1005,7 +1001,7 @@ class DTRcontroller extends Controller
                             if (isset($value->second_in)) {
                                     $entryf = $value->second_in;
                                 }
-                                if ($entryf >= $date_start && $entryf <= $date_end) {
+                                if ($entryf == $sdate) {
                                     $mdtr[] = $this->mDTR($value);
                                 }
                             } else {
@@ -1166,22 +1162,20 @@ class DTRcontroller extends Controller
                             $schedule = $this->helper->getSchedule($value->biometric_id, $value->first_in);
                             $is_Half_Schedule = $this->isHalfEntrySchedule($schedule);
 
-                            if (isset($schedule['date_start']) && isset($schedule['date_end'])) {
+                            if (isset($schedule['date'])) {
                                 $date_now = date('Y-m-d');
-                                $date_start =  $schedule['date_start'];
-                                $date_end =  $schedule['date_end'];
-                                $date_Range = array();
-                                $current_Date = strtotime($date_start);
-                                $end_Date = strtotime($date_end);
+                                $sdate =  $schedule['date'];
 
-                                while ($current_Date <= $end_Date) {
-                                    $date_Range[] = date('Y-m-d', $current_Date);
-                                    $current_Date = strtotime('+1 day', $current_Date);
-                                }
+                                $date_Range = array();
+                                $current_Date = strtotime($sdate);
+
+
+                                $date_Range[] = date('Y-m-d', $current_Date);
+                                $current_Date = strtotime('+1 day', $current_Date);
                                 $date_ranges = $date_Range;
-                                $number_Of_Days = $this->getDifferenceDate($date_start, $date_end) + 1;
-                                if ($date_end < $date_now) {
-                                    $number_Of_all_Days_past = $this->getDifferenceDate($date_start, $date_end) + 1;
+                                $number_Of_Days = count($date_Range) + 1;
+                                if ($sdate < $date_now) {
+                                    $number_Of_all_Days_past = count($date_Range) + 1;
                                 }
                                 if (isset($value->first_in)) {
                                     $entryf = $value->first_in;
@@ -1189,7 +1183,7 @@ class DTRcontroller extends Controller
                                 if (isset($value->second_in)) {
                                     $entryf = $value->second_in;
                                 }
-                                if ($entryf >= $date_start && $entryf <= $date_end) {
+                                if ($entryf == $sdate) {
                                     $mdtr[] = $this->mDTR($value);
                                 }
                             } else {
@@ -1430,14 +1424,14 @@ class DTRcontroller extends Controller
         return $dt_records;
     }
 
-    private function getDifferenceDate($date_start, $date_end)
-    {
-        $start_Time_stamp = strtotime($date_start);
-        $end_Time_stamp = strtotime($date_end);
-        $seconds_Difference = $end_Time_stamp - $start_Time_stamp;
-        $number_Of_Days = floor($seconds_Difference / (60 * 60 * 24));
-        return $number_Of_Days;
-    }
+    // private function getDifferenceDate($date_start, $date_end)
+    // {
+    //     $start_Time_stamp = strtotime($date_start);
+    //     $end_Time_stamp = strtotime($date_end);
+    //     $seconds_Difference = $end_Time_stamp - $start_Time_stamp;
+    //     $number_Of_Days = floor($seconds_Difference / (60 * 60 * 24));
+    //     return $number_Of_Days;
+    // }
 
     private function mDTR($value)
     {
