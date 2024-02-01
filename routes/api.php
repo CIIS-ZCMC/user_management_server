@@ -1693,10 +1693,6 @@ Route::middleware('auth.cookie')->group(function () {
             Route::post('time-shift', 'TimeShiftController@store');
         });
 
-        Route::middleware(['auth.permission:UMIS-ScM view'])->group(function () {
-            Route::get('time-shift/{id}', 'TimeShiftController@show');
-        });
-
         Route::middleware(['auth.permission:UMIS-ScM update'])->group(function () {
             Route::put('time-shift/{id}', 'TimeShiftController@update');
         });
@@ -1718,10 +1714,6 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-ScM write'])->group(function () {
             Route::post('schedule', 'ScheduleController@store');
-        });
-
-        Route::middleware(['auth.permission:UMIS-ScM view'])->group(function () {
-            Route::get('schedule/{id}', 'ScheduleController@show');
         });
 
         Route::middleware(['auth.permission:UMIS-ScM update'])->group(function () {
@@ -1800,20 +1792,12 @@ Route::middleware('auth.cookie')->group(function () {
             Route::post('time-adjustment', 'TimeAdjusmentController@store');
         });
 
-        Route::middleware(['auth.permission:UMIS-ScM view'])->group(function () {
-            Route::get('time-adjustment/{id}', 'TimeAdjusmentController@show');
-        });
-
         Route::middleware(['auth.permission:UMIS-ScM update'])->group(function () {
             Route::put('time-adjustment/{id}', 'TimeAdjusmentController@update');
         });
 
         Route::middleware(['auth.permission:UMIS-ScM delete'])->group(function () {
             Route::delete('time-adjustment/{id}', 'TimeAdjusmentController@destroy');
-        });
-
-        Route::middleware(['auth.permission:UMIS-ScM approve'])->group(function () {
-            Route::put('time-adjustment/approval/{id}', 'TimeAdjusmentController@approve');
         });
 
         /**
