@@ -64,74 +64,58 @@ class TimeShiftController extends Controller
             }
 
             $user = $request->user;
-            if ($user != null && $user->position()) {
-                $position = $user->position();
+            $shift = TimeShift::where('first_in', $request->first_in)
+                ->where('first_out', $request->first_out)
+                ->where('second_in', $request->second_in)
+                ->where('second_out', $request->second_out)
+                ->first();
 
-                if (
-                    $position->position === "Chief" || $position->position === "Department OIC" || $position->position === "Supervisor"
-                    || $position->position === "Section OIC" || $position->position === "Unit Head" || $position->position === "Unit OIC"
-                ) {
-
-                    $shift = TimeShift::where('first_in', $request->first_in)
-                        ->where('first_out', $request->first_out)
-                        ->where('second_in', $request->second_in)
-                        ->where('second_out', $request->second_out)
-                        ->first();
-
-                    if ($shift) {
-                        $data = $shift;
-
-                    } else {
-                        if ($cleanData['first_in'] != null && $cleanData['first_out'] != null && $cleanData['second_in'] == null && $cleanData['second_out'] == null) {
-                            $first_in = Carbon::parse($cleanData['first_in']);
-                            $first_out = Carbon::parse($cleanData['first_out']);
-
-                            $cleanData['total_hours'] = $first_in->diffInHours($first_out);
-
-                        } else if ($cleanData['first_in'] != null && $cleanData['first_out'] != null && $cleanData['second_in'] != null && $cleanData['second_out'] != null) {
-                            $first_in = Carbon::parse($cleanData['first_in']);
-                            $first_out = Carbon::parse($cleanData['first_out']);
-
-                            $second_in = Carbon::parse($cleanData['second_in']);
-                            $second_out = Carbon::parse($cleanData['second_out']);
-
-                            $AM = $first_in->diffInHours($first_out);
-                            $PM = $second_in->diffInHours($second_out);
-
-                            $cleanData['total_hours'] = $AM + $PM;
-                        }
-
-                        $cleanData['color'] = Helpers::randomHexColor();
-
-                        $data = TimeShift::create($cleanData);
-                    }
-
-                    $section = Section::select('id')->where('name', $cleanData['section_name'])->first();
-
-                    if ($section != null) {
-                        $query = DB::table('section_time_shift')->where([
-                            ['section_id', '=', $section->id],
-                            ['time_shift_id', '=', $data->id],
-                        ])->first();
-
-                        if ($query) {
-                            $msg = 'time shift already exist';
-                        } else {
-                            $data->section()->attach($section);
-                            $msg = 'New time shift registered.';
-                        }
-                    }
-
-                    Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
-                    return response()->json(['data' => $data, 'message' => $msg], Response::HTTP_OK);
-
-                } else {
-                    return response()->json(['message' => 'User not allowed to create'], Response::HTTP_OK);
-                }
+            if ($shift) {
+                $data = $shift;
 
             } else {
-                return response()->json(['message' => 'User no position'], Response::HTTP_OK);
+                if ($cleanData['first_in'] != null && $cleanData['first_out'] != null && $cleanData['second_in'] == null && $cleanData['second_out'] == null) {
+                    $first_in = Carbon::parse($cleanData['first_in']);
+                    $first_out = Carbon::parse($cleanData['first_out']);
+
+                    $cleanData['total_hours'] = $first_in->diffInHours($first_out);
+
+                } else if ($cleanData['first_in'] != null && $cleanData['first_out'] != null && $cleanData['second_in'] != null && $cleanData['second_out'] != null) {
+                    $first_in = Carbon::parse($cleanData['first_in']);
+                    $first_out = Carbon::parse($cleanData['first_out']);
+
+                    $second_in = Carbon::parse($cleanData['second_in']);
+                    $second_out = Carbon::parse($cleanData['second_out']);
+
+                    $AM = $first_in->diffInHours($first_out);
+                    $PM = $second_in->diffInHours($second_out);
+
+                    $cleanData['total_hours'] = $AM + $PM;
+                }
+
+                $cleanData['color'] = Helpers::randomHexColor();
+
+                $data = TimeShift::create($cleanData);
             }
+
+            $section = Section::select('id')->where('name', $cleanData['section_name'])->first();
+
+            if ($section != null) {
+                $query = DB::table('section_time_shift')->where([
+                    ['section_id', '=', $section->id],
+                    ['time_shift_id', '=', $data->id],
+                ])->first();
+
+                if ($query) {
+                    $msg = 'time shift already exist';
+                } else {
+                    $data->section()->attach($section);
+                    $msg = 'New time shift registered.';
+                }
+            }
+
+            Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
+            return response()->json(['data' => $data, 'message' => $msg], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
@@ -185,45 +169,29 @@ class TimeShiftController extends Controller
             }
 
             $user = $request->user;
-            if ($user != null && $user->position()) {
-                $position = $user->position();
+            if ($cleanData['first_in'] != null && $cleanData['first_out'] != null && $cleanData['second_in'] == null && $cleanData['second_out'] == null) {
+                $first_in = Carbon::parse($cleanData['first_in']);
+                $first_out = Carbon::parse($cleanData['first_out']);
 
-                if (
-                    $position->position === "Chief" || $position->position === "Department OIC" || $position->position === "Supervisor"
-                    || $position->position === "Section OIC" || $position->position === "Unit Head" || $position->position === "Unit OIC"
-                ) {
+                $cleanData['total_hours'] = $first_in->diffInHours($first_out);
 
-                    if ($cleanData['first_in'] != null && $cleanData['first_out'] != null && $cleanData['second_in'] == null && $cleanData['second_out'] == null) {
-                        $first_in = Carbon::parse($cleanData['first_in']);
-                        $first_out = Carbon::parse($cleanData['first_out']);
+            } else if ($cleanData['first_in'] != null && $cleanData['first_out'] != null && $cleanData['second_in'] != null && $cleanData['second_out'] != null) {
+                $first_in = Carbon::parse($cleanData['first_in']);
+                $first_out = Carbon::parse($cleanData['first_out']);
 
-                        $cleanData['total_hours'] = $first_in->diffInHours($first_out);
+                $second_in = Carbon::parse($cleanData['second_in']);
+                $second_out = Carbon::parse($cleanData['second_out']);
 
-                    } else if ($cleanData['first_in'] != null && $cleanData['first_out'] != null && $cleanData['second_in'] != null && $cleanData['second_out'] != null) {
-                        $first_in = Carbon::parse($cleanData['first_in']);
-                        $first_out = Carbon::parse($cleanData['first_out']);
+                $AM = $first_in->diffInHours($first_out);
+                $PM = $second_in->diffInHours($second_out);
 
-                        $second_in = Carbon::parse($cleanData['second_in']);
-                        $second_out = Carbon::parse($cleanData['second_out']);
-
-                        $AM = $first_in->diffInHours($first_out);
-                        $PM = $second_in->diffInHours($second_out);
-
-                        $cleanData['total_hours'] = $AM + $PM;
-                    }
-
-                    $data->update($cleanData);
-
-                    Helpers::registerSystemLogs($request, $id, true, 'Success in updating ' . $this->SINGULAR_MODULE_NAME . '.');
-                    return response()->json(['data' => $data], Response::HTTP_OK);
-
-                } else {
-                    return response()->json(['message' => 'User not allowed to create'], Response::HTTP_OK);
-                }
-
-            } else {
-                return response()->json(['message' => 'User no position'], Response::HTTP_OK);
+                $cleanData['total_hours'] = $AM + $PM;
             }
+
+            $data->update($cleanData);
+
+            Helpers::registerSystemLogs($request, $id, true, 'Success in updating ' . $this->SINGULAR_MODULE_NAME . '.');
+            return response()->json(['data' => $data], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
