@@ -47,6 +47,7 @@ Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(functi
     Route::post('new-password', 'EmployeeProfileController@newPassword');
     Route::get('retrieve-token', 'CsrfTokenController@generateCsrfToken');
     Route::get('validate-token', 'CsrfTokenController@validateToken');
+    Route::post('employee-profile/signout-from-other-device', 'EmployeeProfileController@signOutFromOtherDevice');
 });
 
 Route::middleware('auth.cookie')->group(function () {
@@ -743,16 +744,12 @@ Route::middleware('auth.cookie')->group(function () {
         /**
          * Employee Profile Module
          */
-        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
-            Route::delete('employee-profile/signout-from-other-device/{id}', 'EmployeeProfileController@signOutFromOtherDevice');
-        });
-
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::get('employee-profile/validate-access-token', 'EmployeeProfileController@revalidateAccessToken');
         });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::get('employees-by-area-assigned', 'EmployeeProfileController@employeesByAreaAssigned');
+            Route::get('employees-by-area-assigned/{id}/sector/{sector}', 'EmployeeProfileController@employeesByAreaAssigned');
         });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
@@ -1761,7 +1758,6 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-ScM delete'])->group(function () {
             Route::delete('exchange-duties/{id}', 'ExchangeDutyController@destroy');
         });
-
 
         /**
          * Pull Out Module

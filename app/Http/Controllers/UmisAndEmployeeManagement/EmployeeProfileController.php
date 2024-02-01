@@ -156,7 +156,7 @@ class EmployeeProfileController extends Controller
              * notify user for that and allow user to choose to cancel or proceed to signout account to other device
              * return employee profile id when user choose to proceed signout in other device
              * for server to be able to determine which account it want to sign out.
-             * If account is singin with in the same machine like ip and device and platform continue
+             * If account is singin with in the same machine like ip and device and platform continues
              * signin without signout to current signined of account.
              * Reuse the created token of first instance of signin to have single access token.
              */
@@ -168,26 +168,26 @@ class EmployeeProfileController extends Controller
                 $created_at = Carbon::parse($access_token['created_at']);
                 $current_time = Carbon::now();
 
-                $difference_in_minutes = $current_time->diffInMinutes($created_at);
+                // $difference_in_minutes = $current_time->diffInMinutes($created_at);
 
-                $login_trail = LoginTrail::where('employee_profile_id', $employee_profile['id'])->first();
+                $login_trail = LoginTrail::where('employee_profile_id', $employee_profile->id)->first();
 
-                if ($difference_in_minutes < 5 && $login_trail['ip_address'] != $ip) {
-
+                if ($login_trail->ip_address !== $ip) {
+                    Helpers::errorLog($this->CONTROLLER_NAME, 'signIn', "Successfully verified ip address");
                     $body = view('mail.otp', ['otpcode' => $this->two_auth->getOTP($employee_profile)]);
                     $data = [
                         'Subject' => 'ONE TIME PIN',
-                        'To_receiver' => $employee_profile->personalinformation->contact->email,
+                        'To_receiver' => $employee_profile->personalinformation->contact->email_address,
                         'Receiver_Name' => $employee_profile->personalInformation->name(),
                         'Body' => $body
                     ];
 
                     if ($this->mail->send($data)) {
-                        return response()->json(['message' => "You're account is currently signined to other device. A OTP has sent to your email if you want to signout from other device submit the OTP."], Response::HTTP_OK)
+                        return response()->json(['message' => "You are currently logged on to other device. An OTP has been sent to your registered email. If you want to signout from that device, submit the OTP."], Response::HTTP_FOUND)
                             ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', env('SESSION_DOMAIN'), false);
                     }
 
-                    return response()->json(['message' => "Your account is currently signined to other device, sending otp to your email has failed please try again later."], Response::HTTP_INTERNAL_SERVER_ERROR);
+                    return response()->json(['message' => "Your account is currently logged on to other device, sending otp to your email has failed please try again later."], Response::HTTP_INTERNAL_SERVER_ERROR);
                 }
             }
 
@@ -518,17 +518,36 @@ class EmployeeProfileController extends Controller
     }
 
     //**Require employee id *
-    public function signOutFromOtherDevice($id, Request $request)
+    public function signOutFromOtherDevice(Request $request)
     {
         try {
-            $employee_profile = EmployeeProfile::find($id);
+            $employee_details = json_decode($request->cookie('employee_details'));
+
+            $employee_profile = EmployeeProfile::where('employee_id', $employee_details->employee_id)->first();
 
             if (!$employee_profile) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
+            
+            $otp = strip_tags($request->otp);
+            $otpExpirationMinutes = 5;
+            $currentDateTime = Carbon::now();
+            $otp_expiration = Carbon::parse($employee_profile->otp_expiration);
 
-            $access_token = $employee_profile->accessToken;
-            $access_token->delete();
+            if ($currentDateTime->diffInMinutes($otp_expiration) > $otpExpirationMinutes) {
+                return response()->json(['message' => 'OTP has expired.'], Response::HTTP_BAD_REQUEST);
+            }
+
+            if ((int)$otp !== $employee_profile->otp) {
+                return response()->json(['message' => 'Invalid OTP.'], Response::HTTP_BAD_REQUEST);
+            }
+
+            $employee_profile->update([
+                'otp' => null,
+                'otp_expiration' => null
+            ]);
+
+            AccessToken::where('employee_profile_id', $employee_profile->id)->delete();
 
             $agent = new Agent();
             $device = [
@@ -1295,11 +1314,11 @@ class EmployeeProfileController extends Controller
         }
     }
 
-    public function employeesByAreaAssigned(EmployeesByAreaAssignedRequest $request)
+    public function employeesByAreaAssigned($id, $sector, Request $request)
     {
         try {
-            $area = strip_tags($request->query('id'));
-            $sector = strip_tags($request->query('sector'));
+            $area = strip_tags($id);
+            $sector = strip_tags($sector);
             $employees = [];
             $key = '';
 

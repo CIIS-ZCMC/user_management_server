@@ -39,6 +39,7 @@ class Helpers
             'ip_address' => $ip
         ]);
     }
+    
     public static function registerExchangeDutyLogs($data_id, $user_id, $action)
     {
         ExchangeDutyLog::create([
