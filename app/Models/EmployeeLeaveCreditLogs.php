@@ -9,7 +9,7 @@ class EmployeeLeaveCreditLogs extends Model
 {
     use HasFactory;
 
-    private $table = "employee_leave_credit_logs";
+    protected $table = "employee_leave_credit_logs";
 
     public $fillable = [
         'employee_leave_credit_id',

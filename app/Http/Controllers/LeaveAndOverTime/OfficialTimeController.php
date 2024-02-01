@@ -32,6 +32,7 @@ class OfficialTimeController extends Controller
             $approving = ["for approving approval", "approved", "declined"];
             $employeeId = $employee_profile->id;
 
+
             /**
              * Division Head [approving, recommending] - applications of assigned area
              *  - recommending => [for recommending approval, for approving approval, approved, declined]
@@ -55,7 +56,8 @@ class OfficialTimeController extends Controller
                 ], Response::HTTP_OK);
             }
 
-            if ($employee_area->sector['Section'] === 'HRMO') {
+          
+            if ($employee_profile->id===Helpers::getHrmoOfficer()) {
                 return response()->json([
                     'data' => OfficialTimeResource::collection(OfficialTime::all()),
                     'message' => 'Retrieved all offical business application'

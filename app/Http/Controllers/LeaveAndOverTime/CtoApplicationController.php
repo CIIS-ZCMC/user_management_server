@@ -209,7 +209,7 @@ class CtoApplicationController extends Controller
             foreach (json_decode($request->cto_applications) as $key=>$value) {
 
                 $employee_credit = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)->first();
-
+                $hrmo_officer= Helpers::getHrmoOfficer();
                 if ($employee_credit->earned_credit_by_hour < $value->applied_credits) {
                     $failed[] = $value;
                     $reason[] = 'Insufficient overtime credit.';
@@ -222,7 +222,7 @@ class CtoApplicationController extends Controller
                 $cleanData['purpose'] = $value->purpose;
                 $cleanData['remarks'] = $value->remarks;
                 $cleanData['status'] = 'for recommending approval';
-                $cleanData['recommending_officer'] = Helpers::getHrmoOfficer();
+                $cleanData['recommending_officer'] = $hrmo_officer;
                 $cleanData['approving_officer'] = $recommending_and_approving['approving_officer'];
 
                 $credits = $value->applied_credits;

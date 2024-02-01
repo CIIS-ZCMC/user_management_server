@@ -13,14 +13,16 @@ class LeaveApplicationLog extends JsonResource
      * @return array<string, mixed>
      */
     public function toArray($request): array
-    {$employee = [
-        'name'=> $this->employee->personalInformation->name(),
+    { 
+       
+        $employee = [
+        'name'=> $this->employeeProfile->personalInformation->name(),
         'profile_url' => $this->profile_url,
         'designation' => [
-            'name' => $this->employee->assignedArea->designation->name,
-            'code' => $this->employee->assignedArea->designation->code,
+            'name' => $this->employeeProfile->assignedArea->designation->name,
+            'code' => $this->employeeProfile->assignedArea->designation->code,
         ],
-        'area' => $this->employee->assignedArea->findDetails()['details']->name,
+        'area' => $this->employeeProfile->assignedArea->findDetails()['details']->name,
     ];
 
     return [

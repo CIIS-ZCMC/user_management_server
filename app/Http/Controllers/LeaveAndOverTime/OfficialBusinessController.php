@@ -33,6 +33,7 @@ class OfficialBusinessController extends Controller
             $approving = ["for approving approval", "approved", "declined"];
             $position = $employee_profile->position();
             $employeeId = $employee_profile->id;
+        
 
             /**
              * Division Head [approving, recommending] - applications of assigned area
@@ -58,7 +59,7 @@ class OfficialBusinessController extends Controller
                 ], Response::HTTP_OK);
             }
 
-            if ($employee_area->sector['Section'] === 'HRMO') {
+            if ($employee_profile->id===Helpers::getHrmoOfficer()) {
                 return response()->json([
                     'data' => OfficialBusinessResource::collection(OfficialBusiness::all()),
                     'message' => 'Retrieved all offical business application'
