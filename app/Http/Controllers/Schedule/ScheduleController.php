@@ -68,7 +68,7 @@ class ScheduleController extends Controller
                     'id' => $value['id'],
                     'name' => $value->name(),
                     'employee_id' => $value['employee_id'],
-                    'biometric_id' => $value['biometric_id'],
+                    'biometric_id' => $value['biometric_id'], 
                     'assigned_area' => $value->assignedArea,
                     'schedule' => $value['schedule'],
                 ];
@@ -141,10 +141,6 @@ class ScheduleController extends Controller
             $msg = null;
             $is_weekend = 0;
 
-            // if ($user != null && $user->position()) {
-            //     $position = $user->position();
-
-            //     if ($position->position === "Chief" || $position->position === "Department OIC" || $position->position === "Supervisor" || $position->position === "Section OIC" || $position->position === "Unit Head" || $position->position === "Unit OIC") {
             $date_start = $cleanData['date_start'];     // Replace with your start date
             $date_end = $cleanData['date_end'];       // Replace with your end date
             $selected_days = $cleanData['selected_days'];  // Replace with your selected days
@@ -164,14 +160,13 @@ class ScheduleController extends Controller
                 //If Toggle Show Day on
                 case($selected_days >= 1 && $date_start === null && $date_end === null):
                     $date = Carbon::now();  // Replace with your desired year
-                    $month = Carbon::parse($cleanData['month'])->month;  // Replace with your desired month
+                    $month = Carbon::parse($cleanData['month'])->month;   // Replace with your desired month
 
-                    $firstDayOfMonth = $date->firstOfMonth();
-
-                    // If you want to get the first day of a specific month, you can do something like this:
-                    $specificMonth = $month; // Replace with the desired month
-                    $start_date = Carbon::create($date->year, $month, 1)->firstOfMonth();
+                    $start_date = Carbon::create($date->year, $month, 1)->startOfMonth();
                     $end_date = $start_date->copy()->endOfMonth();
+
+                    return response()->json(['data' => $start_date], Response::HTTP_FOUND);
+
 
                     $current_date = $start_date->copy();
 
@@ -243,8 +238,6 @@ class ScheduleController extends Controller
 
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json(['data' => $data, 'message' => $msg], Response::HTTP_OK);
-            //     }
-            // }
 
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
