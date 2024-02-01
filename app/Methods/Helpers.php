@@ -59,52 +59,48 @@ class Helpers
         if (!isset($date_now)) {
             $date_now = date('Y-m-d');
         }
+
+        $date_now = date('Y-m-d', strtotime($date_now));
         $get_Sched = DB::select("
-        SELECT s.*, 
-        CASE 
-            WHEN s.id IS NOT NULL THEN 
-                (SELECT date_start
-                 FROM schedules 
-                 WHERE '$date_now' BETWEEN date_start AND date_end 
-                 AND status = 1 
-                 AND time_shift_id = s.id
-                 LIMIT 1)
-            ELSE 'NONE'
-        END AS date_start,
-        CASE 
-            WHEN s.id IS NOT NULL THEN 
-                   (SELECT date_end
-                 FROM schedules 
-                 WHERE '$date_now' BETWEEN date_start AND date_end 
-                 AND status = 1 
-                 AND time_shift_id = s.id
-                 LIMIT 1)
-            ELSE 'NONE'
-        END AS date_end,
-         CASE 
-            WHEN s.id IS NOT NULL THEN 
-                 (SELECT is_on_call
-                 FROM employee_profile_schedule 
-                 WHERE schedule_id = s.id limit 1)
-            ELSE 'NONE'
-        END AS is_on_call
- FROM time_shifts s
- WHERE s.id IN (
-     SELECT time_shift_id 
-     FROM schedules 
-     WHERE '$date_now' BETWEEN date_start AND date_end 
-     AND status = 1 
-     AND id IN (
-         SELECT schedule_id 
-         FROM employee_profile_schedule 
-         WHERE employee_profile_id IN (
-             SELECT id 
-             FROM employee_profiles 
-             WHERE biometric_id = '$biometric_id'
-         )
-     )
- );
+ SELECT s.*, 
+ CASE 
+     WHEN s.id IS NOT NULL THEN 
+         (SELECT date
+          FROM schedules 
+          WHERE '$date_now' = date
+          AND status = 1 
+          AND time_shift_id = s.id
+          LIMIT 1)
+     ELSE 'NONE'
+ END AS date,
+ 
+  CASE 
+     WHEN s.id IS NOT NULL THEN 
+          (SELECT is_on_call
+          FROM employee_profile_schedule 
+          WHERE schedule_id = s.id limit 1)
+     ELSE 'NONE'
+ END AS is_on_call
+FROM time_shifts s
+WHERE s.id IN (
+SELECT time_shift_id 
+FROM schedules 
+WHERE '$date_now' = date 
+AND status = 1 
+AND id IN (
+  SELECT schedule_id 
+  FROM employee_profile_schedule 
+  WHERE employee_profile_id IN (
+      SELECT id 
+      FROM employee_profiles 
+      WHERE biometric_id = '$biometric_id'
+  )
+)
+);
+
     ");
+
+
 
         if ($this->isNurseOrDoctor($biometric_id)) {
             /* Check if Available Schedule */
@@ -122,8 +118,7 @@ class Helpers
                 'third_entry' => $get_Sched[0]->second_in,
                 'last_entry' => $get_Sched[0]->second_out,
                 'total_hours' => $get_Sched[0]->total_hours,
-                'date_start' => $get_Sched[0]->date_start,
-                'date_end' => $get_Sched[0]->date_end,
+                'date' => $get_Sched[0]->date,
                 'is_on_call' => $get_Sched[0]->is_on_call,
             ];
         }
@@ -133,7 +128,7 @@ class Helpers
             'third_entry' => null,
             'last_entry' => null,
             'total_hours' => env('REQUIRED_WORKING_HOURS'),
-            'date_start' => null,
+            'date' => null,
             'date_end' => null,
             'is_on_call' => null,
         ];
@@ -470,9 +465,7 @@ class Helpers
                                                     $scheduleEntry = $time_stamps_req['first_entry'];
                                                 }
 
-
-
-                                                return   $this->SaveFirstEntry(
+                                                $this->SaveFirstEntry(
                                                     $this->sequence(0, [$value]),
                                                     $break_Time_Req,
                                                     $biometric_id,

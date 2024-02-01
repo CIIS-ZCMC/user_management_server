@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\LeaveAndOverTime;
 
+use App\Helpers\Helpers;
 use App\Models\OvertimeApplication;
 use App\Http\Controllers\Controller;
 use App\Models\AssignArea;
@@ -242,7 +243,7 @@ class OvertimeApplicationController extends Controller
                 });
                 return response()->json(['data' => $overtime_applications_result], Response::HTTP_OK);
             } else {
-                return response()->json(['message' => 'No records available'], Response::HTTP_OK);
+                return response()->json(['data' => $overtime_applications, 'message' => 'No records available'], Response::HTTP_OK);
             }
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], 500);
@@ -253,7 +254,6 @@ class OvertimeApplicationController extends Controller
     {
         try {
             $user = $request->user;
-
             $overtime_applications = [];
             $overtime_applications = OvertimeApplication::with(['employeeProfile.assignedArea.division', 'employeeProfile.personalInformation', 'logs', 'activities'])
                 ->where('employee_profile_id', $user->id)->get();
@@ -466,7 +466,7 @@ class OvertimeApplicationController extends Controller
                 });
                 return response()->json(['data' => $overtime_applications_result], Response::HTTP_OK);
             } else {
-                return response()->json(['message' => 'No records available'], Response::HTTP_OK);
+                return response()->json(['data' => $overtime_applications, 'message' => 'No records available'], Response::HTTP_OK);
             }
         } catch (\Throwable $th) {
 
@@ -2196,12 +2196,15 @@ class OvertimeApplicationController extends Controller
     public function store(Request $request)
     {
         try {
+            $user = $request->user;
+            $area = AssignArea::where('employee_profile_id', $user->id)->value('division_id');
             $validatedData = $request->validate([
-                'dates.*' => 'required',
+                'dates.*' => 'required|date_format:Y-m-d',
                 'activities.*' => 'required',
-                'time_from.*' => 'required',
+                'time_from.*' => 'required|date_format:H:i',
                 'time_to.*' => [
                     'required',
+                    'date_format:H:i',
                     function ($attribute, $value, $fail) use ($request) {
                         $index = explode('.', $attribute)[1];
                         $timeFrom = $request->input('time_from.*' . $index);
@@ -2210,42 +2213,33 @@ class OvertimeApplicationController extends Controller
                         }
                     },
                 ],
-                'letter_of_request' => 'required|image|mimes:jpeg,png,jpg,pdf|max:2048',
+                'letter_of_request' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
                 'purpose.*' => 'required|string|max:512',
                 'remarks.*' => 'required|string|max:512',
                 'quantities.*' => 'required',
-                'employees.*' => 'required',
+                'employees.*' => 'required|integer|exists:employee_profiles,id',
             ]);
             $user = $request->user;
             $area = AssignArea::where('employee_profile_id', $user->id)->value('division_id');
             $divisions = Division::where('id', $area)->first();
             DB::beginTransaction();
             $path = "";
-            if ($request->hasFile('letter_of_request')) {
-                $folderName = 'Letter';
-                $image = $request->file('letter_of_request');
-                $imageName = time() . '.' . $image->getClientOriginalExtension();
-                $image->storeAs('Letter', $imageName, 'public');
-                Storage::makeDirectory('public/' . $folderName);
-                $path =  $image->storeAs($folderName, $imageName);
-            }
-            // $divisions = Division::where('id',$area)->first();
-            // if ($divisions->code === 'NS' || $divisions->code === 'MS') {
 
-            //     $status='for-approval-department-head';
-            // }
-            // else
-            // {
-            //     $status='for-approval-section-head';
-            // }
+            if ($request->hasFile('letter_of_request')) {
+                $fileName = pathinfo($request->file('letter_of_request')->getClientOriginalName(), PATHINFO_FILENAME);
+                $size = filesize($request->file('letter_of_request'));
+                $file_name_encrypted = Helpers::checkSaveFile($request->file('letter_of_request'), '/overtime_application');
+            }
             $status = 'for-approval-division-head';
             $overtime_application = OvertimeApplication::create([
-                'employee_profile_id' => '1',
+                'employee_profile_id' => $user->id,
                 'status' => $status,
                 'purpose' => $request->purpose,
                 'date' => date('Y-m-d'),
                 'time' => date('H:i:s'),
-                'overtime_letter_of_request' =>  $imageName,
+                'overtime_letter_of_request' =>  $fileName,
+                'overtime_letter_of_request_path' =>  $file_name_encrypted,
+                'overtime_letter_of_request_size' =>  $size,
                 'path' =>  $path
             ]);
 
@@ -2496,7 +2490,6 @@ class OvertimeApplicationController extends Controller
                 'data' => $overtime_applications_result
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
-
             DB::rollBack();
             return response()->json(['message' => $th->getMessage()], 500);
         }
@@ -2556,17 +2549,15 @@ class OvertimeApplicationController extends Controller
                     'time_to' =>  $validatedData['time_to'][$index],
                     'date' =>  $date,
                 ]);
-
-                $date_id = $date_application->id;
-                foreach ($validatedData['employees'] as $index => $employees) {
-                    OvtApplicationEmployee::create([
-                        'ovt_application_datetime_id' => $date_id,
-                        'employee_profile_id' =>  $validatedData['employees'][$index],
-                        'remarks' =>  $validatedData['remarks'][$index],
-                    ]);
-                }
             }
-
+            $date_id = $date_application->id;
+            foreach ($validatedData['employees'] as $index => $employees) {
+                OvtApplicationEmployee::create([
+                    'ovt_application_datetime_id' => $date_id,
+                    'employee_profile_id' =>  $validatedData['employees'][$index],
+                    'remarks' =>  $validatedData['remarks'][$index],
+                ]);
+            }
             $columnsString = "";
             $process_name = "Applied";
             $this->storeOvertimeApplicationLog($ovt_id, $process_name, $columnsString, $user->id);
@@ -2815,16 +2806,12 @@ class OvertimeApplicationController extends Controller
 
             $overtime_applications = OvertimeApplication::where('id', '=', $id)
                 ->first();
-
             if ($overtime_applications) {
                 $user = $request->user;
                 $user_password = $user->password_encrypted;
-
-                $password_decrypted = Crypt::decryptString($user['password_encrypted']);
-                $password = strip_tags($request->password);
-                if (!Hash::check($password . env("SALT_VALUE"), $password_decrypted)) {
-                    return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
-                } else {
+                $password = $request->password;
+                if ($user_password == $password) {
+                    // if($user_id){
                     DB::beginTransaction();
                     $overtime_application_log = new OvtApplicationLog();
                     $overtime_application_log->action = 'declined';
@@ -3249,9 +3236,7 @@ class OvertimeApplicationController extends Controller
     public function updateOvertimeApplicationStatus($id, $status, Request $request)
     {
         try {
-
             $user = $request->user;
-
             $password_decrypted = Crypt::decryptString($user['password_encrypted']);
             $password = strip_tags($request->password);
             if (!Hash::check($password . env("SALT_VALUE"), $password_decrypted)) {

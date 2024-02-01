@@ -43,7 +43,7 @@ class DivisionController extends Controller
             });
 
             return response()->json([
-                'data' => DivisionResource::collection($divisions), 
+                'data' => DivisionResource::collection($divisions),
                 'message' => 'Division record retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -56,7 +56,7 @@ class DivisionController extends Controller
      * Assign Chief or Head
      * This must be in division/department/section/unit
      */
-    
+
     public function assignChiefByEmployeeID($id, DivisionAssignChiefRequest $request)
     {
         try{
@@ -74,7 +74,7 @@ class DivisionController extends Controller
             if(!$division)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }  
+            }
 
             $employee_profile = EmployeeProfile::where('employee_id', $request['employee_id'])->first();
 
@@ -93,8 +93,8 @@ class DivisionController extends Controller
             Helpers::registerSystemLogs($request, $id, true, 'Success in assigning division chief '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
-                'data' => new DivisionResource($division), 
-                'message' => 'New chief assigned in department.'], 
+                'data' => new DivisionResource($division),
+                'message' => 'New chief assigned in department.'],
                 Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'assignChiefByEmployeeID', $th->getMessage());
@@ -115,14 +115,14 @@ class DivisionController extends Controller
             if(!$division)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }  
+            }
 
             $employee_profile = EmployeeProfile::where('employee_id', $request['employee_id'])->first();
 
             if(!$employee_profile)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            } 
+            }
 
             if($employee_profile->id !== $division->chief_employee_profile_id){
                 return response()->json(['message' => 'UnAuthorized.'], Response::HTTP_UNAUTHORIZED);
@@ -156,7 +156,7 @@ class DivisionController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function store(DivisionRequest $request)
     {
         try{
@@ -190,7 +190,7 @@ class DivisionController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function show($id, Request $request)
     {
         try{
@@ -210,7 +210,7 @@ class DivisionController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function update($id, DivisionRequest $request)
     {
         try{
@@ -229,7 +229,7 @@ class DivisionController extends Controller
                     $cleanData[$key] = $value;
                     continue;
                 }
-                
+
                 if($key === 'attachment')
                 {
                     $cleanData['division_attachment_url'] = $this->file_validation_and_upload->check_save_file($request, 'division\files');
@@ -250,7 +250,7 @@ class DivisionController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function destroy($id, PasswordApprovalRequest $request)
     {
         try{
@@ -277,9 +277,9 @@ class DivisionController extends Controller
             }
 
             $division -> delete();
-            
+
             Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
+
             return response()->json(['message' => 'Division deleted successfully.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
