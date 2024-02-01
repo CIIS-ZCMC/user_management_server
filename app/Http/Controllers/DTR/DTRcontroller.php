@@ -58,7 +58,7 @@ class DTRcontroller extends Controller
             if ($selfRecord) {
                 return [
                     'dtr_date' => $selfRecord->dtr_date,
-                    'first_in' => date('H:i', strtotime($selfRecord->first_in)),
+                    'first_in' => $selfRecord->first_out ? date('H:i', strtotime($selfRecord->first_in)) : ' --:--',
                     'first_out' => $selfRecord->first_out ? date('H:i', strtotime($selfRecord->first_out)) : ' --:--',
                     'second_in' => $selfRecord->second_in ? date('H:i', strtotime($selfRecord->second_in)) : ' --:--',
                     'second_out' => $selfRecord->second_out ? date('H:i', strtotime($selfRecord->second_out)) : ' --:--',
