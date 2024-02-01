@@ -14,6 +14,9 @@ class LeaveApplication extends Model
     protected $casts = [
         'with_pay' => 'boolean',
         'patient_type' => 'boolean',
+        'is_outpatient' => 'boolean',
+        'is_masters' => 'boolean', 
+        'is_board' => 'boolean', 
     ];
 
     public $fillable = [
@@ -23,8 +26,10 @@ class LeaveApplication extends Model
         'date_to',
         'country',
         'city',
-        'patient_type',
+        'is_outpatient',
         'illness',
+        'is_masters',
+        'is_board',
         'applied_credits',
         'status',
         'remarks',
@@ -40,7 +45,7 @@ class LeaveApplication extends Model
         return $this->belongsTo(LeaveType::class);
     }
 
-    public function leaveApplicationRequirement()
+    public function leaveApplicationRequirements()
     {
         return $this->hasMany(LeaveApplicationRequirement::class);
     }
@@ -53,6 +58,11 @@ class LeaveApplication extends Model
     public function employeeProfile()
     {
         return $this->belongsTo(EmployeeProfile::class);
+    }
+
+    public function employeeLeaveCredit()
+    {
+        return $this->belongsTo(EmployeeLeaveCredit::class, 'employee_profile_id', 'leave_type_id');
     }
 
     public function hrmoOfficer()

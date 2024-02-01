@@ -16,6 +16,7 @@ class LeaveType extends Model
         'is_active' => 'boolean',
         'is_country' => 'boolean',
         'is_illness' => 'boolean',
+        'is_study' => 'boolean',
         'is_days_recommended' => 'boolean'
     ];
 
@@ -31,12 +32,17 @@ class LeaveType extends Model
         'is_active',
         'is_country',
         'is_illness',
+        'is_study',
         'is_days_recommended'
     ];
 
     public function leaveTypeRequirements()
     {
         return $this->hasmany(LeaveTypeRequirement::class);
+    }
+
+    public function leaveRequirements() {
+        return $this->belongsTo(Requirement::class);
     }
 
     public function requirements() {

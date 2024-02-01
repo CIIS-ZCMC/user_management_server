@@ -19,6 +19,8 @@ return new class extends Migration
             $table->string('city')->nullable();
             $table->boolean('is_outpatient')->default(false);
             $table->string('illness')->nullable();
+            $table->boolean('is_masters')->default(false);
+            $table->boolean('is_board')->default(false);
             $table->string('applied_credits')->nullable();
             $table->string('status')->nullable();
             $table->string('remarks')->nullable();

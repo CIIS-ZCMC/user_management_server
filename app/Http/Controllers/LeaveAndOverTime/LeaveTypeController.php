@@ -56,15 +56,24 @@ class LeaveTypeController extends Controller
             $result_data = [];
 
             foreach($leave_types as $leave_type){
-                if($leave_type->is_special){
+                $requirements = $leave_type->requirements()->get();
+
+                if($leave_type->is_special === 1){
                     $leave_type['total_credits'] = null;
-                    $result_data[] = $leave_type;
+                    // $result_data[] = $leave_type;
                     continue;
                 }
-                $leave_type['total_credits'] = ModelsEmployeeLeaveCredit::with(['leaveType' => function ($query) {
-                                                                        $query->with(['requirements'])->get();                                                                    }])
-                                                                    ->where('employee_profile_id', $employee_profile->id)
-                                                                    ->where('leave_type_id', $leave_type->id)->first();
+                $leave_type['total_credits'] = ModelsEmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)
+                ->where('leave_type_id', $leave_type->id)
+                ->first();
+
+            
+            // // Fetch requirements (assuming leaveType relationship is defined)
+            // $leave_type['requirements'] = $leave_type['total_credits'] 
+            //     ? $leave_type['total_credits']->leaveType->requirements 
+            //     : [];
+                
+                
                 $result_data[] = [
                     // 'all' => $leave_type,
                     'value' => $leave_type->id,
@@ -78,19 +87,19 @@ class LeaveTypeController extends Controller
                     'is_special'=> $leave_type->is_special,
                     'is_country'=> $leave_type->is_country,
                     'is_illness'=> $leave_type->is_illness,
+                    'is_study'=> $leave_type->is_study,
                     'is_days_recommended'=> $leave_type->is_days_recommended,
                     'created_at'=> $leave_type->created_at,
                     'updated_at'=> $leave_type->updated_at,
-                    'total_credits'=> [
+                    'total_credits'=> $leave_type->total_credits ? [
                         'id'=> $leave_type->total_credits->id,
                         'employee_profile_id'=> $leave_type->total_credits->employee_profile_id,
                         'leave_type_id'=> $leave_type->total_credits->leave_type_id,
                         'total_leave_credits'=> $leave_type->total_credits->total_leave_credits,
                         'created_at'=> $leave_type->total_credits->created_at,
                         'updated_at'=> $leave_type->total_credits->updated_at,
-                    ],
-                    'requirements' => $leave_type->total_credits->leaveType->requirements,
-                    
+                    ] : null,
+                    'requirements' => $requirements ?? [],
                 ];
             }
             

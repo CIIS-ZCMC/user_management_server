@@ -26,6 +26,7 @@ class LeaveApplicationController extends Controller
     public function index(Request $request)
     {
         try {
+            
             $employee_profile = $request->user;
 
             /**
@@ -33,7 +34,7 @@ class LeaveApplicationController extends Controller
              * Only newly applied leave application
              */
             if (Helpers::getHrmoOfficer() === $employee_profile->id) {
-                $leave_applications = LeaveApplication::where('status', 'Applied')->where('hrmo_officer', $employee_profile->id)->get();
+                $leave_applications = LeaveApplication::where('status', 'applied')->where('hrmo_officer', $employee_profile->id)->get();
 
                 return response()->json([
                     'data' => LeaveApplicationResource::collection($leave_applications),
@@ -58,7 +59,7 @@ class LeaveApplicationController extends Controller
                         $leave_applications = [...$leave_applications, $leave_application_under_omcc];
                         continue;
                     }
-                    $leave_application_per_division_head = LeaveApplication::where('For approving_officer')->where('approving_officer', $division->chief_employee_profile_id)->get();
+                    $leave_application_per_division_head = LeaveApplication::where('for approving_officer')->where('approving_officer', $division->chief_employee_profile_id)->get();
                     $leave_applications = [...$leave_applications, $leave_application_per_division_head];
                 }
 
@@ -118,25 +119,25 @@ class LeaveApplicationController extends Controller
             $status = '';
 
             switch ($leave_application->status) {
-                case 'Applied':
+                case 'applied':
                     if (Helpers::getHrmoOfficer() !== $employee_profile->id) {
                         return response()->json(['message' => 'Forbidden.'], Response::HTTP_FORBIDDEN);
                     }
-                    $status = 'For recommending approval';
+                    $status = 'for recommending approval';
                     $leave_application->update(['status' => $status]);
                     break;
-                case 'For recommending approval':
+                case 'for recommending approval':
                     if ($position === null || str_contains($position->position, 'Unit')) {
                         return response()->json(['message' => 'Forbidden'], Response::HTTP_FORBIDDEN);
                     }
-                    $status = 'For approving approval';
+                    $status = 'for approving approval';
                     $leave_application->update(['status' => $status]);
                     break;
-                case 'For approving approval':
+                case 'for approving approval':
                     if (Helpers::getChiefOfficer() !== $employee_profile->id) {
                         return response()->json(['message' => 'Forbidden'], Response::HTTP_FORBIDDEN);
                     }
-                    $status = 'Approved';
+                    $status = 'approved';
                     $leave_application->update(['status' => $status]);
                     break;
             }
@@ -188,21 +189,27 @@ class LeaveApplicationController extends Controller
             $start = Carbon::parse($request->date_from);
             $end = Carbon::parse($request->date_to);
 
-            $daysDiff = $start->diffInDays($end);
+            $daysDiff = $start->diffInDays($end) + 1;
 
-            if ($employee_credit->total_leave_credits < $daysDiff) {
+            if ($request->without_pay === 0 && $employee_credit->total_leave_credits < $daysDiff) {
                 return response()->json(['message' => 'Insuficient leave credit.'], Response::HTTP_BAD_REQUEST);
             }
-
-
+            $cleanData['applied_credits'] = $daysDiff;
             $cleanData['employee_profile_id'] = $employee_profile->id;
             $cleanData['hrmo_officer'] = $hrmo_officer;
             $cleanData['recommending_officer'] = $recommending_and_approving['recommending_officer'];
             $cleanData['approving_officer'] = $recommending_and_approving['approving_officer'];
-            $cleanData['status'] = 'Applied';
+            $cleanData['status'] = 'applied';
 
             foreach ($request->all() as $key => $leave) {
-                if ($key === 'user' || $key === 'requirements')
+                if(is_bool($leave)){
+                    $cleanData[$key] = $leave === 0 ? false:true;
+                }
+                if(is_array($leave)){
+                    $cleanData[$key] = $leave;
+                    continue;
+                }
+                if ($key === 'user' || $key === 'requirements') 
                     continue;
                 if ($leave === 'null') {
                     $cleanData[$key] = $leave;
@@ -212,23 +219,30 @@ class LeaveApplicationController extends Controller
             }
 
             $leave_application = LeaveApplication::create($cleanData);
+            
+            if($request->without_pay == 0 ){
+                $sql = $employee_credit->update(['total_leave_credits' => $employee_credit->total_leave_credits - $daysDiff]);
+                // return response()->json(['data' => $sql], Response::HTTP_FOUND);
 
-            $employee_credit->update(['total_leave_credits' => $employee_credit->total_leave_credits - $daysDiff]);
+            }
 
-            if ($request->hasFile('requirements')) {
+            if ($request->requirements) {
                 $index = 0;
+                $requirements_name = $request->requirements_name;
+
                 foreach ($request->file('requirements') as $key => $file) {
-                    $fileName = pathinfo($file->attachment->getClientOriginalName(), PATHINFO_FILENAME);
-                    $size = filesize($file->attachment);
-                    $file_name_encrypted = Helpers::checkSaveFile($file->attachment, '/requirements');
+                    $fileName=$file->getClientOriginalName();
+                    $size = filesize($file);
+                    $file_name_encrypted = Helpers::checkSaveFile($file, '/requirements');
 
                     LeaveApplicationRequirement::create([
                         'leave_application_id' => $leave_application->id,
                         'file_name' => $fileName,
-                        'name' => $request->requirement_names[$index],
+                        'name' => $requirements_name[$index],
                         'path' => $file_name_encrypted,
                         'size' => $size,
                     ]);
+                    $index++;
                 }
             }
 
@@ -277,7 +291,7 @@ class LeaveApplicationController extends Controller
             $leave_application = LeaveApplication::find($id);
 
             $leave_application->update([
-                'status' => 'Declined',
+                'status' => 'declined',
                 'reason' => strip_tags($request->reason)
             ]);
 

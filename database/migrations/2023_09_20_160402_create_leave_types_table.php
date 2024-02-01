@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('code');
-            $table->string('description')->nullable();
+            $table->text('description')->nullable();
             $table->double('period')->nullable();
             $table->string('file_date');
             $table->float('month_value');
@@ -24,6 +24,7 @@ return new class extends Migration
             $table->boolean('is_special')->default(false);
             $table->boolean('is_country')->default(false);
             $table->boolean('is_illness')->default(false);
+            $table->boolean('is_study')->default(false);
             $table->boolean('is_days_recommended')->default(false);
             $table->timestamps();
 

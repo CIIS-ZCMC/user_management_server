@@ -37,10 +37,6 @@ class LeaveTypeSeeder extends Seeder
             'updated_at' => now()
         ]);
 
-        LeaveTypeRequirement::create([
-            'leave_type_id' => $vacation_leave->id,
-            'leave_requirement_id' => $requiment_one->id
-        ]);
 
         $sick_leave = LeaveType::create([
             'name' => "Sick Leave",
@@ -57,11 +53,6 @@ class LeaveTypeSeeder extends Seeder
             'is_days_recommended' => 0,
             'created_at' => now(),
             'updated_at' => now()
-        ]);
-
-        LeaveTypeRequirement::create([
-            'leave_type_id' => $sick_leave->id,
-            'leave_requirement_id' => $requiment_one->id
         ]);
 
         LeaveTypeRequirement::create([
@@ -87,10 +78,6 @@ class LeaveTypeSeeder extends Seeder
             'updated_at' => now()
         ]);
 
-        LeaveTypeRequirement::create([
-            'leave_type_id' => $special_previlege_leave->id,
-            'leave_requirement_id' => $requiment_one->id
-        ]);
 
         $force_leave = LeaveType::create([
             'name' => "Force Leave",
@@ -109,10 +96,6 @@ class LeaveTypeSeeder extends Seeder
             'updated_at' => now()
         ]);
 
-        LeaveTypeRequirement::create([
-            'leave_type_id' => $force_leave->id,
-            'leave_requirement_id' => $requiment_one->id
-        ]);
 
         $maternity_leave = LeaveType::create([
             'name' => "Maternity Leave",
@@ -131,10 +114,10 @@ class LeaveTypeSeeder extends Seeder
             'updated_at' => now()
         ]);
 
-        LeaveTypeRequirement::create([
-            'leave_type_id' => $maternity_leave->id,
-            'leave_requirement_id' => $requiment_one->id
-        ]);
+        // LeaveTypeRequirement::create([
+        //     'leave_type_id' => $maternity_leave->id,
+        //     'leave_requirement_id' => $requiment_one->id
+        // ]);
 
         LeaveTypeRequirement::create([
             'leave_type_id' => $maternity_leave->id,
