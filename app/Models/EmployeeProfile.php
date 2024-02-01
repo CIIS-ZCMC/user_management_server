@@ -293,6 +293,7 @@ class EmployeeProfile extends Authenticatable
     public function schedule() {
         return $this->belongsToMany(Schedule::class, 'employee_profile_schedule')->withPivot('employee_profile_id');
     }
+    
     public function GetPersonalInfo()
     {
         return $this->personalInformation;

@@ -5,9 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-use App\Http\Resources\ChiefDivisionTrailResource;
-use App\Http\Resources\OICDivisionTrailResource;
-
 class Division extends Model
 {
     use HasFactory;
