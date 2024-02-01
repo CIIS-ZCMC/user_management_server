@@ -13,12 +13,14 @@ use App\Http\Requests\TimeAdjustmentRequest;
 use App\Helpers\Helpers;
 
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use DateTime;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class TimeAdjusmentController extends Controller
 {
@@ -177,7 +179,7 @@ class TimeAdjusmentController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $id)
+    public function update($id, Request $request)
     {
         try {
             $data = TimeAdjusment::findOrFail($id);
@@ -186,40 +188,45 @@ class TimeAdjusmentController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $cleanData = [];
+            $password = strip_tags($request->password);
 
-            foreach ($request->all() as $key => $value) {
-                if (empty($value)) {
-                    $cleanData[$key] = $value;
-                    continue;
-                }
+            $employee_profile = $request->user;
 
-                if (is_int($value)) {
-                    $cleanData[$key] = $value;
-                    continue;
-                }
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
 
-                if (is_array($value)) {
-                    $section_data = [];
-
-                    foreach ($request->all() as $key => $value) {
-                        $section_data[$key] = $value;
-                    }
-                    $cleanData[$key] = $section_data;
-                    continue;
-                }
-
-                $cleanData[$key] = strip_tags($value);
+            if (!Hash::check($password . env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
             }
 
-            $data->update($cleanData);
+            $status = null;
+            if ($request->approval_status === 'approved') {
+                switch ($data->status) {
+                    case 'applied':
+                        $status = 'approved';
+                        break;
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating ' . $this->SINGULAR_MODULE_NAME . '.');
-            return response()->json(['data' => $data], Response::HTTP_OK);
+                    case 'declined':
+                        $status = 'declined';
+
+                    default:
+                        $status = 'approved';
+                        break;
+                }
+            } else if ($request->approval_status === 'declined') {
+                $status = 'declined';
+            }
+
+            $data->update(['status' => $status, 'remarks' => $request->remarks, 'approval_date' => Carbon::now()]);
+
+            Helpers::registerSystemLogs($request, $data->id, true, 'Success in updating.' . $this->SINGULAR_MODULE_NAME . '.');
+            return response()->json([
+                'data' => TimeAdjustmentResource::collection(TimeAdjusment::where('id', $data->id)->get()),
+                // 'logs' => Helpers::registerExchangeDutyLogs($data->id, $employee_profile->id, $status),
+                'msg' => 'Request '.$status
+            ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-
-            Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -247,67 +254,6 @@ class TimeAdjusmentController extends Controller
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
 
-        }
-    }
-
-    /**
-     * Update Approval of Request
-     */
-    public function approve(Request $request, $id)
-    {
-        try {
-
-            $cleanData = [];
-
-            foreach ($request->all() as $key => $value) {
-                if (empty($value)) {
-                    $cleanData[$key] = $value;
-                    continue;
-                }
-
-                if (DateTime::createFromFormat('Y-m-d', $value)) {
-                    $cleanData[$key] = Carbon::parse($value);
-                    continue;
-                }
-
-                if (is_int($value)) {
-                    $cleanData[$key] = $value;
-                    continue;
-                }
-
-                if (is_array($value)) {
-                    $section_data = [];
-
-                    foreach ($request->all() as $key => $value) {
-                        $section_data[$key] = $value;
-                    }
-                    $cleanData[$key] = $section_data;
-                    continue;
-                }
-
-                $cleanData[$key] = strip_tags($value);
-            }
-
-
-            $data = TimeAdjusment::findOrFail($id);
-
-            if (!$data) {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }
-
-            $query = TimeAdjusment::where('id', $data->id)->update([
-                'status' => $cleanData['status'],
-                'approval_date' => now(),
-                'updated_at' => now()
-            ]);
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in approve ' . $this->SINGULAR_MODULE_NAME . '.');
-            return response()->json(['data' => $query, 'message' => 'Success'], Response::HTTP_OK);
-
-        } catch (\Throwable $th) {
-
-            Helpers::errorLog($this->CONTROLLER_NAME, 'approve', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 }
