@@ -229,7 +229,6 @@ class LeaveApplicationController extends Controller
                         'path' => $file_name_encrypted,
                         'size' => $size,
                     ]);
-                    $index++;
                 }
             }
 

@@ -17,7 +17,7 @@ return new class extends Migration
             $table->datetime('date_to')->nullable();
             $table->string('country')->nullable();
             $table->string('city')->nullable();
-            $table->string('patient_type')->nullable();
+            $table->boolean('is_outpatient')->default(false);
             $table->string('illness')->nullable();
             $table->string('applied_credits')->nullable();
             $table->string('status')->nullable();
@@ -32,8 +32,8 @@ return new class extends Migration
             $table->foreign('hrmo_officer')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->unsignedBigInteger('recommending_officer')->unsigned()->nullable();
             $table->foreign('recommending_officer')->references('id')->on('employee_profiles')->onDelete('cascade');
-            $table->unsignedBigInteger('approving')->unsigned()->nullable();
-            $table->foreign('approving')->references('id')->on('employee_profiles')->onDelete('cascade');
+            $table->unsignedBigInteger('approving_officer')->unsigned()->nullable();
+            $table->foreign('approving_officer')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->timestamps();
         });
     }
