@@ -2196,15 +2196,14 @@ class OvertimeApplicationController extends Controller
     public function store(Request $request)
     {
         try {
-            $user = $request->user;
-            $area = AssignArea::where('employee_profile_id', $user->id)->value('division_id');
+            // $user = $request->user;
+            // $area = AssignArea::where('employee_profile_id', $user->id)->value('division_id');
             $validatedData = $request->validate([
-                'dates.*' => 'required|date_format:Y-m-d',
+                'dates.*' => 'required',
                 'activities.*' => 'required',
-                'time_from.*' => 'required|date_format:H:i',
+                'time_from.*' => 'required',
                 'time_to.*' => [
                     'required',
-                    'date_format:H:i',
                     function ($attribute, $value, $fail) use ($request) {
                         $index = explode('.', $attribute)[1];
                         $timeFrom = $request->input('time_from.*' . $index);
@@ -2214,10 +2213,10 @@ class OvertimeApplicationController extends Controller
                     },
                 ],
                 'letter_of_request' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
-                'purpose.*' => 'required|string|max:512',
-                'remarks.*' => 'required|string|max:512',
+                'purpose.*' => 'required',
+                'remarks.*' => 'required',
                 'quantities.*' => 'required',
-                'employees.*' => 'required|integer|exists:employee_profiles,id',
+                'employees.*' => 'required',
             ]);
             $user = $request->user;
             $area = AssignArea::where('employee_profile_id', $user->id)->value('division_id');
