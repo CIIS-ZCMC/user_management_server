@@ -165,9 +165,6 @@ class ScheduleController extends Controller
                     $start_date = Carbon::create($date->year, $month, 1)->startOfMonth();
                     $end_date = $start_date->copy()->endOfMonth();
 
-                    return response()->json(['data' => $start_date], Response::HTTP_FOUND);
-
-
                     $current_date = $start_date->copy();
 
                     while ($current_date->lte($end_date->startOfDay())) {
