@@ -234,7 +234,7 @@ class ScheduleController extends Controller
                         if ($query) {
                             $msg = 'Employee schedule already exists.';
                         } else {
-                            $data->employee()->attach($employee_id, ['is_on_call' => $value['is_on_call']]);
+                            $data->employee()->attach($employee_id);
                             $msg = 'New employee schedule registered.';
                         }
                     }
