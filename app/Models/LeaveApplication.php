@@ -114,4 +114,10 @@ class LeaveApplication extends Model
     {
         return $this->belongsTo(EmployeeProfile::class, 'approving_officer');
     }
+
+    
+    public function leaveApplicationLogs()
+    {
+        return $this->hasMany(LeaveApplicationLog::class);
+    }
 }

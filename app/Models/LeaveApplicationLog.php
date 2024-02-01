@@ -12,15 +12,15 @@ class LeaveApplicationLog extends Model
     protected $table = 'leave_application_logs';
 
     public $fillable = [
-        'action_by',
         'leave_application_id',
+        'action_by',
         'action',
 
     ];
 
     public function leaveApplications()
     {
-        return $this->belongsTo(LeaveApplication::class);
+        return $this->belongsTo(LeaveApplication::class, 'leave_application_id');
     }
 
     public function employeeProfile()

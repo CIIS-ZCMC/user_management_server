@@ -63,10 +63,10 @@ class LeaveApplicationResource extends JsonResource
                 "profile_url" => $this->approvingOfficer->profile_url
             ],
             'attachments' =>$this->leaveApplicationRequirements === null? []: LeaveApplicationAttachmentResource::collection($this->leaveApplicationRequirements),
-            "logs" => $this->logs,
+            'logs' => $this->leaveApplicationLogs ? LeaveApplicationLog::collection($this->leaveApplicationLogs) : [],
             'created_at'=>$this->created_at,
             'updated_at'=>$this->updated_at,
-
+            
         ];
     }
 }
