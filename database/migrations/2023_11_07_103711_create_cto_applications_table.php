@@ -16,6 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('employee_profile_id')->unsigned();
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->string('remarks')->nullable();
+            $table->string('reason')->nullable();
             $table->string('status');
             $table->string('purpose')->nullable();
             $table->string('reference_number')->nullable();

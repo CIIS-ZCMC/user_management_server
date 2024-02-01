@@ -22,6 +22,7 @@ class Authorization
      */
     public function handle(Request $request, Closure $next, $routePermission): Response
     {
+
         list($module, $action) = explode(' ', $routePermission);
 
         $system_module = SystemModule::where('code', $module)->first();

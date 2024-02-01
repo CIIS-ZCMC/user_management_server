@@ -9,6 +9,7 @@ use App\Models\Designation;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
@@ -41,6 +42,75 @@ class PlantillaController extends Controller
             
             return response()->json([
                 'data' => PlantillaNumberAllResource::collection($plantillas),
+                'message' => 'Plantilla list retrieved.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+             Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function reAssignArea($id, Request $request)
+    {
+        try{
+            /**
+             * id = plantilla number id
+             * area = area id (division, department, section, unit)
+             * sector = area sector
+             * effective_at = when the data will be use
+             */
+            $plantilla_number = PlantillaNumber::find($id);
+
+            if(!$plantilla_number){
+                return response()->json(['message' => 'No record found for plantilla number with id '.$id], Response::HTTP_NOT_FOUND);
+            }
+
+            $key = null;
+
+            switch(strip_tags($request->sector)){
+                case 'Division':
+                    $division = Division::find(strip_tags($request->area));
+                    if(!$division){
+                        return response()->json(['message' => 'No record found for division with id '.$id], Response::HTTP_NOT_FOUND);
+                    }
+                    $key = 'division_id';
+                    break;
+                case 'Department':
+                    $department = Department::find(strip_tags($request->area));
+                    if(!$department){
+                        return response()->json(['message' => 'No record found for department with id '.$id], Response::HTTP_NOT_FOUND);
+                    }
+                    $key = 'department_id';
+                    break;
+                case 'Section':
+                    $section = Section::find(strip_tags($request->area));
+                    if(!$section){
+                        return response()->json(['message' => 'No record found for section with id '.$id], Response::HTTP_NOT_FOUND);
+                    }
+                    $key = 'section_id';
+                    break;
+                case 'Unit':
+                    $unit = Unit::find(strip_tags($request->area));
+                    if(!$unit){
+                        return response()->json(['message' => 'No record found for unit with id '.$id], Response::HTTP_NOT_FOUND);
+                    }
+                    $key = 'unit_id';
+                    break;
+            }
+            
+            $plantilla_number->assignedArea->update([$key => $request->area, 'effective_at' => $request->effective_at]);
+
+            if($plantilla_number->employee_profile_id !== null && Carbon::parse($request->effective_at)->isPast()){
+                
+                Artisan::call('app:plantilla-number-re-assign-task:to-run', [
+                    '--taskId' => $plantilla_number->id,
+                    '--area' => $request->area,
+                    '--sector' => $request->sector
+                ]);
+            }
+
+            return response()->json([
+                'data' => new PlantillaNumberAllResource($plantilla_number),
                 'message' => 'Plantilla list retrieved.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){

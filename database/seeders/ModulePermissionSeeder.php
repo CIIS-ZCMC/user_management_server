@@ -385,10 +385,16 @@ class ModulePermissionSeeder extends Seeder
         ]);
         
         ModulePermission::create([
+            'code' => $system_module_official_business['code'].' '.$permission_approve['action'],
+            'permission_id' => $permission_approve['id'],
+            'system_module_id' => $system_module_official_business['id']
+        ]);
+        ModulePermission::create([
             'code' => $system_module_official_business['code'].' '.$permission_request['action'],
             'permission_id' => $permission_request['id'],
             'system_module_id' => $system_module_official_business['id']
         ]);
+        
         
         /**
          * Official Time
@@ -419,6 +425,11 @@ class ModulePermissionSeeder extends Seeder
             'system_module_id' => $system_module_official_time['id']
         ]);
         
+        ModulePermission::create([
+            'code' => $system_module_official_time['code'].' '.$permission_approve['action'],
+            'permission_id' => $permission_approve['id'],
+            'system_module_id' => $system_module_official_time['id']
+        ]);
         ModulePermission::create([
             'code' => $system_module_official_time['code'].' '.$permission_request['action'],
             'permission_id' => $permission_request['id'],
@@ -454,6 +465,11 @@ class ModulePermissionSeeder extends Seeder
             'system_module_id' => $system_module_compensatory_time['id']
         ]);
         
+        ModulePermission::create([
+            'code' => $system_module_compensatory_time['code'].' '.$permission_approve['action'],
+            'permission_id' => $permission_approve['id'],
+            'system_module_id' => $system_module_compensatory_time['id']
+        ]);
         ModulePermission::create([
             'code' => $system_module_compensatory_time['code'].' '.$permission_request['action'],
             'permission_id' => $permission_request['id'],

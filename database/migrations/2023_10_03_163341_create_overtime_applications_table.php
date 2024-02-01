@@ -20,6 +20,8 @@ return new class extends Migration
             $table->string('remarks')->nullable();
             $table->string('purpose')->nullable();
             $table->string('overtime_letter_of_request')->nullable();
+            $table->string('overtime_letter_of_request_path')->nullable();
+            $table->string('overtime_letter_of_request_size')->nullable();
             $table->string('path')->nullable();
             $table->string('date');
             $table->string('time')->nullable();

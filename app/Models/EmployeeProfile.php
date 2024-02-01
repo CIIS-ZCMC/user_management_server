@@ -146,8 +146,9 @@ class EmployeeProfile extends Authenticatable
         return $this->hasMany(EmployeeOvertimeCredit::class);
     }
 
-    public function leaveApplications() {
-        return $this->hasMany(LeaveApplication::class);
+    public function leaveApplications()
+    {
+        return $this->hasMany(LeaveApplication::class, 'employee_profile_id');
     }
 
     public function leaveApplicationLogs() {
@@ -288,10 +289,11 @@ class EmployeeProfile extends Authenticatable
 
         return null;
     }
-    
+
     public function schedule() {
         return $this->belongsToMany(Schedule::class, 'employee_profile_schedule')->withPivot('employee_profile_id');
     }
+    
     public function GetPersonalInfo()
     {
         return $this->personalInformation;

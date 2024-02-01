@@ -40,7 +40,7 @@ class RequirementController extends Controller
                         $formatted_date=Carbon::parse($date)->format('M d,Y');
                         return [
                             'id' => $log->id,
-                            'action_by' => "{$first_name} {$last_name}" ,
+                            'action_by' => "{$last_name}, {$first_name}" ,
                             'position' => $log->employeeProfile->assignedArea->designation->code ?? null,
                             'action' => $log->action,
                             'date' => $formatted_date,
@@ -118,7 +118,7 @@ class RequirementController extends Controller
                         return [
                             'id' => $log->id,
                             'leave_application_id' => $log->leave_application_id,
-                            'action_by' => "{$first_name} {$last_name}" ,
+                            'action_by' => "{$last_name}, {$first_name}" ,
                             'position' => $log->employeeProfile->assignedArea->designation->code ?? null,
                             'action' => $log->action,
                             'date' => $formatted_date,

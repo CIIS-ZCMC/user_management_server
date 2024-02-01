@@ -18,6 +18,15 @@ class LeaveApplication extends JsonResource
      */
     public function toArray($request)
     {
+        //MULTIPLE FILES
+        // $files_result = [];
+        // foreach($this->files as $file){
+        //     $files_result[] = [
+        //         'file_name' => $this->file_name,
+        //         'file_path' => 'http://localhost:8000/server/'.$this->file_name
+        //     ];
+        // }
+
         return [
             'id' => $this->id,
             'reference_number' => $this->reference_number,
@@ -35,6 +44,11 @@ class LeaveApplication extends JsonResource
             // 'leave_application_requirement'=> $this->leave_application_requirement ? ResourcesLeaveApplicationRequirement::collection($this->leave_application_requirement) : [],
             // 'leave_application_log'=> $this->leave_application_log ? LeaveApplicationLog::collection($this->leave_application_log) : [],
             // 'leave_application_date_time'=> $this->leave_application_date_time ? ResourcesLeaveApplicationDateTime::collection($this->leave_application_date_time) : [],
+            //MULTIPLE FILES
+            // 'files_result' => $files_result,
+            // SINGLE FILE
+            // 'file_name' => $this->file_name,
+            // 'file_path' => 'http://localhost:8000/server/'.$this->file_name
 
         ];
     }

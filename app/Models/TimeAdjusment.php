@@ -33,4 +33,20 @@ class TimeAdjusment extends Model
 
     public $timestamps = true;
 
+    public function dailyTimeRecord() {
+        return $this->belongsTo(DailyTimeRecords::class, 'daily_time_record_id');
+    }
+
+    public function employee() {
+        return $this->belongsTo(EmployeeProfile::class, 'employee_profile_id');
+    }
+
+    public function recommendedBy() {
+        return $this->belongsTo(EmployeeProfile::class, 'recommended_by');
+    }
+
+    public function approveBy() {
+        return $this->belongsTo(EmployeeProfile::class, 'approve_by');
+    }
+
 }

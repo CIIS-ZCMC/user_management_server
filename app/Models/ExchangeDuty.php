@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
 
 use App\Models\Schedule;
-use App\Models\EmployeeProfile;
 
 class ExchangeDuty extends Model
 {
@@ -29,19 +28,27 @@ class ExchangeDuty extends Model
 
     public $timestamps = true;
 
+    public function exchangeDuty() {
+        return $this->hasOne(ExchangeDuty::class, 'approve_by');
+    }
+
     public function schedule()
     {
         return $this->belongsTo(Schedule::class);
     }
 
-    public function employee()
+    public function requestedEmployee()
     {
-        return $this->belongsToMany(EmployeeProfile::class);
+        return $this->belongsTo(EmployeeProfile::class, 'requested_employee_id');
     }
 
-    public function approval()
+    public function relieverEmployee()
     {
-        return $this->belongsToMany(EmployeeProfile::class, 'exchange_duty_approval');
+        return $this->belongsTo(EmployeeProfile::class, 'reliever_employee_id');
     }
     
+    public function approveBy()
+    {
+        return $this->belongsTo(EmployeeProfile::class, 'approve_by');
+    }
 }

@@ -3,20 +3,19 @@
 namespace App\Http\Controllers\Schedule;
 
 
+use App\Models\EmployeeProfile;
+use App\Models\Section;
 use App\Models\TimeAdjusment;
-use App\Models\daily_time_records;
+use App\Models\DailyTimeRecords;
 
 use App\Http\Resources\TimeAdjustmentResource;
 use App\Http\Requests\TimeAdjustmentRequest;
 use App\Helpers\Helpers;
 
 use Illuminate\Http\Response;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use DateTime;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -33,13 +32,13 @@ class TimeAdjusmentController extends Controller
     public function index(Request $request)
     {
         try {
-            
-            Helpers::registerSystemLogs($request, null, true, 'Success in fetching '.$this->PLURAL_MODULE_NAME.'.');
+
+            Helpers::registerSystemLogs($request, null, true, 'Success in fetching ' . $this->PLURAL_MODULE_NAME . '.');
             return response()->json(['data' => TimeAdjustmentResource::collection(TimeAdjusment::all())], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
-            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -61,13 +60,8 @@ class TimeAdjusmentController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if(empty($value)){
+                if (empty($value)) {
                     $cleanData[$key] = $value;
-                    continue;
-                }
-
-                if (DateTime::createFromFormat('Y-m-d', $value)) {
-                    $cleanData[$key] = Carbon::parse($value);
                     continue;
                 }
 
@@ -76,40 +70,76 @@ class TimeAdjusmentController extends Controller
                     continue;
                 }
 
-                if(is_array($value)) {
-                    $section_data = [];
-
-                    foreach ($request->all() as $key => $value) {
-                        $section_data[$key] = $value;
-                    }        
-                    $cleanData[$key] = $section_data;
+                if (is_array($value)) {
+                    $cleanData[$key] = $value;
                     continue;
                 }
 
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $dates = $cleanData['dates'];
-            foreach ($dates as $key => $date) {
-                $find = daily_time_records::where([
-                    ['dtr_date',    '=', $date['dtr_date']],
-                    ['first_in', '=', $date['first_in']],
-                    ['first_out', '=', $date['first_out']],
-                    ['second_in', '=', $date['second_in']],
-                    ['second_out', '=', $date['second_out']],
+            $user = $request->user;
+            $data = null;
+            $recommending_officer = null;
+            $approving_officer = Section::where('code', 'HRMO')->first()->supervisor_employee_profile_id;
+
+            $dates = $cleanData['dtr_date'];
+            foreach ($dates as $key => $value) {
+                $daily_time_record = DailyTimeRecords::where([
+                    ['biometric_id', '=', $cleanData['biometric_id']],
+                    ['dtr_date', '=', $value['date']],
                 ])->first();
 
-                $data = TimeAdjusment::create($date);
+                if (!$daily_time_record) {
+                    return response()->json(['message' => 'No DTR record found.'], Response::HTTP_NOT_FOUND);
+                }
+
+                if ($daily_time_record) {
+                    $employee = EmployeeProfile::find($cleanData['employee_profile_id'])->first();
+                    if ($employee) {
+                        $employee_area = $employee->assignedArea->findDetails();
+
+                        switch ($employee_area['sector']) {
+                            case 'Division':
+                                $recommending_officer = $employee->assignedArea->division->divisionHead;
+                                break;
+
+                            case 'Department':
+                                $recommending_officer = $employee->assignedArea->department->head;
+                                break;
+
+                            case 'Section':
+                                $recommending_officer = $employee->assignedArea->section->supervisor_employee_profile_id;
+                                break;
+
+                            case 'Unit':
+                                $recommending_officer = $employee->assignedArea->department->head;
+                                break;
+
+                            default:
+                                return response()->json(['message' => 'User has no sector'], Response::HTTP_NOT_FOUND);
+                        }
+                    }
+
+                    $data = TimeAdjusment::create([
+                        'first_in' => $value['firstIn'] ?? null,
+                        'first_out' => $value['firstOut'] ?? null,
+                        'second_in' => $value['secondIn'] ?? null,
+                        'second_out' => $value['secondOut'] ?? null,
+                        'employee_profile_id' => $employee->id,
+                        'daily_time_record_id' => $daily_time_record->id,
+                        'recommended_by' => $user->id,
+                        'approve_by' => $approving_officer,
+                    ]);
+                }
             }
 
-            // $data = TimeAdjusment::create($cleanData);
-
-            Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
-            return response()->json(['data' => $data ,'message' => $msg], Response::HTTP_OK);
+            Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
+            return response()->json(['data' => $data], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
-            Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -122,17 +152,16 @@ class TimeAdjusmentController extends Controller
         try {
             $data = new TimeAdjustmentResource(TimeAdjusment::findOrFail($id));
 
-            if(!$data)
-            {
+            if (!$data) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in fetching '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in fetching ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json(['data' => $data], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
-            Helpers::errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -153,20 +182,15 @@ class TimeAdjusmentController extends Controller
         try {
             $data = TimeAdjusment::findOrFail($id);
 
-            if(!$data) {
+            if (!$data) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if(empty($value)){
+                if (empty($value)) {
                     $cleanData[$key] = $value;
-                    continue;
-                }
-
-                if (DateTime::createFromFormat('Y-m-d', $value)) {
-                    $cleanData[$key] = Carbon::parse($value);
                     continue;
                 }
 
@@ -175,12 +199,12 @@ class TimeAdjusmentController extends Controller
                     continue;
                 }
 
-                if(is_array($value)) {
+                if (is_array($value)) {
                     $section_data = [];
 
                     foreach ($request->all() as $key => $value) {
                         $section_data[$key] = $value;
-                    }        
+                    }
                     $cleanData[$key] = $section_data;
                     continue;
                 }
@@ -190,12 +214,12 @@ class TimeAdjusmentController extends Controller
 
             $data->update($cleanData);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in updating ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json(['data' => $data], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
-            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -208,19 +232,19 @@ class TimeAdjusmentController extends Controller
         try {
             $data = TimeAdjusment::withTrashed()->findOrFail($id);
             $data->section()->detach($data->id);
-         
+
             if ($data->deleted_at != null) {
                 $data->forceDelete();
             } else {
                 $data->delete();
             }
-            
-            Helpers::registerSystemLogs($request, $id, true, 'Success in delete '.$this->SINGULAR_MODULE_NAME.'.');
+
+            Helpers::registerSystemLogs($request, $id, true, 'Success in delete ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json(['data' => $data], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
-            Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
 
         }
@@ -229,13 +253,14 @@ class TimeAdjusmentController extends Controller
     /**
      * Update Approval of Request
      */
-    public function approve(Request $request, $id) {
+    public function approve(Request $request, $id)
+    {
         try {
-            
+
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if(empty($value)){
+                if (empty($value)) {
                     $cleanData[$key] = $value;
                     continue;
                 }
@@ -250,12 +275,12 @@ class TimeAdjusmentController extends Controller
                     continue;
                 }
 
-                if(is_array($value)) {
+                if (is_array($value)) {
                     $section_data = [];
 
                     foreach ($request->all() as $key => $value) {
                         $section_data[$key] = $value;
-                    }        
+                    }
                     $cleanData[$key] = $section_data;
                     continue;
                 }
@@ -263,25 +288,25 @@ class TimeAdjusmentController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            
+
             $data = TimeAdjusment::findOrFail($id);
 
-            if(!$data) {
+            if (!$data) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
             $query = TimeAdjusment::where('id', $data->id)->update([
-                'status'            => $cleanData['status'],
-                'approval_date'     => now(),
-                'updated_at'        => now()
+                'status' => $cleanData['status'],
+                'approval_date' => now(),
+                'updated_at' => now()
             ]);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in approve '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in approve ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json(['data' => $query, 'message' => 'Success'], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
-            Helpers::errorLog($this->CONTROLLER_NAME,'approve', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'approve', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
