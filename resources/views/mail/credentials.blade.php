@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <style>
         .container {
-            padding: 100px;
+          
             text-align: left
         }
         h1 {
@@ -74,7 +74,7 @@ table {
 
 /* Style for table cells */
 td {
-  border: 1px solid #bdb2b2; /* Border color: #ddd (light gray) */
+  border: 1px solid rgb(19, 12, 12); /* Border color: #ddd (light gray) */
   padding: 8px;
   text-align: left;
 }
@@ -83,48 +83,69 @@ td {
 td:first-child {
   font-size: 15px;
   font-weight: normal;
-  color: #555; /* Text color: #555 (medium gray) */
+  color: gray; /* Text color: #555 (medium gray) */
 }
 
 /* Style for the second column (values) */
 td:nth-child(2) {
   font-size: 16px;
   font-weight: bold;
-  color: #333; /* Text color: #333 (dark gray) */
+  color: gray; /* Text color: #333 (dark gray) */
 }
 
             </style>
 
-            <table>
+            <table style="  border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px; ">
                 <tr >
-                    <td style="width: 200px !important"> <span style="font-size:14px;font-weight:normal">Employee-ID / Username :</span></td>
-                    <td>
-                        2022090251
+                    <td style="width: 200px !important;
+                    border: 1px solid rgb(150, 147, 147);
+  padding: 8px;
+  text-align: left;
+                    "> <span style="font-size:14px;font-weight:normal">Employee-ID / Username :</span></td>
+                    <td style="  border: 1px solid rgb(150, 147, 147);
+                    padding: 8px;
+                    text-align: left;">
+                        {{$employeeID}}
                     </td>
                 </tr>
                 <tr>
-                    <td> <span style="font-size:15px;font-weight:normal">Default Password :</span></td>
-                    <td>
-                        Zcmc_Umis2023@
+                    <td  style="  border: 1px solid rgb(150, 147, 147);
+                    padding: 8px;
+                    text-align: left;"> <span style="font-size:15px;font-weight:normal">Default Password :</span></td>
+                    <td  style="  border: 1px solid rgb(150, 147, 147);
+                    padding: 8px;
+                    text-align: left;">
+                        {{$Password}}
                     </td>
                 </tr>
               
                 
 
             </table>
-
+            <h4 style="font-weight: normal">Upon first login, you will be prompted to change your password.</h4>
 
            
-            <table>
+            <table style="  border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px; ">
+               
                 <tr>
-                    <td colspan="2">
-                        <h5 style="font-weight: normal;color:red">The link is accessible only within the ZCMC premises when connected to the local network.</h5>
+                    <td  style="  border: 1px solid rgb(150, 147, 147);
+                    padding: 8px;
+                    text-align: left;"> <span style="font-size:15px;font-weight:normal">Website Link :</span></td>
+                    <td  style="  border: 1px solid rgb(150, 147, 147);
+                    padding: 8px;
+                    text-align: left;">
+                        <a href="{{$Link}}">Link to ZCMC-Portal 2023</a>
                     </td>
                 </tr>
                 <tr>
-                    <td> <span style="font-size:15px;font-weight:normal">Website Link :</span></td>
-                    <td>
-                        <a href="#">Link to ZCMC-Portal 2023</a>
+                    <td  style="  border: 1px solid rgb(150, 147, 147);
+                    padding: 8px;
+                    text-align: left;" colspan="2">
+                        <h4 style="font-weight: normal;color:rgb(216, 68, 68)">The link is accessible only within the ZCMC premises when connected to the local network.</h4>
                     </td>
                 </tr>
             </table>
@@ -133,8 +154,7 @@ td:nth-child(2) {
           
         </h3>
      
-        <h5 style="font-weight: normal">Upon first login, you will be prompted to change your password.</h5>
-        <br>
+     
         <h4>
            <span id="zcmc">ZCMC</span>-Portal &middot; 2023
            <br>

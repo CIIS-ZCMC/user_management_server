@@ -6,12 +6,15 @@ use Illuminate\Http\Request;
 use  App\Models\Biometrics;
 use App\Methods\BioControl;
 use App\Http\Controllers\DTR\BioMSController;
+use App\Http\Controllers\DTR\MailController;
 use App\Models\Devices;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Response;
+use App\Models\DefaultPassword;
+use App\Models\EmployeeProfile;
 
 
 class BioController extends Controller
@@ -21,6 +24,8 @@ class BioController extends Controller
     protected $ip_registration;
     protected $devices;
     protected $bioms;
+
+    protected $mailer;
     public function __construct()
     {
         $this->device = new BioControl();
@@ -29,6 +34,7 @@ class BioController extends Controller
             2
         ];
         $this->ip_registration = json_decode($this->bioms->registrationDevice()->getContent(), true)['data'];
+        $this->mailer = new MailController();
     }
 
     /* ----------------------------- THIS IS FOR REGISTRATION OF BIOMETRICS----------------------------------- */
@@ -65,6 +71,17 @@ class BioController extends Controller
             ]);
 
             if ($save) {
+                $defpassword = DefaultPassword::first()->password;
+                $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
+
+                $credential = new Request([
+                    'EmployeeID' => $employee->employee_id,
+                    'Email' => $employee->personalInformation->contact->email_address,
+                    'Receiver' => $employee->name(),
+                    'Password' => $defpassword
+                ]);
+
+                $this->mailer->sendCredentials($credential);
                 $this->device->fetchdatatoDeviceforNewFPRegistration(
                     $ipreg,
                     $biometric_id,

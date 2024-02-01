@@ -24,8 +24,8 @@ Route::controller(App\Http\Controllers\DTR\DTRcontroller::class)->group(
         // Route::get('/getHolidays', 'getHolidays')->name('getHolidays');
         // Route::get('/setHolidays', 'setHolidays')->name('setHolidays');
         // Route::get('/modifyHolidays', 'modifyHolidays')->name('modifyHolidays');
-        Route::get('/dtrutotreport', 'dtrUTOTReport')->name('dtrutotreport');
-        Route::get('/testtest', 'test')->name('testtest');
+        // Route::get('/dtrutotreport', 'dtrUTOTReport')->name('dtrutotreport');
+        // Route::get('/testtest', 'test')->name('testtest');
         // Route::get('/setHolidays', 'Set_Holidays')->name('setHolidays');
     }
 );
@@ -93,4 +93,8 @@ Route::get('/ot', function () {
 
 Route::get('/lr', function () {
     return view('leave_report');
+});
+
+Route::get('/testmail', function () {
+    return view('mail.credentials');
 });
