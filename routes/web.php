@@ -25,7 +25,7 @@ Route::controller(App\Http\Controllers\DTR\DTRcontroller::class)->group(
         // Route::get('/setHolidays', 'setHolidays')->name('setHolidays');
         // Route::get('/modifyHolidays', 'modifyHolidays')->name('modifyHolidays');
         // Route::get('/dtrutotreport', 'dtrUTOTReport')->name('dtrutotreport');
-        // Route::get('/testtest', 'test')->name('testtest');
+        Route::get('/testtest', 'test')->name('testtest');
         // Route::get('/setHolidays', 'Set_Holidays')->name('setHolidays');
     }
 );

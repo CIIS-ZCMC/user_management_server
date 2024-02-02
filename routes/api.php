@@ -1437,7 +1437,6 @@ Route::middleware('auth.cookie')->group(function () {
     Route::namespace('App\Http\Controllers\DTR')->group(function () {
         /** APPLY CODE HERE */
         Route::middleware(['auth.permission:UMIS-DTRM view-all'])->group(function () {
-            Route::get('dtr-self', 'DTRcontroller@pullDTRuser');
             Route::get('dtr-device-devices', 'BioMSController@index');
             Route::post('dtr-pushuser-to-devices', 'BioController@fetchUserToDevice');
             Route::post('dtr-pulluser-from-devices', 'BioController@fetchUserFromDevice');
@@ -1450,6 +1449,8 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-DTRM view'])->group(function () {
+            Route::get('dtr-self', 'DTRcontroller@pullDTRuser');
+            Route::get('dtr-md-records-self', 'DTRcontroller@monthDayRecordsSelf');
             Route::get('dtr-device-testdevice', 'BioMSController@testDeviceConnection');
             Route::get('dtr-fetchuser', 'DTRcontroller@fetchUserDTR');
             Route::get('dtr-reports', 'DTRcontroller@dtrUTOTReport');
