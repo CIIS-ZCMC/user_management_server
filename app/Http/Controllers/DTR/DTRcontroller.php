@@ -77,6 +77,28 @@ class DTRcontroller extends Controller
         }
     }
 
+    public function monthDayRecordsSelf(Request $request)
+    {
+        try {
+            $user = $request->user;
+            $biometric_id = $user->biometric_id;
+            $selfRecord = DailyTimeRecords::where('biometric_id', $biometric_id)->get();
+            foreach ($selfRecord as $dtr) {
+                $records[date('F', strtotime($dtr->dtr_date))][] = date('Y', strtotime($dtr->dtr_date));
+            }
+            $result = [];
+            foreach ($records as $month => $years) {
+                $result[] = [
+                    'month' => $month,
+                    'year' => array_values(array_unique($years))
+                ];
+            }
+            return $result;
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], 401);
+        }
+    }
+
     public function fetchDTRFromDevice()
     {
 
@@ -353,10 +375,15 @@ class DTRcontroller extends Controller
             */
             $id = json_decode($biometric_id);
 
+            if (count($id) == 0) {
+                return response()->json([
+                    'message' => 'Failed to Generate: No Employee data found'
+                ]);
+            }
+
             if (count($id) >= 2) {
                 return $this->GenerateMultiple($id, $month_of, $year_of, $view);
             }
-
 
             $emp_name = '';
             $biometric_id = $id[0];
@@ -366,7 +393,7 @@ class DTRcontroller extends Controller
                 $emp_name = $employee->name();
             } else {
                 return response()->json([
-                    'message' => 'Failed to Generate: Data not found'
+                    'message' => 'Failed to Generate: No biometric data found'
                 ]);
             }
             $dtr = DB::table('daily_time_records')
@@ -691,6 +718,7 @@ class DTRcontroller extends Controller
     {
 
         $data = [];
+
         foreach ($id as $key => $biometric_id) {
             if ($this->helper->isEmployee($biometric_id)) {
                 $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
@@ -716,13 +744,14 @@ class DTRcontroller extends Controller
 
 
                     $arrival_Departure = [];
-                    $time_stamps_req = '';
+
                     foreach ($dtr as $val) {
                         /* Validating DTR with its Matching Schedules */
                         /*
                         *   if no matching schedule then
                         *   it will not display the daily time record
                         */
+                        $time_stamps_req = '';
                         $time_stamps_req = $this->helper->getSchedule($biometric_id, $val->first_in); //biometricID
                         $arrival_Departure[] = $this->arrivalDeparture($time_stamps_req, $year_of, $month_of);
                         $schedule = $this->helper->getSchedule($val->biometric_id, date('Y-m-d', strtotime($val->first_in)));
@@ -779,7 +808,7 @@ class DTRcontroller extends Controller
                     $ohf = isset($time_stamps_req) ? $time_stamps_req['total_hours'] . ' HOURS' : null;
                     $emp_Details = [
                         'OHF' => $ohf,
-                        'Arrival_Departure' => $arrival_Departure[0],
+                        'Arrival_Departure' => $arrival_Departure[0] ?? "",
                         'Employee_Name' => $emp_name,
                         'DTRFile_Name' => $emp_name,
                         'biometric_ID' => $biometric_id
@@ -791,35 +820,35 @@ class DTRcontroller extends Controller
                             'first_in' => $res['first_in'],
                             'biometric_ID' => $res['biometric_ID']
                         ];
-                    }, $dt_records);
+                    }, $dt_records ?? []);
 
                     $first_out = array_map(function ($res) {
                         return [
                             'first_out' => $res['first_out'],
                             'biometric_ID' => $res['biometric_ID']
                         ];
-                    }, $dt_records);
+                    }, $dt_records ?? []);
 
                     $second_in = array_map(function ($res) {
                         return [
                             'second_in' => $res['second_in'],
                             'biometric_ID' => $res['biometric_ID']
                         ];
-                    }, $dt_records);
+                    }, $dt_records ?? []);
 
                     $second_out = array_map(function ($res) {
                         return [
                             'second_out' => $res['second_out'],
                             'biometric_ID' => $res['biometric_ID']
                         ];
-                    }, $dt_records);
+                    }, $dt_records ?? []);
 
                     $ut =  array_map(function ($res) {
                         return [
                             'created' => $res['created'],
                             'undertime' => $res['undertime_minutes']
                         ];
-                    }, $dt_records);
+                    }, $dt_records ?? []);
 
                     $holidays = DB::table('holidays')->get();
                 } catch (\Throwable $th) {
@@ -835,10 +864,10 @@ class DTRcontroller extends Controller
                     'secondin' => $second_in,
                     'secondout' => $second_out,
                     'undertime' => $ut,
-                    'dtrRecords' => $dt_records,
+                    'dtrRecords' => $dt_records ?? [],
                     'holidays' => $holidays,
                     'print_view' => true,
-                    'halfsched' => $is_Half_Schedule,
+                    'halfsched' => $is_Half_Schedule ?? 0,
                 ];
             }
         }
@@ -1557,7 +1586,7 @@ class DTRcontroller extends Controller
 
         for ($i = 1; $i <= 30; $i++) {
 
-            $date = date('Y-m-d', strtotime('2024-01-' . $i));
+            $date = date('Y-m-d', strtotime('2022-11-' . $i));
 
             if (date('D', strtotime($date)) != 'Sun') {
                 $firstin = date('H:i:s', strtotime('today') + rand(25200, 30600));

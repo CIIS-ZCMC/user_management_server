@@ -13,24 +13,26 @@ return new class extends Migration
     {
         Schema::create('official_time_applications', function (Blueprint $table) {
             $table->id();
-            $table->string('date_from');
-            $table->string('date_to');
-            // $table->string('time_from');
-            // $table->string('time_to');
-            $table->string('reason')->nullable();
-            $table->string('status');
-            $table->string('date')->nullable();
-            $table->string('time')->nullable();
-            $table->string('decline_reason')->nullable();
-            $table->string('personal_order')->nullable();
+            $table->unsignedBigInteger('employee_profile_id')->unsigned();
+            $table->foreign('employee_profile_id')->references('id')->on('employee_profiles')->onDelete('cascade');
+            $table->date('date_from');
+            $table->date('date_to');
+            $table->string('purpose');
+            $table->string('status')->default('for recommending approval');
+            $table->string('personal_order_file')->nullable();
             $table->string('personal_order_path')->nullable();
             $table->string('personal_order_size')->nullable();
             $table->string('certificate_of_appearance')->nullable();
             $table->string('certificate_of_appearance_path')->nullable();
             $table->string('certificate_of_appearance_size')->nullable();
-            $table->string('reference_number')->nullable();
-            $table->unsignedBigInteger('employee_profile_id')->unsigned();
-            $table->foreign('employee_profile_id')->references('id')->on('employee_profiles')->onDelete('cascade');
+
+            $table->unsignedBigInteger('recommending_officer')->nullable();
+            $table->foreign('recommending_officer')->references('id')->on('employee_profiles');
+
+            $table->unsignedBigInteger('approving_officer')->nullable();
+            $table->foreign('approving_officer')->references('id')->on('employee_profiles');
+
+            $table->text('remarks')->nullable();
             $table->timestamps();
         });
     }

@@ -24,7 +24,7 @@ class SectionSeeder extends Seeder
         ]);
         
         Section::create([
-            'name' => 'Human Resource Management Offce',
+            'name' => 'Human Resource Management Office',
             'code' => 'HRMO',
             'division_id' => $division->id
         ]);

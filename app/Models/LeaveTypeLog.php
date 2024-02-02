@@ -8,21 +8,21 @@ use Illuminate\Database\Eloquent\Model;
 class LeaveTypeLog extends Model
 {
     use HasFactory;
+
     public $fillable = [
-        'action_by_id',
         'leave_type_id',
-        'action',
-        'date',
-        'time',
-        'fields'
-       
-       
+        'action_by',
+        'action'
     ];
-    public function leaveType() {
+
+    public function leaveType()
+    {
         return $this->belongsTo(LeaveType::class);
     }
-    public function employeeProfile() {
-        return $this->belongsTo(EmployeeProfile::class, 'action_by_id');
+
+    public function employeeProfile()
+    {
+        return $this->belongsTo(EmployeeProfile::class, 'action_by');
     }
 
 }
