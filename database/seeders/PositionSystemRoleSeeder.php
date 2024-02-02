@@ -2,9 +2,10 @@
 
 namespace Database\Seeders;
 
+use App\Models\EmployeeProfile;
+use App\Models\SpecialAccessRole;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 use App\Models\Designation;
 use App\Models\PositionSystemRole;
@@ -17,16 +18,14 @@ class PositionSystemRoleSeeder extends Seeder
      */
     public function run(): void
     {
-        $system_role =  SystemRole::find(1);
+        $regular_employee =  SystemRole::find(1);
+        $designations = Designation::all();
 
-        PositionSystemRole::create([
-            'designation_id' => Designation::where('code', 'SA I')->first()->id,
-            'system_role_id' => $system_role -> id,
-        ]);
-        
-        PositionSystemRole::create([
-            'designation_id' => Designation::where('code', 'CP III')->first()->id,
-            'system_role_id' => $system_role -> id,
-        ]);
+        foreach($designations as $designation){
+            PositionSystemRole::create([
+                'designation_id' => $designation->id,
+                'system_role_id' => $regular_employee -> id,
+            ]);
+        }
     }
 }

@@ -29,6 +29,7 @@ class DatabaseSeeder extends Seeder
         $this->call([LeaveTypeRequirementSeeder::class]);
         $this->call([LeaveTypeSeeder::class]);
         $this->call([PersonalInformationSeeder::class]);
+        $this->call([AssignSpecialAccessToSuperAdmin::class]);
         $this->call([TimeShiftSeeder::class]);
 
     }

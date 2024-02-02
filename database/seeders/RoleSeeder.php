@@ -19,18 +19,8 @@ class RoleSeeder extends Seeder
         ]);
         
         Role::create([
-            'name' => 'Admin I',
-            'code' => 'admin_001'
-        ]);
-        
-        Role::create([
-            'name' => 'Admin II',
-            'code' => 'admin_002'
-        ]);
-        
-        Role::create([
-            'name' => 'Admin III',
-            'code' => 'admin_003'
+            'name' => 'Regular Employee',
+            'code' => 'reg_emp'
         ]);
     }
 }
