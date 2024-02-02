@@ -289,8 +289,7 @@ class Helpers
 
         return $code;
     }
-<<<<<<< HEAD
-
+    
     public static function ScheduleApprovingOfficer($area, $user)
     {
         if ($area != null) {
@@ -355,6 +354,3 @@ class Helpers
 
     }
 }
-=======
-}
->>>>>>> 79101f77654207dc5784f59a2b37e05560a4fc77
