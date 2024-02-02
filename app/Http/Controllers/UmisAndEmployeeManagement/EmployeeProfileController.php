@@ -1327,6 +1327,7 @@ class EmployeeProfileController extends Controller
              *  area = area id (division, department, section, unit)
              *  sector = area sector
              *  designation_id = job position id
+             *  effective_date = effective
              */
             $employee_profile = EmployeeProfile::find($id);
 
@@ -1390,7 +1391,7 @@ class EmployeeProfileController extends Controller
             $employee_assign_area->update([
                 $key_details => $area_details->id,
                 'designation_id' => $designation_details !== null? $designation_details->id: $employee_assign_area->designation_id,
-                'effective_date' => now()
+                'effective_date' => $request->effective_date
             ]);
 
             $employee_previous_assign_area['started_at'] = $employee_previous_assign_area['effective_at'];
