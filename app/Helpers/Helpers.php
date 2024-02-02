@@ -289,4 +289,68 @@ class Helpers
 
         return $code;
     }
+    
+    public static function ScheduleApprovingOfficer($area, $user)
+    {
+        if ($area != null) {
+            if ($area['sector'] === 'Division') {
+                $division = Division::where('id', $user->assignedArea->division->id)->first();
+
+                if ($division->chief_employee_profile_id !== null) {
+                  return ["approving_officer" => $division->chief_employee_profile_id];
+                }
+
+                if ($division->oic_employee_profile_id !== null) {
+                     return ["approving_officer" =>  $division->oic_employee_profile_id];
+                }
+            }
+
+            if ($area['sector'] === 'Department') {
+                $department = Department::where('id', $user->assignedArea->department->id)->first();
+
+                if ($department->head_employee_profile_id !== null) {
+                     return ["approving_officer" =>  $department->head_employee_profile_id];
+                }
+
+                if ($department->oic_employee_profile_id  !== null) {
+                     return ["approving_officer" =>  $department->oic_employee_profile_id];
+                }
+            }
+
+            if ($area['sector'] === 'Section') {
+                $section = Section::where('id',$user->assignedArea->section->id)->first();
+                if ($section) {
+                    if ($section->department_id !== null) {
+                         return ["approving_officer" =>  Department::where('id', $section->department_id)->first()->head_employee_profile_id];
+                    }
+                   
+                    if ($section->supervisor_employee_profile_id !== null) {
+                         return ["approving_officer" =>  $section->supervisor_employee_profile_id];
+                    }
+
+                    if ($section->oic_employee_profile_id  !== null) {
+                         return ["approving_officer" =>  $section->oic_employee_profile_id];
+                    }
+                }
+            }
+
+            if ($area['sector'] === 'Unit') {
+                $unit = Unit::where('id',$user->assignedArea->unit->id)->first();
+                if ($unit) {
+                    if ($unit->section_id  !== null) {
+                         return ["approving_officer" =>  Section::where('id', $unit->section_id)->first()->supervisor_employee_profile_id];
+                    }
+                   
+                    if ($unit->head_employee_profile_id !== null) {
+                         return ["approving_officer" =>  $unit->head_employee_profile_id];
+                    }
+
+                    if ($unit->oic_employee_profile_id !== null) {
+                         return ["approving_officer" =>  $unit->oic_employee_profile_id];
+                    }
+                }
+            }
+        }
+
+    }
 }

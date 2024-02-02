@@ -3,9 +3,6 @@
 namespace App\Http\Controllers\Schedule;
 
 use App\Models\EmployeeProfile;
-
-use App\Http\Resources\ScheduleResource;
-use App\Http\Requests\ScheduleRequest;
 use App\Helpers\Helpers;
 
 use Carbon\Carbon;
@@ -24,9 +21,9 @@ class EmployeeScheduleController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-       //
+        // 
     }
 
     /**

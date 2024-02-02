@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Schedule;
 use App\Models\PullOut;
 use App\Models\EmployeeProfile;
 use App\Models\Section;
-use App\Models\TimeAdjusment;
 
 use App\Http\Resources\PullOutResource;
 use App\Http\Requests\PullOutRequest;
@@ -13,10 +12,8 @@ use App\Helpers\Helpers;
 
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\DB;
 
 use Carbon\Carbon;
-use DateTime;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;

@@ -6,8 +6,6 @@ use App\Models\EmployeeSchedule;
 use App\Models\Schedule;
 use App\Models\EmployeeProfile;
 
-use App\Http\Resources\ScheduleResource;
-use App\Http\Requests\ScheduleRequest;
 use App\Helpers\Helpers;
 
 use Illuminate\Http\Response;
@@ -30,26 +28,19 @@ class OnCallController extends Controller
     public function index(Request $request)
     {
         try {
+            
             $user = $request->user;
             $assigned_area = $user->assignedArea->findDetails();
 
-            $array = EmployeeProfile::with([
-                'personalInformation',
-                'assignedArea',
-                'schedule' => function ($query) use ($request) {
-                    $query->with([
-                        'timeShift',
-                        'isOnCall' => function ($innerQuery) use ($request) {
-                            $innerQuery->select('*')->where('is_on_call', 1);
-                        }
-                    ])->whereYear('date', '=', $request->year)->whereMonth('date', '=', $request->month);
-                }
-            ])->whereHas('assignedArea', function ($query) use ($user, $assigned_area) {
+            $sql = EmployeeProfile::with(['schedule' => function ($query) use ($request) {
+                    $query->with(['timeShift'])->whereYear('date', '=', $request->year)->whereMonth('date', '=', Carbon::parse($request->month)->format('m'))
+                    ->where('is_on_call', '=', 1);
+            }])->whereHas('assignedArea', function ($query) use ($user, $assigned_area) {
                 $query->where([strtolower($assigned_area['sector']) . '_id' => $user->assignedArea->id]);
             })->get();
 
             $data = [];
-            foreach ($array as $key => $value) {
+            foreach ($sql as $key => $value) {
                 $data[] = [
                     'id' => $value['id'],
                     'name' => $value->name(),
