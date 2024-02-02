@@ -13,24 +13,29 @@ return new class extends Migration
     {
         Schema::create('leave_applications', function (Blueprint $table) {
             $table->id();
-            $table->string('reference_number')->nullable();
+            $table->datetime('date_from')->nullable();
+            $table->datetime('date_to')->nullable();
             $table->string('country')->nullable();
             $table->string('city')->nullable();
-            $table->string('zip_code')->nullable();
-            $table->string('patient_type')->nullable();
+            $table->boolean('is_outpatient')->default(false);
             $table->string('illness')->nullable();
-            $table->string('reason')->nullable();
-            $table->string('leave_credit_total')->nullable();
+            $table->boolean('is_masters')->default(false);
+            $table->boolean('is_board')->default(false);
+            $table->string('applied_credits')->nullable();
             $table->string('status')->nullable();
             $table->string('remarks')->nullable();
-            $table->string('date')->nullable();
-            $table->string('time')->nullable();
-            $table->string('decline_reason')->nullable();
             $table->boolean('without_pay')->default(false);
+            $table->text('reason')->nullable();
             $table->unsignedBigInteger('employee_profile_id')->unsigned();
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->unsignedBigInteger('leave_type_id')->unsigned();
-            $table->foreign('leave_type_id')->references('id')->on('leave_types')->onDelete('cascade');;
+            $table->foreign('leave_type_id')->references('id')->on('leave_types')->onDelete('cascade');
+            $table->unsignedBigInteger('hrmo_officer')->unsigned()->nullable();
+            $table->foreign('hrmo_officer')->references('id')->on('employee_profiles')->onDelete('cascade');
+            $table->unsignedBigInteger('recommending_officer')->unsigned()->nullable();
+            $table->foreign('recommending_officer')->references('id')->on('employee_profiles')->onDelete('cascade');
+            $table->unsignedBigInteger('approving_officer')->unsigned()->nullable();
+            $table->foreign('approving_officer')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->timestamps();
         });
     }

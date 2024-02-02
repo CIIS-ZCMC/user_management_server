@@ -28,7 +28,7 @@ class LeaveCreditController extends Controller
         try{
             $leave_credits=[];
 
-           $leave_credits =LeaveCredit::all();
+           $leave_credits = EmployeeLeaveCredit::all();
            $leave_credit_resource=ResourcesLeaveCredit::collection($leave_credits);
 
              return response()->json(['data' => $leave_credit_resource], Response::HTTP_OK);
@@ -69,7 +69,7 @@ class LeaveCreditController extends Controller
             }
             return response()->json(['message' => 'success.'], Response::HTTP_OK);
         }
-     
+
 
         return response()->json(['message' => 'No employee records available.'], Response::HTTP_OK);
     }
@@ -358,10 +358,10 @@ class LeaveCreditController extends Controller
     public function store(Request $request)
     {
         try{
-            $leave_credit = new LeaveCredit();
-            $leave_credit->day_value = $request->day_value;
-            $leave_credit->month_value = $request->month_value;
-            $leave_credit->save();
+            // $leave_credit = new EmployeeLeaveCredit();
+            // $leave_credit->day_value = $request->day_value;
+            // $leave_credit->month_value = $request->month_value;
+            // $leave_credit->save();
 
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -373,7 +373,7 @@ class LeaveCreditController extends Controller
     public function update($id,Request $request)
     {
         try{
-            $leave_credit = LeaveCredit::findOrFail($id);
+            $leave_credit = EmployeeLeaveCredit::findOrFail($id);
             $leave_credit->day_value = $request->day_value;
             $leave_credit->month_value = $request->month_value;
             $leave_credit->update();
@@ -385,9 +385,4 @@ class LeaveCreditController extends Controller
             return response() -> json(['message' => $th -> getMessage()], 500);
         }
     }
-
-
-
-
 }
-

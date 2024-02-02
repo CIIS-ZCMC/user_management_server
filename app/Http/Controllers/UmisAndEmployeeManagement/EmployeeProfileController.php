@@ -80,7 +80,7 @@ class EmployeeProfileController extends Controller
      * Create Access Token
      * Retrieve Personal Information
      * Job Details (Plantilla or Not)
-     * 
+     *
      */
     public function signIn(SignInRequest $request)
     {
@@ -532,7 +532,7 @@ class EmployeeProfileController extends Controller
             if (!$employee_profile) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
-            
+
             $otp = strip_tags($request->otp);
             $otpExpirationMinutes = 5;
             $currentDateTime = Carbon::now();
@@ -1162,7 +1162,7 @@ class EmployeeProfileController extends Controller
                 'password_encrypted' => $encryptedPassword,
                 'password_created_at' => now(),
                 'password_expiration_at' => $fortyDaysExpiration,
-                'is_2fa' => $request->two_factor??false
+                'is_2fa' => $request->two_factor ?? false
             ]);
 
             $agent = new Agent();
@@ -1320,7 +1320,7 @@ class EmployeeProfileController extends Controller
 
     public function reAssignArea($id, Request $request)
     {
-        try{
+        try {
             /**
              * REQUIREMENTS:
              *  id = employee_profile_id
@@ -1330,54 +1330,54 @@ class EmployeeProfileController extends Controller
              */
             $employee_profile = EmployeeProfile::find($id);
 
-            if(!$employee_profile){
-                return response()->json(['message' => "No employee record found with id ".$id], Response::HTTP_NOT_FOUND);
+            if (!$employee_profile) {
+                return response()->json(['message' => "No employee record found with id " . $id], Response::HTTP_NOT_FOUND);
             }
 
             $area_details = null;
             $key_details = null;
             $designation_details = null;
 
-            if($request->designation_id !== null){
+            if ($request->designation_id !== null) {
                 $designation = Designation::find($request->designation_id);
 
-                if(!$designation){
-                    return response()->json(['message' => "No job position record found with id ".$id], Response::HTTP_NOT_FOUND);
+                if (!$designation) {
+                    return response()->json(['message' => "No job position record found with id " . $id], Response::HTTP_NOT_FOUND);
                 }
-                
+
                 $designation_details = $designation;
             }
-            
-            if($request->area !== null){
+
+            if ($request->area !== null) {
                 $area = strip_tags($request->area);
                 $sector = strip_tags($request->sector);
-    
-                switch($sector){
+
+                switch ($sector) {
                     case "Division":
                         $area_details = Division::find($area);
-                        if(!$area_details){
-                            return response()->json(['message' => 'No record found for division with id '.$id ], Response::HTTP_NOT_FOUND);
+                        if (!$area_details) {
+                            return response()->json(['message' => 'No record found for division with id ' . $id], Response::HTTP_NOT_FOUND);
                         }
                         $key_details = 'division_id';
                         break;
                     case "Department":
                         $area_details = Department::find($area);
-                        if(!$area_details){
-                            return response()->json(['message' => 'No record found for department with id '.$id ], Response::HTTP_NOT_FOUND);
+                        if (!$area_details) {
+                            return response()->json(['message' => 'No record found for department with id ' . $id], Response::HTTP_NOT_FOUND);
                         }
                         $key_details = 'department_id';
                         break;
                     case "Section":
                         $area_details = Section::find($area);
-                        if(!$area_details){
-                            return response()->json(['message' => 'No record found for section with id '.$id ], Response::HTTP_NOT_FOUND);
+                        if (!$area_details) {
+                            return response()->json(['message' => 'No record found for section with id ' . $id], Response::HTTP_NOT_FOUND);
                         }
                         $key_details = 'section_id';
                         break;
                     case "Unit":
                         $area_details = Unit::find($area);
-                        if(!$area_details){
-                            return response()->json(['message' => 'No record found for unit with id '.$id ], Response::HTTP_NOT_FOUND);
+                        if (!$area_details) {
+                            return response()->json(['message' => 'No record found for unit with id ' . $id], Response::HTTP_NOT_FOUND);
                         }
                         $key_details = 'unit_id';
                         break;
@@ -1389,7 +1389,7 @@ class EmployeeProfileController extends Controller
 
             $employee_assign_area->update([
                 $key_details => $area_details->id,
-                'designation_id' => $designation_details !== null? $designation_details->id: $employee_assign_area->designation_id,
+                'designation_id' => $designation_details !== null ? $designation_details->id : $employee_assign_area->designation_id,
                 'effective_date' => now()
             ]);
 
@@ -1402,8 +1402,8 @@ class EmployeeProfileController extends Controller
                 'data' => new EmployeeProfileResource($employee_profile),
                 'message' => 'Designation records retrieved.'
             ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'reAssignArea', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'reAssignArea', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -1583,6 +1583,7 @@ class EmployeeProfileController extends Controller
 
             Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . '.');
 
+
             return response()->json(
                 [
                     'data' => new EmployeeProfileResource($employee_profile),
@@ -1592,6 +1593,7 @@ class EmployeeProfileController extends Controller
             );
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
+
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -1863,7 +1865,9 @@ class EmployeeProfileController extends Controller
 
             $employee_profile->delete();
 
+
             Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in deleting a ' . $this->SINGULAR_MODULE_NAME . '.');
+
 
             return response()->json(['message' => 'Employee profile deleted.'], Response::HTTP_OK);
         } catch (\Throwable $th) {

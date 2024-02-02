@@ -12,14 +12,14 @@ class EmployeeOvertimeCredit extends Model
 
     public $fillable = [
         'employee_profile_id',
-        'overtime_application_id',
-        'operation',
-        'overtime_hours',
-        'credit_value',
-        'date',
+        'earned_credit_by_hour',
+        'used_credit_by_hour',
+        'max_credit_monthly',
+        'max_credit_annual',
     ];
+
     public function employeeProfile()
-{
-    return $this->belongsTo(EmployeeProfile::class);
-}
+    {
+        return $this->belongsTo(EmployeeProfile::class, 'employee_profile_id');
+    }
 }

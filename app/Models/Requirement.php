@@ -10,26 +10,22 @@ class Requirement extends Model
 {
     use HasFactory;
     
-    protected $table = 'requirements';
+    protected $table = 'leave_requirements';
     protected $fillable = [
         'name',
         'description'
     ];
     public function leaveTypeRequirements()
     {
-        return $this->hasMany(LeaveTypeRequirement::class, 'requirement_id');
+        return $this->hasMany(LeaveTypeRequirement::class, 'leave_requirement_id');
     }
   
     public function logs(){ 
-        return $this->hasMany(RequirementLog::class);
+        return $this->hasMany(RequirementLog::class, 'leave_requirement_id');
     }
    
     public function leaveTypes() {
         return $this->belongsToMany(LeaveType::class);
     }
-
-   
-
-
 
 }
