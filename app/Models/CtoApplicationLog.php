@@ -10,7 +10,7 @@ class CtoApplicationLog extends Model
     use HasFactory;
     protected $table = 'cto_application_logs';
     public $fillable = [
-        'action_by_id',
+        'action_by',
         'cto_application_id',
         'action',
         'date',
@@ -21,7 +21,9 @@ class CtoApplicationLog extends Model
     public function CtoApplication() {
         return $this->belongsTo(CtoApplication::class);
     }
+
     public function employeeProfile() {
-        return $this->belongsTo(EmployeeProfile::class, 'action_by_id');
+        return $this->belongsTo(EmployeeProfile::class, 'action_by');
     }
+
 }

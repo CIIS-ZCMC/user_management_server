@@ -20,25 +20,29 @@ class EmployeeProfileResource extends JsonResource
         $assigned_area = $this->assignedArea;
         $area_details = $assigned_area->findDetails();
         $area = $area_details;
-        $is_regular_employee = $assigned_area->plantilla_id === null? false: true;
-        $designation = $assigned_area->plantilla_id===null?$assigned_area->designation:$assigned_area->plantilla->designation;
+        $is_regular_employee = $assigned_area->plantilla_id === null ? false : true;
+        $designation = $assigned_area->plantilla_id === null ? $assigned_area->designation : $assigned_area->plantilla->designation;
         $designation_name = $designation->name;
+
         $designation_code = $designation->code;
+
 
         $employment_type = $this->employmentType;
         $employment_status = $employment_type->name;
 
-        $account_status = $this->deactivated_at === null? 'Active':$this->deactivated_at;
+        $account_status = $this->deactivated_at === null ? 'Active' : $this->deactivated_at;
 
         return [
             'id' => $this->id,
             'employee_id' => $this->employee_id,
             'name' => $name,
-            'profile_url' =>  env('SERVER_DOMAIN')."/photo/profiles/".$this->profile_url,
+            'profile_url' =>  env('SERVER_DOMAIN') . "/photo/profiles/" . $this->profile_url,
             'area' => $area,
             'is_regular_employee' => $is_regular_employee,
             'designation' => $designation_name,
+
             'designation_code' => $designation_code,
+
             'date_hired' => $this->date_hired,
             'employment_status' => $employment_status,
             'account_status' => $account_status

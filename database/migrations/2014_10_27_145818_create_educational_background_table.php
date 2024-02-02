@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('level');
             $table->string('name');
             $table->string('degree_course')->nullable();
-            $table->date('year_graduated');
+            $table->date('year_graduated')->nullable();
             $table->string('highest_grade')->nullable();
             $table->date('inclusive_from')->nullable();
             $table->date('inclusive_to')->nullable();
