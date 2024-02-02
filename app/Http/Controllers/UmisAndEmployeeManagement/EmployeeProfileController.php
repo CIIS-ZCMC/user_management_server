@@ -1385,19 +1385,25 @@ class EmployeeProfileController extends Controller
                 }
             }
 
-            $employee_assign_area = $employee_profile->assignArea;
-            $employee_previous_assign_area = $employee_assign_area;
+            $employee_previous_assign_area = $employee_profile->assignedArea;
 
-            $employee_assign_area->update([
+            $employee_profile->assignedArea->update([
                 $key_details => $area_details->id,
-                'designation_id' => $designation_details !== null? $designation_details->id: $employee_assign_area->designation_id,
+                'designation_id' => $designation_details !== null? $designation_details->id:$employee_profile->assignedArea->designation_id,
                 'effective_date' => $request->effective_date
             ]);
 
-            $employee_previous_assign_area['started_at'] = $employee_previous_assign_area['effective_at'];
-            $employee_previous_assign_area['end_at'] = now();
+            $new_trail = [];
 
-            AssignAreaTrail::create($employee_previous_assign_area);
+            foreach($employee_previous_assign_area as $key => $value){
+                if($key === 'created_at' || $key === 'updated_at') continue;
+                $new_trail[$key] = $value;
+            }
+
+            $new_trail['started_at'] = $employee_previous_assign_area['effective_at'];
+            $new_trail['end_at'] = now();
+
+            AssignAreaTrail::create($new_trail);
 
             return response()->json([
                 'data' => new EmployeeProfileResource($employee_profile),
