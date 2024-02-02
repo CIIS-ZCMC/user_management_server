@@ -1354,28 +1354,28 @@ class EmployeeProfileController extends Controller
                 $sector = strip_tags($request->sector);
     
                 switch($sector){
-                    case "Division":
+                    case "division":
                         $area_details = Division::find($area);
                         if(!$area_details){
                             return response()->json(['message' => 'No record found for division with id '.$id ], Response::HTTP_NOT_FOUND);
                         }
                         $key_details = 'division_id';
                         break;
-                    case "Department":
+                    case "department":
                         $area_details = Department::find($area);
                         if(!$area_details){
                             return response()->json(['message' => 'No record found for department with id '.$id ], Response::HTTP_NOT_FOUND);
                         }
                         $key_details = 'department_id';
                         break;
-                    case "Section":
+                    case "section":
                         $area_details = Section::find($area);
                         if(!$area_details){
                             return response()->json(['message' => 'No record found for section with id '.$id ], Response::HTTP_NOT_FOUND);
                         }
                         $key_details = 'section_id';
                         break;
-                    case "Unit":
+                    case "unit":
                         $area_details = Unit::find($area);
                         if(!$area_details){
                             return response()->json(['message' => 'No record found for unit with id '.$id ], Response::HTTP_NOT_FOUND);
@@ -1533,7 +1533,7 @@ class EmployeeProfileController extends Controller
             $cleanData['designation_id'] = $request->designation_id;
             $cleanData['effective_at'] = $request->date_hired;
 
-            $plantilla_number_id = $request->plantilla_number_id;
+            $plantilla_number_id = $request->plantilla_number_id == 'null' || $request->plantilla_number_id === null ? null: $request->plantilla_number_id;
             $sector_key = '';
 
             switch (strip_tags($request->sector)) {
