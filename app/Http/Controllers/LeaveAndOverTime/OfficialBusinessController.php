@@ -61,7 +61,7 @@ class OfficialBusinessController extends Controller
 
             if ($employee_profile->id===Helpers::getHrmoOfficer()) {
                 return response()->json([
-                    'data' => OfficialBusinessResource::collection(OfficialBusiness::all()),
+                    'data' => OfficialBusinessResource::collection(OfficialBusiness::where('status', 'approved')->get()),
                     'message' => 'Retrieved all offical business application'
                 ], Response::HTTP_OK);
             }

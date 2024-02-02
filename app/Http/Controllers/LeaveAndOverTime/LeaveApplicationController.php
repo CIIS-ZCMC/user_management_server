@@ -220,6 +220,7 @@ class LeaveApplicationController extends Controller
     public function store(LeaveApplicationRequest $request)
     {
         try {
+            
             $employee_profile = $request->user;
             $recommending_and_approving = Helpers::getRecommendingAndApprovingOfficer($employee_profile->assignedArea->findDetails(), $employee_profile->id);
             $hrmo_officer = Helpers::getHrmoOfficer();
@@ -237,7 +238,7 @@ class LeaveApplicationController extends Controller
         if($leave_type->is_special){
 
             if ($leave_type->period < $daysDiff) {
-                return response()->json(['message' => 'Exceeds days entitled for '.$leave_type->name], Response::HTTP_BAD_REQUEST);
+                return response()->json(['message' => 'Exceeds days entitled for '.$leave_type->name], Response::HTTP_FORBIDDEN);
             }
 
             $cleanData['applied_credits'] = $daysDiff;
@@ -297,82 +298,84 @@ class LeaveApplicationController extends Controller
             $employee_credit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)
             ->where('leave_type_id', $request->leave_type_id)->first();
 
+    
+           
+        if ($request->without_pay == 0 && $employee_credit->total_leave_credits < $daysDiff) {
+ 
+            return response()->json(['message' => 'Insufficient leave credits.'], Response::HTTP_BAD_REQUEST);
+        }else{
+            $cleanData['applied_credits'] = $daysDiff;
+            $cleanData['employee_profile_id'] = $employee_profile->id;
+            $cleanData['hrmo_officer'] = $hrmo_officer;
+            $cleanData['recommending_officer'] = $recommending_and_approving['recommending_officer'];
+            $cleanData['approving_officer'] = $recommending_and_approving['approving_officer'];
+            $cleanData['status'] = 'applied';
+    
+            foreach ($request->all() as $key => $leave) {
+                if(is_bool($leave)){
+                    $cleanData[$key] = $leave === 0 ? false:true;
+                }
+                if(is_array($leave)){
+                    $cleanData[$key] = $leave;
+                    continue;
+                }
+                if ($key === 'user' || $key === 'requirements') 
+                    continue;
+                if ($leave === 'null') {
+                    $cleanData[$key] = $leave;
+                    continue;
+                }
+                $cleanData[$key] = strip_tags($leave);
+            }
+    
+            $leave_application = LeaveApplication::create($cleanData);
             
-        
-
-        if ($request->without_pay === 0 && $employee_credit->total_leave_credits < $daysDiff) {
-            return response()->json(['message' => 'Insufficient leave credit.'], Response::HTTP_BAD_REQUEST);
-        }
-        $cleanData['applied_credits'] = $daysDiff;
-        $cleanData['employee_profile_id'] = $employee_profile->id;
-        $cleanData['hrmo_officer'] = $hrmo_officer;
-        $cleanData['recommending_officer'] = $recommending_and_approving['recommending_officer'];
-        $cleanData['approving_officer'] = $recommending_and_approving['approving_officer'];
-        $cleanData['status'] = 'applied';
-
-        foreach ($request->all() as $key => $leave) {
-            if(is_bool($leave)){
-                $cleanData[$key] = $leave === 0 ? false:true;
-            }
-            if(is_array($leave)){
-                $cleanData[$key] = $leave;
-                continue;
-            }
-            if ($key === 'user' || $key === 'requirements') 
-                continue;
-            if ($leave === 'null') {
-                $cleanData[$key] = $leave;
-                continue;
-            }
-            $cleanData[$key] = strip_tags($leave);
-        }
-
-        $leave_application = LeaveApplication::create($cleanData);
-        
-        if($request->without_pay == 0 ){
-            $previous_credit= $employee_credit->total_leave_credits;
-
-            $employee_credit->update(['total_leave_credits' => $employee_credit->total_leave_credits - $daysDiff]);
-
-            EmployeeLeaveCreditLogs::create([
-                'employee_leave_credit_id' => $employee_credit->id,
-                'previous_credit' => $previous_credit,
-                'leave_credits' => $daysDiff
-            ]);
-
-        }
-
-        if ($request->requirements) {
-            $index = 0;
-            $requirements_name = $request->requirements_name;
-
-            foreach ($request->file('requirements') as $key => $file) {
-                $fileName=$file->getClientOriginalName();
-                $size = filesize($file);
-                $file_name_encrypted = Helpers::checkSaveFile($file, '/requirements');
-
-                LeaveApplicationRequirement::create([
-                    'leave_application_id' => $leave_application->id,
-                    'file_name' => $fileName,
-                    'name' => $requirements_name[$index],
-                    'path' => $file_name_encrypted,
-                    'size' => $size,
+            if($request->without_pay == 0 ){
+                $previous_credit= $employee_credit->total_leave_credits;
+    
+                $employee_credit->update(['total_leave_credits' => $employee_credit->total_leave_credits - $daysDiff]);
+    
+                EmployeeLeaveCreditLogs::create([
+                    'employee_leave_credit_id' => $employee_credit->id,
+                    'previous_credit' => $previous_credit,
+                    'leave_credits' => $daysDiff
                 ]);
-                $index++;
+    
+            }
+    
+            if ($request->requirements) {
+                $index = 0;
+                $requirements_name = $request->requirements_name;
+    
+                foreach ($request->file('requirements') as $key => $file) {
+                    $fileName=$file->getClientOriginalName();
+                    $size = filesize($file);
+                    $file_name_encrypted = Helpers::checkSaveFile($file, '/requirements');
+    
+                    LeaveApplicationRequirement::create([
+                        'leave_application_id' => $leave_application->id,
+                        'file_name' => $fileName,
+                        'name' => $requirements_name[$index],
+                        'path' => $file_name_encrypted,
+                        'size' => $size,
+                    ]);
+                    $index++;
+                }
+            }
+    
+            LeaveApplicationLog::create([
+                'action_by' => $employee_profile->id,
+                'leave_application_id' => $leave_application->id,
+                'action' => 'Applied'
+            ]);
             }
         }
-
-        LeaveApplicationLog::create([
-            'action_by' => $employee_profile->id,
-            'leave_application_id' => $leave_application->id,
-            'action' => 'Applied'
-        ]);
-        }
+        
            
 
             return response()->json([
                 'data' => new LeaveApplicationResource($leave_application),
-                'message' => 'Retrieve all leave application records.'
+                'message' => 'Successfully applied for '. $leave_type->name
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -407,27 +410,33 @@ class LeaveApplicationController extends Controller
             }
 
             $leave_application = LeaveApplication::find($id);
+            $leave_type = $leave_application->leaveType;
+            
+            // return response()->json(['message' => $leave_type->is_special], 401);
 
             $leave_application->update([
                 'status' => 'declined',
                 'reason' => strip_tags($request->reason)
             ]);
 
-            $employee_credit = EmployeeLeaveCredit::where('employee_profile_id', $leave_application->employee_profile_id)
+            if(!$leave_type->is_special){
+                $employee_credit = EmployeeLeaveCredit::where('employee_profile_id', $leave_application->employee_profile_id)
                 ->where('leave_type_id', $leave_application->leave_type_id)->first();
 
-            $current_leave_credit = $employee_credit->total_leave_credits;
+                $current_leave_credit = $employee_credit->total_leave_credits;
 
-            $employee_credit->update([
-                'total_leave_credits' => $current_leave_credit + $leave_application->leave_credits
-            ]);
-           
+                $employee_credit->update([
+                    'total_leave_credits' => $current_leave_credit + $leave_application->leave_credits
+                ]);
+            
 
-            EmployeeLeaveCreditLogs::create([
-                'employee_leave_credit_id' => $employee_credit->id,
-                'previous_credit' => $current_leave_credit,
-                'leave_credits' => $leave_application->applied_credits
-            ]);
+                EmployeeLeaveCreditLogs::create([
+                    'employee_leave_credit_id' => $employee_credit->id,
+                    'previous_credit' => $current_leave_credit,
+                    'leave_credits' => $leave_application->applied_credits
+                ]);
+            }
+            
 
             LeaveApplicationLog::create([
                 'action_by' => $employee_profile->id,

@@ -62,18 +62,18 @@ class LeaveApplicationRequest extends FormRequest
         // return $rules;
 
         return [
-            "date_from.*" => "required|date_format:Y-m-d",
-            "date_to.*" => "required|date_format:Y-m-d",
-            "country.*" => "nullable|string|max:255",
-            "illness.*" => "nullable|string|max:255",
-            "city.*" => "nullable|string|max:255",
-            "is_outpatient.*" => "nullable|boolean",
-            "is_masters.*" => "nullable|boolean",
-            "is_board.*" => "nullable|boolean",
-            "without_pay.*" => "nullable|boolean",
-            "remarks.*" => "nullable|string",
+            "date_from" => "required|before_or_equal:date_to",
+            "date_to" => "required|after_or_equal:date_from",
+            "country" => "nullable|string|max:255",
+            "illness" => "nullable|string|max:255",
+            "city" => "nullable|string|max:255",
+            "is_outpatient" => "nullable|boolean",
+            "is_masters" => "nullable|boolean",
+            "is_board" => "nullable|boolean",
+            "without_pay" => "nullable|boolean",
+            "remarks" => "nullable|string",
             "attachment_name.*" => "required|string|max:255",
-            "attachment_file.*" => "required|file|mimes:jpeg,png,jpg,pdf|max:2048",
+            "attachment_file.*" => "required|file|mimes:jpeg,png,jpg,pdf|max:10000",
         ];
     }
 }

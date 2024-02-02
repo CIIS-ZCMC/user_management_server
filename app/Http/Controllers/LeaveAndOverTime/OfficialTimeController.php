@@ -59,7 +59,7 @@ class OfficialTimeController extends Controller
           
             if ($employee_profile->id===Helpers::getHrmoOfficer()) {
                 return response()->json([
-                    'data' => OfficialTimeResource::collection(OfficialTime::all()),
+                    'data' => OfficialTimeResource::collection(OfficialTime::where('status', 'approved')->get()),
                     'message' => 'Retrieved all offical business application'
                 ], Response::HTTP_OK);
             }

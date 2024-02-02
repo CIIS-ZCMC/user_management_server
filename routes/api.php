@@ -1467,9 +1467,9 @@ Route::middleware('auth.cookie')->group(function(){
             Route::post('requirement/{id}', 'RequirementController@update');
         });
 
-        Route::middleware(['auth.permission:UMIS-LM delete'])->group(function(){
-            Route::post('requirement/{id}', 'RequirementController@destroy');
-        });
+        // Route::middleware(['auth.permission:UMIS-LM delete'])->group(function(){
+        //     Route::post('requirement/{id}', 'RequirementController@destroy');
+        // });
 
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function(){
             Route::get('leave-type-all', 'LeaveTypeController@index');
