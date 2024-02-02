@@ -203,34 +203,36 @@
                 @foreach ($data as $key => $resource)
                         <tr>
                             <td class="schedule-cell"> {{ ++$key }} </td>
-                            <td class="td-name"> {{ $resource->last_name }}, {{ $resource->first_name }} </td>
-                            
+                            <td class="td-name"> {{ $resource->personalInformation->name() }}  </td>
+
+                            @php
+                                $totalHours = 0;
+                            @endphp
+
                             @foreach($dates as $date)
                             <td>
                                 <div class="schedule-container">
-                                    @if ($holiday->where('effectiveDate', $date)->count() > 0)
-                                        @if ($resource->schedule->where('date_start', $date)->count() > 0)
-                                            <span class="schedule-cell">
-                                                {{ date('h', strtotime(substr($resource->schedule->first()->timeShift->first_in ?? '', 0, 2) . ':00')) }} <br>
-
-                                                @if ($resource->schedule->first()->timeShift->second_out ?? '' != null)
-                                                    {{ date('h', strtotime(substr($resource->schedule->first()->timeShift->second_out ?? '', 0, 2) . ':00')) }} <br>
-                                                @else
-                                                    {{ date('h', strtotime(substr($resource->schedule->first()->timeShift->first_out ?? '', 0, 2) . ':00')) }} <br>
-                                                @endif
-                                            </span>
-                                        @else
-                                            <span class="schedule-cell">H</span>
-                                        @endif
+                                    @if ($holiday->where('month_day', date('m-d', strtotime($date)))->count() > 0)
+                                        <span class="schedule-cell">H</span>
                                     @else
-                                        @if ($resource->schedule->where('date_start', $date)->count() > 0)
-                                            <span class="schedule-cell">
-                                                {{ date('h', strtotime(substr($resource->schedule->first()->timeShift->first_in ?? '', 0, 2) . ':00')) }} <br>
+                                        @if ($resource->schedule->where('date', $date)->count() > 0)
 
-                                                @if ($resource->schedule->first()->timeShift->second_out ?? '' != null)
-                                                    {{ date('h', strtotime(substr($resource->schedule->first()->timeShift->second_out ?? '', 0, 2) . ':00')) }} <br>
+                                        @php
+                                            $shift = $resource->schedule->first()->timeShift;
+                                            $firstIn = strtotime($shift->first_in ?? '');
+                                            $secondOut = strtotime($shift->second_out ?? '');
+                                            $firstOut = strtotime($shift->first_out ?? '');
+            
+                                            $totalHours += ($secondOut != null) ? ($secondOut - $firstIn) / 3600 : ($firstOut - $firstIn) / 3600;
+                                        @endphp
+
+                                            <span class="schedule-cell">
+                                                {{ date('h', $firstIn) }} <br>
+
+                                                @if ($secondOut != null)
+                                                    {{ date('h', $secondOut) }} <br>
                                                 @else
-                                                    {{ date('h', strtotime(substr($resource->schedule->first()->timeShift->first_out ?? '', 0, 2) . ':00')) }} <br>
+                                                    {{ date('h', $firstOut) }} <br>
                                                 @endif
                                             </span>
                                         @else
@@ -241,7 +243,7 @@
                               </td>
                             @endforeach
 
-                            <td> Total Hours </td>
+                            <td> {{ $totalHours }} </td>
                         </tr>
                 @endforeach
             </tbody>
@@ -262,15 +264,15 @@
             </div>
 
             <div class="text-center">
-                <span class="float-start">Approved By:</span>
+                {{-- <span class="float-start">Approved By:</span>
                 <br>
                 <span class="signature"></span>
                 <br>
-                <span>Position</span>
+                <span>Position</span> --}}
             </div>
 
             <div class="text-center">
-                <span class="float-start">Noted By:</span>
+                <span class="float-start">Approved By:</span>
                 <br>
                 <span class="signature"></span>
                 <br>

@@ -3,17 +3,19 @@
 namespace App\Http\Controllers\Schedule;
 
 use App\Http\Resources\EmployeeScheduleResource;
+use App\Models\Department;
+use App\Models\Division;
 use App\Models\EmployeeSchedule;
-use App\Models\PullOut;
 use App\Models\Holiday;
 use App\Models\Schedule;
 use App\Models\EmployeeProfile;
-
 
 use App\Http\Resources\ScheduleResource;
 use App\Http\Requests\ScheduleRequest;
 use App\Helpers\Helpers;
 
+use App\Models\Section;
+use App\Models\Unit;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 
@@ -124,11 +126,6 @@ class ScheduleController extends Controller
                     continue;
                 }
 
-                if (DateTime::createFromFormat('Y-m-d', $value)) {
-                    $cleanData[$key] = Carbon::parse($value);
-                    continue;
-                }
-
                 if (is_int($value)) {
                     $cleanData[$key] = $value;
                     continue;
@@ -149,7 +146,7 @@ class ScheduleController extends Controller
             switch ($selected_days) {
                 //If Toggle Date Period On
                 case($selected_days <= 0 && $date_start != null && $date_end != null):
-                    $current_date = $date_start->copy();
+                    $current_date = Carbon::parse($date_start)->copy();
 
                     while ($current_date->lte($date_end)) {
                         $selected_dates[] = $current_date->toDateString();
@@ -157,6 +154,7 @@ class ScheduleController extends Controller
                     }
                     break;
 
+                    
                 //If Toggle Show Day on
                 case($selected_days >= 1 && $date_start === null && $date_end === null):
                     $date = Carbon::now();  // Replace with your desired year
@@ -215,7 +213,8 @@ class ScheduleController extends Controller
                 $employee = $cleanData['employee'];
                 foreach ($employee as $key => $value) {
                     $employee_ids = $value['employee_id']; // Array of employee IDs
-                    $existing_employee_ids = EmployeeProfile::whereIn('id', $employee_ids)->pluck('id')->toArray();
+                    // return $existing_employee_ids = EmployeeProfile::whereIn('id', $employee_ids)->pluck('id');
+                    $existing_employee_ids = EmployeeProfile::where('id', $employee_ids)->pluck('id');
 
                     foreach ($existing_employee_ids as $employee_id) {
                         $query = DB::table('employee_profile_schedule')->where([
@@ -352,79 +351,32 @@ class ScheduleController extends Controller
     public function generate(Request $request)
     {
         try {
-
             $user = $request->user;
             $assigned_area = $user->assignedArea->findDetails();
-            // if ($user != null && $user->position()) {
-            //     $position = $user->position();
 
-            // if ($position->position === "Chief" || $position->position === "Department OIC" || $position->position === "Supervisor" || $position->position === "Section OIC" || $position->position === "Unit Head" || $position->position === "Unit OIC") {
 
             $month = Carbon::parse($request->month)->month;    // Replace with the desired month (1 to 12)
-            $year = Carbon::parse($request->year)->year;      // Replace with the desired year
+            $year = $request->year;      // Replace with the desired year
 
             $days = Helpers::getDatesInMonth($year, $month, "Day");
             $weeks = Helpers::getDatesInMonth($year, $month, "Week");
             $dates = Helpers::getDatesInMonth($year, $month, "");
 
-            // $data = EmployeeProfile::join('personal_informations as PI', 'employee_profiles.personal_information_id', '=', 'PI.id')
-            //     ->with([
-            //         'assignedArea',
-            //         'schedule' => function ($query) use ($year, $month) {
-            //             $query->with(['timeShift', 'holiday'])->whereYear('date', '=', $year)->whereMonth('date', '=', $month);
-            //         }
-            //     ])
-            //     ->whereHas('assignedArea', function ($query) use ($user) {
-            //         $query->where('id', $user->id);
-            //     })
-            //     ->select('employee_profiles.id', 'employee_id', 'biometric_id', 'PI.first_name', 'PI.middle_name', 'PI.last_name')
-            //     ->get();
+            $data = EmployeeProfile::where(function ($query) use ($user, $assigned_area) {
+                                        $query->whereHas('assignedArea', function ($innerQuery) use ($user, $assigned_area) {
+                                            $innerQuery->where([strtolower($assigned_area['sector']) . '_id' => $user->assignedArea->id]);
+                                        });
+                                    })->with(['personalInformation','assignedArea','schedule.timeShift'])->get();
 
-            $data = EmployeeProfile::with([
-                'personalInformation',
-                'assignedArea',
-                'schedule' => function ($query) use ($year, $month) {
-                    $query->with(['timeShift', 'holiday'])->whereYear('date', '=', $year)->whereMonth('date', '=', $month);
-                }
-            ])->whereHas('assignedArea', function ($query) use ($user, $assigned_area) {
-                $query->where([strtolower($assigned_area['sector']) . '_id' => $user->assignedArea->id]);
-            })->get();
-
-            $chief = null;
-            $head = null;
-            $supervisor = null;
-            $unit_head = null;
-
-            $area = $user->assignedArea->findDetails();
-            if ($area != null) {
-                if ($area['sector'] === 'Division') {
-                    $chief = $user->assignedArea->division->divisionHead;
-                }
-
-                if ($area['sector'] === 'Department') {
-                    $head = $user->assignedArea->department->head;
-                }
-
-                if ($area['sector'] === 'Section') {
-                    $supervisor = $user->assignedArea->department->supervisor;
-                }
-
-                if ($area['sector'] === 'Unit') {
-                    $unit_head = $user->assignedArea->department->head;
-                }
-            }
+            $approving_officer = Helpers::ScheduleApprovingOfficer($assigned_area, $user);
+            $officer_details = EmployeeProfile::where('id', $approving_officer['approving_officer'])->first();
+            $holiday = Holiday::all();
 
             // Helpers::registerSystemLogs($request, $data->id, true, 'Success in generate ' . $this->SINGULAR_MODULE_NAME . '.');
-            return view('generate_schedule/section-schedule', compact('data', 'month', 'year', 'days', 'weeks', 'dates', 'user', 'chief', 'head', 'supervisor', 'unit_head'));
-            //     } else {
-            //         return response()->json(['message' => 'User not allowed to create'], Response::HTTP_OK);
-            //     }
-
-            // } else {
-            //     return response()->json(['message' => 'User no position'], Response::HTTP_OK);
-            // }
+            return view('generate_schedule/section-schedule', compact('data','holiday', 'month', 'year', 'days', 'weeks', 'dates', 'user', 'officer_details'));
 
         } catch (\Throwable $th) {
+            
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }

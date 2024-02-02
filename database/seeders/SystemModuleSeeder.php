@@ -83,5 +83,40 @@ class SystemModuleSeeder extends Seeder
             'description' => 'About compensation.',
             'system_id' => 1
         ]);
+
+        SystemModule::create([
+            'name' => 'Time Shift',
+            'code' => 'UMIS-TS',
+            'description' => 'Time Shift Library',
+            'system_id' => 1
+        ]);
+
+        SystemModule::create([
+            'name' => 'Exchange Schedule',
+            'code' => 'UMIS-ES',
+            'description' => 'Creating  and approving of Exchange Schdule request',
+            'system_id' => 1
+        ]);
+
+        SystemModule::create([
+            'name' => 'Pull Out Management',
+            'code' => 'UMIS-POM',
+            'description' => 'Creating  and approving of Pull Out request',
+            'system_id' => 1
+        ]);
+        
+        SystemModule::create([
+            'name' => 'Time Adjustment',
+            'code' => 'UMIS-TA',
+            'description' => 'Creating and approving of Time Adjustment request',
+            'system_id' => 1
+        ]);
+
+        SystemModule::create([
+            'name' => 'On Call Management',
+            'code' => 'UMIS-OCM',
+            'description' => 'Creating On Call',
+            'system_id' => 1
+        ]);
     }
 }

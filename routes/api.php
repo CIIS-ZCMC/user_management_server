@@ -1690,19 +1690,19 @@ Route::middleware('auth.cookie')->group(function () {
         /**
          * Time Shift Module
          */
-        Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-TS view-all'])->group(function () {
             Route::get('time-shift', 'TimeShiftController@index');
         });
 
-        Route::middleware(['auth.permission:UMIS-ScM write'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-TS write'])->group(function () {
             Route::post('time-shift', 'TimeShiftController@store');
         });
 
-        Route::middleware(['auth.permission:UMIS-ScM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-TS update'])->group(function () {
             Route::put('time-shift/{id}', 'TimeShiftController@update');
         });
 
-        Route::middleware(['auth.permission:UMIS-ScM delete'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-TS delete'])->group(function () {
             Route::delete('time-shift/{id}', 'TimeShiftController@destroy');
         });
 
@@ -1713,7 +1713,7 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('schedules', 'ScheduleController@index');
         });
 
-        Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-ScM view'])->group(function () {
             Route::get('schedule', 'ScheduleController@create');
         });
 
@@ -1739,42 +1739,44 @@ Route::middleware('auth.cookie')->group(function () {
         /**
          * Exchange Schedule Module
          */
-        Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-ES view-all'])->group(function () {
             Route::get('exchange-duties', 'ExchangeDutyController@index');
         });
 
-        Route::middleware(['auth.permission:UMIS-ScM view'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-ES view'])->group(function () {
             Route::get('exchange-duty', 'ExchangeDutyController@create');
         });
 
-        Route::middleware(['auth.permission:UMIS-ScM write'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-ES write'])->group(function () {
             Route::post('exchange-duties', 'ExchangeDutyController@store');
         });
 
-        Route::middleware(['auth.permission:UMIS-ScM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-ES update'])->group(function () {
             Route::put('exchange-duties/{id}', 'ExchangeDutyController@update');
         });
 
-        Route::middleware(['auth.permission:UMIS-ScM delete'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-ES delete'])->group(function () {
             Route::delete('exchange-duties/{id}', 'ExchangeDutyController@destroy');
         });
 
         /**
          * Pull Out Module
          */
-        Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-POM view-all'])->group(function () {
             Route::get('pull-out', 'PullOutController@index');
         });
 
-        Route::middleware(['auth.permission:UMIS-ScM write'])->group(function () {
+        // add create here
+
+        Route::middleware(['auth.permission:UMIS-POM write'])->group(function () {
             Route::post('pull-out', 'PullOutController@store');
         });
 
-        Route::middleware(['auth.permission:UMIS-ScM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-POM update'])->group(function () {
             Route::put('pull-out/{id}', 'PullOutController@update');
         });
 
-        Route::middleware(['auth.permission:UMIS-ScM delete'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-POM delete'])->group(function () {
             Route::delete('pull-out/{id}', 'PullOutController@destroy');
         });
         
@@ -1788,34 +1790,38 @@ Route::middleware('auth.cookie')->group(function () {
         /**
          * Time Adjustment Module
          */
-        Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-TA view-all'])->group(function () {
             Route::get('time-adjustment', 'TimeAdjusmentController@index');
         });
 
-        Route::middleware(['auth.permission:UMIS-ScM write'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-TA write'])->group(function () {
             Route::post('time-adjustment', 'TimeAdjusmentController@store');
         });
 
-        Route::middleware(['auth.permission:UMIS-ScM update'])->group(function () {
+        // Add create here
+
+        Route::middleware(['auth.permission:UMIS-TA update'])->group(function () {
             Route::put('time-adjustment/{id}', 'TimeAdjusmentController@update');
         });
 
-        Route::middleware(['auth.permission:UMIS-ScM delete'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-TA delete'])->group(function () {
             Route::delete('time-adjustment/{id}', 'TimeAdjusmentController@destroy');
         });
 
         /**
          * On Call Schedule Module
          */
-        Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-OCM view-all'])->group(function () {
             Route::get('on-calls', 'OnCallController@index');
         });
 
-        Route::middleware(['auth.permission:UMIS-ScM write'])->group(function () {
+        // add create here
+
+        Route::middleware(['auth.permission:UMIS-OCM write'])->group(function () {
             Route::post('on-call', 'OnCallController@store');
         });
 
-        Route::middleware(['auth.permission:UMIS-ScM delete'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-OCM delete'])->group(function () {
             Route::delete('on-call/{id}', 'OnCallController@destroy');
         });
     });
