@@ -1352,30 +1352,30 @@ class EmployeeProfileController extends Controller
             if ($request->area !== null) {
                 $area = strip_tags($request->area);
                 $sector = strip_tags($request->sector);
-
-                switch ($sector) {
-                    case "Division":
+    
+                switch($sector){
+                    case "division":
                         $area_details = Division::find($area);
                         if (!$area_details) {
                             return response()->json(['message' => 'No record found for division with id ' . $id], Response::HTTP_NOT_FOUND);
                         }
                         $key_details = 'division_id';
                         break;
-                    case "Department":
+                    case "department":
                         $area_details = Department::find($area);
                         if (!$area_details) {
                             return response()->json(['message' => 'No record found for department with id ' . $id], Response::HTTP_NOT_FOUND);
                         }
                         $key_details = 'department_id';
                         break;
-                    case "Section":
+                    case "section":
                         $area_details = Section::find($area);
                         if (!$area_details) {
                             return response()->json(['message' => 'No record found for section with id ' . $id], Response::HTTP_NOT_FOUND);
                         }
                         $key_details = 'section_id';
                         break;
-                    case "Unit":
+                    case "unit":
                         $area_details = Unit::find($area);
                         if (!$area_details) {
                             return response()->json(['message' => 'No record found for unit with id ' . $id], Response::HTTP_NOT_FOUND);
@@ -1385,19 +1385,25 @@ class EmployeeProfileController extends Controller
                 }
             }
 
-            $employee_assign_area = $employee_profile->assignArea;
-            $employee_previous_assign_area = $employee_assign_area;
+            $employee_previous_assign_area = $employee_profile->assignedArea;
 
-            $employee_assign_area->update([
+            $employee_profile->assignedArea->update([
                 $key_details => $area_details->id,
-                'designation_id' => $designation_details !== null ? $designation_details->id : $employee_assign_area->designation_id,
+                'designation_id' => $designation_details !== null? $designation_details->id:$employee_profile->assignedArea->designation_id,
                 'effective_date' => $request->effective_date
             ]);
 
-            $employee_previous_assign_area['started_at'] = $employee_previous_assign_area['effective_at'];
-            $employee_previous_assign_area['end_at'] = now();
+            $new_trail = [];
 
-            AssignAreaTrail::create($employee_previous_assign_area);
+            foreach($employee_previous_assign_area as $key => $value){
+                if($key === 'created_at' || $key === 'updated_at') continue;
+                $new_trail[$key] = $value;
+            }
+
+            $new_trail['started_at'] = $employee_previous_assign_area['effective_at'];
+            $new_trail['end_at'] = now();
+
+            AssignAreaTrail::create($new_trail);
 
             return response()->json([
                 'data' => new EmployeeProfileResource($employee_profile),
@@ -1533,7 +1539,7 @@ class EmployeeProfileController extends Controller
             $cleanData['designation_id'] = $request->designation_id;
             $cleanData['effective_at'] = $request->date_hired;
 
-            $plantilla_number_id = $request->plantilla_number_id;
+            $plantilla_number_id = $request->plantilla_number_id == 'null' || $request->plantilla_number_id === null ? null: $request->plantilla_number_id;
             $sector_key = '';
 
             switch (strip_tags($request->sector)) {

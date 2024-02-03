@@ -149,7 +149,8 @@ class DesignationController extends Controller
                 $designations[] = $designation;
             }
 
-            if($failed > 0){
+         
+            if(count($failed) > 0){
                 return response()->json([
                     'data' => DesignationWithSystemRoleResource::collection($designations),
                     'message' => "Some designation failed to assign system role."
