@@ -37,16 +37,24 @@ class ExchangeDutyController extends Controller
             $user = $request->user;
             $assigned_area = $user->assignedArea->findDetails();
 
-            $model = ExchangeDuty::with([
-                'requestedEmployee' => function ($query) {
-                    $query->with(['assignedArea']);
-                }
-            ])->where('approve_by', $user->id)
-                ->whereHas('requestedEmployee', function ($query) use ($user, $assigned_area) {
-                    $query->whereHas('assignedArea', function ($innerQuery) use ($user, $assigned_area) {
-                        $innerQuery->where([strtolower($assigned_area['sector']) . '_id' => $user->assignedArea->id]);
-                    });
-                })->get();
+            $checkEmployeePosition = Helpers::checkEmployeeHead($user->id, $assigned_area);
+            
+
+            if ($checkEmployeePosition['head'] !== null) {
+
+                $model = ExchangeDuty::with([
+                    'requestedEmployee' => function ($query) {
+                        $query->with(['assignedArea']);
+                    }])->where('approve_by', $user->id)
+                    ->whereHas('requestedEmployee', function ($query) use ($user, $assigned_area) {
+                        $query->whereHas('assignedArea', function ($innerQuery) use ($user, $assigned_area) {
+                            $innerQuery->where([strtolower($assigned_area['sector']) . '_id' => $user->assignedArea->id]);
+                        });
+                    })->get();
+            } else {
+
+                $model = ExchangeDuty::where('requested_employee_id', $user->id)->get();
+            }
 
             return response()->json(['data' => ExchangeDutyResource::collection($model)], Response::HTTP_OK);
 

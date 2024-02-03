@@ -20,6 +20,7 @@ use DatePeriod;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Termwind\Components\BreakLine;
 
 
 class Helpers
@@ -380,6 +381,50 @@ class Helpers
                 }
 
                 return ["approve_by" => $section->supervisor_employee_profile_id];
+
+            default:
+                return null;
+        }
+    }
+
+    public static function checkEmployeeHead($user, $assigned_area)
+    {
+        switch ($assigned_area['sector']) {
+            case 'Division':
+                // If employee is Division head
+                if (Division::find($assigned_area['details']->id)->chief_employee_profile_id === $user) {
+                    $chief_officer = Division::where('code', $assigned_area['details']['code'])->first();
+                    return ["head" => $chief_officer->chief_employee_profile_id];
+                }
+
+                return ["head" => null];
+
+            case 'Department':
+                // If employee is Department head
+                if (Department::find($assigned_area['details']->id)->head_employee_profile_id === $user) {
+                    $chief_officer = Department::where('code', $assigned_area['details']['code'])->first();
+                    return ["head" => $chief_officer->head_employee_profile_id];
+                }
+
+                return ["head" => null];
+
+            case 'Section':
+                // If employee is Section head
+                if (Section::find($assigned_area['details']->id)->supervisor_employee_profile_id === $user) {
+                    $chief_officer = Section::where('code', $assigned_area['details']['code'])->first();
+                    return ["head" => $chief_officer->supervisor_employee_profile_id];
+                }
+
+                return ["head" => null];
+
+            case 'Unit':
+                // If employee is Unit head
+                if (Unit::find($assigned_area['details']->id)->head_employee_profile_id === $user) {
+                    $chief_officer = Unit::where('code', $assigned_area['details']['code'])->first();
+                    return ["head" => $chief_officer->head_employee_profile_id];
+                }
+
+                return ["head" => null];
 
             default:
                 return null;
