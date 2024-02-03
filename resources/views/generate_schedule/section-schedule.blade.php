@@ -60,7 +60,7 @@
 
         footer {
             padding: 10px;
-            margin-top: 50px;
+            margin-top: 10px;
             text-align: left;
         }
 
@@ -80,7 +80,6 @@
         .underline {
             border-bottom: 1px solid #000;
             display: inline-block;
-            width: 100px;
         }
 
         /* Badge container styles */
@@ -161,20 +160,13 @@
         <div class="row" style="margin-bottom: 10px">
             <div class="col-6">
                 <span class="float-start">Department :
-                    <span class="underline">  </span>
+                    <span class="underline">{{ $user->assignedArea->findDetails()['details']['name'] }}</span>
                 </span>
             </div>
             
-            <div class="col-6 ">
+            <div class="col-6">
                 <span class="float-end">For The Month of :
-                    <span class="underline"> {{ $month }} </span>
-                </span>
-            </div>
-            
-            <div class="col">
-          
-                <span class="float-start">Section :
-                    <span class="underline">  </span>
+                    <span class="underline"> {{ date('F', strtotime($month)) }} </span>
                 </span>
             </div>
         </div>
@@ -185,16 +177,16 @@
                     <th class="schedule-cell" rowspan="2">#</th>
                     <th class="th-name" rowspan="2">Name</th>
                     
-                    @foreach($days as $date)
-                        <th colspan="1" >{{ $date }}</th>
+                    @foreach($dates as $date)
+                        <th colspan="1" >{{ \Carbon\Carbon::parse($date)->format('d') }}</th>
                     @endforeach
                     
                     <th rowspan="2" style="width: 10px; font-size: 10px">Total Hours</th>
                 </tr>
                 
                 <tr>
-                    @foreach ($weeks as $week)
-                        <th style="font-size: 10px">{{ $week }}</th>
+                    @foreach ($dates as $date)
+                        <th style="font-size: 10px">{{ \Carbon\Carbon::parse($date)->format('D') }}</th>
                     @endforeach
                 </tr>
             </thead>
@@ -217,14 +209,14 @@
                                     @else
                                         @if ($resource->schedule->where('date', $date)->count() > 0)
 
-                                        @php
+                                  @php
                                             $shift = $resource->schedule->first()->timeShift;
                                             $firstIn = strtotime($shift->first_in ?? '');
                                             $secondOut = strtotime($shift->second_out ?? '');
                                             $firstOut = strtotime($shift->first_out ?? '');
             
                                             $totalHours += ($secondOut != null) ? ($secondOut - $firstIn) / 3600 : ($firstOut - $firstIn) / 3600;
-                                        @endphp
+                                        @endphp      
 
                                             <span class="schedule-cell">
                                                 {{ date('h', $firstIn) }} <br>
@@ -243,40 +235,33 @@
                               </td>
                             @endforeach
 
-                            <td> {{ $totalHours }} </td>
+                            <td> {{ $totalHours  }} </td>
                         </tr>
                 @endforeach
             </tbody>
         </table>
+
+        
+        <p style="margin-bottom: 0px;"><span class="text-danger">*</span> Note: </p>
+        <span style="padding-left: 10px">Station/Department Contact No: </span>
     </div>
 
     <footer>
-        <p style="margin-bottom: 0px;"><span class="text-danger">*</span> Note: </p>
-        <span style="padding-left: 10px">Station/Department Contact No: </span>
-
         <div class="signatures">
             <div class="text-center">
                 <span class="float-start">Prepared By:</span>
                 <br>
-                <span class="signature"></span>
+                <span class="signature">{{ $user->personalInformation->name() }}</span>
                 <br>
-                <span>Position</span>
-            </div>
-
-            <div class="text-center">
-                {{-- <span class="float-start">Approved By:</span>
-                <br>
-                <span class="signature"></span>
-                <br>
-                <span>Position</span> --}}
+                <span>{{ $user->position()['position'] ?? null }}</span>
             </div>
 
             <div class="text-center">
                 <span class="float-start">Approved By:</span>
                 <br>
-                <span class="signature"></span>
+                <span class="signature">{{ $head_officer->personalInformation->name() }}</span>
                 <br>
-                <span>Position</span>
+                <span>{{ $head_officer->position()['position'] ?? null }}</span>
             </div>
         </div>
     </footer>

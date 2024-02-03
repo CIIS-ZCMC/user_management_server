@@ -138,9 +138,9 @@ class ScheduleController extends Controller
             $msg = null;
             $is_weekend = 0;
 
-            $date_start = $cleanData['date_start'];     // Replace with your start date
-            $date_end = $cleanData['date_end'];       // Replace with your end date
-            $selected_days = $cleanData['selected_days'];  // Replace with your selected days
+            $date_start     = $cleanData['date_start'];     // Replace with your start date
+            $date_end       = $cleanData['date_end'];       // Replace with your end date
+            $selected_days  = $cleanData['selected_days'];  // Replace with your selected days
             $selected_dates = [];                           // Replace with your selected dates
 
             switch ($selected_days) {
@@ -201,9 +201,9 @@ class ScheduleController extends Controller
 
                     $data = new Schedule;
 
-                    $data->time_shift_id = $cleanData['time_shift_id'];
-                    $data->is_weekend = $is_weekend;
-                    $data->date = $date;
+                    $data->time_shift_id    = $cleanData['time_shift_id'];
+                    $data->is_weekend       = $is_weekend;
+                    $data->date             = $date;
                     $data->save();
                 } else {
 
@@ -303,12 +303,12 @@ class ScheduleController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $data->time_shift_id = $cleanData['time_shift_id'];
-            $data->holiday_id = $cleanData['holiday_id'];
-            $data->date = $cleanData['date'];
-            $data->is_weekend = $cleanData['is_weekend'];
-            $data->status = $cleanData['status'];
-            $data->remarks = $cleanData['remarks'];
+            $data->time_shift_id    = $cleanData['time_shift_id'];
+            $data->holiday_id       = $cleanData['holiday_id'];
+            $data->date             = $cleanData['date'];
+            $data->is_weekend       = $cleanData['is_weekend'];
+            $data->status           = $cleanData['status'];
+            $data->remarks          = $cleanData['remarks'];
             $data->update();
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in updating ' . $this->SINGULAR_MODULE_NAME . '.');
@@ -351,16 +351,13 @@ class ScheduleController extends Controller
     public function generate(Request $request)
     {
         try {
-            $user = $request->user;
-            $assigned_area = $user->assignedArea->findDetails();
+            $user           = $request->user;
+            $assigned_area  = $user->assignedArea->findDetails();
 
+            $month  = $request->month; // Replace with the desired month (1 to 12)
+            $year   = $request->year;                         // Replace with the desired year
 
-            $month = Carbon::parse($request->month)->month;    // Replace with the desired month (1 to 12)
-            $year = $request->year;      // Replace with the desired year
-
-            $days = Helpers::getDatesInMonth($year, $month, "Day");
-            $weeks = Helpers::getDatesInMonth($year, $month, "Week");
-            $dates = Helpers::getDatesInMonth($year, $month, "");
+            $dates = Helpers::getDatesInMonth($year, Carbon::parse($month)->month, "");
 
             $data = EmployeeProfile::where(function ($query) use ($user, $assigned_area) {
                                         $query->whereHas('assignedArea', function ($innerQuery) use ($user, $assigned_area) {
@@ -368,13 +365,11 @@ class ScheduleController extends Controller
                                         });
                                     })->with(['personalInformation','assignedArea','schedule.timeShift'])->get();
 
-            $approving_officer = Helpers::ScheduleApprovingOfficer($assigned_area, $user);
-            $officer_details = EmployeeProfile::where('id', $approving_officer['approving_officer'])->first();
-            $holiday = Holiday::all();
+            $approving_officer  = Helpers::ScheduleApprovingOfficer($assigned_area, $user);
+            $head_officer       = EmployeeProfile::where('id', $approving_officer['approving_officer'])->first();
+            $holiday            = Holiday::all();
 
-            // Helpers::registerSystemLogs($request, $data->id, true, 'Success in generate ' . $this->SINGULAR_MODULE_NAME . '.');
-            return view('generate_schedule/section-schedule', compact('data','holiday', 'month', 'year', 'days', 'weeks', 'dates', 'user', 'officer_details'));
-
+            return view('generate_schedule/section-schedule', compact('data','holiday', 'month', 'year', 'dates', 'user', 'head_officer'));
         } catch (\Throwable $th) {
             
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
