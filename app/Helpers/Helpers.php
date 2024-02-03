@@ -351,6 +351,38 @@ class Helpers
                 }
             }
         }
+    }
 
+    public static function ExchangeDutyApproval($assigned_area, $employee_profile_id) {
+        switch($assigned_area['sector']){
+            case 'Division':
+                $division_head = Division::find($assigned_area['details']['id'])->chief_employee_profile_id;
+                return ["approve_by" => $division_head];
+
+            case 'Department':
+                $department_head = Department::find($assigned_area['details']['id'])->head_employee_profile_id;
+                return ["approve_by" => $department_head];
+
+            case 'Section':
+                $section = Section::find($assigned_area['details']['id']);
+                if($section->division !== null){
+                    return ["approve_by" => $section->supervisor_employee_profile_id];
+                }
+
+                $department = $section->department;
+                return ["approve_by" => $department->head_employee_profile_id];
+
+            case 'Unit':
+                $section = Unit::find($assigned_area['details']['id'])->section;
+                if($section->department_id !== null){
+                    $department = $section->department;
+                    return ["approve_by" => $department->head_employee_profile_id];
+                }
+
+                return ["approve_by" => $section->supervisor_employee_profile_id];
+
+            default:
+                return null;
+        }
     }
 }
