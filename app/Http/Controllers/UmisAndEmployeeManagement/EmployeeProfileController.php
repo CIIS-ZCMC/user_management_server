@@ -1352,8 +1352,8 @@ class EmployeeProfileController extends Controller
             if ($request->area !== null) {
                 $area = strip_tags($request->area);
                 $sector = strip_tags($request->sector);
-    
-                switch($sector){
+
+                switch ($sector) {
                     case "division":
                         $area_details = Division::find($area);
                         if (!$area_details) {
@@ -1389,14 +1389,14 @@ class EmployeeProfileController extends Controller
 
             $employee_profile->assignedArea->update([
                 $key_details => $area_details->id,
-                'designation_id' => $designation_details !== null? $designation_details->id:$employee_profile->assignedArea->designation_id,
+                'designation_id' => $designation_details !== null ? $designation_details->id : $employee_profile->assignedArea->designation_id,
                 'effective_date' => $request->effective_date
             ]);
 
             $new_trail = [];
 
-            foreach($employee_previous_assign_area as $key => $value){
-                if($key === 'created_at' || $key === 'updated_at') continue;
+            foreach ($employee_previous_assign_area as $key => $value) {
+                if ($key === 'created_at' || $key === 'updated_at') continue;
                 $new_trail[$key] = $value;
             }
 
@@ -1539,7 +1539,7 @@ class EmployeeProfileController extends Controller
             $cleanData['designation_id'] = $request->designation_id;
             $cleanData['effective_at'] = $request->date_hired;
 
-            $plantilla_number_id = $request->plantilla_number_id == 'null' || $request->plantilla_number_id === null ? null: $request->plantilla_number_id;
+            $plantilla_number_id = $request->plantilla_number_id == 'null' || $request->plantilla_number_id === null ? null : $request->plantilla_number_id;
             $sector_key = '';
 
             switch (strip_tags($request->sector)) {
