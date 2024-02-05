@@ -233,7 +233,11 @@ class ScheduleController extends Controller
             }
 
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
-            return response()->json(['data' => $data, 'message' => $msg], Response::HTTP_OK);
+            return response()->json([
+                'data' =>  new EmployeeScheduleResource($data),
+                'logs' => Helpers::registerEmployeeScheduleLogs($data->id, $request->user->id, 'Store'),
+                'message' => $msg
+            ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
@@ -312,7 +316,11 @@ class ScheduleController extends Controller
             $data->update();
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in updating ' . $this->SINGULAR_MODULE_NAME . '.');
-            return response()->json(['data' => $data], Response::HTTP_OK);
+            return response()->json([
+                'data' =>  new EmployeeScheduleResource($data),
+                'logs' => Helpers::registerEmployeeScheduleLogs($data->id, $request->user->id, 'Update'),
+                'message' => 'Schedule is updated'
+            ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
@@ -354,8 +362,8 @@ class ScheduleController extends Controller
             $user           = $request->user;
             $assigned_area  = $user->assignedArea->findDetails();
 
-            $month  = $request->month; // Replace with the desired month (1 to 12)
-            $year   = $request->year;                         // Replace with the desired year
+            $month  = $request->month;  // Replace with the desired month (1 to 12)
+            $year   = $request->year;   // Replace with the desired year
 
             $dates = Helpers::getDatesInMonth($year, Carbon::parse($month)->month, "");
 

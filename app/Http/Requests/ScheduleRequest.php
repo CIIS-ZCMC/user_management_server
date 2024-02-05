@@ -29,7 +29,6 @@ class ScheduleRequest extends FormRequest
             'is_weekend.*' => 'required|integer',
             'month.*' => 'nullable|date_format:Y-m-d|',
             'selected_days.*' => 'nullable|string',
-            // 'selected_days.*' => 'required|string|min:10',
         ];
     }
 }

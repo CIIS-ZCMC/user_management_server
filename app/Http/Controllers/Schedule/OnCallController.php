@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Schedule;
 
+use App\Http\Resources\EmployeeScheduleResource;
 use App\Models\EmployeeSchedule;
 use App\Models\Schedule;
 use App\Models\EmployeeProfile;
@@ -97,11 +98,11 @@ class OnCallController extends Controller
                     continue;
                 }
 
-                if (DateTime::createFromFormat('Y-m-d', $value)) {
-                    $cleanData[$key] = Carbon::parse($value);
+                if (strtotime($value)) {
+                    $datetime = Carbon::parse($value);
+                    $cleanData[$key] = $datetime->format('Y-m-d'); // Adjust the format as needed
                     continue;
                 }
-
                 if (is_int($value)) {
                     $cleanData[$key] = $value;
                     continue;
@@ -110,15 +111,9 @@ class OnCallController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $user = $request->user;
             $data = null;
             $msg = null;
             $is_weekend = 0;
-
-            // if ($user != null && $user->position()) {
-            //     $position = $user->position();
-
-            //     if ($position->position === "Chief" || $position->position === "Department OIC" || $position->position === "Supervisor" || $position->position === "Section OIC" || $position->position === "Unit Head" || $position->position === "Unit OIC") {
 
             $schedule = Schedule::where('time_shift_id', $cleanData['time_shift_id'])
                 ->where('date', $cleanData['date'])
@@ -161,30 +156,16 @@ class OnCallController extends Controller
             }
 
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
-            return response()->json(['data' => $data, 'message' => $msg], Response::HTTP_OK);
-            //     }
-            // }
+            return response()->json([
+                'data' =>  new EmployeeScheduleResource($data),
+                'logs' => Helpers::registerEmployeeScheduleLogs($data->id, $request->user->id, 'Store'),
+                'msg' => $msg,
+            ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
     }
 
     /**

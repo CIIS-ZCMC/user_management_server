@@ -4,6 +4,7 @@ namespace App\Helpers;
 
 use App\Models\Department;
 use App\Models\Division;
+use App\Models\EmployeeScheduleLog;
 use App\Models\ExchangeDutyLog;
 use App\Models\PullOut;
 use App\Models\PullOutLog;
@@ -429,5 +430,14 @@ class Helpers
             default:
                 return null;
         }
+    }
+
+    public static function registerEmployeeScheduleLogs($data_id, $user_id, $action)
+    {
+        EmployeeScheduleLog::create([
+            'employee_schedule_id' => $data_id,
+            'action_by' => $user_id,
+            'action' => $action
+        ]);
     }
 }

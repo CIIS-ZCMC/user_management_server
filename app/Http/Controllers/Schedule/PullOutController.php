@@ -75,6 +75,12 @@ class PullOutController extends Controller
                     continue;
                 }
 
+                if (strtotime($value)) {
+                    $datetime = Carbon::parse($value);
+                    $cleanData[$key] = $datetime->format('Y-m-d'); // Adjust the format as needed
+                    continue;
+                }
+
                 $cleanData[$key] = strip_tags($value);
             }
 
@@ -122,7 +128,7 @@ class PullOutController extends Controller
             }
             
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
-            return response()->json(['data' => PullOutResource::collection(PullOut::where('id', $data->id)->get()),
+            return response()->json(['data' => new PullOutResource($data),
                                     'logs' => Helpers::registerPullOutLogs($data->id, $user->id, 'Store'),
                                     'msg' => 'Pull out requested'], Response::HTTP_OK);
 
@@ -178,7 +184,7 @@ class PullOutController extends Controller
             $data->update(['status' => $status, 'remarks' => $request->remarks, 'approval_date' => Carbon::now()]);
 
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in updating.' . $this->SINGULAR_MODULE_NAME . '.');
-            return response()->json(['data' => PullOutResource::collection(PullOut::where('id', $data->id)->get()),
+            return response()->json(['data' => new PullOutResource($data),
                                     'logs' => Helpers::registerPullOutLogs($data->id, $user->id, $status),
                                     'msg' => 'Pull out is '.$status], Response::HTTP_OK);
 
