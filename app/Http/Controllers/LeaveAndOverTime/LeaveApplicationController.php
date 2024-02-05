@@ -456,11 +456,12 @@ class LeaveApplicationController extends Controller
     public function printLeaveForm($id)
     {
         try {
-            $leave_applications = LeaveApplication::where('id', $id)
-                ->first();
+            $leave_applications = LeaveApplication::where('id', $id)->first();
+                        
             if ($leave_applications) {
                 $leave_applications = LeaveApplication::with(['employeeProfile.assignedArea.division', 'employeeProfile.personalInformation', 'dates', 'logs', 'requirements', 'employeeProfile.leaveCredits.leaveType'])
-                    ->where('id', $leave_applications->id)->get();
+                                                        ->where('id', $leave_applications->id)->get();
+                                                        
                 $leave_applications_result = $leave_applications->map(function ($leave_application) {
                     $datesData = $leave_application->dates ? $leave_application->dates : collect();
                     $logsData = $leave_application->logs ? $leave_application->logs : collect();
