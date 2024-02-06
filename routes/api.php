@@ -1075,7 +1075,7 @@ Route::middleware('auth.cookie')->group(function () {
          * Plantilla Module
          */
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
-            Route::put('plantilla-reassign-area', 'PlantillaController@reAssignArea');
+            Route::put('plantilla-reassign-area/{id}', 'PlantillaController@reAssignArea');
         });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {

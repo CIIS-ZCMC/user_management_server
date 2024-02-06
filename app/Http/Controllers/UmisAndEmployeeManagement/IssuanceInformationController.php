@@ -22,6 +22,7 @@ class IssuanceInformationController extends Controller
 
     public function store(IssuanceInformationRequest $request)
     {
+    
         try{
             $cleanData = [];
             
@@ -33,7 +34,8 @@ class IssuanceInformationController extends Controller
                 }
                 $cleanData[$key] = strip_tags($value);
             }
-
+         
+        
             $issuance_information = IssuanceInformation::create($cleanData);
 
             Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');

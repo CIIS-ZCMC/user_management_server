@@ -14,7 +14,7 @@ class IssuanceInformation extends Model
     public $fillable = [
         'license_no',
         'govt_issued_id',
-        'ctct_issued_date',
+        'ctc_issued_date',
         'ctc_issued_at',
         'person_administrative_oath',
         'employee_profile_id'

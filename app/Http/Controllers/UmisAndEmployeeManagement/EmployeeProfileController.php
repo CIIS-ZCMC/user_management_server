@@ -269,19 +269,19 @@ class EmployeeProfileController extends Controller
                 'first_name' => $personal_information->first_name,
                 'last_name' => $personal_information->last_name,
                 'middle_name' => $personal_information->middle_name === null ? ' ' : $personal_information->middle_name,
-                'name_extension' => $personal_information->name_extension === null ? 'NONE' : $personal_information->name_extension,
+                'name_extension' => $personal_information->name_extension === null ? null : $personal_information->name_extension,
                 'employee_id' => $employee_profile->employee_id,
-                'years_of_service' => $employee_profile->personalInformation->years_of_service === null ? 'NONE' : $personal_information->years_of_service,
-                'name_title' => $personal_information->name_title === null ? 'NONE' : $personal_information->name_title,
+                'years_of_service' => $employee_profile->personalInformation->years_of_service === null ? null : $personal_information->years_of_service,
+                'name_title' => $personal_information->name_title === null ? null : $personal_information->name_title,
                 'sex' => $personal_information->sex,
                 'date_of_birth' => $personal_information->date_of_birth,
                 'date_hired' => $employee_profile->date_hired,
                 'place_of_birth' => $personal_information->place_of_birth,
                 'civil_status' => $personal_information->civil_status,
                 'citizenship' => $personal_information->citizenship,
-                'date_of_marriage' => $personal_information->date_of_marriage === null ? 'NONE' : $personal_information->date_of_marriage,
-                'agency_employee_no' => $employee_profile->agency_employee_no === null ? 'NONE' : $personal_information->agency_employee_no,
-                'blood_type' => $personal_information->blood_type === null ? 'NONE' : $personal_information->blood_type,
+                'date_of_marriage' => $personal_information->date_of_marriage === null ? null : $personal_information->date_of_marriage,
+                'agency_employee_no' => $employee_profile->agency_employee_no === null ? null : $personal_information->agency_employee_no,
+                'blood_type' => $personal_information->blood_type === null ? null : $personal_information->blood_type,
                 'height' => $personal_information->height,
                 'weight' => $personal_information->weight,
             ];
@@ -302,21 +302,21 @@ class EmployeeProfileController extends Controller
                 if ($value->is_residential_and_permanent) {
                     $address['residential_address'] = $value->address;
                     $address['residential_zip_code'] = $value->zip_code;
-                    $address['residential_telephone_no'] = $value->telephone_no === null ? 'NONE' : $value->telephone_no;
+                    $address['residential_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
                     $address['permanent_address'] = $value->address;
                     $address['permanent_zip_code'] = $value->zip_code;
-                    $address['permanent_telephone_no'] = $value->telephone_no === null ? 'NONE' : $value->telephone_no;
+                    $address['permanent_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
                     break;
                 }
 
                 if ($value->is_residential) {
                     $address['residential_address'] = $value->address;
                     $address['residential_zip_code'] = $value->zip_code;
-                    $address['residential_telephone_no'] = $value->telephone_no === null ? 'NONE' : $value->telephone_no;
+                    $address['residential_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
                 } else {
                     $address['permanent_address'] = $value->address;
                     $address['permanent_zip_code'] = $value->zip_code;
-                    $address['permanent_telephone_no'] = $value->telephone_no === null ? 'NONE' : $value->telephone_no;
+                    $address['permanent_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
                 }
             }
 
@@ -606,19 +606,19 @@ class EmployeeProfileController extends Controller
                 'first_name' => $personal_information->first_name,
                 'last_name' => $personal_information->last_name,
                 'middle_name' => $personal_information->middle_name === null ? ' ' : $personal_information->middle_name,
-                'name_extension' => $personal_information->name_extension === null ? 'NONE' : $personal_information->name_extension,
+                'name_extension' => $personal_information->name_extension === null ? null : $personal_information->name_extension,
                 'employee_id' => $employee_profile->employee_id,
-                'years_of_service' => $employee_profile->personalInformation->years_of_service === null ? 'NONE' : $personal_information->years_of_service,
-                'name_title' => $personal_information->name_title === null ? 'NONE' : $personal_information->name_title,
+                'years_of_service' => $employee_profile->personalInformation->years_of_service === null ? null : $personal_information->years_of_service,
+                'name_title' => $personal_information->name_title === null ? null : $personal_information->name_title,
                 'sex' => $personal_information->sex,
                 'date_of_birth' => $personal_information->date_of_birth,
                 'date_hired' => $employee_profile->date_hired,
                 'place_of_birth' => $personal_information->place_of_birth,
                 'civil_status' => $personal_information->civil_status,
                 'citizenship' => $personal_information->citizenship,
-                'date_of_marriage' => $personal_information->date_of_marriage === null ? 'NONE' : $personal_information->date_of_marriage,
-                'agency_employee_no' => $employee_profile->agency_employee_no === null ? 'NONE' : $personal_information->agency_employee_no,
-                'blood_type' => $personal_information->blood_type === null ? 'NONE' : $personal_information->blood_type,
+                'date_of_marriage' => $personal_information->date_of_marriage === null ? null : $personal_information->date_of_marriage,
+                'agency_employee_no' => $employee_profile->agency_employee_no === null ? null : $personal_information->agency_employee_no,
+                'blood_type' => $personal_information->blood_type === null ? null : $personal_information->blood_type,
                 'height' => $personal_information->height,
                 'weight' => $personal_information->weight,
             ];
@@ -639,21 +639,21 @@ class EmployeeProfileController extends Controller
                 if ($value->is_residential_and_permanent) {
                     $address['residential_address'] = $value->address;
                     $address['residential_zip_code'] = $value->zip_code;
-                    $address['residential_telephone_no'] = $value->telephone_no === null ? 'NONE' : $value->telephone_no;
+                    $address['residential_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
                     $address['permanent_address'] = $value->address;
                     $address['permanent_zip_code'] = $value->zip_code;
-                    $address['permanent_telephone_no'] = $value->telephone_no === null ? 'NONE' : $value->telephone_no;
+                    $address['permanent_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
                     break;
                 }
 
                 if ($value->is_residential) {
                     $address['residential_address'] = $value->address;
                     $address['residential_zip_code'] = $value->zip_code;
-                    $address['residential_telephone_no'] = $value->telephone_no === null ? 'NONE' : $value->telephone_no;
+                    $address['residential_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
                 } else {
                     $address['permanent_address'] = $value->address;
                     $address['permanent_zip_code'] = $value->zip_code;
-                    $address['permanent_telephone_no'] = $value->telephone_no === null ? 'NONE' : $value->telephone_no;
+                    $address['permanent_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
                 }
             }
 
@@ -763,19 +763,19 @@ class EmployeeProfileController extends Controller
                 'first_name' => $personal_information->first_name,
                 'last_name' => $personal_information->last_name,
                 'middle_name' => $personal_information->middle_name === null ? ' ' : $personal_information->middle_name,
-                'name_extension' => $personal_information->name_extension === null ? 'NONE' : $personal_information->name_extension,
+                'name_extension' => $personal_information->name_extension === null ? null : $personal_information->name_extension,
                 'employee_id' => $employee_profile->employee_id,
-                'years_of_service' => $employee_profile->personalInformation->years_of_service === null ? 'NONE' : $personal_information->years_of_service,
-                'name_title' => $personal_information->name_title === null ? 'NONE' : $personal_information->name_title,
+                'years_of_service' => $employee_profile->personalInformation->years_of_service === null ? null : $personal_information->years_of_service,
+                'name_title' => $personal_information->name_title === null ? null : $personal_information->name_title,
                 'sex' => $personal_information->sex,
                 'date_of_birth' => $personal_information->date_of_birth,
                 'date_hired' => $employee_profile->date_hired,
                 'place_of_birth' => $personal_information->place_of_birth,
                 'civil_status' => $personal_information->civil_status,
                 'citizenship' => $personal_information->citizenship,
-                'date_of_marriage' => $personal_information->date_of_marriage === null ? 'NONE' : $personal_information->date_of_marriage,
-                'agency_employee_no' => $employee_profile->agency_employee_no === null ? 'NONE' : $personal_information->agency_employee_no,
-                'blood_type' => $personal_information->blood_type === null ? 'NONE' : $personal_information->blood_type,
+                'date_of_marriage' => $personal_information->date_of_marriage === null ? null : $personal_information->date_of_marriage,
+                'agency_employee_no' => $employee_profile->agency_employee_no === null ? null : $personal_information->agency_employee_no,
+                'blood_type' => $personal_information->blood_type === null ? null : $personal_information->blood_type,
                 'height' => $personal_information->height,
                 'weight' => $personal_information->weight,
             ];
@@ -796,21 +796,21 @@ class EmployeeProfileController extends Controller
                 if ($value->is_residential_and_permanent) {
                     $address['residential_address'] = $value->address;
                     $address['residential_zip_code'] = $value->zip_code;
-                    $address['residential_telephone_no'] = $value->telephone_no === null ? 'NONE' : $value->telephone_no;
+                    $address['residential_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
                     $address['permanent_address'] = $value->address;
                     $address['permanent_zip_code'] = $value->zip_code;
-                    $address['permanent_telephone_no'] = $value->telephone_no === null ? 'NONE' : $value->telephone_no;
+                    $address['permanent_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
                     break;
                 }
 
                 if ($value->is_residential) {
                     $address['residential_address'] = $value->address;
                     $address['residential_zip_code'] = $value->zip_code;
-                    $address['residential_telephone_no'] = $value->telephone_no === null ? 'NONE' : $value->telephone_no;
+                    $address['residential_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
                 } else {
                     $address['permanent_address'] = $value->address;
                     $address['permanent_zip_code'] = $value->zip_code;
-                    $address['permanent_telephone_no'] = $value->telephone_no === null ? 'NONE' : $value->telephone_no;
+                    $address['permanent_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
                 }
             }
 
@@ -995,19 +995,19 @@ class EmployeeProfileController extends Controller
                 'first_name' => $personal_information->first_name,
                 'last_name' => $personal_information->last_name,
                 'middle_name' => $personal_information->middle_name === null ? ' ' : $personal_information->middle_name,
-                'name_extension' => $personal_information->name_extension === null ? 'NONE' : $personal_information->name_extension,
+                'name_extension' => $personal_information->name_extension === null ? null : $personal_information->name_extension,
                 'employee_id' => $employee_profile->employee_id,
-                'years_of_service' => $employee_profile->personalInformation->years_of_service === null ? 'NONE' : $personal_information->years_of_service,
-                'name_title' => $personal_information->name_title === null ? 'NONE' : $personal_information->name_title,
+                'years_of_service' => $employee_profile->personalInformation->years_of_service === null ? null : $personal_information->years_of_service,
+                'name_title' => $personal_information->name_title === null ? null : $personal_information->name_title,
                 'sex' => $personal_information->sex,
                 'date_of_birth' => $personal_information->date_of_birth,
                 'date_hired' => $employee_profile->date_hired,
                 'place_of_birth' => $personal_information->place_of_birth,
                 'civil_status' => $personal_information->civil_status,
                 'citizenship' => $personal_information->citizenship,
-                'date_of_marriage' => $personal_information->date_of_marriage === null ? 'NONE' : $personal_information->date_of_marriage,
-                'agency_employee_no' => $employee_profile->agency_employee_no === null ? 'NONE' : $personal_information->agency_employee_no,
-                'blood_type' => $personal_information->blood_type === null ? 'NONE' : $personal_information->blood_type,
+                'date_of_marriage' => $personal_information->date_of_marriage === null ? null : $personal_information->date_of_marriage,
+                'agency_employee_no' => $employee_profile->agency_employee_no === null ? null : $personal_information->agency_employee_no,
+                'blood_type' => $personal_information->blood_type === null ? null : $personal_information->blood_type,
                 'height' => $personal_information->height,
                 'weight' => $personal_information->weight,
             ];
@@ -1028,21 +1028,21 @@ class EmployeeProfileController extends Controller
                 if ($value->is_residential_and_permanent) {
                     $address['residential_address'] = $value->address;
                     $address['residential_zip_code'] = $value->zip_code;
-                    $address['residential_telephone_no'] = $value->telephone_no === null ? 'NONE' : $value->telephone_no;
+                    $address['residential_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
                     $address['permanent_address'] = $value->address;
                     $address['permanent_zip_code'] = $value->zip_code;
-                    $address['permanent_telephone_no'] = $value->telephone_no === null ? 'NONE' : $value->telephone_no;
+                    $address['permanent_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
                     break;
                 }
 
                 if ($value->is_residential) {
                     $address['residential_address'] = $value->address;
                     $address['residential_zip_code'] = $value->zip_code;
-                    $address['residential_telephone_no'] = $value->telephone_no === null ? 'NONE' : $value->telephone_no;
+                    $address['residential_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
                 } else {
                     $address['permanent_address'] = $value->address;
                     $address['permanent_zip_code'] = $value->zip_code;
-                    $address['permanent_telephone_no'] = $value->telephone_no === null ? 'NONE' : $value->telephone_no;
+                    $address['permanent_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
                 }
             }
 
@@ -1218,19 +1218,19 @@ class EmployeeProfileController extends Controller
                 'first_name' => $personal_information->first_name,
                 'last_name' => $personal_information->last_name,
                 'middle_name' => $personal_information->middle_name === null ? ' ' : $personal_information->middle_name,
-                'name_extension' => $personal_information->name_extension === null ? 'NONE' : $personal_information->name_extension,
+                'name_extension' => $personal_information->name_extension === null ? null : $personal_information->name_extension,
                 'employee_id' => $employee_profile->employee_id,
-                'years_of_service' => $employee_profile->personalInformation->years_of_service === null ? 'NONE' : $personal_information->years_of_service,
-                'name_title' => $personal_information->name_title === null ? 'NONE' : $personal_information->name_title,
+                'years_of_service' => $employee_profile->personalInformation->years_of_service === null ? null : $personal_information->years_of_service,
+                'name_title' => $personal_information->name_title === null ? null : $personal_information->name_title,
                 'sex' => $personal_information->sex,
                 'date_of_birth' => $personal_information->date_of_birth,
                 'date_hired' => $employee_profile->date_hired,
                 'place_of_birth' => $personal_information->place_of_birth,
                 'civil_status' => $personal_information->civil_status,
                 'citizenship' => $personal_information->citizenship,
-                'date_of_marriage' => $personal_information->date_of_marriage === null ? 'NONE' : $personal_information->date_of_marriage,
-                'agency_employee_no' => $employee_profile->agency_employee_no === null ? 'NONE' : $personal_information->agency_employee_no,
-                'blood_type' => $personal_information->blood_type === null ? 'NONE' : $personal_information->blood_type,
+                'date_of_marriage' => $personal_information->date_of_marriage === null ? null : $personal_information->date_of_marriage,
+                'agency_employee_no' => $employee_profile->agency_employee_no === null ? null : $personal_information->agency_employee_no,
+                'blood_type' => $personal_information->blood_type === null ? null : $personal_information->blood_type,
                 'height' => $personal_information->height,
                 'weight' => $personal_information->weight,
             ];
@@ -1251,21 +1251,21 @@ class EmployeeProfileController extends Controller
                 if ($value->is_residential_and_permanent) {
                     $address['residential_address'] = $value->address;
                     $address['residential_zip_code'] = $value->zip_code;
-                    $address['residential_telephone_no'] = $value->telephone_no === null ? 'NONE' : $value->telephone_no;
+                    $address['residential_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
                     $address['permanent_address'] = $value->address;
                     $address['permanent_zip_code'] = $value->zip_code;
-                    $address['permanent_telephone_no'] = $value->telephone_no === null ? 'NONE' : $value->telephone_no;
+                    $address['permanent_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
                     break;
                 }
 
                 if ($value->is_residential) {
                     $address['residential_address'] = $value->address;
                     $address['residential_zip_code'] = $value->zip_code;
-                    $address['residential_telephone_no'] = $value->telephone_no === null ? 'NONE' : $value->telephone_no;
+                    $address['residential_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
                 } else {
                     $address['permanent_address'] = $value->address;
                     $address['permanent_zip_code'] = $value->zip_code;
-                    $address['permanent_telephone_no'] = $value->telephone_no === null ? 'NONE' : $value->telephone_no;
+                    $address['permanent_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
                 }
             }
 
@@ -1500,10 +1500,10 @@ class EmployeeProfileController extends Controller
         }
     }
 
-    public function store(EmployeeProfileRequest $request)
+    public function store(Request $request)
     {
         try {
-
+           
             $cleanData = [];
             $dateString = $request->date_hired;
             $carbonDate = Carbon::parse($dateString);
@@ -1529,7 +1529,7 @@ class EmployeeProfileController extends Controller
             $cleanData['biometric_id'] = $new_biometric_id;
             $cleanData['employment_type_id'] = strip_tags($request->employment_type_id);
             $cleanData['personal_information_id'] = strip_tags($request->personal_information_id);
-            $cleanData['profile_url'] = $request->attachment === null ? null : Helpers::checkSaveFile($request->attachment, 'photo/profiles');
+            $cleanData['profile_url'] = $request->attachment === null  || $request->attachment === 'null'? null : Helpers::checkSaveFile($request->attachment, 'photo/profiles');
             $cleanData['allow_time_adjustment'] = strip_tags($request->allow_time_adjustment) === 1 ? true : false;
             $cleanData['password_encrypted'] = $encryptedPassword;
             $cleanData['password_created_at'] = now();
@@ -1539,9 +1539,10 @@ class EmployeeProfileController extends Controller
             $cleanData['designation_id'] = $request->designation_id;
             $cleanData['effective_at'] = $request->date_hired;
 
-            $plantilla_number_id = $request->plantilla_number_id == 'null' || $request->plantilla_number_id === null ? null : $request->plantilla_number_id;
+            
+            $plantilla_number_id = $request->plantilla_number_id === "null"  || $request->plantilla_number_id === null ? null : $request->plantilla_number_id;
             $sector_key = '';
-
+         
             switch (strip_tags($request->sector)) {
                 case "division":
                     $sector_key = 'division_id';
@@ -1565,9 +1566,11 @@ class EmployeeProfileController extends Controller
 
             $cleanData[$sector_key] = strip_tags($request->sector_id);
 
-            if ($plantilla_number_id !== null) {
+            if ($plantilla_number_id !== null  ) {
                 $plantilla_number = PlantillaNumber::find($plantilla_number_id);
 
+                 
+                 
                 if (!$plantilla_number) {
                     return response()->json(['message' => 'No record found for plantilla number ' . $plantilla_number_id], Response::HTTP_NOT_FOUND);
                 }
@@ -1577,7 +1580,8 @@ class EmployeeProfileController extends Controller
                 $cleanData['designation_id'] = $designation->id;
                 $cleanData['plantilla_number_id'] = $plantilla_number->id;
             }
-
+            
+             
             $employee_profile = EmployeeProfile::create($cleanData);
 
             $cleanData['employee_profile_id'] = $employee_profile->id;
@@ -1782,6 +1786,7 @@ class EmployeeProfileController extends Controller
                 'job_position' => $designation->name,
                 'date_hired' => $employee_profile->date_hired,
                 'job_type' => $employee_profile->employmentType->name,
+                'employment_type_id' => $employee_profile->employmentType->id,
                 'years_of_service' => $employee_profile->personalInformation->years_of_service,
                 'last_login' => $last_login === null ? null : $last_login->created_at,
                 'biometric_id' => $employee_profile->biometric_id
@@ -1792,19 +1797,19 @@ class EmployeeProfileController extends Controller
                 'first_name' => $personal_information->first_name,
                 'last_name' => $personal_information->last_name,
                 'middle_name' => $personal_information->middle_name === null ? ' ' : $personal_information->middle_name,
-                'name_extension' => $personal_information->name_extension === null ? 'NONE' : $personal_information->name_extension,
+                'name_extension' => $personal_information->name_extension === null ? null : $personal_information->name_extension,
                 'employee_id' => $employee_profile->employee_id,
-                'years_of_service' => $employee_profile->personalInformation->years_of_service === null ? 'NONE' : $personal_information->years_of_service,
-                'name_title' => $personal_information->name_title === null ? 'NONE' : $personal_information->name_title,
+                'years_of_service' => $employee_profile->personalInformation->years_of_service === null ? null : $personal_information->years_of_service,
+                'name_title' => $personal_information->name_title === null ? null : $personal_information->name_title,
                 'sex' => $personal_information->sex,
                 'date_of_birth' => $personal_information->date_of_birth,
                 'date_hired' => $employee_profile->date_hired,
                 'place_of_birth' => $personal_information->place_of_birth,
                 'civil_status' => $personal_information->civil_status,
                 'citizenship' => $personal_information->citizenship,
-                'date_of_marriage' => $personal_information->date_of_marriage === null ? 'NONE' : $personal_information->date_of_marriage,
-                'agency_employee_no' => $employee_profile->agency_employee_no === null ? 'NONE' : $personal_information->agency_employee_no,
-                'blood_type' => $personal_information->blood_type === null ? 'NONE' : $personal_information->blood_type,
+                'date_of_marriage' => $personal_information->date_of_marriage === null ? null : $personal_information->date_of_marriage,
+                'agency_employee_no' => $employee_profile->agency_employee_no === null ? null : $personal_information->agency_employee_no,
+                'blood_type' => $personal_information->blood_type === null ? null : $personal_information->blood_type,
                 'height' => $personal_information->height,
                 'weight' => $personal_information->weight,
             ];
@@ -1825,21 +1830,21 @@ class EmployeeProfileController extends Controller
                 if ($value->is_residential_and_permanent) {
                     $address['residential_address'] = $value->address;
                     $address['residential_zip_code'] = $value->zip_code;
-                    $address['residential_telephone_no'] = $value->telephone_no === null ? 'NONE' : $value->telephone_no;
+                    $address['residential_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
                     $address['permanent_address'] = $value->address;
                     $address['permanent_zip_code'] = $value->zip_code;
-                    $address['permanent_telephone_no'] = $value->telephone_no === null ? 'NONE' : $value->telephone_no;
+                    $address['permanent_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
                     break;
                 }
 
                 if ($value->is_residential) {
                     $address['residential_address'] = $value->address;
                     $address['residential_zip_code'] = $value->zip_code;
-                    $address['residential_telephone_no'] = $value->telephone_no === null ? 'NONE' : $value->telephone_no;
+                    $address['residential_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
                 } else {
                     $address['permanent_address'] = $value->address;
                     $address['permanent_zip_code'] = $value->zip_code;
-                    $address['permanent_telephone_no'] = $value->telephone_no === null ? 'NONE' : $value->telephone_no;
+                    $address['permanent_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
                 }
             }
 
@@ -1848,7 +1853,8 @@ class EmployeeProfileController extends Controller
             $data = [
                 'employee_id' => $employee_profile['employee_id'],
                 'name' => $personal_information->employeeName(),
-                'designation' => $designation['name'],
+                'designation' => $designation['name'],  
+                'designation_code' => $designation['code'],
                 'employee_details' => [
                     'employee' => $employee,
                     'personal_information' => $personal_information_data,
