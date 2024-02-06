@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,47 +18,34 @@
             flex-direction: column;
             justify-content: center;
         }
-
         header {
             padding: 10px;
             text-align: center;
         }
-
         header img {
             max-height: 50px;
             margin-right: 10px;
         }
-
         main {
             max-width: 800px;
             margin: 20px auto;
         }
-
-        .container-fluid {
-            margin: 20px;
-        }
-
         table {
             width: 90%;
             border-collapse: collapse;
             margin: 0;
-            text-align: left;
+            /* text-align: left; */
         }
-
-        th,
-        td {
+        th, td {
             border: 1px solid #ddd;
             padding: 8px;
             text-align: center;
         }
-
-        tr,
-        td {
+        tr, td {
             border: 2px solid #000000;
             padding: 2px;
             text-align: center;
         }
-
         footer {
             padding: 10px;
             margin-top: 50px;
@@ -80,18 +66,18 @@
             font-size: 13px;
             font-weight: bold;
             vertical-align: top;
-            text-align: left;
+            text-align: left;"
         }
 
         .topcenter {
             font-size: 13px;
             font-weight: lighter;
-            vertical-align: top;
-            text-align: center;
+            vertical-align: center;
+            text-align: center;"
         }
 
         .text-end {
-            text-align: right;
+            text-align: right;"
         }
 
         .rigthside-font {
@@ -103,16 +89,14 @@
             font-size: 12px;
         }
 
-        ul,
-        li,
-        span {
+        ul , li, span {
             font-size: 10px;
             font-weight: bold;
         }
 
         .small-underline {
-            border-bottom: 1px solid #000;
-            display: inline-block;
+            border-bottom: 1px solid #000; 
+            display: inline-block; 
             width: 15px;
             text-align: center;
         }
@@ -122,60 +106,74 @@
             margin: auto;
             text-align: center;
         }
-
-        .small-table,
-        th,
-        td {
+        .small-table, th, td {
             font-size: 13px;
             border: 1px solid #000000;
             padding: 2px;
             text-align: center;
         }
-
-        .small-table,
-        tr,
-        td {
+        .small-table, tr, td {
             font-size: 10px;
             border: 1px solid #000000;
             padding: 2px;
         }
-
         .small-p {
-            font-size: 10px;
+            font-size : 10px;
             display: block;
             /* word-wrap: break-word; */
             /* white-space:pre-wrap; */
         }
-    </style>
-</head>
 
+        .name-row {
+            text-align: center;
+        }
+
+        .label {
+            font-weight: bold;
+            padding-right: 10px;
+        }
+
+        .name-column,
+        .formatted-name-column {
+            border: 1px solid #ccc; /* Example border for better visualization */
+            padding: 10px;
+            width: 33%; /* Equal width for each column */
+        }
+
+        .formatted-name-column {
+            text-align: left;
+        }
+    </style>
+
+
+</head>
 <body>
-    <div style="font-size: 8px; text-align: center; margin-bottom: 10px;">
-        <span>Civil Service Form No. 6</span>  
-        <span>Revised 2020</span>
+    <div>
+        <span style="display: block; font-size: 8px;">Civil Service Form No. 6</span>  
+        <span style="display: block; font-size: 8px;">Revised 2020</span>
     </div>
-    
-    <header style="display: flex; align-items: center; justify-content: space-between; font-size: 10px;">
-        <div style="display: flex; align-items: center;">
-            <img id="zcmclogo" src="{{ base_path() . '\public\storage\logo/zcmc.jpeg'}}" alt="zcmcLogo" style="max-height: 50px; margin-right: 10px;">
-            {{-- <img id="zcmclogo" src="{{ asset('storage/zcmc.png') }}" alt="Logo Left" style="max-height: 50px; margin-right: 10px;"> --}}
+
+    <header style="display: flex; align-items: center; justify-content: space-between;">
+        <div>
+            {{-- <img src="{{ asset('storage/zcmc.png') }}" alt="Logo Left"> --}}
+            <img id="zcmclogo" src="{{ base_path() . '\public\storage\logo/zcmc.jpeg'}}" alt="Logo Left">
         </div>
     
         <div style="text-align: center;">
             <span>Republic of the Philippines</span>
-            <h6 style="margin: 0">ZAMBOANGA CITY MEDICAL CENTER</h6>
+            <h6 style="margin: 0;">ZAMBOANGA CITY MEDICAL CENTER</h6>
             <span>Dr. Evangelista Street, Sta. Catalina, Zamboanga City</span>
         </div>
     
-        <div style="display: flex; align-items: center;">
-            <img id="dohlogo" src="{{ base_path() . '\public\storage\logo/doh.jpeg'}}" alt="dohLogo" style="max-height: 50px; margin-left: 10px;">
-            {{-- <img id="dohlogo" src="{{ asset('storage/doh.png') }}" alt="Logo Right" style="max-height: 50px; margin-left: 10px;"> --}}
+        <div>
+            {{-- <img src="{{ asset('storage/doh.png') }}" alt="Logo Right"> --}}
+            <img id="dohlogo" src="{{ base_path() . '\public\storage\logo/doh.jpeg'}}" alt="Logo Right">
         </div>
     </header>
 
     <div class="container-fluid">
         
-        <div style="text-align: center;">
+        <div  style="text-align: center;">
             <small> <b> APPLICATION FOR LEAVE </b> </small>
         </div>
 
@@ -185,30 +183,29 @@
                     <td class="topleft" colspan="1" style="width: 35%;"> 1. OFFICE/AGENCY
                         <div class="mb-3 topcenter">
                             <label>
-                                Zamboanga City Medical Center
+                                 Zamboanga City Medical Center
                             </label>
                         </div>
                     </td>
-                    
+    
 
-                    <td class="text-start topleft" colspan="5">
-                        <div class="row align-items-start">
-                            <div class="col">
-                                2. NAME :
-                            </div>
+                    <td class="topleft" colspan="1" style="border-right:#ddd">
+                        <label> 2. Name :</label>
+                    </td>
 
-                            <div class="col">
-                                <div>(Last) <br><span class="topcenter"> {{ $data->employeeProfile->personalInformation->last_name ?? null }} </span></div>
-                            </div>
+                    <td class="topleft" colspan="2" style="border-left:#ddd; border-right:#ddd">
+                        <label> (Last) </label> <br>
+                        <label class="text-center" style="padding:4px"> {{ $data->employeeProfile->personalInformation->last_name ?? null }} </label>
+                    </td>
 
-                            <div class="col">
-                                <div>(First) <br><span class="topcenter"> {{ $data->employeeProfile->personalInformation->first_name ?? null }} </span></div>
-                            </div>
+                    <td class="topleft" colspan="2"style="border-left:#ddd; border-right:#ddd">
+                        <label> (First) </label> <br>
+                        <label class="text-center" style="padding:4px"> {{ $data->employeeProfile->personalInformation->first_name ?? null }} </label>
+                    </td>
 
-                            <div class="col">
-                                <div>(Middle) <br><span class="topcenter"> {{ $data->employeeProfile->personalInformation->middle_name ?? null }} </span></div>
-                            </div>
-                        </div>
+                    <td class="topleft" colspan="1" style="border-left:#ddd">
+                        <label> (Middle) </label> <br>
+                        <label class="text-center" style="padding:4px"> {{ $data->employeeProfile->personalInformation->last_name ?? null }} </label>
                     </td>
                 </tr>
 
@@ -216,7 +213,7 @@
                     <td class="topleft" colspan="1"> 3. DATE OF FILING
                         <div class="mb-3 topcenter">
                             <label>
-                                {{ date(' F d, Y', strtotime($data->created_at  ?? null)) }}
+                                {{ date(' F d, Y', strtotime($data->created_at)) }}
                             </label>
                         </div>
                     </td>
@@ -224,12 +221,12 @@
                     <td class="topleft" colspan="4" style="width: 33%"> 4. POSITION
                         <div class="mb-3 topcenter">
                             <label>
-                                {{-- {{ $data->employeeProfile->findDesignation()['name'] }} --}}
+                                {{ $data->employeeProfile->findDesignation()['name'] }}
                             </label>
                         </div>
                     </td>
 
-                    <td class="topleft" colspan="1"> 5. SALARY
+                    <td class="topleft" colspan="2"> 5. SALARY
                         <div class="mb-3 topcenter">
                             <label>
                             </label>
@@ -238,7 +235,7 @@
                 </tr>
 
                 <tr>
-                    <td colspan="6" style="font-size: 15px"><small><b> DETAILS OF APPLICATION </b></small></td>
+                    <td colspan="7" style="font-size: 15px"><small><b> DETAILS OF APPLICATION </b></small></td>
                 </tr>
 
                 <tr>
@@ -258,7 +255,7 @@
                             @endforeach
                     </td>
                     
-                    <td class="topleft" colspan="1"> 6. B.) DETAILS OF LEAVE <br>
+                    <td class="topleft" colspan="3"> 6. B.) DETAILS OF LEAVE <br>
                         <div class="mb-3 text-start small">
                             <label class="rigthside-font">In case of Vacation/Special Privilege Leave:</label>
                             <ul class="list-unstyled">
@@ -269,7 +266,7 @@
                                         @endif
                                     </span>
                                     <span style="font-size: 12px;">Within the Philippines</span>    
-                                    <span style="border-bottom: 1px solid #000; display: inline-block; width: 84px;"></span>
+                                    <span style="border-bottom: 1px solid #000; display: inline-block; width: 50px;"></span>
                                 </li>
                                 
                                 <li>
@@ -279,7 +276,7 @@
                                         @endif
                                     </span>
                                     <span style="padding-right: 29px; font-size: 12px">Abroad (Specify)</span>    
-                                    <span style="border-bottom: 1px solid #000; display: inline-block; width: 84px;"></span>
+                                    <span style="border-bottom: 1px solid #000; display: inline-block; width: 50px;"></span>
                                 </li>
                               </ul>
                             
@@ -292,7 +289,7 @@
                                         @endif
                                     </span>
                                     <span style="padding-right: 4px; font-size: 12px">In Hospital (Specify Illness)</span>    
-                                    <span style="border-bottom: 1px solid #000; display: inline-block; width: 55px;">
+                                    <span style="border-bottom: 1px solid #000; display: inline-block; width: 50px;">
                                         @if ($data->is_outpatient === false)
                                             {{ $data->illness }}
                                         @endif
@@ -305,7 +302,7 @@
                                         @endif
                                     </span>
                                     <span style="padding-right: 2px; font-size: 12px">Out Patient (Specify Illness)</span>
-                                    <span style="border-bottom: 1px solid #000; display: inline-block; width: 55px;">
+                                    <span style="border-bottom: 1px solid #000; display: inline-block; width: 50px;">
                                         @if ($data->is_outpatient === true)
                                             {{ $data->illness }}
                                         @endif
@@ -363,9 +360,9 @@
                 </tr>
 
                 <tr>
-                    <small> <td class="topleft" colspan="2" style="width: 50%"> 6. C.) NUMBER OF WORKING DAY APPLIED FOR:
+                    <td class="topleft" colspan="3" style="width: 50%"> 6. C.) NUMBER OF WORKING DAY APPLIED FOR:
                         <p class="text-center">
-                            <span style="font-size: 12px; padding: 5px; border-bottom: 1px solid #000; display: inline-block; width: 300px;">
+                            <span style="font-size: 12px; padding: 1px; border-bottom: 1px solid #000; display: inline-block; width: 300px;">
                                 {{ number_format($data->applied_credits, 1) }} Day(s)
                             </span>
                         </p>
@@ -374,7 +371,7 @@
                             Inclusive Dates
                         </div>
                         <p class="text-center">
-                            <span style="font-size: 12px; padding: 5px; border-bottom: 1px solid #000; display: inline-block; width: 300px;">
+                            <span style="font-size: 12px; padding: 1px; border-bottom: 1px solid #000; display: inline-block; width: 300px;">
                                 @if ($data->date_from === $data->date_to)
                                     {{ date(' F d, Y', strtotime($data->date_from)) }}
                                 @else
@@ -386,24 +383,24 @@
                     </td>
 
                     <td class="topleft" colspan="4"> 6. D.) COMMUTATION
-                        <div class="mb-3 text-center">
-                                
+                        <div class="mb-3 text-center" style="padding: 2px">
                             <div class="form-check form-check-inline">
                                 @if ($data->is_commutation === 1 || $data->is_commutation === true)
-                                    ( x )
+                                    <label> ( x )  Requested</label>
+
                                 @else
-                                    (   )
+                                    <label>(   ) Requested</label>
                                 @endif
-                                <label>Requested</label>
                             </div>
 
                             <div class="form-check form-check-inline">
                                 @if ($data->is_commutation === 0 || $data->is_commutation === false)
-                                    ( x )
+                                    <label> ( x ) Not Requested</label>
+
                                 @else
-                                    (   )
+                                    <label> (   ) Not Requested</label>
+
                                 @endif
-                                <label for="inlineCheckbox2">Not Requested</label>
                             </div>
 
                             <div style="margin-top: 20px;">
@@ -417,18 +414,17 @@
                             </div>
                         </div>
                     </td>
-                    </small>
                 </tr>
 
                 <tr>
-                    <td colspan="6" style="font-size: 15px"><small><b> DETAILS OF APPLICATION </b></small></td>
+                    <td colspan="7" style="font-size: 15px"><small><b> DETAILS OF APPLICATION </b></small></td>
                  </tr>
- 
+
                 <tr>
                     <td class="topleft" colspan="3"> 7. A) CERTIFICATION OF LEAVE CREDITS
                         <div class="mb-3">
                             <label style="padding-left: 40px">As of</label>
-                            <span style="border-bottom: 1px solid #000; display: inline-block; width: 100px;"> 
+                            <span style="font-size: 10px; border-bottom: 1px solid #000; display: inline-block;"> 
                                 {{ \Carbon\Carbon::now()->format('F d, Y')}}
                             </span>
 
@@ -473,25 +469,24 @@
                         </div>
                     </td>
 
-                    <td class="topleft" colspan="3"> 7. B) RECOMMENDATION
+                    <td class="topleft" colspan="4"> 7. B) RECOMMENDATION
                         <div class="mb-3">
                             <div style="padding-left: 40px">
                                 <div class="form-check form-check-inline">
                                     @if ($data->status === 'for approving officer')
-                                        ( x )
+                                        <label> ( x ) Approved </label>
                                     @else
-                                        (   )
+                                        <label> (   ) Approved </label>
                                     @endif
-                                    <label class="form-check-label" for="defaultCheck1"> Approved </label>
+                                   
                                 </div>
                                 <br>
                                 <div class="form-check form-check-inline">
                                     @if ($data->status === 'declined')
-                                        ( x )
+                                        <label> ( x ) Disapproval due to </label>
                                     @else
-                                        (   )
+                                        <label> (   ) Disapproval due to </label>
                                     @endif
-                                    <label class="form-check-label" for="defaultCheck2"> Disapproval due to</label>
                                     <br>
                                     <span style="font-size 12px; padding:10px; border-bottom: 1px solid #000; display: inline-block; width: 220px;">
                                         {{ $data->remarks }}
@@ -511,83 +506,80 @@
                             </div>
                         </div>
                     </td>
-                 </tr>
+                </tr>
 
-                 <tr>
-                    <td colspan="6">
-                        <div class="mb-3">
-                            <div class="row">
-                                <div class="col-6 topleft"> 7. C) APPROVED FOR
-                                    <div class="text-center">
-                                        <span class="small-underline">
-                                            @if ($data->without_pay === 0 ||$data->without_pay === false)
-                                                {{ $data->applied_credits }}
-                                            @endif
-                                        </span>
-                                        <span style="padding-right: 20px">Days with pay</span>    
-                                        <span style="border-bottom: 1px solid #000; display: inline-block; width: 100px;">
-                                            @if ($data->without_pay === 0 ||$data->without_pay === false)
-                                                @if ($data->date_from === $data->date_to)
-                                                    {{ date(' F d, Y', strtotime($data->date_from)) }}
-                                                @else
-                                                    {{ date(' F d, Y', strtotime($data->date_from)) }} - {{ date(' F d, Y', strtotime($data->date_to)) }}
-                                                @endif
-                                            @endif
-                                        </span>
-                                        <br>                                        
-                                        <span class="small-underline">
-                                            @if ($data->without_pay === 1 ||$data->without_pay === true)
-                                                {{ $data->applied_credits }}
-                                            @endif
-                                        </span>
-                                        <span style="padding-right: 5px">Days without pay</span>    
-                                        <span style="border-bottom: 1px solid #000; display: inline-block; width: 100px;">
-                                            @if ($data->without_pay === 1 ||$data->without_pay === true)
-                                                @if ($data->date_from === $data->date_to)
-                                                    {{ date(' F d, Y', strtotime($data->date_from)) }}
-                                                @else
-                                                    {{ date(' F d, Y', strtotime($data->date_from)) }} - {{ date(' F d, Y', strtotime($data->date_to)) }}
-                                                @endif
-                                            @endif
-                                        </span>    
-                                        <br>
-                                        <span class="small-underline"></span>
-                                        <span style="padding-right: 10px">Others (Specify)</span>    
-                                        <span style="border-bottom: 1px solid #000; display: inline-block; width: 100px;"></span>    
-                                    </div>
-                                </div>
-
-                                <div class="col-6 topleft">7. D) DISAPPROVED DUE TO:
-                                    <div class="text-center">
-                                        <br>
-                                        <span style="border-bottom: 1px solid #000; display: inline-block; width: 200px;"> {{$data->remakrs}} </span>
-                                    </div>
-                                </div>
-                            
-                                <div class="col-12"><br>
-                                    <h6 class="topleft" style="padding-top: 5px; padding-left: 20px">BY AUTHORITY OF THE SECRETARY OF HEALTH</h6>
-                                    <span style="font-size: 13px; padding: 10px; border-bottom: 1px solid #000; display: inline-block; width: 250px;"></span>
-                                    <br> 
-                                    <span><b> Signature </b></span>
-                                    <br>
-                                    <span style="font-size: 13px; border-bottom: 1px solid #000; display: inline-block; width: 250px; padding-top: 30px">
-                                        <b>
-                                            {{ $data->approvingOfficer->personalInformation->first_name }}
-                                            {{ substr($data->approvingOfficer->personalInformation->middle_name, 0, 1) }}
-                                            {{ $data->approvingOfficer->personalInformation->last_name }}         
-                                        </b>
-                                    </span>
-                                    <br>
-                                    <span style="font-size:10px;">{{ $data->approvingOfficer->findDesignation()['name']  }}</span>
-                                    <br>
-                                    <h6 class="topleft" style="padding-top: 20px; padding-left: 20px">Date
-                                        <span style="border-bottom: 1px solid #000; display: inline-block; width: 250px;"></span>
-                                    </h6>
-                                </div>
-                            </div>
+                <tr style="border-color: #ffffff">
+                    <td class="topleft" colspan="3" style="border-right: #ddd; border-bottom: #ddd">
+                        <label> 7. C) APPROVED FOR </label>
+                        <div style="padding-top: 3px; padding-left: 20px">
+                            <span class="small-underline">
+                                @if ($data->without_pay === 0 ||$data->without_pay === false)
+                                    {{ $data->applied_credits }}
+                                @endif
+                            </span>
+                            <span style="padding-right: 20px">Days with pay</span>    
+                            <span style="border-bottom: 1px solid #000; display: inline-block; width: 100px;">
+                                @if ($data->without_pay === 0 ||$data->without_pay === false)
+                                    @if ($data->date_from === $data->date_to)
+                                        {{ date(' F d, Y', strtotime($data->date_from)) }}
+                                    @else
+                                        {{ date(' F d, Y', strtotime($data->date_from)) }} - {{ date(' F d, Y', strtotime($data->date_to)) }}
+                                    @endif
+                                @endif
+                            </span>
+                            <br>                                        
+                            <span class="small-underline">
+                                @if ($data->without_pay === 1 ||$data->without_pay === true)
+                                    {{ $data->applied_credits }}
+                                @endif
+                            </span>
+                            <span style="padding-right: 5px">Days without pay</span>    
+                            <span style="border-bottom: 1px solid #000; display: inline-block; width: 100px;">
+                                @if ($data->without_pay === 1 ||$data->without_pay === true)
+                                    @if ($data->date_from === $data->date_to)
+                                        {{ date(' F d, Y', strtotime($data->date_from)) }}
+                                    @else
+                                        {{ date(' F d, Y', strtotime($data->date_from)) }} - {{ date(' F d, Y', strtotime($data->date_to)) }}
+                                    @endif
+                                @endif
+                            </span>    
+                            <br>
+                            <span class="small-underline"></span>
+                            <span style="padding-right: 10px">Others (Specify)</span>    
+                            <span style="border-bottom: 1px solid #000; display: inline-block; width: 100px;"></span>    
                         </div>
                     </td>
-                 </tr>
+                    
+                    <td class="topleft" colspan="4" style="border-left: #ddd; border-bottom: #ddd">
+                        <label> 7. D) DISAPPROVED DUE TO: </label>
+                        <div class="text-center" style="padding-top: 15px">
+                            <span style="border-bottom: 1px solid #000; display: inline-block; width: 200px;"> {{$data->remakrs}} </span>
+                        </div>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td colspan="7" style="border-top: #ddd">
+                        <h6 class="topleft" style="padding-top: 5px; padding-left: 20px">BY AUTHORITY OF THE SECRETARY OF HEALTH</h6>
+                        <span style="font-size: 13px; padding: 10px; border-bottom: 1px solid #000; display: inline-block; width: 250px;"></span>
+                        <br> 
+                        <span><b> Signature </b></span>
+                        <br>
+                        <span style="font-size: 13px; border-bottom: 1px solid #000; display: inline-block; width: 250px; padding-top: 30px">
+                            <b>
+                                {{ $data->approvingOfficer->personalInformation->first_name }}
+                                {{ substr($data->approvingOfficer->personalInformation->middle_name, 0, 1) }}
+                                {{ $data->approvingOfficer->personalInformation->last_name }}         
+                            </b>
+                        </span>
+                        <br>
+                        <span style="font-size:10px;">{{ $data->approvingOfficer->findDesignation()['name']  }}</span>
+                        <br>
+                        <h6 class="topleft" style="padding-top: 20px; padding-left: 20px">Date
+                            <span style="border-bottom: 1px solid #000; display: inline-block; width: 250px;"></span>
+                        </h6>
+                    </td>
+                </tr>
             </tbody>
         </table>
         
@@ -601,7 +593,7 @@
             </div>
 
             <div class="col-2">
-                <span class="text-center" style="display: block; font-size: 8px;">Effectivity Date: June 1, 2021</span>
+                <span class="text-end" style="display: block; font-size: 8px; padding-right:90px;">Effectivity Date: June 1, 2021</span>
             </div>
 
             <div class="col-12">
@@ -613,7 +605,7 @@
         <br>
 
         <h5 class="text-center">INSTRUCTIONS AND REQUIREMENTS</h5>
-        <div class="row">
+        <div class="row" style="width: 90%;">
             <div class="col-6">
                 <p class="small-p">Application for any type of leave shall be made on this Form and to be
                     accomplished at least in duplicate with documentary requirements, as follows:
