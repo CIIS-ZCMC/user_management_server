@@ -214,6 +214,7 @@ class OfficialTimeController extends Controller
      */
     public function update($id, Request $request)
     {
+     
         try {        
             $data = OfficialTime::findOrFail($id);
 

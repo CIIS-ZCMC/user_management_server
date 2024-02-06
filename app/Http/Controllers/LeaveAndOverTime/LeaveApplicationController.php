@@ -76,6 +76,7 @@ class LeaveApplicationController extends Controller
                     'illness',
                     'is_masters',
                     'is_board',
+                    'is_commutation',
                     'applied_credits',
                     'status',
                     'remarks',
@@ -144,6 +145,8 @@ class LeaveApplicationController extends Controller
     public function approved($id, PasswordApprovalRequest $request)
     {
         try {
+
+            
             $password = strip_tags($request->password);
 
             $employee_profile = $request->user;
@@ -154,6 +157,7 @@ class LeaveApplicationController extends Controller
                 return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
             }
 
+        
             $leave_application = LeaveApplication::find($id);
 
             if (!$leave_application) {
@@ -166,6 +170,7 @@ class LeaveApplicationController extends Controller
 
             switch ($leave_application->status) {
                 case 'applied':
+                 
                     if (Helpers::getHrmoOfficer() !== $employee_profile->id) {
                         return response()->json(['message' => 'Forbidden.'], Response::HTTP_FORBIDDEN);
                     }
@@ -174,6 +179,7 @@ class LeaveApplicationController extends Controller
                     $leave_application->update(['status' => $status]);
                     break;
                 case 'for recommending approval':
+                  
                     if ($position === null || str_contains($position['position'], 'Unit')) {
                         return response()->json(['message' => 'Forbidden'], Response::HTTP_FORBIDDEN);
                     }
@@ -182,7 +188,8 @@ class LeaveApplicationController extends Controller
                     $leave_application->update(['status' => $status]);
                     break;
                 case 'for approving approval':
-                    if (Helpers::getChiefOfficer() !== $employee_profile->id) {
+                    $approving =  Helpers::getRecommendingAndApprovingOfficer($employee_profile->assignedArea->findDetails(),$leave_application->employee_profile_id )['approving_officer'];
+                    if ($approving !== $employee_profile->id) {
                         return response()->json(['message' => 'Forbidden'], Response::HTTP_FORBIDDEN);
                     }
                     $status = 'approved';
@@ -415,11 +422,26 @@ class LeaveApplicationController extends Controller
 
             $leave_application = LeaveApplication::find($id);
             $leave_type = $leave_application->leaveType;
+            $leave_application_hrmo=$leave_application->hrmo_officer;
+            $leave_application_recommending=$leave_application->recommending_officer  ;
+            $leave_application_approving=$leave_application->approving_officer  ;
+            
+            if ($employee_profile->id === $leave_application_hrmo) {
+                $status='declined by hrmo officer';
+            }
+            else if($employee_profile->id === $leave_application_recommending)
+            {
+                $status='declined by recommending officer';
+            }
+            else if($employee_profile->id === $leave_application_approving)
+            {
+                $status='declined by approving officer';
+            }
 
             // return response()->json(['message' => $leave_type->is_special], 401);
 
             $leave_application->update([
-                'status' => 'declined',
+                'status' => $status,
                 'reason' => strip_tags($request->reason)
             ]);
 

@@ -17,6 +17,7 @@ class LeaveApplication extends Model
         'is_outpatient' => 'boolean',
         'is_masters' => 'boolean', 
         'is_board' => 'boolean', 
+        // 'is_commutation' => 'boolean', 
     ];
 
     public $fillable = [
@@ -30,6 +31,7 @@ class LeaveApplication extends Model
         'illness',
         'is_masters',
         'is_board',
+        // 'is_commutation',
         'applied_credits',
         'status',
         'remarks',

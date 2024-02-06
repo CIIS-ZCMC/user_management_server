@@ -70,6 +70,7 @@ class LeaveApplicationRequest extends FormRequest
             "is_outpatient" => "nullable|boolean",
             "is_masters" => "nullable|boolean",
             "is_board" => "nullable|boolean",
+            // "is_commutation" => "nullable",
             "without_pay" => "nullable|boolean",
             "remarks" => "nullable|string",
             "attachment_name.*" => "required|string|max:255",
