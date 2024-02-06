@@ -473,10 +473,10 @@ class LeaveApplicationController extends Controller
             $dompdf = new Dompdf($options);
             $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
             $html = view('leave_from.leave_application_form', compact('data', 'leave_type', 'hrmo_officer'))->render();
-            return $dompdf->loadHtml($html);
+            $dompdf->loadHtml($html);
 
 
-            $dompdf->setPaper('Letter', 'portrait');
+            $dompdf->setPaper('Legal', 'portrait');
             $dompdf->render();
             $filename = 'Leave Application (' . $data->employeeProfile->personalInformation->name() . ').pdf';
 
@@ -630,6 +630,7 @@ class LeaveApplicationController extends Controller
             //     return view('leave_from.leave_application_form', $singleArray);
             // }
         } catch (\Exception $e) {
+            return $e;
             return response()->json(['message' => $e->getMessage(), 'error' => true]);
         }
     }

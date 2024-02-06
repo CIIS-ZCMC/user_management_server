@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,9 +8,6 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
     <style>
         body {
-            /* font-family: 'Arial', sans-serif;
-            margin: 0;
-            padding: 0; */
             font-family: 'Arial', sans-serif;
             margin: 0;
             padding: 0;
@@ -17,38 +15,51 @@
             height: 14in; /* Height of a standard long bond paper in inches */
             margin-left: auto;
             margin-right: auto;
-            /* display: flex; */
+            display: flex;
             flex-direction: column;
             justify-content: center;
         }
+
         header {
             padding: 10px;
             text-align: center;
         }
+
         header img {
             max-height: 50px;
             margin-right: 10px;
         }
+
         main {
             max-width: 800px;
             margin: 20px auto;
         }
+
+        .container-fluid {
+            margin: 20px;
+        }
+
         table {
-            width: 100%;
+            width: 90%;
             border-collapse: collapse;
-            margin: auto;
+            margin: 0;
             text-align: left;
         }
-        th, td {
+
+        th,
+        td {
             border: 1px solid #ddd;
             padding: 8px;
             text-align: center;
         }
-        tr, td {
+
+        tr,
+        td {
             border: 2px solid #000000;
             padding: 2px;
             text-align: center;
         }
+
         footer {
             padding: 10px;
             margin-top: 50px;
@@ -69,18 +80,18 @@
             font-size: 13px;
             font-weight: bold;
             vertical-align: top;
-            text-align: left;"
+            text-align: left;
         }
 
         .topcenter {
             font-size: 13px;
             font-weight: lighter;
-            vertical-align: center;
-            text-align: center;"
+            vertical-align: top;
+            text-align: center;
         }
 
         .text-end {
-            text-align: right;"
+            text-align: right;
         }
 
         .rigthside-font {
@@ -92,14 +103,16 @@
             font-size: 12px;
         }
 
-        ul , li, span {
+        ul,
+        li,
+        span {
             font-size: 10px;
             font-weight: bold;
         }
 
         .small-underline {
-            border-bottom: 1px solid #000; 
-            display: inline-block; 
+            border-bottom: 1px solid #000;
+            display: inline-block;
             width: 15px;
             text-align: center;
         }
@@ -109,91 +122,91 @@
             margin: auto;
             text-align: center;
         }
-        .small-table, th, td {
+
+        .small-table,
+        th,
+        td {
             font-size: 13px;
             border: 1px solid #000000;
             padding: 2px;
             text-align: center;
         }
-        .small-table, tr, td {
+
+        .small-table,
+        tr,
+        td {
             font-size: 10px;
             border: 1px solid #000000;
             padding: 2px;
         }
+
         .small-p {
-            font-size : 10px;
+            font-size: 10px;
             display: block;
             /* word-wrap: break-word; */
             /* white-space:pre-wrap; */
         }
     </style>
-
-
 </head>
+
 <body>
-    <div>
-        <span style="display: block; font-size: 8px;">Civil Service Form No. 6</span>  
-        <span style="display: block; font-size: 8px;">Revised 2020</span>
+    <div style="font-size: 8px; text-align: center; margin-bottom: 10px;">
+        <span>Civil Service Form No. 6</span>  
+        <span>Revised 2020</span>
     </div>
-
-    <header style="display: flex; align-items: center; justify-content: space-between;">
-        <div>
-            {{-- <img src="{{ asset('storage/zcmc.png') }}" alt="Logo Left"> --}}
-            {{-- <img id="zcmclogo" src="{{ base_path() . '\public\storage\logo/zcmc.jpeg'}}" alt="zcmcLogo"> --}}
-
+    
+    <header style="display: flex; align-items: center; justify-content: space-between; font-size: 10px;">
+        <div style="display: flex; align-items: center;">
+            <img id="zcmclogo" src="{{ base_path() . '\public\storage\logo/zcmc.jpeg'}}" alt="zcmcLogo" style="max-height: 50px; margin-right: 10px;">
+            {{-- <img id="zcmclogo" src="{{ asset('storage/zcmc.png') }}" alt="Logo Left" style="max-height: 50px; margin-right: 10px;"> --}}
         </div>
-
+    
         <div style="text-align: center;">
-
-            <span>Republic of the Philippines</h6>
-            <h6 style="margin: 0">  ZAMBOANGA CITY MEDICAL CENTER </h3>
-            <span>Dr. Evangelista Street, Sta. Catalina, Zamboanga City</h6>
+            <span>Republic of the Philippines</span>
+            <h6 style="margin: 0">ZAMBOANGA CITY MEDICAL CENTER</h6>
+            <span>Dr. Evangelista Street, Sta. Catalina, Zamboanga City</span>
         </div>
-
-        <div>
-            {{-- <img src="{{ asset('storage/doh.png') }}" alt="Logo Right"> --}}
-            {{-- <img id="dohlogo" src="{{ base_path() . '\public\storage\logo/doh.jpeg'}}" alt="dohLogo"> --}}
-
+    
+        <div style="display: flex; align-items: center;">
+            <img id="dohlogo" src="{{ base_path() . '\public\storage\logo/doh.jpeg'}}" alt="dohLogo" style="max-height: 50px; margin-left: 10px;">
+            {{-- <img id="dohlogo" src="{{ asset('storage/doh.png') }}" alt="Logo Right" style="max-height: 50px; margin-left: 10px;"> --}}
         </div>
-        <!-- Add any other header content as needed -->
     </header>
 
     <div class="container-fluid">
         
-        <div  style="text-align: center;">
+        <div style="text-align: center;">
             <small> <b> APPLICATION FOR LEAVE </b> </small>
         </div>
 
-        <table class="table-bordered" border="1" cellspacing="0" cellpadding="10">
+        <table class="table-bordered" border="1" cellspacing="0" cellpadding="5">
             <tbody>
                 <tr>
                     <td class="topleft" colspan="1" style="width: 35%;"> 1. OFFICE/AGENCY
                         <div class="mb-3 topcenter">
                             <label>
-                                 Zamboanga City Medical Center
+                                Zamboanga City Medical Center
                             </label>
                         </div>
                     </td>
+                    
 
-                    <td class="text-start topleft" colspan="5"> 
+                    <td class="text-start topleft" colspan="5">
                         <div class="row align-items-start">
                             <div class="col">
                                 2. NAME :
                             </div>
 
                             <div class="col">
-                                (Last) <br>
-                                <span class="topcenter"> {{ $data->employeeProfile->personalInformation->last_name }} </span>
+                                <div>(Last) <br><span class="topcenter"> {{ $data->employeeProfile->personalInformation->last_name ?? null }} </span></div>
                             </div>
 
                             <div class="col">
-                                (First) <br>
-                                <span class="topcenter"> {{ $data->employeeProfile->personalInformation->first_name }} </span>
+                                <div>(First) <br><span class="topcenter"> {{ $data->employeeProfile->personalInformation->first_name ?? null }} </span></div>
                             </div>
 
                             <div class="col">
-                                (Middle) <br>
-                                <span class="topcenter"> {{ $data->employeeProfile->personalInformation->last_name }} </span>
+                                <div>(Middle) <br><span class="topcenter"> {{ $data->employeeProfile->personalInformation->middle_name ?? null }} </span></div>
                             </div>
                         </div>
                     </td>
@@ -203,15 +216,15 @@
                     <td class="topleft" colspan="1"> 3. DATE OF FILING
                         <div class="mb-3 topcenter">
                             <label>
-                                {{ date(' F d, Y', strtotime($data->created_at)) }}
+                                {{ date(' F d, Y', strtotime($data->created_at  ?? null)) }}
                             </label>
                         </div>
                     </td>
 
-                    <td class="topleft" colspan="3" style="width: 33%"> 4. POSITION
+                    <td class="topleft" colspan="4" style="width: 33%"> 4. POSITION
                         <div class="mb-3 topcenter">
                             <label>
-                                {{ $data->employeeProfile->findDesignation()['name'] }}
+                                {{-- {{ $data->employeeProfile->findDesignation()['name'] }} --}}
                             </label>
                         </div>
                     </td>
@@ -410,8 +423,8 @@
                 <tr>
                     <td colspan="6" style="font-size: 15px"><small><b> DETAILS OF APPLICATION </b></small></td>
                  </tr>
-
-                 <tr>
+ 
+                <tr>
                     <td class="topleft" colspan="3"> 7. A) CERTIFICATION OF LEAVE CREDITS
                         <div class="mb-3">
                             <label style="padding-left: 40px">As of</label>
