@@ -191,7 +191,7 @@ class ModulePermissionSeeder extends Seeder
             'system_module_id' => $system_module_dtr['id']
         ]);
         
-        /**
+       /**
          * Leave and Overtime Management Registration
          */
         $system_module_leave_ot = SystemModule::find(4);
@@ -367,7 +367,7 @@ class ModulePermissionSeeder extends Seeder
             'system_module_id' => $system_module_overtime_management['id']
         ]);
         
-        /**
+         /**
          * Official Business
          */
         $system_module_official_business = SystemModule::find(8);
@@ -487,6 +487,7 @@ class ModulePermissionSeeder extends Seeder
             'permission_id' => $permission_request['id'],
             'system_module_id' => $system_module_compensatory_time['id']
         ]);
+
 
         /**
          * Time Shift
