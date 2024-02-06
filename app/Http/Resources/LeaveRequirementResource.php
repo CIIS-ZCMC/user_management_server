@@ -37,6 +37,8 @@ class LeaveRequirementResource extends JsonResource
             'added_by' => $added_by,
             'date_added' => $date_added,
             'logs'  => $this->logs ? RequirementLog::collection($this->logs) : [],
+            'created_at'=> $this->created_at,
+            'updated_at'=> $this->updated_at,
         ];
     }
 }

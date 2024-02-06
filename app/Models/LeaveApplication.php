@@ -54,6 +54,10 @@ class LeaveApplication extends Model
     {
         return $this->hasMany(LeaveApplicationLog::class);
     }
+    // public function leaveApplicationLogs()
+    // {
+    //     return $this->hasMany(LeaveApplicationLog::class);
+    // }
 
     public function employeeProfile()
     {
@@ -114,4 +118,7 @@ class LeaveApplication extends Model
     {
         return $this->belongsTo(EmployeeProfile::class, 'approving_officer');
     }
+
+    
+   
 }

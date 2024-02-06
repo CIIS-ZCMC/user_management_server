@@ -1541,7 +1541,7 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('leave-application-all', 'LeaveApplicationController@index');
         });
 
-        Route::middleware(['auth.permission:UMIS-LM approve'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
             Route::get('user-leave-application', 'LeaveApplicationController@userLeaveApplication');
         });
 
@@ -1582,8 +1582,8 @@ Route::middleware('auth.cookie')->group(function () {
             Route::post('leave-application-approved/{id}', 'LeaveApplicationController@approved');
         });
 
-        Route::middleware(['auth.permission:UMIS-LM download'])->group(function () {
-            Route::post('print-leave-form/{id}', 'LeaveApplicationController@printLeaveForm');
+        Route::middleware(['auth.permission:UMIS-LM write'])->group(function () {
+            Route::post('leave-application-print/{id}', 'LeaveApplicationController@printLeaveForm');
         });
 
 
@@ -1614,7 +1614,7 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('ot-application-all', 'OfficialTimeController@index');
         });
 
-        Route::middleware(['auth.permission:UMIS-OB view'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-OT view'])->group(function () {
             Route::get('user-ot-application', 'OfficialTimeController@create');
         });
 
@@ -1622,7 +1622,7 @@ Route::middleware('auth.cookie')->group(function () {
             Route::post('ot-application', 'OfficialTimeController@store');
         });
 
-        Route::middleware(['auth.permission:UMIS-OB approve'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-OT approve'])->group(function () {
             Route::post('ot-application/{id}', 'OfficialTimeController@update');
         });
 

@@ -115,8 +115,8 @@ class RequirementController extends Controller
 
             RequirementLog::create([
                 'leave_requirement_id' => $leave_requirement->id,
-                'employee_profile_id' => $employee_profile->id,
-                'action' => 'Update leave requirement.'
+                'action_by' => $employee_profile->id,
+                'action' => 'Update'
             ]);
 
             return response()->json([

@@ -237,6 +237,12 @@ class ModulePermissionSeeder extends Seeder
             'permission_id' => $permission_request['id'],
             'system_module_id' => $system_module_leave_ot['id']
         ]);
+
+        ModulePermission::create([
+            'code' => $system_module_leave_ot['code'].' '.$permission_download['action'],
+            'permission_id' => $permission_download['id'],
+            'system_module_id' => $system_module_leave_ot['id']
+        ]);
         
         /**
          * Schedule Management Registration
