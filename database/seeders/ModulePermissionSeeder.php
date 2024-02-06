@@ -29,7 +29,7 @@ class ModulePermissionSeeder extends Seeder
         /**
          * Umis Module Registration
          */
-        $system_module_umis = SystemModule::find(1);
+        $system_module_umis = SystemModule::where('code', 'UMIS-SM')->first();
 
         ModulePermission::create([
             'code' => $system_module_umis['code'].' '.$permission_read_all['action'],
@@ -88,7 +88,7 @@ class ModulePermissionSeeder extends Seeder
         /**
          * Employee Management Registration
          */
-        $system_module_employee_registration = SystemModule::find(2);
+        $system_module_employee_registration = SystemModule::where('code', 'UMIS-EM')->first();
 
         ModulePermission::create([
             'code' => $system_module_employee_registration['code'].' '.$permission_read_all['action'],
@@ -147,7 +147,7 @@ class ModulePermissionSeeder extends Seeder
         /**
          * Daily Time Record Management Registration
          */
-        $system_module_dtr = SystemModule::find(3);
+        $system_module_dtr = SystemModule::where('code', 'UMIS-DTRM')->first();
 
         ModulePermission::create([
             'code' => $system_module_dtr['code'].' '.$permission_read_all['action'],
@@ -194,7 +194,7 @@ class ModulePermissionSeeder extends Seeder
        /**
          * Leave and Overtime Management Registration
          */
-        $system_module_leave_ot = SystemModule::find(4);
+        $system_module_leave_ot = SystemModule::where('code', 'UMIS-LM')->first();
 
         ModulePermission::create([
             'code' => $system_module_leave_ot['code'].' '.$permission_read_all['action'],
@@ -247,7 +247,7 @@ class ModulePermissionSeeder extends Seeder
         /**
          * Schedule Management Registration
          */
-        $system_module_schedule = SystemModule::find(5);
+        $system_module_schedule = SystemModule::where('code','UMIS-ScM')->first();
 
         ModulePermission::create([
             'code' => $system_module_schedule['code'].' '.$permission_read_all['action'],
@@ -300,7 +300,7 @@ class ModulePermissionSeeder extends Seeder
         /**
          * Personal Information Management
          */
-        $system_module_personal_account_management = SystemModule::find(6);
+        $system_module_personal_account_management = SystemModule::where('code', 'UMIS-PAM')->first();
 
         ModulePermission::create([
             'code' => $system_module_personal_account_management['code'].' '.$permission_read_all['action'],
@@ -335,7 +335,7 @@ class ModulePermissionSeeder extends Seeder
         /**
          * Overtime Management
          */
-        $system_module_overtime_management = SystemModule::find(7);
+        $system_module_overtime_management = SystemModule::where('code', 'UMIS-OM')->first();
 
         ModulePermission::create([
             'code' => $system_module_overtime_management['code'].' '.$permission_read_all['action'],
@@ -370,7 +370,7 @@ class ModulePermissionSeeder extends Seeder
          /**
          * Official Business
          */
-        $system_module_official_business = SystemModule::find(8);
+        $system_module_official_business = SystemModule::where('code', 'UMIS-OB')->first();
 
         ModulePermission::create([
             'code' => $system_module_official_business['code'].' '.$permission_read_all['action'],
@@ -411,7 +411,7 @@ class ModulePermissionSeeder extends Seeder
         /**
          * Official Time
          */
-        $system_module_official_time = SystemModule::find(9);
+        $system_module_official_time = SystemModule::where('code', 'UMIS-OT')->first();
 
         ModulePermission::create([
             'code' => $system_module_official_time['code'].' '.$permission_read_all['action'],
@@ -451,7 +451,7 @@ class ModulePermissionSeeder extends Seeder
         /**
          * Compensatory Time
          */
-        $system_module_compensatory_time = SystemModule::find(10);
+        $system_module_compensatory_time = SystemModule::where('code', 'UMIS-CT')->first();
 
         ModulePermission::create([
             'code' => $system_module_compensatory_time['code'].' '.$permission_read_all['action'],
@@ -492,7 +492,7 @@ class ModulePermissionSeeder extends Seeder
         /**
          * Time Shift
          */
-        $system_module_time_shift = SystemModule::find(11);
+        $system_module_time_shift = SystemModule::where('code', 'UMIS-TS')->first();
 
         ModulePermission::create([
             'code' => $system_module_time_shift['code'].' '.$permission_read_all['action'],
@@ -521,7 +521,7 @@ class ModulePermissionSeeder extends Seeder
         /**
          * Exchange Schedule Management
          */
-        $system_module_exchange_schedule = SystemModule::find(12);
+        $system_module_exchange_schedule = SystemModule::where('code', 'UMIS-ES')->first();
 
         ModulePermission::create([
             'code' => $system_module_exchange_schedule['code'].' '.$permission_read_all['action'],
@@ -556,7 +556,7 @@ class ModulePermissionSeeder extends Seeder
          /**
          * Pull Out Management
          */
-        $system_module_pull_out_management = SystemModule::find(13);
+        $system_module_pull_out_management = SystemModule::where('code', 'UMIS-POM')->first();
 
         ModulePermission::create([
             'code' => $system_module_pull_out_management['code'].' '.$permission_read_all['action'],
@@ -589,44 +589,9 @@ class ModulePermissionSeeder extends Seeder
         ]);
 
          /**
-         * Pull Out Management
-         */
-        $system_module_time_adjustment = SystemModule::find(14);
-
-        ModulePermission::create([
-            'code' => $system_module_time_adjustment['code'].' '.$permission_read_all['action'],
-            'permission_id' => $permission_read_all['id'],
-            'system_module_id' => $system_module_time_adjustment['id']
-        ]);
-
-        ModulePermission::create([
-            'code' => $system_module_time_adjustment['code'].' '.$permission_read['action'],
-            'permission_id' => $permission_read['id'],
-            'system_module_id' => $system_module_time_adjustment['id']
-        ]);
-
-        ModulePermission::create([
-            'code' => $system_module_time_adjustment['code'].' '.$permission_write['action'],
-            'permission_id' => $permission_write['id'],
-            'system_module_id' => $system_module_time_adjustment['id']
-        ]);
-
-        ModulePermission::create([
-            'code' => $system_module_time_adjustment['code'].' '.$permission_update['action'],
-            'permission_id' => $permission_update['id'],
-            'system_module_id' => $system_module_time_adjustment['id']
-        ]);
-
-        ModulePermission::create([
-            'code' => $system_module_time_adjustment['code'].' '.$permission_delete['action'],
-            'permission_id' => $permission_delete['id'],
-            'system_module_id' => $system_module_time_adjustment['id']
-        ]);
-
-         /**
          * On Call Management
          */
-        $system_module_on_call_management = SystemModule::find(15);
+        $system_module_on_call_management = SystemModule::where('code', 'UMIS-OCM')->first();
 
         ModulePermission::create([
             'code' => $system_module_on_call_management['code'].' '.$permission_read_all['action'],
@@ -651,7 +616,5 @@ class ModulePermissionSeeder extends Seeder
             'permission_id' => $permission_delete['id'],
             'system_module_id' => $system_module_on_call_management['id']
         ]);
-
-
     }
 }
