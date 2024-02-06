@@ -31,14 +31,16 @@ class LeaveApplicationController extends Controller
     public function index(Request $request)
     {
         try {
-
+  
             $employee_profile = $request->user;
 
             /**
              * HR division
              * Only newly applied leave application
              */
+           
             if (Helpers::getHrmoOfficer() === $employee_profile->id) {
+                
                 $leave_applications = LeaveApplication::where('hrmo_officer', $employee_profile->id)->get();
 
                 return response()->json([
@@ -49,8 +51,8 @@ class LeaveApplicationController extends Controller
 
 
             $employeeId = $employee_profile->id;
-            $recommending = ["for recommending approval", "for approving approval", "approved", "declined"];
-            $approving = ["for approving approval", "approved", "declined"];
+            $recommending = ["for recommending approval", "for approving approval", "approved", "declined by recommending officer"];
+            $approving = ["for approving approval", "approved", "declined by approving officer"];
 
             /**
              * Supervisor = for recommending, for approving, approved, de
@@ -472,7 +474,7 @@ class LeaveApplicationController extends Controller
 
             return response()->json([
                 'data' => new LeaveApplicationResource($leave_application),
-                'message' => 'Retrieve leave application record.'
+                'message' => 'Declined leave application successfully.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
