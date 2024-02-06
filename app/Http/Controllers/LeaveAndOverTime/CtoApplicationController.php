@@ -148,21 +148,36 @@ class CtoApplicationController extends Controller
                         $log_action = 'Approved by Approving Officer';
                     break;
                     
-                    default:
-                        $status = 'declined';
-                        $log_action = 'Request Declined';
-                    break;
+                    // default:
+                    //     $status = 'declined';
+                    //     $log_action = 'Request Declined';
+                    // break;
                 }
             } else if ($request->status === 'declined') {
-                $status = 'declined';
+                $cto_application_recommending=$data->recommending_officer  ;
+                $cto_application_approving=$data->approving_officer  ;
+                
+              
+                if($employee_profile->id === $cto_application_recommending)
+                {
+                    $status='declined by recommending officer';
+                }
+                else if($employee_profile->id === $cto_application_approving)
+                {
+                    $status='declined by approving officer';
+                }
                 $log_action = 'Request Declined';
-            }
-            
+            }            
+                CtoApplicationLog::create([
+                    'action_by' => $employee_profile->id,
+                    'cto_application_id' => $data->id,
+                    'action' => $log_action,
+                ]);
 
             $data->update(['status' => $status, 'remarks' => $request->remarks]);
 
             return response()->json(['data' => CtoApplicationResource::collection(CtoApplication::where('id', $data->id)->get()),
-                                    'msg' => $log_action, ], Response::HTTP_OK);
+                                    'message' => $log_action, ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
             
