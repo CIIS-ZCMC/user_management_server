@@ -27,7 +27,8 @@ class DesignationResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'code' => $this->code,
-            'salary_grade' => $salary_grade
+            'salary_grade' => $salary_grade,
+            'created_at' => $this->created_at
         ];
     }
 }

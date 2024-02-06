@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->integer('employee_profile_id')->unasigned();
             $table->integer('schedule_id')->unasigned();
-            $table->json('is_on_call')->nullable();
+            $table->boolean('is_on_call')->default(false);
         });
     }
 

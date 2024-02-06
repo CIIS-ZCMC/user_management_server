@@ -49,10 +49,11 @@ class DepartmentResource extends JsonResource
             }
 
             return [
+                'id' => $this->id,
                 'name' => $name,
                 'code' => $code,
                 'head' => $head,
-                'head_designation' => $head_designation,
+                'head_designation' => $this->head->assignedArea->designation,
                 'head_status' => $head_status,
                 'training_officer' => $training_officer,
                 'training_officer_designation' => $toe_designation,

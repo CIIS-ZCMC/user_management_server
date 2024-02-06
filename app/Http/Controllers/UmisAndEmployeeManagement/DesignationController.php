@@ -27,6 +27,13 @@ class DesignationController extends Controller
     private $PLURAL_MODULE_NAME = 'designations';
     private $SINGULAR_MODULE_NAME = 'designation';
 
+
+    public function test(Request $request)
+    { 
+       $name = Helpers::checkSaveFile($request->attachment, 'test/profiles');    
+       return response()->json(['data' => $name], Response::HTTP_OK);
+    }
+
     public function index(Request $request)
     {
         try{
@@ -142,7 +149,8 @@ class DesignationController extends Controller
                 $designations[] = $designation;
             }
 
-            if($failed > 0){
+         
+            if(count($failed) > 0){
                 return response()->json([
                     'data' => DesignationWithSystemRoleResource::collection($designations),
                     'message' => "Some designation failed to assign system role."

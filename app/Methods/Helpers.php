@@ -59,52 +59,48 @@ class Helpers
         if (!isset($date_now)) {
             $date_now = date('Y-m-d');
         }
+
+        $date_now = date('Y-m-d', strtotime($date_now));
         $get_Sched = DB::select("
-        SELECT s.*, 
-        CASE 
-            WHEN s.id IS NOT NULL THEN 
-                (SELECT date_start
-                 FROM schedules 
-                 WHERE '$date_now' BETWEEN date_start AND date_end 
-                 AND status = 1 
-                 AND time_shift_id = s.id
-                 LIMIT 1)
-            ELSE 'NONE'
-        END AS date_start,
-        CASE 
-            WHEN s.id IS NOT NULL THEN 
-                   (SELECT date_end
-                 FROM schedules 
-                 WHERE '$date_now' BETWEEN date_start AND date_end 
-                 AND status = 1 
-                 AND time_shift_id = s.id
-                 LIMIT 1)
-            ELSE 'NONE'
-        END AS date_end,
-         CASE 
-            WHEN s.id IS NOT NULL THEN 
-                 (SELECT is_on_call
-                 FROM employee_profile_schedule 
-                 WHERE schedule_id = s.id limit 1)
-            ELSE 'NONE'
-        END AS is_on_call
- FROM time_shifts s
- WHERE s.id IN (
-     SELECT time_shift_id 
-     FROM schedules 
-     WHERE '$date_now' BETWEEN date_start AND date_end 
-     AND status = 1 
-     AND id IN (
-         SELECT schedule_id 
-         FROM employee_profile_schedule 
-         WHERE employee_profile_id IN (
-             SELECT id 
-             FROM employee_profiles 
-             WHERE biometric_id = '$biometric_id'
-         )
-     )
- );
+ SELECT s.*, 
+ CASE 
+     WHEN s.id IS NOT NULL THEN 
+         (SELECT date
+          FROM schedules 
+          WHERE '$date_now' = date
+          AND status = 1 
+          AND time_shift_id = s.id
+          LIMIT 1)
+     ELSE 'NONE'
+ END AS date,
+ 
+  CASE 
+     WHEN s.id IS NOT NULL THEN 
+          (SELECT is_on_call
+          FROM employee_profile_schedule 
+          WHERE schedule_id = s.id limit 1)
+     ELSE 'NONE'
+ END AS is_on_call
+FROM time_shifts s
+WHERE s.id IN (
+SELECT time_shift_id 
+FROM schedules 
+WHERE '$date_now' = date 
+AND status = 1 
+AND id IN (
+  SELECT schedule_id 
+  FROM employee_profile_schedule 
+  WHERE employee_profile_id IN (
+      SELECT id 
+      FROM employee_profiles 
+      WHERE biometric_id = '$biometric_id'
+  )
+)
+);
+
     ");
+
+
 
         if ($this->isNurseOrDoctor($biometric_id)) {
             /* Check if Available Schedule */
@@ -122,8 +118,7 @@ class Helpers
                 'third_entry' => $get_Sched[0]->second_in,
                 'last_entry' => $get_Sched[0]->second_out,
                 'total_hours' => $get_Sched[0]->total_hours,
-                'date_start' => $get_Sched[0]->date_start,
-                'date_end' => $get_Sched[0]->date_end,
+                'date' => $get_Sched[0]->date,
                 'is_on_call' => $get_Sched[0]->is_on_call,
             ];
         }
@@ -133,7 +128,7 @@ class Helpers
             'third_entry' => null,
             'last_entry' => null,
             'total_hours' => env('REQUIRED_WORKING_HOURS'),
-            'date_start' => null,
+            'date' => null,
             'date_end' => null,
             'is_on_call' => null,
         ];
@@ -203,10 +198,15 @@ class Helpers
 
     public  function inEntry($biometric_id, $alloted_hours, $sc, $sched, $delay)
     {
+
+
         $first_Entry = $sched['first_entry'];
+
         $time_stamp = strtotime($first_Entry);
+
         $new_Time_stamp = $time_stamp - ($alloted_hours * 3600);
         $Calculated_allotedHours = date('Y-m-d H:i:s', $new_Time_stamp);
+
         $employee_In = date('Y-m-d H:i:s', strtotime($sc['date_time']));
         $dtr_date = date('Y-m-d', strtotime($sc['date_time']));
 
@@ -229,6 +229,10 @@ class Helpers
                     'is_biometric' => 1,
                 ]);
             }
+
+            // if ($first_Entry == null) {
+            //     return $sc['date_time'];
+            // }
         }
     }
 
@@ -237,7 +241,9 @@ class Helpers
     {
         try {
             if (count($check_Records) >= 1) {
+
                 foreach ($check_Records as $key => $value) {
+
                     $biometric_id =  $value['biometric_id'];
 
                     if ($delay) {
@@ -246,7 +252,9 @@ class Helpers
                         $entrydate = date('Y-m-d');
                     }
                     if ($this->isEmployee($biometric_id)) { // Validating if User is an employee with Biometric data and employee data
+
                         $validate = DailyTimeRecords::whereDate('dtr_date', $entrydate)->where('biometric_id', $biometric_id)->get();
+
                         if (count($validate) >= 1) {
                             /* Updating All existing  Records */
 
@@ -376,6 +384,8 @@ class Helpers
                             }
                         } else {
 
+
+
                             if ($delay) {
                                 /* Save new records */
                                 if ($value['status'] == 0 || $value['status'] == 255) {
@@ -395,6 +405,7 @@ class Helpers
                                     );
                                 }
                             } else {
+
                                 /**
                                  * Here we are checking if theres an existing first entry this is  for nursing and doctors
                                  * which has two entries for schedule only.
@@ -403,7 +414,10 @@ class Helpers
                                 $yester_date = date('Y-m-d', strtotime('-1 day'));
                                 $time_stamps_req = $this->getSchedule($biometric_id, $check_Records[0]['date_time']);
                                 $check_yesterday_Records = DailyTimeRecords::whereDate('first_in', $yester_date)->where('biometric_id', $biometric_id)->get();
+
                                 if (count($check_yesterday_Records) >= 1) {
+
+
                                     foreach ($check_yesterday_Records as $key => $rcrd) {
                                         $f_1 = $rcrd['first_in'];
                                         $f_2 = $rcrd['first_out'];
@@ -436,6 +450,28 @@ class Helpers
                                                         );
                                                     }
                                                 }
+                                            }
+                                        } else {
+
+                                            /* Save new records */
+                                            if ($value['status'] == 0 || $value['status'] == 255) {
+
+                                                $break_Time_Req = $this->getBreakSchedule($biometric_id, $time_stamps_req); // Put employee ID
+                                                $scheduleEntry = null;
+
+
+                                                if (isset($time_stamps_req['is_on_call']) && $time_stamps_req['is_on_call']) {
+                                                    // $scheduleEntry = date('Y-m-d H:i:s', strtotime($time_stamps_req['date_start'] . ' ' . $time_stamps_req['first_entry'] . '+' . $max_allowed_entry_for_oncall . ' minutes'));
+                                                    $scheduleEntry = $time_stamps_req['first_entry'];
+                                                }
+
+                                                $this->SaveFirstEntry(
+                                                    $this->sequence(0, [$value]),
+                                                    $break_Time_Req,
+                                                    $biometric_id,
+                                                    $delay,
+                                                    $scheduleEntry
+                                                );
                                             }
                                         }
                                     }
@@ -470,10 +506,14 @@ class Helpers
     public function saveFirstEntry($sequence, $break_Time_Req, $biometric_id, $delay, $scheduleEntry)
     {
         try {
+
             $alloted_hours = env('ALLOTED_VALID_TIME_FOR_FIRSTENTRY');
+
             $sched = $this->getSchedule($biometric_id, null);
+
             foreach ($sequence as $sc) {
                 $in = date('H:i', strtotime($sc['date_time']));  // From Bio
+
                 if (count($break_Time_Req) >= 1) {
                     if ($in >= $break_Time_Req['break1'] && $in < $break_Time_Req['adminOut'] || $in >= $break_Time_Req['break2'] && $in <  $break_Time_Req['otherout']) {
                         /* SECOND IN ENTRY */
@@ -487,9 +527,10 @@ class Helpers
                     } else {
                         /* Adjust time in - if on call based on allowed entry */
                         /* FIRST IN ENTRY */
-                        return $this->inEntry($biometric_id, $alloted_hours, $this->calculatedEntry($scheduleEntry, $sc), $sched, $delay);
+                        $this->inEntry($biometric_id, $alloted_hours, $this->calculatedEntry($scheduleEntry, $sc), $sched, $delay);
                     }
                 } else {
+
                     /* Adjust time in - if on call based on allowed entry */
                     $this->inEntry($biometric_id, $alloted_hours, $this->calculatedEntry($scheduleEntry, $sc), $sched, $delay);
                 }
@@ -502,7 +543,9 @@ class Helpers
     public function calculatedEntry($scheduleEntry, $sc)
     {
         $entry = $sc;
-        if (isset($scheduleEntry)) {
+
+        if ($scheduleEntry) {
+
             $max_allowed_entry_for_oncall = env('MAX_ALLOWED_ENTRY_ONCALL'); // Max entry for on call
             $sc_Entry = date('Y-m-d H:i:s', strtotime(date('Y-m-d', strtotime($sc['date_time'])) . ' ' . $scheduleEntry . '+' . $max_allowed_entry_for_oncall . ' minutes'));
 
@@ -578,6 +621,7 @@ class Helpers
 
     public function saveTotalWorkingHours($validate, $value, $sequence, $time_stamps_req, $check_for_generate)
     {
+        //return $this->toWordsMinutes(59.71);
 
         foreach ($sequence as $sc) {
             /* Entries */
@@ -661,28 +705,37 @@ class Helpers
                     $undertime_Minutes_4th_entry = $undertime_4th_entry / 60;
                     $overtime_4th_entry = $overtime_4th_entry / 60;
                 }
-                $undertime = floor($undertime_Minutes_1st_entry + $undertime_Minutes_2nd_entry + $undertime_3rd_entry + $undertime_Minutes_4th_entry);
+
+                $undertime = $undertime_Minutes_1st_entry + $undertime_Minutes_2nd_entry + $undertime_3rd_entry + $undertime_Minutes_4th_entry;
 
                 if ($f3_entry && $f4_entry) {
                     $overtime = $overtime_4th_entry;
                 } else {
                     $overtime = $overtime_2nd_entry;
                 }
-                $ot = round($overtime);
-                $ut = round($undertime);
+
+
+                $ot = round($overtime, 2);
+                $ut = round($undertime, 2);
+
+
                 $Schedule_Minutes  = $this->getTotalTimeRegistered(
                     $s1,
                     $s2,
                     $s3,
                     $s4
                 );
+
                 /* Overtime */
-                $overTime_inWords = $this->toWordsMinutes($ot)['Inwords'];
+                $overTime_inWords = $this->toWordsMinutes($ot)['InWords'];
                 $overTime_Minutes =  $this->toWordsMinutes($ot)['InMinutes'];
+
                 /* Undertime  */
-                $underTime_inWords = $this->toWordsMinutes($ut)['Inwords'];
+                $underTime_inWords = $this->toWordsMinutes($ut)['InWords'];
                 $underTime_Minutes =  $this->toWordsMinutes($ut)['InMinutes'];
             }
+
+
             $Registered_minutes = $this->getTotalTimeRegistered(
                 $f1_entry,
                 $f2_entry,
@@ -699,11 +752,11 @@ class Helpers
 
             if ($Schedule_Minutes <= $tWH) {
                 $tWH = floor($Schedule_Minutes - $underTime_Minutes);
-                $total_WH_words = $this->toWordsMinutes($tWH)['Inwords'];
+                $total_WH_words = $this->toWordsMinutes($tWH)['InWords'];
                 $total_WH_minutes = $this->toWordsMinutes($tWH)['InMinutes'];
             } else {
                 $tWH = floor($Schedule_Minutes - $underTime_Minutes);
-                $total_WH_words = $this->toWordsMinutes($tWH)['Inwords'];
+                $total_WH_words = $this->toWordsMinutes($tWH)['InWords'];
                 $total_WH_minutes = $this->toWordsMinutes($tWH)['InMinutes'];
             }
             /* Registered Minutes */
@@ -875,6 +928,7 @@ class Helpers
         $status_description = '';
         $Status_Entry = '';
         $active_entry = 'f1';
+        $biometric_id = 0;
         $on_Active_Status = date('Y-m-d H:i:s', strtotime($attendance_Log['date_time'] . '-5 minutes'));
         switch ($attendance_Log['status']) {
             case 0:
@@ -1120,6 +1174,7 @@ class Helpers
 
     public function getEmployeeAttendance($attendance_Logs, $Employee_Info)
     {
+
         $Employee_Attendance = [];
         foreach ($attendance_Logs as $key =>  $attendance_Log) {
             $employee_ID = $attendance_Log['biometric_id'];
@@ -1160,45 +1215,72 @@ class Helpers
         }
     }
 
-    public function toWordsMinutes($minutes)
+
+
+
+    public function toWordsMinutes($totalMinutes)
     {
-        $in_Words = '';
-        $entry = $minutes;
+        // $totalMinutes = 40.75;
+        $hours = '';
+        $minutes = floor($totalMinutes);
+        $seconds = fmod($totalMinutes, 1) * 100;
+
+        //   echo 'minutes : ' . $minutes . " seconds : " . $seconds . "\n";
+
+        if ($seconds >= 60) {
+            $extmin = floor($seconds / 60); // Get the whole minutes
+            $extsecs = $seconds % 60; // Get the remaining seconds
+
+            $minutes += $extmin;
+            $seconds = $extsecs;
+        }
+        //  echo $minutes . ' minutes and ' . round($seconds) . ' seconds' . "\n";
         if ($minutes >= 60) {
             $hours = floor($minutes / 60);
-            $minutes = $minutes % 60;
+            $minutes %= 60;
 
             if ($hours > 0) {
-                $in_Words = $hours . ' hour';
+                $inWords = $hours . ' hour';
                 if ($hours > 1) {
-                    $in_Words .= 's';
+                    $inWords .= 's';
                 }
+
                 if ($minutes > 0) {
-                    $in_Words .= ' and ' . $minutes . ' minute';
+                    $inWords .= ' and ' . $minutes . ' minute';
                     if ($minutes > 1) {
-                        $in_Words .= 's';
+                        $inWords .= 's';
                     }
                 }
             } else {
-                $in_Words = $minutes . ' minute';
+                $inWords = $minutes . ' minute';
                 if ($minutes > 1) {
-                    $in_Words .= 's';
+                    $inWords .= 's';
                 }
             }
-            $undertime = $in_Words;
-            $uh = $hours;
-            $um = $minutes;
         } else {
-            $in_Words = $minutes . ' minute';
+            $inWords = $minutes . ' minute';
             if ($minutes > 1) {
-                $in_Words .= 's';
+                $inWords .= 's';
             }
         }
+
+        if ($seconds) {
+            $inWords .= ' and ' . round($seconds) . ' second';
+            if ($seconds > 1) {
+                $inWords .= 's';
+            }
+        }
+
+
         return [
-            'Inwords' => $in_Words,
-            'InMinutes' => $entry
+            'InWords' => $inWords,
+            'InMinutes' => $totalMinutes,
+
         ];
     }
+
+
+
 
     /**
      * This Function backups selected table in database.

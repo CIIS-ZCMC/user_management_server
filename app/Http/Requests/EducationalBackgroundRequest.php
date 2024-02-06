@@ -25,11 +25,11 @@ class EducationalBackgroundRequest extends FormRequest
             'level' => 'required|string|max:255',
             'name' => 'required|string|max:255',
             'degree_course' => 'nullable|string|max:255',
-            'year_graduated' => 'required|date:Y-m-d',
-            'highest_grade' => 'required|string|max:255',
-            'inclusive_from' => 'required|date:Y-m-d',
-            'inclusive_to' => 'required|date:Y-m-d',
-            'academic_honors' => 'required|string|max:255',
+            'year_graduated' => 'nullable|date:Y-m-d',
+            'highest_grade' => 'nullable|string|max:255',
+            'inclusive_from' => 'nullable|date:Y-m-d',
+            'inclusive_to' => 'nullable|date:Y-m-d',
+            'academic_honors' => 'nullable|string|max:255',
             'personal_information_id' => 'required|integer',
         ];
     }

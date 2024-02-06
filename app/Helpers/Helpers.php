@@ -4,6 +4,10 @@ namespace App\Helpers;
 
 use App\Models\Department;
 use App\Models\Division;
+use App\Models\EmployeeScheduleLog;
+use App\Models\ExchangeDutyLog;
+use App\Models\PullOut;
+use App\Models\PullOutLog;
 use App\Models\OfficialTimeLog;
 use App\Models\Section;
 use App\Models\SystemLogs;
@@ -17,6 +21,7 @@ use DatePeriod;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Termwind\Components\BreakLine;
 
 
 class Helpers
@@ -34,10 +39,10 @@ class Helpers
 
     public static function getRecommendingAndApprovingOfficer($assigned_area, $employee_profile_id)
     {
-        switch($assigned_area['sector']){
+        switch ($assigned_area['sector']) {
             case 'Division':
                 // If employee is not Division head
-                if(Division::find($assigned_area['details']->id)->chief_employee_profile_id === $employee_profile_id){
+                if (Division::find($assigned_area['details']->id)->chief_employee_profile_id === $employee_profile_id) {
                     $chief_officer = Division::where('code', 'OMCC')->first()->chief_employee_profile_id;
                     return [
                         "recommending_officer" => $chief_officer,
@@ -54,7 +59,7 @@ class Helpers
 
             case 'Department':
                 // If employee is Department head
-                if(Department::find($assigned_area['details']->id)->head_employee_profile_id === $employee_profile_id){
+                if (Department::find($assigned_area['details']->id)->head_employee_profile_id === $employee_profile_id) {
                     $division = Department::find($assigned_area['details']->id)->division_id;
 
                     $division_head = Division::find($division)->chief_employee_profile_id;
@@ -100,7 +105,7 @@ class Helpers
             case 'Unit':
                 // If employee is Unit head
                 $section = Unit::find($assigned_area['details']->id)->section;
-                if($section->department_id !== null){
+                if ($section->department_id !== null) {
                     $department = $section->department;
 
                     return [
@@ -136,6 +141,24 @@ class Helpers
         ]);
     }
 
+    public static function registerExchangeDutyLogs($data_id, $user_id, $action)
+    {
+        ExchangeDutyLog::create([
+            'exchange_duty_id' => $data_id,
+            'action_by' => $user_id,
+            'action' => $action
+        ]);
+    }
+
+    public static function registerPullOutLogs($data_id, $user_id, $action)
+    {
+        PullOutLog::create([
+            'pull_out_id' => $data_id,
+            'action_by' => $user_id,
+            'action' => $action
+        ]);
+    }
+
     public static function registerOfficialBusinessLogs($data_id, $user_id, $action)
     {
         OfficialBusinessLog::create([
@@ -144,7 +167,7 @@ class Helpers
             'action' => $action
         ]);
     }
-    
+
     public static function registerOfficialTimeLogs($data_id, $user_id, $action)
     {
         OfficialTimeLog::create([
@@ -268,5 +291,153 @@ class Helpers
 
         return $code;
     }
+    
+    public static function ScheduleApprovingOfficer($area, $user)
+    {
+        if ($area != null) {
+            if ($area['sector'] === 'Division') {
+                $division = Division::where('id', $user->assignedArea->division->id)->first();
 
+                if ($division->chief_employee_profile_id !== null) {
+                  return ["approving_officer" => $division->chief_employee_profile_id];
+                }
+
+                if ($division->oic_employee_profile_id !== null) {
+                     return ["approving_officer" =>  $division->oic_employee_profile_id];
+                }
+            }
+
+            if ($area['sector'] === 'Department') {
+                $department = Department::where('id', $user->assignedArea->department->id)->first();
+
+                if ($department->head_employee_profile_id !== null) {
+                     return ["approving_officer" =>  $department->head_employee_profile_id];
+                }
+
+                if ($department->oic_employee_profile_id  !== null) {
+                     return ["approving_officer" =>  $department->oic_employee_profile_id];
+                }
+            }
+
+            if ($area['sector'] === 'Section') {
+                $section = Section::where('id',$user->assignedArea->section->id)->first();
+                if ($section) {
+                    if ($section->department_id !== null) {
+                         return ["approving_officer" =>  Department::where('id', $section->department_id)->first()->head_employee_profile_id];
+                    }
+                   
+                    if ($section->supervisor_employee_profile_id !== null) {
+                         return ["approving_officer" =>  $section->supervisor_employee_profile_id];
+                    }
+
+                    if ($section->oic_employee_profile_id  !== null) {
+                         return ["approving_officer" =>  $section->oic_employee_profile_id];
+                    }
+                }
+            }
+
+            if ($area['sector'] === 'Unit') {
+                $unit = Unit::where('id',$user->assignedArea->unit->id)->first();
+                if ($unit) {
+                    if ($unit->section_id  !== null) {
+                         return ["approving_officer" =>  Section::where('id', $unit->section_id)->first()->supervisor_employee_profile_id];
+                    }
+                   
+                    if ($unit->head_employee_profile_id !== null) {
+                         return ["approving_officer" =>  $unit->head_employee_profile_id];
+                    }
+
+                    if ($unit->oic_employee_profile_id !== null) {
+                         return ["approving_officer" =>  $unit->oic_employee_profile_id];
+                    }
+                }
+            }
+        }
+    }
+
+    public static function ExchangeDutyApproval($assigned_area, $employee_profile_id) {
+        switch($assigned_area['sector']){
+            case 'Division':
+                $division_head = Division::find($assigned_area['details']['id'])->chief_employee_profile_id;
+                return ["approve_by" => $division_head];
+
+            case 'Department':
+                $department_head = Department::find($assigned_area['details']['id'])->head_employee_profile_id;
+                return ["approve_by" => $department_head];
+
+            case 'Section':
+                $section = Section::find($assigned_area['details']['id']);
+                if($section->division !== null){
+                    return ["approve_by" => $section->supervisor_employee_profile_id];
+                }
+
+                $department = $section->department;
+                return ["approve_by" => $department->head_employee_profile_id];
+
+            case 'Unit':
+                $section = Unit::find($assigned_area['details']['id'])->section;
+                if($section->department_id !== null){
+                    $department = $section->department;
+                    return ["approve_by" => $department->head_employee_profile_id];
+                }
+
+                return ["approve_by" => $section->supervisor_employee_profile_id];
+
+            default:
+                return null;
+        }
+    }
+
+    public static function checkEmployeeHead($user, $assigned_area)
+    {
+        switch ($assigned_area['sector']) {
+            case 'Division':
+                // If employee is Division head
+                if (Division::find($assigned_area['details']->id)->chief_employee_profile_id === $user) {
+                    $chief_officer = Division::where('code', $assigned_area['details']['code'])->first();
+                    return ["head" => $chief_officer->chief_employee_profile_id];
+                }
+
+                return ["head" => null];
+
+            case 'Department':
+                // If employee is Department head
+                if (Department::find($assigned_area['details']->id)->head_employee_profile_id === $user) {
+                    $chief_officer = Department::where('code', $assigned_area['details']['code'])->first();
+                    return ["head" => $chief_officer->head_employee_profile_id];
+                }
+
+                return ["head" => null];
+
+            case 'Section':
+                // If employee is Section head
+                if (Section::find($assigned_area['details']->id)->supervisor_employee_profile_id === $user) {
+                    $chief_officer = Section::where('code', $assigned_area['details']['code'])->first();
+                    return ["head" => $chief_officer->supervisor_employee_profile_id];
+                }
+
+                return ["head" => null];
+
+            case 'Unit':
+                // If employee is Unit head
+                if (Unit::find($assigned_area['details']->id)->head_employee_profile_id === $user) {
+                    $chief_officer = Unit::where('code', $assigned_area['details']['code'])->first();
+                    return ["head" => $chief_officer->head_employee_profile_id];
+                }
+
+                return ["head" => null];
+
+            default:
+                return null;
+        }
+    }
+
+    public static function registerEmployeeScheduleLogs($data_id, $user_id, $action)
+    {
+        EmployeeScheduleLog::create([
+            'employee_schedule_id' => $data_id,
+            'action_by' => $user_id,
+            'action' => $action
+        ]);
+    }
 }

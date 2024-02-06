@@ -16,13 +16,15 @@ class ExchangeDutyResource extends JsonResource
     {
         return [
             'id'                    => $this->id,
+            'status'                => $this->status,
             'reason'                => $this->reason,
-            'approve_by'            => $this->approve_by,
+            'schedule'              => $this->schedule,
+            'requested_employee'    => $this->requestedEmployee ? new EmployeeProfileResource($this->requestedEmployee) : null,
+            'reliever_employee'     => $this->relieverEmployee ? new EmployeeProfileResource($this->relieverEmployee) : null,
+            'approve_by'            => $this->approval ? EmployeeProfileResource::collection($this->approval) : [],
             'deleted_at'            => (string) $this->deleted_at,
             'created_at'            => (string) $this->created_at,
             'updated_at'            => (string) $this->updated_at,
-            'requested_employee'    => $this->employee ? new EmployeeProfileResource($this->employee) : null,
-            'reliever_employee'     => $this->employee ? new EmployeeProfileResource($this->employee) : null,
         ];
     }
 }

@@ -13,7 +13,8 @@ class Training extends Model
 
     public $fillable = [
         'title',
-        'inclusive_date',
+        'inclusive_from',
+        'inclusive_to',
         'hours',
         'type_of_ld',
         'conducted_by',

@@ -22,15 +22,11 @@ return new class extends Migration
             $table->unsignedBigInteger('reliever_employee_id');
             $table->foreign('reliever_employee_id')->references('id')->on('employee_profiles');
 
-            // $table->unsignedBigInteger('section_head_id');
-            // $table->foreign('section_head_id')->references('id')->on('employee_profiles');
-            // $table->boolean('supervisor_approval');
-                        
-            // $table->unsignedBigInteger('department_head_id');
-            // $table->foreign('department_head_id')->references('id')->on('employee_profiles');
-            // $table->boolean('department_head_approval');
+            $table->unsignedBigInteger('approve_by');
+            $table->foreign('approve_by')->references('id')->on('employee_profiles');
 
-            $table->boolean('status')->default(false);
+            $table->date('approval_date')->nullable();
+            $table->string('status')->default('applied');
             $table->string('reason');
             $table->softDeletes();
             $table->timestamps();

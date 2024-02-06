@@ -33,4 +33,18 @@ class MailController extends Controller
         }
         return response()->json(['message' => 'Messaged Sending Failed!']);
     }
+
+
+    public function sendCredentials(Request $request)
+    {
+
+        $body = view('mail.credentials', ['employeeID' => $request->EmployeeID, 'Password' => $request->Password, 'Link' => env('CLIENT_DOMAIN')]);
+        $data = [
+            'Subject' => 'Greetings from ZCMC-Portal-Team',
+            'To_receiver' =>  $request->Email,
+            'Receiver_Name' => $request->Receiver,
+            'Body' => $body
+        ];
+        $this->mail->send($data);
+    }
 }
