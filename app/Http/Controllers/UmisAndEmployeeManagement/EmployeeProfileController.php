@@ -1766,8 +1766,6 @@ class EmployeeProfileController extends Controller
 
             $special_access_roles = $employee_profile->specialAccessRole;
 
-            //Retrieve Sidebar Details for the employee base on designation.
-            $side_bar_details = $this->buildSidebarDetails($employee_profile, $designation, $special_access_roles);
 
             $area_assigned = $employee_profile->assignedArea->findDetails();
 
@@ -1871,7 +1869,6 @@ class EmployeeProfileController extends Controller
                 ],
                 'area_assigned' => $area_assigned['details']->name,
                 'area_sector' => $area_assigned['sector'],
-                'side_bar_details' => $side_bar_details
             ];
             return response()->json(['data' => $data, 'message' => 'Employee details found.'], Response::HTTP_OK);
         } catch (\Throwable $th) {
