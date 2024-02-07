@@ -49,6 +49,12 @@ class SystemController extends Controller
                 $cleanData[$key] = strip_tags($value); 
             }
 
+            $check_if_exist =  System::where('name', $cleanData['name'])->where('code', $cleanData['code'])->first();
+
+            if($check_if_exist !== null){
+                return response()->json(['message' => 'System already exist.'], Response::HTTP_FORBIDDEN);
+            }
+
             $system = System::create($cleanData);
 
             Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');

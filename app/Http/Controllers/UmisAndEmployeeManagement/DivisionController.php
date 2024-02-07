@@ -177,6 +177,12 @@ class DivisionController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
+            $check_if_exist =  Division::where('name', $cleanData['name'])->where('code', $cleanData['code'])->first();
+
+            if($check_if_exist !== null){
+                return response()->json(['message' => 'Department already exist.'], Response::HTTP_FORBIDDEN);
+            }
+
             $division = Division::create($cleanData);
 
             Helpers::registerSystemLogs($request, $division['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');

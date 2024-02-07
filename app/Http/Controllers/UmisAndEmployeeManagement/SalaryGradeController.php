@@ -104,6 +104,12 @@ class SalaryGradeController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
+            $check_if_exist =  SalaryGrade::where('salary_grade_number', $cleanData['salary_grade_number'])->where('effective_at', $cleanData['effective_at'])->first();
+
+            if($check_if_exist !== null){
+                return response()->json(['message' => 'Salary grade already exist.'], Response::HTTP_FORBIDDEN);
+            }
+
             $salary_grade = SalaryGrade::create($cleanData);
             
             return response()->json([
