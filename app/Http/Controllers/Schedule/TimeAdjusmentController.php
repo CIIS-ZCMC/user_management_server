@@ -212,7 +212,7 @@ class TimeAdjusmentController extends Controller
                         $status = 'approved';
                         break;
                 }
-            } else if ($request->approval_status === 'declined') {
+            } else if ($request->status === 'declined') {
                 $status = 'declined';
             }
 
