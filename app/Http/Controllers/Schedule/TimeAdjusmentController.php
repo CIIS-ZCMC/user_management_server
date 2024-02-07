@@ -199,7 +199,7 @@ class TimeAdjusmentController extends Controller
             }
 
             $status = null;
-            if ($request->approval_status === 'approved') {
+            if ($request->status === 'approved') {
                 switch ($data->status) {
                     case 'applied':
                         $status = 'approved';
@@ -212,7 +212,7 @@ class TimeAdjusmentController extends Controller
                         $status = 'approved';
                         break;
                 }
-            } else if ($request->approval_status === 'declined') {
+            } else if ($request->status === 'declined') {
                 $status = 'declined';
             }
 

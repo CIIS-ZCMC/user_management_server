@@ -398,7 +398,7 @@ class ScheduleController extends Controller
          
             // return view('generate_schedule/section-schedule', compact('data','holiday', 'month', 'year', 'dates', 'user', 'head_officer'));
         } catch (\Throwable $th) {
-            return $th;
+
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }

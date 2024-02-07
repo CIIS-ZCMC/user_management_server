@@ -31,7 +31,7 @@ class LeaveApplication extends Model
         'illness',
         'is_masters',
         'is_board',
-        // 'is_commutation',
+        'is_commutation',
         'applied_credits',
         'status',
         'remarks',

@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('illness')->nullable();
             $table->boolean('is_masters')->default(false);
             $table->boolean('is_board')->default(false);
-            $table->string('is_commutation')->nullable();
+            $table->boolean('is_commutation')->default(false);
             $table->string('applied_credits')->nullable();
             $table->string('status')->nullable();
             $table->string('remarks')->nullable();

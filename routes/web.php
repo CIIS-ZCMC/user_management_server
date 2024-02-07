@@ -87,7 +87,7 @@ Route::get('/new-account', function () {
 
 
 Route::namespace('App\Http\Controllers\Schedule')->group(function () {
-    Route::get('/generate', 'ScheduleController@generate');
+    Route::get('/schedule-generate', 'ScheduleController@generate');
 });
 
 Route::get('/ot', function () {
@@ -102,4 +102,8 @@ Route::get('/lr', function () {
 
 Route::get('/testmail', function () {
     return view('mail.credentials');
+});
+
+Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
+    Route::get('/leave-application-print/{id}', 'LeaveApplicationController@printLeaveForm');
 });
