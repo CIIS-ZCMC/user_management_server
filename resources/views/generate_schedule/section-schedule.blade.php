@@ -9,7 +9,7 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 0;
+            margin: au;
             padding: 0;
             width: 14in;
             height: 8.5in;
@@ -24,41 +24,51 @@
         }
         
         .container {
-            max-width: 100%;
+            max-width: 90%;
             overflow-x: auto;
+            margin: 0;
+            padding: 0;
         }
 
         table {
-            width: 100%;
+            width: 100%; /* Adjusted to fill the container */
             border-collapse: collapse;
             margin: 0;
+            padding-top: 20px;
             text-align: left;
         }
-        th {
+
+        thead {
+            border: #000;
+        }
+
+        thead, th {
             widows: 100px;
             height: 10px;
             border: 1px solid #ddd;
             text-align: center;
-            font-size: 11px;
+            font-size: 12px;
             padding: 2px 1px 2px 1px ;
         }
 
         .th-name {
-            padding-right: 80px
+            padding-right: 80px;
+            font-size: 12px; /* Adjusted font size */
         }
 
         .td-name {
-            font-size: 10px;
+            font-size: 12px; /* Adjusted font size */
             font-weight: bold;
-            text-align: left
+            text-align: left;
         }
 
         td {
             text-align: center;
-            font-size: 12px
+            font-size: 12px; /* Adjusted font size */
         }
 
         footer {
+            width: 90%;
             padding: 10px;
             margin-top: 10px;
             text-align: left;
@@ -67,59 +77,44 @@
         .signatures {
             padding: 10px;
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
+            align-items: center;;
         }
 
         .signature {
             padding-top: 40px;
             border-bottom: 1px solid #000;
             display: inline-block;
-            width: 350px;
+            align-items: center;
+        }
+
+        .signature span {
+            display: block;
+            margin-bottom: 5px;
         }
 
         .underline {
+            padding: 0;
+            margin: 0;
             border-bottom: 1px solid #000;
-            display: inline-block;
+            /* display: inline-block; */
         }
 
-        /* Badge container styles */
-        .badge {
-            display: inline-block;
-            padding: 2px 4px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: bold;
+        .grid-container {
+            display: grid;
+            grid-template-columns: auto auto auto auto;
+            grid-gap: 10px;
+            background-color: #2196F3;
+            padding: 10px;
         }
 
-        .badge-dark {
-            background-color: #343a40;
-            color: #fff;
-        }
-
-        .badge-warning {
-            background-color: #f39c12;
-            color: #fff;
-        }
-
-        .schedule-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+        .grid-container > div {
+            background-color: rgba(255, 255, 255, 0.8);
             text-align: center;
+            padding: 20px 0;
+            font-size: 30px;
         }
 
-        .schedule-cell {
-            font-weight: bold;
-            font-size: 10px;
-        }
-
-        .schedule-time {
-            vertical-align: center;
-        }
-
-        .schedule-time + .schedule-time {
-            margin-top: 5px; /* Add some spacing between schedule times */
-        }
 
         @media print {
             @page {
@@ -138,39 +133,38 @@
 </head>
 <body>
 
-    
-    <header style="display: flex; align-items: center; justify-content: space-between;">
-        <div>
-            <img src="{{ asset('storage/zcmc.png') }}" alt="Logo Left">
+<header style="display: flex; align-items: center; justify-content: space-between;">
+    <div>
+        {{-- <img src="{{ asset('storage/zcmc.png') }}" alt="Logo Left"> --}}
+    </div>
+
+    <div style="text-align: center;">
+        <span>Republic of the Philippines</span>
+        <h6 style="margin: 0;">ZAMBOANGA CITY MEDICAL CENTER</h6>
+        <span>Dr. Evangelista Street, Sta. Catalina, Zamboanga City</span>
+    </div>
+
+    <div>
+        {{-- <img src="{{ asset('storage/doh.png') }}" alt="Logo Right"> --}}
+    </div>
+</header>
+
+<div class="container">
+    <div class="row" style="margin-bottom: 10px">
+        <div class="col-6">
+            <label class="float-start">Department :
+                <span class="underline">{{ $user->assignedArea->findDetails()['details']['name'] }}</span>
+            </label>
         </div>
-
-        <div style="text-align: center;">
-
-            <span>Republic of the Philippines</h6>
-            <h6 style="margin: 0">  ZAMBOANGA CITY MEDICAL CENTER </h3>
-            <span>Dr. Evangelista Street, Sta. Catalina, Zamboanga City</h6>
+        
+        <div class="col-6">
+            <span class="float-end">For The Month of :
+                <span class="underline"> {{ date('F', strtotime($month)) }} </span>
+            </span>
         </div>
+    </div>
 
-        <div>
-            <img src="{{ asset('storage/doh.png') }}" alt="Logo Right">
-        </div>
-    </header>
-
-    <div class="container">
-        <div class="row" style="margin-bottom: 10px">
-            <div class="col-6">
-                <span class="float-start">Department :
-                    <span class="underline">{{ $user->assignedArea->findDetails()['details']['name'] }}</span>
-                </span>
-            </div>
-            
-            <div class="col-6">
-                <span class="float-end">For The Month of :
-                    <span class="underline"> {{ date('F', strtotime($month)) }} </span>
-                </span>
-            </div>
-        </div>
-
+    <div class="table-responsive"> <!-- Added -->
         <table class="table-bordered" border="1" cellspacing="0" cellpadding="10">
             <thead>
                 <tr>
@@ -209,7 +203,7 @@
                                     @else
                                         @if ($resource->schedule->where('date', $date)->count() > 0)
 
-                                  @php
+                                @php
                                             $shift = $resource->schedule->first()->timeShift;
                                             $firstIn = strtotime($shift->first_in ?? '');
                                             $secondOut = strtotime($shift->second_out ?? '');
@@ -232,7 +226,7 @@
                                         @endif
                                     @endif
                                 </div>
-                              </td>
+                            </td>
                             @endforeach
 
                             <td> {{ $totalHours  }} </td>
@@ -240,31 +234,36 @@
                 @endforeach
             </tbody>
         </table>
-
-        
-        <p style="margin-bottom: 0px;"><span class="text-danger">*</span> Note: </p>
-        <span style="padding-left: 10px">Station/Department Contact No: </span>
     </div>
+    
+    <p style="margin-bottom: 0px;"><span class="text-danger">*</span> Note: </p>
+    <span style="padding-left: 10px">Station/Department Contact No: </span>
+</div>
 
-    <footer>
-        <div class="signatures">
-            <div class="text-center">
-                <span class="float-start">Prepared By:</span>
+<footer>
+    <div class="signatures">
+        <div class="row">
+            <div class>
+                <div class="text-start">
+                <span>Prepared By:</span>
                 <br>
                 <span class="signature">{{ $user->personalInformation->name() }}</span>
                 <br>
                 <span>{{ $user->position()['position'] ?? null }}</span>
+                </div>
             </div>
-
-            <div class="text-center">
-                <span class="float-start">Approved By:</span>
+            
+            <div class="text-end">
+                <span>Approved By:</span>
                 <br>
                 <span class="signature">{{ $head_officer->personalInformation->name() }}</span>
                 <br>
                 <span>{{ $head_officer->position()['position'] ?? null }}</span>
             </div>
         </div>
-    </footer>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
 </body>
 </html>

@@ -14,7 +14,7 @@ class EmployeeScheduleLog extends Model
     protected $primaryKey = 'id';
 
     protected $fillable = [
-        'exchange_duty_id',
+        'employee_schedule_id',
         'action_by',
         'action',
     ];

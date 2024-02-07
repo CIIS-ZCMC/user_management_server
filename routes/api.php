@@ -1860,8 +1860,8 @@ Route::middleware('auth.cookie')->group(function () {
         /**
          * Generate Schedule Module
          */
-        Route::middleware(['auth.permission:UMIS-ScM download'])->group(function () {
-            Route::get('generate', 'ScheduleController@generate');
+        Route::middleware(['auth.permission:UMIS-ScM update'])->group(function () {
+            Route::post('generate', 'ScheduleController@generate');
         });
 
         /**
