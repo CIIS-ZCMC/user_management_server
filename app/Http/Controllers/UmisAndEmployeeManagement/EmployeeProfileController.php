@@ -1512,19 +1512,19 @@ class EmployeeProfileController extends Controller
                 return EmployeeProfile::all();
             });
 
-            $permanent = EmployeeProfileResource::collection($employee_profiles->filter(function ($profile) {
-                return $profile->employment_type_id  == 1;
+            $temp_perm = EmployeeProfileResource::collection($employee_profiles->filter(function ($profile) {
+                return $profile->employment_type_id  == 1 || $profile->employment_type_id == 2;
             }) ?? []);
 
-            $temporary = EmployeeProfileResource::collection($employee_profiles->filter(function ($profile) {
-                return $profile->employment_type_id  == 2;
+            $joborder = EmployeeProfileResource::collection($employee_profiles->filter(function ($profile) {
+                return $profile->employment_type_id  == 3;
             }) ?? []);
 
 
             return response()->json([
                 'data' => [
-                    'permanent' => $permanent,
-                    'temporary' => $temporary,
+                    'permanent' => $temp_perm,
+                    'joborder' => $joborder,
                 ],
                 'message' => 'list of employees retrieved.'
             ], Response::HTTP_OK);
