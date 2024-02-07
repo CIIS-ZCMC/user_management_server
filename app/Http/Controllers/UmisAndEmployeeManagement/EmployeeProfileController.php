@@ -1500,10 +1500,44 @@ class EmployeeProfileController extends Controller
         }
     }
 
+    public function getEmployeeListByEmployementTypes(Request $request)
+    {
+        try {
+
+
+
+            $cacheExpiration = Carbon::now()->addDay();
+
+            $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () {
+                return EmployeeProfile::all();
+            });
+
+            $permanent = EmployeeProfileResource::collection($employee_profiles->filter(function ($profile) {
+                return $profile->employment_type_id  == 1;
+            }) ?? []);
+
+            $temporary = EmployeeProfileResource::collection($employee_profiles->filter(function ($profile) {
+                return $profile->employment_type_id  == 2;
+            }) ?? []);
+
+
+            return response()->json([
+                'data' => [
+                    'permanent' => $permanent,
+                    'temporary' => $temporary,
+                ],
+                'message' => 'list of employees retrieved.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'getEmployeeListByEmployementTypes', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public function store(Request $request)
     {
         try {
-           
+
             $cleanData = [];
             $dateString = $request->date_hired;
             $carbonDate = Carbon::parse($dateString);
@@ -1529,7 +1563,7 @@ class EmployeeProfileController extends Controller
             $cleanData['biometric_id'] = $new_biometric_id;
             $cleanData['employment_type_id'] = strip_tags($request->employment_type_id);
             $cleanData['personal_information_id'] = strip_tags($request->personal_information_id);
-            $cleanData['profile_url'] = $request->attachment === null  || $request->attachment === 'null'? null : Helpers::checkSaveFile($request->attachment, 'photo/profiles');
+            $cleanData['profile_url'] = $request->attachment === null  || $request->attachment === 'null' ? null : Helpers::checkSaveFile($request->attachment, 'photo/profiles');
             $cleanData['allow_time_adjustment'] = strip_tags($request->allow_time_adjustment) === 1 ? true : false;
             $cleanData['password_encrypted'] = $encryptedPassword;
             $cleanData['password_created_at'] = now();
@@ -1539,10 +1573,10 @@ class EmployeeProfileController extends Controller
             $cleanData['designation_id'] = $request->designation_id;
             $cleanData['effective_at'] = $request->date_hired;
 
-            
+
             $plantilla_number_id = $request->plantilla_number_id === "null"  || $request->plantilla_number_id === null ? null : $request->plantilla_number_id;
             $sector_key = '';
-         
+
             switch (strip_tags($request->sector)) {
                 case "division":
                     $sector_key = 'division_id';
@@ -1566,11 +1600,11 @@ class EmployeeProfileController extends Controller
 
             $cleanData[$sector_key] = strip_tags($request->sector_id);
 
-            if ($plantilla_number_id !== null  ) {
+            if ($plantilla_number_id !== null) {
                 $plantilla_number = PlantillaNumber::find($plantilla_number_id);
 
-                 
-                 
+
+
                 if (!$plantilla_number) {
                     return response()->json(['message' => 'No record found for plantilla number ' . $plantilla_number_id], Response::HTTP_NOT_FOUND);
                 }
@@ -1580,8 +1614,8 @@ class EmployeeProfileController extends Controller
                 $cleanData['designation_id'] = $designation->id;
                 $cleanData['plantilla_number_id'] = $plantilla_number->id;
             }
-            
-             
+
+
             $employee_profile = EmployeeProfile::create($cleanData);
 
             $cleanData['employee_profile_id'] = $employee_profile->id;
@@ -1851,7 +1885,7 @@ class EmployeeProfileController extends Controller
             $data = [
                 'employee_id' => $employee_profile['employee_id'],
                 'name' => $personal_information->employeeName(),
-                'designation' => $designation['name'],  
+                'designation' => $designation['name'],
                 'designation_code' => $designation['code'],
                 'employee_details' => [
                     'employee' => $employee,
