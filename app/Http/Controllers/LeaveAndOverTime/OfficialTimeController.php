@@ -214,6 +214,7 @@ class OfficialTimeController extends Controller
      */
     public function update($id, Request $request)
     {
+     
         try {        
             $data = OfficialTime::findOrFail($id);
 
@@ -246,13 +247,24 @@ class OfficialTimeController extends Controller
                         $log_action = 'Approved by Approving Officer';
                     break;
                     
-                    default:
-                        $status = 'declined';
-                        $log_action = 'Request Declined';
-                    break;
+                    // default:
+                    //     $status = 'declined';
+                    //     $log_action = 'Request Declined';
+                    // break;
                 }
             } else if ($request->status === 'declined') {
-                $status = 'declined';
+                $ot_application_recommending=$data->recommending_officer  ;
+                $ot_application_approving=$data->approving_officer  ;
+                
+              
+                if($employee_profile->id === $ot_application_recommending)
+                {
+                    $status='declined by recommending officer';
+                }
+                else if($employee_profile->id === $ot_application_approving)
+                {
+                    $status='declined by approving officer';
+                }
                 $log_action = 'Request Declined';
             }
             

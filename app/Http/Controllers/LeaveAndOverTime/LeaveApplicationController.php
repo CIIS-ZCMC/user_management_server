@@ -31,14 +31,16 @@ class LeaveApplicationController extends Controller
     public function index(Request $request)
     {
         try {
-
+  
             $employee_profile = $request->user;
 
             /**
              * HR division
              * Only newly applied leave application
              */
+           
             if (Helpers::getHrmoOfficer() === $employee_profile->id) {
+                
                 $leave_applications = LeaveApplication::where('hrmo_officer', $employee_profile->id)->get();
 
                 return response()->json([
@@ -49,8 +51,8 @@ class LeaveApplicationController extends Controller
 
 
             $employeeId = $employee_profile->id;
-            $recommending = ["for recommending approval", "for approving approval", "approved", "declined"];
-            $approving = ["for approving approval", "approved", "declined"];
+            $recommending = ["for recommending approval", "for approving approval", "approved", "declined by recommending officer"];
+            $approving = ["for approving approval", "approved", "declined by approving officer"];
 
             /**
              * Supervisor = for recommending, for approving, approved, de
@@ -76,6 +78,7 @@ class LeaveApplicationController extends Controller
                     'illness',
                     'is_masters',
                     'is_board',
+                    'is_commutation',
                     'applied_credits',
                     'status',
                     'remarks',
@@ -144,6 +147,8 @@ class LeaveApplicationController extends Controller
     public function approved($id, PasswordApprovalRequest $request)
     {
         try {
+
+            
             $password = strip_tags($request->password);
 
             $employee_profile = $request->user;
@@ -154,6 +159,7 @@ class LeaveApplicationController extends Controller
                 return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
             }
 
+        
             $leave_application = LeaveApplication::find($id);
 
             if (!$leave_application) {
@@ -166,6 +172,7 @@ class LeaveApplicationController extends Controller
 
             switch ($leave_application->status) {
                 case 'applied':
+                 
                     if (Helpers::getHrmoOfficer() !== $employee_profile->id) {
                         return response()->json(['message' => 'Forbidden.'], Response::HTTP_FORBIDDEN);
                     }
@@ -174,6 +181,7 @@ class LeaveApplicationController extends Controller
                     $leave_application->update(['status' => $status]);
                     break;
                 case 'for recommending approval':
+                  
                     if ($position === null || str_contains($position['position'], 'Unit')) {
                         return response()->json(['message' => 'Forbidden'], Response::HTTP_FORBIDDEN);
                     }
@@ -182,7 +190,8 @@ class LeaveApplicationController extends Controller
                     $leave_application->update(['status' => $status]);
                     break;
                 case 'for approving approval':
-                    if (Helpers::getChiefOfficer() !== $employee_profile->id) {
+                    $approving =  Helpers::getRecommendingAndApprovingOfficer($employee_profile->assignedArea->findDetails(),$leave_application->employee_profile_id )['approving_officer'];
+                    if ($approving !== $employee_profile->id) {
                         return response()->json(['message' => 'Forbidden'], Response::HTTP_FORBIDDEN);
                     }
                     $status = 'approved';
@@ -415,11 +424,26 @@ class LeaveApplicationController extends Controller
 
             $leave_application = LeaveApplication::find($id);
             $leave_type = $leave_application->leaveType;
+            $leave_application_hrmo=$leave_application->hrmo_officer;
+            $leave_application_recommending=$leave_application->recommending_officer  ;
+            $leave_application_approving=$leave_application->approving_officer  ;
+            
+            if ($employee_profile->id === $leave_application_hrmo) {
+                $status='declined by hrmo officer';
+            }
+            else if($employee_profile->id === $leave_application_recommending)
+            {
+                $status='declined by recommending officer';
+            }
+            else if($employee_profile->id === $leave_application_approving)
+            {
+                $status='declined by approving officer';
+            }
 
             // return response()->json(['message' => $leave_type->is_special], 401);
 
             $leave_application->update([
-                'status' => 'declined',
+                'status' => $status,
                 'reason' => strip_tags($request->reason)
             ]);
 
@@ -450,7 +474,7 @@ class LeaveApplicationController extends Controller
 
             return response()->json([
                 'data' => new LeaveApplicationResource($leave_application),
-                'message' => 'Retrieve leave application record.'
+                'message' => 'Declined leave application successfully.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -473,162 +497,15 @@ class LeaveApplicationController extends Controller
             $dompdf = new Dompdf($options);
             $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
             $html = view('leave_from.leave_application_form', compact('data', 'leave_type', 'hrmo_officer'))->render();
-            return $dompdf->loadHtml($html);
+            $dompdf->loadHtml($html);
 
-
-            $dompdf->setPaper('Letter', 'portrait');
+            $dompdf->setPaper('Legal', 'portrait');
             $dompdf->render();
-            $filename = 'Leave Application (' . $data->employeeProfile->personalInformation->name() . ').pdf';
+            $filename = 'Leave Application('. $data->employeeProfile->personalInformation->name() .').pdf';
 
             /* Downloads as PDF */
             $dompdf->stream($filename);
-
-            // if ($leave_applications) {
-            //     $leave_applications = LeaveApplication::with(['employeeProfile.assignedArea.division', 'employeeProfile.personalInformation', 'dates', 'logs', 'requirements', 'employeeProfile.employeeLeaveCredit.leaveType'])
-            //                                             ->where('id', $leave_applications->id)->get();
-
-            //     $leave_applications_result = $leave_applications->map(function ($leave_application) {
-            //         $datesData = $leave_application->dates ? $leave_application->dates : collect();
-            //         $logsData = $leave_application->logs ? $leave_application->logs : collect();
-            //         $requirementsData = $leave_application->requirements ? $leave_application->requirements : collect();
-            //         $add = EmployeeLeaveCredit::where('employee_profile_id', $leave_application->employee_profile_id)->where('leave_type_id', $leave_application->leave_type_id)
-            //             ->where('operation', 'add')
-            //             ->sum('credit_value');
-            //         $deduct = EmployeeLeaveCredit::where('employee_profile_id', $leave_application->employee_profile_id)->where('leave_type_id', $leave_application->leave_type_id)
-            //             ->where('operation', 'deduct')
-            //             ->sum('credit_value');
-            //         $division = AssignArea::where('employee_profile_id', $leave_application->employee_profile_id)->value('division_id');
-            //         $department = AssignArea::where('employee_profile_id', $leave_application->employee_profile_id)->value('department_id');
-            //         $section = AssignArea::where('employee_profile_id', $leave_application->employee_profile_id)->value('section_id');
-            //         $hrmo = EmployeeProfile::where('id', $leave_application->hrmo_officer_id)->first();
-            //         $recommending = EmployeeProfile::where('id', $leave_application->recommending_officer_id)->first();
-            //         $approving = AssignArea::where('employee_profile_id', $leave_application->employee_profile_id)->value('section_id');
-
-            //         $recommending_name = null;
-            //         $recommending_position = null;
-            //         $recommending_code = null;
-            //         $approving_name = null;
-            //         $approving_position = null;
-            //         $approving_code = null;
-            //         $hr_name = null;
-            //         $hr_position = null;
-            //         $hr_code = null;
-
-            //         if ($hrmo) {
-            //             $hr_name = $hrmo->last_name . ', ' . $hrmo->last_name;
-            //             $hr_position = $hrmo->assignedArea->designation->name ?? null;
-            //             $hr_code = $hrmo->assignedArea->designation->code ?? null;
-
-            //         }
-            //         if ($recommending) {
-            //             $recommending_name = $recommending->last_name . ', ' . $recommending->first_name;
-            //             $recommending_position = $recommending->assignedArea->designation->name ?? null;
-            //             $recommending_code = $recommending->assignedArea->designation->code ?? null;
-
-            //         }
-            //         if ($approving) {
-            //             $approving_name = $approving->last_name . ', ' . $approving->first_name;
-            //             $approving_position = $approving->assignedArea->designation->name ?? null;
-            //             $approving_code = $approving->assignedArea->designation->code ?? null;
-
-            //         }
-            //         $first_name = optional($leave_application->employeeProfile->personalInformation)->first_name ?? null;
-            //         $last_name = optional($leave_application->employeeProfile->personalInformation)->last_name ?? null;
-            //         $total_days = 0;
-            //         foreach ($leave_application->dates as $date) {
-            //             $startDate = Carbon::createFromFormat('Y-m-d', $date->date_from);
-            //             $endDate = Carbon::createFromFormat('Y-m-d', $date->date_to);
-
-            //             $numberOfDays = $startDate->diffInDays($endDate) + 1;
-            //             $total_days += $numberOfDays;
-            //         }
-            //         return [
-            //             'id' => $leave_application->id,
-            //             'leave_type_name' => $leave_application->leaveType->name,
-            //             'is_special' => $leave_application->leaveType->is_special,
-            //             'reference_number' => $leave_application->reference_number,
-            //             'country' => $leave_application->country,
-            //             'city' => $leave_application->city,
-            //             'zip_code' => $leave_application->zip_code,
-            //             'patient_type' => $leave_application->patient_type,
-            //             'illness' => $leave_application->illness,
-            //             'reason' => $leave_application->reason,
-            //             'leave_credit_total' => $leave_application->leave_credit_total,
-            //             'leave_credit_balance' => $add - $deduct,
-            //             'days_total' => $total_days,
-            //             'status' => $leave_application->status,
-            //             'remarks' => $leave_application->remarks,
-            //             'date' => $leave_application->date,
-            //             'with_pay' => $leave_application->with_pay,
-            //             'employee_id' => $leave_application->employeeProfile->employee_id,
-            //             'employee_name' => "{$first_name} {$last_name}",
-            //             'position_code' => $leave_application->employeeProfile->assignedArea->designation->code ?? null,
-            //             'position_name' => $leave_application->employeeProfile->assignedArea->designation->name ?? null,
-            //             'date_created' => $leave_application->date,
-            //             'recommending_name' => $recommending_name,
-            //             'recommending_position' => $recommending_position,
-            //             'recommending_code' => $recommending_code,
-            //             'hr_name' => $hr_name,
-            //             'hr_position' => $hr_position,
-            //             'hr_code' => $hr_code,
-            //             'approving_name' => $approving_name,
-            //             'approving_position' => $approving_position,
-            //             'approving_code' => $approving_code,
-            //             'division_name' => $leave_application->employeeProfile->assignedArea->division->name ?? null,
-            //             'department_name' => $leave_application->employeeProfile->assignedArea->department->name ?? null,
-            //             'section_name' => $leave_application->employeeProfile->assignedArea->section->name ?? null,
-            //             'unit_name' => $leave_application->employeeProfile->assignedArea->unit->name ?? null,
-            //             'logs' => $logsData->map(function ($log) {
-            //                 $process_name = $log->action;
-            //                 $action = "";
-            //                 $first_name = optional($log->employeeProfile->personalInformation)->first_name ?? null;
-            //                 $last_name = optional($log->employeeProfile->personalInformation)->last_name ?? null;
-            //                 if ($log->action_by_id === optional($log->employeeProfile->assignedArea->division)->chief_employee_profile_id) {
-            //                     $action = $process_name . ' by ' . 'Division Head';
-            //                 } else if ($log->action_by_id === optional($log->employeeProfile->assignedArea->department)->head_employee_profile_id || optional($log->employeeProfile->assignedArea->section)->supervisor_employee_profile_id) {
-            //                     $action = $process_name . ' by ' . 'Supervisor';
-            //                 } else {
-            //                     $action = $process_name . ' by ' . $first_name . ' ' . $last_name;
-            //                 }
-
-            //                 $date = $log->date;
-            //                 $formatted_date = Carbon::parse($date)->format('M d,Y');
-            //                 return [
-            //                     'id' => $log->id,
-            //                     'leave_application_id' => $log->leave_application_id,
-            //                     'action_by' => "{$first_name} {$last_name}",
-            //                     'position' => $log->employeeProfile->assignedArea->designation->name ?? null,
-            //                     'action' => $log->action,
-            //                     'date' => $formatted_date,
-            //                     'time' => $log->time,
-            //                     'process' => $action
-            //                 ];
-            //             }),
-            //             'requirements' => $requirementsData->map(function ($requirement) {
-            //                 return [
-            //                     'id' => $requirement->id,
-            //                     'leave_application_id' => $requirement->leave_application_id,
-            //                     'name' => $requirement->name,
-            //                     'file_name' => $requirement->file_name,
-            //                     'path' => $requirement->path,
-            //                     'size' => $requirement->size,
-            //                 ];
-            //             }),
-            //             'dates' => $datesData->map(function ($date) {
-            //                 $formatted_date_from = Carbon::parse($date->date_from)->format('M d,Y');
-            //                 $formatted_date_to = Carbon::parse($date->date_to)->format('M d,Y');
-            //                 return [
-            //                     'id' => $date->id,
-            //                     'leave_application_id' => $date->leave_application_id,
-            //                     'date_from' => $formatted_date_from,
-            //                     'date_to' => $formatted_date_to,
-            //                 ];
-            //             }),
-            //         ];
-            //     });
-            //     $singleArray = array_merge(...$leave_applications_result);
-            //     return view('leave_from.leave_application_form', $singleArray);
-            // }
+            
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage(), 'error' => true]);
         }

@@ -245,13 +245,26 @@ class OfficialBusinessController extends Controller
                         $log_action = 'Approved by Approving Officer';
                     break;
                     
-                    default:
-                        $status = 'declined';
-                        $log_action = 'Request Declined';
-                    break;
+                    // default:
+                    //     $status = 'declined';
+                    //     $log_action = 'Request Declined';
+                    // break;
                 }
             } else if ($request->status === 'declined') {
-                $status = 'declined';
+             
+              
+                $ob_application_recommending=$data->recommending_officer  ;
+                $ob_application_approving=$data->approving_officer  ;
+                
+              
+                if($employee_profile->id === $ob_application_recommending)
+                {
+                    $status='declined by recommending officer';
+                }
+                else if($employee_profile->id === $ob_application_approving)
+                {
+                    $status='declined by approving officer';
+                }
                 $log_action = 'Request Declined';
             }
             
@@ -266,7 +279,7 @@ class OfficialBusinessController extends Controller
         } catch (\Throwable $th) {
 
             Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return response()->json(['msg' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
