@@ -35,6 +35,7 @@ class LeaveApplicationResource extends JsonResource
             "illness" => $this->illness,
             "is_masters" => $this->is_masters,
             "is_board" => $this->is_board,
+            "is_commutation" => $this->is_commutation,
             "applied_credits" => (int)$this->applied_credits, // amount of credits to be use only for non special leave.
             "status" => $this->status, //Applied->For recommending officer approval->For approving officer approval->Approved || Declined.
             "remarks" => $this->remarks, //Reason of leave application.
