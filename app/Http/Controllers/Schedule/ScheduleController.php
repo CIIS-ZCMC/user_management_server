@@ -16,6 +16,8 @@ use App\Helpers\Helpers;
 
 use App\Models\Section;
 use App\Models\Unit;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 
@@ -135,7 +137,8 @@ class ScheduleController extends Controller
             }
 
             $user = $request->user;
-            $msg = null;
+            $message = null;
+            $data = null;
             $is_weekend = 0;
 
             $date_start     = $cleanData['date_start'];     // Replace with your start date
@@ -175,7 +178,7 @@ class ScheduleController extends Controller
 
                 //If Toggle Date Period && Toggle Show Day On
                 default:
-                    $current_date = $date_start->copy();
+                    $current_date = Carbon::parse($date_start)->copy();
 
                     while ($current_date->lte($date_end)) {
                         if (in_array($current_date->englishDayOfWeek, $selected_days)) {
@@ -223,10 +226,10 @@ class ScheduleController extends Controller
                         ])->first();
 
                         if ($query) {
-                            $msg = 'Employee schedule already exists.';
+                            $message = 'Employee schedule already exists.';
                         } else {
                             $data->employee()->attach($employee_id);
-                            $msg = 'New employee schedule registered.';
+                            $message = 'New employee schedule registered.';
                         }
                     }
                 }
@@ -234,9 +237,9 @@ class ScheduleController extends Controller
 
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json([
-                'data' =>  new EmployeeScheduleResource($data),
-                'logs' => Helpers::registerEmployeeScheduleLogs($data->id, $request->user->id, 'Store'),
-                'message' => $msg
+                'data' =>  new ScheduleResource($data),
+                'logs' => Helpers::registerEmployeeScheduleLogs($data->id, $user->id, 'Store'),
+                'message' => $message
             ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
@@ -376,10 +379,26 @@ class ScheduleController extends Controller
             $approving_officer  = Helpers::ScheduleApprovingOfficer($assigned_area, $user);
             $head_officer       = EmployeeProfile::where('id', $approving_officer['approving_officer'])->first();
             $holiday            = Holiday::all();
+    
+            $options = new Options();
+            $options->set('isPhpEnabled', true);
+            $options->set('isHtml5ParserEnabled', true);
+            $options->set('isRemoteEnabled', true);
+            $dompdf = new Dompdf($options);
+            $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
+            $html = view('generate_schedule/section-schedule', compact('data','holiday', 'month', 'year', 'dates', 'user', 'head_officer'))->render();
+            $dompdf->loadHtml($html);
 
-            return view('generate_schedule/section-schedule', compact('data','holiday', 'month', 'year', 'dates', 'user', 'head_officer'));
+            $dompdf->setPaper('Legal', 'landscape');
+            $dompdf->render();
+            $filename = 'Schedule.pdf';
+
+            /* Downloads as PDF */
+            $dompdf->stream($filename);
+         
+            // return view('generate_schedule/section-schedule', compact('data','holiday', 'month', 'year', 'dates', 'user', 'head_officer'));
         } catch (\Throwable $th) {
-            
+            return $th;
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }

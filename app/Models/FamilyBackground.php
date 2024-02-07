@@ -42,12 +42,21 @@ class FamilyBackground extends Model
 
     public function fatherName()
     {
-        return $this->father_last_name.','.$this->father_first_name.' '.$this->father_middle_name;
+        if ($this->father_middle_name === NULL ) {
+            return $this->father_last_name.', '.$this->father_first_name;
+        }
+
+        return $this->father_last_name.', '.$this->father_first_name.', '.$this->father_middle_name;
     }
 
     public function motherName()
     {
-        return $this->mother_last_name.','.$this->mother_first_name.' '.$this->mother_middle_name;
+        if ($this->mother_middle_name === NULL ) {
+            return $this->mother_last_name.', '.$this->mother_first_name;
+        }
+
+        return $this->mother_last_name.', '.$this->mother_first_name.', '.$this->mother_middle_name;
+      
     }
 
     public function decryptData($toEncrypt)

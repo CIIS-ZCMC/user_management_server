@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('license_no')->nullable();
             $table->string('govt_issued_id')->nullable();
-            $table->datetime('ctc_issued_date')->nullable();
+            $table->date('ctc_issued_date')->nullable();
             $table->string('ctc_issued_at')->nullable();
             $table->string('person_administrative_oath')->nullable();
             $table->unsignedBigInteger('employee_profile_id')->nullable();

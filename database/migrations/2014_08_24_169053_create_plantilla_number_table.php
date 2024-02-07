@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('number');
             $table->boolean('is_vacant')->default(true);
+            $table->boolean('is_dissolve')->default(true);
             $table->datetime('assigned_at')->nullable();
             $table->unsignedBigInteger('plantilla_id');
             $table->foreign('plantilla_id')->references('id')->on('plantillas');

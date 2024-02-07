@@ -15,6 +15,7 @@ class PlantillaNumber extends Model
         'number',
         'is_vacant',
         'assigned_at',
+        'is_dissolve',
         'plantilla_id',
         'employee_profile_id'
     ];
