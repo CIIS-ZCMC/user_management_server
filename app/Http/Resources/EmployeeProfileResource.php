@@ -26,8 +26,6 @@ class EmployeeProfileResource extends JsonResource
 
         $designation_code = $designation->code;
 
-
-
         $employment_type = $this->employmentType;
         $employment_status = $employment_type->name;
 

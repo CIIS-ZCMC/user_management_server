@@ -1355,33 +1355,35 @@ class EmployeeProfileController extends Controller
 
                 switch ($sector) {
                     case "division":
-                        $area_details = Division::find($area);
+                        $area_details = Division::find((int) $area);
                         if (!$area_details) {
                             return response()->json(['message' => 'No record found for division with id ' . $id], Response::HTTP_NOT_FOUND);
                         }
                         $key_details = 'division_id';
                         break;
                     case "department":
-                        $area_details = Department::find($area);
+                        $area_details = Department::find((int) $area);
                         if (!$area_details) {
                             return response()->json(['message' => 'No record found for department with id ' . $id], Response::HTTP_NOT_FOUND);
                         }
                         $key_details = 'department_id';
                         break;
                     case "section":
-                        $area_details = Section::find($area);
+                        $area_details = Section::find((int) $area);
                         if (!$area_details) {
                             return response()->json(['message' => 'No record found for section with id ' . $id], Response::HTTP_NOT_FOUND);
                         }
                         $key_details = 'section_id';
                         break;
                     case "unit":
-                        $area_details = Unit::find($area);
+                        $area_details = Unit::find((int) $area);
                         if (!$area_details) {
                             return response()->json(['message' => 'No record found for unit with id ' . $id], Response::HTTP_NOT_FOUND);
                         }
                         $key_details = 'unit_id';
                         break;
+                    default: 
+                        return response()->json(['message' => 'Undefined area.'], Response::HTTP_BAD_REQUEST);
                 }
             }
 
@@ -1503,8 +1505,6 @@ class EmployeeProfileController extends Controller
     public function getEmployeeListByEmployementTypes(Request $request)
     {
         try {
-
-
 
             $cacheExpiration = Carbon::now()->addDay();
 
@@ -1802,9 +1802,7 @@ class EmployeeProfileController extends Controller
                 $designation = $plantilla->designation;
             }
 
-            $special_access_roles = $employee_profile->specialAccessRole;
-
-
+        
             $area_assigned = $employee_profile->assignedArea->findDetails();
 
             $position = $employee_profile->position();
@@ -1887,10 +1885,11 @@ class EmployeeProfileController extends Controller
                 'name' => $personal_information->employeeName(),
                 'designation' => $designation['name'],
                 'designation_code' => $designation['code'],
+                'plantilla_number_id' => $assigned_area['plantilla_number_id'],
                 'employee_details' => [
                     'employee' => $employee,
                     'personal_information' => $personal_information_data,
-                    'contact' => new ContactResource($personal_information->contact),
+                    'contact' => OtherInformationResource::collection($personal_information->otherInformation),
                     'address' => $address,
                     'family_background' => new FamilyBackGroundResource($personal_information->familyBackground),
                     'children' => ChildResource::collection($personal_information->children),
@@ -1907,6 +1906,7 @@ class EmployeeProfileController extends Controller
                     'legal_information' => $employee_profile->personalInformation->legalInformation,
                     'identification' => new IdentificationNumberResource($employee_profile->personalInformation->identificationNumber)
                 ],
+                'area' => $area_assigned,
                 'area_assigned' => $area_assigned['details']->name,
                 'area_sector' => $area_assigned['sector'],
             ];
