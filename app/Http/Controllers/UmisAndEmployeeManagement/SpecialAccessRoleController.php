@@ -60,6 +60,12 @@ class SpecialAccessRoleController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
+            $check_if_exist =  SpecialAccessRole::where('employee_profile_id', $cleanData['employee_profile_id'])->where('system_role_id', $cleanData['system_role_id'])->first();
+
+            if($check_if_exist !== null){
+                return response()->json(['message' => 'System already exist.'], Response::HTTP_FORBIDDEN);
+            }
+
             $special_access_role = SpecialAccessRole::create($cleanData);
             
             Helpers::registerSystemLogs($request, $special_access_role['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
