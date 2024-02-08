@@ -24,7 +24,7 @@ return new class extends Migration
             $table->boolean('is_commutation')->default(false);
             $table->string('applied_credits')->nullable();
             $table->string('status')->nullable();
-            $table->string('remarks')->nullable();
+            $table->text('remarks')->nullable();
             $table->boolean('without_pay')->default(false);
             $table->text('reason')->nullable();
             $table->unsignedBigInteger('employee_profile_id')->unsigned();
