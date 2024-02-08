@@ -13,6 +13,7 @@ class EmployeeLeaveCredit extends JsonResource
         return [
             "id"=> $this->id,
             'employee_profile_id' => $this->employee_profile_id,
+            'name' => $this->employeeProfile->personalInformation->name(),
             'leave_type' => $this->leaveType,
             'total_leave_credits' => $this->total_leave_credits,
             'created_at' => $this->created_at,

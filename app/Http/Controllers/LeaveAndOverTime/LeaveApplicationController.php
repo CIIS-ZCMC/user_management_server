@@ -15,6 +15,8 @@ use App\Models\LeaveApplication;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LeaveApplicationRequest;
 use App\Http\Requests\PasswordApprovalRequest;
+use App\Http\Resources\EmployeeLeaveCredit as ResourcesEmployeeLeaveCredit;
+use App\Http\Resources\EmployeeProfileResource;
 use App\Http\Resources\LeaveApplicationResource;
 use App\Models\AssignArea;
 use App\Models\Division;
@@ -24,23 +26,25 @@ use App\Models\EmployeeProfile;
 use App\Models\LeaveApplicationLog;
 use App\Models\LeaveApplicationRequirement;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Cache;
 
 class LeaveApplicationController extends Controller
 {
     public function index(Request $request)
     {
         try {
-  
+
             $employee_profile = $request->user;
 
             /**
              * HR division
              * Only newly applied leave application
              */
-           
+
             if (Helpers::getHrmoOfficer() === $employee_profile->id) {
-                
+
                 $leave_applications = LeaveApplication::where('hrmo_officer', $employee_profile->id)->get();
 
                 return response()->json([
@@ -144,11 +148,140 @@ class LeaveApplicationController extends Controller
         }
     }
 
+    public function getEmployees()
+    {
+        try {
+
+            $leaveCredits = EmployeeLeaveCredit::with(['employeeProfile.personalInformation', 'leaveType'])->get()->groupBy('employee_profile_id');
+            $response = [];
+            foreach ($leaveCredits as $employeeProfileId => $leaveCreditGroup)
+             {
+                $employeeDetails = $leaveCreditGroup->first()->employeeProfile->personalInformation->name();
+                $leaveCreditData = [];
+                foreach ($leaveCreditGroup as $leaveCredit) {
+
+                    $leaveCreditData[$leaveCredit->leaveType->name] = $leaveCredit->total_leave_credits;
+                }
+
+
+                $employeeResponse = [
+                    'id' => $employeeProfileId,
+                    'name' => $employeeDetails,
+                ];
+                $employeeResponse = array_merge($employeeResponse, $leaveCreditData);
+                $response[] = $employeeResponse;
+            }
+
+            return response()->json($response, 200);
+
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function getAllEmployees()
+    {
+        try {
+            $employee_profiles = EmployeeProfile::all();
+            return response()->json([
+                'data' => EmployeeProfileResource::collection($employee_profiles),
+                'message' => 'list of employees retrieved.'
+            ], Response::HTTP_OK);
+
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function getLeaveTypes()
+    {
+        try {
+            $LeaveTypes = LeaveType::where('is_special','0')->get();
+            return response()->json([
+                'data' => LeaveTypeResource::collection($LeaveTypes),
+                'message' => 'list of special leave type retrieved.'
+            ], Response::HTTP_OK);
+
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function updateCredit($id, PasswordApprovalRequest $request)
+    {
+        try {
+
+            $password = strip_tags($request->password);
+            $employee_profile = $request->user;
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password . env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $updates = $request->updates;
+            foreach ($updates as $update) {
+                $leaveCredit = EmployeeLeaveCredit::where('employee_profile_id', $id)
+                    ->where('leave_type_id', $update['leave_type_id'])
+                    ->firstOrFail();
+
+                    $leaveCredit->total_leave_credits += $update['credit_value'];
+                    $previousCredit = $leaveCredit->total_leave_credits;
+                    $leaveCredit->save();
+
+                    EmployeeLeaveCreditLogs::create([
+                        'employee_leave_credit_id' => $leaveCredit->id,
+                        'previous_credit' => $previousCredit,
+                        'leave_credits' => $update['credit_value']
+                    ]);
+            }
+
+            return response()->json(['message' => 'Leave credits updated successfully'], 200);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function addCredit($id, PasswordApprovalRequest $request)
+    {
+        try {
+
+            $password = strip_tags($request->password);
+            $employee_profile = $request->user;
+            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password . env("SALT_VALUE"), $password_decrypted)) {
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $credits = $request->credits;
+            foreach ($credits as $credit) {
+                $leaveCredit = EmployeeLeaveCredit::where('employee_profile_id', $id)
+                    ->where('leave_type_id', $credit['leave_type_id'])
+                    ->firstOrNew();
+                $leaveCredit->total_leave_credits += $credit['credit_value'];
+                $previousCredit = $leaveCredit->total_leave_credits;
+                $leaveCredit->save();
+
+
+                EmployeeLeaveCreditLogs::create([
+                    'employee_leave_credit_id' => $leaveCredit->id,
+                    'previous_credit' => $previousCredit,
+                    'leave_credits' => $credits['credit_value']
+                ]);
+            }
+
+            return response()->json(['message' => 'Leave credits added successfully'], 200);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public function approved($id, PasswordApprovalRequest $request)
     {
         try {
 
-            
+
             $password = strip_tags($request->password);
 
             $employee_profile = $request->user;
@@ -159,7 +292,7 @@ class LeaveApplicationController extends Controller
                 return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
             }
 
-        
+
             $leave_application = LeaveApplication::find($id);
 
             if (!$leave_application) {
@@ -172,7 +305,7 @@ class LeaveApplicationController extends Controller
 
             switch ($leave_application->status) {
                 case 'applied':
-                 
+
                     if (Helpers::getHrmoOfficer() !== $employee_profile->id) {
                         return response()->json(['message' => 'Forbidden.'], Response::HTTP_FORBIDDEN);
                     }
@@ -181,7 +314,7 @@ class LeaveApplicationController extends Controller
                     $leave_application->update(['status' => $status]);
                     break;
                 case 'for recommending approval':
-                  
+
                     if ($position === null || str_contains($position['position'], 'Unit')) {
                         return response()->json(['message' => 'Forbidden'], Response::HTTP_FORBIDDEN);
                     }
@@ -427,7 +560,7 @@ class LeaveApplicationController extends Controller
             $leave_application_hrmo=$leave_application->hrmo_officer;
             $leave_application_recommending=$leave_application->recommending_officer  ;
             $leave_application_approving=$leave_application->approving_officer  ;
-            
+
             if ($employee_profile->id === $leave_application_hrmo) {
                 $status='declined by hrmo officer';
             }
@@ -487,7 +620,7 @@ class LeaveApplicationController extends Controller
             $data = LeaveApplication::with(['employeeProfile', 'leaveType', 'recommendingOfficer', 'approvingOfficer'])->where('id', $id)->first();
             $leave_type = LeaveTypeResource::collection(LeaveType::all());
             $hrmo_officer = Section::with(['supervisor'])->where('code', 'HRMO')->first();
-          
+
             // return view('leave_from.leave_application_form', compact('data', 'leave_type', 'hrmo_officer'));
 
             $options = new Options();
@@ -516,7 +649,7 @@ class LeaveApplicationController extends Controller
             // } else {
             //     return response()->json(['message' => 'Error loading HTML content', 'error' => true]);
             // }
-            
+
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage(), 'error' => true]);
         }
