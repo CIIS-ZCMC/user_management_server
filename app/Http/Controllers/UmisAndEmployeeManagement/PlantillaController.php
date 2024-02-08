@@ -67,47 +67,68 @@ class PlantillaController extends Controller
 
             $key = null;
 
+
+            if($request->sector === null){
+                return response()->json(['message' => 'Invalid request.'], Response::HTTP_BAD_REQUEST);
+            }
+
             switch(strip_tags($request->sector)){
-                case 'Division':
-                    $division = Division::find(strip_tags($request->area));
+                case 'division':
+                    $division = Division::find(strip_tags((int) $request->area));
                     if(!$division){
                         return response()->json(['message' => 'No record found for division with id '.$id], Response::HTTP_NOT_FOUND);
                     }
                     $key = 'division_id';
                     break;
-                case 'Department':
-                    $department = Department::find(strip_tags($request->area));
+                case 'department':
+                    $department = Department::find(strip_tags((int) $request->area));
                     if(!$department){
                         return response()->json(['message' => 'No record found for department with id '.$id], Response::HTTP_NOT_FOUND);
                     }
                     $key = 'department_id';
                     break;
-                case 'Section':
-                    $section = Section::find(strip_tags($request->area));
+                case 'section':
+                    $section = Section::find(strip_tags((int) $request->area));
                     if(!$section){
                         return response()->json(['message' => 'No record found for section with id '.$id], Response::HTTP_NOT_FOUND);
                     }
                     $key = 'section_id';
                     break;
-                case 'Unit':
-                    $unit = Unit::find(strip_tags($request->area));
+                case 'unit':
+                    $unit = Unit::find(strip_tags((int) $request->area));
                     if(!$unit){
                         return response()->json(['message' => 'No record found for unit with id '.$id], Response::HTTP_NOT_FOUND);
                     }
                     $key = 'unit_id';
                     break;
+                default:
+                    return response()->json(['message'=> 'Undefined area.'], Response::HTTP_BAD_REQUEST);
+            }
+
+            $area_list = ['division_id', 'department_id', 'section_id', 'unit_id'];
+            $new_data_of_area = [];
+            
+            foreach($area_list as $area){
+                if($area === $key) {
+                    $new_data_of_area[$key] = (int) $request->area;
+                    continue;
+                }
+                $new_data_of_area[$area] = null;
             }
             
-            $plantilla_number->assignedArea->update([$key => $request->area, 'effective_at' => $request->effective_at]);
+            $plantilla_number->assignedArea->update([...$new_data_of_area, 'effective_at' => $request->effective_at]);
+            $employee_profile = $plantilla_number->employeeProfile;
 
-            if($plantilla_number->employee_profile_id !== null && Carbon::parse($request->effective_at)->isPast()){
+            $employee_profile->assignedArea->update([...$new_data_of_area, 'effective_at' => $request->effective_at]);
+
+            // if($plantilla_number->employee_profile_id !== null && Carbon::parse($request->effective_at)->isPast()){
                 
-                Artisan::call('app:plantilla-number-re-assign-task:to-run', [
-                    '--taskId' => $plantilla_number->id,
-                    '--area' => $request->area,
-                    '--sector' => $request->sector
-                ]);
-            }
+            //     Artisan::call('app:plantilla-number-re-assign-task:to-run', [
+            //         '--taskId' => $plantilla_number->id,
+            //         '--area' => $request->area,
+            //         '--sector' => $request->sector
+            //     ]);
+            // }
 
             return response()->json([
                 'data' => new PlantillaNumberAllResource($plantilla_number),

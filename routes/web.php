@@ -103,3 +103,7 @@ Route::get('/lr', function () {
 Route::get('/testmail', function () {
     return view('mail.credentials');
 });
+
+Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
+    Route::get('/leave-application-print/{id}', 'LeaveApplicationController@printLeaveForm');
+});

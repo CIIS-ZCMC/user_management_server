@@ -152,24 +152,22 @@
         <span style="display: block; font-size: 8px;">Civil Service Form No. 6</span>  
         <span style="display: block; font-size: 8px;">Revised 2020</span>
     </div>
-
-    <header style="display: flex; align-items: center; justify-content: space-between;">
-        <div>
-            {{-- <img src="{{ asset('storage/zcmc.png') }}" alt="Logo Left"> --}}
-            <img id="zcmclogo" src="{{ base_path() . '\public\storage\logo/zcmc.jpeg'}}" alt="Logo Left">
-        </div>
+    <header style="width: 100%;display: flex; align-items: center; justify-content: space-between;">
+        <!-- ZCMC Logo on the left -->
+        <img id="zcmclogo" src="{{ base_path() . '\public\storage\logo/zcmc.jpeg'}}" alt="ZCMC Logo">
     
-        <div style="text-align: center;">
+        <!-- Center Text -->
+        <div style="flex-grow: 1; text-align: center; margin: 0 10px;">
             <span>Republic of the Philippines</span>
             <h6 style="margin: 0;">ZAMBOANGA CITY MEDICAL CENTER</h6>
             <span>Dr. Evangelista Street, Sta. Catalina, Zamboanga City</span>
         </div>
     
-        <div>
-            {{-- <img src="{{ asset('storage/doh.png') }}" alt="Logo Right"> --}}
-            <img id="dohlogo" src="{{ base_path() . '\public\storage\logo/doh.jpeg'}}" alt="Logo Right">
-        </div>
+        <!-- DOH Logo on the right -->
+        <img id="dohlogo" src="{{ base_path() . '\public\storage\logo/doh.jpeg'}}" alt="DOH Logo">
     </header>
+    
+    
 
     <div class="container-fluid">
         
@@ -213,7 +211,7 @@
                     <td class="topleft" colspan="1"> 3. DATE OF FILING
                         <div class="mb-3 topcenter">
                             <label>
-                                {{ date(' F d, Y', strtotime($data->created_at)) }}
+                                {{-- {{ date(' F d, Y', strtotime($data->created_at)) }} --}}
                             </label>
                         </div>
                     </td>

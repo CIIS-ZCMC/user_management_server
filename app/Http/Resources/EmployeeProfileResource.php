@@ -20,12 +20,11 @@ class EmployeeProfileResource extends JsonResource
         $assigned_area = $this->assignedArea;
         $area_details = $assigned_area->findDetails();
         $area = $area_details;
-        $is_regular_employee = $assigned_area->plantilla_id === null ? false : true;
+        $is_regular_employee = $assigned_area->plantilla_number_id === null ? false : true;
         $designation = $assigned_area->plantilla_id === null ? $assigned_area->designation : $assigned_area->plantilla->designation;
         $designation_name = $designation->name;
 
         $designation_code = $designation->code;
-
 
         $employment_type = $this->employmentType;
         $employment_status = $employment_type->name;

@@ -1560,8 +1560,8 @@ Route::middleware('auth.cookie')->group(function () {
             Route::post('leave-application-approved/{id}', 'LeaveApplicationController@approved');
         });
 
-        Route::middleware(['auth.permission:UMIS-LM write'])->group(function () {
-            Route::post('leave-application-print/{id}', 'LeaveApplicationController@printLeaveForm');
+        Route::middleware(['auth.permission:UMIS-LM download'])->group(function(){
+            Route::get('leave-application-print/{id}', 'LeaveApplicationController@printLeaveForm');
         });
 
 

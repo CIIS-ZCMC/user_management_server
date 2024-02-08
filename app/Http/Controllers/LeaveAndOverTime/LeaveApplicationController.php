@@ -487,7 +487,7 @@ class LeaveApplicationController extends Controller
             $data = LeaveApplication::with(['employeeProfile', 'leaveType', 'recommendingOfficer', 'approvingOfficer'])->where('id', $id)->first();
             $leave_type = LeaveTypeResource::collection(LeaveType::all());
             $hrmo_officer = Section::with(['supervisor'])->where('code', 'HRMO')->first();
-
+          
             // return view('leave_from.leave_application_form', compact('data', 'leave_type', 'hrmo_officer'));
 
             $options = new Options();
@@ -503,8 +503,19 @@ class LeaveApplicationController extends Controller
             $dompdf->render();
             $filename = 'Leave Application('. $data->employeeProfile->personalInformation->name() .').pdf';
 
-            /* Downloads as PDF */
-            $dompdf->stream($filename);
+            // Use 'I' instead of 'D' to open in the browser
+                $dompdf->stream($filename, array('Attachment' => false));
+            // $dompdf->stream($filename);
+
+
+            // if ($dompdf->loadHtml($html)) {
+                // $dompdf->setPaper('Legal', 'portrait');
+                // $dompdf->render();
+                // $filename = 'Leave Application('. $data->employeeProfile->personalInformation->name() .').pdf';
+                // $dompdf->stream($filename);
+            // } else {
+            //     return response()->json(['message' => 'Error loading HTML content', 'error' => true]);
+            // }
             
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage(), 'error' => true]);
