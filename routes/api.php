@@ -1569,6 +1569,10 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
+            Route::get('with-credit-employees', 'LeaveApplicationController@getEmployees');
+        });
+
+        Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
             Route::get('all-employees', 'LeaveApplicationController@getAllEmployees');
         });
 

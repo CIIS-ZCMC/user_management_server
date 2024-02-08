@@ -245,7 +245,6 @@ class LeaveApplicationController extends Controller
     public function addCredit($id, PasswordApprovalRequest $request)
     {
         try {
-
             $password = strip_tags($request->password);
             $employee_profile = $request->user;
             $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
@@ -262,7 +261,6 @@ class LeaveApplicationController extends Controller
                 $leaveCredit->total_leave_credits += $credit['credit_value'];
                 $previousCredit = $leaveCredit->total_leave_credits;
                 $leaveCredit->save();
-
 
                 EmployeeLeaveCreditLogs::create([
                     'employee_leave_credit_id' => $leaveCredit->id,
