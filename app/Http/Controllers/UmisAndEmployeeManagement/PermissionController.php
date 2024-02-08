@@ -45,6 +45,12 @@ class PermissionController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
+            $check_if_exist =  Permission::where('name', $cleanData['name'])->where('action', $cleanData['action'])->first();
+
+            if($check_if_exist !== null){
+                return response()->json(['message' => 'Permission already exist.'], Response::HTTP_FORBIDDEN);
+            }
+
             $permission = Permission::create($cleanData);
 
             Helpers::registerSystemLogs($request, $permission['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');

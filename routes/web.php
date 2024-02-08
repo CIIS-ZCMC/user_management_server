@@ -87,7 +87,7 @@ Route::get('/new-account', function () {
 
 
 Route::namespace('App\Http\Controllers\Schedule')->group(function () {
-    Route::get('/generate', 'ScheduleController@generate');
+    Route::get('/schedule-generate', 'ScheduleController@generate');
 });
 
 Route::get('/ot', function () {

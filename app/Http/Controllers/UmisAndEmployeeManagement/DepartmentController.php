@@ -229,6 +229,7 @@ class DepartmentController extends Controller
                 return response()->json(['message' => 'No division record found for id '.$division_id], Response::HTTP_BAD_REQUEST);
             }
 
+
             $cleanData = [];
             
             foreach ($request->all() as $key => $value) {
@@ -243,6 +244,12 @@ class DepartmentController extends Controller
                     continue;
                 }
                 $cleanData[$key] = strip_tags($value);
+            }
+
+            $check_if_exist =  Department::where('name', $cleanData['name'])->where('code', $cleanData['code'])->first();
+
+            if($check_if_exist !== null){
+                return response()->json(['message' => 'Department already exist.'], Response::HTTP_FORBIDDEN);
             }
 
             $department = Department::create($cleanData);

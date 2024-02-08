@@ -616,5 +616,40 @@ class ModulePermissionSeeder extends Seeder
             'permission_id' => $permission_delete['id'],
             'system_module_id' => $system_module_on_call_management['id']
         ]);
+
+         /**
+         * Time Adjustment
+         */
+        $system_module_time_adjustment = SystemModule::where('code', 'UMIS-TA')->first();
+
+        ModulePermission::create([
+            'code' => $system_module_time_adjustment['code'].' '.$permission_read_all['action'],
+            'permission_id' => $permission_read_all['id'],
+            'system_module_id' => $system_module_time_adjustment['id']
+        ]);
+
+        ModulePermission::create([
+            'code' => $system_module_time_adjustment['code'].' '.$permission_read['action'],
+            'permission_id' => $permission_read['id'],
+            'system_module_id' => $system_module_time_adjustment['id']
+        ]);
+
+        ModulePermission::create([
+            'code' => $system_module_time_adjustment['code'].' '.$permission_write['action'],
+            'permission_id' => $permission_write['id'],
+            'system_module_id' => $system_module_time_adjustment['id']
+        ]);
+
+        ModulePermission::create([
+            'code' => $system_module_time_adjustment['code'].' '.$permission_approve['action'],
+            'permission_id' => $permission_approve['id'],
+            'system_module_id' => $system_module_time_adjustment['id']
+        ]);
+
+        ModulePermission::create([
+            'code' => $system_module_time_adjustment['code'].' '.$permission_delete['action'],
+            'permission_id' => $permission_delete['id'],
+            'system_module_id' => $system_module_time_adjustment['id']
+        ]);
     }
 }
