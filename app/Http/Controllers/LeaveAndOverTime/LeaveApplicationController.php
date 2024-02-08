@@ -444,7 +444,7 @@ class LeaveApplicationController extends Controller
                     ->where('leave_type_id', $request->leave_type_id)->first();
 
 
-
+//  return response()->json(['message' => $request->without_pay == 0 && $employee_credit->total_leave_credits < $daysDiff], 401);
                 if ($request->without_pay == 0 && $employee_credit->total_leave_credits < $daysDiff) {
 
                     return response()->json(['message' => 'Insufficient leave credits.'], Response::HTTP_BAD_REQUEST);
@@ -514,9 +514,6 @@ class LeaveApplicationController extends Controller
                     ]);
                 }
             }
-
-
-
             return response()->json([
                 'data' => new LeaveApplicationResource($leave_application),
                 'message' => 'Successfully applied for ' . $leave_type->name
@@ -575,7 +572,7 @@ class LeaveApplicationController extends Controller
 
             $leave_application->update([
                 'status' => $status,
-                'reason' => strip_tags($request->reason)
+                'reason' => strip_tags($request->remarks),
             ]);
 
             if (!$leave_type->is_special) {
@@ -632,7 +629,7 @@ class LeaveApplicationController extends Controller
 
             $dompdf->setPaper('Legal', 'portrait');
             $dompdf->render();
-            $filename = 'Leave Application('. $data->employeeProfile->personalInformation->name() .').pdf';
+            $filename = 'LEAVE REPORT - ('. $data->employeeProfile->personalInformation->name() .').pdf';
 
             // Use 'I' instead of 'D' to open in the browser
                 $dompdf->stream($filename, array('Attachment' => false));
