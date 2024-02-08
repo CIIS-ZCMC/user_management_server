@@ -44,6 +44,12 @@ class RoleController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
+            $check_if_exist =  Role::where('name', $cleanData['name'])->where('code', $cleanData['code'])->first();
+
+            if($check_if_exist !== null){
+                return response()->json(['message' => 'Role already exist.'], Response::HTTP_FORBIDDEN);
+            }
+
             $role = Role::create($cleanData);
 
             Helpers::registerSystemLogs($request, $role['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');

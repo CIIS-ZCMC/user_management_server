@@ -178,6 +178,12 @@ class UnitController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
+            $check_if_exist =  Unit::where('name', $cleanData['name'])->where('code', $cleanData['code'])->first();
+
+            if($check_if_exist !== null){
+                return response()->json(['message' => 'Unit already exist.'], Response::HTTP_FORBIDDEN);
+            }
+
             $unit = Unit::create($cleanData);
 
             Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');

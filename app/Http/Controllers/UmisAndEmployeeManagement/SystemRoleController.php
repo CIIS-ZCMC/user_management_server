@@ -97,6 +97,12 @@ class SystemRoleController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
+            $check_if_exist =  System::where('role_id', $cleanData['role_id'])->where('system_id', $cleanData['system_id'])->first();
+
+            if($check_if_exist !== null){
+                return response()->json(['message' => 'System role already exist.'], Response::HTTP_FORBIDDEN);
+            }
+
             $systemRole = SystemRole::create($cleanData);
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
