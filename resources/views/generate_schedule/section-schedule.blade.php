@@ -9,19 +9,47 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: au;
+            margin: 0;
             padding: 0;
             width: 14in;
             height: 8.5in;
         }
         
         header {
-            padding: 10px;
+            top: 0%;
+            width: 90%;
             text-align: center;
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between;
+            padding: 5px;
+            background-color: aqua;
         }
+
+        .topnav {
+            margin: 0;
+            height: 30px;
+            width: 90%;
+            overflow: hidden;
+            padding-top: 5px;
+            background-color: red;            
+        }
+
+        .topnav .float-left {
+            padding: 0;
+            margin: 0;
+            float: left;
+            display: block;
+            text-align: start;
+            text-decoration: none;
+        }
+
+        .topnav .float-right {
+            padding: 0;
+            margin: 0;
+            float: right;
+            display: block;
+            text-align: end;
+            text-decoration: none;
+        }
+
         
         .container {
             max-width: 90%;
@@ -100,22 +128,6 @@
             /* display: inline-block; */
         }
 
-        .grid-container {
-            display: grid;
-            grid-template-columns: auto auto auto auto;
-            grid-gap: 10px;
-            background-color: #2196F3;
-            padding: 10px;
-        }
-
-        .grid-container > div {
-            background-color: rgba(255, 255, 255, 0.8);
-            text-align: center;
-            padding: 20px 0;
-            font-size: 30px;
-        }
-
-
         @media print {
             @page {
                 size: landscape;
@@ -132,38 +144,35 @@
     </style>
 </head>
 <body>
+    <header>
+        <div>
+            {{-- <img src="{{ asset('storage/zcmc.png') }}" alt="Logo Left"> --}}
+        </div>
 
-<header style="display: flex; align-items: center; justify-content: space-between;">
-    <div>
-        {{-- <img src="{{ asset('storage/zcmc.png') }}" alt="Logo Left"> --}}
-    </div>
+        <div>
+            <span>Republic of the Philippines</span>
+            <h6 style="margin: 0;">ZAMBOANGA CITY MEDICAL CENTER</h6>
+            <span>Dr. Evangelista Street, Sta. Catalina, Zamboanga City</span>
+        </div>
 
-    <div style="text-align: center;">
-        <span>Republic of the Philippines</span>
-        <h6 style="margin: 0;">ZAMBOANGA CITY MEDICAL CENTER</h6>
-        <span>Dr. Evangelista Street, Sta. Catalina, Zamboanga City</span>
-    </div>
+        
+        <div>
+            {{-- <img src="{{ asset('storage/doh.png') }}" alt="Logo Right"> --}}
+        </div>
+    </header>
 
-    <div>
-        {{-- <img src="{{ asset('storage/doh.png') }}" alt="Logo Right"> --}}
+    <div class="topnav">
+        <div class="float-left">
+            Department : <span class="underline">{{ $user->assignedArea->findDetails()['details']['name'] }}</span>
+        </div>
+
+        <div class="float-right">
+            For The Month of :  <span class="underline"> {{ date('F', strtotime($month)) }} </span>
+        </div>
     </div>
-</header>
 
 <div class="container">
-    <div class="row" style="margin-bottom: 10px">
-        <div class="col-6">
-            <label class="float-start">Department :
-                <span class="underline">{{ $user->assignedArea->findDetails()['details']['name'] }}</span>
-            </label>
-        </div>
-        
-        <div class="col-6">
-            <span class="float-end">For The Month of :
-                <span class="underline"> {{ date('F', strtotime($month)) }} </span>
-            </span>
-        </div>
-    </div>
-
+ 
     <div class="table-responsive"> <!-- Added -->
         <table class="table-bordered" border="1" cellspacing="0" cellpadding="10">
             <thead>

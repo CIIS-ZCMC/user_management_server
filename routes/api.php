@@ -1816,13 +1816,15 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('time-adjustment', 'TimeAdjusmentController@index');
         });
 
+        Route::middleware(['auth.permission:UMIS-TA view'])->group(function () {
+            Route::get('user-time-adjustment', 'TimeAdjusmentController@create');
+        });
+        
         Route::middleware(['auth.permission:UMIS-TA write'])->group(function () {
             Route::post('time-adjustment', 'TimeAdjusmentController@store');
         });
 
-        // Add create here
-
-        Route::middleware(['auth.permission:UMIS-TA update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-TA approve'])->group(function () {
             Route::put('time-adjustment/{id}', 'TimeAdjusmentController@update');
         });
 
