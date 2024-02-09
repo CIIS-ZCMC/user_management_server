@@ -10,7 +10,9 @@ class EmployeeLeaveCredit extends Model
     use HasFactory;
 
     protected $table = 'employee_leave_credits';
-
+    protected $casts = [
+        'total_leave_credits' => 'float',
+    ];
     public $fillable = [
         'employee_profile_id',
         'leave_type_id',
