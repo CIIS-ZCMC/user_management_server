@@ -1565,19 +1565,19 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-LM write'])->group(function () {
-            Route::post('leave-credit-add/{id}', 'LeaveApplicationController@addCredit');
+            Route::post('leave-credit-add', 'LeaveApplicationController@addCredit');
         });
 
         Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
-            Route::get('with-credit-employees', 'LeaveApplicationController@getEmployees');
+            Route::get('leave-credit-employees', 'LeaveApplicationController@getEmployees');
         });
 
         Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
-            Route::get('all-employees', 'LeaveApplicationController@getAllEmployees');
+            Route::get('leave-credit-select-employees', 'LeaveApplicationController@getAllEmployees');
         });
 
         Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
-            Route::get('non-special-leave-type', 'LeaveApplicationController@getLeaveTypes');
+            Route::get('leave-credit-leave-type', 'LeaveApplicationController@getLeaveTypes');
         });
 
 

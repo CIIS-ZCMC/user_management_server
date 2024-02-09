@@ -172,7 +172,7 @@ class LeaveApplicationController extends Controller
                 $response[] = $employeeResponse;
             }
 
-            return response()->json($response, 200);
+            return ['data' => $response];
 
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -183,9 +183,17 @@ class LeaveApplicationController extends Controller
     {
         try {
             $employee_profiles = EmployeeProfile::all();
+            $data = [];
+            foreach ($employee_profiles as $employee) {
+                $data[] = [
+                    'id' => $employee->id,
+                    'name' => $employee->name(),
+                ];
+            }
+    
             return response()->json([
-                'data' => EmployeeProfileResource::collection($employee_profiles),
-                'message' => 'list of employees retrieved.'
+                'data' => $data,
+                'message' => 'List of employees retrieved.'
             ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
@@ -219,21 +227,23 @@ class LeaveApplicationController extends Controller
                 return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
             }
 
-            $updates = $request->updates;
-            foreach ($updates as $update) {
-                $leaveCredit = EmployeeLeaveCredit::where('employee_profile_id', $id)
-                    ->where('leave_type_id', $update['leave_type_id'])
-                    ->firstOrFail();
-
-                    $leaveCredit->total_leave_credits += $update['credit_value'];
-                    $previousCredit = $leaveCredit->total_leave_credits;
-                    $leaveCredit->save();
-
-                    EmployeeLeaveCreditLogs::create([
-                        'employee_leave_credit_id' => $leaveCredit->id,
-                        'previous_credit' => $previousCredit,
-                        'leave_credits' => $update['credit_value']
-                    ]);
+            foreach ($request->credits as $credit) {
+                $newLeaveCredit = new EmployeeLeaveCredit([
+                    'employee_profile_id' => $request->employee_id,
+                    'leave_type_id' => $credit['leave_id'], // Adjust the key if needed
+                    'total_leave_credits' => (float)$credit['credit_value'],
+                    'created_at' => now(), // Adjust as needed
+                    'updated_at' => now(), // Adjust as needed
+                ]);
+        
+                $newLeaveCredit->save();
+        
+                // Assuming you have a 'logs' attribute in your request
+                EmployeeLeaveCreditLogs::create([
+                    'employee_leave_credit_id' => $newLeaveCredit->id,
+                    'previous_credit' => 0.0, // Assuming initial value is 0
+                    'leave_credits' => (float)$credit['credit_value'],
+                ]);
             }
 
             return response()->json(['message' => 'Leave credits updated successfully'], 200);
@@ -242,7 +252,7 @@ class LeaveApplicationController extends Controller
         }
     }
 
-    public function addCredit($id, PasswordApprovalRequest $request)
+    public function addCredit(PasswordApprovalRequest $request)
     {
         try {
             $password = strip_tags($request->password);
@@ -253,23 +263,51 @@ class LeaveApplicationController extends Controller
                 return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
             }
 
-            $credits = $request->credits;
-            foreach ($credits as $credit) {
-                $leaveCredit = EmployeeLeaveCredit::where('employee_profile_id', $id)
-                    ->where('leave_type_id', $credit['leave_type_id'])
-                    ->firstOrNew();
-                $leaveCredit->total_leave_credits += $credit['credit_value'];
-                $previousCredit = $leaveCredit->total_leave_credits;
-                $leaveCredit->save();
-
-                EmployeeLeaveCreditLogs::create([
-                    'employee_leave_credit_id' => $leaveCredit->id,
-                    'previous_credit' => $previousCredit,
-                    'leave_credits' => $credits['credit_value']
+            foreach ($request->credits as $credit) {
+                $newLeaveCredit = new EmployeeLeaveCredit([
+                    'employee_profile_id' => $request->employee_id,
+                    'leave_type_id' => $credit['leave_id'], // Adjust the key if needed
+                    'total_leave_credits' => (float)$credit['credit_value'],
+                    // 'created_at' => now(), // Adjust as needed
+                    // 'updated_at' => now(), // Adjust as needed
                 ]);
+        
+                $newLeaveCredit->save();
+        
+                // // Assuming you have a 'logs' attribute in your request
+                // EmployeeLeaveCreditLogs::create([
+                //     'employee_leave_credit_id' => $newLeaveCredit->id,
+                //     'previous_credit' => 0.0, // Assuming initial value is 0
+                //     'leave_credits' => (float)$credit['credit_value'],
+                // ]);
+            }
+            /// Fetch updated leave credits only for the specific employee
+            $updatedLeaveCredits = EmployeeLeaveCredit::with(['employeeProfile.personalInformation', 'leaveType'])
+            ->where('employee_profile_id', $request->employee_id)
+            ->get()
+            ->groupBy('employee_profile_id');
+
+        $response = [];
+
+        foreach ($updatedLeaveCredits as $employeeProfileId => $leaveCreditGroup) {
+            $employeeDetails = $leaveCreditGroup->first()->employeeProfile->personalInformation->name();
+            $leaveCreditData = [];
+            
+            foreach ($leaveCreditGroup as $leaveCredit) {
+                $leaveCreditData[$leaveCredit->leaveType->name] = $leaveCredit->total_leave_credits;
             }
 
-            return response()->json(['message' => 'Leave credits added successfully'], 200);
+            $employeeResponse = [
+                'id' => $employeeProfileId,
+                'name' => $employeeDetails,
+            ];
+
+            $employeeResponse = array_merge($employeeResponse, $leaveCreditData);
+            $response[] = $employeeResponse;
+        }
+        
+
+            return response()->json(['message' => 'Leave credits added successfully','data' => $response,], 200);
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
