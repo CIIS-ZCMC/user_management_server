@@ -15,20 +15,14 @@ use App\Models\LeaveApplication;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LeaveApplicationRequest;
 use App\Http\Requests\PasswordApprovalRequest;
-use App\Http\Resources\EmployeeLeaveCredit as ResourcesEmployeeLeaveCredit;
-use App\Http\Resources\EmployeeProfileResource;
 use App\Http\Resources\LeaveApplicationResource;
-use App\Models\AssignArea;
-use App\Models\Division;
 use App\Models\EmployeeLeaveCredit;
 use App\Models\EmployeeLeaveCreditLogs;
 use App\Models\EmployeeProfile;
 use App\Models\LeaveApplicationLog;
 use App\Models\LeaveApplicationRequirement;
 use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Cache;
 
 class LeaveApplicationController extends Controller
 {
@@ -516,7 +510,10 @@ class LeaveApplicationController extends Controller
                     if ($request->without_pay == 0) {
                         $previous_credit = $employee_credit->total_leave_credits;
 
-                        $employee_credit->update(['total_leave_credits' => $employee_credit->total_leave_credits - $daysDiff]);
+                        $employee_credit->update([
+                            'total_leave_credits' => $employee_credit->total_leave_credits - $daysDiff,
+                            'used_leave_credits' => $employee_credit->used_leave_credits + $daysDiff
+                        ]);
 
                         EmployeeLeaveCreditLogs::create([
                             'employee_leave_credit_id' => $employee_credit->id,
@@ -618,11 +615,12 @@ class LeaveApplicationController extends Controller
                     ->where('leave_type_id', $leave_application->leave_type_id)->first();
 
                 $current_leave_credit = $employee_credit->total_leave_credits;
+                $current_used_leave_credit = $employee_credit->used_leave_credits;
 
                 $employee_credit->update([
-                    'total_leave_credits' => $current_leave_credit + $leave_application->leave_credits
+                    'total_leave_credits' => $current_leave_credit + $leave_application->leave_credits,
+                    'used_leave_credits' => $current_used_leave_credit - $leave_application->leave_credits
                 ]);
-
 
                 EmployeeLeaveCreditLogs::create([
                     'employee_leave_credit_id' => $employee_credit->id,
