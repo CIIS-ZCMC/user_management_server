@@ -15,20 +15,14 @@ use App\Models\LeaveApplication;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LeaveApplicationRequest;
 use App\Http\Requests\PasswordApprovalRequest;
-use App\Http\Resources\EmployeeLeaveCredit as ResourcesEmployeeLeaveCredit;
-use App\Http\Resources\EmployeeProfileResource;
 use App\Http\Resources\LeaveApplicationResource;
-use App\Models\AssignArea;
-use App\Models\Division;
 use App\Models\EmployeeLeaveCredit;
 use App\Models\EmployeeLeaveCreditLogs;
 use App\Models\EmployeeProfile;
 use App\Models\LeaveApplicationLog;
 use App\Models\LeaveApplicationRequirement;
 use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Cache;
 
 class LeaveApplicationController extends Controller
 {
@@ -228,22 +222,22 @@ class LeaveApplicationController extends Controller
             }
 
             foreach ($request->credits as $credit) {
-                $newLeaveCredit = new EmployeeLeaveCredit([
-                    'employee_profile_id' => $request->employee_id,
-                    'leave_type_id' => $credit['leave_id'], // Adjust the key if needed
-                    'total_leave_credits' => (float)$credit['credit_value'],
-                    'created_at' => now(), // Adjust as needed
-                    'updated_at' => now(), // Adjust as needed
-                ]);
+                $employeeId = $request->employee_id;
+                $leaveTypeId = $credit['leave_id'];
+
+                EmployeeLeaveCredit::where('employee_profile_id', $employeeId)
+                    ->where('leave_type_id', $leaveTypeId)
+                    ->update([
+                        'total_leave_credits' => \DB::raw('total_leave_credits + ' . (float)$credit['credit_value']),
+                        'updated_at' => now(),
+                    ]);
         
-                $newLeaveCredit->save();
-        
-                // Assuming you have a 'logs' attribute in your request
-                EmployeeLeaveCreditLogs::create([
-                    'employee_leave_credit_id' => $newLeaveCredit->id,
-                    'previous_credit' => 0.0, // Assuming initial value is 0
-                    'leave_credits' => (float)$credit['credit_value'],
-                ]);
+                // // Assuming you have a 'logs' attribute in your request
+                // EmployeeLeaveCreditLogs::create([
+                //     'employee_leave_credit_id' => $newLeaveCredit->id,
+                //     'previous_credit' => 0.0, // Assuming initial value is 0
+                //     'leave_credits' => (float)$credit['credit_value'],
+                // ]);
             }
 
             return response()->json(['message' => 'Leave credits updated successfully'], 200);
@@ -516,7 +510,10 @@ class LeaveApplicationController extends Controller
                     if ($request->without_pay == 0) {
                         $previous_credit = $employee_credit->total_leave_credits;
 
-                        $employee_credit->update(['total_leave_credits' => $employee_credit->total_leave_credits - $daysDiff]);
+                        $employee_credit->update([
+                            'total_leave_credits' => $employee_credit->total_leave_credits - $daysDiff,
+                            'used_leave_credits' => $employee_credit->used_leave_credits + $daysDiff
+                        ]);
 
                         EmployeeLeaveCreditLogs::create([
                             'employee_leave_credit_id' => $employee_credit->id,
@@ -610,7 +607,7 @@ class LeaveApplicationController extends Controller
 
             $leave_application->update([
                 'status' => $status,
-                'reason' => strip_tags($request->remarks),
+                'remarks' => strip_tags($request->remarks),
             ]);
 
             if (!$leave_type->is_special) {
@@ -618,16 +615,18 @@ class LeaveApplicationController extends Controller
                     ->where('leave_type_id', $leave_application->leave_type_id)->first();
 
                 $current_leave_credit = $employee_credit->total_leave_credits;
+                $current_used_leave_credit = $employee_credit->used_leave_credits;
 
                 $employee_credit->update([
-                    'total_leave_credits' => $current_leave_credit + $leave_application->leave_credits
+                    'total_leave_credits' => $current_leave_credit + $leave_application->leave_credits,
+                    'used_leave_credits' => $current_used_leave_credit - $leave_application->leave_credits
                 ]);
-
 
                 EmployeeLeaveCreditLogs::create([
                     'employee_leave_credit_id' => $employee_credit->id,
                     'previous_credit' => $current_leave_credit,
-                    'leave_credits' => $leave_application->applied_credits
+                    'leave_credits' => $leave_application->applied_credits,
+                    'reason' => "declined"
                 ]);
             }
 
@@ -651,6 +650,7 @@ class LeaveApplicationController extends Controller
     {
         try {
             $data = LeaveApplication::with(['employeeProfile', 'leaveType', 'recommendingOfficer', 'approvingOfficer'])->where('id', $id)->first();
+            // return $data;
             $leave_type = LeaveTypeResource::collection(LeaveType::all());
             $hrmo_officer = Section::with(['supervisor'])->where('code', 'HRMO')->first();
 

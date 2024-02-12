@@ -152,6 +152,8 @@ class DesignationController extends Controller
                     ]);
                 }
                 
+                Cache::forget($designation->name);
+
                 $designations[] = $designation;
             }
 
