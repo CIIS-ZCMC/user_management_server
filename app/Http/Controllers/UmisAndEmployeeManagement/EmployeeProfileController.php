@@ -50,6 +50,7 @@ use App\Models\EmployeeProfile;
 use App\Models\LoginTrail;
 use App\Models\PositionSystemRole;
 use App\Models\SpecialAccessRole;
+use App\Http\Requests\PromotionRequest;
 
 class EmployeeProfileController extends Controller
 {
@@ -1488,7 +1489,7 @@ class EmployeeProfileController extends Controller
                         }
                         $key_details = 'unit_id';
                         break;
-                    default: 
+                    default:
                         return response()->json(['message' => 'Undefined area.'], Response::HTTP_BAD_REQUEST);
                 }
             }
@@ -1670,18 +1671,17 @@ class EmployeeProfileController extends Controller
             $cleanData['biometric_id'] = $new_biometric_id;
             $cleanData['employment_type_id'] = strip_tags($request->employment_type_id);
             $cleanData['personal_information_id'] = strip_tags($request->personal_information_id);
-            try{
+            try {
                 $fileName = Helpers::checkSaveFile($request->attachment, 'photo/profiles');
-                if(is_string($fileName)){
+                if (is_string($fileName)) {
                     $cleanData['profile_url'] = $request->attachment === null  || $request->attachment === 'null' ? null : $fileName;
                 }
-                
-                if(is_array($fileName)){
+
+                if (is_array($fileName)) {
                     $in_valid_file = true;
                     $cleanData['profile_url'] = null;
                 }
-            }catch(\Throwable $th){
-
+            } catch (\Throwable $th) {
             }
             $cleanData['allow_time_adjustment'] = strip_tags($request->allow_time_adjustment) === 1 ? true : false;
             $cleanData['password_encrypted'] = $encryptedPassword;
@@ -1762,7 +1762,7 @@ class EmployeeProfileController extends Controller
             Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . '.');
 
 
-            if($in_valid_file){
+            if ($in_valid_file) {
                 return response()->json(
                     [
                         'data' => new EmployeeProfileResource($employee_profile),
@@ -1946,7 +1946,7 @@ class EmployeeProfileController extends Controller
                 $designation = $plantilla->designation;
             }
 
-        
+
             $area_assigned = $employee_profile->assignedArea->findDetails();
 
             $position = $employee_profile->position();
@@ -2153,6 +2153,11 @@ class EmployeeProfileController extends Controller
             Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+
+    public function promotion($id, PromotionRequest $request)
+    {
     }
 
 
