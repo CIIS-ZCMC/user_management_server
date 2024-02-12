@@ -41,7 +41,7 @@ class ExchangeDutyController extends Controller
                 }])->where('approve_by', $user->id)
                 ->whereHas('requestedEmployee', function ($query) use ($user, $assigned_area) {
                     $query->whereHas('assignedArea', function ($innerQuery) use ($user, $assigned_area) {
-                        $innerQuery->where([strtolower($assigned_area['sector']) . '_id' => $user->assignedArea->id]);
+                        $innerQuery->where([strtolower($assigned_area['sector']) . '_id' => $assigned_area['details']->id]);
                     });
                 })->get();
 
