@@ -22,7 +22,9 @@ use App\Models\Contact;
 use App\Models\Department;
 use App\Models\Designation;
 use App\Models\Division;
+use App\Models\EmployeeLeaveCredit;
 use App\Models\InActiveEmployee;
+use App\Models\LeaveType;
 use App\Models\PasswordTrail;
 use App\Models\PlantillaNumber;
 use App\Models\Section;
@@ -1741,6 +1743,20 @@ class EmployeeProfileController extends Controller
             if ($plantilla_number_id !== null) {
                 $plantilla_number = PlantillaNumber::find($plantilla_number_id);
                 $plantilla_number->update(['employee_profile_id' => $employee_profile->id, 'is_vacant' => false, 'assigned_at' => now()]);
+            }
+            
+
+            if ($plantilla_number_id !== null) {
+                $leave_types = LeaveType::where('is_special', 0)->get();
+
+                foreach($leave_types as $leave_type){
+                    EmployeeLeaveCredit::create([
+                        'employee_profile_id' => $employee_profile->id,
+                        'leave_type_id' => $leave_type->id,
+                        'total_leave_credits' => 0,
+                        'used_leave_credits' => 0
+                    ]);
+                }
             }
 
             Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . '.');
