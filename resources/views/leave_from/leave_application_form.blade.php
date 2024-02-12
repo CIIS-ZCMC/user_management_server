@@ -322,7 +322,7 @@
 
                             <div>
                                 <span style="font-size: 12px">(Specify Illness)</span>
-                                <span style="border-bottom: 1px solid #000; display: inline-block; width: 135px;">
+                                <span style="padding-top:5px;border-bottom: 1px solid #000; display: inline-block; width: 135px;">
                                     {{ $data->illness }}
                                 </span>
                             </div>  
