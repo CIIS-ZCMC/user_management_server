@@ -24,14 +24,32 @@ class PullOutResource extends JsonResource
             'area' => $this->employee->assignedArea->findDetails()['details']->name,
         ];
 
-        $requesting_officer = $employee;
-        $approving_officer = $employee;
+        $requesting_officer = [
+            'name'=> $this->requestedBy->personalInformation->name(),
+            'profile_url' => $this->profile_url,
+            'designation' => [
+                'name' => $this->requestedBy->assignedArea->designation->name,
+                'code' => $this->requestedBy->assignedArea->designation->code,
+            ],
+            'area' => $this->requestedBy->assignedArea->findDetails()['details']->name,
+        ];
+
+        $approving_officer = [
+            'name'=> $this->approveBy->personalInformation->name(),
+            'profile_url' => $this->profile_url,
+            'designation' => [
+                'name' => $this->approveBy->assignedArea->designation->name,
+                'code' => $this->approveBy->assignedArea->designation->code,
+            ],
+            'area' => $this->approveBy->assignedArea->findDetails()['details']->name,
+        ];
+
 
         return [
             'id'                    => $this->id,
-            'employee'              => $employee,
-            'requesting_officer'    => $this->requesting_officer,
-            'approving_officer'     => $this->approving_officer,
+            'employee_profile_id'   => $employee,
+            'requesting_officer'    => $requesting_officer,
+            'approving_officer'     => $approving_officer,
             'pull_out_date'         => $this->pull_out_date,
             'approval_date'         => $this->approval_date,
             'status'                => $this->status,
