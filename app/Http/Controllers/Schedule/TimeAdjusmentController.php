@@ -208,7 +208,18 @@ class TimeAdjusmentController extends Controller
                 switch ($data->status) {
                     case 'applied':
                         $status = 'approved';
-                        break;
+
+                        // $find_designation = EmployeeProfile::where('biometric_id', $data['biometric_id'])->first()->findDesignation()['code'];
+                        // $designation = 'CMPS II' || 'MCC I' || 'MCC II' || 'MO I'  || 'MO II' || 'MO III' || 'MO IV' || 'MS I' || 'MS I (PT)' || 'MS II' || 'MS II (PT)' ||
+                        //                 'MS III' || 'MS III (PT)' || 'MS IV' || 'MS IV (PT)';
+    
+                        // if ($find_designation === $designation) {
+                        //     //
+                        // } else {
+                        //     $dtr = DailyTimeRecords::update(array_merge($request,['']));
+                        // }
+
+                    break;
 
                     case 'declined':
                         $status = 'declined';
