@@ -31,7 +31,6 @@ class PullOutController extends Controller
     {
         try {
 
-            Helpers::registerSystemLogs($request, null, true, 'Success in fetching ' . $this->PLURAL_MODULE_NAME . '.');
             return response()->json(['data' => PullOutResource::collection(PullOut::all())], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
@@ -118,7 +117,7 @@ class PullOutController extends Controller
                                 $approving_officer = $section->division->chief_employee_profile_id;
                             }
 
-                            $approving_officer = $employee->assignedArea->department->supervisor_employee_profile_id;
+                            $approving_officer = $employee->assignedArea->section->supervisor_employee_profile_id;
                             break;
 
                         case 'Unit':
@@ -133,10 +132,15 @@ class PullOutController extends Controller
                 $selectedEmployees[] = $employee;
             }
 
-            foreach ($selectedEmployees as $employee) {
-                $data = PullOut::create(array_merge($cleanData, ['requesting_officer' => $user->id, 'approving_officer' => $approving_officer]));
+            foreach ($selectedEmployees as $selectedEmployee) {
+                $data = PullOut::create(array_merge($cleanData, [
+                    'employee_profile_id' => $selectedEmployee->id,
+                    'requesting_officer' => $user->id,
+                    'approving_officer' => $approving_officer,
+                    'status' => 'pending',
+                ]));
             }
-            
+
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json(['data' => new PullOutResource($data),
                                     'logs' => Helpers::registerPullOutLogs($data->id, $user->id, 'Store'),
@@ -188,7 +192,7 @@ class PullOutController extends Controller
                         break;
                 }
             } else if ($request->approval_status === 'declined') {
-                $status = 'declined';
+                $status = 'declined';   
             }
 
             $data->update(['status' => $status, 'remarks' => $request->remarks, 'approval_date' => Carbon::now()]);
