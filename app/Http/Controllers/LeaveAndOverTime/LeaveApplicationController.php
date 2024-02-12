@@ -228,22 +228,22 @@ class LeaveApplicationController extends Controller
             }
 
             foreach ($request->credits as $credit) {
-                $newLeaveCredit = new EmployeeLeaveCredit([
-                    'employee_profile_id' => $request->employee_id,
-                    'leave_type_id' => $credit['leave_id'], // Adjust the key if needed
-                    'total_leave_credits' => (float)$credit['credit_value'],
-                    'created_at' => now(), // Adjust as needed
-                    'updated_at' => now(), // Adjust as needed
-                ]);
+                $employeeId = $request->employee_id;
+                $leaveTypeId = $credit['leave_id'];
+
+                EmployeeLeaveCredit::where('employee_profile_id', $employeeId)
+                    ->where('leave_type_id', $leaveTypeId)
+                    ->update([
+                        'total_leave_credits' => \DB::raw('total_leave_credits + ' . (float)$credit['credit_value']),
+                        'updated_at' => now(),
+                    ]);
         
-                $newLeaveCredit->save();
-        
-                // Assuming you have a 'logs' attribute in your request
-                EmployeeLeaveCreditLogs::create([
-                    'employee_leave_credit_id' => $newLeaveCredit->id,
-                    'previous_credit' => 0.0, // Assuming initial value is 0
-                    'leave_credits' => (float)$credit['credit_value'],
-                ]);
+                // // Assuming you have a 'logs' attribute in your request
+                // EmployeeLeaveCreditLogs::create([
+                //     'employee_leave_credit_id' => $newLeaveCredit->id,
+                //     'previous_credit' => 0.0, // Assuming initial value is 0
+                //     'leave_credits' => (float)$credit['credit_value'],
+                // ]);
             }
 
             return response()->json(['message' => 'Leave credits updated successfully'], 200);
@@ -652,6 +652,7 @@ class LeaveApplicationController extends Controller
     {
         try {
             $data = LeaveApplication::with(['employeeProfile', 'leaveType', 'recommendingOfficer', 'approvingOfficer'])->where('id', $id)->first();
+            // return $data;
             $leave_type = LeaveTypeResource::collection(LeaveType::all());
             $hrmo_officer = Section::with(['supervisor'])->where('code', 'HRMO')->first();
 
