@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\EmployeeLeaveCredit;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class LeaveApplicationResource extends JsonResource
@@ -14,6 +15,7 @@ class LeaveApplicationResource extends JsonResource
     public function toArray($request)
     {
         $area = $this->employeeProfile->assignedArea->findDetails();
+        $leave_credits = EmployeeLeaveCredit::where('employee_profile_id', $this->employeeProfile->id)->where('leave_type_id', $this->leave_type_id)->first();
 
         return [
             "id" => $this->id,
@@ -41,7 +43,7 @@ class LeaveApplicationResource extends JsonResource
             "remarks" => $this->remarks, //Reason of leave application.
             "without_pay" => $this->without_pay,
             'reason' => $this->reason,
-            'credit_balance' => $this->employeeLeaveCredit->total_leave_credits,
+            'credit_balance' => $leave_credits->total_leave_credits,
             "hrmo_officer" => [
                 "employee_id" => $this->hrmoOfficer->employee_id,
                 "name" => $this->hrmoOfficer->personalInformation->name(),

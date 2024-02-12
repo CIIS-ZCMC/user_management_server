@@ -1576,6 +1576,14 @@ class DTRcontroller extends Controller
         }
     }
 
+    public function adjustDTR(Request $request)
+    {
+        try {
+        } catch (\Throwable $th) {
+            //throw $th;
+        }
+    }
+
     public function test()
     {
         /*

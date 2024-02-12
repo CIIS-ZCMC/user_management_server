@@ -1564,6 +1564,25 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('leave-application-print/{id}', 'LeaveApplicationController@printLeaveForm');
         });
 
+        Route::middleware(['auth.permission:UMIS-LM write'])->group(function () {
+            Route::post('leave-credit-add', 'LeaveApplicationController@addCredit');
+        });
+
+        Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
+            Route::get('leave-credit-employees', 'LeaveApplicationController@getEmployees');
+        });
+
+        Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
+            Route::get('leave-credit-select-employees', 'LeaveApplicationController@getAllEmployees');
+        });
+
+        Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
+            Route::get('leave-credit-leave-type', 'LeaveApplicationController@getLeaveTypes');
+        });
+
+
+
+
 
         /**
          * Official Business Module
@@ -1819,7 +1838,7 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-TA view'])->group(function () {
             Route::get('user-time-adjustment', 'TimeAdjusmentController@create');
         });
-        
+
         Route::middleware(['auth.permission:UMIS-TA write'])->group(function () {
             Route::post('time-adjustment', 'TimeAdjusmentController@store');
         });

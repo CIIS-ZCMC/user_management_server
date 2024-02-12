@@ -64,11 +64,15 @@ class IdentificationNumberController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if($value === null || $key === 'personal_information_id'){ 
+                if( $value === 'null' || $value === null || $key === 'personal_information_id'){
                     $cleanData[$key] = $value;
                     continue;
                 }
-                $cleanData[$key] =  $this->encryptData(strip_tags($value));
+                try{
+                    $cleanData[$key] =  $this->encryptData(strip_tags($value));
+                }catch(\Throwable $th){
+                    $cleanData[$key] = $value;
+                }
             }
 
             $identification = IdentificationNumber::create($cleanData);
@@ -225,6 +229,10 @@ class IdentificationNumberController extends Controller
 
     protected function encryptData($dataToEncrypt)
     {
-        return openssl_encrypt($dataToEncrypt, env("ENCRYPT_DECRYPT_ALGORITHM"), env("DATA_KEY_ENCRYPTION"), 0, substr(md5(env("DATA_KEY_ENCRYPTION")), 0, 16));
+        try{
+            return openssl_encrypt($dataToEncrypt, env("ENCRYPT_DECRYPT_ALGORITHM"), env("DATA_KEY_ENCRYPTION"), 0, substr(md5(env("DATA_KEY_ENCRYPTION")), 0, 16));
+        }catch(\Throwable $th){
+            return $dataToEncrypt;
+        }
     }
 }

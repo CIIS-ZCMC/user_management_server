@@ -60,8 +60,8 @@ class LeaveTypeSeeder extends Seeder
             'leave_requirement_id' => $requiment_two->id
         ]);
 
-        $special_previlege_leave = LeaveType::create([
-            'name' => "Special Previlege Leave",
+        $special_privilege_leave = LeaveType::create([
+            'name' => "Special Privilege Leave",
             'code' => "SPL",
             'description' => 'Maybe granted after the Probationary period (6 months continuous service)
             Granted to mark personal milestones and/or attend to filial and domestic responsibilities',
@@ -96,6 +96,22 @@ class LeaveTypeSeeder extends Seeder
             'updated_at' => now()
         ]);
 
+        $soloparent_leave = LeaveType::create([
+            'name' => "Solo Parent",
+            'code' => "SP",
+            'description' => 'Granted to a qualified FEMALE public servant in every instance of pregnancy',
+            'period' => 7,
+            'file_date' => 'Employee will receive 5 credits of force leave upon he/she has reach 10 leave credits.',
+            'month_value' => 0,
+            'annual_credit' => 7,
+            'is_active' => 1,
+            'is_special' => 0,
+            'is_country' => 0,
+            'is_illness' => 0,
+            'is_days_recommended' => 0,
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
 
         $maternity_leave = LeaveType::create([
             'name' => "Maternity Leave",
@@ -103,10 +119,10 @@ class LeaveTypeSeeder extends Seeder
             'description' => 'Granted to a qualified FEMALE public servant in every instance of pregnancy',
             'period' => 105,
             'file_date' => 'Employee will receive 5 credits of force leave upon he/she has reach 10 leave credits.',
-            'month_value' => 5,
-            'annual_credit' => 5,
+            'month_value' => 0,
+            'annual_credit' => 0,
             'is_active' => 1,
-            'is_special' => 0,
+            'is_special' => 1,
             'is_country' => 0,
             'is_illness' => 0,
             'is_days_recommended' => 0,
