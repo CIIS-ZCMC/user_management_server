@@ -133,7 +133,12 @@ class PullOutController extends Controller
             }
 
             foreach ($selectedEmployees as $selectedEmployee) {
-                $data = PullOut::create(array_merge($cleanData, ['employee_profile_id' => $selectedEmployee->id, 'requesting_officer' => $user->id, 'approving_officer' => $approving_officer]));
+                $data = PullOut::create(array_merge($cleanData, [
+                    'employee_profile_id' => $selectedEmployee->id,
+                    'requesting_officer' => $user->id,
+                    'approving_officer' => $approving_officer,
+                    'status' => 'pending',
+                ]));
             }
 
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
@@ -187,7 +192,7 @@ class PullOutController extends Controller
                         break;
                 }
             } else if ($request->approval_status === 'declined') {
-                $status = 'declined';
+                $status = 'declined';   
             }
 
             $data->update(['status' => $status, 'remarks' => $request->remarks, 'approval_date' => Carbon::now()]);
