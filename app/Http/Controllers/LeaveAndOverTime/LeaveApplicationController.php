@@ -607,7 +607,7 @@ class LeaveApplicationController extends Controller
 
             $leave_application->update([
                 'status' => $status,
-                'reason' => strip_tags($request->remarks),
+                'remarks' => strip_tags($request->remarks),
             ]);
 
             if (!$leave_type->is_special) {
@@ -625,7 +625,8 @@ class LeaveApplicationController extends Controller
                 EmployeeLeaveCreditLogs::create([
                     'employee_leave_credit_id' => $employee_credit->id,
                     'previous_credit' => $current_leave_credit,
-                    'leave_credits' => $leave_application->applied_credits
+                    'leave_credits' => $leave_application->applied_credits,
+                    'reason' => "declined"
                 ]);
             }
 
