@@ -22,12 +22,12 @@ class ScheduleRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'employee.*.employee_id' => 'required|array',            
+            'month' => 'required|date_format:M|',
+            'time_shift_id' => 'required|integer',
             'date_end' => 'nullable|date_format:Y-m-d',
             'date_start' => 'nullable|date_format:Y-m-d',
-            'employee.*' => 'required|array',
-            'employee.*.employee_id.*' => 'required|integer',
             'is_weekend.*' => 'required|integer',
-            'month.*' => 'nullable|date_format:Y-m-d|',
             'selected_days.*' => 'nullable|string',
         ];
     }

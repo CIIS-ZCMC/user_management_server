@@ -111,14 +111,14 @@
             text-align: left;
         }
 
-        thead {
-            border: #000;
+        table, th, td {
+            border: 1px solid;
         }
 
         thead, th {
             widows: 100px;
             height: 10px;
-            border: 1px solid #ddd;
+            border: 1px solid;
             text-align: center;
             font-size: 12px;
             padding: 2px 1px 2px 1px ;
@@ -139,7 +139,6 @@
             text-align: center;
             font-size: 12px; /* Adjusted font size */
         }
-
 
         .signatures {
             padding: 10px;
