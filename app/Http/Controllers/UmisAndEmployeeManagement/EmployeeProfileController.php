@@ -1537,6 +1537,7 @@ class EmployeeProfileController extends Controller
     public function store(Request $request)
     {
         try {
+            $in_valid_file = false;
 
             $cleanData = [];
             $dateString = $request->date_hired;
@@ -1563,7 +1564,19 @@ class EmployeeProfileController extends Controller
             $cleanData['biometric_id'] = $new_biometric_id;
             $cleanData['employment_type_id'] = strip_tags($request->employment_type_id);
             $cleanData['personal_information_id'] = strip_tags($request->personal_information_id);
-            $cleanData['profile_url'] = $request->attachment === null  || $request->attachment === 'null' ? null : Helpers::checkSaveFile($request->attachment, 'photo/profiles');
+            try{
+                $fileName = Helpers::checkSaveFile($request->attachment, 'photo/profiles');
+                if(is_string($fileName)){
+                    $cleanData['profile_url'] = $request->attachment === null  || $request->attachment === 'null' ? null : $fileName;
+                }
+                
+                if(is_array($fileName)){
+                    $in_valid_file = true;
+                    $cleanData['profile_url'] = null;
+                }
+            }catch(\Throwable $th){
+
+            }
             $cleanData['allow_time_adjustment'] = strip_tags($request->allow_time_adjustment) === 1 ? true : false;
             $cleanData['password_encrypted'] = $encryptedPassword;
             $cleanData['password_created_at'] = now();
@@ -1628,6 +1641,17 @@ class EmployeeProfileController extends Controller
 
             Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . '.');
 
+
+            if($in_valid_file){
+                return response()->json(
+                    [
+                        'data' => new EmployeeProfileResource($employee_profile),
+                        'message' => 'Newly employee registered.',
+                        'other' => "Invalid attachment."
+                    ],
+                    Response::HTTP_OK
+                );
+            }
 
             return response()->json(
                 [

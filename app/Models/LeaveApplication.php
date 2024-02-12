@@ -12,7 +12,7 @@ class LeaveApplication extends Model
     protected $table = 'leave_applications';
 
     protected $casts = [
-        'with_pay' => 'boolean',
+        'without_pay' => 'boolean',
         'patient_type' => 'boolean',
         'is_outpatient' => 'boolean',
         'is_masters' => 'boolean', 
@@ -68,7 +68,8 @@ class LeaveApplication extends Model
 
     public function employeeLeaveCredit()
     {
-        return $this->belongsTo(EmployeeLeaveCredit::class, 'employee_profile_id', 'leave_type_id');
+        
+        return $this->belongsTo(EmployeeLeaveCredit::class, 'employee_profile_id','id');
     }
 
     public function hrmoOfficer()
