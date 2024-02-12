@@ -44,9 +44,19 @@ class PullOutController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
-        //
+        try {
+
+            $user = $request->user;
+            $data = PullOut::where('employee_profile_id ', $user->id)->get();
+            return response()->json(['data' => PullOutResource::collection($data)], Response::HTTP_OK);
+
+        } catch (\Throwable $th) {
+
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**

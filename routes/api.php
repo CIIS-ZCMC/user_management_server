@@ -1839,8 +1839,10 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('on-calls', 'OnCallController@index');
         });
 
-        // add create here
-
+        Route::middleware(['auth.permission:UMIS-OCM view'])->group(function () {
+            Route::get('on-call', 'OnCallController@create');
+        });
+        
         Route::middleware(['auth.permission:UMIS-OCM write'])->group(function () {
             Route::post('on-call', 'OnCallController@store');
         });

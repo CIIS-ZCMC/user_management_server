@@ -108,32 +108,6 @@ class TimeAdjusmentController extends Controller
                                     'MS III' || 'MS III (PT)' || 'MS IV' || 'MS IV (PT)';
 
                     if ($find_designation === $designation) {
-                            $employee = EmployeeProfile::find($cleanData['employee_profile_id'])->first();
-                            if ($employee) {
-                                $employee_area = $employee->assignedArea->findDetails();
-        
-                                switch ($employee_area['sector']) {
-                                    case 'Division':
-                                        $recommending_officer = $employee->assignedArea->division->divisionHead;
-                                        break;
-        
-                                    case 'Department':
-                                        $recommending_officer = $employee->assignedArea->department->head;
-                                        break;
-        
-                                    case 'Section':
-                                        $recommending_officer = $employee->assignedArea->section->supervisor_employee_profile_id;
-                                        break;
-        
-                                    case 'Unit':
-                                        $recommending_officer = $employee->assignedArea->department->head;
-                                        break;
-        
-                                    default:
-                                        return response()->json(['message' => 'User has no sector'], Response::HTTP_NOT_FOUND);
-                                }
-                            }
-        
                             $data = TimeAdjusment::create([
                                 'first_in' => $value['firstIn'] ?? null,
                                 'first_out' => $value['firstOut'] ?? null,
@@ -144,12 +118,11 @@ class TimeAdjusmentController extends Controller
                                 'recommended_by' => $user->id,
                                 'approve_by' => $approving_officer,
                             ]);
+                    } else {
+                        return response()->json(['message' => 'No DTR record found.'], Response::HTTP_NOT_FOUND);
                     }
-
-                    return response()->json(['message' => 'No DTR record found.'], Response::HTTP_NOT_FOUND);
-                }
-
-                if ($daily_time_record) {
+                    
+                } else {
                     $employee = EmployeeProfile::find($cleanData['employee_profile_id'])->first();
                     if ($employee) {
                         $employee_area = $employee->assignedArea->findDetails();
@@ -184,7 +157,7 @@ class TimeAdjusmentController extends Controller
                         'employee_profile_id' => $employee->id,
                         'daily_time_record_id' => $daily_time_record->id,
                         'date' => $value['value'] ?? null,
-                        'recommended_by' => $user->id,
+                        'recommended_by' => $recommending_officer->id,
                         'approve_by' => $approving_officer,
                     ]);
                 }
@@ -196,28 +169,6 @@ class TimeAdjusmentController extends Controller
         } catch (\Throwable $th) {
 
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Request $request, $id)
-    {
-        try {
-            $data = new TimeAdjustmentResource(TimeAdjusment::findOrFail($id));
-
-            if (!$data) {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in fetching ' . $this->SINGULAR_MODULE_NAME . '.');
-            return response()->json(['data' => $data], Response::HTTP_OK);
-
-        } catch (\Throwable $th) {
-
-            Helpers::errorLog($this->CONTROLLER_NAME, 'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
