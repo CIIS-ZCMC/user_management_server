@@ -16,7 +16,8 @@ class EmployeeLeaveCredit extends Model
     public $fillable = [
         'employee_profile_id',
         'leave_type_id',
-        'total_leave_credits'
+        'total_leave_credits',
+        'used_leave_credits'
     ];
     public function employeeProfile()
     {

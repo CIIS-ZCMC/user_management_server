@@ -18,6 +18,7 @@ return new class extends Migration
             $table->unsignedBigInteger('leave_type_id')->unsigned();
             $table->foreign('leave_type_id')->references('id')->on('leave_types');
             $table->float('total_leave_credits')->default(0);
+            $table->float('used_leave_credits')->default(0);
             $table->timestamps();
         });
     }
