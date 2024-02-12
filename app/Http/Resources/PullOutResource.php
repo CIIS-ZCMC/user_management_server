@@ -47,7 +47,7 @@ class PullOutResource extends JsonResource
 
         return [
             'id'                    => $this->id,
-            'employee_profile_id'   => $employee,
+            'employee'              => $employee,
             'requesting_officer'    => $requesting_officer,
             'approving_officer'     => $approving_officer,
             'pull_out_date'         => $this->pull_out_date,
