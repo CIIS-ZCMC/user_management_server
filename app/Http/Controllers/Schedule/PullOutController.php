@@ -118,7 +118,7 @@ class PullOutController extends Controller
                                 $approving_officer = $section->division->chief_employee_profile_id;
                             }
 
-                            $approving_officer = $employee->assignedArea->department->head_employee_profile_id ;
+                            $approving_officer = $employee->assignedArea->department->supervisor_employee_profile_id;
                             break;
 
                         case 'Unit':
