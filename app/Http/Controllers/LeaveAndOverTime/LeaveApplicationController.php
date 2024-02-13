@@ -168,6 +168,7 @@ class LeaveApplicationController extends Controller
                 $employeeResponse = [
                     'id' => $employeeProfileId,
                     'name' => $employeeDetails,
+                    'employee_id' =>  $leaveCreditGroup->first()->employeeProfile->employee_id,
                 ];
                 $employeeResponse = array_merge($employeeResponse, $leaveCreditData);
                 $response[] = $employeeResponse;
