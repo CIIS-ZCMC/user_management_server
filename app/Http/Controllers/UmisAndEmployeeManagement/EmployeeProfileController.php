@@ -2365,6 +2365,7 @@ class EmployeeProfileController extends Controller
             ];
 
             $personal_information_data = [
+                'personal_information_id' => $personal_information->id,
                 'full_name' => $personal_information->nameWithSurnameFirst(),
                 'first_name' => $personal_information->first_name,
                 'last_name' => $personal_information->last_name,
@@ -2431,12 +2432,12 @@ class EmployeeProfileController extends Controller
                 'employee_details' => [
                     'employee' => $employee,
                     'personal_information' => $personal_information_data,
-                    'contact' => OtherInformationResource::collection($personal_information->otherInformation),
+                    'contact' =>  new ContactResource($personal_information->contact),
                     'address' => $address,
                     'family_background' => new FamilyBackGroundResource($personal_information->familyBackground),
                     'children' => ChildResource::collection($personal_information->children),
                     'education' => EducationalBackgroundResource::collection($personal_information->educationalBackground),
-                    'affiliations_and_others' => [
+                    'affiliations_and_others' => [ 
                         'civil_service_eligibility' => CivilServiceEligibilityResource::collection($personal_information->civilServiceEligibility),
                         'work_experience' => WorkExperienceResource::collection($personal_information->workExperience),
                         'voluntary_work_or_involvement' => VoluntaryWorkResource::collection($personal_information->voluntaryWork),

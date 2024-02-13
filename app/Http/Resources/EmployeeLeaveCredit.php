@@ -16,6 +16,7 @@ class EmployeeLeaveCredit extends JsonResource
             'name' => $this->employeeProfile->personalInformation->name(),
             'leave_type' => $this->leaveType,
             'total_leave_credits' => (float)$this->total_leave_credits,
+            'used_leave_credits' => (float)$this->used_leave_credits,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'logs' => $this->logs

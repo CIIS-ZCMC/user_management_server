@@ -40,7 +40,7 @@ class LeaveTypeSeeder extends Seeder
 
         $sick_leave = LeaveType::create([
             'name' => "Sick Leave",
-            'code' => "VL",
+            'code' => "SL",
             'description' => 'On account of SICKNESS of the EMPLOYEE and IMMEDIATE family members',
             'period' => 0,
             'file_date' => 'First 3 days after recovery.',
@@ -80,7 +80,7 @@ class LeaveTypeSeeder extends Seeder
 
 
         $force_leave = LeaveType::create([
-            'name' => "Force Leave",
+            'name' => "Forced Leave",
             'code' => "FL",
             'description' => 'Balance of 10 days/more VL',
             'period' => 0,
