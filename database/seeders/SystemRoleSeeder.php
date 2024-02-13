@@ -22,17 +22,16 @@ class SystemRoleSeeder extends Seeder
     {
         $system = System::WHERE("code",  env('SYSTEM_ABBREVIATION'))->first();
 
-        $role = Role::where('code',"super_admin")->first();
+        $role = Role::where('code', "SUPER-USER-00")->first();
 
         $super_admin = SystemRole::create([
             'role_id' => $role->id,
-            'system_id' => $system -> id
+            'system_id' => $system->id
         ]);
 
         $module_permissions = ModulePermission::all();
 
-        foreach($module_permissions as $key => $module_permission)
-        {
+        foreach ($module_permissions as $key => $module_permission) {
             RoleModulePermission::create([
                 'system_role_id' => $super_admin['id'],
                 'module_permission_id' => $module_permission['id']
