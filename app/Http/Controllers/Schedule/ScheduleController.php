@@ -3,8 +3,6 @@
 namespace App\Http\Controllers\Schedule;
 
 use App\Http\Resources\EmployeeScheduleResource;
-use App\Models\Department;
-use App\Models\Division;
 use App\Models\EmployeeSchedule;
 use App\Models\Holiday;
 use App\Models\Schedule;
@@ -14,14 +12,12 @@ use App\Http\Resources\ScheduleResource;
 use App\Http\Requests\ScheduleRequest;
 use App\Helpers\Helpers;
 
-use App\Models\Section;
-use App\Models\Unit;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Http\Response;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
-use Carbon\Carbon;
 use DateTime;
 
 use App\Http\Controllers\Controller;
@@ -39,11 +35,10 @@ class ScheduleController extends Controller
     public function index(Request $request)
     {
         try {
-
             $month = $request->month;   // Replace with the desired month (1 to 12)
             $year = $request->year;     // Replace with the desired year
-            $dates_with_day = Helpers::getDatesInMonth($year, Carbon::parse($month)->format('m'), "Days of Week");
-            
+            $dates_with_day = Helpers::getDatesInMonth($year, $month, "Days of Week");
+
             $user = $request->user;
             $assigned_area = $user->assignedArea->findDetails();
 
