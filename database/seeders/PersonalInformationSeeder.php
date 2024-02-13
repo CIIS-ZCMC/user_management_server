@@ -38,8 +38,8 @@ class PersonalInformationSeeder extends Seeder
     public function run(): void
     {
         $personal_information = PersonalInformation::create([
-            'first_name' => 'Tristan jay',
-            'last_name' => 'Amit',
+            'first_name' => 'Test',
+            'last_name' => 'UMIS',
             'sex' => 'Male',
             'date_of_birth' => Carbon::createFromFormat('Y-m-d', "2001-01-23"),
             'place_of_birth' => 'Zamboanga City',
@@ -50,7 +50,7 @@ class PersonalInformationSeeder extends Seeder
         ]);
 
         Address::create([
-            'address' => 'San Roque, Zamboanga City',
+            'address' => 'Evangelista Sta. Catalina, Zamboanga City',
             'is_residential_and_permanent' => true,
             'is_residential' => true,
             'personal_information_id' => $personal_information->id,
@@ -58,7 +58,7 @@ class PersonalInformationSeeder extends Seeder
 
         Contact::create([
             'phone_number' => '09123456789',
-            'email_address' => 'tristan.zcmc@gmail.com',
+            'email_address' => 'superadmin@mailinator.com',
             'personal_information_id' => $personal_information->id,
         ]);
 

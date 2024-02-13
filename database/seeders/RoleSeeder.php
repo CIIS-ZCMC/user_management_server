@@ -37,10 +37,7 @@ class RoleSeeder extends Seeder
             'name' => 'Division Head',
             'code' => 'DIV-HEAD-03'
         ]);
-        Role::create([
-            'name' => 'HR Staff',
-            'code' => 'HR-ADMIN'
-        ]);
+
         Role::create([
             'name' => 'Department Head',
             'code' => 'DEPT-HEAD-04'
