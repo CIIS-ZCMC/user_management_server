@@ -263,6 +263,10 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-SM view-all'])->group(function () {
+            Route::get('system-role/employees-with-special-access/{id}', 'SystemRoleController@employeeWithSpecialAccess');
+        });
+
+        Route::middleware(['auth.permission:UMIS-SM view-all'])->group(function () {
             Route::get('system-role/designation-with-system-roles', 'SystemRoleController@designationsWithSystemRoles');
         });
 

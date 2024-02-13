@@ -58,7 +58,7 @@ class PersonalInformationSeeder extends Seeder
 
         Contact::create([
             'phone_number' => '09123456789',
-            'email_address' => 'superadmin@mailinator.com',
+            'email_address' => 'ciis.zcmc@mailinator.com',
             'personal_information_id' => $personal_information->id,
         ]);
 
