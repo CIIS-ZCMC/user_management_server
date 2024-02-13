@@ -6,17 +6,13 @@ use App\Http\Controllers\Controller;
 
 use App\Http\Resources\PlantillaWithDesignationResource;
 use App\Models\Designation;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use App\Helpers\Helpers;
 use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\PlantillaRequest;
-use App\Http\Resources\DesignationEmployeesResource;
 use App\Http\Resources\PlantillaResource;
 use App\Http\Resources\PlantillaNumberAllResource;
 use App\Models\Plantilla;
@@ -231,7 +227,9 @@ class PlantillaController extends Controller
             foreach($cleanData['plantilla_number'] as $value)
             {
                 try{
-                    if(!is_string($value))
+                    $existing = PlantillaNumber::where('number', $value)->first();
+
+                    if(!is_string($value) || $existing !== null)
                     {
                         $failed_to_register = [
                             'plantilla_number' => $value,

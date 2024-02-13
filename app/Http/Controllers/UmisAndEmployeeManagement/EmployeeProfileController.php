@@ -23,6 +23,7 @@ use App\Models\Department;
 use App\Models\Designation;
 use App\Models\Division;
 use App\Models\EmployeeLeaveCredit;
+use App\Models\EmployeeOvertimeCredit;
 use App\Models\InActiveEmployee;
 use App\Models\LeaveType;
 use App\Models\PasswordTrail;
@@ -39,7 +40,6 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use App\Helpers\Helpers;
-use App\Services\FileValidationAndUpload;
 use App\Http\Requests\SignInRequest;
 use App\Http\Requests\EmployeeProfileRequest;
 use App\Http\Resources\EmployeeProfileResource;
@@ -166,10 +166,8 @@ class EmployeeProfileController extends Controller
 
             if ($access_token !== null && Carbon::parse(Carbon::now())->startOfDay()->lte($access_token->token_exp)) {
                 $ip = $request->ip();
-                $created_at = Carbon::parse($access_token['created_at']);
-                $current_time = Carbon::now();
-
-                // $difference_in_minutes = $current_time->diffInMinutes($created_at);
+                // $created_at = Carbon::parse($access_token['created_at']);
+                // $current_time = Carbon::now();
 
                 $login_trail = LoginTrail::where('employee_profile_id', $employee_profile->id)->first();
 
@@ -1501,8 +1499,19 @@ class EmployeeProfileController extends Controller
 
             $employee_previous_assign_area = $employee_profile->assignedArea;
 
+            $area_new_data = [];
+            $sector_list = ['division_id', 'department_id', 'section_id', 'unit_id'];
+
+            foreach($sector_list as $sector){
+                if($sector !== $key_details){
+                    $area_new_data[$sector] = null;
+                    continue;
+                }
+                $area_new_data[$key_details] = $area_details->id;
+            }
+
             $employee_profile->assignedArea->update([
-                $key_details => $area_details->id,
+                ...$area_new_data,
                 'designation_id' => $designation_details !== null ? $designation_details->id : $employee_profile->assignedArea->designation_id,
                 'effective_date' => $request->effective_date
             ]);
@@ -2155,6 +2164,14 @@ class EmployeeProfileController extends Controller
                         'used_leave_credits' => 0
                     ]);
                 }
+
+                EmployeeOvertimeCredit::create([
+                    'employee_profile_id' => $employee_profile->id,
+                    'earned_credit_by_hour' => 0,
+                    'used_credit_by_hour' => 0,
+                    'max_credit_monthly' => 40,
+                    'max_credit_annual' => 120
+                ]);
             }
 
             Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . '.');
@@ -2585,6 +2602,39 @@ class EmployeeProfileController extends Controller
 
 
             return response()->json(['message' => 'Employee profile deleted.'], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function revokeRights($id, $access_right_id, PasswordApprovalRequest $request)
+    {
+        try {
+            $user = $request->user;
+            $cleanData['password'] = strip_tags($request->input('password'));
+
+            $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
+
+            if (!Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedPassword)) {
+                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $employee_profile = EmployeeProfile::findOrFail($id);
+
+            if (!$employee_profile) {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $special_access_role = SpecialAccessRole::find($access_right_id)->where('employee_profile_id', $employee_profile->id);
+
+            if(!$special_access_role){
+                return response()->json(['message' => "No special access right found."], Response::HTTP_NOT_FOUND);
+            }
+
+            Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in deleting a ' . $this->SINGULAR_MODULE_NAME . '.');
+
+            return response()->json(['message' => 'Special Access right has been revoke.'], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
