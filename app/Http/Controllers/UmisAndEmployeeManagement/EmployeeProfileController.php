@@ -2626,11 +2626,12 @@ class EmployeeProfileController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $special_access_role = SpecialAccessRole::find($access_right_id)->where('employee_profile_id', $employee_profile->id);
+            $special_access_role = SpecialAccessRole::where("id",$access_right_id)->where('employee_profile_id', $employee_profile->id)->first();
 
             if(!$special_access_role){
                 return response()->json(['message' => "No special access right found."], Response::HTTP_NOT_FOUND);
             }
+            $special_access_role->delete();
 
             Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in deleting a ' . $this->SINGULAR_MODULE_NAME . '.');
 
