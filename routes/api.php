@@ -1568,6 +1568,10 @@ Route::middleware('auth.cookie')->group(function () {
             Route::post('leave-credit-add', 'LeaveApplicationController@addCredit');
         });
 
+        Route::middleware(['auth.permission:UMIS-LM write'])->group(function () {
+            Route::post('leave-credit-update', 'LeaveApplicationController@updateCredit');
+        });
+
         Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
             Route::get('leave-credit-employees', 'LeaveApplicationController@getEmployees');
         });

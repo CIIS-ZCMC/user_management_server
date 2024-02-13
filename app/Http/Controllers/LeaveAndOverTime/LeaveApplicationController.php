@@ -23,6 +23,7 @@ use App\Models\LeaveApplicationLog;
 use App\Models\LeaveApplicationRequirement;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
+use App\Http\Resources\EmployeeLeaveCredit as EmployeeLeaveCreditResource;
 
 class LeaveApplicationController extends Controller
 {
@@ -209,7 +210,7 @@ class LeaveApplicationController extends Controller
         }
     }
 
-    public function updateCredit($id, PasswordApprovalRequest $request)
+    public function updateCredit(PasswordApprovalRequest $request)
     {
         try {
 
@@ -220,27 +221,43 @@ class LeaveApplicationController extends Controller
             if (!Hash::check($password . env("SALT_VALUE"), $password_decrypted)) {
                 return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
             }
-
             foreach ($request->credits as $credit) {
                 $employeeId = $request->employee_id;
                 $leaveTypeId = $credit['leave_id'];
 
-                EmployeeLeaveCredit::where('employee_profile_id', $employeeId)
+                $leaveCredit = EmployeeLeaveCredit::where('employee_profile_id', $employeeId)
                     ->where('leave_type_id', $leaveTypeId)
-                    ->update([
-                        'total_leave_credits' => \DB::raw('total_leave_credits + ' . (float)$credit['credit_value']),
-                        'updated_at' => now(),
-                    ]);
-        
-                // // Assuming you have a 'logs' attribute in your request
-                // EmployeeLeaveCreditLogs::create([
-                //     'employee_leave_credit_id' => $newLeaveCredit->id,
-                //     'previous_credit' => 0.0, // Assuming initial value is 0
-                //     'leave_credits' => (float)$credit['credit_value'],
-                // ]);
+                    ->firstOrFail();
+
+                    $leaveCredit->total_leave_credits = $credit['credit_value'];
+                    $leaveCredit->save();
+           
+            }
+            $updatedLeaveCredits = EmployeeLeaveCredit::with(['employeeProfile.personalInformation', 'leaveType'])
+            ->where('employee_profile_id', $request->employee_id)
+            ->get()
+            ->groupBy('employee_profile_id');
+
+        $response = [];
+
+        foreach ($updatedLeaveCredits as $employeeProfileId => $leaveCreditGroup) {
+            $employeeDetails = $leaveCreditGroup->first()->employeeProfile->personalInformation->name();
+            $leaveCreditData = [];
+            
+            foreach ($leaveCreditGroup as $leaveCredit) {
+                $leaveCreditData[$leaveCredit->leaveType->name] = $leaveCredit->total_leave_credits;
             }
 
-            return response()->json(['message' => 'Leave credits updated successfully'], 200);
+            $employeeResponse = [
+                'id' => $employeeProfileId,
+                'name' => $employeeDetails,
+            ];
+
+            $employeeResponse = array_merge($employeeResponse, $leaveCreditData);
+            $response[] = $employeeResponse;
+        }
+
+            return response()->json(['message' => 'Leave credits updated successfully','data' => $response,], 200);
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -384,9 +401,24 @@ class LeaveApplicationController extends Controller
             $employee_profile = $request->user;
 
             $leave_applications = LeaveApplication::where('employee_profile_id', $employee_profile->id)->get();
+            $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->get();
+            $result = [];
+
+            foreach ($employeeCredit as $leaveCredit) {
+                $leaveType = $leaveCredit->leaveType->name;
+                $totalCredits = $leaveCredit->total_leave_credits;
+                $usedCredits = $leaveCredit->used_leave_credits;
+
+                $result[] = [
+                    'leave_type_name' => $leaveType,
+                    'total_leave_credits' => $totalCredits,
+                    'used_leave_credits' => $usedCredits
+                ];
+            }
 
             return response()->json([
                 'data' => LeaveApplicationResource::collection($leave_applications),
+                'credits'=>$result,
                 'message' => 'Retrieve all leave application records.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -471,12 +503,14 @@ class LeaveApplicationController extends Controller
                     'leave_application_id' => $leave_application->id,
                     'action' => 'Applied'
                 ]);
-            } else {
+            } 
+            else 
+            {
                 $employee_credit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)
                     ->where('leave_type_id', $request->leave_type_id)->first();
 
 
-//  return response()->json(['message' => $request->without_pay == 0 && $employee_credit->total_leave_credits < $daysDiff], 401);
+                //  return response()->json(['message' => $request->without_pay == 0 && $employee_credit->total_leave_credits < $daysDiff], 401);
                 if ($request->without_pay == 0 && $employee_credit->total_leave_credits < $daysDiff) {
 
                     return response()->json(['message' => 'Insufficient leave credits.'], Response::HTTP_BAD_REQUEST);
@@ -518,7 +552,8 @@ class LeaveApplicationController extends Controller
                         EmployeeLeaveCreditLogs::create([
                             'employee_leave_credit_id' => $employee_credit->id,
                             'previous_credit' => $previous_credit,
-                            'leave_credits' => $daysDiff
+                            'leave_credits' => $daysDiff,
+                            'reason'=>'apply'
                         ]);
                     }
 
@@ -549,8 +584,23 @@ class LeaveApplicationController extends Controller
                     ]);
                 }
             }
+            $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->get();
+            $result = [];
+
+            foreach ($employeeCredit as $leaveCredit) {
+                $leaveType = $leaveCredit->leaveType->name;
+                $totalCredits = $leaveCredit->total_leave_credits;
+                $usedCredits = $leaveCredit->used_leave_credits;
+
+                $result[] = [
+                    'leave_type_name' => $leaveType,
+                    'total_leave_credits' => $totalCredits,
+                    'used_leave_credits' => $usedCredits
+                ];
+            }
             return response()->json([
                 'data' => new LeaveApplicationResource($leave_application),
+                'credits' => $result,
                 'message' => 'Successfully applied for ' . $leave_type->name
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
