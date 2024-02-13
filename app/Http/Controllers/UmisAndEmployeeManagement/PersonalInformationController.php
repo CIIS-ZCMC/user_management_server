@@ -4,6 +4,7 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Http\Requests\PersonalInformationUpdateRequest;
 use App\Models\Address;
 use App\Http\Requests\PasswordApprovalRequest;
 use Illuminate\Http\Request;
@@ -133,7 +134,7 @@ class PersonalInformationController extends Controller
         }
     }
     
-    public function update($id, PersonalInformationRequest $request)
+    public function update($id, PersonalInformationUpdateRequest $request)
     {
         try{
             $personal_information = PersonalInformation::find($id);

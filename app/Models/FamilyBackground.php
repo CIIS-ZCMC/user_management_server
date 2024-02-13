@@ -46,7 +46,7 @@ class FamilyBackground extends Model
             return $this->father_last_name.', '.$this->father_first_name;
         }
 
-        return $this->father_last_name.', '.$this->father_first_name.', '.$this->father_middle_name;
+        return $this->father_last_name.', '.$this->father_first_name.' '.$this->father_middle_name;
     }
 
     public function motherName()
@@ -55,7 +55,7 @@ class FamilyBackground extends Model
             return $this->mother_last_name.', '.$this->mother_first_name;
         }
 
-        return $this->mother_last_name.', '.$this->mother_first_name.', '.$this->mother_middle_name;
+        return $this->mother_last_name.', '.$this->mother_first_name.' '.$this->mother_middle_name;
       
     }
 

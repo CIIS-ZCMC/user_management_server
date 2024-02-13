@@ -50,7 +50,7 @@ class PersonalInformationSeeder extends Seeder
         ]);
 
         Address::create([
-            'address' => 'San Roque, Zamboanga City',
+            'address' => 'Evangelista Sta. Catalina, Zamboanga City',
             'is_residential_and_permanent' => true,
             'is_residential' => true,
             'personal_information_id' => $personal_information->id,
@@ -58,7 +58,7 @@ class PersonalInformationSeeder extends Seeder
 
         Contact::create([
             'phone_number' => '09123456789',
-            'email_address' => 'ciis.zcmc@gmail.com',
+            'email_address' => 'superadmin@mailinator.com',
             'personal_information_id' => $personal_information->id,
         ]);
 
