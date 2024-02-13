@@ -303,6 +303,7 @@ class ScheduleController extends Controller
             $schedule = Schedule::where('date', $cleanData['date'])->where('time_shift_id',$cleanData['time_shift_id'])->first();
 
             if ($schedule === null) {
+                $is_weekend = 0; 
                 $date = Carbon::parse($cleanData['date']);
                 $isWeekend = $date->dayOfWeek === 6 || $date->dayOfWeek === 0;
 
