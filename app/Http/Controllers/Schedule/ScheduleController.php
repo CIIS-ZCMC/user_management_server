@@ -57,7 +57,7 @@ class ScheduleController extends Controller
                         $query->with(['timeShift', 'holiday'])->whereYear('date', '=', $year)->whereMonth('date', '=', $month);
                     }
                 ])->whereHas('assignedArea', function ($query) use ($user, $assigned_area) {
-                    $query->where([strtolower($assigned_area['sector']) . '_id' => $user->assignedArea->id]);
+                    $query->where([strtolower($assigned_area['sector']) . '_id' => $assigned_area['details']['id']]);
                 })->get();
             }
 
