@@ -29,7 +29,9 @@ use App\Models\PasswordTrail;
 use App\Models\PlantillaNumber;
 use App\Models\Section;
 use App\Models\Unit;
+use App\Rules\StrongPassword;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Validator;
 use Jenssegers\Agent\Agent;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -58,15 +60,11 @@ class EmployeeProfileController extends Controller
     private $PLURAL_MODULE_NAME = 'employee profiles';
     private $SINGULAR_MODULE_NAME = 'employee profile';
 
-    protected $file_validation_and_upload;
-
-
     private $mail;
     private $two_auth;
 
-    public function __construct(FileValidationAndUpload $file_validation_and_upload)
+    public function __construct()
     {
-        $this->file_validation_and_upload = $file_validation_and_upload;
         $this->mail = new MailConfig();
         $this->two_auth = new TwoFactorAuthController();
     }
@@ -1219,21 +1217,27 @@ class EmployeeProfileController extends Controller
     public function newPassword(Request $request)
     {
         try {
-            // password:"test",
-            // two_factor: 0, for recovery send null: for new account 1 or 0
+            // Validate the request data
+            $validator = Validator::make($request->all(), [
+                'password' => ['required', new StrongPassword],
+            ]);
+
+            // If validation fails
+            if ($validator->fails()) {
+                return response()->json(['errors' => $validator->errors()], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
 
             $employee_details = json_decode($request->cookie('employee_details'));
 
             $employee_profile = EmployeeProfile::where('employee_id', $employee_details->employee_id)->first();
 
             $new_password = strip_tags($request->password);
-
+            
             $hashPassword = Hash::make($new_password . env('SALT_VALUE'));
             $encryptedPassword = Crypt::encryptString($hashPassword);
 
             $now = Carbon::now();
-            // $fortyDaysFromNow = $now->addDays(40);
-            $fortyDaysExpiration = $now->addMinutes(5)->toDateTimeString();
+            $threeMonths = $now->addMonths(3);
 
             $old_password = PasswordTrail::create([
                 'old_password' => $employee_profile->password_encrypted,
@@ -1249,7 +1253,7 @@ class EmployeeProfileController extends Controller
             $employee_profile->update([
                 'password_encrypted' => $encryptedPassword,
                 'password_created_at' => now(),
-                'password_expiration_at' => $fortyDaysExpiration,
+                'password_expiration_at' => $threeMonths,
                 'is_2fa' => $request->two_factor ?? false
             ]);
 
@@ -1425,6 +1429,7 @@ class EmployeeProfileController extends Controller
         }
     }
 
+
     public function reAssignArea($id, Request $request)
     {
         try {
@@ -1524,6 +1529,242 @@ class EmployeeProfileController extends Controller
         }
     }
 
+    public function updatePasswordExpiration($id, $sector, Request $request)
+    {
+        try {
+            $employee_profile = $request->user;
+            
+            $now = Carbon::now();
+            $threeMonths = $now->addMonths(3);
+
+            $employee_profile->update(["password_expiration_at" => $threeMonths]);
+
+            $agent = new Agent();
+            $device = [
+                'is_desktop' => $agent->isDesktop(),
+                'is_mobile' => $agent->isMobile(),
+                'platform' => $agent->platform(),
+                'browser' => $agent->browser(),
+                'version' => $agent->version($agent->browser())
+            ];
+
+            $access_token = AccessToken::where('employee_profile_id', $employee_profile->id)->orderBy('token_exp')->first();
+
+            if ($access_token !== null && Carbon::parse(Carbon::now())->startOfDay()->lte($access_token->token_exp)) {
+                $ip = $request->ip();
+
+                $login_trail = LoginTrail::where('employee_profile_id', $employee_profile->id)->first();
+
+                if ($login_trail->ip_address !== $ip) {
+                    Helpers::errorLog($this->CONTROLLER_NAME, 'signIn', "Successfully verified ip address");
+                    $body = view('mail.otp', ['otpcode' => $this->two_auth->getOTP($employee_profile)]);
+                    $data = [
+                        'Subject' => 'ONE TIME PIN',
+                        'To_receiver' => $employee_profile->personalinformation->contact->email_address,
+                        'Receiver_Name' => $employee_profile->personalInformation->name(),
+                        'Body' => $body
+                    ];
+
+                    if ($this->mail->send($data)) {
+                        return response()->json(['message' => "You are currently logged on to other device. An OTP has been sent to your registered email. If you want to signout from that device, submit the OTP."], Response::HTTP_FOUND)
+                            ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', env('SESSION_DOMAIN'), false);
+                    }
+
+                    return response()->json(['message' => "Your account is currently logged on to other device, sending otp to your email has failed please try again later."], Response::HTTP_INTERNAL_SERVER_ERROR);
+                }
+            }
+
+            if ($access_token !== null) {
+                AccessToken::where('employee_profile_id', $employee_profile->id)->delete();
+            }
+
+            /**
+             * Validate for 2FA
+             * if 2FA is activated send OTP to email to validate ownership
+             */
+            if ((bool) $employee_profile->is_2fa) {
+
+                $data = $request->data;
+
+                $body = view('mail.otp', ['otpcode' => $this->two_auth->getOTP($employee_profile)]);
+                $data = [
+                    'Subject' => 'ONE TIME PIN',
+                    'To_receiver' => $employee_profile->personalinformation->contact->email_address,
+                    'Receiver_Name' => $employee_profile->personalInformation->name(),
+                    'Body' => $body
+                ];
+
+                if ($this->mail->send($data)) {
+                    return response()->json(['message' => "OTP has sent to your email, submit the OTP to verify that this is your account."], Response::HTTP_OK)
+                        ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', env('SESSION_DOMAIN'), false);
+                }
+
+                return response()->json([
+                    'message' => 'Failed to send OTP to your email.'
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
+            $token = $employee_profile->createToken();
+
+            $personal_information = $employee_profile->personalInformation;
+
+            $assigned_area = $employee_profile->assignedArea;
+            $plantilla = null;
+            $designation = null;
+
+            if ($assigned_area['plantilla_id'] === null) {
+                $designation = $assigned_area->designation;
+            } else {
+                //Employment is plantilla retrieve the plantilla and its designation.
+                $plantilla = $assigned_area->plantilla;
+                $designation = $plantilla->designation;
+            }
+
+            $special_access_roles = $employee_profile->specialAccessRole;
+
+            $side_bar_details = null;
+            $trials = 2;
+
+            //Retrieve Sidebar Details for the employee base on designation.
+            do{
+                $side_bar_details = $this->buildSidebarDetails($employee_profile, $designation, $special_access_roles); 
+
+                if(count($side_bar_details['system']) === 0) {
+                    Cache::forget($designation['name']);
+                    break;
+                };
+                
+                $trials--;
+            }while($trials !== 0);
+
+            if($side_bar_details === null || count($side_bar_details['system']) === 0){
+                return response()->json([
+                    'data' => $side_bar_details,
+                    'message' => "Please be inform that your account currently doesn't have access to the system."], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $area_assigned = $employee_profile->assignedArea->findDetails();
+
+            $position = $employee_profile->position();
+
+            $last_login = LoginTrail::where('employee_profile_id', $employee_profile->id)->orderByDesc('created_at')->first();
+
+            $employee = [
+                'profile_url' => env('SERVER_DOMAIN') . "/photo/profiles/" . $employee_profile->profile_url,
+                'employee_id' => $employee_profile->employee_id,
+                'position' => $position,
+                'job_position' => $designation->name,
+                'date_hired' => $employee_profile->date_hired,
+                'job_type' => $employee_profile->employmentType->name,
+                'years_of_service' => $employee_profile->personalInformation->years_of_service,
+                'last_login' => $last_login === null ? null : $last_login->created_at,
+                'biometric_id' => $employee_profile->biometric_id
+            ];
+
+            $personal_information_data = [
+                'full_name' => $personal_information->nameWithSurnameFirst(),
+                'first_name' => $personal_information->first_name,
+                'last_name' => $personal_information->last_name,
+                'middle_name' => $personal_information->middle_name === null ? ' ' : $personal_information->middle_name,
+                'name_extension' => $personal_information->name_extension === null ? null : $personal_information->name_extension,
+                'employee_id' => $employee_profile->employee_id,
+                'years_of_service' => $employee_profile->personalInformation->years_of_service === null ? null : $personal_information->years_of_service,
+                'name_title' => $personal_information->name_title === null ? null : $personal_information->name_title,
+                'sex' => $personal_information->sex,
+                'date_of_birth' => $personal_information->date_of_birth,
+                'date_hired' => $employee_profile->date_hired,
+                'place_of_birth' => $personal_information->place_of_birth,
+                'civil_status' => $personal_information->civil_status,
+                'citizenship' => $personal_information->citizenship,
+                'date_of_marriage' => $personal_information->date_of_marriage === null ? null : $personal_information->date_of_marriage,
+                'agency_employee_no' => $employee_profile->agency_employee_no === null ? null : $personal_information->agency_employee_no,
+                'blood_type' => $personal_information->blood_type === null ? null : $personal_information->blood_type,
+                'height' => $personal_information->height,
+                'weight' => $personal_information->weight,
+            ];
+
+            $address = [
+                'residential_address' => null,
+                'residential_zip_code' => null,
+                'residential_telephone_no' => null,
+                'permanent_address' => null,
+                'permanent_zip_code' => null,
+                'permanent_telephone_no' => null
+            ];
+
+            $addresses = $personal_information->addresses;
+
+            foreach ($addresses as $value) {
+
+                if ($value->is_residential_and_permanent) {
+                    $address['residential_address'] = $value->address;
+                    $address['residential_zip_code'] = $value->zip_code;
+                    $address['residential_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
+                    $address['permanent_address'] = $value->address;
+                    $address['permanent_zip_code'] = $value->zip_code;
+                    $address['permanent_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
+                    break;
+                }
+
+                if ($value->is_residential) {
+                    $address['residential_address'] = $value->address;
+                    $address['residential_zip_code'] = $value->zip_code;
+                    $address['residential_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
+                } else {
+                    $address['permanent_address'] = $value->address;
+                    $address['permanent_zip_code'] = $value->zip_code;
+                    $address['permanent_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
+                }
+            }
+
+            $data = [
+                'employee_id' => $employee_profile['employee_id'],
+                'name' => $personal_information->employeeName(),
+                'designation' => $designation['name'],
+                'employee_details' => [
+                    'employee' => $employee,
+                    'personal_information' => $personal_information_data,
+                    'contact' => new ContactResource($personal_information->contact),
+                    'address' => $address,
+                    'family_background' => new FamilyBackGroundResource($personal_information->familyBackground),
+                    'children' => ChildResource::collection($personal_information->children),
+                    'education' => EducationalBackgroundResource::collection($personal_information->educationalBackground),
+                    'affiliations_and_others' => [
+                        'civil_service_eligibility' => CivilServiceEligibilityResource::collection($personal_information->civilServiceEligibility),
+                        'work_experience' => WorkExperienceResource::collection($personal_information->workExperience),
+                        'voluntary_work_or_involvement' => VoluntaryWorkResource::collection($personal_information->voluntaryWork),
+                        'training' => TrainingResource::collection($personal_information->training),
+                        'other' => OtherInformationResource::collection($personal_information->otherInformation),
+                    ],
+                    'issuance' => $employee_profile->issuanceInformation,
+                    'reference' => $employee_profile->personalInformation->references,
+                    'legal_information' => $employee_profile->personalInformation->legalInformation,
+                    'identification' => new IdentificationNumberResource($employee_profile->personalInformation->identificationNumber)
+                ],
+                'area_assigned' => $area_assigned['details']->name,
+                'area_sector' => $area_assigned['sector'],
+                'side_bar_details' => $side_bar_details
+            ];
+
+            LoginTrail::create([
+                'signin_at' => now(),
+                'ip_address' => $request->ip(),
+                'device' => ($device['is_desktop'] ? 'Desktop' : $device['is_mobile']) ? 'Mobile' : 'Unknown',
+                'platform' => is_bool($device['platform']) ? 'Postman' : $device['platform'],
+                'browser' => is_bool($device['browser']) ? 'Postman' : $device['browser'],
+                'browser_version' => is_bool($device['version']) ? 'Postman' : $device['version'],
+                'employee_profile_id' => $employee_profile['id']
+            ]);
+
+            return response()
+                ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
+                ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), false);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'updatePasswordExpiration', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public function employeesByAreaAssigned($id, $sector, Request $request)
     {
         try {
@@ -1590,6 +1831,165 @@ class EmployeeProfileController extends Controller
         }
     }
 
+    public function reEmploy($id, Request $request)
+    {
+        try {
+
+            $in_valid_file = false;
+            $in_active_employee = InActiveEmployee::find($id);
+
+            if(!$in_active_employee){
+                return response()->json(['message' => "No in active employee with id ".$id], Response::HTTP_NOT_FOUND);
+            }
+
+            $previous_employee_profile_id = $in_active_employee->employee_profile_id;
+            
+            $dateString = $request->date_hired;
+            $carbonDate = Carbon::parse($dateString);
+            $date_hired_string = $carbonDate->format('Ymd');
+
+            $total_registered_this_day = EmployeeProfile::whereDate('date_hired', $carbonDate)->get();
+            $employee_id_random_digit = 50 + count($total_registered_this_day);
+
+            $employee_data = $in_active_employee;
+            $employee_data['employee_id'] = $employee_id_random_digit;
+            
+            $last_registered_employee = EmployeeProfile::orderBy('biometric_id', 'desc')->first();
+            $last_password = DefaultPassword::orderBy('effective_at', 'desc')->first();
+
+            $hashPassword = Hash::make($last_password->password . env('SALT_VALUE'));
+            $encryptedPassword = Crypt::encryptString($hashPassword);
+            $now = Carbon::now();
+            $fortyDaysFromNow = $now->addDays(40);
+            // $fortyDaysExpiration = $now->addMinutes(5)->toDateTimeString();
+
+            $new_biometric_id = $last_registered_employee->biometric_id + 1;
+            $new_employee_id = $date_hired_string . $employee_id_random_digit;
+
+            $employee_data['employee_id'] = $new_employee_id;
+            $employee_data['biometric_id'] = $new_biometric_id;
+            $employee_data['employment_type_id'] = strip_tags($request->employment_type_id);
+            $employee_data['personal_information_id'] = $in_active_employee->personal_information_id;
+
+            try {
+                $fileName = Helpers::checkSaveFile($request->attachment, 'photo/profiles');
+                if (is_string($fileName)) {
+                    $employee_data['profile_url'] = $request->attachment === null  || $request->attachment === 'null' ? null : $fileName;
+                }
+
+                if (is_array($fileName)) {
+                    $in_valid_file = true;
+                    $employee_data['profile_url'] = null;
+                }
+            } catch (\Throwable $th) {
+
+            }
+            
+            $employee_data['allow_time_adjustment'] = strip_tags($request->allow_time_adjustment) === 1 ? true : false;
+            $employee_data['password_encrypted'] = $encryptedPassword;
+            $employee_data['password_created_at'] = now();
+            $employee_data['password_expiration_at'] = $fortyDaysFromNow;
+            $employee_data['salary_grade_step'] = strip_tags($request->salary_grade_step);
+            $employee_data['date_hired'] = $request->date_hired;
+            $employee_data['designation_id'] = $request->designation_id;
+            $employee_data['effective_at'] = $request->date_hired;
+
+
+            $plantilla_number_id = $request->plantilla_number_id === "null"  || $request->plantilla_number_id === null ? null : $request->plantilla_number_id;
+            $sector_key = '';
+
+            switch (strip_tags($request->sector)) {
+                case "division":
+                    $sector_key = 'division_id';
+                    break;
+                case "department":
+                    $sector_key = 'department_id';
+                    break;
+                case "section":
+                    $sector_key = 'section_id';
+                    break;
+                case "unit":
+                    $sector_key = 'unit_id';
+                    break;
+                default:
+                    $sector_key = null;
+            }
+
+            if ($sector_key === null) {
+                return response()->json(['message' => 'Invalid sector area.'], Response::HTTP_BAD_REQUEST);
+            }
+
+            $employee_data[$sector_key] = strip_tags($request->sector_id);
+
+            if ($plantilla_number_id !== null) {
+                $plantilla_number = PlantillaNumber::find($plantilla_number_id);
+
+
+
+                if (!$plantilla_number) {
+                    return response()->json(['message' => 'No record found for plantilla number ' . $plantilla_number_id], Response::HTTP_NOT_FOUND);
+                }
+
+                $plantilla = $plantilla_number->plantilla;
+                $designation = $plantilla->designation;
+                $employee_data['designation_id'] = $designation->id;
+                $employee_data['plantilla_number_id'] = $plantilla_number->id;
+            }
+
+
+            $employee_profile = EmployeeProfile::create($employee_data);
+
+            $employee_data['employee_profile_id'] = $employee_profile->id;
+            AssignArea::create($employee_data);
+
+            if ($plantilla_number_id !== null) {
+                $plantilla_number = PlantillaNumber::find($plantilla_number_id);
+                $plantilla_number->update(['employee_profile_id' => $employee_profile->id, 'is_vacant' => false, 'assigned_at' => now()]);
+            }
+            
+
+            if ($plantilla_number_id !== null) {
+                $leave_types = LeaveType::where('is_special', 0)->get();
+
+                foreach($leave_types as $leave_type){
+                    EmployeeLeaveCredit::create([
+                        'employee_profile_id' => $employee_profile->id,
+                        'leave_type_id' => $leave_type->id,
+                        'total_leave_credits' => 0,
+                        'used_leave_credits' => 0
+                    ]);
+                }
+            }
+
+            AssignAreaTrail::where(['employee_profile_id', $previous_employee_profile_id])->update(['employee_profile_id', $employee_profile->id]);
+
+            Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . '.');
+
+
+            if ($in_valid_file) {
+                return response()->json(
+                    [
+                        'data' => new EmployeeProfileResource($employee_profile),
+                        'message' => 'Newly employee registered.',
+                        'other' => "Invalid attachment."
+                    ],
+                    Response::HTTP_OK
+                );
+            }
+
+            return response()->json(
+                [
+                    'data' => new EmployeeProfileResource($employee_profile),
+                    'message' => 'Newly employee registered.'
+                ],
+                Response::HTTP_OK
+            );
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public function index(Request $request)
     {
         try {
@@ -1612,7 +2012,6 @@ class EmployeeProfileController extends Controller
     public function getEmployeeListByEmployementTypes(Request $request)
     {
         try {
-
             $cacheExpiration = Carbon::now()->addDay();
 
             $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () {
@@ -1660,9 +2059,8 @@ class EmployeeProfileController extends Controller
             $hashPassword = Hash::make($last_password->password . env('SALT_VALUE'));
             $encryptedPassword = Crypt::encryptString($hashPassword);
             $now = Carbon::now();
-            // $fortyDaysFromNow = $now->addDays(40);
 
-            $fortyDaysExpiration = $now->addMinutes(5)->toDateTimeString();
+            $twominutes = $now->addMinutes(2)->toDateTimeString();
 
             $new_biometric_id = $last_registered_employee->biometric_id + 1;
             $new_employee_id = $date_hired_string . $employee_id_random_digit;
@@ -1686,7 +2084,7 @@ class EmployeeProfileController extends Controller
             $cleanData['allow_time_adjustment'] = strip_tags($request->allow_time_adjustment) === 1 ? true : false;
             $cleanData['password_encrypted'] = $encryptedPassword;
             $cleanData['password_created_at'] = now();
-            $cleanData['password_expiration_at'] = $fortyDaysExpiration;
+            $cleanData['password_expiration_at'] = $twominutes;
             $cleanData['salary_grade_step'] = strip_tags($request->salary_grade_step);
             $cleanData['date_hired'] = $request->date_hired;
             $cleanData['designation_id'] = $request->designation_id;

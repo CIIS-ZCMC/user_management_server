@@ -42,6 +42,7 @@ Route::namespace('App\Http\Controllers')->group(function () {
 Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
     Route::post('sign-in', 'EmployeeProfileController@signIn');
     Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
+    Route::post('skip-for-now', 'EmployeeProfileController@updatePasswordExpiration');
     Route::post('verify-email-and-send-otp', 'EmployeeProfileController@verifyEmailAndSendOTP');
     Route::post('verify-otp', 'EmployeeProfileController@verifyOTP');
     Route::post('new-password', 'EmployeeProfileController@newPassword');
