@@ -38,8 +38,8 @@ class PersonalInformationSeeder extends Seeder
     public function run(): void
     {
         $personal_information = PersonalInformation::create([
-            'first_name' => 'Test',
-            'last_name' => 'UMIS',
+            'first_name' => 'Iisu',
+            'last_name' => 'Super Admin',
             'sex' => 'Male',
             'date_of_birth' => Carbon::createFromFormat('Y-m-d', "2001-01-23"),
             'place_of_birth' => 'Zamboanga City',
@@ -197,12 +197,12 @@ class PersonalInformationSeeder extends Seeder
         $fortyDaysExpiration = $fortyDaysFromNow->toDateTimeString();
 
         $employee_profile = EmployeeProfile::create([
-            'employee_id' => '2022091351',
+            'employee_id' => '1918091351',
             'date_hired' => Carbon::createFromFormat('Y-m-d', "2022-9-13"),
             'password_encrypted' => $encryptedPassword,
             'password_created_at' => now(),
             'password_expiration_at' => $fortyDaysExpiration,
-            'biometric_id' => 3553,
+            'biometric_id' => 1,
             'allow_time_adjustment' => TRUE,
             'employment_type_id' => EmploymentType::find(3)->id,
             'personal_information_id' => $personal_information->id
@@ -229,10 +229,10 @@ class PersonalInformationSeeder extends Seeder
 
         AssignArea::create([
             'employee_profile_id' => $employee_profile->id,
-            'section_id' => Section::where('code', 'MMS')->first()->id,
+            'section_id' => Division::where('code', 'OMCC')->first()->id,
             'designation_id' => Designation::where('code', 'CP III')->first()->id,
-            'effective_at' => now()
-
+            'effective_at' => now(),
+            'end_date' => Carbon::now()->addYears(50)
         ]);
 
         $designations = Designation::all();
