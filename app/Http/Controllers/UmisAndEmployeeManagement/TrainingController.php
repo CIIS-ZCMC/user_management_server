@@ -5,6 +5,7 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 use App\Http\Controllers\Controller;
 
 use App\Http\Requests\PasswordApprovalRequest;
+use App\Http\Requests\TrainingManyRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
@@ -184,6 +185,65 @@ class TrainingController extends Controller
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function updateMany(TrainingManyRequest $request)
+    {
+        try{
+            $cleanData  = [];
+            $failed = [];
+            $success = [];
+
+            foreach($request->trainings as $training){
+                $cleanNewData = [];
+                foreach($training as $key => $fields){
+                    if($fields === null || $fields === 'null'){
+                        $cleanNewData[$key] = $fields;
+                        continue;
+                    }
+                    $cleanNewData[$key] = strip_tags($fields);
+                }
+                $cleanData[] = $cleanNewData;
+            }
+
+            foreach ($cleanData as $key => $training) {
+                $training_new = Training::find($training->id);
+
+                if(!$training_new)
+                {
+                    $failed[] = $training;
+                    continue;
+                }
+
+                $training_new->update($cleanData);
+                $success[] = $training_new;
+            }
+
+            Helpers::registerSystemLogs($request, null, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+
+            if(count($cleanData) === count($failed)){
+                return response()->json([
+                    'message' => "Request to update training records has failed.",
+                    'failed' => $failed
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
+            if(count($failed) > 0 && count($success) > count($failed)){
+                return response()->json([
+                    'data' => TrainingResource::collection($success), 
+                    'failed' => $failed,
+                    'message' => "Successfully update some training record.",
+                ], Response::HTTP_OK);
+            }
+
+            return response()->json([
+                'data' => TrainingResource::collection($success),
+                'message' => 'Employee training data is updated.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME,'updateMany', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

@@ -16,7 +16,7 @@ class AssignArea extends Model
 
     protected $table = 'assigned_areas';
 
-    public $fillable = [ 
+    public $fillable = [
         'salary_grade_step',
         'employee_profile_id',
         'division_id',
@@ -26,7 +26,8 @@ class AssignArea extends Model
         'designation_id',
         'plantilla_id',
         'plantilla_number_id',
-        'effective_at'
+        'effective_at',
+        'end_date'
     ];
 
     public $timestamps = TRUE;
@@ -55,7 +56,7 @@ class AssignArea extends Model
     {
         return $this->belongsTo(Unit::class);
     }
-    
+
     public function designation()
     {
         return $this->belongsTo(Designation::class);
@@ -73,24 +74,21 @@ class AssignArea extends Model
 
     public function findDetails()
     {
-        if($this->division_id !== null)
-        {
+        if ($this->division_id !== null) {
             return [
                 'details' => new AssignAreaDivisionResource($this->division),
                 'sector' => 'Division'
             ];
         }
 
-        if($this->department_id !== null)
-        {
+        if ($this->department_id !== null) {
             return [
                 'details' => new AssignAreaDepartmentResource($this->department),
                 'sector' => 'Department'
             ];
         }
 
-        if($this->section_id !== null)
-        {
+        if ($this->section_id !== null) {
             return [
                 'details' => new AssignAreaSectionResource($this->section),
                 'sector' => 'Section'
@@ -100,6 +98,6 @@ class AssignArea extends Model
         return [
             'details' => new AssignAreaUnitResource($this->unit),
             'sector' => 'Unit'
-        ]; 
+        ];
     }
 }

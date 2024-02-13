@@ -4,6 +4,7 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Http\Requests\EducationalBackgroundManyRequest;
 use App\Http\Requests\PasswordApprovalRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -182,6 +183,66 @@ class EducationalBackgroundController extends Controller
             return response()->json(['data' => new EducationalBackgroundResource($educational_background), 'message' => 'Employee educational_background data is updated.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function updateMany(EducationalBackgroundManyRequest $request)
+    {
+        try{
+
+            $cleanData  = [];
+            $failed = [];
+            $success = [];
+
+            foreach($request->educations as $education){
+                $cleanNewData = [];
+                foreach($education as $key => $fields){
+                    if($fields === null || $fields === 'null'){
+                        $cleanNewData[$key] = $fields;
+                        continue;
+                    }
+                    $cleanNewData[$key] = strip_tags($fields);
+                }
+                $cleanData[] = $cleanNewData;
+            }
+
+            foreach ($cleanData as $key => $education) {
+                $educational_background = EducationalBackground::find($education->id);
+
+                if(!$educational_background)
+                {
+                    $failed[] = $education;
+                    continue;
+                }
+
+                $educational_background->update($cleanData);
+                $success[] = $educational_background;
+            }
+
+            Helpers::registerSystemLogs($request, null, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+
+            if(count($cleanData) === count($failed)){
+                return response()->json([
+                    'message' => "Request to update educations has failed.",
+                    'failed' => $failed
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
+            if(count($failed) > 0 && count($success) > count($failed)){
+                return response()->json([
+                    'data' => EducationalBackgroundResource::collection($success), 
+                    'failed' => $failed,
+                    'message' => "Successfully update some education background record.",
+                ], Response::HTTP_OK);
+            }
+
+            return response()->json([
+                'data' => EducationalBackgroundResource::collection($success),
+                'message' => 'Employee educational_background data is updated.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME,'updateMany', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
