@@ -15,22 +15,48 @@ class RoleSeeder extends Seeder
     {
         Role::create([
             'name' => 'Super Admin',
-            'code' => 'super_admin'
+            'code' => 'SUPER-USER-00'
         ]);
-        
+
         Role::create([
-            'name' => 'Admin I',
-            'code' => 'admin_001'
+            'name' => 'OMCC',
+            'code' => 'OMCC-01'
         ]);
-        
+
         Role::create([
-            'name' => 'Admin II',
-            'code' => 'admin_002'
+            'name' => 'HR Director',
+            'code' => 'HRMO-HEAD-02'
         ]);
-        
+
         Role::create([
-            'name' => 'Admin III',
-            'code' => 'admin_003'
+            'name' => 'HR Staff',
+            'code' => 'HR-ADMIN'
+        ]);
+
+        Role::create([
+            'name' => 'Division Head',
+            'code' => 'DIV-HEAD-03'
+        ]);
+
+        Role::create([
+            'name' => 'Department Head',
+            'code' => 'DEPT-HEAD-04'
+        ]);
+        Role::create([
+            'name' => 'Section Head',
+            'code' => 'SECTION-HEAD-05'
+        ]);
+        Role::create([
+            'name' => 'Unit Head',
+            'code' => 'UNIT-HEAD-06'
+        ]);
+        Role::create([
+            'name' => 'Common User - Regular',
+            'code' => 'COMMON-REG'
+        ]);
+        Role::create([
+            'name' => 'Common User - JO',
+            'code' => 'COMMON-JO'
         ]);
     }
 }

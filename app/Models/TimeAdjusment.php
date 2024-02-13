@@ -18,6 +18,7 @@ class TimeAdjusment extends Model
     protected $fillable = [
         'employee_profile_id',
         'daily_time_record_id',
+        'date',
         'recommended_by',
         'approve_by',
         'approval_date',

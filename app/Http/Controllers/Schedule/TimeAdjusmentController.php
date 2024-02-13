@@ -48,9 +48,19 @@ class TimeAdjusmentController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
-        //
+        try {
+
+            $user = $request->user;
+            $data = TimeAdjusment::where('employee_profile_id ', $user->id)->get();
+            return response()->json(['data' => TimeAdjustmentResource::collection($data)], Response::HTTP_OK);
+
+        } catch (\Throwable $th) {
+
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**
@@ -93,10 +103,26 @@ class TimeAdjusmentController extends Controller
                 ])->first();
 
                 if (!$daily_time_record) {
-                    return response()->json(['message' => 'No DTR record found.'], Response::HTTP_NOT_FOUND);
-                }
+                    $find_designation = EmployeeProfile::where('biometric_id', $cleanData['biometric_id'])->first()->findDesignation()['code'];
+                    $designation = 'CMPS II' || 'MCC I' || 'MCC II' || 'MO I'  || 'MO II' || 'MO III' || 'MO IV' || 'MS I' || 'MS I (PT)' || 'MS II' || 'MS II (PT)' ||
+                                    'MS III' || 'MS III (PT)' || 'MS IV' || 'MS IV (PT)';
 
-                if ($daily_time_record) {
+                    if ($find_designation === $designation) {
+                            $data = TimeAdjusment::create([
+                                'first_in' => $value['firstIn'] ?? null,
+                                'first_out' => $value['firstOut'] ?? null,
+                                'second_in' => $value['secondIn'] ?? null,
+                                'second_out' => $value['secondOut'] ?? null,
+                                'employee_profile_id' => $employee->id,
+                                'date' => $value['value'] ?? null,
+                                'recommended_by' => $user->id,
+                                'approve_by' => $approving_officer,
+                            ]);
+                    } else {
+                        return response()->json(['message' => 'No DTR record found.'], Response::HTTP_NOT_FOUND);
+                    }
+                    
+                } else {
                     $employee = EmployeeProfile::find($cleanData['employee_profile_id'])->first();
                     if ($employee) {
                         $employee_area = $employee->assignedArea->findDetails();
@@ -130,7 +156,8 @@ class TimeAdjusmentController extends Controller
                         'second_out' => $value['secondOut'] ?? null,
                         'employee_profile_id' => $employee->id,
                         'daily_time_record_id' => $daily_time_record->id,
-                        'recommended_by' => $user->id,
+                        'date' => $value['value'] ?? null,
+                        'recommended_by' => $recommending_officer->id,
                         'approve_by' => $approving_officer,
                     ]);
                 }
@@ -142,28 +169,6 @@ class TimeAdjusmentController extends Controller
         } catch (\Throwable $th) {
 
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Request $request, $id)
-    {
-        try {
-            $data = new TimeAdjustmentResource(TimeAdjusment::findOrFail($id));
-
-            if (!$data) {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in fetching ' . $this->SINGULAR_MODULE_NAME . '.');
-            return response()->json(['data' => $data], Response::HTTP_OK);
-
-        } catch (\Throwable $th) {
-
-            Helpers::errorLog($this->CONTROLLER_NAME, 'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -203,7 +208,18 @@ class TimeAdjusmentController extends Controller
                 switch ($data->status) {
                     case 'applied':
                         $status = 'approved';
-                        break;
+
+                        // $find_designation = EmployeeProfile::where('biometric_id', $data['biometric_id'])->first()->findDesignation()['code'];
+                        // $designation = 'CMPS II' || 'MCC I' || 'MCC II' || 'MO I'  || 'MO II' || 'MO III' || 'MO IV' || 'MS I' || 'MS I (PT)' || 'MS II' || 'MS II (PT)' ||
+                        //                 'MS III' || 'MS III (PT)' || 'MS IV' || 'MS IV (PT)';
+    
+                        // if ($find_designation === $designation) {
+                        //     //
+                        // } else {
+                        //     $dtr = DailyTimeRecords::update(array_merge($request,['']));
+                        // }
+
+                    break;
 
                     case 'declined':
                         $status = 'declined';

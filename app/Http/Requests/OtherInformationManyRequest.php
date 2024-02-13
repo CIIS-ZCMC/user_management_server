@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class PullOutRequest extends FormRequest
+class OtherInformationManyRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,9 +22,11 @@ class PullOutRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'pull_out_date'             => 'required|date',
-            'employee.*.employee_id'    => 'required|integer',
-            'reason'                    => 'required|string',
+            'others.title' => 'required|string|max:255',
+            'others.skills_hobbies' => 'nullable|boolean',
+            'others.recognition' => 'nullable|boolean',
+            'others.organization' => 'nullable|boolean',
+            'others.personal_information_id' => 'required|integer'
         ];
     }
 }

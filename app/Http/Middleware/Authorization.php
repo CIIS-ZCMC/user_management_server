@@ -35,12 +35,34 @@ class Authorization
 
         $has_rights = false;
 
-        foreach ($permissions['system'] as $key => $value) {
-            foreach ($value['roles'] as $key => $value) {
-                foreach ($value['modules'] as $key => $value) {
-                    if ($value['code'] === $system_module['code']) {
-                        if (in_array($action, $value['permissions'])) {
-                            $has_rights = true;
+        if($permissions !== null && count($permissions['system']) !== 0){
+            foreach ($permissions['system'] as $key => $value) {
+                foreach ($value['roles'] as $key => $value) {
+                    foreach ($value['modules'] as $key => $value) {
+                        if ($value['code'] === $system_module['code']) {
+                            if (in_array($action, $value['permissions'])) {
+                                $has_rights = true;
+                            }
+                        }
+                    }
+                }
+            }
+    
+            $request->merge(['permission' => $routePermission]);
+    
+            return $next($request);
+        }
+
+        $permissions = Cache::get($user->employee_id);
+        
+        if(!$has_rights){
+            foreach ($permissions['system'] as $key => $value) {
+                foreach ($value['roles'] as $key => $value) {
+                    foreach ($value['modules'] as $key => $value) {
+                        if ($value['code'] === $system_module['code']) {
+                            if (in_array($action, $value['permissions'])) {
+                                $has_rights = true;
+                            }
                         }
                     }
                 }

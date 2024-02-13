@@ -244,7 +244,9 @@ class CtoApplicationController extends Controller
                 $cto_application = CtoApplication::create($cleanData);
                 
                 $current_overtime_credit = $employee_credit->earned_credit_by_hour;
-                $employee_credit->update(['earned_credit_by_hour' => DB::raw("earned_credit_by_hour - $credits")]);
+                $earned_credit = $employee_credit->earned_credit_by_hour;
+                $used_credit = $employee_credit->used_credit_by_hour;
+                $employee_credit->update(['earned_credit_by_hour' => $earned_credit - $credits, 'used_credit_by_hour' => $used_credit + $credits]);
                 $employeeCredit = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)->get();
                 $logs =  EmployeeOvertimeCreditLog::create([
                     'employee_ot_credit_id' => $employee_credit->id,
@@ -327,9 +329,11 @@ class CtoApplicationController extends Controller
             $employee_credit = EmployeeOvertimeCredit::where('employee_profile_id', $cto_application->employee_profile_id)->first();
 
             $current_overtime_credit = $employee_credit->earn_credit_by_hour;
+            $used_credit  = $employee_credit->used_credit_by_hour;
 
             $employee_credit->update([
-                'earn_credit_by_hour' => DB::raw("earn_credit_by_hour + $cto_application->applied_credits")
+                'earn_credit_by_hour' => $current_overtime_credit +  $cto_application->applied_credits,
+                'used_credit_by_hour' => $used_credit - $cto_application->applied_credits
             ]);
 
             EmployeeOvertimeCreditLog::create([

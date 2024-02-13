@@ -223,6 +223,12 @@ class SectionController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
+            $check_if_exist =  Section::where('name', $cleanData['name'])->where('code', $cleanData['code'])->first();
+
+            if($check_if_exist !== null){
+                return response()->json(['message' => 'Section already exist.'], Response::HTTP_FORBIDDEN);
+            }
+
             $section = Section::create($cleanData);
 
             Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');

@@ -21,7 +21,8 @@ class ExchangeDuty extends Model
         'status',
         'schedule_id',
         'requested_employee_id',
-        'reliever_employee_id'
+        'reliever_employee_id',
+        'approve_by',
     ];
     
     protected $softDelete = true;
@@ -47,7 +48,7 @@ class ExchangeDuty extends Model
         return $this->belongsTo(EmployeeProfile::class, 'reliever_employee_id');
     }
     
-    public function approveBy()
+    public function approvingEmployee()
     {
         return $this->belongsTo(EmployeeProfile::class, 'approve_by');
     }

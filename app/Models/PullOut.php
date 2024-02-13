@@ -30,16 +30,16 @@ class PullOut extends Model
 
     public function employee()
     {
-        return $this->belongsToMany(EmployeeProfile::class, 'pull_out_employee')->withPivot('employee_profile_id');
+        return $this->belongsTo(EmployeeProfile::class, 'employee_profile_id');
     }
 
     public function requestedBy()
     {
-        return $this->belongsToMany(EmployeeProfile::class, 'requesting_officer');
+        return $this->belongsTo(EmployeeProfile::class, 'requesting_officer');
     }
 
     public function approveBy()
     {
-        return $this->belongsToMany(EmployeeProfile::class, 'approving_officer');
+        return $this->belongsTo(EmployeeProfile::class, 'approving_officer');
     }
 }

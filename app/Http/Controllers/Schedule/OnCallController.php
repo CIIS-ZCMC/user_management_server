@@ -34,7 +34,7 @@ class OnCallController extends Controller
             $assigned_area = $user->assignedArea->findDetails();
 
             $sql = EmployeeProfile::with(['schedule' => function ($query) use ($request) {
-                    $query->with(['timeShift'])->whereYear('date', '=', $request->year)->whereMonth('date', '=', Carbon::parse($request->month)->format('m'))
+                    $query->with(['timeShift'])->whereYear('date', '=', $request->year)->whereMonth('date', '=', $request->month)
                     ->where('is_on_call', '=', 1);
             }])->whereHas('assignedArea', function ($query) use ($user, $assigned_area) {
                 $query->where([strtolower($assigned_area['sector']) . '_id' => $user->assignedArea->id]);
