@@ -23,6 +23,7 @@ use App\Models\Department;
 use App\Models\Designation;
 use App\Models\Division;
 use App\Models\EmployeeLeaveCredit;
+use App\Models\EmployeeOvertimeCredit;
 use App\Models\InActiveEmployee;
 use App\Models\LeaveType;
 use App\Models\PasswordTrail;
@@ -39,7 +40,6 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use App\Helpers\Helpers;
-use App\Services\FileValidationAndUpload;
 use App\Http\Requests\SignInRequest;
 use App\Http\Requests\EmployeeProfileRequest;
 use App\Http\Resources\EmployeeProfileResource;
@@ -2155,6 +2155,14 @@ class EmployeeProfileController extends Controller
                         'used_leave_credits' => 0
                     ]);
                 }
+
+                EmployeeOvertimeCredit::create([
+                    'employee_profile_id' => $employee_profile->id,
+                    'earned_credit_by_hour' => 0,
+                    'used_credit_by_hour' => 0,
+                    'max_credit_monthly' => 40,
+                    'max_credit_annual' => 120
+                ]);
             }
 
             Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . '.');
@@ -2365,6 +2373,7 @@ class EmployeeProfileController extends Controller
             ];
 
             $personal_information_data = [
+                'personal_information_id' => $personal_information->id,
                 'full_name' => $personal_information->nameWithSurnameFirst(),
                 'first_name' => $personal_information->first_name,
                 'last_name' => $personal_information->last_name,
@@ -2431,12 +2440,12 @@ class EmployeeProfileController extends Controller
                 'employee_details' => [
                     'employee' => $employee,
                     'personal_information' => $personal_information_data,
-                    'contact' => OtherInformationResource::collection($personal_information->otherInformation),
+                    'contact' =>  new ContactResource($personal_information->contact),
                     'address' => $address,
                     'family_background' => new FamilyBackGroundResource($personal_information->familyBackground),
                     'children' => ChildResource::collection($personal_information->children),
                     'education' => EducationalBackgroundResource::collection($personal_information->educationalBackground),
-                    'affiliations_and_others' => [
+                    'affiliations_and_others' => [ 
                         'civil_service_eligibility' => CivilServiceEligibilityResource::collection($personal_information->civilServiceEligibility),
                         'work_experience' => WorkExperienceResource::collection($personal_information->workExperience),
                         'voluntary_work_or_involvement' => VoluntaryWorkResource::collection($personal_information->voluntaryWork),

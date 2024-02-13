@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class PersonalInformationRequest extends FormRequest
+class PersonalInformationUpdateRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -17,7 +17,7 @@ class PersonalInformationRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -36,14 +36,7 @@ class PersonalInformationRequest extends FormRequest
             'citizenship' => 'required|string|max:255',
             'height' => 'nullable|integer',
             'weight' => 'nullable|integer',
-            'blood_type' => 'nullable|string|max:255',
-            'r_address' => 'required|string|max:255',
-            'r_telephone' => 'nullable|string|max:255',
-            'r_zip_code' => 'nullable|string|max:255',
-            'is_res_per' => 'nullable|integer',
-            'p_address' => 'nullable|string|max:255',
-            'p_telephone' => 'nullable|string|max:255',
-            'p_zip_code' => 'nullable|string|max:255',
+            'blood_type' => 'nullable|string|max:255'
         ];
     }
 }
