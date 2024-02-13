@@ -18,7 +18,7 @@ class TrainingResource extends JsonResource
             'id' => $this->id,
             'title' => $this->title,
             'inclusive_date' => $this->inclusive_date,
-            'hours' => $this->total_hours ?? 'NONE',
+            'hours' => $this->hours ?? 'NONE',
             'type_of_ld' => $this->type_of_ld,
             'conducted_by' =>  $this->conducted_by ?? 'NONE',
         ];

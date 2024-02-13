@@ -17,6 +17,7 @@ class EmployeeProfileResource extends JsonResource
         $personal_information = $this->personalInformation;
 
         $name = $personal_information->name();
+        
         $assigned_area = $this->assignedArea;
         $area_details = $assigned_area->findDetails();
         $area = $area_details;

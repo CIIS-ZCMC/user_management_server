@@ -49,7 +49,7 @@ class PersonalInformation extends Model
             return $this->last_name.', '.$this->first_name;
         }
 
-          return $this->last_name.', '.$this->first_name.', '.$this->middle_name;
+          return $this->last_name.', '.$this->first_name.' '.$this->middle_name;
             
     }
 
