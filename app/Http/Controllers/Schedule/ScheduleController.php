@@ -300,10 +300,7 @@ class ScheduleController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $schedule = Schedule::where([
-                ['date' => $cleanData['date']],
-                ['time_shift_id' => $cleanData['time_shift_id']]
-            ])->first();
+            $schedule = Schedule::where('date', $cleanData['date'])->where('time_shift_id',$cleanData['time_shift_id'])->first();
 
             if ($schedule === null) {
                 $date = Carbon::parse($cleanData['date']);
