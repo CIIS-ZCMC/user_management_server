@@ -339,16 +339,18 @@ class ScheduleController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Request $request, $id)
+    public function destroy($id, Request $request)
     {
         try {
-            $data = Schedule::withTrashed()->findOrFail($id);
+            // $data = Schedule::withTrashed()->findOrFail($id);
+            $data = EmployeeSchedule::findOrFail($id);
 
             if (!$data) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $data->employee()->detach($request->employee_id);
+            // $data->employee()->detach($request->employee_id);
+            $data->delete();
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in delete ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json(['data' => $data], Response::HTTP_OK);
