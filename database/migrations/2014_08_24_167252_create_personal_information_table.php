@@ -26,8 +26,8 @@ return new class extends Migration
             $table->date('date_of_marriage')->nullable();
             $table->string('citizenship')->default('Filipino');
             $table->string('country')->default('Philippines');
-            $table->integer('height')->nullable();//cm
-            $table->integer('weight')->nullable();;
+            $table->float('height')->nullable();//cm
+            $table->float('weight')->nullable();;
             $table->string('blood_type')->nullable();;
             $table->timestamps();
         });

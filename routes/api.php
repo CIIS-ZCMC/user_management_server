@@ -481,6 +481,10 @@ Route::middleware('auth.cookie')->group(function () {
             Route::put('child/{id}', 'ChildController@update');
         });
 
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::put('child-many', 'ChildController@updateMany');
+        });
+
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
             Route::delete('child/{id}', 'ChildController@destroy');
         });
@@ -553,6 +557,10 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::put('civil-service-eligibility/{id}', 'CivilServiceEligibilityController@update');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::put('civil-service-eligibility-many', 'CivilServiceEligibilityController@updateMany');
         });
 
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
@@ -692,6 +700,10 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::put('educational-background/{id}', 'EducationalBackgroundController@update');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::put('educational-background-many', 'EducationalBackgroundController@updateMany');
         });
 
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
@@ -1324,6 +1336,10 @@ Route::middleware('auth.cookie')->group(function () {
             Route::put('training/{id}', 'TrainingController@update');
         });
 
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::put('training-many', 'TrainingController@updateMany');
+        });
+
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
             Route::delete('training/{id}', 'TrainingController@destroy');
         });
@@ -1386,6 +1402,10 @@ Route::middleware('auth.cookie')->group(function () {
             Route::put('voluntary-work/{id}', 'VoluntaryWorkController@update');
         });
 
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::put('voluntary-work-many', 'VoluntaryWorkController@updateMany');
+        });
+
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
             Route::delete('voluntary-work/{id}', 'VoluntaryWorkController@destroy');
         });
@@ -1423,6 +1443,10 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::put('work-experience/{id}', 'WorkExperienceController@update');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::put('work-experience-many', 'WorkExperienceController@updateMany');
         });
 
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
