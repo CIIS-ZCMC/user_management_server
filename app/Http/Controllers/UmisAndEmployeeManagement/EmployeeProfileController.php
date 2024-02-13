@@ -2598,4 +2598,37 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+    
+    public function revokeRights($id, $access_right_id, PasswordApprovalRequest $request)
+    {
+        try {
+            $user = $request->user;
+            $cleanData['password'] = strip_tags($request->input('password'));
+
+            $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
+
+            if (!Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedPassword)) {
+                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $employee_profile = EmployeeProfile::findOrFail($id);
+
+            if (!$employee_profile) {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $special_access_role = SpecialAccessRole::find($access_right_id)->where('employee_profile_id', $employee_profile->id);
+
+            if(!$special_access_role){
+                return response()->json(['message' => "No special access right found."], Response::HTTP_NOT_FOUND);
+            }
+
+            Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in deleting a ' . $this->SINGULAR_MODULE_NAME . '.');
+
+            return response()->json(['message' => 'Special Access right has been revoke.'], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }

@@ -811,6 +811,11 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
             Route::delete('employee-profile/{id}', 'EmployeeProfileController@destroy');
         });
+        
+
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
+            Route::delete('employee-profile/{id}/revoke/{access_right_id}', 'EmployeeProfileController@revokeRights');
+        });
 
         /**
          * Employment Type Module
