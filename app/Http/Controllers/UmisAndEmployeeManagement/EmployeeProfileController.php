@@ -166,10 +166,8 @@ class EmployeeProfileController extends Controller
 
             if ($access_token !== null && Carbon::parse(Carbon::now())->startOfDay()->lte($access_token->token_exp)) {
                 $ip = $request->ip();
-                $created_at = Carbon::parse($access_token['created_at']);
-                $current_time = Carbon::now();
-
-                // $difference_in_minutes = $current_time->diffInMinutes($created_at);
+                // $created_at = Carbon::parse($access_token['created_at']);
+                // $current_time = Carbon::now();
 
                 $login_trail = LoginTrail::where('employee_profile_id', $employee_profile->id)->first();
 
@@ -1501,8 +1499,19 @@ class EmployeeProfileController extends Controller
 
             $employee_previous_assign_area = $employee_profile->assignedArea;
 
+            $area_new_data = [];
+            $sector_list = ['division_id', 'department_id', 'section_id', 'unit_id'];
+
+            foreach($sector_list as $sector){
+                if($sector !== $key_details){
+                    $area_new_data[$sector] = null;
+                    continue;
+                }
+                $area_new_data[$key_details] = $area_details->id;
+            }
+
             $employee_profile->assignedArea->update([
-                $key_details => $area_details->id,
+                ...$area_new_data,
                 'designation_id' => $designation_details !== null ? $designation_details->id : $employee_profile->assignedArea->designation_id,
                 'effective_date' => $request->effective_date
             ]);

@@ -132,6 +132,7 @@ class DesignationController extends Controller
         try{
             $failed = [];
             $designations = [];
+            $designation_names = [];
 
             foreach($request->designations as $id){
                 $designation_id = strip_tags($id);
@@ -153,9 +154,13 @@ class DesignationController extends Controller
                 }
                 
                 Cache::forget($designation->name);
-
+                if(!in_array($designation->name, $designation_names)){
+                    $designation_names[] = $designation->name;
+                }
                 $designations[] = $designation;
             }
+            
+            $this->buildSidebarDetails($designation);
 
          
             if(count($failed) > 0){
@@ -176,7 +181,110 @@ class DesignationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+    private function buildSidebarDetails($designation)
+    {
+        $side_bar_details['designation_id'] = $designation['id'];
+        $side_bar_details['designation_name'] = $designation['name'];
+        $side_bar_details['system'] = [];
+
+        /**
+         * Relation of table
+         * position_sytem_role
+         * sytemRole
+         * system
+         * roleModulePermissions
+         * modulePermission
+         * systemModule
+         * permission
+         */
+        $position_system_roles = PositionSystemRole::with([
+            'systemRole' => function ($query) {
+                $query->with([
+                    'system',
+                    'roleModulePermissions' => function ($query) {
+                        $query->with([
+                            'modulePermission' => function ($query) {
+                                $query->with(['module', 'permission']);
+                            }
+                        ]);
+                    },
+                ]);
+            }
+        ])->where('designation_id', $designation['id'])->get();
+
+        if(count($position_system_roles) !== 0){
+            /**
+             * Convert to meet sidebar data format.
+             * Iterate to every system roles.
+             */
+
+            foreach ($position_system_roles as $key => $position_system_role) {
+                $system_exist = false;
+                $system_role = $position_system_role['systemRole'];
+
+                /**
+                 * If side bar details system array is empty
+                 */
+                if (!$side_bar_details['system']) {
+                    $side_bar_details['system'][] = $this->buildSystemDetails($system_role);
+                    continue;
+                }
+
+                foreach ($side_bar_details['system'] as $key => $system) {
+                    if ($system['id'] === $system_role->system['id']) {
+                        $system_exist = true;
+                        $system[] = $this->buildRoleDetails($system_role);
+                        break;
+                    }
+                }
+
+                if (!$system_exist) {
+                    $side_bar_details['system'][] = $this->buildSystemDetails($system_role);
+                }
+            }
+
+            $cacheExpiration = Carbon::now()->addYear();
+            Cache::put($designation['name'], $side_bar_details, $cacheExpiration);
+        }
+    }
+
+    private function buildSystemDetails($system_role)
+    {
+        return [
+            'id' => $system_role->system['id'],
+            'name' => $system_role->system['name'],
+            'code' => $system_role->system['code'],
+            'roles' => [$this->buildRoleDetails($system_role)],
+        ];
+    }
+
+    private function buildRoleDetails($system_role)
+    {
+        $modules = [];
+
+        $role_module_permissions = $system_role->roleModulePermissions;
+
+        foreach ($role_module_permissions as $role_module_permission) {
+            $module_name = $role_module_permission->modulePermission->module->name;
+            $module_code = $role_module_permission->modulePermission->module->code;
+            $permission_action = $role_module_permission->modulePermission->permission->action;
+
+            if (!isset($modules[$module_name])) {
+                $modules[$module_name] = ['name' => $module_name, 'code' => $module_code, 'permissions' => []];
+            }
+
+            if (!in_array($permission_action, $modules[$module_name]['permissions'])) {
+                $modules[$module_name]['permissions'][] = $permission_action;
+            }
+        }
+
+        return [
+            'id' => $system_role->id,
+            'name' => $system_role->role->name,
+            'modules' => array_values($modules), // Resetting array keys
+        ];
+    }
+
     public function show($id, Request $request)
     {
         try{
