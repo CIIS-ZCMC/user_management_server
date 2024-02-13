@@ -31,7 +31,7 @@ return new class extends Migration
             $table->unsignedBigInteger('plantilla_number_id')->nullable();
             $table->foreign('plantilla_number_id')->references('id')->on('plantilla_numbers');
             $table->datetime('effective_at');
-            $table->datetime('end_date')->nullable();
+            $table->datetime('end_date');
             $table->timestamps();
         });
     }

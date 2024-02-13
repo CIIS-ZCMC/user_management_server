@@ -50,4 +50,9 @@ class Schedule extends Model
     {
         return $this->belongsToMany(EmployeeProfile::class, 'employee_profile_schedule');
     }
+
+    public function employeeSchedule()
+    {
+        return $this->belongsTo(EmployeeSchedule::class);
+    }
 }
