@@ -42,7 +42,7 @@ class ScheduleController extends Controller
 
             $month = $request->month;   // Replace with the desired month (1 to 12)
             $year = $request->year;     // Replace with the desired year
-            $dates_with_day = Helpers::getDatesInMonth(Carbon::parse($year)->year, Carbon::parse($month)->month, "Days of Week");
+            $dates_with_day = Helpers::getDatesInMonth($year, Carbon::parse($month)->month, "Days of Week");
 
             $user = $request->user;
             $assigned_area = $user->assignedArea->findDetails();
