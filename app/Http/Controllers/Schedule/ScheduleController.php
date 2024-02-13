@@ -67,14 +67,13 @@ class ScheduleController extends Controller
                     'id' => $value['id'],
                     'name' => $value->name(),
                     'employee_id' => $value['employee_id'],
-                    'biometric_id' => $value['biometric_id'], 
+                    'biometric_id' => $value['biometric_id'],
                     'assigned_area' => $value->assignedArea,
                     'schedule' => $value['schedule'],
                 ];
             }
 
             return response()->json(['data' => $data, 'dates' => $dates_with_day], Response::HTTP_OK);
-
         } catch (\Throwable $th) {
 
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
@@ -95,7 +94,6 @@ class ScheduleController extends Controller
                 'data' => EmployeeScheduleResource::collection($model),
                 'holiday' => Holiday::all()
             ], Response::HTTP_OK);
-
         } catch (\Throwable $th) {
 
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
@@ -142,8 +140,8 @@ class ScheduleController extends Controller
             $selected_dates = [];                           // Replace with your selected dates
 
             switch ($selected_days) {
-                //If Toggle Date Period On
-                case($selected_days <= 0 && $date_start != null && $date_end != null):
+                    //If Toggle Date Period On
+                case ($selected_days <= 0 && $date_start != null && $date_end != null):
                     $current_date = Carbon::parse($date_start)->copy();
 
                     while ($current_date->lte($date_end)) {
@@ -152,9 +150,9 @@ class ScheduleController extends Controller
                     }
                     break;
 
-                    
-                //If Toggle Show Day on
-                case($selected_days >= 1 && $date_start === null && $date_end === null):
+
+                    //If Toggle Show Day on
+                case ($selected_days >= 1 && $date_start === null && $date_end === null):
                     $date = Carbon::now();  // Replace with your desired year
                     $month = Carbon::parse($cleanData['month'])->month;   // Replace with your desired month
 
@@ -171,7 +169,7 @@ class ScheduleController extends Controller
                     }
                     break;
 
-                //If Toggle Date Period && Toggle Show Day On
+                    //If Toggle Date Period && Toggle Show Day On
                 default:
                     $current_date = Carbon::parse($date_start)->copy();
 
@@ -236,7 +234,6 @@ class ScheduleController extends Controller
                 'logs' => Helpers::registerEmployeeScheduleLogs($data->id, $user->id, 'Store'),
                 'message' => $message
             ], Response::HTTP_OK);
-
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -256,7 +253,6 @@ class ScheduleController extends Controller
             }
 
             return response()->json(['data' => $data], Response::HTTP_OK);
-
         } catch (\Throwable $th) {
 
             Helpers::errorLog($this->CONTROLLER_NAME, 'show', $th->getMessage());
@@ -291,7 +287,7 @@ class ScheduleController extends Controller
                     $cleanData[$key] = $value;
                     continue;
                 }
-                
+
                 if (is_int($value)) {
                     $cleanData[$key] = $value;
                     continue;
@@ -300,10 +296,10 @@ class ScheduleController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $schedule = Schedule::where('date', $cleanData['date'])->where('time_shift_id',$cleanData['time_shift_id'])->first();
+            $schedule = Schedule::where('date', $cleanData['date'])->where('time_shift_id', $cleanData['time_shift_id'])->first();
 
             if ($schedule === null) {
-                $is_weekend = 0; 
+                $is_weekend = 0;
                 $date = Carbon::parse($cleanData['date']);
                 $isWeekend = $date->dayOfWeek === 6 || $date->dayOfWeek === 0;
 
@@ -328,7 +324,6 @@ class ScheduleController extends Controller
                 'logs' => Helpers::registerEmployeeScheduleLogs($data->id, $request->user->id, 'Update'),
                 'message' => 'Schedule is updated'
             ], Response::HTTP_OK);
-
         } catch (\Throwable $th) {
 
             Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
@@ -377,22 +372,22 @@ class ScheduleController extends Controller
             $dates = Helpers::getDatesInMonth($year, Carbon::parse($month)->month, "");
 
             $data = EmployeeProfile::where(function ($query) use ($user, $assigned_area) {
-                                        $query->whereHas('assignedArea', function ($innerQuery) use ($user, $assigned_area) {
-                                            $innerQuery->where([strtolower($assigned_area['sector']) . '_id' => $user->assignedArea->id]);
-                                        });
-                                    })->with(['personalInformation','assignedArea','schedule.timeShift'])->get();
+                $query->whereHas('assignedArea', function ($innerQuery) use ($user, $assigned_area) {
+                    $innerQuery->where([strtolower($assigned_area['sector']) . '_id' => $user->assignedArea->id]);
+                });
+            })->with(['personalInformation', 'assignedArea', 'schedule.timeShift'])->get();
 
             $approving_officer  = Helpers::ScheduleApprovingOfficer($assigned_area, $user);
             $head_officer       = EmployeeProfile::where('id', $approving_officer['approving_officer'])->first();
             $holiday            = Holiday::all();
-    
+
             $options = new Options();
             $options->set('isPhpEnabled', true);
             $options->set('isHtml5ParserEnabled', true);
             $options->set('isRemoteEnabled', true);
             $dompdf = new Dompdf($options);
             $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
-            $html = view('generate_schedule/section-schedule', compact('data','holiday', 'month', 'year', 'dates', 'user', 'head_officer'))->render();
+            $html = view('generate_schedule/section-schedule', compact('data', 'holiday', 'month', 'year', 'dates', 'user', 'head_officer'))->render();
             $dompdf->loadHtml($html);
 
             $dompdf->setPaper('Legal', 'landscape');
@@ -401,10 +396,10 @@ class ScheduleController extends Controller
 
             /* Downloads as PDF */
             $dompdf->stream($filename);
-         
+
             // return view('generate_schedule/section-schedule', compact('data','holiday', 'month', 'year', 'dates', 'user', 'head_officer'));
         } catch (\Throwable $th) {
-            
+
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
