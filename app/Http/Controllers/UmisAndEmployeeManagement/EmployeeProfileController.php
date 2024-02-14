@@ -242,21 +242,22 @@ class EmployeeProfileController extends Controller
             $trials = 2;
 
             //Retrieve Sidebar Details for the employee base on designation.
-            do{
-                $side_bar_details = $this->buildSidebarDetails($employee_profile, $designation, $special_access_roles); 
+            do {
+                $side_bar_details = $this->buildSidebarDetails($employee_profile, $designation, $special_access_roles);
 
-                if(count($side_bar_details['system']) === 0) {
+                if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
                 };
-                
-                $trials--;
-            }while($trials !== 0);
 
-            if($side_bar_details === null || count($side_bar_details['system']) === 0){
+                $trials--;
+            } while ($trials !== 0);
+
+            if ($side_bar_details === null || count($side_bar_details['system']) === 0) {
                 return response()->json([
                     'data' => $side_bar_details,
-                    'message' => "Please be inform that your account currently doesn't have access to the system."], Response::HTTP_UNAUTHORIZED);
+                    'message' => "Please be inform that your account currently doesn't have access to the system."
+                ], Response::HTTP_UNAUTHORIZED);
             }
 
             $area_assigned = $employee_profile->assignedArea->findDetails();
@@ -417,16 +418,16 @@ class EmployeeProfileController extends Controller
                 }
             ])->where('designation_id', $designation['id'])->get();
 
-            if(count($position_system_roles) !== 0){
+            if (count($position_system_roles) !== 0) {
                 /**
                  * Convert to meet sidebar data format.
                  * Iterate to every system roles.
                  */
-    
+
                 foreach ($position_system_roles as $key => $position_system_role) {
                     $system_exist = false;
                     $system_role = $position_system_role['systemRole'];
-    
+
                     /**
                      * If side bar details system array is empty
                      */
@@ -434,7 +435,7 @@ class EmployeeProfileController extends Controller
                         $side_bar_details['system'][] = $this->buildSystemDetails($system_role);
                         continue;
                     }
-    
+
                     foreach ($side_bar_details['system'] as $key => $system) {
                         if ($system['id'] === $system_role->system['id']) {
                             $system_exist = true;
@@ -442,12 +443,12 @@ class EmployeeProfileController extends Controller
                             break;
                         }
                     }
-    
+
                     if (!$system_exist) {
                         $side_bar_details['system'][] = $this->buildSystemDetails($system_role);
                     }
                 }
-    
+
                 $cacheExpiration = Carbon::now()->addYear();
                 Cache::put($designation['name'], $side_bar_details, $cacheExpiration);
             }
@@ -612,21 +613,22 @@ class EmployeeProfileController extends Controller
             $trials = 2;
 
             //Retrieve Sidebar Details for the employee base on designation.
-            do{
-                $side_bar_details = $this->buildSidebarDetails($employee_profile, $designation, $special_access_roles); 
+            do {
+                $side_bar_details = $this->buildSidebarDetails($employee_profile, $designation, $special_access_roles);
 
-                if(count($side_bar_details['system']) === 0) {
+                if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
                 };
-                
-                $trials--;
-            }while($trials !== 0);
 
-            if($side_bar_details === null || count($side_bar_details['system']) === 0){
+                $trials--;
+            } while ($trials !== 0);
+
+            if ($side_bar_details === null || count($side_bar_details['system']) === 0) {
                 return response()->json([
                     'data' => $side_bar_details,
-                    'message' => "Please be inform that your account currently doesn't have access to the system."], Response::HTTP_UNAUTHORIZED);
+                    'message' => "Please be inform that your account currently doesn't have access to the system."
+                ], Response::HTTP_UNAUTHORIZED);
             }
 
             $area_assigned = $employee_profile->assignedArea->findDetails();
@@ -788,21 +790,22 @@ class EmployeeProfileController extends Controller
             $trials = 2;
 
             //Retrieve Sidebar Details for the employee base on designation.
-            do{
-                $side_bar_details = $this->buildSidebarDetails($employee_profile, $designation, $special_access_roles); 
+            do {
+                $side_bar_details = $this->buildSidebarDetails($employee_profile, $designation, $special_access_roles);
 
-                if(count($side_bar_details['system']) === 0) {
+                if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
                 };
-                
-                $trials--;
-            }while($trials !== 0);
 
-            if($side_bar_details === null || count($side_bar_details['system']) === 0){
+                $trials--;
+            } while ($trials !== 0);
+
+            if ($side_bar_details === null || count($side_bar_details['system']) === 0) {
                 return response()->json([
                     'data' => $side_bar_details,
-                    'message' => "Please be inform that your account currently doesn't have access to the system."], Response::HTTP_UNAUTHORIZED);
+                    'message' => "Please be inform that your account currently doesn't have access to the system."
+                ], Response::HTTP_UNAUTHORIZED);
             }
 
             $area_assigned = $employee_profile->assignedArea->findDetails();
@@ -1039,21 +1042,22 @@ class EmployeeProfileController extends Controller
             $trials = 2;
 
             //Retrieve Sidebar Details for the employee base on designation.
-            do{
-                $side_bar_details = $this->buildSidebarDetails($employee_profile, $designation, $special_access_roles); 
+            do {
+                $side_bar_details = $this->buildSidebarDetails($employee_profile, $designation, $special_access_roles);
 
-                if(count($side_bar_details['system']) === 0) {
+                if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
                 };
-                
-                $trials--;
-            }while($trials !== 0);
 
-            if($side_bar_details === null || count($side_bar_details['system']) === 0){
+                $trials--;
+            } while ($trials !== 0);
+
+            if ($side_bar_details === null || count($side_bar_details['system']) === 0) {
                 return response()->json([
                     'data' => $side_bar_details,
-                    'message' => "Please be inform that your account currently doesn't have access to the system."], Response::HTTP_UNAUTHORIZED);
+                    'message' => "Please be inform that your account currently doesn't have access to the system."
+                ], Response::HTTP_UNAUTHORIZED);
             }
 
             $area_assigned = $employee_profile->assignedArea->findDetails();
@@ -1230,7 +1234,7 @@ class EmployeeProfileController extends Controller
             $employee_profile = EmployeeProfile::where('employee_id', $employee_details->employee_id)->first();
 
             $new_password = strip_tags($request->password);
-            
+
             $hashPassword = Hash::make($new_password . env('SALT_VALUE'));
             $encryptedPassword = Crypt::encryptString($hashPassword);
 
@@ -1287,21 +1291,22 @@ class EmployeeProfileController extends Controller
             $trials = 2;
 
             //Retrieve Sidebar Details for the employee base on designation.
-            do{
-                $side_bar_details = $this->buildSidebarDetails($employee_profile, $designation, $special_access_roles); 
+            do {
+                $side_bar_details = $this->buildSidebarDetails($employee_profile, $designation, $special_access_roles);
 
-                if(count($side_bar_details['system']) === 0) {
+                if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
                 };
-                
-                $trials--;
-            }while($trials !== 0);
 
-            if($side_bar_details === null || count($side_bar_details['system']) === 0){
+                $trials--;
+            } while ($trials !== 0);
+
+            if ($side_bar_details === null || count($side_bar_details['system']) === 0) {
                 return response()->json([
                     'data' => $side_bar_details,
-                    'message' => "Please be inform that your account currently doesn't have access to the system."], Response::HTTP_UNAUTHORIZED);
+                    'message' => "Please be inform that your account currently doesn't have access to the system."
+                ], Response::HTTP_UNAUTHORIZED);
             }
 
             $area_assigned = $employee_profile->assignedArea->findDetails();
@@ -1502,8 +1507,8 @@ class EmployeeProfileController extends Controller
             $area_new_data = [];
             $sector_list = ['division_id', 'department_id', 'section_id', 'unit_id'];
 
-            foreach($sector_list as $sector){
-                if($sector !== $key_details){
+            foreach ($sector_list as $sector) {
+                if ($sector !== $key_details) {
                     $area_new_data[$sector] = null;
                     continue;
                 }
@@ -1542,7 +1547,7 @@ class EmployeeProfileController extends Controller
     {
         try {
             $employee_profile = $request->user;
-            
+
             $now = Carbon::now();
             $threeMonths = $now->addMonths(3);
 
@@ -1635,21 +1640,22 @@ class EmployeeProfileController extends Controller
             $trials = 2;
 
             //Retrieve Sidebar Details for the employee base on designation.
-            do{
-                $side_bar_details = $this->buildSidebarDetails($employee_profile, $designation, $special_access_roles); 
+            do {
+                $side_bar_details = $this->buildSidebarDetails($employee_profile, $designation, $special_access_roles);
 
-                if(count($side_bar_details['system']) === 0) {
+                if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
                 };
-                
-                $trials--;
-            }while($trials !== 0);
 
-            if($side_bar_details === null || count($side_bar_details['system']) === 0){
+                $trials--;
+            } while ($trials !== 0);
+
+            if ($side_bar_details === null || count($side_bar_details['system']) === 0) {
                 return response()->json([
                     'data' => $side_bar_details,
-                    'message' => "Please be inform that your account currently doesn't have access to the system."], Response::HTTP_UNAUTHORIZED);
+                    'message' => "Please be inform that your account currently doesn't have access to the system."
+                ], Response::HTTP_UNAUTHORIZED);
             }
 
             $area_assigned = $employee_profile->assignedArea->findDetails();
@@ -1815,10 +1821,9 @@ class EmployeeProfileController extends Controller
     {
         try {
             $employment_type_id = $request->employment_type_id;
-
             if ($employment_type_id !== null) {
                 $employee_profiles = EmployeeProfile::where('employment_type_id', $employment_type_id)
-                    ->where('employment_type_id', "<", 11)->get();
+                    ->get();
 
                 return response()->json([
                     'data' => EmployeeDTRList::collection($employee_profiles),
@@ -1826,8 +1831,7 @@ class EmployeeProfileController extends Controller
                 ], Response::HTTP_OK);
             }
 
-            $employee_profiles = EmployeeProfile::where('employment_type_id', "<", 11)->get();
-
+            $employee_profiles = EmployeeProfile::all();
             Helpers::registerSystemLogs($request, null, true, 'Success in fetching a ' . $this->PLURAL_MODULE_NAME . '.');
 
             return response()->json([
@@ -1847,12 +1851,12 @@ class EmployeeProfileController extends Controller
             $in_valid_file = false;
             $in_active_employee = InActiveEmployee::find($id);
 
-            if(!$in_active_employee){
-                return response()->json(['message' => "No in active employee with id ".$id], Response::HTTP_NOT_FOUND);
+            if (!$in_active_employee) {
+                return response()->json(['message' => "No in active employee with id " . $id], Response::HTTP_NOT_FOUND);
             }
 
             $previous_employee_profile_id = $in_active_employee->employee_profile_id;
-            
+
             $dateString = $request->date_hired;
             $carbonDate = Carbon::parse($dateString);
             $date_hired_string = $carbonDate->format('Ymd');
@@ -1862,7 +1866,7 @@ class EmployeeProfileController extends Controller
 
             $employee_data = $in_active_employee;
             $employee_data['employee_id'] = $employee_id_random_digit;
-            
+
             $last_registered_employee = EmployeeProfile::orderBy('biometric_id', 'desc')->first();
             $last_password = DefaultPassword::orderBy('effective_at', 'desc')->first();
 
@@ -1891,9 +1895,8 @@ class EmployeeProfileController extends Controller
                     $employee_data['profile_url'] = null;
                 }
             } catch (\Throwable $th) {
-
             }
-            
+
             $employee_data['allow_time_adjustment'] = strip_tags($request->allow_time_adjustment) === 1 ? true : false;
             $employee_data['password_encrypted'] = $encryptedPassword;
             $employee_data['password_created_at'] = now();
@@ -1955,12 +1958,12 @@ class EmployeeProfileController extends Controller
                 $plantilla_number = PlantillaNumber::find($plantilla_number_id);
                 $plantilla_number->update(['employee_profile_id' => $employee_profile->id, 'is_vacant' => false, 'assigned_at' => now()]);
             }
-            
+
 
             if ($plantilla_number_id !== null) {
                 $leave_types = LeaveType::where('is_special', 0)->get();
 
-                foreach($leave_types as $leave_type){
+                foreach ($leave_types as $leave_type) {
                     EmployeeLeaveCredit::create([
                         'employee_profile_id' => $employee_profile->id,
                         'leave_type_id' => $leave_type->id,
@@ -2151,12 +2154,12 @@ class EmployeeProfileController extends Controller
                 $plantilla_number = PlantillaNumber::find($plantilla_number_id);
                 $plantilla_number->update(['employee_profile_id' => $employee_profile->id, 'is_vacant' => false, 'assigned_at' => now()]);
             }
-            
+
 
             if ($plantilla_number_id !== null) {
                 $leave_types = LeaveType::where('is_special', 0)->get();
 
-                foreach($leave_types as $leave_type){
+                foreach ($leave_types as $leave_type) {
                     EmployeeLeaveCredit::create([
                         'employee_profile_id' => $employee_profile->id,
                         'leave_type_id' => $leave_type->id,
@@ -2454,7 +2457,7 @@ class EmployeeProfileController extends Controller
                     'family_background' => new FamilyBackGroundResource($personal_information->familyBackground),
                     'children' => ChildResource::collection($personal_information->children),
                     'education' => EducationalBackgroundResource::collection($personal_information->educationalBackground),
-                    'affiliations_and_others' => [ 
+                    'affiliations_and_others' => [
                         'civil_service_eligibility' => CivilServiceEligibilityResource::collection($personal_information->civilServiceEligibility),
                         'work_experience' => WorkExperienceResource::collection($personal_information->workExperience),
                         'voluntary_work_or_involvement' => VoluntaryWorkResource::collection($personal_information->voluntaryWork),
@@ -2607,7 +2610,7 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function revokeRights($id, $access_right_id, PasswordApprovalRequest $request)
     {
         try {
@@ -2628,7 +2631,7 @@ class EmployeeProfileController extends Controller
 
             $special_access_role = SpecialAccessRole::find($access_right_id)->where('employee_profile_id', $employee_profile->id);
 
-            if(!$special_access_role){
+            if (!$special_access_role) {
                 return response()->json(['message' => "No special access right found."], Response::HTTP_NOT_FOUND);
             }
 
