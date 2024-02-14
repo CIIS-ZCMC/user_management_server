@@ -54,6 +54,7 @@ use App\Models\PositionSystemRole;
 use App\Models\SpecialAccessRole;
 use App\Http\Requests\PromotionRequest;
 
+
 class EmployeeProfileController extends Controller
 {
     private $CONTROLLER_NAME = 'Employee Profile';
@@ -1530,8 +1531,9 @@ class EmployeeProfileController extends Controller
 
             $new_trail['started_at'] = $employee_previous_assign_area['effective_at'];
             $new_trail['end_at'] = now();
-
-            AssignAreaTrail::create($new_trail);
+            if (!isset($request->promotion)) {
+                AssignAreaTrail::create($new_trail);
+            }
 
             return response()->json([
                 'data' => new EmployeeProfileResource($employee_profile),
@@ -2577,6 +2579,57 @@ class EmployeeProfileController extends Controller
 
     public function promotion($id, PromotionRequest $request)
     {
+        try {
+            $user = $request->user;
+            $cleanData['password'] = strip_tags($request->input('password'));
+            $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
+            if (!Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedPassword)) {
+                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
+            }
+            $employee_profile = EmployeeProfile::findOrFail($id);
+            $effective_date = $request->effective_date;
+            $designation_id = $request->designation_id;
+            $period = $request->period;
+            $area_assigned = json_decode($request->area_assigned);
+            $end_at = date('Y-m-d', strtotime("+" . $period . " months", strtotime($effective_date)));
+
+            $parts = explode('-', $area_assigned->value);
+            $areaid = trim($parts[0]);
+            $sector = trim($parts[1]);
+            $assigned = $employee_profile->assignedArea;
+            $AssignareaRequest = new Request([
+                'area' => $areaid,
+                'sector' => $sector,
+                'designation_id' => $designation_id,
+                'effective_date' => $effective_date,
+                'promotion' => true
+            ]);
+            $this->reAssignArea($id, $AssignareaRequest);
+            $Promotion = [
+                'designation_id' => $designation_id,
+                'effective_at' => $effective_date,
+                'end_date' => $end_at
+            ];
+            $trails = [
+                'salary_grade_step' => $assigned->salary_grade_step,
+                'employee_profile_id' => $assigned->employee_profile_id,
+                'division_id' => $assigned->division_id,
+                'department_id' => $assigned->department_id,
+                'section_id' => $assigned->section_id,
+                'unit_id' => $assigned->unit_id,
+                'designation_id' => $assigned->designation_id,
+                'plantilla_id' => $assigned->plantilla_id,
+                'plantilla_number_id' => $assigned->plantilla_number_id,
+                'started_at' => $assigned->effective_at,
+                'end_at' => date('Y-m-d H:i:s')
+            ];
+            AssignAreaTrail::create($trails);
+            AssignArea::where('id', $assigned->id)->update($Promotion);
+            return response()->json(['message' => 'Employee promotion process successfully.'], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'promotion', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
 
@@ -2629,7 +2682,7 @@ class EmployeeProfileController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $special_access_role = SpecialAccessRole::where("id",$access_right_id)->where('employee_profile_id', $employee_profile->id)->first();
+            $special_access_role = SpecialAccessRole::where("id", $access_right_id)->where('employee_profile_id', $employee_profile->id)->first();
 
             if (!$special_access_role) {
                 return response()->json(['message' => "No special access right found."], Response::HTTP_NOT_FOUND);
