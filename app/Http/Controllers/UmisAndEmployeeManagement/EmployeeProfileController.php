@@ -1433,6 +1433,46 @@ class EmployeeProfileController extends Controller
         }
     }
 
+    public function resetPassword($id, Request $request)
+    {
+        try{
+            $user = $request->user;
+            $cleanData['password'] = strip_tags($request->password);
+
+            $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
+
+            if (!Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedPassword)) {
+                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $employee_id = strip_tags($request->employee_id);
+
+            $employee_profile = EmployeeProfile::where(['employee_id', $employee_id])->first();
+
+            if(!$employee_profile){
+                return response()->json(['message' => "Employee doesn't exist with id given."], Response::HTTP_NOT_FOUND);
+            }
+
+            $last_password = DefaultPassword::orderBy('effective_at', 'desc')->first();
+
+            $hashPassword = Hash::make($last_password->password . env('SALT_VALUE'));
+            $encryptedPassword = Crypt::encryptString($hashPassword);
+
+            $employee_profile->update([
+                'password_encrypted' => $encryptedPassword,
+                'password_created_at' => Carbon::now(),
+                'password_expiration_at' => Carbon::now()->addSeconds(10)
+            ]);
+
+            return response()->json([
+                'data' => $last_password->password,
+                'message' => "Password has successfully reset."
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'resetPassword', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 
     public function reAssignArea($id, Request $request)
     {
@@ -2202,7 +2242,6 @@ class EmployeeProfileController extends Controller
             );
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
-
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

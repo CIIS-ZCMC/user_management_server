@@ -794,6 +794,9 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('employee-profile-bytypes', 'EmployeeProfileController@getEmployeeListByEmployementTypes');
         });
 
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::get('employee-account-reset-password', 'EmployeeProfileController@resetPassword');
+        });
 
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {
             Route::post('employee-profile', 'EmployeeProfileController@store');
