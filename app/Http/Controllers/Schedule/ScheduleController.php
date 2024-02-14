@@ -209,8 +209,8 @@ class ScheduleController extends Controller
                 $employee = $cleanData['employee'];
                 foreach ($employee as $key => $value) {
                     $employee_ids = $value['employee_id']; // Array of employee IDs
-                    // return $existing_employee_ids = EmployeeProfile::whereIn('id', $employee_ids)->pluck('id');
-                    $existing_employee_ids = EmployeeProfile::where('id', $employee_ids)->pluck('id');
+                    $existing_employee_ids = EmployeeProfile::whereIn('id', $employee_ids)->pluck('id');
+                    // $existing_employee_ids = EmployeeProfile::where('id', $employee_ids)->pluck('id');
 
                     foreach ($existing_employee_ids as $employee_id) {
                         $query = DB::table('employee_profile_schedule')->where([
@@ -396,7 +396,7 @@ class ScheduleController extends Controller
 
             /* Downloads as PDF */
             // $dompdf->stream($filename);
-            $dompdf->stream($filename, array('Attachment' => false));
+            
 
             // return view('generate_schedule/section-schedule', compact('data','holiday', 'month', 'year', 'dates', 'user', 'head_officer'));
         } catch (\Throwable $th) {
