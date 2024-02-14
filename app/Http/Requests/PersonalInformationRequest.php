@@ -22,7 +22,7 @@ class PersonalInformationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'first_name' => 'required|string|max:255',  
+            'first_name' => 'required|string|max:255',
             'middle_name' => 'nullable|string|max:255',
             'last_name' => 'required|string|max:255',
             'name_extension' => 'nullable|string|max:255',
@@ -33,8 +33,8 @@ class PersonalInformationRequest extends FormRequest
             'place_of_birth' => 'required|string|max:255',
             'civil_status' => 'required|string|max:255',
             'citizenship' => 'required|string|max:255',
-            'height' => 'nullable|integer',
-            'weight' => 'nullable|integer',
+            'height' => 'nullable|double',
+            'weight' => 'nullable|double',
             'blood_type' => 'nullable|string|max:255',
             'r_address' => 'required|string|max:255',
             'r_telephone' => 'nullable|string|max:255',
