@@ -395,7 +395,8 @@ class ScheduleController extends Controller
             $filename = 'Schedule.pdf';
 
             /* Downloads as PDF */
-            $dompdf->stream($filename);
+            // $dompdf->stream($filename);
+            $dompdf->stream($filename, array('Attachment' => false));
 
             // return view('generate_schedule/section-schedule', compact('data','holiday', 'month', 'year', 'dates', 'user', 'head_officer'));
         } catch (\Throwable $th) {
