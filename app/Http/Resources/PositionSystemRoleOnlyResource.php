@@ -20,7 +20,7 @@ class PositionSystemRoleOnlyResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $role->name,
-            'created_at' => $this->created_at
+            // 'created_at' => $this->created_at
         ];
     }
 }

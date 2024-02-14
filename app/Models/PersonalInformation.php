@@ -22,7 +22,6 @@ class PersonalInformation extends Model
         'date_of_birth',
         'place_of_birth',
         'civil_status',
-        'date_of_marriage',
         'citizenship',
         'country',
         'height',
@@ -56,9 +55,9 @@ class PersonalInformation extends Model
     public function name()
     {
         $nameExtension = $this->name_extension===NULL?'':' '.$this->name_extion.' ';
-        $nameTitle = $this->name_title===NULL?'': ' '.$this->name_title;
+        // $nameTitle = $this->name_title===NULL?'': ' '.$this->name_title;
 
-        $name = $this->last_name.$nameExtension.$nameTitle. ', ' .$this->first_name;
+        $name = $this->last_name.$nameExtension.', ' .$this->first_name;
 
         return $name;
     }
