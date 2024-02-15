@@ -22,7 +22,7 @@ class PersonalInformationUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'first_name' => 'required|string|max:255',  
+            'first_name' => 'required|string|max:255',
             'middle_name' => 'nullable|string|max:255',
             'last_name' => 'required|string|max:255',
             'name_extension' => 'nullable|string|max:255',
@@ -32,10 +32,9 @@ class PersonalInformationUpdateRequest extends FormRequest
             'date_of_birth' => 'required|date:Y-m-d',
             'place_of_birth' => 'required|string|max:255',
             'civil_status' => 'required|string|max:255',
-            'date_of_marriage' => 'nullable|date:Y-m-d',
             'citizenship' => 'required|string|max:255',
-            'height' => 'nullable|integer',
-            'weight' => 'nullable|integer',
+            'height' => 'nullable|double',
+            'weight' => 'nullable|double',
             'blood_type' => 'nullable|string|max:255'
         ];
     }

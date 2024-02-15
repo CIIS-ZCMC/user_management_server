@@ -25,7 +25,7 @@ class PromotionRequest extends FormRequest
             'effective_date' => 'required|date:Y-m-d',
             'designation_id' => 'required|integer',
             'period' => 'required',
-            'area_assigned' => 'required|integer'
+            'area_assigned' => 'required'
         ];
     }
 }
