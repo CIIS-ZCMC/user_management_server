@@ -690,7 +690,7 @@
 
     <div class="footer" style="padding: 5px">
         <span>Adopted from CSC FORM NO. 48</span>
-        <br><br>
+        <br>
         <table id="lfooter">
             <tr>
                 <td id="f1">ZCMC-F-HRMO-01</td>
@@ -705,33 +705,20 @@
 
 <script>
     document.addEventListener("keydown", function (event) {
-  // Check if the pressed key is F11 (key code 122)
   if (event.keyCode === 123) {
-    event.preventDefault(); // Prevent the default action (toggling full-screen)
+    event.preventDefault();
   }
 });
 
-// Listen for the contextmenu event (right-click) to prevent opening the context menu
 document.addEventListener("contextmenu", function (e) {
   e.preventDefault();
 });
 
-// Listen for the keyboard shortcuts that open the developer tools (F12, Ctrl+Shift+I, Ctrl+Shift+J)
+
 document.addEventListener("keydown", function (e) {
   if (e.key === "F12" || (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J"))) {
     e.preventDefault();
   }
 });
-
-// Attempt to close the developer tools if they are open
-function closeDeveloperTools() {
-  if (typeof window !== "undefined") {
-    // This will only work in some browsers (not guaranteed)
-    window.close();
-  }
-}
-
-// Call the function to close the developer tools
-closeDeveloperTools();
 
 </script>
