@@ -36,6 +36,7 @@ class EmployeeProfile extends Authenticatable
         'employment_type_id'
     ];
 
+
     public $timestamps = TRUE;
 
     /**

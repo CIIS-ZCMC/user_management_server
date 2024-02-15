@@ -2310,6 +2310,7 @@ class EmployeeProfileController extends Controller
         }
     }
 
+    // API [employee-profile-picture/{id}]
     public function updateEmployeeProfilePicture($id, Request $request)
     {
         try{
@@ -2706,7 +2707,6 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
 
     public function promotion($id, PromotionRequest $request)
     {
