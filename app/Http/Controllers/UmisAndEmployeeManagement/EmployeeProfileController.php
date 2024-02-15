@@ -85,6 +85,7 @@ class EmployeeProfileController extends Controller
     public function signIn(SignInRequest $request)
     {
         try {
+
             /**
              * Fields Needed:
              *  employee_id
@@ -382,6 +383,7 @@ class EmployeeProfileController extends Controller
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
                 ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), false);
         } catch (\Throwable $th) {
+            return $th;
             Helpers::errorLog($this->CONTROLLER_NAME, 'signIn', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -1496,7 +1498,7 @@ class EmployeeProfileController extends Controller
 
     public function resetPassword($id, Request $request)
     {
-        try{
+        try {
             $user = $request->user;
             $cleanData['password'] = strip_tags($request->password);
 
@@ -1510,7 +1512,7 @@ class EmployeeProfileController extends Controller
 
             $employee_profile = EmployeeProfile::find($id);
 
-            if(!$employee_profile){
+            if (!$employee_profile) {
                 return response()->json(['message' => "Employee doesn't exist with id given."], Response::HTTP_NOT_FOUND);
             }
 
@@ -2828,7 +2830,7 @@ class EmployeeProfileController extends Controller
     }
 
     public function deactivateEmployeeAccount($id, Request $request)
-    { 
+    {
         try {
             $user = $request->user;
             $cleanData['password'] = strip_tags($request->password);
@@ -2845,10 +2847,10 @@ class EmployeeProfileController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            if($employee_profile->position() !== null){
+            if ($employee_profile->position() !== null) {
                 $position = $employee_profile->position();
                 $area = $employee_profile->assignedArea->findDetails();
-                return response()->json(["message" => "Action is prohibited this employee currently a ".$position->position." ".$area['details']->name."."], Response::HTTP_FORBIDDEN);
+                return response()->json(["message" => "Action is prohibited this employee currently a " . $position->position . " " . $area['details']->name . "."], Response::HTTP_FORBIDDEN);
             }
 
             $new_in_active = InActiveEmployee::create([
@@ -2862,7 +2864,7 @@ class EmployeeProfileController extends Controller
                 'remarks' => strip_tags($request->remarks)
             ]);
 
-            if(!$new_in_active){
+            if (!$new_in_active) {
                 return response()->json(['message' => "Failed to deactivate account."], Response::HTTP_BAD_REQUEST);
             }
 
@@ -2893,6 +2895,6 @@ class EmployeeProfileController extends Controller
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        } 
+        }
     }
 }

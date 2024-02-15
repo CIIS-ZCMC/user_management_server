@@ -255,6 +255,15 @@ class EmployeeProfile extends Authenticatable
         $nurse_service = Division::where('code', 'NS')->first();
 
         if ($head) {
+            if ($head->department_id === $nurse_service->id) {
+                return [
+                    'position' => 'Nurse Manager',
+                    'area' => $head
+                ];
+            }
+        }
+
+        if ($head) {
             if($head->department_id === $nurse_service->id){
                 return [
                     'position' => 'Nurse Manager',
@@ -333,9 +342,9 @@ class EmployeeProfile extends Authenticatable
 
     public function schedule()
     {
-        return $this->belongsToMany(Schedule::class, 'employee_profile_schedule')->withPivot('id','employee_profile_id');
+        return $this->belongsToMany(Schedule::class, 'employee_profile_schedule')->withPivot('id', 'employee_profile_id');
     }
-    
+
     public function GetPersonalInfo()
     {
         return $this->personalInformation;
