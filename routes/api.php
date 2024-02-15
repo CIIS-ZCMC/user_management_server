@@ -410,6 +410,10 @@ Route::middleware('auth.cookie')->group(function () {
             Route::put('address/{id}', 'AddressController@update');
         });
 
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::put('address-many/{id}', 'AddressController@updateMany');
+        });
+
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
             Route::put('address/{id}', 'AddressController@destroy');
         });
@@ -771,6 +775,10 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::post('employee-profile-picture/{id}', 'EmployeeProfileController@updateEmployeeProfilePicture');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::post('employee-profile/promote/{id}', 'EmployeeProfileController@promotion');
         });
 
@@ -795,7 +803,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
-            Route::get('employee-account-reset-password', 'EmployeeProfileController@resetPassword');
+            Route::get('employee-account-reset-password/{id}', 'EmployeeProfileController@resetPassword');
         });
 
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {

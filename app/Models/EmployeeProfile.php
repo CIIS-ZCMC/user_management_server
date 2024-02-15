@@ -103,6 +103,11 @@ class EmployeeProfile extends Authenticatable
         return $this->belongsTo(EmploymentType::class);
     }
 
+    public function passwordTrail()
+    {
+        return $this->hasMany(PasswordTrail::class);
+    }
+
     public function createToken()
     {
         Log::channel('custom-info')->info('PASSED');
@@ -249,14 +254,14 @@ class EmployeeProfile extends Authenticatable
         $head = Department::where('head_employee_profile_id', $this->id)->first();
         $nurse_service = Division::where('code', 'NS')->first();
 
-        if($head->department_id === $nurse_service->id){
-            return [
-                'position' => 'Nurse Manager',
-                'area' => $head
-            ];
-        }
-
         if ($head) {
+            if($head->department_id === $nurse_service->id){
+                return [
+                    'position' => 'Nurse Manager',
+                    'area' => $head
+                ];
+            }
+
             return [
                 'position' => 'Department Head',
                 'area' => $head

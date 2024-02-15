@@ -28,7 +28,9 @@ use App\Models\InActiveEmployee;
 use App\Models\LeaveType;
 use App\Models\PasswordTrail;
 use App\Models\PlantillaNumber;
+use App\Models\Role;
 use App\Models\Section;
+use App\Models\SystemRole;
 use App\Models\Unit;
 use App\Rules\StrongPassword;
 use Carbon\Carbon;
@@ -133,7 +135,7 @@ class EmployeeProfileController extends Controller
             /**
              * For new account need to reset the password
              */
-            if (count($employee_profile->loginTrails) === 0) {
+            if (count($employee_profile->passwordTrail) === 0) {
                 return response()->json(['message' => 'New account'], Response::HTTP_TEMPORARY_REDIRECT)
                     ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', env('SESSION_DOMAIN'), false); //status 307
             }
@@ -507,6 +509,66 @@ class EmployeeProfileController extends Controller
 
                 $cacheExpiration = Carbon::now()->addYear();
                 Cache::put($employee_profile['employee_id'], $side_bar_details, $cacheExpiration);
+            }
+        }
+
+        if(($side_bar_details['system']) > 0){
+            $employment_type = $employee_profile->employmentType;
+
+            if($employment_type->name === "Permanent" || $employment_type->name === 'Temporary'){
+                $role = Role::where('code', "Common User - Regular")->first();
+                $reg_system_role = SystemRole::where('role_id', $role->id)->first();
+
+                $systems = [];
+
+                foreach ($side_bar_details['system'] as $system) {
+                    if ($system['id'] === $reg_system_role->system_id) {
+                        $system_role_exist = false;
+
+                        foreach($system['roles'] as $value){
+                            if($value['name'] === $role->name){
+                                $system_role_exist = true;
+                            }
+                        }
+
+                        if(!$system_role_exist){
+                            $reg_system_roles_data = $this->buildRoleDetails($reg_system_role);
+                            $system['roles'][] = $reg_system_roles_data;
+                        }
+                        $systems[] = $system;
+                        continue;
+                    }
+                    $systems[] = $system;
+                }
+                $side_bar_details['system'] = $systems;
+            }
+
+            if($employment_type->name == "Job order"){
+                $role = Role::where("code", "COMMON-JO")->first();
+                $jo_system_role = SystemRole::where('role_id', $role->id)->first();
+
+                $systems = [];
+
+                foreach ($side_bar_details['system'] as $system) {
+                    if ($system['id'] === $jo_system_role->system_id) {
+                        $system_role_exist = false;
+
+                        foreach($system['roles'] as $value){
+                            if($value['name'] === $role->name){
+                                $system_role_exist = true;
+                            }
+                        }
+
+                        if(!$system_role_exist){
+                            $jo_system_roles_data = $this->buildRoleDetails($jo_system_role);
+                            $system['roles'][] = $jo_system_roles_data;
+                        }
+                        $systems[] = $system;
+                        continue;
+                    }
+                    $systems[] = $system;
+                }
+                $side_bar_details['system'] = $systems;
             }
         }
 
@@ -1239,8 +1301,7 @@ class EmployeeProfileController extends Controller
             $hashPassword = Hash::make($new_password . env('SALT_VALUE'));
             $encryptedPassword = Crypt::encryptString($hashPassword);
 
-            $now = Carbon::now();
-            $threeMonths = $now->addMonths(3);
+            $threeMonths = Carbon::now()->addMonths(3);
 
             $old_password = PasswordTrail::create([
                 'old_password' => $employee_profile->password_encrypted,
@@ -1429,7 +1490,7 @@ class EmployeeProfileController extends Controller
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
                 ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), false);
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'signOut', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'newPassword', $th->getMessage());
         }
     }
 
@@ -1447,7 +1508,7 @@ class EmployeeProfileController extends Controller
 
             $employee_id = strip_tags($request->employee_id);
 
-            $employee_profile = EmployeeProfile::where(['employee_id', $employee_id])->first();
+            $employee_profile = EmployeeProfile::find($id);
 
             if(!$employee_profile){
                 return response()->json(['message' => "Employee doesn't exist with id given."], Response::HTTP_NOT_FOUND);
@@ -1461,7 +1522,8 @@ class EmployeeProfileController extends Controller
             $employee_profile->update([
                 'password_encrypted' => $encryptedPassword,
                 'password_created_at' => Carbon::now(),
-                'password_expiration_at' => Carbon::now()->addSeconds(10)
+                'password_expiration_at' => Carbon::now()->addSeconds(10),
+                'is_2fa' => false
             ]);
 
             return response()->json([
@@ -2242,6 +2304,34 @@ class EmployeeProfileController extends Controller
             );
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function updateEmployeeProfilePicture($id, Request $request)
+    {
+        try{
+            $employee_profile = EmployeeProfile::find($id);
+
+            if(!$employee_profile){
+                return response()->json(['message' => "No employee exist."], Response::HTTP_NOT_FOUND);
+            }
+
+            $profile_path = null;
+
+            $fileName = Helpers::checkSaveFile($request->attachment, 'photo/profiles');
+            if (is_string($fileName)) {
+                $profile_path = $request->attachment === null  || $request->attachment === 'null' ? null : $fileName;
+            }
+
+            $employee_profile->update(['profile_url' => $profile_path]);
+
+            return response()->json([
+                "data" => new EmployeeProfileResource($employee_profile),
+                "message" => "Successfully update employee profile."
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'updateEmployeeProfilePicture', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
