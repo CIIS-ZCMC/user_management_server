@@ -113,7 +113,7 @@ class TimeAdjusmentController extends Controller
                                 'first_out' => $value['firstOut'] ?? null,
                                 'second_in' => $value['secondIn'] ?? null,
                                 'second_out' => $value['secondOut'] ?? null,
-                                'employee_profile_id' => $employee->id,
+                                'employee_profile_id' => $value['employee_profile_id'],
                                 'date' => $value['value'] ?? null,
                                 'recommended_by' => $user->id,
                                 'approve_by' => $approving_officer,
