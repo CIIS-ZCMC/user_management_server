@@ -806,6 +806,10 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('employee-profile/{id}', 'EmployeeProfileController@show');
         });
 
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function () {
+            Route::delete('employee-profile-deactivate/{id}', 'EmployeeProfileController@deactivateEmployeeAccount');
+        });
+
 
 
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function () {
