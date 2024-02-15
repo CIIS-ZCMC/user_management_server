@@ -99,10 +99,10 @@ class TimeAdjusmentController extends Controller
             foreach ($dates as $key => $value) {
                 $daily_time_record = DailyTimeRecords::where([
                     ['biometric_id', '=', $cleanData['biometric_id']],
-                    ['dtr_date', '=', $value['date']],
+                    ['dtr_date', '=', Carbon::parse($value['date'])],
                 ])->first();
 
-                if (!$daily_time_record) {
+                if ($daily_time_record === null) {
                     $find_designation = EmployeeProfile::where('biometric_id', $cleanData['biometric_id'])->first()->findDesignation()['code'];
                     $designation = 'CMPS II' || 'MCC I' || 'MCC II' || 'MO I'  || 'MO II' || 'MO III' || 'MO IV' || 'MS I' || 'MS I (PT)' || 'MS II' || 'MS II (PT)' ||
                                     'MS III' || 'MS III (PT)' || 'MS IV' || 'MS IV (PT)';
@@ -114,7 +114,7 @@ class TimeAdjusmentController extends Controller
                                 'second_in' => $value['secondIn'] ?? null,
                                 'second_out' => $value['secondOut'] ?? null,
                                 'employee_profile_id' => $value['employee_profile_id'],
-                                'date' => $value['value'] ?? null,
+                                'date' => Carbon::parse($value['date']),
                                 'recommended_by' => $user->id,
                                 'approve_by' => $approving_officer,
                             ]);
@@ -156,8 +156,8 @@ class TimeAdjusmentController extends Controller
                         'second_out' => $value['secondOut'] ?? null,
                         'employee_profile_id' => $employee->id,
                         'daily_time_record_id' => $daily_time_record->id,
-                        'date' => $value['value'] ?? null,
-                        'recommended_by' => $recommending_officer->id,
+                        'date' => Carbon::parse($value['date']),
+                        'recommended_by' => $recommending_officer,
                         'approve_by' => $approving_officer,
                     ]);
                 }
