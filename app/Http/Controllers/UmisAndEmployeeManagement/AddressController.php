@@ -4,6 +4,7 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Http\Requests\AddressManyRequest;
 use App\Http\Requests\PasswordApprovalRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -142,6 +143,113 @@ class AddressController extends Controller
 
             return response()->json([
                 'data' => new AddressResource($address),
+                'message' => 'Employee address detail updated.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    // API [address-many/{id}]
+    public function updateMany($id, AddressManyRequest $request)
+    {
+        try{
+            $cleanData = [];
+
+            foreach ($request->address as $key => $address) {
+                $new_clean_data = [];
+                foreach($address as $key => $value){
+                    if (is_bool($value) || $value === null) {
+                        $new_clean_data[$key] = $value;
+                        continue;
+                    }
+                    $new_clean_data[$key] = strip_tags($value);
+                }
+                $cleanData[] = $new_clean_data;
+            }
+
+            $employee_profile = EmployeeProfile::find($id);
+
+            if(!$employee_profile){
+                return response()->json(['message' => "No employee existing."], Response::HTTP_NOT_FOUND);
+            }
+
+            if(count($employee_profile->personalInformation->addresses) === 2){
+                $addresses = $employee_profile->personalInformation->addresses;
+
+                /**
+                 * If employee has existing 2 address registered and the update only 1
+                 * as permanent address and residential
+                 * This will update the 1 address of the employee and delete the other one.
+                 */
+                if($cleanData['is_permanent'] === 1){
+                    $index = 0;
+                    $updated_address = [];
+
+                    foreach($addresses as $address){
+                        if($index === 0){
+                            $address->update(...$cleanData[0]);
+                            $updated_address[] = $address;
+                            $updated_address[] = $address;
+                            continue;
+                        }
+                        $address->delete();
+                    }
+                    
+                    return response()->json([
+                        'data' => AddressResource::collection($updated_address),
+                        'message' => 'Employee address detail updated.'
+                    ], Response::HTTP_OK);
+                }
+                
+                /**
+                 * Updating existing addresses
+                 */
+                $updated_address = [];
+
+                foreach($addresses as $address){
+                    foreach($cleanData as $value){
+                        $address->update(...$value);
+                        $updated_address[] = $address;
+                    }
+                }
+
+                return response()->json([
+                    'data' => AddressResource::collection($updated_address),
+                    'message' => 'Employee address detail updated.'
+                ], Response::HTTP_OK);
+            }
+
+            /**
+             * If the new update is also permanent
+             * this will update only the existing permanent address
+             * and return as both residential and permanent
+             */
+            if($cleanData['is_permanent'] === 0){
+                $address = Address::where('personal_information_id', $employee_profile->personalInformation->id)
+                    ->first()->update(...$cleanData[0]);
+                
+                return response()->json([
+                    'data' => AddressResource::collection([$address, $address]),
+                    'message' => 'Employee address detail updated.'
+                ], Response::HTTP_OK);
+            }   
+
+            /**
+             * If employee has 1 previous address and the update will be 1 permanent and 1 residential
+             * this will update the existing address
+             * and register new address
+             */
+            $existing_address = Address::where('personal_information_id', $employee_profile->personalInformation->id)
+                ->first()->update(...$cleanData[0]);
+
+            $new_address = Address::create(...$cleanData[1]);
+
+            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+
+            return response()->json([
+                'data' => AddressResource::collection([$existing_address, $new_address]),
                 'message' => 'Employee address detail updated.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){

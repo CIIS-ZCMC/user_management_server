@@ -18,7 +18,8 @@ class InActiveEmployee extends Model
         'biometric_id',
         'employment_end_at',
         'employment_type_id',
-        'personal_information_id'
+        'personal_information_id',
+        'remarks'
     ];
 
     public $timestamps = TRUE;
