@@ -8,6 +8,7 @@ use App\Http\Requests\NewRolePermissionRequest;
 use App\Http\Resources\DesignationAssignedSystemRolesResource;
 use App\Http\Resources\DesignationWithSystemRoleResource;
 use App\Http\Resources\EmployeeWithSpecialAccessResource;
+use App\Http\Resources\PositionSystemRoleOnlyResource;
 use App\Http\Resources\SpecialAccessRoleAssignResource;
 use App\Models\Designation;
 use App\Models\EmployeeProfile;
@@ -53,11 +54,26 @@ class SystemRoleController extends Controller
     public function employeesWithSpecialAccess(Request $request)
     {
         try {
-            $employees = EmployeeProfile::all();
+            $employees = EmployeeProfile::whereHas('specialAccessRole')->get();
 
             return response()->json([
                 'data' => EmployeeWithSpecialAccessResource::collection($employees),
                 'message' => 'Special access role assign successfully.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'addSpecialAccessRole', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function employeeWithSpecialAccess($id, Request $request)
+    {
+        try {
+            $employee = EmployeeProfile::find($id);
+
+            return response()->json([
+                'data' => PositionSystemRoleOnlyResource::collection($employee->specialAccessRole),
+                'message' => 'Employee Special access role assign successfully.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'addSpecialAccessRole', $th->getMessage());

@@ -14,8 +14,8 @@ class CivilServiceEligibilityResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $license_number = $this->license_number === null?'NONE':$this->license_number;
-        $license_release_at = $this->license_release_at === null?'NONE':$this->license_release_at;
+        $license_number = $this->license_number;
+        $license_release_at = $this->license_release_at;
 
         return [
             'id'=> $this->id,

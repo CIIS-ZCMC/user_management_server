@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class PositionSystemRoleOnlyResource extends JsonResource
+class ChildFullResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -14,13 +14,13 @@ class PositionSystemRoleOnlyResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $system_role_data = $this->systemRole;
-        $role = $system_role_data->role;
-        
         return [
             'id' => $this->id,
-            'name' => $role->name,
-            // 'created_at' => $this->created_at
+            'last_name' => $this->last_name,
+            'middle_name' => $this->middle_name,
+            'first_name' => $this->first_name,
+            'gender' => $this->gender,
+            'birthdate' => $this->birthdate
         ];
     }
 }

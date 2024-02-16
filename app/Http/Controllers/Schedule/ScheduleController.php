@@ -57,7 +57,7 @@ class ScheduleController extends Controller
                         $query->with(['timeShift', 'holiday'])->whereYear('date', '=', $year)->whereMonth('date', '=', $month);
                     }
                 ])->whereHas('assignedArea', function ($query) use ($user, $assigned_area) {
-                    $query->where([strtolower($assigned_area['sector']) . '_id' => $user->assignedArea->id]);
+                    $query->where([strtolower($assigned_area['sector']) . '_id' => $assigned_area['details']['id']]);
                 })->get();
             }
 
@@ -209,8 +209,8 @@ class ScheduleController extends Controller
                 $employee = $cleanData['employee'];
                 foreach ($employee as $key => $value) {
                     $employee_ids = $value['employee_id']; // Array of employee IDs
-                    // return $existing_employee_ids = EmployeeProfile::whereIn('id', $employee_ids)->pluck('id');
-                    $existing_employee_ids = EmployeeProfile::where('id', $employee_ids)->pluck('id');
+                    $existing_employee_ids = EmployeeProfile::whereIn('id', $employee_ids)->pluck('id');
+                    // $existing_employee_ids = EmployeeProfile::where('id', $employee_ids)->pluck('id');
 
                     foreach ($existing_employee_ids as $employee_id) {
                         $query = DB::table('employee_profile_schedule')->where([
@@ -395,7 +395,8 @@ class ScheduleController extends Controller
             $filename = 'Schedule.pdf';
 
             /* Downloads as PDF */
-            $dompdf->stream($filename);
+            // $dompdf->stream($filename);
+            
 
             // return view('generate_schedule/section-schedule', compact('data','holiday', 'month', 'year', 'dates', 'user', 'head_officer'));
         } catch (\Throwable $th) {

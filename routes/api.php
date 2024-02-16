@@ -263,6 +263,10 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-SM view-all'])->group(function () {
+            Route::get('system-role/employees-with-special-access/{id}', 'SystemRoleController@employeeWithSpecialAccess');
+        });
+
+        Route::middleware(['auth.permission:UMIS-SM view-all'])->group(function () {
             Route::get('system-role/designation-with-system-roles', 'SystemRoleController@designationsWithSystemRoles');
         });
 
@@ -381,6 +385,11 @@ Route::middleware('auth.cookie')->group(function () {
         /**
          * Address Module
          */
+
+
+        // Route::get('employees-dtr-list', 'EmployeeProfileController@employeesDTRList');
+
+
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('address-all-personal-info/{id}', 'AddressController@findByPersonalInformationID');
         });
@@ -399,6 +408,10 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::put('address/{id}', 'AddressController@update');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::put('address-many/{id}', 'AddressController@updateMany');
         });
 
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
@@ -762,6 +775,14 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::post('employee-profile-picture/{id}', 'EmployeeProfileController@updateEmployeeProfilePicture');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::post('employee-profile/promote/{id}', 'EmployeeProfileController@promotion');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::get('employee-profile/validate-access-token', 'EmployeeProfileController@revalidateAccessToken');
         });
 
@@ -781,6 +802,9 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('employee-profile-bytypes', 'EmployeeProfileController@getEmployeeListByEmployementTypes');
         });
 
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::get('employee-account-reset-password/{id}', 'EmployeeProfileController@resetPassword');
+        });
 
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {
             Route::post('employee-profile', 'EmployeeProfileController@store');
@@ -792,6 +816,10 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function () {
             Route::get('employee-profile/{id}', 'EmployeeProfileController@show');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function () {
+            Route::delete('employee-profile-deactivate/{id}', 'EmployeeProfileController@deactivateEmployeeAccount');
         });
 
 
@@ -811,7 +839,7 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
             Route::delete('employee-profile/{id}', 'EmployeeProfileController@destroy');
         });
-        
+
 
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
             Route::delete('employee-profile/{id}/revoke/{access_right_id}', 'EmployeeProfileController@revokeRights');
@@ -1101,6 +1129,10 @@ Route::middleware('auth.cookie')->group(function () {
          */
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::put('plantilla-reassign-area/{id}', 'PlantillaController@reAssignArea');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::put('plantilla-reassign-plantilla/{id}', 'PlantillaController@reAssignPlantilla');
         });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
@@ -1590,7 +1622,7 @@ Route::middleware('auth.cookie')->group(function () {
             Route::post('leave-application-approved/{id}', 'LeaveApplicationController@approved');
         });
 
-        Route::middleware(['auth.permission:UMIS-LM download'])->group(function(){
+        Route::middleware(['auth.permission:UMIS-LM download'])->group(function () {
             Route::get('leave-application-print/{id}', 'LeaveApplicationController@printLeaveForm');
         });
 
@@ -1895,7 +1927,7 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-OCM view'])->group(function () {
             Route::get('on-call', 'OnCallController@create');
         });
-        
+
         Route::middleware(['auth.permission:UMIS-OCM write'])->group(function () {
             Route::post('on-call', 'OnCallController@store');
         });

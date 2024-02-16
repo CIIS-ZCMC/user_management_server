@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 
 use App\Http\Requests\ChildManyRequest;
 use App\Http\Requests\PasswordApprovalRequest;
+use App\Http\Resources\ChildFullResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
@@ -71,7 +72,7 @@ class ChildController extends Controller
         try{
             $cleanData = [];
 
-            $personal_information = PersonalInformation::find($request->input('personal_information_id'));
+            $personal_information = PersonalInformation::find($request->personal_information_id);
 
             if(!$personal_information)
             {
@@ -164,7 +165,7 @@ class ChildController extends Controller
             }
 
             return response()->json([
-                'data' => new ChildResource($child),
+                'data' => new ChildFullResource($child),
                 'message' => 'Employee child record retrieved'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -266,18 +267,18 @@ class ChildController extends Controller
         }
     }
     
-    public function destroy($id, PasswordApprovalRequest $request)
+    public function destroy($id, Request $request)
     {
         try{
-            $password = strip_tags($request->password);
+            // $password = strip_tags($request->password);
 
-            $employee_profile = $request->user;
+            // $employee_profile = $request->user;
 
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+            // $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
 
-            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
-            }
+            // if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+            //     return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            // }
 
             $child = Child::findOrFail($id);
 

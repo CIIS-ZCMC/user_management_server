@@ -22,6 +22,7 @@ return new class extends Migration
             $table->foreign('employment_type_id')->references('id')->on('employment_types');
             $table->unsignedBigInteger('personal_information_id');
             $table->foreign('personal_information_id')->references('id')->on('personal_informations');
+            $table->text('remarks')->nullable();
             $table->timestamps();
         });
     }

@@ -36,6 +36,7 @@ class EmployeeProfile extends Authenticatable
         'employment_type_id'
     ];
 
+
     public $timestamps = TRUE;
 
     /**
@@ -101,6 +102,11 @@ class EmployeeProfile extends Authenticatable
     public function employmentType()
     {
         return $this->belongsTo(EmploymentType::class);
+    }
+
+    public function passwordTrail()
+    {
+        return $this->hasMany(PasswordTrail::class);
     }
 
     public function createToken()
@@ -206,12 +212,32 @@ class EmployeeProfile extends Authenticatable
     public function position()
     {
         /** Division Chief */
-        $chief = Division::where('chief_employee_profile_id', $this->id)->first();
+        $chief = Division::where('chief_employee_profile_id', $this->id)->where('code', 'OMCC')->first();
 
         if ($chief) {
             return [
-                'position' => 'Chief',
+                'position' => 'Medical Center Chief',
                 'area' => $chief
+            ];
+        }
+
+        /** Chief Nurse */
+        $chief_nurse = Division::where('chief_employee_profile_id', $this->id)->where('code', 'NS')->first();
+
+        if ($chief_nurse) {
+            return [
+                'position' => 'Chief Nurse',
+                'area' => $chief_nurse
+            ];
+        }
+
+        /** Division Head */
+        $division_head = Division::where('chief_employee_profile_id', $this->id)->first();
+
+        if ($division_head) {
+            return [
+                'position' => 'Division Head',
+                'area' => $division_head
             ];
         }
 
@@ -227,8 +253,25 @@ class EmployeeProfile extends Authenticatable
 
         /** Department Chief */
         $head = Department::where('head_employee_profile_id', $this->id)->first();
+        $nurse_service = Division::where('code', 'NS')->first();
 
         if ($head) {
+            if ($head->department_id === $nurse_service->id) {
+                return [
+                    'position' => 'Nurse Manager',
+                    'area' => $head
+                ];
+            }
+        }
+
+        if ($head) {
+            if($head->department_id === $nurse_service->id){
+                return [
+                    'position' => 'Nurse Manager',
+                    'area' => $head
+                ];
+            }
+
             return [
                 'position' => 'Department Head',
                 'area' => $head
@@ -300,9 +343,9 @@ class EmployeeProfile extends Authenticatable
 
     public function schedule()
     {
-        return $this->belongsToMany(Schedule::class, 'employee_profile_schedule')->withPivot('id','employee_profile_id');
+        return $this->belongsToMany(Schedule::class, 'employee_profile_schedule')->withPivot('id', 'employee_profile_id');
     }
-    
+
     public function GetPersonalInfo()
     {
         return $this->personalInformation;
