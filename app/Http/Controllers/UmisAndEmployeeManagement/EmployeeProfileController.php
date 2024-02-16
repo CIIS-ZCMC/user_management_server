@@ -12,6 +12,7 @@ use App\Http\Resources\EducationalBackgroundResource;
 use App\Http\Resources\FamilyBackGroundResource;
 use App\Http\Resources\IdentificationNumberResource;
 use App\Http\Resources\OtherInformationResource;
+use App\Http\Resources\PlantillaNumberResource;
 use App\Http\Resources\TrainingResource;
 use App\Http\Resources\VoluntaryWorkResource;
 use App\Http\Resources\WorkExperienceResource;
@@ -2578,11 +2579,13 @@ class EmployeeProfileController extends Controller
 
 
             $data = [
+                'employee_profile_id' => $employee_profile['id'],
                 'employee_id' => $employee_profile['employee_id'],
                 'name' => $personal_information->employeeName(),
                 'designation' => $designation['name'],
                 'designation_code' => $designation['code'],
                 'plantilla_number_id' => $assigned_area['plantilla_number_id'],
+                'plantilla_number' => $assigned_area->plantillaNumber['number'],
                 'employee_details' => [
                     'employee' => $employee,
                     'personal_information' => $personal_information_data,
