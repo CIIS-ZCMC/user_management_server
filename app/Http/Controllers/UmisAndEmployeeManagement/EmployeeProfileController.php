@@ -2583,6 +2583,7 @@ class EmployeeProfileController extends Controller
                 'designation' => $designation['name'],
                 'designation_code' => $designation['code'],
                 'plantilla_number_id' => $assigned_area['plantilla_number_id'],
+                'plantilla_number' => $assigned_area->plantillaNumber,
                 'employee_details' => [
                     'employee' => $employee,
                     'personal_information' => $personal_information_data,

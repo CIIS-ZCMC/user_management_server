@@ -442,7 +442,6 @@ class LeaveApplicationController extends Controller
     }
 
     public function store(LeaveApplicationRequest $request)
-
     {
         try {
 
