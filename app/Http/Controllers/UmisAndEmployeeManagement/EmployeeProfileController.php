@@ -514,10 +514,10 @@ class EmployeeProfileController extends Controller
             }
         }
 
-        if(($side_bar_details['system']) > 0){
+        if (($side_bar_details['system']) > 0) {
             $employment_type = $employee_profile->employmentType;
 
-            if($employment_type->name === "Permanent" || $employment_type->name === 'Temporary'){
+            if ($employment_type->name === "Permanent" || $employment_type->name === 'Temporary') {
                 $role = Role::where('code', "Common User - Regular")->first();
                 $reg_system_role = SystemRole::where('role_id', $role->id)->first();
 
@@ -527,13 +527,13 @@ class EmployeeProfileController extends Controller
                     if ($system['id'] === $reg_system_role->system_id) {
                         $system_role_exist = false;
 
-                        foreach($system['roles'] as $value){
-                            if($value['name'] === $role->name){
+                        foreach ($system['roles'] as $value) {
+                            if ($value['name'] === $role->name) {
                                 $system_role_exist = true;
                             }
                         }
 
-                        if(!$system_role_exist){
+                        if (!$system_role_exist) {
                             $reg_system_roles_data = $this->buildRoleDetails($reg_system_role);
                             $system['roles'][] = $reg_system_roles_data;
                         }
@@ -545,7 +545,7 @@ class EmployeeProfileController extends Controller
                 $side_bar_details['system'] = $systems;
             }
 
-            if($employment_type->name == "Job order"){
+            if ($employment_type->name == "Job order") {
                 $role = Role::where("code", "COMMON-JO")->first();
                 $jo_system_role = SystemRole::where('role_id', $role->id)->first();
 
@@ -555,13 +555,13 @@ class EmployeeProfileController extends Controller
                     if ($system['id'] === $jo_system_role->system_id) {
                         $system_role_exist = false;
 
-                        foreach($system['roles'] as $value){
-                            if($value['name'] === $role->name){
+                        foreach ($system['roles'] as $value) {
+                            if ($value['name'] === $role->name) {
                                 $system_role_exist = true;
                             }
                         }
 
-                        if(!$system_role_exist){
+                        if (!$system_role_exist) {
                             $jo_system_roles_data = $this->buildRoleDetails($jo_system_role);
                             $system['roles'][] = $jo_system_roles_data;
                         }
@@ -1294,11 +1294,57 @@ class EmployeeProfileController extends Controller
                 return response()->json(['errors' => $validator->errors()], Response::HTTP_UNPROCESSABLE_ENTITY);
             }
 
+
             $employee_details = json_decode($request->cookie('employee_details'));
 
             $employee_profile = EmployeeProfile::where('employee_id', $employee_details->employee_id)->first();
-
             $new_password = strip_tags($request->password);
+
+            // $getPasswordTrails = PasswordTrail::where('employee_profile_id', $employee_profile->id)->get();
+            // $minimumReq = 3;
+            // $match = false;
+            // $cleanData['password'] = strip_tags($request->input('password'));
+            // foreach ($getPasswordTrails as $key => $groupofPass) {
+            //     $count = count($getPasswordTrails);
+            //     if ($minimumReq >= $count) {
+            //         $minimumReq = $count - 1;
+            //     }
+
+
+            //     $lastData = $getPasswordTrails[$count - 1];
+            //     $toskip = $count - floor($minimumReq);
+
+
+            //     $decryptedLastPassword = Crypt::decryptString($lastData->old_password);
+            //     if (Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedLastPassword)) {
+            //         return response()->json(['message' => "Please consider changing your password, as it appears you have reused an old password."], Response::HTTP_BAD_REQUEST);
+            //     }
+            //     return "Not match on lastdata";
+
+            //     if ($toskip > 0) {
+
+            //         /* scan a mimimum req of 1 to check if theres a password match */
+            //         for ($i = 1; $i <= $count; $i++) {
+
+            //             for ($j = floor($count - 1); $j >= floor(floor($count) - $minimumReq); $j--) {
+            //                 echo $j;
+            //                 $decryptedPassword = Crypt::decryptString($getPasswordTrails[$j]->old_password);
+            //                 if (Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedPassword)) {
+            //                     $match = true;
+            //                     break;
+            //                 }
+            //             }
+            //         }
+
+
+
+            //         if ($match) {
+            //             return response()->json(['message' => "Please consider changing your password, as it appears you have reused an old password."], Response::HTTP_BAD_REQUEST);
+            //         }
+            //     }
+            // }
+
+            // return response()->json(['message' => "save new"], Response::HTTP_UNAUTHORIZED);
 
             $hashPassword = Hash::make($new_password . env('SALT_VALUE'));
             $encryptedPassword = Crypt::encryptString($hashPassword);
@@ -2313,10 +2359,10 @@ class EmployeeProfileController extends Controller
     // API [employee-profile-picture/{id}]
     public function updateEmployeeProfilePicture($id, Request $request)
     {
-        try{
+        try {
             $employee_profile = EmployeeProfile::find($id);
 
-            if(!$employee_profile){
+            if (!$employee_profile) {
                 return response()->json(['message' => "No employee exist."], Response::HTTP_NOT_FOUND);
             }
 
