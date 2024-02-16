@@ -55,7 +55,7 @@ class PlantillaController extends Controller
             password : userPassword
             */
             $user = $request->user;
-            $cleanData['password'] = strip_tags($request->input('password'));
+            $cleanData['password'] = strip_tags($request->password);;
             $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
             if (!Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedPassword)) {
                 return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
@@ -63,13 +63,13 @@ class PlantillaController extends Controller
             $employee_profile = EmployeeProfile::findOrFail($id);
             $to_assign = $request->toassign;
             /* plantilla_id | plantilla_numbers */
-            $user_Current_Plantilla = $employee_profile->assignedArea->plantilla_id;
+            $user_Current_Plantilla = $employee_profile->assignedArea->plantilla_number_id;
             if ($user_Current_Plantilla) {
-                PlantillaNumber::where('plantilla_id', $user_Current_Plantilla)->update([
+                PlantillaNumber::where('id', $user_Current_Plantilla)->update([
                     'is_dissolve' => 1,
                     'is_vacant' => 0,
                 ]);
-                PlantillaNumber::where('plantilla_id', $to_assign)->update([
+                PlantillaNumber::where('plantila_number_id', $to_assign)->update([
                     'employee_profile_id' => $id,
                     'is_vacant' => 0,
                 ]);
@@ -79,7 +79,7 @@ class PlantillaController extends Controller
             }
             return response()->json([
                 'message' => 'No plantilla records found for this user.'
-            ], Response::HTTP_OK);
+            ], Response::HTTP_NOT_FOUND);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'reAssignPlantilla', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -175,8 +175,6 @@ class PlantillaController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
-
 
 
     public function plantillaWithDesignation($id, Request $request)
