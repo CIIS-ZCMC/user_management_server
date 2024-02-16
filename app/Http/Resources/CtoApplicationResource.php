@@ -12,10 +12,8 @@ class CtoApplicationResource extends JsonResource
         $employeeProfile = [
             'name'=> $this->employeeProfile->personalInformation->name(),
             'profile_url' => $this->profile_url,
-            'designation' => [
-                'name' => $this->employeeProfile->assignedArea->designation->name,
-                'code' => $this->employeeProfile->assignedArea->designation->code,
-            ],
+            'designation_name' => $this->employeeProfile->assignedArea->designation->name,
+            'designation_code' => $this->employeeProfile->assignedArea->designation->code,
             'area' => $this->employeeProfile->assignedArea->findDetails()['details']->name,
         ];
 
