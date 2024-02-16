@@ -2585,7 +2585,7 @@ class EmployeeProfileController extends Controller
                 'designation' => $designation['name'],
                 'designation_code' => $designation['code'],
                 'plantilla_number_id' => $assigned_area['plantilla_number_id'],
-                'plantilla_number' => $assigned_area->plantillaNumber['number'],
+                'plantilla_number' => $assigned_area['plantilla_number_id'] == NULL ? NULL : $assigned_area->plantillaNumber['number'],
                 'employee_details' => [
                     'employee' => $employee,
                     'personal_information' => $personal_information_data,
