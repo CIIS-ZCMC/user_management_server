@@ -24,6 +24,7 @@ use App\Models\Department;
 use App\Models\Section;
 use App\Models\Unit;
 use App\Models\EmployeeProfile;
+use App\Models\AssignArea;
 
 class PlantillaController extends Controller
 {
@@ -65,6 +66,10 @@ class PlantillaController extends Controller
             /* plantilla_id | plantilla_numbers */
             $user_Current_Plantilla = $employee_profile->assignedArea->plantilla_number_id;
             if ($user_Current_Plantilla) {
+                AssignArea::where('plantilla_number_id', $user_Current_Plantilla)->update([
+                    'plantilla_number_id' => $to_assign,
+                    'effective_at' => now()
+                ]);
                 PlantillaNumber::where('id', $user_Current_Plantilla)->update([
                     'is_dissolve' => 1,
                     'is_vacant' => 0,
@@ -73,6 +78,7 @@ class PlantillaController extends Controller
                     'employee_profile_id' => $id,
                     'is_vacant' => 0,
                 ]);
+
                 return response()->json([
                     'message' => 'Plantilla reassigned successfully!'
                 ], Response::HTTP_OK);
