@@ -382,6 +382,7 @@ class EmployeeProfileController extends Controller
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
                 ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), false);
         } catch (\Throwable $th) {
+            return $th;
             Helpers::errorLog($this->CONTROLLER_NAME, 'signIn', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -2618,6 +2619,8 @@ class EmployeeProfileController extends Controller
                     $address['permanent_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
                 }
             }
+
+
 
             $data = [
                 'employee_profile_id' => $employee_profile['id'],
