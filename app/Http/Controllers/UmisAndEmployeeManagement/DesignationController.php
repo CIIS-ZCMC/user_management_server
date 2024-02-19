@@ -18,6 +18,7 @@ use App\Http\Resources\DesignationWithSystemRoleResource;
 use App\Http\Resources\DesignationTotalEmployeeResource;
 use App\Http\Resources\DesignationTotalPlantillaResource;
 use App\Http\Resources\DesignationEmployeesResource;
+use App\Http\Resources\DesignationwPlantillaResource;
 use App\Models\Designation;
 use App\Models\PositionSystemRole;
 
@@ -29,17 +30,17 @@ class DesignationController extends Controller
 
 
     public function test(Request $request)
-    { 
-       $name = Helpers::checkSaveFile($request->attachment, 'test/profiles');    
-       return response()->json(['data' => $name], Response::HTTP_OK);
+    {
+        $name = Helpers::checkSaveFile($request->attachment, 'test/profiles');
+        return response()->json(['data' => $name], Response::HTTP_OK);
     }
 
     public function index(Request $request)
     {
-        try{
+        try {
             $cacheExpiration = Carbon::now()->addDay();
 
-            $designations = Cache::remember('designations', $cacheExpiration, function(){
+            $designations = Cache::remember('designations', $cacheExpiration, function () {
                 return Designation::all();
             });
 
@@ -47,60 +48,77 @@ class DesignationController extends Controller
                 'data' => DesignationResource::collection($designations),
                 'message' => 'Designation records retrieved.'
             ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function fetchwPlantilla(Request $request)
+    {
+        try {
+            $designations = Designation::whereIn('id', function ($query) {
+                $query->select('designation_id')->from('plantillas');
+            })->get();
+
+            return response()->json([
+                'data' => DesignationResource::collection($designations),
+                'message' => 'Designation records retrieved.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'fetchwPlantilla', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
     public function totalEmployeePerDesignation(Request $request)
     {
-        try{
+        try {
             $total_employee_per_designation = Designation::withCount('assignAreas')->get();
 
             return response()->json([
                 'data' => DesignationTotalEmployeeResource::collection($total_employee_per_designation),
                 'message' => 'Total employee per disignation retrieved.'
             ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'totalEmployeePerDesignation', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'totalEmployeePerDesignation', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
     public function totalPlantillaPerDesignation(Request $request)
     {
-        try{
+        try {
             $total_plantilla_per_designation = Designation::withCount('plantilla')->get();
 
             return response()->json([
                 'data' => DesignationTotalPlantillaResource::collection($total_plantilla_per_designation),
                 'message' => 'Total plantilla per designation retrieved.'
             ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'totalEmployeePerDesignation', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'totalEmployeePerDesignation', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
- 
+
     public function employeeListInDesignation($id, Request $request)
     {
-        try{
+        try {
             $employee_with_designation = Designation::with('assignAreas.employeeProfile')->findOrFail($id);
 
             return response()->json([
                 'data' => new DesignationEmployeesResource($employee_with_designation),
                 'message' => 'Designation employee list retrieved.'
             ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'employeesOfSector', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'employeesOfSector', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function store(DesignationRequest $request)
     {
-        try{
+        try {
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
@@ -109,42 +127,41 @@ class DesignationController extends Controller
 
             $check_if_exist =  Designation::where('name', $cleanData['name'])->where('code', $cleanData['code'])->first();
 
-            if($check_if_exist !== null){
+            if ($check_if_exist !== null) {
                 return response()->json(['message' => 'Department already exist.'], Response::HTTP_FORBIDDEN);
             }
 
             $designation = Designation::create($cleanData);
 
-            Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, null, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
 
             return response()->json([
                 'data' => new DesignationResource($designation),
                 'message' => 'New designation added.'
             ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
     public function assignSystemRole(Request $request)
     {
-        try{
+        try {
             $failed = [];
             $designations = [];
             $designation_names = [];
 
-            foreach($request->designations as $id){
+            foreach ($request->designations as $id) {
                 $designation_id = strip_tags($id);
                 $designation = Designation::find($designation_id);
-                
-                if(!$designation)
-                {
+
+                if (!$designation) {
                     $failed[] = $id;
                     continue;
                 }
-                
-                foreach($request->system_roles as $system_role){
+
+                foreach ($request->system_roles as $system_role) {
                     $system_role_id = strip_tags($system_role);
 
                     PositionSystemRole::create([
@@ -152,31 +169,31 @@ class DesignationController extends Controller
                         'designation_id' => $designation->id
                     ]);
                 }
-                
+
                 Cache::forget($designation->name);
-                if(!in_array($designation->name, $designation_names)){
+                if (!in_array($designation->name, $designation_names)) {
                     $designation_names[] = $designation->name;
                 }
                 $designations[] = $designation;
             }
-            
+
             $this->buildSidebarDetails($designation);
 
-         
-            if(count($failed) > 0){
+
+            if (count($failed) > 0) {
                 return response()->json([
                     'data' => DesignationWithSystemRoleResource::collection($designations),
                     'message' => "Some designation failed to assign system role."
                 ], Response::HTTP_OK);
             }
 
-            Helpers::registerSystemLogs($request, null, true, 'Success in assigned system role to designation '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, null, true, 'Success in assigned system role to designation ' . $this->SINGULAR_MODULE_NAME . '.');
 
             return response()->json([
                 'data' => DesignationWithSystemRoleResource::collection($designations),
                 'message' => 'System role successfully assign to designation.'
             ], Response::HTTP_OK);
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'assignSystemRole', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -212,7 +229,7 @@ class DesignationController extends Controller
             }
         ])->where('designation_id', $designation['id'])->get();
 
-        if(count($position_system_roles) !== 0){
+        if (count($position_system_roles) !== 0) {
             /**
              * Convert to meet sidebar data format.
              * Iterate to every system roles.
@@ -287,11 +304,10 @@ class DesignationController extends Controller
 
     public function show($id, Request $request)
     {
-        try{
+        try {
             $designation = Designation::find($id);
 
-            if(!$designation)
-            {
+            if (!$designation) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
@@ -299,15 +315,15 @@ class DesignationController extends Controller
                 'data' => new DesignationResource($designation),
                 'message' => 'Designation record retrieved.'
             ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function update($id, DesignationRequest $request)
     {
-        try{
+        try {
             $designation = Designation::find($id);
 
             $cleanData = [];
@@ -316,52 +332,53 @@ class DesignationController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $designation -> update($cleanData);
+            $designation->update($cleanData);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in updating ' . $this->SINGULAR_MODULE_NAME . '.');
 
-            return response()->json([
-                'data' => new DesignationResource($designation), 
-                'message' => 'Designation details updated.'], 
-                Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            return response()->json(
+                [
+                    'data' => new DesignationResource($designation),
+                    'message' => 'Designation details updated.'
+                ],
+                Response::HTTP_OK
+            );
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function destroy($id, PasswordApprovalRequest $request)
     {
-        try{
+        try {
             $password = strip_tags($request->password);
 
             $employee_profile = $request->user;
 
             $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
 
-            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+            if (!Hash::check($password . env("SALT_VALUE"), $password_decrypted)) {
                 return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
             }
 
             $designation = Designation::findOrFail($id);
 
-            if(!$designation)
-            {
+            if (!$designation) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            if(count($designation->plantila??[]) > 0 || count($designation->positionSystemRoles??[]) > 0)
-            {
+            if (count($designation->plantila ?? []) > 0 || count($designation->positionSystemRoles ?? []) > 0) {
                 return response()->json(['message' => 'Some data is using this designation record deletion is prohibited.'], Response::HTTP_BAD_REQUEST);
             }
 
-            $designation -> delete();
+            $designation->delete();
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting ' . $this->SINGULAR_MODULE_NAME . '.');
+
             return response()->json(['message' => 'Designation record deleted.'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

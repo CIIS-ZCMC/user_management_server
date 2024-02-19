@@ -12,6 +12,7 @@ use App\Http\Resources\EducationalBackgroundResource;
 use App\Http\Resources\FamilyBackGroundResource;
 use App\Http\Resources\IdentificationNumberResource;
 use App\Http\Resources\OtherInformationResource;
+use App\Http\Resources\PlantillaNumberResource;
 use App\Http\Resources\TrainingResource;
 use App\Http\Resources\VoluntaryWorkResource;
 use App\Http\Resources\WorkExperienceResource;
@@ -170,27 +171,27 @@ class EmployeeProfileController extends Controller
 
             if ($access_token !== null && Carbon::parse(Carbon::now())->startOfDay()->lte($access_token->token_exp)) {
                 $ip = $request->ip();
-                // $created_at = Carbon::parse($access_token['created_at']);
-                // $current_time = Carbon::now();
 
                 $login_trail = LoginTrail::where('employee_profile_id', $employee_profile->id)->first();
 
-                if ($login_trail->ip_address !== $ip) {
-                    Helpers::errorLog($this->CONTROLLER_NAME, 'signIn', "Successfully verified ip address");
-                    $body = view('mail.otp', ['otpcode' => $this->two_auth->getOTP($employee_profile)]);
-                    $data = [
-                        'Subject' => 'ONE TIME PIN',
-                        'To_receiver' => $employee_profile->personalinformation->contact->email_address,
-                        'Receiver_Name' => $employee_profile->personalInformation->name(),
-                        'Body' => $body
-                    ];
-
-                    if ($this->mail->send($data)) {
-                        return response()->json(['message' => "You are currently logged on to other device. An OTP has been sent to your registered email. If you want to signout from that device, submit the OTP."], Response::HTTP_FOUND)
-                            ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', env('SESSION_DOMAIN'), false);
+                if($login_trail !== null){
+                    if ($login_trail->ip_address !== $ip) {
+                        Helpers::errorLog($this->CONTROLLER_NAME, 'signIn', "Successfully verified ip address");
+                        $body = view('mail.otp', ['otpcode' => $this->two_auth->getOTP($employee_profile)]);
+                        $data = [
+                            'Subject' => 'ONE TIME PIN',
+                            'To_receiver' => $employee_profile->personalinformation->contact->email_address,
+                            'Receiver_Name' => $employee_profile->personalInformation->name(),
+                            'Body' => $body
+                        ];
+    
+                        if ($this->mail->send($data)) {
+                            return response()->json(['message' => "You are currently logged on to other device. An OTP has been sent to your registered email. If you want to signout from that device, submit the OTP."], Response::HTTP_FOUND)
+                                ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', env('SESSION_DOMAIN'), false);
+                        }
+    
+                        return response()->json(['message' => "Your account is currently logged on to other device, sending otp to your email has failed please try again later."], Response::HTTP_INTERNAL_SERVER_ERROR);
                     }
-
-                    return response()->json(['message' => "Your account is currently logged on to other device, sending otp to your email has failed please try again later."], Response::HTTP_INTERNAL_SERVER_ERROR);
                 }
             }
 
@@ -338,8 +339,6 @@ class EmployeeProfileController extends Controller
                 }
             }
 
-
-
             $data = [
                 'employee_id' => $employee_profile['employee_id'],
                 'name' => $personal_information->employeeName(),
@@ -368,7 +367,7 @@ class EmployeeProfileController extends Controller
                 'area_sector' => $area_assigned['sector'],
                 'side_bar_details' => $side_bar_details
             ];
-
+            // return $request->ip();
             LoginTrail::create([
                 'signin_at' => now(),
                 'ip_address' => $request->ip(),
@@ -513,11 +512,11 @@ class EmployeeProfileController extends Controller
             }
         }
 
-        if(($side_bar_details['system']) > 0){
+        if (($side_bar_details['system']) > 0) {
             $employment_type = $employee_profile->employmentType;
 
-            if($employment_type->name === "Permanent" || $employment_type->name === 'Temporary'){
-                $role = Role::where('code', "Common User - Regular")->first();
+            if ($employment_type->name === "Permanent" || $employment_type->name === 'Temporary') {
+                $role = Role::where('code', "COMMON-REG")->first();
                 $reg_system_role = SystemRole::where('role_id', $role->id)->first();
 
                 $systems = [];
@@ -526,13 +525,13 @@ class EmployeeProfileController extends Controller
                     if ($system['id'] === $reg_system_role->system_id) {
                         $system_role_exist = false;
 
-                        foreach($system['roles'] as $value){
-                            if($value['name'] === $role->name){
+                        foreach ($system['roles'] as $value) {
+                            if ($value['name'] === $role->name) {
                                 $system_role_exist = true;
                             }
                         }
 
-                        if(!$system_role_exist){
+                        if (!$system_role_exist) {
                             $reg_system_roles_data = $this->buildRoleDetails($reg_system_role);
                             $system['roles'][] = $reg_system_roles_data;
                         }
@@ -544,7 +543,7 @@ class EmployeeProfileController extends Controller
                 $side_bar_details['system'] = $systems;
             }
 
-            if($employment_type->name == "Job order"){
+            if ($employment_type->name == "Job order") {
                 $role = Role::where("code", "COMMON-JO")->first();
                 $jo_system_role = SystemRole::where('role_id', $role->id)->first();
 
@@ -554,13 +553,13 @@ class EmployeeProfileController extends Controller
                     if ($system['id'] === $jo_system_role->system_id) {
                         $system_role_exist = false;
 
-                        foreach($system['roles'] as $value){
-                            if($value['name'] === $role->name){
+                        foreach ($system['roles'] as $value) {
+                            if ($value['name'] === $role->name) {
                                 $system_role_exist = true;
                             }
                         }
 
-                        if(!$system_role_exist){
+                        if (!$system_role_exist) {
                             $jo_system_roles_data = $this->buildRoleDetails($jo_system_role);
                             $system['roles'][] = $jo_system_roles_data;
                         }
@@ -1293,11 +1292,57 @@ class EmployeeProfileController extends Controller
                 return response()->json(['errors' => $validator->errors()], Response::HTTP_UNPROCESSABLE_ENTITY);
             }
 
+
             $employee_details = json_decode($request->cookie('employee_details'));
 
             $employee_profile = EmployeeProfile::where('employee_id', $employee_details->employee_id)->first();
-
             $new_password = strip_tags($request->password);
+
+            // $getPasswordTrails = PasswordTrail::where('employee_profile_id', $employee_profile->id)->get();
+            // $minimumReq = 3;
+            // $match = false;
+            // $cleanData['password'] = strip_tags($request->input('password'));
+            // foreach ($getPasswordTrails as $key => $groupofPass) {
+            //     $count = count($getPasswordTrails);
+            //     if ($minimumReq >= $count) {
+            //         $minimumReq = $count - 1;
+            //     }
+
+
+            //     $lastData = $getPasswordTrails[$count - 1];
+            //     $toskip = $count - floor($minimumReq);
+
+
+            //     $decryptedLastPassword = Crypt::decryptString($lastData->old_password);
+            //     if (Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedLastPassword)) {
+            //         return response()->json(['message' => "Please consider changing your password, as it appears you have reused an old password."], Response::HTTP_BAD_REQUEST);
+            //     }
+            //     return "Not match on lastdata";
+
+            //     if ($toskip > 0) {
+
+            //         /* scan a mimimum req of 1 to check if theres a password match */
+            //         for ($i = 1; $i <= $count; $i++) {
+
+            //             for ($j = floor($count - 1); $j >= floor(floor($count) - $minimumReq); $j--) {
+            //                 echo $j;
+            //                 $decryptedPassword = Crypt::decryptString($getPasswordTrails[$j]->old_password);
+            //                 if (Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedPassword)) {
+            //                     $match = true;
+            //                     break;
+            //                 }
+            //             }
+            //         }
+
+
+
+            //         if ($match) {
+            //             return response()->json(['message' => "Please consider changing your password, as it appears you have reused an old password."], Response::HTTP_BAD_REQUEST);
+            //         }
+            //     }
+            // }
+
+            // return response()->json(['message' => "save new"], Response::HTTP_UNAUTHORIZED);
 
             $hashPassword = Hash::make($new_password . env('SALT_VALUE'));
             $encryptedPassword = Crypt::encryptString($hashPassword);
@@ -2102,7 +2147,7 @@ class EmployeeProfileController extends Controller
                 Response::HTTP_OK
             );
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'reEmploy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -2312,10 +2357,10 @@ class EmployeeProfileController extends Controller
     // API [employee-profile-picture/{id}]
     public function updateEmployeeProfilePicture($id, Request $request)
     {
-        try{
+        try {
             $employee_profile = EmployeeProfile::find($id);
 
-            if(!$employee_profile){
+            if (!$employee_profile) {
                 return response()->json(['message' => "No employee exist."], Response::HTTP_NOT_FOUND);
             }
 
@@ -2575,12 +2620,13 @@ class EmployeeProfileController extends Controller
             }
 
             $data = [
+                'employee_profile_id' => $employee_profile['id'],
                 'employee_id' => $employee_profile['employee_id'],
                 'name' => $personal_information->employeeName(),
                 'designation' => $designation['name'],
                 'designation_code' => $designation['code'],
                 'plantilla_number_id' => $assigned_area['plantilla_number_id'],
-                'plantilla_number' => $assigned_area->plantillaNumber,
+                'plantilla_number' => $assigned_area['plantilla_number_id'] === NULL ? NULL :$assigned_area->plantillaNumber['number'],
                 'employee_details' => [
                     'employee' => $employee,
                     'personal_information' => $personal_information_data,

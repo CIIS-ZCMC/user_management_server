@@ -31,9 +31,9 @@ class PersonalInformation extends Model
 
     public $timestamps = TRUE;
 
-    public function employeeName()
+    public function employeeName() 
     {
-        $nameExtension = $this->name_extension===NULL?'':' '.$this->name_extion.' ';
+        $nameExtension = $this->name_extension===NULL?'': $this->name_extion.', ';
         $nameTitle = $this->name_title===NULL?'': ' '.$this->name_title;
 
         $name = $this->first_name.' '.$this->last_name.$nameExtension.$nameTitle;
@@ -54,7 +54,7 @@ class PersonalInformation extends Model
 
     public function name()
     {
-        $nameExtension = $this->name_extension===NULL?'':' '.$this->name_extion.' ';
+        $nameExtension = $this->name_extension===NULL?'':''.$this->name_extion.'';
         // $nameTitle = $this->name_title===NULL?'': ' '.$this->name_title;
 
         $name = $this->last_name.$nameExtension.', ' .$this->first_name;
