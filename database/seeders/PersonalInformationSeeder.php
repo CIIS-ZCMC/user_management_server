@@ -217,6 +217,13 @@ class PersonalInformationSeeder extends Seeder
                 'total_leave_credits' => 5
             ]);
         }
+        EmployeeOvertimeCredit::create([
+            'employee_profile_id' => $employee_profile->id,
+            'earned_credit_by_hour' => 0,
+            'used_credit_by_hour' => 0,
+            'max_credit_monthly' => 40,
+            'max_credit_annual' => 120
+        ]);
 
         IssuanceInformation::create([
             'employee_profile_id' => $employee_profile->id,
