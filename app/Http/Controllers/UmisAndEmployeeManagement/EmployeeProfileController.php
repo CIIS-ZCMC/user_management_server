@@ -2148,7 +2148,7 @@ class EmployeeProfileController extends Controller
                 Response::HTTP_OK
             );
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'reEmploy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -2620,7 +2620,7 @@ class EmployeeProfileController extends Controller
                 }
             }
 
-
+        
 
             $data = [
                 'employee_profile_id' => $employee_profile['id'],
@@ -2629,7 +2629,7 @@ class EmployeeProfileController extends Controller
                 'designation' => $designation['name'],
                 'designation_code' => $designation['code'],
                 'plantilla_number_id' => $assigned_area['plantilla_number_id'],
-                'plantilla_number' => $assigned_area['plantilla_number_id'] == NULL ? NULL : $assigned_area->plantillaNumber['number'],
+                'plantilla_number' => $assigned_area['plantilla_number_id'] === NULL ? NULL :$assigned_area->plantillaNumber['number'],
                 'employee_details' => [
                     'employee' => $employee,
                     'personal_information' => $personal_information_data,

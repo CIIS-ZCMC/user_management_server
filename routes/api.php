@@ -623,6 +623,11 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('designation-all', 'DesignationController@index');
         });
 
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('designation-wplantilla', 'DesignationController@fetchwPlantilla');
+        });
+
+
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function () {
             Route::get('designation/total-employee-per-designation', 'DesignationController@totalEmployeePerDesignation');
         });

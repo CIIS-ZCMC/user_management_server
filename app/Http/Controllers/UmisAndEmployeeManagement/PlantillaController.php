@@ -36,7 +36,7 @@ class PlantillaController extends Controller
     {
         try {
 
-            $plantillas = PlantillaNumber::all();
+            $plantillas = PlantillaNumber::where('is_dissolve', false)->get();
 
             return response()->json([
                 'data' => PlantillaNumberAllResource::collection($plantillas),
@@ -51,8 +51,10 @@ class PlantillaController extends Controller
     public function reAssignPlantilla($id, Request $request)
     {
         try {
+
+           
             /*
-            toassign : New Plantilla _ ID
+            toassign : New Plantilla_number_ID
             password : userPassword
             */
             $user = $request->user;
@@ -66,17 +68,49 @@ class PlantillaController extends Controller
             /* plantilla_id | plantilla_numbers */
             $user_Current_Plantilla = $employee_profile->assignedArea->plantilla_number_id;
             if ($user_Current_Plantilla) {
-                AssignArea::where('plantilla_number_id', $user_Current_Plantilla)->update([
+
+               
+                $New = PlantillaAssignedArea::where('plantilla_number_id', $to_assign)->first();
+                $newPlantilla = PlantillaNumber::where('id',$to_assign)->first()->plantilla;
+                $newdivision_id = null;
+                $newdepartment_id = null;
+                $newsection_id = null;
+                $newunit_id = null;
+
+                if($New->division_id !== NULL){
+                $newdivision_id = $New->division_id;
+                }
+                if($New->department_id !== NULL){
+                $newdepartment_id =$New->department_id;
+                }
+                if($New->section_id !== NULL){
+                  $newsection_id  = $New->section_id;
+                }
+                if($New->unit_id !== NULL){
+                    $newunit_id=$New->unit_id;
+                }
+
+                AssignArea::create([
+                    'salary_grade_step' => 1,
+                    'employee_profile_id' => $id,
+                    'division_id' => $newdivision_id,
+                    'department_id' => $newdepartment_id,
+                    'section_id' => $newsection_id,
+                    'unit_id' => $newunit_id,
+                    'designation_id' => $newPlantilla->designation_id,
+                    'plantilla_id' => $newPlantilla->id,
                     'plantilla_number_id' => $to_assign,
                     'effective_at' => now()
                 ]);
                 PlantillaNumber::where('id', $user_Current_Plantilla)->update([
                     'is_dissolve' => 1,
                     'is_vacant' => 0,
+                    'employee_profile_id' => NULL,
                 ]);
-                PlantillaNumber::where('plantila_number_id', $to_assign)->update([
+                PlantillaNumber::where('id', $to_assign)->update([
                     'employee_profile_id' => $id,
-                    'is_vacant' => 0,
+                    'is_vacant' => 0, 
+                    'is_dissolve' => 0,
                 ]);
 
                 return response()->json([

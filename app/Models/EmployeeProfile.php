@@ -66,7 +66,7 @@ class EmployeeProfile extends Authenticatable
 
     public function assignedArea()
     {
-        return $this->hasOne(AssignArea::class);
+        return $this->hasOne(AssignArea::class)->latest();
     }
 
     public function assignedAreaTrail()
