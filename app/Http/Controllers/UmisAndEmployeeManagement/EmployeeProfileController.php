@@ -171,27 +171,27 @@ class EmployeeProfileController extends Controller
 
             if ($access_token !== null && Carbon::parse(Carbon::now())->startOfDay()->lte($access_token->token_exp)) {
                 $ip = $request->ip();
-                // $created_at = Carbon::parse($access_token['created_at']);
-                // $current_time = Carbon::now();
 
                 $login_trail = LoginTrail::where('employee_profile_id', $employee_profile->id)->first();
 
-                if ($login_trail->ip_address !== $ip) {
-                    Helpers::errorLog($this->CONTROLLER_NAME, 'signIn', "Successfully verified ip address");
-                    $body = view('mail.otp', ['otpcode' => $this->two_auth->getOTP($employee_profile)]);
-                    $data = [
-                        'Subject' => 'ONE TIME PIN',
-                        'To_receiver' => $employee_profile->personalinformation->contact->email_address,
-                        'Receiver_Name' => $employee_profile->personalInformation->name(),
-                        'Body' => $body
-                    ];
-
-                    if ($this->mail->send($data)) {
-                        return response()->json(['message' => "You are currently logged on to other device. An OTP has been sent to your registered email. If you want to signout from that device, submit the OTP."], Response::HTTP_FOUND)
-                            ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', env('SESSION_DOMAIN'), false);
+                if($login_trail !== null){
+                    if ($login_trail->ip_address !== $ip) {
+                        Helpers::errorLog($this->CONTROLLER_NAME, 'signIn', "Successfully verified ip address");
+                        $body = view('mail.otp', ['otpcode' => $this->two_auth->getOTP($employee_profile)]);
+                        $data = [
+                            'Subject' => 'ONE TIME PIN',
+                            'To_receiver' => $employee_profile->personalinformation->contact->email_address,
+                            'Receiver_Name' => $employee_profile->personalInformation->name(),
+                            'Body' => $body
+                        ];
+    
+                        if ($this->mail->send($data)) {
+                            return response()->json(['message' => "You are currently logged on to other device. An OTP has been sent to your registered email. If you want to signout from that device, submit the OTP."], Response::HTTP_FOUND)
+                                ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', env('SESSION_DOMAIN'), false);
+                        }
+    
+                        return response()->json(['message' => "Your account is currently logged on to other device, sending otp to your email has failed please try again later."], Response::HTTP_INTERNAL_SERVER_ERROR);
                     }
-
-                    return response()->json(['message' => "Your account is currently logged on to other device, sending otp to your email has failed please try again later."], Response::HTTP_INTERNAL_SERVER_ERROR);
                 }
             }
 
@@ -339,8 +339,6 @@ class EmployeeProfileController extends Controller
                 }
             }
 
-
-
             $data = [
                 'employee_id' => $employee_profile['employee_id'],
                 'name' => $personal_information->employeeName(),
@@ -369,7 +367,7 @@ class EmployeeProfileController extends Controller
                 'area_sector' => $area_assigned['sector'],
                 'side_bar_details' => $side_bar_details
             ];
-
+            // return $request->ip();
             LoginTrail::create([
                 'signin_at' => now(),
                 'ip_address' => $request->ip(),
@@ -519,7 +517,7 @@ class EmployeeProfileController extends Controller
             $employment_type = $employee_profile->employmentType;
 
             if ($employment_type->name === "Permanent" || $employment_type->name === 'Temporary') {
-                $role = Role::where('code', "Common User - Regular")->first();
+                $role = Role::where('code', "COMMON-REG")->first();
                 $reg_system_role = SystemRole::where('role_id', $role->id)->first();
 
                 $systems = [];
@@ -2622,7 +2620,7 @@ class EmployeeProfileController extends Controller
                 }
             }
 
-        
+
 
             $data = [
                 'employee_profile_id' => $employee_profile['id'],
