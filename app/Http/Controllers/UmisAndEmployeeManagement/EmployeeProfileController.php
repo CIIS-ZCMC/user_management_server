@@ -2756,9 +2756,15 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+    
 
     public function promotion($id, PromotionRequest $request)
     {
+        // password
+        // effective_date
+        // designation_id
+        // period
+        // area_assigned
         try {
             $user = $request->user;
             $cleanData['password'] = strip_tags($request->input('password'));

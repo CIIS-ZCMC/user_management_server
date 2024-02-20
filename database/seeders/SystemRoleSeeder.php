@@ -502,7 +502,7 @@ class SystemRoleSeeder extends Seeder
 
                             /* Overtime Management */
                             $row['code'] === "UMIS-OM view" ||
-                            $row['code'] === "UMIS-OM request" ||
+                            // $row['code'] === "UMIS-OM request" ||
                             $row['code'] === "UMIS-OM download" ||
 
                             /* Official Business */
