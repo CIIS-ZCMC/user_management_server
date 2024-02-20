@@ -174,7 +174,7 @@ class EmployeeProfileController extends Controller
 
                 $login_trail = LoginTrail::where('employee_profile_id', $employee_profile->id)->first();
 
-                if($login_trail !== null){
+                if ($login_trail !== null) {
                     if ($login_trail->ip_address !== $ip) {
                         Helpers::errorLog($this->CONTROLLER_NAME, 'signIn', "Successfully verified ip address");
                         $body = view('mail.otp', ['otpcode' => $this->two_auth->getOTP($employee_profile)]);
@@ -184,12 +184,12 @@ class EmployeeProfileController extends Controller
                             'Receiver_Name' => $employee_profile->personalInformation->name(),
                             'Body' => $body
                         ];
-    
+
                         if ($this->mail->send($data)) {
                             return response()->json(['message' => "You are currently logged on to other device. An OTP has been sent to your registered email. If you want to signout from that device, submit the OTP."], Response::HTTP_FOUND)
                                 ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', env('SESSION_DOMAIN'), false);
                         }
-    
+
                         return response()->json(['message' => "Your account is currently logged on to other device, sending otp to your email has failed please try again later."], Response::HTTP_INTERNAL_SERVER_ERROR);
                     }
                 }
@@ -1334,8 +1334,6 @@ class EmployeeProfileController extends Controller
             //                 }
             //             }
             //         }
-
-
 
             //         if ($match) {
             //             return response()->json(['message' => "Please consider changing your password, as it appears you have reused an old password."], Response::HTTP_BAD_REQUEST);
@@ -2629,7 +2627,7 @@ class EmployeeProfileController extends Controller
                 'designation' => $designation['name'],
                 'designation_code' => $designation['code'],
                 'plantilla_number_id' => $assigned_area['plantilla_number_id'],
-                'plantilla_number' => $assigned_area['plantilla_number_id'] === NULL ? NULL :$assigned_area->plantillaNumber['number'],
+                'plantilla_number' => $assigned_area['plantilla_number_id'] === NULL ? NULL : $assigned_area->plantillaNumber['number'],
                 'employee_details' => [
                     'employee' => $employee,
                     'personal_information' => $personal_information_data,
