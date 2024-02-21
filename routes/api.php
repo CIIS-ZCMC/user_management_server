@@ -1845,6 +1845,10 @@ Route::middleware('auth.cookie')->group(function () {
             Route::delete('schedule/{id}', 'ScheduleController@destroy');
         });
 
+        Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function () {
+            Route::get('schedules-time-shift', 'ScheduleController@scheduleTimeShift');
+        });
+
         /**
          * Employee Schedule Module
          */

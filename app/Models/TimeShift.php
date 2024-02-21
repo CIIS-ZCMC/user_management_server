@@ -29,8 +29,23 @@ class TimeShift extends Model
 
     public $timestamps = true;
 
+    public function division()
+    {
+        return $this->belongsToMany(Division::class, 'section_time_shift')->withPivot('division_id');
+    }
+
+    public function department()
+    {
+        return $this->belongsToMany(Department::class, 'section_time_shift', 'department_id')->withPivot('department_id');
+    }
+
     public function section()
     {
-        return $this->belongsToMany(Section::class, 'section_time_shift', )->withPivot('section_id');
+        return $this->belongsToMany(Section::class, 'section_time_shift', 'section_id')->withPivot('section_id');
+    }
+
+    public function unit()
+    {
+        return $this->belongsToMany(Unit::class, 'section_time_shift', 'unit_id')->withPivot('unit_id');
     }
 }

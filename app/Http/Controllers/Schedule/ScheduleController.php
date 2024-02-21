@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Schedule;
 
 use App\Http\Resources\EmployeeScheduleResource;
+use App\Http\Resources\TimeShiftResource;
 use App\Models\EmployeeSchedule;
 use App\Models\Holiday;
 use App\Models\Schedule;
@@ -12,6 +13,7 @@ use App\Http\Resources\ScheduleResource;
 use App\Http\Requests\ScheduleRequest;
 use App\Helpers\Helpers;
 
+use App\Models\TimeShift;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Http\Response;
@@ -402,6 +404,34 @@ class ScheduleController extends Controller
         } catch (\Throwable $th) {
 
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function scheduleTimeShift(Request $request) {
+        
+        try {            
+            $user           = $request->user;
+            $assigned_area  = $user->assignedArea->findDetails();
+
+            $model = TimeShift::with(['division', 'department', 'section', 'unit'])
+            ->where(function ($query) use ($assigned_area) {
+                $query->whereHas('division', function ($query) use ($assigned_area) {
+                    $query->where(strtolower($assigned_area['sector']) . '_id', $assigned_area['details']['id']);
+                })
+                ->orWhereHas('department', function ($query) use ($assigned_area) {
+                    $query->where(strtolower($assigned_area['sector']) . '_id', $assigned_area['details']['id']);
+                })
+                ->orWhereHas('section', function ($query) use ($assigned_area) {
+                    $query->where(strtolower($assigned_area['sector']) . '_id', $assigned_area['details']['id']);
+                });
+            })->get();
+
+            return response()->json(['data' => TimeShiftResource::collection($model)], Response::HTTP_OK);
+
+        } catch (\Throwable $th) {
+
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

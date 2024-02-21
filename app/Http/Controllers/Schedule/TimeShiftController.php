@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers\Schedule;
 
+use App\Http\Requests\DepartmentRequest;
+use App\Models\Department;
+use App\Models\Division;
 use App\Models\TimeShift;
 use App\Models\Section;
 use App\Http\Resources\TimeShiftResource;
 use App\Http\Resources\SectionResource;
 use App\Http\Requests\TimeShiftRequest;
+use App\Models\Unit;
 use App\Services\RequestLogger;
 use App\Helpers\Helpers;
 
@@ -36,8 +40,48 @@ class TimeShiftController extends Controller
     public function index(Request $request)
     {
         try {
+            $divisions = Division::with(['departments.sections'])->get();
 
-            return response()->json(['data' => TimeShiftResource::collection(TimeShift::all())], Response::HTTP_OK);
+            $mergedData = collect([]);
+
+            foreach ($divisions as $division) {
+                $departments = [];
+                foreach ($division->departments as $department) {
+                    $departments[] = [
+                        'id' => $department->id,
+                        'name' => $department->name,
+                        'code' => $department->code
+                    ];
+                }
+
+                $sections = [];
+                foreach ($division->sections as $section) {
+                    foreach ($section->units as $unit) {
+                        $units[] = [
+                            'id' => $unit->id,
+                            'name' => $unit->name,
+                            'code' => $unit->code
+                        ];
+                    }
+
+                    $sections[] = [
+                        'id' => $section->id,
+                        'name' => $section->name,
+                        'code' => $section->code,
+                        'units' => $section->units
+                    ];
+                }
+            
+                $mergedData->push([
+                    'id' => $division->id,
+                    'name' => $division->name,
+                    'code' => $division->code,
+                    'departments' => $departments,
+                    'sections' => $sections,
+                ]);
+            }
+            
+            return response()->json(['data' => TimeShiftResource::collection(TimeShift::all()), 'division' => $mergedData], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
@@ -59,11 +103,20 @@ class TimeShiftController extends Controller
                     $cleanData[$key] = $value;
                     continue;
                 }
+                
+                if (is_array($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                if (is_int($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
 
                 $cleanData[$key] = strip_tags($value);
             }
-
-            $user = $request->user;
+            
             $shift = TimeShift::where('first_in', $request->first_in)
                 ->where('first_out', $request->first_out)
                 ->where('second_in', $request->second_in)
@@ -93,29 +146,44 @@ class TimeShiftController extends Controller
                     $cleanData['total_hours'] = $AM + $PM;
                 }
 
-                $cleanData['color'] = Helpers::randomHexColor();
-
                 $data = TimeShift::create($cleanData);
             }
+            
+            $attach = null;
+            switch ($cleanData['assigned_area']) {
+                case 'division':
+                    $attach = Division::select('id')->where('id', $cleanData['assigned_area_id'])->first();
+                break;
 
-            $section = Section::select('id')->where('name', $cleanData['section_name'])->first();
+                case 'section':
+                    $attach = Section::select('id')->where('id', $cleanData['assigned_area_id'])->first();
+                break;
 
-            if ($section != null) {
-                $query = DB::table('section_time_shift')->where([
-                    ['section_id', '=', $section->id],
-                    ['time_shift_id', '=', $data->id],
-                ])->first();
+                case 'department':
+                    $attach = Department::select('id')->where('id', $cleanData['assigned_area_id'])->first();
+                break;
 
-                if ($query) {
-                    $msg = 'time shift already exist';
-                } else {
-                    $data->section()->attach($section);
-                    $msg = 'New time shift registered.';
-                }
+                case 'units':
+                    $attach = Unit::select('id')->where('id', $cleanData['assigned_area_id'])->first();
+                break;
+                
+                default:
+                    return response()->json(['message' => "Area does not exist"], Response::HTTP_NOT_FOUND);
             }
 
+            $query = DB::table('section_time_shift')->where([
+                ['section_id', '=', $attach->id],
+                ['time_shift_id', '=', $data->id],
+            ])->first();
+
+            if ($query) {
+                return response()->json(['message' => 'Time shift already exist'], Response::HTTP_FOUND);
+            }
+            
+            $data->{$cleanData['assigned_area']}()->attach($attach);
+
             Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
-            return response()->json(['data' => $data, 'message' => $msg], Response::HTTP_OK);
+            return response()->json(['data' => new TimeShiftResource($data), 'message' => "Successfully saved"], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
