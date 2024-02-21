@@ -41,13 +41,13 @@ class AuthServiceProvider extends ServiceProvider
                 return response()->json(['error' => 'Unauthorized'], 401);
             }
 
-            $token = openssl_decrypt($encryptedToken, env("ENCRYPT_DECRYPT_ALGORITHM"), $env("DECRYPT_KEY"), 0, substr(md5(env("DECRYPT_KEY")), 0, 16));
+            // $token = openssl_decrypt($encryptedToken, env("ENCRYPT_DECRYPT_ALGORITHM"), $env("DECRYPT_KEY"), 0, substr(md5(env("DECRYPT_KEY")), 0, 16));
 
-            $isAuthenticated = PersonalAccessToken::where('accessToken', $token)->where('FK_system_ID', $sytem->id)->first();
+            // $isAuthenticated = PersonalAccessToken::where('accessToken', $token)->where('FK_system_ID', $sytem->id)->first();
 
-            if (!$isAuthenticated) {
-                return response()->json(['error' => 'Unauthorized'], 401);
-            }
+            // if (!$isAuthenticated) {
+            //     return response()->json(['error' => 'Unauthorized'], 401);
+            // }
 
             // Retrieve the user based on the token or any other authentication mechanism
             // Implement your own logic to authenticate and retrieve the user

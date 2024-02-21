@@ -50,9 +50,7 @@ class PlantillaController extends Controller
 
     public function reAssignPlantilla($id, Request $request)
     {
-        try {
-
-           
+        try {           
             /*
             toassign : New Plantilla_number_ID
             password : userPassword

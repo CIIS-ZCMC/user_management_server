@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Division;
 use App\Models\EmployeeLeaveCredit;
+use App\Models\EmployeeOvertimeCredit;
 use App\Models\LeaveType;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -217,6 +218,7 @@ class PersonalInformationSeeder extends Seeder
                 'total_leave_credits' => 5
             ]);
         }
+
         EmployeeOvertimeCredit::create([
             'employee_profile_id' => $employee_profile->id,
             'earned_credit_by_hour' => 0,
