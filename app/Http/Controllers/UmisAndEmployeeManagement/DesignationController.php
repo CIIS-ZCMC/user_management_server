@@ -234,7 +234,6 @@ class DesignationController extends Controller
              * Convert to meet sidebar data format.
              * Iterate to every system roles.
              */
-
             foreach ($position_system_roles as $key => $position_system_role) {
                 $system_exist = false;
                 $system_role = $position_system_role['systemRole'];
@@ -250,7 +249,38 @@ class DesignationController extends Controller
                 foreach ($side_bar_details['system'] as $key => $system) {
                     if ($system['id'] === $system_role->system['id']) {
                         $system_exist = true;
-                        $system[] = $this->buildRoleDetails($system_role);
+
+                        $build_role_details = $this->buildRoleDetails($system_role);
+    
+                        /** Convert the array of object to array of string retrieving only the names of role */
+                        $new_array_roles = collect($system['roles'])->pluck('name')->toArray();
+
+                        /** Validate if the role exist in the array of not then a new role will be added to system roles. */
+                        if (!in_array($build_role_details['name'], $new_array_roles)) {
+                            $system['roles'][] = [
+                                'id' => $build_role_details['id'],
+                                'name' => $build_role_details['name'],
+                            ];
+                        }
+
+                        // Convert the array of objects to a collection
+                        $collection = collect($system['modules']);
+
+                        foreach($build_role_details['modules'] as $role_module){
+                            // Find the module with code "UMIS-SM" and modify it in the collection
+                            $collection->transform(function ($module) use ($role_module) {
+                                if ($module['code'] === $role_module['code']) {
+                                    /** Iterate new permissions of other system role */
+                                    foreach($role_module['permissions'] as $permission){
+                                        /** If permission doesn't exist in current module then it will be added to the module permissions.*/
+                                        if (!in_array($permission, $module['permissions'])) {
+                                            $module['permissions'][] = $permission;
+                                        }
+                                    }
+                                }
+                                return $module;
+                            });
+                        }
                         break;
                     }
                 }
@@ -265,13 +295,22 @@ class DesignationController extends Controller
         }
     }
 
+
     private function buildSystemDetails($system_role)
     {
+        $build_role_details = $this->buildRoleDetails($system_role);
+        
+        $role = [
+            'id' => $build_role_details['id'],
+            'name' => $build_role_details['name'],
+        ];
+
         return [
             'id' => $system_role->system['id'],
             'name' => $system_role->system['name'],
             'code' => $system_role->system['code'],
-            'roles' => [$this->buildRoleDetails($system_role)],
+            'roles' => [$role],
+            'modules' => $build_role_details['modules']
         ];
     }
 
