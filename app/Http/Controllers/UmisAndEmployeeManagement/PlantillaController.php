@@ -25,6 +25,7 @@ use App\Models\Section;
 use App\Models\Unit;
 use App\Models\EmployeeProfile;
 use App\Models\AssignArea;
+use App\Models\AssignAreaTrail;
 
 class PlantillaController extends Controller
 {
@@ -66,26 +67,49 @@ class PlantillaController extends Controller
             /* plantilla_id | plantilla_numbers */
             $user_Current_Plantilla = $employee_profile->assignedArea->plantilla_number_id;
             if ($user_Current_Plantilla) {
+                /*
+                save old assignare to trails
+                - make the old empprof null
+                */
+                $old_assignedArea = AssignArea::where('plantilla_number_id', $user_Current_Plantilla)->first();
 
-               
+                AssignAreaTrail::create([
+                    'salary_grade_step' => $old_assignedArea->salary_grade_step,
+                    'employee_profile_id' => $old_assignedArea->employee_profile_id,
+                    'division_id' => $old_assignedArea->division_id,
+                    'department_id' => $old_assignedArea->department_id,
+                    'section_id' => $old_assignedArea->section_id,
+                    'unit_id' => $old_assignedArea->unit_id,
+                    'designation_id' => $old_assignedArea->designation_id,
+                    'plantilla_id' => $old_assignedArea->plantilla_id,
+                    'plantilla_number_id' => $old_assignedArea->plantilla_number_id,
+                    'started_at' => $old_assignedArea->effective_at,
+                    'end_at' => now()
+                ]);
+
+                $old_assignedArea->update([
+                    'employee_profile_id' => null,
+                    'end_date' => now()
+                ]);
+
                 $New = PlantillaAssignedArea::where('plantilla_number_id', $to_assign)->first();
-                $newPlantilla = PlantillaNumber::where('id',$to_assign)->first()->plantilla;
+                $newPlantilla = PlantillaNumber::where('id', $to_assign)->first()->plantilla;
                 $newdivision_id = null;
                 $newdepartment_id = null;
                 $newsection_id = null;
                 $newunit_id = null;
 
-                if($New->division_id !== NULL){
-                $newdivision_id = $New->division_id;
+                if ($New->division_id !== NULL) {
+                    $newdivision_id = $New->division_id;
                 }
-                if($New->department_id !== NULL){
-                $newdepartment_id =$New->department_id;
+                if ($New->department_id !== NULL) {
+                    $newdepartment_id = $New->department_id;
                 }
-                if($New->section_id !== NULL){
-                  $newsection_id  = $New->section_id;
+                if ($New->section_id !== NULL) {
+                    $newsection_id  = $New->section_id;
                 }
-                if($New->unit_id !== NULL){
-                    $newunit_id=$New->unit_id;
+                if ($New->unit_id !== NULL) {
+                    $newunit_id = $New->unit_id;
                 }
 
                 AssignArea::create([
@@ -107,7 +131,7 @@ class PlantillaController extends Controller
                 ]);
                 PlantillaNumber::where('id', $to_assign)->update([
                     'employee_profile_id' => $id,
-                    'is_vacant' => 0, 
+                    'is_vacant' => 0,
                     'is_dissolve' => 0,
                 ]);
 
