@@ -4,6 +4,7 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Http\Resources\PlantillaReferrenceResource;
 use App\Http\Resources\PlantillaWithDesignationResource;
 use App\Models\Designation;
 use Illuminate\Http\Request;
@@ -42,6 +43,22 @@ class PlantillaController extends Controller
             return response()->json([
                 'data' => PlantillaNumberAllResource::collection($plantillas),
                 'message' => 'Plantilla list retrieved.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /** [API] - plantilla-referrence-to-assignarea [METHOD] - GET */
+    public function plantillaReferrenceToAssignArea(Request $request)
+    {
+        try {
+            $plantillas = Plantilla::all();
+
+            return response()->json([
+                'data' => PlantillaReferrenceResource::collection($plantillas),
+                'message' => 'Plantilla list to assign area retrieved.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
@@ -124,16 +141,21 @@ class PlantillaController extends Controller
                     'plantilla_number_id' => $to_assign,
                     'effective_at' => now()
                 ]);
+
                 PlantillaNumber::where('id', $user_Current_Plantilla)->update([
                     'is_dissolve' => 1,
                     'is_vacant' => 0,
                     'employee_profile_id' => NULL,
                 ]);
+
                 PlantillaNumber::where('id', $to_assign)->update([
                     'employee_profile_id' => $id,
                     'is_vacant' => 0,
                     'is_dissolve' => 0,
                 ]);
+                
+                $plantilla = $newPlantilla->plantilla;
+                $plantilla->update(['total_used_plantilla_no' => $plantilla->total_used_plantilla_no + 1]);
 
                 return response()->json([
                     'message' => 'Plantilla reassigned successfully!'
@@ -237,7 +259,6 @@ class PlantillaController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
 
     public function plantillaWithDesignation($id, Request $request)
     {

@@ -2404,6 +2404,7 @@ class EmployeeProfileController extends Controller
                 $designation = $plantilla->designation;
                 $cleanData['designation_id'] = $designation->id;
                 $cleanData['plantilla_number_id'] = $plantilla_number->id;
+                $plantilla->update(['total_used_plantilla_no' => $plantilla->total_used_plantilla_no + 1]);
             }
 
 
