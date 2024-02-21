@@ -30,6 +30,7 @@ use App\Models\Reference;
 use App\Models\PersonalInformation;
 use App\Models\OtherInformation;
 use App\Models\Section;
+use App\Models\EmployeeOvertimeCredit;
 
 class PersonalInformationSeeder extends Seeder
 {
@@ -38,6 +39,7 @@ class PersonalInformationSeeder extends Seeder
      */
     public function run(): void
     {
+        //   for ($i = 0; $i <= 4; $i++) {
         $personal_information = PersonalInformation::create([
             'first_name' => 'Iisu',
             'last_name' => 'Super Admin',
@@ -249,6 +251,7 @@ class PersonalInformationSeeder extends Seeder
         foreach ($designations as $designation) {
             Cache::forget($designation['name']);
         }
+        // }
     }
 
     protected function encryptData($dataToEncrypt)

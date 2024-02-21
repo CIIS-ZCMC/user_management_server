@@ -104,10 +104,7 @@ class PlantillaController extends Controller
                     'end_at' => now()
                 ]);
 
-                $old_assignedArea->update([
-                    'employee_profile_id' => null,
-                    'end_date' => now()
-                ]);
+                $old_assignedArea->delete();
 
                 $New = PlantillaAssignedArea::where('plantilla_number_id', $to_assign)->first();
                 $newPlantilla = PlantillaNumber::where('id', $to_assign)->first()->plantilla;

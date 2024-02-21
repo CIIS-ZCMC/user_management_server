@@ -56,7 +56,7 @@ use App\Models\LoginTrail;
 use App\Models\PositionSystemRole;
 use App\Models\SpecialAccessRole;
 use App\Http\Requests\PromotionRequest;
-
+use Illuminate\Support\Facades\DB;
 
 class EmployeeProfileController extends Controller
 {
@@ -1412,49 +1412,11 @@ class EmployeeProfileController extends Controller
             $employee_profile = EmployeeProfile::where('employee_id', $employee_details->employee_id)->first();
             $new_password = strip_tags($request->password);
 
-            // $getPasswordTrails = PasswordTrail::where('employee_profile_id', $employee_profile->id)->get();
-            // $minimumReq = 3;
-            // $match = false;
-            // $cleanData['password'] = strip_tags($request->input('password'));
-            // foreach ($getPasswordTrails as $key => $groupofPass) {
-            //     $count = count($getPasswordTrails);
-            //     if ($minimumReq >= $count) {
-            //         $minimumReq = $count - 1;
-            //     }
+            $cleanData['password'] = strip_tags($request->input('password'));
 
-
-            //     $lastData = $getPasswordTrails[$count - 1];
-            //     $toskip = $count - floor($minimumReq);
-
-
-            //     $decryptedLastPassword = Crypt::decryptString($lastData->old_password);
-            //     if (Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedLastPassword)) {
-            //         return response()->json(['message' => "Please consider changing your password, as it appears you have reused an old password."], Response::HTTP_BAD_REQUEST);
-            //     }
-            //     return "Not match on lastdata";
-
-            //     if ($toskip > 0) {
-
-            //         /* scan a mimimum req of 1 to check if theres a password match */
-            //         for ($i = 1; $i <= $count; $i++) {
-
-            //             for ($j = floor($count - 1); $j >= floor(floor($count) - $minimumReq); $j--) {
-            //                 echo $j;
-            //                 $decryptedPassword = Crypt::decryptString($getPasswordTrails[$j]->old_password);
-            //                 if (Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedPassword)) {
-            //                     $match = true;
-            //                     break;
-            //                 }
-            //             }
-            //         }
-
-            //         if ($match) {
-            //             return response()->json(['message' => "Please consider changing your password, as it appears you have reused an old password."], Response::HTTP_BAD_REQUEST);
-            //         }
-            //     }
-            // }
-
-            // return response()->json(['message' => "save new"], Response::HTTP_UNAUTHORIZED);
+            if ($this->CheckPasswordRepetition($cleanData, 3, $employee_profile)) {
+                return response()->json(['message' => "Please consider changing your password, as it appears you have reused an old password."], Response::HTTP_BAD_REQUEST);
+            }
 
             $hashPassword = Hash::make($new_password . env('SALT_VALUE'));
             $encryptedPassword = Crypt::encryptString($hashPassword);
@@ -1649,6 +1611,56 @@ class EmployeeProfileController extends Controller
                 ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), false);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'newPassword', $th->getMessage());
+        }
+    }
+
+    public function CheckPasswordRepetition($cleanData, $minimumReq, $employee_profile)
+    {
+
+        $getPasswordTrails = PasswordTrail::where('employee_profile_id', $employee_profile->id)->get();
+
+        foreach ($getPasswordTrails as $key => $groupofPass) {
+            $count = count($getPasswordTrails);
+            $lastData = $getPasswordTrails[$count - 1];
+
+            $decryptedLastPassword = Crypt::decryptString($lastData->old_password);
+            if (Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedLastPassword)) {
+                return true;
+            }
+            if ($count <= $minimumReq) {
+                $disallow1 = false;
+                $limit = $count - 1;
+                $otherpass = DB::select("SELECT * FROM `password_trails` where employee_profile_id ={$employee_profile->id} limit {$limit} OFFSET 0 ");
+                if (count($otherpass) >= 1) {
+                    $disallow1 = false;
+                    foreach ($otherpass as $check) {
+                        $level1Pass = Crypt::decryptString($check->old_password);
+                        if (Hash::check($cleanData['password'] . env("SALT_VALUE"), $level1Pass)) {
+                            $disallow1 = true;
+                            break;
+                        }
+                    }
+                    if ($disallow1) {
+                        return true;
+                    }
+                }
+            }
+            $limit = $minimumReq - 1;
+            $offset = floor($count - ($limit + 1));
+            $setofpassminReq = DB::select("SELECT * FROM `password_trails` where employee_profile_id ={$employee_profile->id} limit {$limit} OFFSET {$offset} ");
+            if (count($setofpassminReq) >= 1) {
+                $disallow2 = false;
+                foreach ($setofpassminReq as $check) {
+                    $level2Pass = Crypt::decryptString($check->old_password);
+                    if (Hash::check($cleanData['password'] . env("SALT_VALUE"), $level2Pass)) {
+                        $disallow2 = true;
+                        break;
+                    }
+                }
+                if ($disallow2) {
+                    return true;
+                }
+            }
         }
     }
 
