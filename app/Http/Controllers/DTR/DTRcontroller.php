@@ -54,8 +54,19 @@ class DTRcontroller extends Controller
             $today = date('Y-m-d');
             $biometric_id = $user->biometric_id;
             $selfRecord = DailyTimeRecords::where('biometric_id', $biometric_id)->where('dtr_date', $today)->first();
+            $sched = $this->helper->getSchedule($biometric_id, null);
 
             if ($selfRecord) {
+                if ($sched['third_entry'] == NULL && $sched['last_entry']  == NULL) {
+                    return [
+                        'dtr_date' => $selfRecord->dtr_date,
+                        'first_in' => $selfRecord->first_in ? date('H:i', strtotime($selfRecord->first_in)) : ' --:--',
+                        'first_out' => ' --:--',
+                        'second_in' =>  ' --:--',
+                        'second_out' => $selfRecord->first_out ? date('H:i', strtotime($selfRecord->first_out)) : ' --:--',
+                    ];
+                }
+
                 return [
                     'dtr_date' => $selfRecord->dtr_date,
                     'first_in' => $selfRecord->first_in ? date('H:i', strtotime($selfRecord->first_in)) : ' --:--',
@@ -76,6 +87,7 @@ class DTRcontroller extends Controller
             return response()->json(['message' => $th->getMessage()], 401);
         }
     }
+
 
     public function monthDayRecordsSelf(Request $request)
     {
