@@ -1222,11 +1222,11 @@ class DTRcontroller extends Controller
 
                                 if (isset($value->first_in)  && $value->first_in != NULL) {
                                     $entryf = $value->first_in;
-                                }
-
-                                if (isset($value->second_in) && $value->second_in != NULL) {
+                                } else if (isset($value->second_in) && $value->second_in != NULL) {
                                     $entryf = $value->second_in;
                                 }
+
+
 
                                 if (date('Y-m-d', strtotime($entryf)) == $sdate) {
                                     $mdtr[] = $this->mDTR($value);
@@ -1372,9 +1372,7 @@ class DTRcontroller extends Controller
                             $mdt[] = $d;  // Use the day from $mdtr
                             $found = true;
                         }
-                    }
-
-                    if (!is_null($d['second_in'])) {
+                    } else if (!is_null($d['second_in'])) {
                         if (date('d', strtotime($d['second_in'])) == $i) {
                             $d['date'] = Carbon::create("$year_of-$month_of-$i")->format('Y-m-d');
                             $mdt[] = $d;  // Use the day from $mdtr
