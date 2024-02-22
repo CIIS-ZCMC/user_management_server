@@ -75,7 +75,11 @@ class ScheduleController extends Controller
                 ];
             }
 
-            return response()->json(['data' => $data, 'dates' => $dates_with_day], Response::HTTP_OK);
+            return response()->json([
+                'data' => $data,
+                'dates' => $dates_with_day,
+                'time_shift' => TimeShiftResource::collection(TimeShift::all())
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
 
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
@@ -397,41 +401,11 @@ class ScheduleController extends Controller
             $filename = 'Schedule.pdf';
 
             /* Downloads as PDF */
-            // $dompdf->stream($filename);
-            
-
+            $dompdf->stream($filename, array("Attachment" => false));
             // return view('generate_schedule/section-schedule', compact('data','holiday', 'month', 'year', 'dates', 'user', 'head_officer'));
         } catch (\Throwable $th) {
 
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    public function scheduleTimeShift(Request $request) {
-        
-        try {            
-            $user           = $request->user;
-            $assigned_area  = $user->assignedArea->findDetails();
-
-            $model = TimeShift::with(['division', 'department', 'section', 'unit'])
-            ->where(function ($query) use ($assigned_area) {
-                $query->whereHas('division', function ($query) use ($assigned_area) {
-                    $query->where(strtolower($assigned_area['sector']) . '_id', $assigned_area['details']['id']);
-                })
-                ->orWhereHas('department', function ($query) use ($assigned_area) {
-                    $query->where(strtolower($assigned_area['sector']) . '_id', $assigned_area['details']['id']);
-                })
-                ->orWhereHas('section', function ($query) use ($assigned_area) {
-                    $query->where(strtolower($assigned_area['sector']) . '_id', $assigned_area['details']['id']);
-                });
-            })->get();
-
-            return response()->json(['data' => TimeShiftResource::collection($model)], Response::HTTP_OK);
-
-        } catch (\Throwable $th) {
-
-            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
