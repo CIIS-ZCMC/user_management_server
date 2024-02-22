@@ -13,8 +13,21 @@ return new class extends Migration
     {
         Schema::create('section_time_shift', function (Blueprint $table) {
             $table->id();
-            $table->integer('section_id')->unasigned();
-            $table->integer('time_shift_id')->unasigned();
+            
+            $table->bigInteger('division_id')->unsigned()->nullable();
+            $table->foreign('division_id')->references('id')->on('divisions')->onDelete('cascade');
+
+            $table->bigInteger('department_id')->unsigned()->nullable();
+            $table->foreign('department_id')->references('id')->on('departments')->onDelete('cascade');
+
+            $table->bigInteger('section_id')->unsigned()->nullable();
+            $table->foreign('section_id')->references('id')->on('sections')->onDelete('cascade');
+
+            $table->bigInteger('unit_id')->unsigned()->nullable();
+            $table->foreign('unit_id')->references('id')->on('units')->onDelete('cascade');
+
+            $table->bigInteger('time_shift_id')->unsigned()->nullable();
+            $table->foreign('time_shift_id')->references('id')->on('time_shifts')->onDelete('cascade');
         });
     }
 
