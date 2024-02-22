@@ -427,7 +427,7 @@ class EmployeeProfileController extends Controller
                  * Iterate to every system roles.
                  */
 
-                foreach ($position_system_roles as $key => $position_system_role) {
+                 foreach ($position_system_roles as $key => $position_system_role) {
                     $system_exist = false;
                     $system_role = $position_system_role['systemRole'];
 
@@ -439,41 +439,56 @@ class EmployeeProfileController extends Controller
                         continue;
                     }
 
-                    foreach ($side_bar_details['system'] as $key => $system) {
+                    foreach ($side_bar_details['system'] as &$system) {
                         if ($system['id'] === $system_role->system['id']) {
                             $system_exist = true;
-
+                    
                             $build_role_details = $this->buildRoleDetails($system_role);
-        
-                            /** Convert the array of object to array of string retrieving only the names of role */
+                    
+                            // Convert the array of object to array of string retrieving only the names of role
                             $new_array_roles = collect($system['roles'])->pluck('name')->toArray();
-
-                            /** Validate if the role exist in the array of not then a new role will be added to system roles. */
+                    
+                            // Validate if the role exist in the array, if not, then add a new role to system roles
                             if (!in_array($build_role_details['name'], $new_array_roles)) {
                                 $system['roles'][] = [
                                     'id' => $build_role_details['id'],
                                     'name' => $build_role_details['name'],
                                 ];
                             }
-
+                    
                             // Convert the array of objects to a collection
                             $collection = collect($system['modules']);
-
-                            foreach($build_role_details['modules'] as $role_module){
-                                // Find the module with code "UMIS-SM" and modify it in the collection
-                                $collection->transform(function ($module) use ($role_module) {
-                                    if ($module['code'] === $role_module['code']) {
-                                        /** Iterate new permissions of other system role */
-                                        foreach($role_module['permissions'] as $permission){
-                                            /** If permission doesn't exist in current module then it will be added to the module permissions.*/
-                                            if (!in_array($permission, $module['permissions'])) {
-                                                $module['permissions'][] = $permission;
+                    
+                            foreach ($build_role_details['modules'] as $role_module) {
+                                // Check if the module with the given code exists in the collection
+                                $moduleIndex = $collection->search(function ($module) use ($role_module) {
+                                    return $module['code'] === $role_module['code'];
+                                });
+                    
+                                if ($moduleIndex !== false) {
+                                    // If the module exists, modify its permissions
+                                    $collection->transform(function ($module) use ($role_module) {
+                                        if ($module['code'] === $role_module['code']) {
+                                            // Iterate new permissions of other system role
+                                            foreach ($role_module['permissions'] as $permission) {
+                                                // If permission doesn't exist in current module then it will be added to the module permissions.
+                                                if (!in_array($permission, $module['permissions'])) {
+                                                    $module['permissions'][] = $permission;
+                                                }
                                             }
                                         }
-                                    }
-                                    return $module;
-                                });
+                                        return $module;
+                                    });
+                                } else {
+                                    // If the module doesn't exist, add it to the collection
+                                    $collection->push($role_module);
+                                }
                             }
+                    
+                            // Update the modules in the system array
+                            $system['modules'] = $collection->toArray();
+                            
+                            // Break out of the loop once the system is found and updated
                             break;
                         }
                     }
@@ -525,41 +540,56 @@ class EmployeeProfileController extends Controller
                         continue;
                     }
 
-                    foreach ($side_bar_details['system'] as $key => $system) {
+                    foreach ($side_bar_details['system'] as &$system) {
                         if ($system['id'] === $system_role->system['id']) {
                             $system_exist = true;
-
+                    
                             $build_role_details = $this->buildRoleDetails($system_role);
-        
-                            /** Convert the array of object to array of string retrieving only the names of role */
+                    
+                            // Convert the array of object to array of string retrieving only the names of role
                             $new_array_roles = collect($system['roles'])->pluck('name')->toArray();
-
-                            /** Validate if the role exist in the array of not then a new role will be added to system roles. */
+                    
+                            // Validate if the role exist in the array, if not, then add a new role to system roles
                             if (!in_array($build_role_details['name'], $new_array_roles)) {
                                 $system['roles'][] = [
                                     'id' => $build_role_details['id'],
                                     'name' => $build_role_details['name'],
                                 ];
                             }
-
+                    
                             // Convert the array of objects to a collection
                             $collection = collect($system['modules']);
-
-                            foreach($build_role_details['modules'] as $role_module){
-                                // Find the module with code "UMIS-SM" and modify it in the collection
-                                $collection->transform(function ($module) use ($role_module) {
-                                    if ($module['code'] === $role_module['code']) {
-                                        /** Iterate new permissions of other system role */
-                                        foreach($role_module['permissions'] as $permission){
-                                            /** If permission doesn't exist in current module then it will be added to the module permissions.*/
-                                            if (!in_array($permission, $module['permissions'])) {
-                                                $module['permissions'][] = $permission;
+                    
+                            foreach ($build_role_details['modules'] as $role_module) {
+                                // Check if the module with the given code exists in the collection
+                                $moduleIndex = $collection->search(function ($module) use ($role_module) {
+                                    return $module['code'] === $role_module['code'];
+                                });
+                    
+                                if ($moduleIndex !== false) {
+                                    // If the module exists, modify its permissions
+                                    $collection->transform(function ($module) use ($role_module) {
+                                        if ($module['code'] === $role_module['code']) {
+                                            // Iterate new permissions of other system role
+                                            foreach ($role_module['permissions'] as $permission) {
+                                                // If permission doesn't exist in current module then it will be added to the module permissions.
+                                                if (!in_array($permission, $module['permissions'])) {
+                                                    $module['permissions'][] = $permission;
+                                                }
                                             }
                                         }
-                                    }
-                                    return $module;
-                                });
+                                        return $module;
+                                    });
+                                } else {
+                                    // If the module doesn't exist, add it to the collection
+                                    $collection->push($role_module);
+                                }
                             }
+                    
+                            // Update the modules in the system array
+                            $system['modules'] = $collection->toArray();
+                            
+                            // Break out of the loop once the system is found and updated
                             break;
                         }
                     }
@@ -593,30 +623,38 @@ class EmployeeProfileController extends Controller
                         }
                 
                         if (!$system_role_exist) {
-                            $jo_system_roles_data = $this->buildRoleDetails($reg_system_role);
+                            $reg_system_roles_data = $this->buildRoleDetails($reg_system_role);
+
+                            $cacheExpiration = Carbon::now()->addYear();
+                            Cache::put("COMMON-REG", $reg_system_roles_data, $cacheExpiration);
+
                             $system['roles'][] = [
-                                'id' => $jo_system_roles_data['id'],
-                                'name' => $jo_system_roles_data['name']
+                                'id' => $reg_system_roles_data['id'],
+                                'name' => $reg_system_roles_data['name']
                             ];
                 
                             // Convert the array of objects to a collection
                             $modulesCollection = collect($system['modules']);
                 
-                            foreach ($jo_system_roles_data['modules'] as $role_module) {
-                                // Find the module with the code and modify it directly
-                                $moduleIndex = $modulesCollection->search(function ($module) use ($role_module) {
+                            foreach ($reg_system_roles_data['modules'] as $role_module) {
+                                // Check if the module with the code exists in the collection
+                                $existingModuleIndex = $modulesCollection->search(function ($module) use ($role_module) {
                                     return $module['code'] === $role_module['code'];
                                 });
                 
-                                if ($moduleIndex !== false) {
-                                    $module = $modulesCollection->get($moduleIndex);
+                                if ($existingModuleIndex !== false) {
+                                    // If the module exists, modify its permissions
+                                    $existingModule = $modulesCollection->get($existingModuleIndex);
                                     foreach ($role_module['permissions'] as $permission) {
                                         // If permission doesn't exist in the current module then it will be added to the module permissions.
-                                        if (!in_array($permission, $module['permissions'])) {
-                                            $module['permissions'][] = $permission;
+                                        if (!in_array($permission, $existingModule['permissions'])) {
+                                            $existingModule['permissions'][] = $permission;
                                         }
                                     }
-                                    $modulesCollection->put($moduleIndex, $module);
+                                    $modulesCollection->put($existingModuleIndex, $existingModule);
+                                } else {
+                                    // If the module doesn't exist, add it to the collection
+                                    $modulesCollection->push($role_module);
                                 }
                             }
                 
@@ -644,6 +682,10 @@ class EmployeeProfileController extends Controller
                 
                         if (!$system_role_exist) {
                             $jo_system_roles_data = $this->buildRoleDetails($jo_system_role);
+                            
+                            $cacheExpiration = Carbon::now()->addYear();
+                            Cache::put("COMMON-JO", $reg_system_roles_data, $cacheExpiration);
+
                             $system['roles'][] = [
                                 'id' => $jo_system_roles_data['id'],
                                 'name' => $jo_system_roles_data['name']
@@ -653,20 +695,24 @@ class EmployeeProfileController extends Controller
                             $modulesCollection = collect($system['modules']);
                 
                             foreach ($jo_system_roles_data['modules'] as $role_module) {
-                                // Find the module with the code and modify it directly
-                                $moduleIndex = $modulesCollection->search(function ($module) use ($role_module) {
+                                // Check if the module with the code exists in the collection
+                                $existingModuleIndex = $modulesCollection->search(function ($module) use ($role_module) {
                                     return $module['code'] === $role_module['code'];
                                 });
                 
-                                if ($moduleIndex !== false) {
-                                    $module = $modulesCollection->get($moduleIndex);
+                                if ($existingModuleIndex !== false) {
+                                    // If the module exists, modify its permissions
+                                    $existingModule = $modulesCollection->get($existingModuleIndex);
                                     foreach ($role_module['permissions'] as $permission) {
                                         // If permission doesn't exist in the current module then it will be added to the module permissions.
-                                        if (!in_array($permission, $module['permissions'])) {
-                                            $module['permissions'][] = $permission;
+                                        if (!in_array($permission, $existingModule['permissions'])) {
+                                            $existingModule['permissions'][] = $permission;
                                         }
                                     }
-                                    $modulesCollection->put($moduleIndex, $module);
+                                    $modulesCollection->put($existingModuleIndex, $existingModule);
+                                } else {
+                                    // If the module doesn't exist, add it to the collection
+                                    $modulesCollection->push($role_module);
                                 }
                             }
                 
@@ -675,6 +721,7 @@ class EmployeeProfileController extends Controller
                         }
                     }
                 }
+                
             }
         }
 
