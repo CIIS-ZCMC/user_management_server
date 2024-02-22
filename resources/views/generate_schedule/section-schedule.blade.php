@@ -105,7 +105,7 @@
 
         table {
             width: 100%; /* Adjusted to fill the container */
-            border-collapse: collapse;
+            /* border-collapse: collapse; */
             margin: 0;
             padding-top: 20px;
             text-align: left;
@@ -233,10 +233,10 @@
             </thead>
 
             <tbody>
-                @foreach ($data as $key => $resource)
+                @foreach ($data as $key => $value)
                         <tr>
                             <td class="schedule-cell"> {{ ++$key }} </td>
-                            <td class="td-name"> {{ $resource->personalInformation->name() }}  </td>
+                            <td class="td-name"> {{ $value->personalInformation->name() }}  </td>
 
                             @php
                                 $totalHours = 0;
@@ -248,10 +248,10 @@
                                     @if ($holiday->where('month_day', date('m-d', strtotime($date)))->count() > 0)
                                         <span class="schedule-cell">H</span>
                                     @else
-                                        @if ($resource->schedule->where('date', $date)->count() > 0)
+                                        @if ($value->schedule->where('date', $date)->count() > 0)
 
                                 @php
-                                            $shift = $resource->schedule->first()->timeShift;
+                                            $shift = $value->schedule->first()->timeShift;
                                             $firstIn = strtotime($shift->first_in ?? '');
                                             $secondOut = strtotime($shift->second_out ?? '');
                                             $firstOut = strtotime($shift->first_out ?? '');
