@@ -427,7 +427,7 @@ class EmployeeProfileController extends Controller
                  * Iterate to every system roles.
                  */
 
-                 foreach ($position_system_roles as $key => $position_system_role) {
+                foreach ($position_system_roles as $key => $position_system_role) {
                     $system_exist = false;
                     $system_role = $position_system_role['systemRole'];
 
@@ -442,12 +442,12 @@ class EmployeeProfileController extends Controller
                     foreach ($side_bar_details['system'] as &$system) {
                         if ($system['id'] === $system_role->system['id']) {
                             $system_exist = true;
-                    
+
                             $build_role_details = $this->buildRoleDetails($system_role);
-                    
+
                             // Convert the array of object to array of string retrieving only the names of role
                             $new_array_roles = collect($system['roles'])->pluck('name')->toArray();
-                    
+
                             // Validate if the role exist in the array, if not, then add a new role to system roles
                             if (!in_array($build_role_details['name'], $new_array_roles)) {
                                 $system['roles'][] = [
@@ -455,16 +455,16 @@ class EmployeeProfileController extends Controller
                                     'name' => $build_role_details['name'],
                                 ];
                             }
-                    
+
                             // Convert the array of objects to a collection
                             $collection = collect($system['modules']);
-                    
+
                             foreach ($build_role_details['modules'] as $role_module) {
                                 // Check if the module with the given code exists in the collection
                                 $moduleIndex = $collection->search(function ($module) use ($role_module) {
                                     return $module['code'] === $role_module['code'];
                                 });
-                    
+
                                 if ($moduleIndex !== false) {
                                     // If the module exists, modify its permissions
                                     $collection->transform(function ($module) use ($role_module) {
@@ -484,10 +484,10 @@ class EmployeeProfileController extends Controller
                                     $collection->push($role_module);
                                 }
                             }
-                    
+
                             // Update the modules in the system array
                             $system['modules'] = $collection->toArray();
-                            
+
                             // Break out of the loop once the system is found and updated
                             break;
                         }
@@ -543,12 +543,12 @@ class EmployeeProfileController extends Controller
                     foreach ($side_bar_details['system'] as &$system) {
                         if ($system['id'] === $system_role->system['id']) {
                             $system_exist = true;
-                    
+
                             $build_role_details = $this->buildRoleDetails($system_role);
-                    
+
                             // Convert the array of object to array of string retrieving only the names of role
                             $new_array_roles = collect($system['roles'])->pluck('name')->toArray();
-                    
+
                             // Validate if the role exist in the array, if not, then add a new role to system roles
                             if (!in_array($build_role_details['name'], $new_array_roles)) {
                                 $system['roles'][] = [
@@ -556,16 +556,16 @@ class EmployeeProfileController extends Controller
                                     'name' => $build_role_details['name'],
                                 ];
                             }
-                    
+
                             // Convert the array of objects to a collection
                             $collection = collect($system['modules']);
-                    
+
                             foreach ($build_role_details['modules'] as $role_module) {
                                 // Check if the module with the given code exists in the collection
                                 $moduleIndex = $collection->search(function ($module) use ($role_module) {
                                     return $module['code'] === $role_module['code'];
                                 });
-                    
+
                                 if ($moduleIndex !== false) {
                                     // If the module exists, modify its permissions
                                     $collection->transform(function ($module) use ($role_module) {
@@ -585,10 +585,10 @@ class EmployeeProfileController extends Controller
                                     $collection->push($role_module);
                                 }
                             }
-                    
+
                             // Update the modules in the system array
                             $system['modules'] = $collection->toArray();
-                            
+
                             // Break out of the loop once the system is found and updated
                             break;
                         }
@@ -614,14 +614,14 @@ class EmployeeProfileController extends Controller
                 foreach ($side_bar_details['system'] as &$system) {
                     if ($system['id'] === $reg_system_role->system_id) {
                         $system_role_exist = false;
-                
+
                         foreach ($system['roles'] as $value) {
                             if ($value['name'] === $role->name) {
                                 $system_role_exist = true;
                                 break; // No need to continue checking once the role is found
                             }
                         }
-                
+
                         if (!$system_role_exist) {
                             $reg_system_roles_data = $this->buildRoleDetails($reg_system_role);
 
@@ -632,16 +632,16 @@ class EmployeeProfileController extends Controller
                                 'id' => $reg_system_roles_data['id'],
                                 'name' => $reg_system_roles_data['name']
                             ];
-                
+
                             // Convert the array of objects to a collection
                             $modulesCollection = collect($system['modules']);
-                
+
                             foreach ($reg_system_roles_data['modules'] as $role_module) {
                                 // Check if the module with the code exists in the collection
                                 $existingModuleIndex = $modulesCollection->search(function ($module) use ($role_module) {
                                     return $module['code'] === $role_module['code'];
                                 });
-                
+
                                 if ($existingModuleIndex !== false) {
                                     // If the module exists, modify its permissions
                                     $existingModule = $modulesCollection->get($existingModuleIndex);
@@ -657,7 +657,7 @@ class EmployeeProfileController extends Controller
                                     $modulesCollection->push($role_module);
                                 }
                             }
-                
+
                             // Assign back the modified modules collection to the system
                             $system['modules'] = $modulesCollection->toArray();
                         }
@@ -672,34 +672,34 @@ class EmployeeProfileController extends Controller
                 foreach ($side_bar_details['system'] as &$system) {
                     if ($system['id'] === $jo_system_role->system_id) {
                         $system_role_exist = false;
-                
+
                         foreach ($system['roles'] as $value) {
                             if ($value['name'] === $role->name) {
                                 $system_role_exist = true;
                                 break; // No need to continue checking once the role is found
                             }
                         }
-                
+
                         if (!$system_role_exist) {
                             $jo_system_roles_data = $this->buildRoleDetails($jo_system_role);
-                            
+
                             $cacheExpiration = Carbon::now()->addYear();
-                            Cache::put("COMMON-JO", $reg_system_roles_data, $cacheExpiration);
+                            Cache::put("COMMON-JO", $jo_system_roles_data, $cacheExpiration);
 
                             $system['roles'][] = [
                                 'id' => $jo_system_roles_data['id'],
                                 'name' => $jo_system_roles_data['name']
                             ];
-                
+
                             // Convert the array of objects to a collection
                             $modulesCollection = collect($system['modules']);
-                
+
                             foreach ($jo_system_roles_data['modules'] as $role_module) {
                                 // Check if the module with the code exists in the collection
                                 $existingModuleIndex = $modulesCollection->search(function ($module) use ($role_module) {
                                     return $module['code'] === $role_module['code'];
                                 });
-                
+
                                 if ($existingModuleIndex !== false) {
                                     // If the module exists, modify its permissions
                                     $existingModule = $modulesCollection->get($existingModuleIndex);
@@ -715,13 +715,12 @@ class EmployeeProfileController extends Controller
                                     $modulesCollection->push($role_module);
                                 }
                             }
-                
+
                             // Assign back the modified modules collection to the system
                             $system['modules'] = $modulesCollection->toArray();
                         }
                     }
                 }
-                
             }
         }
 
@@ -731,7 +730,7 @@ class EmployeeProfileController extends Controller
     private function buildSystemDetails($system_role)
     {
         $build_role_details = $this->buildRoleDetails($system_role);
-        
+
         $role = [
             'id' => $build_role_details['id'],
             'name' => $build_role_details['name'],
