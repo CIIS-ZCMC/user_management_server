@@ -22,15 +22,9 @@ class TimeShift extends Model
         'second_in',
         'second_out',
         'total_hours',
-        'color'
     ];
 
     protected $softDelete = true;
 
     public $timestamps = true;
-
-    public function section()
-    {
-        return $this->belongsToMany(Section::class, 'section_time_shift', )->withPivot('section_id');
-    }
 }

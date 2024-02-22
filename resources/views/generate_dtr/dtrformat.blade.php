@@ -646,7 +646,7 @@
                         $isExcept = true;
                     @endphp
 
-                 @include('generate_dtr.tableDtr_datespan')
+                 @include('generate_dtr.TableDtrDateSpan')
                 @else
                     @if ($isExcept == true)
 

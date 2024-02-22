@@ -38,6 +38,7 @@ class PersonalInformationSeeder extends Seeder
      */
     public function run(): void
     {
+        //   for ($i = 0; $i <= 4; $i++) {
         $personal_information = PersonalInformation::create([
             'first_name' => 'Iisu',
             'last_name' => 'Super Admin',
@@ -218,6 +219,7 @@ class PersonalInformationSeeder extends Seeder
                 'total_leave_credits' => 5
             ]);
         }
+
         EmployeeOvertimeCredit::create([
             'employee_profile_id' => $employee_profile->id,
             'earned_credit_by_hour' => 0,
@@ -248,6 +250,7 @@ class PersonalInformationSeeder extends Seeder
         foreach ($designations as $designation) {
             Cache::forget($designation['name']);
         }
+        // }
     }
 
     protected function encryptData($dataToEncrypt)

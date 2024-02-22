@@ -37,15 +37,15 @@ class Authorization
 
         if($permissions !== null && count($permissions['system']) !== 0){
             foreach ($permissions['system'] as $key => $value) {
-                foreach ($value['roles'] as $key => $value) {
-                    foreach ($value['modules'] as $key => $value) {
-                        if ($value['code'] === $system_module['code']) {
-                            if (in_array($action, $value['permissions'])) {
-                                $has_rights = true;
-                            }
+                foreach ($value['modules'] as $key => $data) {
+                    if ($data['code'] === $system_module['code']) {
+                        if (in_array($action, $data['permissions'])) {
+                            $has_rights = true;
                         }
                     }
+                    if($has_rights) break;
                 }
+                if($has_rights) break;
             }
     
             $request->merge(['permission' => $routePermission]);
@@ -57,16 +57,54 @@ class Authorization
         
         if(!$has_rights){
             foreach ($permissions['system'] as $key => $value) {
-                foreach ($value['roles'] as $key => $value) {
-                    foreach ($value['modules'] as $key => $value) {
-                        if ($value['code'] === $system_module['code']) {
-                            if (in_array($action, $value['permissions'])) {
-                                $has_rights = true;
-                            }
+                foreach ($value['modules'] as $key => $data) {
+                    if ($data['code'] === $system_module['code']) {
+                        if (in_array($action, $data['permissions'])) {
+                            $has_rights = true;
                         }
                     }
+                    if($has_rights) break;
                 }
+                if($has_rights) break;
             }
+            
+            $request->merge(['permission' => $routePermission]);
+
+            return $next($request);
+        }
+        
+        $permissions = Cache::get("COMMON-REG");
+        
+        if(!$has_rights){
+            foreach ($permissions['modules'] as $key => $data) {
+                if ($data['code'] === $system_module['code']) {
+                    if (in_array($action, $data['permissions'])) {
+                        $has_rights = true;
+                    }
+                }
+                if($has_rights) break;
+            }
+            
+            $request->merge(['permission' => $routePermission]);
+
+            return $next($request);
+        }
+        
+        $permissions = Cache::get("COMMON-JO");
+        
+        if(!$has_rights){
+            foreach ($permissions['modules'] as $key => $data) {
+                if ($data['code'] === $system_module['code']) {
+                    if (in_array($action, $data['permissions'])) {
+                        $has_rights = true;
+                    }
+                }
+                if($has_rights) break;
+            }
+            
+            $request->merge(['permission' => $routePermission]);
+
+            return $next($request);
         }
 
         if (!$has_rights) {

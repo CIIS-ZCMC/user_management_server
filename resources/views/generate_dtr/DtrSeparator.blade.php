@@ -11,25 +11,25 @@
        @php
            $isHoliday = true;
        @endphp
-   
+
     @endif
 @endforeach
-   
+
 
 
 
     @php
     $countin = 0;
     @endphp
-    
+
     @foreach($firstin as $key=> $f1)
     @if($biometric_ID  == $f1['biometric_ID'])
     @if($f1['first_in'])
     @if(date('d',strtotime($f1['first_in'])) == $i)
     <span class="fentry">
 
-        {{date('h:i a',strtotime($f1['first_in']))}} 
-      
+        {{date('h:i a',strtotime($f1['first_in']))}}
+
     </span>
 
 
@@ -49,15 +49,19 @@
      @if ($countin == 0)
              <span style="color:gray">Day-off </span>
      @endif
- 
+
     @endif
-   
+
     @elseif(date('D',strtotime(date('Y-m-d',strtotime($year.'-'.$month.'-'.$i)))) == 'Sat'
     )
     @if($countin == 0)
+
+
     @php
         $count2 = 0;
     @endphp
+
+
     @foreach ($secondin as $s1)
         @if ($s1['second_in'])
         @if(date('d',strtotime($s1['second_in'])) != $i)
@@ -65,28 +69,29 @@
            $count2 ++;
        @endphp
         @endif
-            
+
         @endif
     @endforeach
 
+
     @if ($count2 >=1)
     <span style="color:gray">Day-off</span>
-    @else 
+    @else
     <span style="color:gray">Day-off</span>
     @endif
-   
-   
     @endif
+
+
     @else
     @if($countin == 0)
-    @if(date('Y-m-d',strtotime($year.'-'.$month.'-'.$i)) < date('Y-m-d') ) 
+    @if(date('Y-m-d',strtotime($year.'-'.$month.'-'.$i)) < date('Y-m-d') )
     @if ($isHoliday)
- 
+
      {{-- <span style="color:gray">HOLIDAY</span> --}}
-    @else 
+    @else
     <span style="color:gray;font-style:italic;color:#FF6969">ABSENT</span>
     @endif
-    
+
         @endif
         @endif
 
@@ -99,10 +104,9 @@
         @endif
         @break
     @case('firstout')
-   
     <span class="fentry">
         <!-- FIRST OUT -->
-       
+
         @php
         $fo = 0;
             if($fspan){
@@ -115,7 +119,7 @@
         @if($biometric_ID  == $f2['biometric_ID'])
         @if($f2['first_out'])
         @if(date('d',strtotime($f2['first_out'])) == $fo)
-        {{date('h:i a',strtotime($f2['first_out']))}} 
+        {{date('h:i a',strtotime($f2['first_out']))}}
         @endif
         @endif
         @endif
@@ -123,7 +127,7 @@
     </span>
         @break
         @case('secondin')
-        
+
         <span class="fentry">
             <!-- SECOND IN -->
             @foreach($secondin as $f3)
@@ -157,7 +161,7 @@
         @break
 
         @case('undertime')
-      
+
 
 
         <table id="tabledate" style="border:none">
@@ -184,7 +188,7 @@
                 }else {
                 $minutes = '-';
                 }
-               
+
                 @endphp
 
                 @endif
@@ -198,5 +202,5 @@
         @break
 
     @default
-        
+
 @endswitch

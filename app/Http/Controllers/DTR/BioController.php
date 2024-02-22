@@ -156,7 +156,7 @@ class BioController extends Controller
 
     /* ------------------------------------------------------------------------------------------- */
 
-    /* 
+    /*
     TO DO --- ip address
     get all the device ID for this function to apply in each devices
     */
