@@ -54,11 +54,6 @@ class TimeShiftController extends Controller
                     continue;
                 }
                 
-                if (is_array($value)) {
-                    $cleanData[$key] = $value;
-                    continue;
-                }
-
                 if (is_int($value)) {
                     $cleanData[$key] = $value;
                     continue;
