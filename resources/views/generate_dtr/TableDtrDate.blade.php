@@ -1,5 +1,4 @@
-
-    <td>
+     <td>
         <!--FIRST IN -->
         @include('generate_dtr.DtrSeparator',['entry'=>'firstin'])
     </td>

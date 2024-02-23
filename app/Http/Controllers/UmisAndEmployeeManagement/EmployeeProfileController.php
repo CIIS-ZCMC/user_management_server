@@ -176,14 +176,7 @@ class EmployeeProfileController extends Controller
 
                 if ($login_trail !== null) {
                     if ($login_trail->ip_address !== $ip) {
-                        Helpers::errorLog($this->CONTROLLER_NAME, 'signIn', "Successfully verified ip address");
-                        $body = view('mail.otp', ['otpcode' => $this->two_auth->getOTP($employee_profile)]);
-                        $data = [
-                            'Subject' => 'ONE TIME PIN',
-                            'To_receiver' => $employee_profile->personalinformation->contact->email_address,
-                            'Receiver_Name' => $employee_profile->personalInformation->name(),
-                            'Body' => $body
-                        ];
+                        $data = Helpers::generateMyOTP($employee_profile);
 
                         if ($this->mail->send($data)) {
                             return response()->json(['message' => "You are currently logged on to other device. An OTP has been sent to your registered email. If you want to signout from that device, submit the OTP."], Response::HTTP_FOUND)
@@ -204,16 +197,7 @@ class EmployeeProfileController extends Controller
              * if 2FA is activated send OTP to email to validate ownership
              */
             if ((bool) $employee_profile->is_2fa) {
-
-                $data = $request->data;
-
-                $body = view('mail.otp', ['otpcode' => $this->two_auth->getOTP($employee_profile)]);
-                $data = [
-                    'Subject' => 'ONE TIME PIN',
-                    'To_receiver' => $employee_profile->personalinformation->contact->email_address,
-                    'Receiver_Name' => $employee_profile->personalInformation->name(),
-                    'Body' => $body
-                ];
+                $data = Helpers::generateMyOTP($request);
 
                 if ($this->mail->send($data)) {
                     return response()->json(['message' => "OTP has sent to your email, submit the OTP to verify that this is your account."], Response::HTTP_OK)
@@ -226,8 +210,6 @@ class EmployeeProfileController extends Controller
             }
 
             $token = $employee_profile->createToken();
-
-            $personal_information = $employee_profile->personalInformation;
 
             $assigned_area = $employee_profile->assignedArea;
             $plantilla = null;
@@ -265,109 +247,8 @@ class EmployeeProfileController extends Controller
                 ], Response::HTTP_UNAUTHORIZED);
             }
 
-            $area_assigned = $employee_profile->assignedArea->findDetails();
+            $data = $this->generateEmployeeProfileDetails($employee_profile, $side_bar_details);
 
-            $position = $employee_profile->position();
-
-            $last_login = LoginTrail::where('employee_profile_id', $employee_profile->id)->orderByDesc('created_at')->first();
-
-            $employee = [
-                'profile_url' => env('SERVER_DOMAIN') . "/photo/profiles/" . $employee_profile->profile_url,
-                'employee_id' => $employee_profile->employee_id,
-                'position' => $position,
-                'job_position' => $designation->name,
-                'date_hired' => $employee_profile->date_hired,
-                'job_type' => $employee_profile->employmentType->name,
-                'years_of_service' => $employee_profile->personalInformation->years_of_service,
-                'last_login' => $last_login === null ? null : $last_login->created_at,
-                'biometric_id' => $employee_profile->biometric_id
-            ];
-
-            $personal_information_data = [
-                'full_name' => $personal_information->nameWithSurnameFirst(),
-                'first_name' => $personal_information->first_name,
-                'last_name' => $personal_information->last_name,
-                'middle_name' => $personal_information->middle_name === null ? ' ' : $personal_information->middle_name,
-                'name_extension' => $personal_information->name_extension === null ? null : $personal_information->name_extension,
-                'employee_id' => $employee_profile->employee_id,
-                'years_of_service' => $employee_profile->personalInformation->years_of_service === null ? null : $personal_information->years_of_service,
-                'name_title' => $personal_information->name_title === null ? null : $personal_information->name_title,
-                'sex' => $personal_information->sex,
-                'date_of_birth' => $personal_information->date_of_birth,
-                'date_hired' => $employee_profile->date_hired,
-                'place_of_birth' => $personal_information->place_of_birth,
-                'civil_status' => $personal_information->civil_status,
-                'citizenship' => $personal_information->citizenship,
-                'date_of_marriage' => $personal_information->date_of_marriage === null ? null : $personal_information->date_of_marriage,
-                'agency_employee_no' => $employee_profile->agency_employee_no === null ? null : $personal_information->agency_employee_no,
-                'blood_type' => $personal_information->blood_type === null ? null : $personal_information->blood_type,
-                'height' => $personal_information->height,
-                'weight' => $personal_information->weight,
-            ];
-
-            $address = [
-                'residential_address' => null,
-                'residential_zip_code' => null,
-                'residential_telephone_no' => null,
-                'permanent_address' => null,
-                'permanent_zip_code' => null,
-                'permanent_telephone_no' => null
-            ];
-
-            $addresses = $personal_information->addresses;
-
-            foreach ($addresses as $value) {
-
-                if ($value->is_residential_and_permanent) {
-                    $address['residential_address'] = $value->address;
-                    $address['residential_zip_code'] = $value->zip_code;
-                    $address['residential_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
-                    $address['permanent_address'] = $value->address;
-                    $address['permanent_zip_code'] = $value->zip_code;
-                    $address['permanent_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
-                    break;
-                }
-
-                if ($value->is_residential) {
-                    $address['residential_address'] = $value->address;
-                    $address['residential_zip_code'] = $value->zip_code;
-                    $address['residential_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
-                } else {
-                    $address['permanent_address'] = $value->address;
-                    $address['permanent_zip_code'] = $value->zip_code;
-                    $address['permanent_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
-                }
-            }
-
-            $data = [
-                'employee_id' => $employee_profile['employee_id'],
-                'name' => $personal_information->employeeName(),
-                'designation' => $designation['name'],
-                'employee_details' => [
-                    'employee' => $employee,
-                    'personal_information' => $personal_information_data,
-                    'contact' => new ContactResource($personal_information->contact),
-                    'address' => $address,
-                    'family_background' => new FamilyBackGroundResource($personal_information->familyBackground),
-                    'children' => ChildResource::collection($personal_information->children),
-                    'education' => EducationalBackgroundResource::collection($personal_information->educationalBackground),
-                    'affiliations_and_others' => [
-                        'civil_service_eligibility' => CivilServiceEligibilityResource::collection($personal_information->civilServiceEligibility),
-                        'work_experience' => WorkExperienceResource::collection($personal_information->workExperience),
-                        'voluntary_work_or_involvement' => VoluntaryWorkResource::collection($personal_information->voluntaryWork),
-                        'training' => TrainingResource::collection($personal_information->training),
-                        'other' => OtherInformationResource::collection($personal_information->otherInformation),
-                    ],
-                    'issuance' => $employee_profile->issuanceInformation,
-                    'reference' => $employee_profile->personalInformation->references,
-                    'legal_information' => $employee_profile->personalInformation->legalInformation,
-                    'identification' => new IdentificationNumberResource($employee_profile->personalInformation->identificationNumber)
-                ],
-                'area_assigned' => $area_assigned['details']->name,
-                'area_sector' => $area_assigned['sector'],
-                'side_bar_details' => $side_bar_details
-            ];
-            // return $request->ip();
             LoginTrail::create([
                 'signin_at' => now(),
                 'ip_address' => $request->ip(),
@@ -439,16 +320,16 @@ class EmployeeProfileController extends Controller
                         continue;
                     }
 
-                    foreach ($side_bar_details['system'] as $key => $system) {
+                    foreach ($side_bar_details['system'] as &$system) {
                         if ($system['id'] === $system_role->system['id']) {
                             $system_exist = true;
 
                             $build_role_details = $this->buildRoleDetails($system_role);
-        
-                            /** Convert the array of object to array of string retrieving only the names of role */
+
+                            // Convert the array of object to array of string retrieving only the names of role
                             $new_array_roles = collect($system['roles'])->pluck('name')->toArray();
 
-                            /** Validate if the role exist in the array of not then a new role will be added to system roles. */
+                            // Validate if the role exist in the array, if not, then add a new role to system roles
                             if (!in_array($build_role_details['name'], $new_array_roles)) {
                                 $system['roles'][] = [
                                     'id' => $build_role_details['id'],
@@ -459,21 +340,36 @@ class EmployeeProfileController extends Controller
                             // Convert the array of objects to a collection
                             $collection = collect($system['modules']);
 
-                            foreach($build_role_details['modules'] as $role_module){
-                                // Find the module with code "UMIS-SM" and modify it in the collection
-                                $collection->transform(function ($module) use ($role_module) {
-                                    if ($module['code'] === $role_module['code']) {
-                                        /** Iterate new permissions of other system role */
-                                        foreach($role_module['permissions'] as $permission){
-                                            /** If permission doesn't exist in current module then it will be added to the module permissions.*/
-                                            if (!in_array($permission, $module['permissions'])) {
-                                                $module['permissions'][] = $permission;
+                            foreach ($build_role_details['modules'] as $role_module) {
+                                // Check if the module with the given code exists in the collection
+                                $moduleIndex = $collection->search(function ($module) use ($role_module) {
+                                    return $module['code'] === $role_module['code'];
+                                });
+
+                                if ($moduleIndex !== false) {
+                                    // If the module exists, modify its permissions
+                                    $collection->transform(function ($module) use ($role_module) {
+                                        if ($module['code'] === $role_module['code']) {
+                                            // Iterate new permissions of other system role
+                                            foreach ($role_module['permissions'] as $permission) {
+                                                // If permission doesn't exist in current module then it will be added to the module permissions.
+                                                if (!in_array($permission, $module['permissions'])) {
+                                                    $module['permissions'][] = $permission;
+                                                }
                                             }
                                         }
-                                    }
-                                    return $module;
-                                });
+                                        return $module;
+                                    });
+                                } else {
+                                    // If the module doesn't exist, add it to the collection
+                                    $collection->push($role_module);
+                                }
                             }
+
+                            // Update the modules in the system array
+                            $system['modules'] = $collection->toArray();
+
+                            // Break out of the loop once the system is found and updated
                             break;
                         }
                     }
@@ -525,16 +421,16 @@ class EmployeeProfileController extends Controller
                         continue;
                     }
 
-                    foreach ($side_bar_details['system'] as $key => $system) {
+                    foreach ($side_bar_details['system'] as &$system) {
                         if ($system['id'] === $system_role->system['id']) {
                             $system_exist = true;
 
                             $build_role_details = $this->buildRoleDetails($system_role);
-        
-                            /** Convert the array of object to array of string retrieving only the names of role */
+
+                            // Convert the array of object to array of string retrieving only the names of role
                             $new_array_roles = collect($system['roles'])->pluck('name')->toArray();
 
-                            /** Validate if the role exist in the array of not then a new role will be added to system roles. */
+                            // Validate if the role exist in the array, if not, then add a new role to system roles
                             if (!in_array($build_role_details['name'], $new_array_roles)) {
                                 $system['roles'][] = [
                                     'id' => $build_role_details['id'],
@@ -545,21 +441,36 @@ class EmployeeProfileController extends Controller
                             // Convert the array of objects to a collection
                             $collection = collect($system['modules']);
 
-                            foreach($build_role_details['modules'] as $role_module){
-                                // Find the module with code "UMIS-SM" and modify it in the collection
-                                $collection->transform(function ($module) use ($role_module) {
-                                    if ($module['code'] === $role_module['code']) {
-                                        /** Iterate new permissions of other system role */
-                                        foreach($role_module['permissions'] as $permission){
-                                            /** If permission doesn't exist in current module then it will be added to the module permissions.*/
-                                            if (!in_array($permission, $module['permissions'])) {
-                                                $module['permissions'][] = $permission;
+                            foreach ($build_role_details['modules'] as $role_module) {
+                                // Check if the module with the given code exists in the collection
+                                $moduleIndex = $collection->search(function ($module) use ($role_module) {
+                                    return $module['code'] === $role_module['code'];
+                                });
+
+                                if ($moduleIndex !== false) {
+                                    // If the module exists, modify its permissions
+                                    $collection->transform(function ($module) use ($role_module) {
+                                        if ($module['code'] === $role_module['code']) {
+                                            // Iterate new permissions of other system role
+                                            foreach ($role_module['permissions'] as $permission) {
+                                                // If permission doesn't exist in current module then it will be added to the module permissions.
+                                                if (!in_array($permission, $module['permissions'])) {
+                                                    $module['permissions'][] = $permission;
+                                                }
                                             }
                                         }
-                                    }
-                                    return $module;
-                                });
+                                        return $module;
+                                    });
+                                } else {
+                                    // If the module doesn't exist, add it to the collection
+                                    $collection->push($role_module);
+                                }
                             }
+
+                            // Update the modules in the system array
+                            $system['modules'] = $collection->toArray();
+
+                            // Break out of the loop once the system is found and updated
                             break;
                         }
                     }
@@ -584,42 +495,50 @@ class EmployeeProfileController extends Controller
                 foreach ($side_bar_details['system'] as &$system) {
                     if ($system['id'] === $reg_system_role->system_id) {
                         $system_role_exist = false;
-                
+
                         foreach ($system['roles'] as $value) {
                             if ($value['name'] === $role->name) {
                                 $system_role_exist = true;
                                 break; // No need to continue checking once the role is found
                             }
                         }
-                
+
                         if (!$system_role_exist) {
-                            $jo_system_roles_data = $this->buildRoleDetails($reg_system_role);
+                            $reg_system_roles_data = $this->buildRoleDetails($reg_system_role);
+
+                            $cacheExpiration = Carbon::now()->addYear();
+                            Cache::put("COMMON-REG", $reg_system_roles_data, $cacheExpiration);
+
                             $system['roles'][] = [
-                                'id' => $jo_system_roles_data['id'],
-                                'name' => $jo_system_roles_data['name']
+                                'id' => $reg_system_roles_data['id'],
+                                'name' => $reg_system_roles_data['name']
                             ];
-                
+
                             // Convert the array of objects to a collection
                             $modulesCollection = collect($system['modules']);
-                
-                            foreach ($jo_system_roles_data['modules'] as $role_module) {
-                                // Find the module with the code and modify it directly
-                                $moduleIndex = $modulesCollection->search(function ($module) use ($role_module) {
+
+                            foreach ($reg_system_roles_data['modules'] as $role_module) {
+                                // Check if the module with the code exists in the collection
+                                $existingModuleIndex = $modulesCollection->search(function ($module) use ($role_module) {
                                     return $module['code'] === $role_module['code'];
                                 });
-                
-                                if ($moduleIndex !== false) {
-                                    $module = $modulesCollection->get($moduleIndex);
+
+                                if ($existingModuleIndex !== false) {
+                                    // If the module exists, modify its permissions
+                                    $existingModule = $modulesCollection->get($existingModuleIndex);
                                     foreach ($role_module['permissions'] as $permission) {
                                         // If permission doesn't exist in the current module then it will be added to the module permissions.
-                                        if (!in_array($permission, $module['permissions'])) {
-                                            $module['permissions'][] = $permission;
+                                        if (!in_array($permission, $existingModule['permissions'])) {
+                                            $existingModule['permissions'][] = $permission;
                                         }
                                     }
-                                    $modulesCollection->put($moduleIndex, $module);
+                                    $modulesCollection->put($existingModuleIndex, $existingModule);
+                                } else {
+                                    // If the module doesn't exist, add it to the collection
+                                    $modulesCollection->push($role_module);
                                 }
                             }
-                
+
                             // Assign back the modified modules collection to the system
                             $system['modules'] = $modulesCollection->toArray();
                         }
@@ -634,42 +553,50 @@ class EmployeeProfileController extends Controller
                 foreach ($side_bar_details['system'] as &$system) {
                     if ($system['id'] === $jo_system_role->system_id) {
                         $system_role_exist = false;
-                
+
                         foreach ($system['roles'] as $value) {
                             if ($value['name'] === $role->name) {
                                 $system_role_exist = true;
                                 break; // No need to continue checking once the role is found
                             }
                         }
-                
+
                         if (!$system_role_exist) {
                             $jo_system_roles_data = $this->buildRoleDetails($jo_system_role);
+
+                            $cacheExpiration = Carbon::now()->addYear();
+                            Cache::put("COMMON-JO", $jo_system_roles_data, $cacheExpiration);
+
                             $system['roles'][] = [
                                 'id' => $jo_system_roles_data['id'],
                                 'name' => $jo_system_roles_data['name']
                             ];
-                
+
                             // Convert the array of objects to a collection
                             $modulesCollection = collect($system['modules']);
-                
+
                             foreach ($jo_system_roles_data['modules'] as $role_module) {
-                                // Find the module with the code and modify it directly
-                                $moduleIndex = $modulesCollection->search(function ($module) use ($role_module) {
+                                // Check if the module with the code exists in the collection
+                                $existingModuleIndex = $modulesCollection->search(function ($module) use ($role_module) {
                                     return $module['code'] === $role_module['code'];
                                 });
-                
-                                if ($moduleIndex !== false) {
-                                    $module = $modulesCollection->get($moduleIndex);
+
+                                if ($existingModuleIndex !== false) {
+                                    // If the module exists, modify its permissions
+                                    $existingModule = $modulesCollection->get($existingModuleIndex);
                                     foreach ($role_module['permissions'] as $permission) {
                                         // If permission doesn't exist in the current module then it will be added to the module permissions.
-                                        if (!in_array($permission, $module['permissions'])) {
-                                            $module['permissions'][] = $permission;
+                                        if (!in_array($permission, $existingModule['permissions'])) {
+                                            $existingModule['permissions'][] = $permission;
                                         }
                                     }
-                                    $modulesCollection->put($moduleIndex, $module);
+                                    $modulesCollection->put($existingModuleIndex, $existingModule);
+                                } else {
+                                    // If the module doesn't exist, add it to the collection
+                                    $modulesCollection->push($role_module);
                                 }
                             }
-                
+
                             // Assign back the modified modules collection to the system
                             $system['modules'] = $modulesCollection->toArray();
                         }
@@ -684,7 +611,7 @@ class EmployeeProfileController extends Controller
     private function buildSystemDetails($system_role)
     {
         $build_role_details = $this->buildRoleDetails($system_role);
-        
+
         $role = [
             'id' => $build_role_details['id'],
             'name' => $build_role_details['name'],
@@ -723,6 +650,124 @@ class EmployeeProfileController extends Controller
             'id' => $system_role->id,
             'name' => $system_role->role->name,
             'modules' => array_values($modules), // Resetting array keys
+        ];
+    }
+
+    public function generateEmployeeProfileDetails($employee_profile, $side_bar_details)
+    {
+        $personal_information = $employee_profile->personalInformation;
+        $assigned_area = $employee_profile->assignedArea;
+        $area_assigned = $employee_profile->assignedArea->findDetails();
+        
+        $position = $employee_profile->position();
+        
+        $designation = null;
+
+        if ($assigned_area['plantilla_id'] === null) {
+            $designation = $assigned_area->designation;
+        } else {
+            //Employment is plantilla retrieve the plantilla and its designation.
+            $plantilla = $assigned_area->plantilla;
+            $designation = $plantilla->designation;
+        }
+
+        $last_login = LoginTrail::where('employee_profile_id', $employee_profile->id)->orderByDesc('created_at')->first();
+        
+        $employee = [
+            'profile_url' => env('SERVER_DOMAIN') . "/photo/profiles/" . $employee_profile->profile_url,
+            'employee_id' => $employee_profile->employee_id,
+            'position' => $position,
+            'job_position' => $designation->name,
+            'date_hired' => $employee_profile->date_hired,
+            'job_type' => $employee_profile->employmentType->name,
+            'years_of_service' => $employee_profile->personalInformation->years_of_service,
+            'last_login' => $last_login === null ? null : $last_login->created_at,
+            'biometric_id' => $employee_profile->biometric_id
+        ];
+
+        $personal_information_data = [
+            'full_name' => $personal_information->nameWithSurnameFirst(),
+            'first_name' => $personal_information->first_name,
+            'last_name' => $personal_information->last_name,
+            'middle_name' => $personal_information->middle_name === null ? ' ' : $personal_information->middle_name,
+            'name_extension' => $personal_information->name_extension === null ? null : $personal_information->name_extension,
+            'employee_id' => $employee_profile->employee_id,
+            'years_of_service' => $employee_profile->personalInformation->years_of_service === null ? null : $personal_information->years_of_service,
+            'name_title' => $personal_information->name_title === null ? null : $personal_information->name_title,
+            'sex' => $personal_information->sex,
+            'date_of_birth' => $personal_information->date_of_birth,
+            'date_hired' => $employee_profile->date_hired,
+            'place_of_birth' => $personal_information->place_of_birth,
+            'civil_status' => $personal_information->civil_status,
+            'citizenship' => $personal_information->citizenship,
+            'date_of_marriage' => $personal_information->date_of_marriage === null ? null : $personal_information->date_of_marriage,
+            'agency_employee_no' => $employee_profile->agency_employee_no === null ? null : $personal_information->agency_employee_no,
+            'blood_type' => $personal_information->blood_type === null ? null : $personal_information->blood_type,
+            'height' => $personal_information->height,
+            'weight' => $personal_information->weight,
+        ];
+
+        $address = [
+            'residential_address' => null,
+            'residential_zip_code' => null,
+            'residential_telephone_no' => null,
+            'permanent_address' => null,
+            'permanent_zip_code' => null,
+            'permanent_telephone_no' => null
+        ];
+
+        $addresses = $personal_information->addresses;
+
+        foreach ($addresses as $value) {
+
+            if ($value->is_residential_and_permanent) {
+                $address['residential_address'] = $value->address;
+                $address['residential_zip_code'] = $value->zip_code;
+                $address['residential_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
+                $address['permanent_address'] = $value->address;
+                $address['permanent_zip_code'] = $value->zip_code;
+                $address['permanent_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
+                break;
+            }
+
+            if ($value->is_residential) {
+                $address['residential_address'] = $value->address;
+                $address['residential_zip_code'] = $value->zip_code;
+                $address['residential_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
+            } else {
+                $address['permanent_address'] = $value->address;
+                $address['permanent_zip_code'] = $value->zip_code;
+                $address['permanent_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
+            }
+        }
+
+        return [
+            'employee_id' => $employee_profile['employee_id'],
+            'name' => $personal_information->employeeName(),
+            'designation' => $designation['name'],
+            'employee_details' => [
+                'employee' => $employee,
+                'personal_information' => $personal_information_data,
+                'contact' => new ContactResource($personal_information->contact),
+                'address' => $address,
+                'family_background' => new FamilyBackGroundResource($personal_information->familyBackground),
+                'children' => ChildResource::collection($personal_information->children),
+                'education' => EducationalBackgroundResource::collection($personal_information->educationalBackground),
+                'affiliations_and_others' => [
+                    'civil_service_eligibility' => CivilServiceEligibilityResource::collection($personal_information->civilServiceEligibility),
+                    'work_experience' => WorkExperienceResource::collection($personal_information->workExperience),
+                    'voluntary_work_or_involvement' => VoluntaryWorkResource::collection($personal_information->voluntaryWork),
+                    'training' => TrainingResource::collection($personal_information->training),
+                    'other' => OtherInformationResource::collection($personal_information->otherInformation),
+                ],
+                'issuance' => $employee_profile->issuanceInformation,
+                'reference' => $employee_profile->personalInformation->references,
+                'legal_information' => $employee_profile->personalInformation->legalInformation,
+                'identification' => new IdentificationNumberResource($employee_profile->personalInformation->identificationNumber)
+            ],
+            'area_assigned' => $area_assigned['details']->name,
+            'area_sector' => $area_assigned['sector'],
+            'side_bar_details' => $side_bar_details
         ];
     }
 
@@ -768,9 +813,6 @@ class EmployeeProfileController extends Controller
             ];
 
             $token = $employee_profile->createToken();
-
-            $personal_information = $employee_profile->personalInformation;
-
             $assigned_area = $employee_profile->assignedArea;
             $plantilla = null;
             $designation = null;
@@ -808,110 +850,7 @@ class EmployeeProfileController extends Controller
                 ], Response::HTTP_UNAUTHORIZED);
             }
 
-            $area_assigned = $employee_profile->assignedArea->findDetails();
-
-            $position = $employee_profile->position();
-
-            $last_login = LoginTrail::where('employee_profile_id', $employee_profile->id)->orderByDesc('created_at')->first();
-
-            $employee = [
-                'profile_url' => env('SERVER_DOMAIN') . "/photo/profiles/" . $employee_profile->profile_url,
-                'employee_id' => $employee_profile->employee_id,
-                'position' => $position,
-                'job_position' => $designation->name,
-                'date_hired' => $employee_profile->date_hired,
-                'job_type' => $employee_profile->employmentType->name,
-                'years_of_service' => $employee_profile->personalInformation->years_of_service,
-                'last_login' => $last_login === null ? null : $last_login->created_at,
-                'biometric_id' => $employee_profile->biometric_id
-            ];
-
-            $personal_information_data = [
-                'full_name' => $personal_information->nameWithSurnameFirst(),
-                'first_name' => $personal_information->first_name,
-                'last_name' => $personal_information->last_name,
-                'middle_name' => $personal_information->middle_name === null ? ' ' : $personal_information->middle_name,
-                'name_extension' => $personal_information->name_extension === null ? null : $personal_information->name_extension,
-                'employee_id' => $employee_profile->employee_id,
-                'years_of_service' => $employee_profile->personalInformation->years_of_service === null ? null : $personal_information->years_of_service,
-                'name_title' => $personal_information->name_title === null ? null : $personal_information->name_title,
-                'sex' => $personal_information->sex,
-                'date_of_birth' => $personal_information->date_of_birth,
-                'date_hired' => $employee_profile->date_hired,
-                'place_of_birth' => $personal_information->place_of_birth,
-                'civil_status' => $personal_information->civil_status,
-                'citizenship' => $personal_information->citizenship,
-                'date_of_marriage' => $personal_information->date_of_marriage === null ? null : $personal_information->date_of_marriage,
-                'agency_employee_no' => $employee_profile->agency_employee_no === null ? null : $personal_information->agency_employee_no,
-                'blood_type' => $personal_information->blood_type === null ? null : $personal_information->blood_type,
-                'height' => $personal_information->height,
-                'weight' => $personal_information->weight,
-            ];
-
-            $address = [
-                'residential_address' => null,
-                'residential_zip_code' => null,
-                'residential_telephone_no' => null,
-                'permanent_address' => null,
-                'permanent_zip_code' => null,
-                'permanent_telephone_no' => null
-            ];
-
-            $addresses = $personal_information->addresses;
-
-            foreach ($addresses as $value) {
-
-                if ($value->is_residential_and_permanent) {
-                    $address['residential_address'] = $value->address;
-                    $address['residential_zip_code'] = $value->zip_code;
-                    $address['residential_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
-                    $address['permanent_address'] = $value->address;
-                    $address['permanent_zip_code'] = $value->zip_code;
-                    $address['permanent_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
-                    break;
-                }
-
-                if ($value->is_residential) {
-                    $address['residential_address'] = $value->address;
-                    $address['residential_zip_code'] = $value->zip_code;
-                    $address['residential_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
-                } else {
-                    $address['permanent_address'] = $value->address;
-                    $address['permanent_zip_code'] = $value->zip_code;
-                    $address['permanent_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
-                }
-            }
-
-
-
-            $data = [
-                'employee_id' => $employee_profile['employee_id'],
-                'name' => $personal_information->employeeName(),
-                'designation' => $designation['name'],
-                'employee_details' => [
-                    'employee' => $employee,
-                    'personal_information' => $personal_information_data,
-                    'contact' => new ContactResource($personal_information->contact),
-                    'address' => $address,
-                    'family_background' => new FamilyBackGroundResource($personal_information->familyBackground),
-                    'children' => ChildResource::collection($personal_information->children),
-                    'education' => EducationalBackgroundResource::collection($personal_information->educationalBackground),
-                    'affiliations_and_others' => [
-                        'civil_service_eligibility' => CivilServiceEligibilityResource::collection($personal_information->civilServiceEligibility),
-                        'work_experience' => WorkExperienceResource::collection($personal_information->workExperience),
-                        'voluntary_work_or_involvement' => VoluntaryWorkResource::collection($personal_information->voluntaryWork),
-                        'training' => TrainingResource::collection($personal_information->training),
-                        'other' => OtherInformationResource::collection($personal_information->otherInformation),
-                    ],
-                    'issuance' => $employee_profile->issuanceInformation,
-                    'reference' => $employee_profile->personalInformation->references,
-                    'legal_information' => $employee_profile->personalInformation->legalInformation,
-                    'identification' => new IdentificationNumberResource($employee_profile->personalInformation->identificationNumber)
-                ],
-                'area_assigned' => $area_assigned['details']->name,
-                'area_sector' => $area_assigned['sector'],
-                'side_bar_details' => $side_bar_details
-            ];
+            $data = $this->generateEmployeeProfileDetails($employee_profile, $side_bar_details);
 
             LoginTrail::create([
                 'signin_at' => now(),
@@ -936,8 +875,6 @@ class EmployeeProfileController extends Controller
     {
         try {
             $employee_profile = $request->user;
-
-            $personal_information = $employee_profile->personalInformation;
 
             $agent = new Agent();
             $device = [
@@ -985,110 +922,7 @@ class EmployeeProfileController extends Controller
                 ], Response::HTTP_UNAUTHORIZED);
             }
 
-            $area_assigned = $employee_profile->assignedArea->findDetails();
-
-            $position = $employee_profile->position();
-
-            $last_login = LoginTrail::where('employee_profile_id', $employee_profile->id)->orderByDesc('created_at')->first();
-
-            $employee = [
-                'profile_url' => env('SERVER_DOMAIN') . "/photo/profiles/" . $employee_profile->profile_url,
-                'employee_id' => $employee_profile->employee_id,
-                'position' => $position,
-                'job_position' => $designation->name,
-                'date_hired' => $employee_profile->date_hired,
-                'job_type' => $employee_profile->employmentType->name,
-                'years_of_service' => $employee_profile->personalInformation->years_of_service,
-                'last_login' => $last_login === null ? null : $last_login->created_at,
-                'biometric_id' => $employee_profile->biometric_id
-            ];
-
-            $personal_information_data = [
-                'full_name' => $personal_information->nameWithSurnameFirst(),
-                'first_name' => $personal_information->first_name,
-                'last_name' => $personal_information->last_name,
-                'middle_name' => $personal_information->middle_name === null ? ' ' : $personal_information->middle_name,
-                'name_extension' => $personal_information->name_extension === null ? null : $personal_information->name_extension,
-                'employee_id' => $employee_profile->employee_id,
-                'years_of_service' => $employee_profile->personalInformation->years_of_service === null ? null : $personal_information->years_of_service,
-                'name_title' => $personal_information->name_title === null ? null : $personal_information->name_title,
-                'sex' => $personal_information->sex,
-                'date_of_birth' => $personal_information->date_of_birth,
-                'date_hired' => $employee_profile->date_hired,
-                'place_of_birth' => $personal_information->place_of_birth,
-                'civil_status' => $personal_information->civil_status,
-                'citizenship' => $personal_information->citizenship,
-                'date_of_marriage' => $personal_information->date_of_marriage === null ? null : $personal_information->date_of_marriage,
-                'agency_employee_no' => $employee_profile->agency_employee_no === null ? null : $personal_information->agency_employee_no,
-                'blood_type' => $personal_information->blood_type === null ? null : $personal_information->blood_type,
-                'height' => $personal_information->height,
-                'weight' => $personal_information->weight,
-            ];
-
-            $address = [
-                'residential_address' => null,
-                'residential_zip_code' => null,
-                'residential_telephone_no' => null,
-                'permanent_address' => null,
-                'permanent_zip_code' => null,
-                'permanent_telephone_no' => null
-            ];
-
-            $addresses = $personal_information->addresses;
-
-            foreach ($addresses as $value) {
-
-                if ($value->is_residential_and_permanent) {
-                    $address['residential_address'] = $value->address;
-                    $address['residential_zip_code'] = $value->zip_code;
-                    $address['residential_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
-                    $address['permanent_address'] = $value->address;
-                    $address['permanent_zip_code'] = $value->zip_code;
-                    $address['permanent_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
-                    break;
-                }
-
-                if ($value->is_residential) {
-                    $address['residential_address'] = $value->address;
-                    $address['residential_zip_code'] = $value->zip_code;
-                    $address['residential_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
-                } else {
-                    $address['permanent_address'] = $value->address;
-                    $address['permanent_zip_code'] = $value->zip_code;
-                    $address['permanent_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
-                }
-            }
-
-
-
-            $data = [
-                'employee_id' => $employee_profile['employee_id'],
-                'name' => $personal_information->employeeName(),
-                'designation' => $designation['name'],
-                'employee_details' => [
-                    'employee' => $employee,
-                    'personal_information' => $personal_information_data,
-                    'contact' => new ContactResource($personal_information->contact),
-                    'address' => $address,
-                    'family_background' => new FamilyBackGroundResource($personal_information->familyBackground),
-                    'children' => ChildResource::collection($personal_information->children),
-                    'education' => EducationalBackgroundResource::collection($personal_information->educationalBackground),
-                    'affiliations_and_others' => [
-                        'civil_service_eligibility' => CivilServiceEligibilityResource::collection($personal_information->civilServiceEligibility),
-                        'work_experience' => WorkExperienceResource::collection($personal_information->workExperience),
-                        'voluntary_work_or_involvement' => VoluntaryWorkResource::collection($personal_information->voluntaryWork),
-                        'training' => TrainingResource::collection($personal_information->training),
-                        'other' => OtherInformationResource::collection($personal_information->otherInformation),
-                    ],
-                    'issuance' => $employee_profile->issuanceInformation,
-                    'reference' => $employee_profile->personalInformation->references,
-                    'legal_information' => $employee_profile->personalInformation->legalInformation,
-                    'identification' => new IdentificationNumberResource($employee_profile->personalInformation->identificationNumber)
-                ],
-                'area_assigned' => $area_assigned['details']->name,
-                'area_sector' => $area_assigned['sector'],
-                'side_bar_details' => $side_bar_details
-            ];
+            $data = $this->generateEmployeeProfileDetails($employee_profile, $side_bar_details);
 
             LoginTrail::create([
                 'signin_at' => now(),
@@ -1138,15 +972,7 @@ class EmployeeProfileController extends Controller
 
             $employee = $contact->personalInformation->employeeProfile;
 
-            $data = $request->data;
-
-            $body = view('mail.otp', ['otpcode' => $this->two_auth->getOTP($employee)]);
-            $data = [
-                'Subject' => 'ONE TIME PIN',
-                'To_receiver' => $email,
-                'Receiver_Name' => $employee->personalInformation->name(),
-                'Body' => $body
-            ];
+            $data = Helpers::generateMyOTP($employee);
 
             if ($this->mail->send($data)) {
                 return response()->json(['message' => 'Please check your email address for OTP.'], Response::HTTP_OK)
@@ -1166,20 +992,15 @@ class EmployeeProfileController extends Controller
     {
         try {
             $otp = strip_tags($request->otp);
+
             $employee_details = json_decode($request->cookie('employee_details'));
 
             $employee_profile = EmployeeProfile::where('employee_id', $employee_details->employee_id)->first();
 
-            $otpExpirationMinutes = 5;
-            $currentDateTime = Carbon::now();
-            $otp_expiration = Carbon::parse($employee_profile->otp_expiration);
+            $message = Helpers::validateOTP($otp, $employee_profile);
 
-            if ($currentDateTime->diffInMinutes($otp_expiration) > $otpExpirationMinutes) {
-                return response()->json(['message' => 'OTP has expired.'], Response::HTTP_BAD_REQUEST);
-            }
-
-            if ((int)$otp !== $employee_profile->otp) {
-                return response()->json(['message' => 'OTP provided is invalid'], Response::HTTP_BAD_REQUEST);
+            if ($message !== null) {
+                return response()->json(['message' => $message], Response::HTTP_BAD_REQUEST);
             }
 
             $employee_profile->update([
@@ -1367,21 +1188,15 @@ class EmployeeProfileController extends Controller
             $otp = strip_tags($request->otp);
             $employee_details = json_decode($request->cookie('employee_details'));
 
-            $employee = EmployeeProfile::where('employee_id', $employee_details->employee_id)->first();
+            $employee_profile = EmployeeProfile::where('employee_id', $employee_details->employee_id)->first();
 
-            $otpExpirationMinutes = 5;
-            $currentDateTime = Carbon::now();
-            $otp_expiration = Carbon::parse($employee->otp_expiration);
+            $message = Helpers::validateOTP($otp, $employee_profile);
 
-            if ($currentDateTime->diffInMinutes($otp_expiration) > $otpExpirationMinutes) {
-                return response()->json(['message' => 'OTP has expired.'], Response::HTTP_BAD_REQUEST);
+            if ($message !== null) {
+                return response()->json(['message' => $message], Response::HTTP_BAD_REQUEST);
             }
 
-            if ((int)$otp !== $employee->otp) {
-                return response()->json(['message' => 'Invalid OTP.'], Response::HTTP_BAD_REQUEST);
-            }
-
-            $employee->update([
+            $employee_profile->update([
                 'otp' => null,
                 'otp_expiration' => null
             ]);
@@ -1451,9 +1266,6 @@ class EmployeeProfileController extends Controller
             ];
 
             $token = $employee_profile->createToken();
-
-            $personal_information = $employee_profile->personalInformation;
-
             $assigned_area = $employee_profile->assignedArea;
             $plantilla = null;
             $designation = null;
@@ -1491,110 +1303,7 @@ class EmployeeProfileController extends Controller
                 ], Response::HTTP_UNAUTHORIZED);
             }
 
-            $area_assigned = $employee_profile->assignedArea->findDetails();
-
-            $position = $employee_profile->position();
-
-            $last_login = LoginTrail::where('employee_profile_id', $employee_profile->id)->orderByDesc('created_at')->first();
-
-            $employee = [
-                'profile_url' => env('SERVER_DOMAIN') . "/photo/profiles/" . $employee_profile->profile_url,
-                'employee_id' => $employee_profile->employee_id,
-                'position' => $position,
-                'job_position' => $designation->name,
-                'date_hired' => $employee_profile->date_hired,
-                'job_type' => $employee_profile->employmentType->name,
-                'years_of_service' => $employee_profile->personalInformation->years_of_service,
-                'last_login' => $last_login === null ? null : $last_login->created_at,
-                'biometric_id' => $employee_profile->biometric_id
-            ];
-
-            $personal_information_data = [
-                'full_name' => $personal_information->nameWithSurnameFirst(),
-                'first_name' => $personal_information->first_name,
-                'last_name' => $personal_information->last_name,
-                'middle_name' => $personal_information->middle_name === null ? ' ' : $personal_information->middle_name,
-                'name_extension' => $personal_information->name_extension === null ? null : $personal_information->name_extension,
-                'employee_id' => $employee_profile->employee_id,
-                'years_of_service' => $employee_profile->personalInformation->years_of_service === null ? null : $personal_information->years_of_service,
-                'name_title' => $personal_information->name_title === null ? null : $personal_information->name_title,
-                'sex' => $personal_information->sex,
-                'date_of_birth' => $personal_information->date_of_birth,
-                'date_hired' => $employee_profile->date_hired,
-                'place_of_birth' => $personal_information->place_of_birth,
-                'civil_status' => $personal_information->civil_status,
-                'citizenship' => $personal_information->citizenship,
-                'date_of_marriage' => $personal_information->date_of_marriage === null ? null : $personal_information->date_of_marriage,
-                'agency_employee_no' => $employee_profile->agency_employee_no === null ? null : $personal_information->agency_employee_no,
-                'blood_type' => $personal_information->blood_type === null ? null : $personal_information->blood_type,
-                'height' => $personal_information->height,
-                'weight' => $personal_information->weight,
-            ];
-
-            $address = [
-                'residential_address' => null,
-                'residential_zip_code' => null,
-                'residential_telephone_no' => null,
-                'permanent_address' => null,
-                'permanent_zip_code' => null,
-                'permanent_telephone_no' => null
-            ];
-
-            $addresses = $personal_information->addresses;
-
-            foreach ($addresses as $value) {
-
-                if ($value->is_residential_and_permanent) {
-                    $address['residential_address'] = $value->address;
-                    $address['residential_zip_code'] = $value->zip_code;
-                    $address['residential_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
-                    $address['permanent_address'] = $value->address;
-                    $address['permanent_zip_code'] = $value->zip_code;
-                    $address['permanent_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
-                    break;
-                }
-
-                if ($value->is_residential) {
-                    $address['residential_address'] = $value->address;
-                    $address['residential_zip_code'] = $value->zip_code;
-                    $address['residential_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
-                } else {
-                    $address['permanent_address'] = $value->address;
-                    $address['permanent_zip_code'] = $value->zip_code;
-                    $address['permanent_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
-                }
-            }
-
-
-
-            $data = [
-                'employee_id' => $employee_profile['employee_id'],
-                'name' => $personal_information->employeeName(),
-                'designation' => $designation['name'],
-                'employee_details' => [
-                    'employee' => $employee,
-                    'personal_information' => $personal_information_data,
-                    'contact' => new ContactResource($personal_information->contact),
-                    'address' => $address,
-                    'family_background' => new FamilyBackGroundResource($personal_information->familyBackground),
-                    'children' => ChildResource::collection($personal_information->children),
-                    'education' => EducationalBackgroundResource::collection($personal_information->educationalBackground),
-                    'affiliations_and_others' => [
-                        'civil_service_eligibility' => CivilServiceEligibilityResource::collection($personal_information->civilServiceEligibility),
-                        'work_experience' => WorkExperienceResource::collection($personal_information->workExperience),
-                        'voluntary_work_or_involvement' => VoluntaryWorkResource::collection($personal_information->voluntaryWork),
-                        'training' => TrainingResource::collection($personal_information->training),
-                        'other' => OtherInformationResource::collection($personal_information->otherInformation),
-                    ],
-                    'issuance' => $employee_profile->issuanceInformation,
-                    'reference' => $employee_profile->personalInformation->references,
-                    'legal_information' => $employee_profile->personalInformation->legalInformation,
-                    'identification' => new IdentificationNumberResource($employee_profile->personalInformation->identificationNumber)
-                ],
-                'area_assigned' => $area_assigned['details']->name,
-                'area_sector' => $area_assigned['sector'],
-                'side_bar_details' => $side_bar_details
-            ];
+            $data = $this->generateEmployeeProfileDetails($employee_profile, $side_bar_details);
 
             LoginTrail::create([
                 'signin_at' => now(),
@@ -1617,51 +1326,61 @@ class EmployeeProfileController extends Controller
     public function CheckPasswordRepetition($cleanData, $minimumReq, $employee_profile)
     {
 
-        $getPasswordTrails = PasswordTrail::where('employee_profile_id', $employee_profile->id)->get();
+        $my_old_password_collection = PasswordTrail::where('employee_profile_id', $employee_profile->id)->orderBy('created_at')->limit(3)->get();
 
-        foreach ($getPasswordTrails as $key => $groupofPass) {
-            $count = count($getPasswordTrails);
-            $lastData = $getPasswordTrails[$count - 1];
-
-            $decryptedLastPassword = Crypt::decryptString($lastData->old_password);
+        foreach($my_old_password_collection as $my_old_password){
+            $decryptedLastPassword = Crypt::decryptString($my_old_password->old_password);
             if (Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedLastPassword)) {
                 return true;
             }
-            if ($count <= $minimumReq) {
-                $disallow1 = false;
-                $limit = $count - 1;
-                $otherpass = DB::select("SELECT * FROM `password_trails` where employee_profile_id ={$employee_profile->id} limit {$limit} OFFSET 0 ");
-                if (count($otherpass) >= 1) {
-                    $disallow1 = false;
-                    foreach ($otherpass as $check) {
-                        $level1Pass = Crypt::decryptString($check->old_password);
-                        if (Hash::check($cleanData['password'] . env("SALT_VALUE"), $level1Pass)) {
-                            $disallow1 = true;
-                            break;
-                        }
-                    }
-                    if ($disallow1) {
-                        return true;
-                    }
-                }
-            }
-            $limit = $minimumReq - 1;
-            $offset = floor($count - ($limit + 1));
-            $setofpassminReq = DB::select("SELECT * FROM `password_trails` where employee_profile_id ={$employee_profile->id} limit {$limit} OFFSET {$offset} ");
-            if (count($setofpassminReq) >= 1) {
-                $disallow2 = false;
-                foreach ($setofpassminReq as $check) {
-                    $level2Pass = Crypt::decryptString($check->old_password);
-                    if (Hash::check($cleanData['password'] . env("SALT_VALUE"), $level2Pass)) {
-                        $disallow2 = true;
-                        break;
-                    }
-                }
-                if ($disallow2) {
-                    return true;
-                }
-            }
         }
+
+        return false;
+
+        /** [SIMPLIFY PROBLEM] */
+        // foreach ($getPasswordTrails as $key => $groupofPass) {
+        //     $count = count($getPasswordTrails);
+        //     $lastData = $getPasswordTrails[$count - 1];
+
+        //     $decryptedLastPassword = Crypt::decryptString($lastData->old_password);
+        //     if (Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedLastPassword)) {
+        //         return true;
+        //     }
+        //     if ($count <= $minimumReq) {
+        //         $disallow1 = false;
+        //         $limit = $count - 1;
+        //         $otherpass = DB::select("SELECT * FROM `password_trails` where employee_profile_id ={$employee_profile->id} limit {$limit} OFFSET 0 ");
+        //         if (count($otherpass) >= 1) {
+        //             $disallow1 = false;
+        //             foreach ($otherpass as $check) {
+        //                 $level1Pass = Crypt::decryptString($check->old_password);
+        //                 if (Hash::check($cleanData['password'] . env("SALT_VALUE"), $level1Pass)) {
+        //                     $disallow1 = true;
+        //                     break;
+        //                 }
+        //             }
+        //             if ($disallow1) {
+        //                 return true;
+        //             }
+        //         }
+        //     }
+        //     $limit = $minimumReq - 1;
+        //     $offset = floor($count - ($limit + 1));
+        //     $setofpassminReq = DB::select("SELECT * FROM `password_trails` where employee_profile_id ={$employee_profile->id} limit {$limit} OFFSET {$offset} ");
+        //     if (count($setofpassminReq) >= 1) {
+        //         $disallow2 = false;
+        //         foreach ($setofpassminReq as $check) {
+        //             $level2Pass = Crypt::decryptString($check->old_password);
+        //             if (Hash::check($cleanData['password'] . env("SALT_VALUE"), $level2Pass)) {
+        //                 $disallow2 = true;
+        //                 break;
+        //             }
+        //         }
+        //         if ($disallow2) {
+        //             return true;
+        //         }
+        //     }
+        // }
     }
 
     public function resetPassword($id, Request $request)
@@ -1844,14 +1563,7 @@ class EmployeeProfileController extends Controller
                 $login_trail = LoginTrail::where('employee_profile_id', $employee_profile->id)->first();
 
                 if ($login_trail->ip_address !== $ip) {
-                    Helpers::errorLog($this->CONTROLLER_NAME, 'signIn', "Successfully verified ip address");
-                    $body = view('mail.otp', ['otpcode' => $this->two_auth->getOTP($employee_profile)]);
-                    $data = [
-                        'Subject' => 'ONE TIME PIN',
-                        'To_receiver' => $employee_profile->personalinformation->contact->email_address,
-                        'Receiver_Name' => $employee_profile->personalInformation->name(),
-                        'Body' => $body
-                    ];
+                    $data = Helpers::generateMyOTP($employee_profile);
 
                     if ($this->mail->send($data)) {
                         return response()->json(['message' => "You are currently logged on to other device. An OTP has been sent to your registered email. If you want to signout from that device, submit the OTP."], Response::HTTP_FOUND)
@@ -1871,16 +1583,7 @@ class EmployeeProfileController extends Controller
              * if 2FA is activated send OTP to email to validate ownership
              */
             if ((bool) $employee_profile->is_2fa) {
-
-                $data = $request->data;
-
-                $body = view('mail.otp', ['otpcode' => $this->two_auth->getOTP($employee_profile)]);
-                $data = [
-                    'Subject' => 'ONE TIME PIN',
-                    'To_receiver' => $employee_profile->personalinformation->contact->email_address,
-                    'Receiver_Name' => $employee_profile->personalInformation->name(),
-                    'Body' => $body
-                ];
+                $data = Helpers::generateMyOTP($employee_profile);
 
                 if ($this->mail->send($data)) {
                     return response()->json(['message' => "OTP has sent to your email, submit the OTP to verify that this is your account."], Response::HTTP_OK)
@@ -1893,9 +1596,6 @@ class EmployeeProfileController extends Controller
             }
 
             $token = $employee_profile->createToken();
-
-            $personal_information = $employee_profile->personalInformation;
-
             $assigned_area = $employee_profile->assignedArea;
             $plantilla = null;
             $designation = null;
@@ -1932,108 +1632,7 @@ class EmployeeProfileController extends Controller
                 ], Response::HTTP_UNAUTHORIZED);
             }
 
-            $area_assigned = $employee_profile->assignedArea->findDetails();
-
-            $position = $employee_profile->position();
-
-            $last_login = LoginTrail::where('employee_profile_id', $employee_profile->id)->orderByDesc('created_at')->first();
-
-            $employee = [
-                'profile_url' => env('SERVER_DOMAIN') . "/photo/profiles/" . $employee_profile->profile_url,
-                'employee_id' => $employee_profile->employee_id,
-                'position' => $position,
-                'job_position' => $designation->name,
-                'date_hired' => $employee_profile->date_hired,
-                'job_type' => $employee_profile->employmentType->name,
-                'years_of_service' => $employee_profile->personalInformation->years_of_service,
-                'last_login' => $last_login === null ? null : $last_login->created_at,
-                'biometric_id' => $employee_profile->biometric_id
-            ];
-
-            $personal_information_data = [
-                'full_name' => $personal_information->nameWithSurnameFirst(),
-                'first_name' => $personal_information->first_name,
-                'last_name' => $personal_information->last_name,
-                'middle_name' => $personal_information->middle_name === null ? ' ' : $personal_information->middle_name,
-                'name_extension' => $personal_information->name_extension === null ? null : $personal_information->name_extension,
-                'employee_id' => $employee_profile->employee_id,
-                'years_of_service' => $employee_profile->personalInformation->years_of_service === null ? null : $personal_information->years_of_service,
-                'name_title' => $personal_information->name_title === null ? null : $personal_information->name_title,
-                'sex' => $personal_information->sex,
-                'date_of_birth' => $personal_information->date_of_birth,
-                'date_hired' => $employee_profile->date_hired,
-                'place_of_birth' => $personal_information->place_of_birth,
-                'civil_status' => $personal_information->civil_status,
-                'citizenship' => $personal_information->citizenship,
-                'date_of_marriage' => $personal_information->date_of_marriage === null ? null : $personal_information->date_of_marriage,
-                'agency_employee_no' => $employee_profile->agency_employee_no === null ? null : $personal_information->agency_employee_no,
-                'blood_type' => $personal_information->blood_type === null ? null : $personal_information->blood_type,
-                'height' => $personal_information->height,
-                'weight' => $personal_information->weight,
-            ];
-
-            $address = [
-                'residential_address' => null,
-                'residential_zip_code' => null,
-                'residential_telephone_no' => null,
-                'permanent_address' => null,
-                'permanent_zip_code' => null,
-                'permanent_telephone_no' => null
-            ];
-
-            $addresses = $personal_information->addresses;
-
-            foreach ($addresses as $value) {
-
-                if ($value->is_residential_and_permanent) {
-                    $address['residential_address'] = $value->address;
-                    $address['residential_zip_code'] = $value->zip_code;
-                    $address['residential_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
-                    $address['permanent_address'] = $value->address;
-                    $address['permanent_zip_code'] = $value->zip_code;
-                    $address['permanent_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
-                    break;
-                }
-
-                if ($value->is_residential) {
-                    $address['residential_address'] = $value->address;
-                    $address['residential_zip_code'] = $value->zip_code;
-                    $address['residential_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
-                } else {
-                    $address['permanent_address'] = $value->address;
-                    $address['permanent_zip_code'] = $value->zip_code;
-                    $address['permanent_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
-                }
-            }
-
-            $data = [
-                'employee_id' => $employee_profile['employee_id'],
-                'name' => $personal_information->employeeName(),
-                'designation' => $designation['name'],
-                'employee_details' => [
-                    'employee' => $employee,
-                    'personal_information' => $personal_information_data,
-                    'contact' => new ContactResource($personal_information->contact),
-                    'address' => $address,
-                    'family_background' => new FamilyBackGroundResource($personal_information->familyBackground),
-                    'children' => ChildResource::collection($personal_information->children),
-                    'education' => EducationalBackgroundResource::collection($personal_information->educationalBackground),
-                    'affiliations_and_others' => [
-                        'civil_service_eligibility' => CivilServiceEligibilityResource::collection($personal_information->civilServiceEligibility),
-                        'work_experience' => WorkExperienceResource::collection($personal_information->workExperience),
-                        'voluntary_work_or_involvement' => VoluntaryWorkResource::collection($personal_information->voluntaryWork),
-                        'training' => TrainingResource::collection($personal_information->training),
-                        'other' => OtherInformationResource::collection($personal_information->otherInformation),
-                    ],
-                    'issuance' => $employee_profile->issuanceInformation,
-                    'reference' => $employee_profile->personalInformation->references,
-                    'legal_information' => $employee_profile->personalInformation->legalInformation,
-                    'identification' => new IdentificationNumberResource($employee_profile->personalInformation->identificationNumber)
-                ],
-                'area_assigned' => $area_assigned['details']->name,
-                'area_sector' => $area_assigned['sector'],
-                'side_bar_details' => $side_bar_details
-            ];
+            $data = $this->generateEmployeeProfileDetails($employee_profile, $side_bar_details);
 
             LoginTrail::create([
                 'signin_at' => now(),
@@ -2743,8 +2342,6 @@ class EmployeeProfileController extends Controller
                     $address['permanent_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
                 }
             }
-
-
 
             $data = [
                 'employee_profile_id' => $employee_profile['id'],

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Schedule;
 
 use App\Http\Resources\EmployeeScheduleResource;
+use App\Http\Resources\TimeShiftResource;
 use App\Models\EmployeeSchedule;
 use App\Models\Holiday;
 use App\Models\Schedule;
@@ -12,6 +13,7 @@ use App\Http\Resources\ScheduleResource;
 use App\Http\Requests\ScheduleRequest;
 use App\Helpers\Helpers;
 
+use App\Models\TimeShift;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Http\Response;
@@ -73,7 +75,11 @@ class ScheduleController extends Controller
                 ];
             }
 
-            return response()->json(['data' => $data, 'dates' => $dates_with_day], Response::HTTP_OK);
+            return response()->json([
+                'data' => $data,
+                'dates' => $dates_with_day,
+                'time_shift' => TimeShiftResource::collection(TimeShift::all())
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
 
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
@@ -395,9 +401,7 @@ class ScheduleController extends Controller
             $filename = 'Schedule.pdf';
 
             /* Downloads as PDF */
-            // $dompdf->stream($filename);
-            
-
+            $dompdf->stream($filename, array("Attachment" => false));
             // return view('generate_schedule/section-schedule', compact('data','holiday', 'month', 'year', 'dates', 'user', 'head_officer'));
         } catch (\Throwable $th) {
 

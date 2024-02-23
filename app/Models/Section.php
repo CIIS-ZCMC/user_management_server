@@ -76,4 +76,9 @@ class Section extends Model
     {
         return $this->hasMany(OfficerInChargeTrail::class);
     }
+
+    public function units()
+    {
+        return $this->hasMany(Unit::class);
+    }
 }

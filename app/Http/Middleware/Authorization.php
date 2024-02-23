@@ -43,7 +43,9 @@ class Authorization
                             $has_rights = true;
                         }
                     }
+                    if($has_rights) break;
                 }
+                if($has_rights) break;
             }
     
             $request->merge(['permission' => $routePermission]);
@@ -61,8 +63,48 @@ class Authorization
                             $has_rights = true;
                         }
                     }
+                    if($has_rights) break;
                 }
+                if($has_rights) break;
             }
+            
+            $request->merge(['permission' => $routePermission]);
+
+            return $next($request);
+        }
+        
+        $permissions = Cache::get("COMMON-REG");
+        
+        if(!$has_rights){
+            foreach ($permissions['modules'] as $key => $data) {
+                if ($data['code'] === $system_module['code']) {
+                    if (in_array($action, $data['permissions'])) {
+                        $has_rights = true;
+                    }
+                }
+                if($has_rights) break;
+            }
+            
+            $request->merge(['permission' => $routePermission]);
+
+            return $next($request);
+        }
+        
+        $permissions = Cache::get("COMMON-JO");
+        
+        if(!$has_rights){
+            foreach ($permissions['modules'] as $key => $data) {
+                if ($data['code'] === $system_module['code']) {
+                    if (in_array($action, $data['permissions'])) {
+                        $has_rights = true;
+                    }
+                }
+                if($has_rights) break;
+            }
+            
+            $request->merge(['permission' => $routePermission]);
+
+            return $next($request);
         }
 
         if (!$has_rights) {

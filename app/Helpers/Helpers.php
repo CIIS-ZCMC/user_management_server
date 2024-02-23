@@ -6,7 +6,6 @@ use App\Models\Department;
 use App\Models\Division;
 use App\Models\EmployeeScheduleLog;
 use App\Models\ExchangeDutyLog;
-use App\Models\PullOut;
 use App\Models\PullOutLog;
 use App\Models\OfficialTimeLog;
 use App\Models\Section;
@@ -15,13 +14,13 @@ use App\Models\TimeShift;
 use App\Models\OfficialBusinessLog;
 
 use App\Models\Unit;
+use Carbon\Carbon;
 use DateTime;
 use DateInterval;
 use DatePeriod;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Termwind\Components\BreakLine;
 
 
 class Helpers
@@ -35,6 +34,46 @@ class Helpers
     public static function getChiefOfficer()
     {
         return Division::where('code', 'OMCC')->first()->chief_employee_profile_id;
+    }
+
+    public static function generateMyOTP($employee_profile)
+    {
+        $otp_code = rand(100000, 999999);
+        $otp_expiry = date('Y-m-d H:i:s', strtotime('+5 minutes'));
+
+        $employee_profile->update(['otp' => $otp_code, 'otp_expiration' => $otp_expiry]);
+
+        $body = view('mail.otp', ['otpcode' => $otp_code]);
+        $data = [
+            'Subject' => 'ONE TIME PIN',
+            'To_receiver' => $employee_profile->personalinformation->contact->email_address,
+            'Receiver_Name' => $employee_profile->personalInformation->name(),
+            'Body' => $body
+        ];
+
+        return $data;
+    }
+
+    public static function validateOTP($otp, $employee_profile)
+    {
+        $otpExpirationMinutes = 5;
+        $currentDateTime = Carbon::now();
+        $employee_otp = $employee_profile->otp;
+        $otp_expiration = Carbon::parse($employee_profile->otp_expiration);
+
+        if($employee_otp === null){
+            return "Please click resend OTP.";
+        }
+
+        if ((int)$otp !== $employee_otp) {
+            return 'OTP provided is invalid';
+        }
+
+        if ($currentDateTime->diffInMinutes($otp_expiration) > $otpExpirationMinutes) {
+            return 'OTP has expired.';
+        }
+
+        return null;
     }
 
     public static function getRecommendingAndApprovingOfficer($assigned_area, $employee_profile_id)
@@ -435,7 +474,6 @@ class Helpers
                 return null;
         }
     }
-
     public static function registerEmployeeScheduleLogs($data_id, $user_id, $action)
     {
         EmployeeScheduleLog::create([

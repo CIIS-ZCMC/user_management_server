@@ -30,7 +30,6 @@ use App\Models\Reference;
 use App\Models\PersonalInformation;
 use App\Models\OtherInformation;
 use App\Models\Section;
-use App\Models\EmployeeOvertimeCredit;
 
 class PersonalInformationSeeder extends Seeder
 {

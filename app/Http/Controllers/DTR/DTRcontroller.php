@@ -130,7 +130,6 @@ class DTRcontroller extends Controller
 
                         if (count($check_Records) >= 1) {
 
-
                             //Normal pull
                             $this->helper->saveDTRRecords($check_Records, false);
                             /* Save DTR Logs */
@@ -1032,10 +1031,11 @@ class DTRcontroller extends Controller
                                 if ($sdate < $date_now) {
                                     $number_Of_all_Days_past = count($date_Range);
                                 }
-                                if (isset($value->first_in)) {
+                                if (isset($value->first_in) && $value->first_in != NULL) {
                                     $entryf = $value->first_in;
-                                } else
-                                        if (isset($value->second_in)) {
+                                }
+
+                                if (isset($value->second_in) && $value->second_in != NULL) {
                                     $entryf = $value->second_in;
                                 }
 
@@ -1079,16 +1079,18 @@ class DTRcontroller extends Controller
 
                         for ($i = 1; $i <= $days_In_Month; $i++) {
                             $count = array_filter($mdtr, function ($res) use ($i) {
-                                return date('d', strtotime($res['first_in'])) == $i;
+                                if (!is_null($res['first_in'])) {
+                                    return date('d', strtotime($res['first_in'])) == $i;
+                                } elseif (!is_null($res['second_in'])) {
+                                    return date('d', strtotime($res['second_in'])) == $i;
+                                }
                             });
-
                             $days_of_duty += count($count);
                             $days_Rendered[] = array_values($count);
                         }
 
 
                         $days = $days_Rendered;
-
                         $present_days = [];
                         foreach ($days as $entry) {
 
@@ -1217,12 +1219,15 @@ class DTRcontroller extends Controller
                                 if ($sdate < $date_now) {
                                     $number_Of_all_Days_past = count($date_Range);
                                 }
-                                if (isset($value->first_in)) {
+
+                                if (isset($value->first_in)  && $value->first_in != NULL) {
                                     $entryf = $value->first_in;
-                                } else
-                                if (isset($value->second_in)) {
+                                } else if (isset($value->second_in) && $value->second_in != NULL) {
                                     $entryf = $value->second_in;
                                 }
+
+
+
                                 if (date('Y-m-d', strtotime($entryf)) == $sdate) {
                                     $mdtr[] = $this->mDTR($value);
                                 }
@@ -1361,10 +1366,18 @@ class DTRcontroller extends Controller
             for ($i = 1; $i <= $days_In_Month; $i++) {
                 $found = false;
                 foreach ($mdtr as $d) {
-                    if (date('d', strtotime($d['first_in'])) == $i) {
-                        $d['date'] = Carbon::create("$year_of-$month_of-$i")->format('Y-m-d');
-                        $mdt[] = $d;  // Use the day from $mdtr
-                        $found = true;
+                    if (!is_null($d['first_in'])) {
+                        if (date('d', strtotime($d['first_in'])) == $i) {
+                            $d['date'] = Carbon::create("$year_of-$month_of-$i")->format('Y-m-d');
+                            $mdt[] = $d;  // Use the day from $mdtr
+                            $found = true;
+                        }
+                    } else if (!is_null($d['second_in'])) {
+                        if (date('d', strtotime($d['second_in'])) == $i) {
+                            $d['date'] = Carbon::create("$year_of-$month_of-$i")->format('Y-m-d');
+                            $mdt[] = $d;  // Use the day from $mdtr
+                            $found = true;
+                        }
                     }
                 }
                 if (!$found) {
