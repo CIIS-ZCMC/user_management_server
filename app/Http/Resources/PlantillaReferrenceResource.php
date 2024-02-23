@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\PlantillaNumber;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -16,10 +17,12 @@ class PlantillaReferrenceResource extends JsonResource
     {
         $name = $this->designation->name." (".$this->created_at.")";
 
+        $platilla_numbers = PlantillaNumber::where('plantilla_id', $this->id)->where('assigned_at', null)->get();
+
         return [
             'id' => $this->id,
             'name' => $name,
-            'vacant' => $this->slot-$this->total_used_plantille_no,
+            'vacant' => count($platilla_numbers),
             'total' => $this->slot,
         ];
     }
