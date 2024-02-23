@@ -2,20 +2,13 @@
 
 namespace App\Http\Controllers\Schedule;
 
-use App\Http\Requests\DepartmentRequest;
-use App\Models\Department;
-use App\Models\Division;
 use App\Models\TimeShift;
-use App\Models\Section;
 use App\Http\Resources\TimeShiftResource;
-use App\Http\Resources\SectionResource;
 use App\Http\Requests\TimeShiftRequest;
-use App\Models\Unit;
 use App\Services\RequestLogger;
 use App\Helpers\Helpers;
 
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 use App\Http\Controllers\Controller;
@@ -40,51 +33,8 @@ class TimeShiftController extends Controller
     public function index(Request $request)
     {
         try {
-            $divisions = Division::with(['departments.sections'])->get();
-
-            $mergedData = collect([]);
-
-            foreach ($divisions as $division) {
-                $departments = [];
-                foreach ($division->departments as $department) {
-                    $departments[] = [
-                        'id' => $department->id,
-                        'name' => $department->name,
-                        'code' => $department->code
-                    ];
-                }
-
-                $sections = [];
-                foreach ($division->sections as $section) {
-                    foreach ($section->units as $unit) {
-                        $units[] = [
-                            'id' => $unit->id,
-                            'name' => $unit->name,
-                            'code' => $unit->code
-                        ];
-                    }
-
-                    $sections[] = [
-                        'id' => $section->id,
-                        'name' => $section->name,
-                        'code' => $section->code,
-                        'units' => $section->units
-                    ];
-                }
-            
-                $mergedData->push([
-                    'id' => $division->id,
-                    'name' => $division->name,
-                    'code' => $division->code,
-                    'departments' => $departments,
-                    'sections' => $sections,
-                ]);
-            }
-            
-            return response()->json(['data' => TimeShiftResource::collection(TimeShift::all()), 'division' => $mergedData], Response::HTTP_OK);
-
+            return response()->json(['data' => TimeShiftResource::collection(TimeShift::all())], Response::HTTP_OK);
         } catch (\Throwable $th) {
-
             $this->requestLogger->errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -104,11 +54,6 @@ class TimeShiftController extends Controller
                     continue;
                 }
                 
-                if (is_array($value)) {
-                    $cleanData[$key] = $value;
-                    continue;
-                }
-
                 if (is_int($value)) {
                     $cleanData[$key] = $value;
                     continue;
@@ -117,98 +62,45 @@ class TimeShiftController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
             
-            $shift = TimeShift::where('first_in', $request->first_in)
-                ->where('first_out', $request->first_out)
-                ->where('second_in', $request->second_in)
-                ->where('second_out', $request->second_out)
+            $shift = TimeShift::where('first_in', $request->first_in ?? null)
+                ->where('first_out', $request->first_out ?? null)
+                ->where('second_in', $request->second_in ?? null)
+                ->where('second_out', $request->second_out ?? null)
                 ->first();
 
             if ($shift) {
-                $data = $shift;
+                return response()->json(['message' => "Time Shift Already Exist"], Response::HTTP_FOUND);
+            } 
 
-            } else {
-                if ($cleanData['first_in'] != null && $cleanData['first_out'] != null && $cleanData['second_in'] == null && $cleanData['second_out'] == null) {
-                    $first_in = Carbon::parse($cleanData['first_in']);
-                    $first_out = Carbon::parse($cleanData['first_out']);
+            if ($cleanData['first_in'] != null && $cleanData['first_out'] != null && $cleanData['second_in'] == null && $cleanData['second_out'] == null) {
+                $first_in = Carbon::parse($cleanData['first_in']);
+                $first_out = Carbon::parse($cleanData['first_out']);
 
-                    $cleanData['total_hours'] = $first_in->diffInHours($first_out);
+                $cleanData['total_hours'] = $first_in->diffInHours($first_out);
 
-                } else if ($cleanData['first_in'] != null && $cleanData['first_out'] != null && $cleanData['second_in'] != null && $cleanData['second_out'] != null) {
-                    $first_in = Carbon::parse($cleanData['first_in']);
-                    $first_out = Carbon::parse($cleanData['first_out']);
+            } else if ($cleanData['first_in'] != null && $cleanData['first_out'] != null && $cleanData['second_in'] != null && $cleanData['second_out'] != null) {
+                $first_in = Carbon::parse($cleanData['first_in']);
+                $first_out = Carbon::parse($cleanData['first_out']);
 
-                    $second_in = Carbon::parse($cleanData['second_in']);
-                    $second_out = Carbon::parse($cleanData['second_out']);
+                $second_in = Carbon::parse($cleanData['second_in']);
+                $second_out = Carbon::parse($cleanData['second_out']);
 
-                    $AM = $first_in->diffInHours($first_out);
-                    $PM = $second_in->diffInHours($second_out);
+                $AM = $first_in->diffInHours($first_out);
+                $PM = $second_in->diffInHours($second_out);
 
-                    $cleanData['total_hours'] = $AM + $PM;
-                }
-
-                $data = TimeShift::create($cleanData);
+                $cleanData['total_hours'] = $AM + $PM;
             }
+
+            $data = TimeShift::create($cleanData);
             
-            $attach = null;
-            switch ($cleanData['assigned_area']) {
-                case 'division':
-                    $attach = Division::select('id')->where('id', $cleanData['assigned_area_id'])->first();
-                break;
-
-                case 'section':
-                    $attach = Section::select('id')->where('id', $cleanData['assigned_area_id'])->first();
-                break;
-
-                case 'department':
-                    $attach = Department::select('id')->where('id', $cleanData['assigned_area_id'])->first();
-                break;
-
-                case 'units':
-                    $attach = Unit::select('id')->where('id', $cleanData['assigned_area_id'])->first();
-                break;
-                
-                default:
-                    return response()->json(['message' => "Area does not exist"], Response::HTTP_NOT_FOUND);
-            }
-
-            $query = DB::table('section_time_shift')->where([
-                ['section_id', '=', $attach->id],
-                ['time_shift_id', '=', $data->id],
-            ])->first();
-
-            if ($query) {
-                return response()->json(['message' => 'Time shift already exist'], Response::HTTP_FOUND);
-            }
-            
-            $data->{$cleanData['assigned_area']}()->attach($attach);
-
             Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
-            return response()->json(['data' => new TimeShiftResource($data), 'message' => "Successfully saved"], Response::HTTP_OK);
+            return response()->json([
+                'data' => new TimeShiftResource($data),
+                'message' => "Successfully saved"
+            ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-
             $this->requestLogger->errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Request $request, $id)
-    {
-        try {
-            $data = new TimeShiftResource(TimeShift::with(['section'])->findOrFail($id));
-
-            if (!$data) {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }
-
-            return response()->json(['data' => $data], Response::HTTP_OK);
-
-        } catch (\Throwable $th) {
-
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME, 'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -216,7 +108,7 @@ class TimeShiftController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(TimeShiftRequest $request, $id)
+    public function update(Request $request, $id)
     {
         try {
             $data = TimeShift::findOrFail($id);
@@ -259,7 +151,10 @@ class TimeShiftController extends Controller
             $data->update($cleanData);
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in updating ' . $this->SINGULAR_MODULE_NAME . '.');
-            return response()->json(['data' => $data], Response::HTTP_OK);
+            return response()->json([
+                'data' => new TimeShiftResource($data),
+                'message' => "Data Successfully update"
+            ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
@@ -274,34 +169,19 @@ class TimeShiftController extends Controller
     public function destroy(Request $request, $id)
     {
         try {
-            $user = $request->user;
-            if ($user != null && $user->position()) {
-                $position = $user->position();
+            $data = TimeShift::withTrashed()->findOrFail($id);
 
-                if (
-                    $position->position === "Chief" || $position->position === "Department OIC" || $position->position === "Supervisor"
-                    || $position->position === "Section OIC" || $position->position === "Unit Head" || $position->position === "Unit OIC"
-                ) {
-
-                    $data = TimeShift::withTrashed()->findOrFail($id);
-                    $data->section()->detach($data->id);
-
-                    if ($data->deleted_at != null) {
-                        $data->forceDelete();
-                    } else {
-                        $data->delete();
-                    }
-
-                    Helpers::registerSystemLogs($request, $id, true, 'Success in delete ' . $this->SINGULAR_MODULE_NAME . '.');
-                    return response()->json(['data' => $data], Response::HTTP_OK);
-
-                } else {
-                    return response()->json(['message' => 'User not allowed to create'], Response::HTTP_OK);
-                }
-
+            if ($data->deleted_at != null) {
+                $data->forceDelete();
             } else {
-                return response()->json(['message' => 'User no position'], Response::HTTP_OK);
+                $data->delete();
             }
+
+            Helpers::registerSystemLogs($request, $id, true, 'Success in delete ' . $this->SINGULAR_MODULE_NAME . '.');
+            return response()->json([
+                'data' => $data,
+                'message' => "Data Successfully deleted"
+            ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 

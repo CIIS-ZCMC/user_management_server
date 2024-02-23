@@ -23,11 +23,9 @@ class TimeShiftRequest extends FormRequest
     {
         return [
             'first_in'          => 'required|date_format:H:i|before_or_equal:first_out',
-            'first_out'         => 'required|date_format:H:i|before_or_equal:first_in',
-            'second_in'         => 'nullable|date_format:H:i|before_or_equal:first_out',
-            'second_out'        => 'nullable|date_format:H:i|before_or_equal:second_in',
-            'assigned_area'     => 'required|string',
-            'assigned_area_id'  => 'required|integer',
+            'first_out'         => 'required|date_format:H:i|after_or_equal:first_in',
+            'second_in'         => 'nullable|date_format:H:i|after_or_equal:first_out',
+            'second_out'        => 'nullable|date_format:H:i|after_or_equal:second_in',
         ];
     }
 }
