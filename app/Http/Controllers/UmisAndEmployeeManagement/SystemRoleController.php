@@ -14,6 +14,7 @@ use App\Models\Designation;
 use App\Models\EmployeeProfile;
 use App\Models\Role;
 use App\Models\SpecialAccessRole;
+use App\Models\SystemModule;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -49,6 +50,91 @@ class SystemRoleController extends Controller
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+    
+    /** API [system-roles-rights/{id}] */
+    public function systemRoleAccessRights($id, Request $request)
+    {
+        try {
+            $systemRoles = SystemRole::find($id);
+
+            if(!$systemRoles){
+                return response()->json(['message' => "No record found."], Response::HTTP_NOT_FOUND);
+            }
+
+            return response()->json([
+                'data' => $this->buildRoleDetails($systemRoles),
+                'message' => 'System role list retrieved.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'systemRoleAccessRights', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    /** API [system-roles-rights/{id}]  UPDATE System role access rights */
+    public function systemRoleAccessRightsUpdate($id, Request $request)
+    {
+        try {
+            $system_roles = SystemRole::find($id);
+
+            if(!$system_roles){
+                return response()->json(['message' => "No record found."], Response::HTTP_NOT_FOUND);
+            }
+
+            $system_role_access_rights = $system_roles->roleModulePermissions;
+
+            $new = [];
+            foreach($request->modules as $module){
+                $module_permission = ModulePermission::select('module_permissions.*')->join('role_module_permissions as rmp', 'rmp.module_permission_id', 'module_permissions.id')
+                    ->where('module_permission_id', $module['module_id'])->where('rmp.system_role_id', $id)->get();
+
+                    
+                    $new_array_roles = collect($module_permission)->pluck('id')->toArray();
+
+                    $new[] = $new_array_roles;
+            }
+
+
+            return response()->json([
+                'data' => $new,
+                'message' => 'System role list retrieved.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'systemRoleAccessRightsUpdate', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    private function buildRoleDetails($system_role)
+    {
+        $modules = [];
+
+        $role_module_permissions = $system_role->roleModulePermissions;
+
+        foreach ($role_module_permissions as $role_module_permission) {
+            $module_name = $role_module_permission->modulePermission->module->name;
+            $module_code = $role_module_permission->modulePermission->module->code;
+            $permission_action = $role_module_permission->modulePermission->permission->action;
+            $permission = $role_module_permission->modulePermission->permission;
+
+            if (!isset($modules[$module_name])) {
+                $modules[$module_name] = ['name' => $module_name, 'code' => $module_code, 'permissions' => []];
+            }
+
+            if (!in_array($permission_action, $modules[$module_name]['permissions'])) {
+                $modules[$module_name]['permissions'][] = [
+                    'id' => $permission->id,
+                    'action' => $permission->action
+                ];
+            }
+        }
+
+        return [
+            'id' => $system_role->id,
+            'name' => $system_role->role->name,
+            'modules' => array_values($modules), // Resetting array keys
+        ];
     }
 
     public function employeesWithSpecialAccess(Request $request)

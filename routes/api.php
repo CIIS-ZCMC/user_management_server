@@ -258,6 +258,14 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('system-role-all', 'SystemRoleController@index');
         });
 
+        Route::middleware(['auth.permission:UMIS-SM view'])->group(function () {
+            Route::get('system-roles-rights/{id}', 'SystemRoleController@systemRoleAccessRights');
+        });
+
+        Route::middleware(['auth.permission:UMIS-SM update'])->group(function () {
+            Route::post('system-roles-rights/{id}', 'SystemRoleController@systemRoleAccessRightsUpdate');
+        });
+
         Route::middleware(['auth.permission:UMIS-SM view-all'])->group(function () {
             Route::get('system-role/employees-with-special-access', 'SystemRoleController@employeesWithSpecialAccess');
         });
