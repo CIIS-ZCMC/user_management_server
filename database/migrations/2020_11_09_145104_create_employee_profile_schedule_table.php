@@ -16,6 +16,7 @@ return new class extends Migration
             $table->integer('employee_profile_id')->unasigned();
             $table->integer('schedule_id')->unasigned();
             $table->boolean('is_on_call')->default(false);
+            $table->timestamps('updated_at');
         });
     }
 
