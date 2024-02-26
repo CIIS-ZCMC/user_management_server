@@ -270,6 +270,7 @@ class EmployeeProfileController extends Controller
 
     private function buildSidebarDetails($employee_profile, $designation, $special_access_roles)
     {
+        $sidebar_cache = Cache::forget($designation['name']);
         $sidebar_cache = Cache::get($designation['name']);
 
         $side_bar_details['designation_id'] = $designation['id'];
@@ -1777,11 +1778,12 @@ class EmployeeProfileController extends Controller
             $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () {
                 return EmployeeProfile::all();
             });
+            return EmployeeProfileResource::collection($employee_profiles);
 
-            return response()->json([
-                'data' => EmployeeProfileResource::collection($employee_profiles),
-                'message' => 'list of employees retrieved.'
-            ], Response::HTTP_OK);
+            // return response()->json([
+            //     'data' => EmployeeProfileResource::collection($employee_profiles),
+            //     'message' => 'list of employees retrieved.'
+            // ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -2369,27 +2371,39 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+    
 
     public function promotion($id, PromotionRequest $request)
     {
+        // password
+        // effective_date
+        // designation_id
+        // period
+        // area_assigned
         try {
-            $user = $request->user;
-            $cleanData['password'] = strip_tags($request->input('password'));
-            $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
-            if (!Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedPassword)) {
-                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
-            }
+            // $user = $request->user;
+            // $cleanData['password'] = strip_tags($request->input('password'));
+            // $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
+            // if (!Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedPassword)) {
+            //     return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
+            // }
+
+            
             $employee_profile = EmployeeProfile::findOrFail($id);
             $effective_date = $request->effective_date;
             $designation_id = $request->designation_id;
             $period = $request->period;
-            $area_assigned = json_decode($request->area_assigned);
+            $area_assigned = $request->area_assigned;
             $end_at = date('Y-m-d', strtotime("+" . $period . " months", strtotime($effective_date)));
 
-            $parts = explode('-', $area_assigned->value);
+            $parts = explode('-', $area_assigned);
+
             $areaid = trim($parts[0]);
             $sector = trim($parts[1]);
+
+           
             $assigned = $employee_profile->assignedArea;
+            
             $AssignareaRequest = new Request([
                 'area' => $areaid,
                 'sector' => $sector,
@@ -2418,7 +2432,7 @@ class EmployeeProfileController extends Controller
             ];
             AssignAreaTrail::create($trails);
             AssignArea::where('id', $assigned->id)->update($Promotion);
-            return response()->json(['message' => 'Employee promotion process successfully.'], Response::HTTP_OK);
+            return response()->json(['message' => 'Employee successfully renewed.'], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'promotion', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

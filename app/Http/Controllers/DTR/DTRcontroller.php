@@ -54,8 +54,19 @@ class DTRcontroller extends Controller
             $today = date('Y-m-d');
             $biometric_id = $user->biometric_id;
             $selfRecord = DailyTimeRecords::where('biometric_id', $biometric_id)->where('dtr_date', $today)->first();
+            $sched = $this->helper->getSchedule($biometric_id, null);
 
             if ($selfRecord) {
+                if ($sched['third_entry'] == NULL && $sched['last_entry']  == NULL) {
+                    return [
+                        'dtr_date' => $selfRecord->dtr_date,
+                        'first_in' => $selfRecord->first_in ? date('H:i', strtotime($selfRecord->first_in)) : ' --:--',
+                        'first_out' => ' --:--',
+                        'second_in' =>  ' --:--',
+                        'second_out' => $selfRecord->first_out ? date('H:i', strtotime($selfRecord->first_out)) : ' --:--',
+                    ];
+                }
+
                 return [
                     'dtr_date' => $selfRecord->dtr_date,
                     'first_in' => $selfRecord->first_in ? date('H:i', strtotime($selfRecord->first_in)) : ' --:--',
@@ -76,6 +87,7 @@ class DTRcontroller extends Controller
             return response()->json(['message' => $th->getMessage()], 401);
         }
     }
+
 
     public function monthDayRecordsSelf(Request $request)
     {
@@ -1488,6 +1500,32 @@ class DTRcontroller extends Controller
 
     private function mDTR($value)
     {
+
+        $sched = $this->helper->getSchedule($value->biometric_id, null);
+        if ($sched['third_entry'] == NULL && $sched['last_entry']  == NULL) {
+            return   [
+                'dtr_ID' => $value->id,
+                'first_in' => $this->FormatDate($value->first_in),
+                'first_out' => null,
+                'second_in' => null,
+                'second_out' => $this->FormatDate($value->first_out),
+                'interval_req' => $value->interval_req,
+                'required_working_hours' => $value->required_working_hours,
+                'required_working_minutes' => $value->required_working_minutes,
+                'total_working_hours' => $value->total_working_hours,
+                'total_working_minutes' => $value->total_working_minutes,
+                'overtime' => $value->overtime,
+                'overtime_minutes' => $value->overtime_minutes,
+                'undertime' => $value->undertime,
+                'undertime_minutes' => $value->undertime_minutes,
+                'overall_minutes_rendered' => $value->overall_minutes_rendered,
+                'total_minutes_reg' => $value->total_minutes_reg,
+                'day' => $this->getDAy($value),
+                'created_at' => $value->created_at,
+                'weekStatus' => $this->getWeekdayStatus($value->created_at),
+                'isHoliday' => $this->isHoliday($value->created_at)
+            ];
+        }
 
         return   [
             'dtr_ID' => $value->id,
