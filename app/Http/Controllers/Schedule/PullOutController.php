@@ -142,7 +142,7 @@ class PullOutController extends Controller
             }
 
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
-            return response()->json(['data' => new PullOutResource($data),
+            return response()->json(['data' => new PullOutRequest($data),
                                     'logs' => Helpers::registerPullOutLogs($data->id, $user->id, 'Store'),
                                     'msg' => 'Pull out requested'], Response::HTTP_OK);
 

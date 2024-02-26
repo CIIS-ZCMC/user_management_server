@@ -233,10 +233,10 @@
             </thead>
 
             <tbody>
-                @foreach ($data as $key => $value)
+                @foreach ($employee as $key => $data)
                         <tr>
                             <td class="schedule-cell"> {{ ++$key }} </td>
-                            <td class="td-name"> {{ $value->personalInformation->name() }}  </td>
+                            <td class="td-name"> {{ $data->personalInformation->name() }}  </td>
 
                             @php
                                 $totalHours = 0;
@@ -248,10 +248,10 @@
                                     @if ($holiday->where('month_day', date('m-d', strtotime($date)))->count() > 0)
                                         <span class="schedule-cell">H</span>
                                     @else
-                                        @if ($value->schedule->where('date', $date)->count() > 0)
+                                        @if ($data->schedule->where('date', $date)->count() > 0)
 
                                 @php
-                                            $shift = $value->schedule->first()->timeShift;
+                                            $shift = $data->schedule->first()->timeShift;
                                             $firstIn = strtotime($shift->first_in ?? '');
                                             $secondOut = strtotime($shift->second_out ?? '');
                                             $firstOut = strtotime($shift->first_out ?? '');
@@ -293,13 +293,13 @@
         <div class="float-left">
             <label> Prepared By: </label> <br>
             <span class="signature">{{ $user->personalInformation->name() }}</span> <br>
-            <span style="padding: 30%">{{ $user->position()['position'] ?? null }}</span>
+            <span style="padding: 28%">{{ $user->position()['position'] ?? null }}</span>
         </div>
 
         <div class="float-right">
             <label> Approved By: </label> <br>
             <span class="signature">{{ $head_officer->personalInformation->name() }}</span> <br>
-            <span style="padding: 30%">{{ $head_officer->position()['position'] ?? null }}</span>
+            <span style="padding: 28%">{{ $head_officer->position()['position'] ?? null }}</span>
         </div>
     </div>
 </footer>
