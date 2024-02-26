@@ -36,6 +36,31 @@ class Helpers
         return Division::where('code', 'OMCC')->first()->chief_employee_profile_id;
     }
 
+    public static function getDivHead($user_area)
+    {   
+        switch ($user_area['sector']) {
+            case 'Division':
+                return Division::find($user_area['details']['id'])->chief_employee_profile_id;    
+            case 'Department':
+                $department = Department::find($user_area['details']['id']);
+                return $department->division->chief_employee_profile_id;
+            case 'Section':
+                $section = Section::find($user_area['details']['id']);
+                if ($section->department_id !== null) {
+                    return $section->department->division->chief_employee_profile_id;
+                }
+                return $section->division->chief_employee_profile_id;
+                
+            case 'Unit':
+                $unit = Unit::find($user_area['details']['id']);
+                if ($unit->section->department_id !== null) {
+                    return $unit->section->department->division->chief_employee_profile_id;
+                }
+                return $unit->section->division->chief_employee_profile_id;
+        }
+
+        return null;
+    }
     public static function generateMyOTP($employee_profile)
     {
         $otp_code = rand(100000, 999999);
