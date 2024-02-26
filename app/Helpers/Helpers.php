@@ -2,8 +2,10 @@
 
 namespace App\Helpers;
 
+use App\Models\AssignArea;
 use App\Models\Department;
 use App\Models\Division;
+use App\Models\EmployeeProfile;
 use App\Models\EmployeeScheduleLog;
 use App\Models\ExchangeDutyLog;
 use App\Models\PullOutLog;
@@ -185,6 +187,88 @@ class Helpers
             default:
                 return null;
         }
+    }
+
+    public static function getApprovingDTR($assigned_area, $employee_profile)
+    {
+        $position = $employee_profile->position();
+
+        if($position !== null){
+            if($position['area']->code === 'OMCC'){
+                return [
+                    'id' => null,
+                    'name' => null
+                ];
+            }
+
+            switch($assigned_area['sector'])
+            {
+                case "Division":
+                    $omcc = Division::where('code', 'OMCC')->first();
+                    return [
+                        'id' => $omcc->chief->biometric,
+                        'name' => $omcc->chief->personalInformation->name()
+                    ];
+                case "Department":
+                    $division = Department::find($assigned_area['details']->id)->division;
+                    return [
+                        'id' => $division->chief->biometric,
+                        'name' => $division->chief->personalInformation->name()
+                    ];
+                case "Section":
+                    $section = Section::find($assigned_area['details']->id);
+
+                    if($section->division_id !== null){
+                        $division = $section->division;
+                        return [
+                            'id' => $division->chief->biometric,
+                            'name' => $division->chief->personalInformation->name()
+                        ];
+                    }
+
+                    $department = $section->department;
+                    return [
+                        'id' => $department->head->biometric,
+                        'name' => $department->head->personalInformation->name()
+                    ];
+                case "Unit":
+                    $section = Unit::find($assigned_area['details']->id)->section;
+                    return [
+                        'id' => $section->supervisor->biometric,
+                        'name' => $section->supervisor->personalInformation->name()
+                    ];
+            }
+        }
+
+        switch($assigned_area['sector'])
+        {
+            case "Division":
+                $division = $employee_profile->assignedArea->division;
+                return [
+                    'id' => $division->chief->biometric,
+                    'name' => $division->chief->personalInformation->name()
+                ];
+            case "Department":
+                $department = $employee_profile->assignedArea->department;
+                return [
+                    'id' => $department->head->biometric,
+                    'name' => $department->head->personalInformation->name()
+                ];
+            case "Section":
+                $section = $employee_profile->assignedArea->section;
+                return [
+                    'id' => $section->supervisor->biometric,
+                    'name' => $section->supervisor->personalInformation->name()
+                ];
+            case "Unit":
+                $unit = $employee_profile->assignedArea->unit;
+                return [
+                    'id' => $unit->head->biometric,
+                    'name' => $unit->head->personalInformation->name()
+                ];
+        }
+        
+        return null;
     }
 
     public static function registerSystemLogs($request, $moduleID, $status, $remarks)
