@@ -1,6 +1,6 @@
      <td>
         <!--FIRST IN -->
-        @include('generate_dtr.DtrSeparator',['entry'=>'firstin'])
+        @include('generate_dtr.DtrSeparator',['entry'=>'firstin','schedule'=>$schedule])
     </td>
     <td>
         @include('generate_dtr.DtrSeparator',['entry'=>'firstout' ,'fspan'=> false])

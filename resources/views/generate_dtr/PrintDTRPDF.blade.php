@@ -7,9 +7,9 @@
     <title>Document</title>
     <style>
         @page {
-         
-          
-           
+
+
+
             /* Set the page size to auto to adjust based on content */
             margin: 0 !important;
             padding: 20px !important;
@@ -27,7 +27,7 @@
             /* Make the table width 100% of the page */
             margin-left: 1.4px;
             border-collapse: collapse;
-            
+
             /* Collapse table borders to remove spacing */
         }
 
@@ -37,13 +37,13 @@
 
             /* Add borders for demonstration purposes */
         }
-       
+
     </style>
 
     @if(isset($data))
     <style>
         @page {
-             size: A4; 
+             size: A4;
         }
 
         #btnprint {
@@ -61,7 +61,7 @@
           border-radius: 5px;
           font-weight: normal;
           transition: all 0.4s;
-          
+
         }
 
         #btnprint:hover {
@@ -70,7 +70,7 @@
             cursor: pointer;
         }
 
-        
+
     </style>
     @endif
     <script>
@@ -88,6 +88,7 @@
        <table id="tbleformat">
         @if (isset($data))
             @foreach ($data as $item)
+
                 @php
                 $daysInMonth=$item['daysInMonth'];
                 $year=$item['year'];
@@ -105,10 +106,13 @@
                 $print_view=$item['print_view'];
                 $halfsched=$item['halfsched'];
                 $biometric_ID = $item['emp_Details']['biometric_ID'];
+                $employeeSched = $item['schedule'];
+
                 @endphp
                    <tr>
                     <td style="border-right: 1px solid black;">
                         @include('generate_dtr.DtrFormat')
+
                     </td>
                     <td>
                         @include('generate_dtr.DtrFormat')
@@ -122,23 +126,24 @@
                         <hr>
                     </td>
                 </tr>
-                
+
             @endforeach
 
 
-        @else 
+        @else
+
         <tr>
             <td style="border-right: 1px solid black;">
-                @include('generate_dtr.DtrFormat')
+                @include('generate_dtr.DtrFormat',['schedule'=>$schedule])
             </td>
             <td>
-                @include('generate_dtr.DtrFormat')
+                @include('generate_dtr.DtrFormat',['schedule'=>$schedule])
             </td>
         </tr>
         @endif
     </table>
 
- 
+
 
 
 </body>
