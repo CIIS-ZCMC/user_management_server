@@ -451,6 +451,7 @@ class LeaveApplicationController extends Controller
             $hrmo_officer = Helpers::getHrmoOfficer();
 
             $cleanData = [];
+            $result = [];
 
             $start = Carbon::parse($request->date_from);
             $end = Carbon::parse($request->date_to);
@@ -458,10 +459,11 @@ class LeaveApplicationController extends Controller
             $daysDiff = $start->diffInDays($end) + 1;
 
             $leave_type = LeaveType::find($request->leave_type_id);
-            //   return response()->json(['message' => $leave_type->period], 401);
+          
 
             if ($leave_type->is_special) {
-
+             
+               
                 if ($leave_type->period < $daysDiff) {
                     return response()->json(['message' => 'Exceeds days entitled for ' . $leave_type->name], Response::HTTP_FORBIDDEN);
                 }
@@ -474,6 +476,7 @@ class LeaveApplicationController extends Controller
                 $cleanData['status'] = 'applied';
 
                 foreach ($request->all() as $key => $leave) {
+                
                     if (is_bool($leave)) {
                         $cleanData[$key] = $leave === 0 ? false : true;
                     }
@@ -491,8 +494,9 @@ class LeaveApplicationController extends Controller
                 }
 
                 $leave_application = LeaveApplication::create($cleanData);
-
-
+               
+               
+               
                 if ($request->requirements) {
                     $index = 0;
                     $requirements_name = $request->requirements_name;
@@ -512,15 +516,19 @@ class LeaveApplicationController extends Controller
                         $index++;
                     }
                 }
-
+               
                 LeaveApplicationLog::create([
                     'action_by' => $employee_profile->id,
                     'leave_application_id' => $leave_application->id,
                     'action' => 'Applied'
                 ]);
+
+               
+                
             } 
             else 
-            {
+            { 
+                 
                 $employee_credit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)
                     ->where('leave_type_id', $request->leave_type_id)->first();
 
@@ -598,24 +606,27 @@ class LeaveApplicationController extends Controller
                         'action' => 'Applied'
                     ]);
                 }
+ 
+                $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->get();
+           
+    
+                foreach ($employeeCredit as $leaveCredit) {
+                 
+                    $leaveType = $leaveCredit->leaveType->name;
+                    $totalCredits = $leaveCredit->total_leave_credits;
+                    $usedCredits = $leaveCredit->used_leave_credits;
+    
+                    $result[] = [
+                        'leave_type_name' => $leaveType,
+                        'total_leave_credits' => $totalCredits,
+                        'used_leave_credits' => $usedCredits
+                    ];
+                }
             }
-            $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->get();
-            $result = [];
-
-            foreach ($employeeCredit as $leaveCredit) {
-                $leaveType = $leaveCredit->leaveType->name;
-                $totalCredits = $leaveCredit->total_leave_credits;
-                $usedCredits = $leaveCredit->used_leave_credits;
-
-                $result[] = [
-                    'leave_type_name' => $leaveType,
-                    'total_leave_credits' => $totalCredits,
-                    'used_leave_credits' => $usedCredits
-                ];
-            }
+        
             return response()->json([
                 'data' => new LeaveApplicationResource($leave_application),
-                'credits' => $result,
+                'credits' => $result ? $result : [],
                 'message' => 'Successfully applied for ' . $leave_type->name
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
