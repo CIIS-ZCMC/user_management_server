@@ -19,7 +19,7 @@ class EmployeeSchedule extends Model
         'is_on_call',
     ];
 
-    public $timestamps = true;
+    public $timestamps = false;
 
     public function employee()
     {

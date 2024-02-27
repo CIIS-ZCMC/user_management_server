@@ -132,7 +132,16 @@ class PullOutController extends Controller
                 }
 
                 $selectedEmployees[] = $employee;
+                
+                $schedule = Schedule::with(['employee'])
+                ->where(function ($query) use ($employee, $cleanData) {
+                    $query->where('date', $cleanData['pull_out_date'])->whereHas('employee', function ($innerQuery) use ($employee) {
+                        $innerQuery->where('employee_profile_id', $employee);
+                    });
+                })->get();
             }
+
+            return response()->json($schedule);
 
             foreach ($selectedEmployees as $selectedEmployee) {
                 $data = PullOut::create(array_merge($cleanData, [

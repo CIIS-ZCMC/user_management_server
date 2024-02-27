@@ -188,7 +188,7 @@ class ScheduleController extends Controller
                     break;
             }
 
-            foreach ($selected_dates as $key => $date) {
+            foreach ($selected_dates as $date) {
                 $schedule = Schedule::where('time_shift_id', $cleanData['time_shift_id'])
                     ->where('date', $date)
                     ->first();
@@ -213,7 +213,7 @@ class ScheduleController extends Controller
                 }
 
                 $employee = $cleanData['employee'];
-                foreach ($employee as $key => $value) {
+                foreach ($employee as $value) {
                     $employee_ids = $value['employee_id']; // Array of employee IDs
                     $existing_employee_ids = EmployeeProfile::whereIn('id', $employee_ids)->pluck('id');
                     // $existing_employee_ids = EmployeeProfile::where('id', $employee_ids)->pluck('id');
