@@ -393,11 +393,7 @@ Route::middleware('auth.cookie')->group(function () {
         /**
          * Address Module
          */
-
-
         // Route::get('employees-dtr-list', 'EmployeeProfileController@employeesDTRList');
-
-
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('address-all-personal-info/{id}', 'AddressController@findByPersonalInformationID');
         });
@@ -1536,8 +1532,12 @@ Route::middleware('auth.cookie')->group(function () {
 
         // });
 
-        Route::middleware(['auth.permission:UMIS-DTRM view'])->group(function () {
+        
+        Route::middleware(['auth.permission:UMIS-PAM view'])->group(function () {
             Route::get('dtr-self', 'DTRcontroller@pullDTRuser');
+        });
+
+        Route::middleware(['auth.permission:UMIS-DTRM view'])->group(function () {
             Route::get('dtr-md-records-self', 'DTRcontroller@monthDayRecordsSelf');
             Route::get('dtr-device-testdevice', 'BioMSController@testDeviceConnection');
             Route::get('dtr-fetchuser', 'DTRcontroller@fetchUserDTR');
@@ -1665,10 +1665,6 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
             Route::get('leave-credit-leave-type', 'LeaveApplicationController@getLeaveTypes');
         });
-
-
-
-
 
         /**
          * Official Business Module

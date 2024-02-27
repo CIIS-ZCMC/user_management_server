@@ -82,23 +82,43 @@ class SystemRoleController extends Controller
                 return response()->json(['message' => "No record found."], Response::HTTP_NOT_FOUND);
             }
 
-            $system_role_access_rights = $system_roles->roleModulePermissions;
+            RoleModulePermission::where('system_role_id', $system_roles->id)->delete();
 
-            $new = [];
+            $failed = [];
+
             foreach($request->modules as $module){
-                $module_permission = ModulePermission::select('module_permissions.*')->join('role_module_permissions as rmp', 'rmp.module_permission_id', 'module_permissions.id')
-                    ->where('module_permission_id', $module['module_id'])->where('rmp.system_role_id', $id)->get();
+                foreach($module['permissions'] as $permission){
+                    $module_permission = ModulePermission::where('system_module_id', $module['module_id'])
+                        ->where('permission_id', $permission)->first();
 
+                    if(!$module_permission){
+                        $failed[] = [
+                            'module_id' => $module['module_id'],
+                            'permission_id' => $permission,
+                            'reason' => "Failed module permission doesn't exist." 
+                        ];
+                        continue;
+                    }
                     
-                    $new_array_roles = collect($module_permission)->pluck('id')->toArray();
+                    RoleModulePermission::create([
+                        'system_role_id' => $id,
+                        'module_permission_id' => $module_permission->id
+                    ]);
+                }
+            }
 
-                    $new[] = $new_array_roles;
+            if(count($failed) > 0){
+                return response()->json([
+                    "data" => $this->buildRoleDetails($system_roles),
+                    "failed" => $failed,
+                    "message" => "System role rights has been successfully updated some had failed."
+                ],Response::HTTP_OK);
             }
 
 
             return response()->json([
-                'data' => $new,
-                'message' => 'System role list retrieved.'
+                "data" => $this->buildRoleDetails($system_roles),
+                'message' => 'System role rights has been successfully updated'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'systemRoleAccessRightsUpdate', $th->getMessage());
@@ -113,13 +133,14 @@ class SystemRoleController extends Controller
         $role_module_permissions = $system_role->roleModulePermissions;
 
         foreach ($role_module_permissions as $role_module_permission) {
+            $module_id = $role_module_permission->modulePermission->module->id;
             $module_name = $role_module_permission->modulePermission->module->name;
             $module_code = $role_module_permission->modulePermission->module->code;
             $permission_action = $role_module_permission->modulePermission->permission->action;
             $permission = $role_module_permission->modulePermission->permission;
 
             if (!isset($modules[$module_name])) {
-                $modules[$module_name] = ['name' => $module_name, 'code' => $module_code, 'permissions' => []];
+                $modules[$module_name] = ['id' => $module_id,'name' => $module_name, 'code' => $module_code, 'permissions' => []];
             }
 
             if (!in_array($permission_action, $modules[$module_name]['permissions'])) {
@@ -474,6 +495,7 @@ class SystemRoleController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
     public function destroy($id, PasswordApprovalRequest $request)
     {
         try {
