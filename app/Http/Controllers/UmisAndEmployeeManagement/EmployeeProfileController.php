@@ -673,6 +673,8 @@ class EmployeeProfileController extends Controller
         }
 
         $last_login = LoginTrail::where('employee_profile_id', $employee_profile->id)->orderByDesc('created_at')->first();
+
+        $special_access_role = SpecialAccessRole::where('employee_profile_id', $employee_profile->id)->where('system_role_id', 1)->first();
         
         $employee = [
             'profile_url' => env('SERVER_DOMAIN') . "/photo/profiles/" . $employee_profile->profile_url,
@@ -683,7 +685,8 @@ class EmployeeProfileController extends Controller
             'job_type' => $employee_profile->employmentType->name,
             'years_of_service' => $employee_profile->personalInformation->years_of_service,
             'last_login' => $last_login === null ? null : $last_login->created_at,
-            'biometric_id' => $employee_profile->biometric_id
+            'biometric_id' => $employee_profile->biometric_id,
+            'is_admin' => $special_access_role !== null? true:false
         ];
 
         $personal_information_data = [

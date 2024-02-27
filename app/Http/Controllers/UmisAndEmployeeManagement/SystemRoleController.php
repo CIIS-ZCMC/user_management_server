@@ -115,7 +115,6 @@ class SystemRoleController extends Controller
                 ],Response::HTTP_OK);
             }
 
-
             return response()->json([
                 "data" => $this->buildRoleDetails($system_roles),
                 'message' => 'System role rights has been successfully updated'
