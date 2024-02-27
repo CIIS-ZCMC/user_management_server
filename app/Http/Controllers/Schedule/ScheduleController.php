@@ -188,7 +188,7 @@ class ScheduleController extends Controller
                     break;
             }
 
-            foreach ($selected_dates as $key => $date) {
+            foreach ($selected_dates as $date) {
                 $schedule = Schedule::where('time_shift_id', $cleanData['time_shift_id'])
                     ->where('date', $date)
                     ->first();
@@ -213,7 +213,7 @@ class ScheduleController extends Controller
                 }
 
                 $employee = $cleanData['employee'];
-                foreach ($employee as $key => $value) {
+                foreach ($employee as $value) {
                     $employee_ids = $value['employee_id']; // Array of employee IDs
                     $existing_employee_ids = EmployeeProfile::whereIn('id', $employee_ids)->pluck('id');
                     // $existing_employee_ids = EmployeeProfile::where('id', $employee_ids)->pluck('id');
@@ -377,9 +377,9 @@ class ScheduleController extends Controller
 
             $dates = Helpers::getDatesInMonth($year, Carbon::parse($month)->month, "");
 
-            $data = EmployeeProfile::where(function ($query) use ($user, $assigned_area) {
-                $query->whereHas('assignedArea', function ($innerQuery) use ($user, $assigned_area) {
-                    $innerQuery->where([strtolower($assigned_area['sector']) . '_id' => $user->assignedArea->id]);
+            $employee = EmployeeProfile::where(function ($query) use ($assigned_area) {
+                $query->whereHas('assignedArea', function ($innerQuery) use ($assigned_area) {
+                    $innerQuery->where([strtolower($assigned_area['sector']) . '_id' => $assigned_area['details']['id']]);
                 });
             })->with(['personalInformation', 'assignedArea', 'schedule.timeShift'])->get();
 
@@ -393,7 +393,7 @@ class ScheduleController extends Controller
             $options->set('isRemoteEnabled', true);
             $dompdf = new Dompdf($options);
             $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
-            $html = view('generate_schedule/section-schedule', compact('data', 'holiday', 'month', 'year', 'dates', 'user', 'head_officer'))->render();
+            $html = view('generate_schedule/section-schedule', compact('employee', 'holiday', 'month', 'year', 'dates', 'user', 'head_officer'))->render();
             $dompdf->loadHtml($html);
 
             $dompdf->setPaper('Legal', 'landscape');
