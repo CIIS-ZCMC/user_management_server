@@ -1,4 +1,6 @@
-
+@php
+    $absent = false;
+@endphp
 @switch($entry)
     @case('firstin')
     @php
@@ -47,7 +49,7 @@
     )
      @if (!$isHoliday)
      @if ($countin == 0)
-             <span style="color:gray">Day-off </span>
+             <span class="timefirstarrival" style="color:gray">Day-off </span>
      @endif
 
     @endif
@@ -75,9 +77,9 @@
 
 
     @if ($count2 >=1)
-    <span style="color:gray">Day-off</span>
+    <span class="timefirstarrival" style="color:gray">Day-off</span>
     @else
-    <span style="color:gray">Day-off</span>
+    <span class="timefirstarrival" style="color:gray">Day-off</span>
     @endif
     @endif
 
@@ -96,9 +98,9 @@
 
     @endphp
         @if (count($checkSched)>=1)
-        <span style="color:gray;font-style:italic;color:#FF6969">ABSENT</span>
+        <span class="timefirstarrival" style="color:gray;font-style:italic;color:#FF6969">ABSENT</span>
         @else
-        <span style="color:gray">Day-off</span>
+        <span class="timefirstarrival" style="color:gray">Day-off</span>
         @endif
 
 
@@ -111,7 +113,7 @@
         @endif
         @if ($isHoliday)
         @if (!$countin)
-        <span style="color:rgb(5, 128, 42)">HOLIDAY</span>
+        <span class="timefirstarrival" style="color:rgb(5, 128, 42)">HOLIDAY</span>
         @endif
         @endif
         @break
@@ -176,8 +178,8 @@
 
 
 
-        <table id="tabledate" style="border:none">
-            <tr style="border:none">
+        <table style="text-align: center;border:none" >
+            <tr style="height:20px" >
                 @php
                 $hours = '-';
                 $minutes = '-';
@@ -205,8 +207,8 @@
 
                 @endif
                 @endforeach
-                <td style="border: none; border-right: 1px solid gray !important; width: 50px;font-weight:bold;color:#04364A ">{{$hours}}</td>
-                <td style="border: none; width: 50px;font-weight:bold ;color:#04364A">{{$minutes}}</td>
+                <td class="time" style="border:none;width: 50px;border-right:1px solid rgb(177, 181, 185);font-weight:bold;color:#FF6969;">{{$hours}}</td>
+                <td class="time" style=" width: 50px;color:#FF6969;border:none">{{$minutes}}</td>
 
 
             </tr>

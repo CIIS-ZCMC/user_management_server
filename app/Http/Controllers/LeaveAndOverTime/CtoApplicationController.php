@@ -188,9 +188,14 @@ class CtoApplicationController extends Controller
     public function store(CtoApplicationRequest $request)
     {
         try {
+
             $employee_profile = $request->user;
             $recommending_and_approving = Helpers::getRecommendingAndApprovingOfficer($employee_profile->assignedArea->findDetails(), $employee_profile->id);
             $cto_applications = [];
+
+            $assigned_area = $employee_profile->assignedArea->findDetails();
+            $approving_officer = Helpers::getDivHead($assigned_area);
+
 
             $reason = [];
             $failed = [];
@@ -238,7 +243,7 @@ class CtoApplicationController extends Controller
                 $cleanData['remarks'] = $value->remarks;
                 $cleanData['status'] = 'for recommending approval';
                 $cleanData['recommending_officer'] = $hrmo_officer;
-                $cleanData['approving_officer'] = $recommending_and_approving['approving_officer'];
+                $cleanData['approving_officer'] = $approving_officer;
 
                 $credits = $value->applied_credits;
                 $cto_application = CtoApplication::create($cleanData);

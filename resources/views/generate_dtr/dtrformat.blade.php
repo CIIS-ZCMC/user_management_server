@@ -646,7 +646,7 @@
                         $isExcept = true;
                     @endphp
 
-                 @include('generate_dtr.TableDtrDateSpan')
+                 @include('generate_dtr.TableDtrDateSpan',['schedule'=>$schedule])
                 @else
                     @if ($isExcept == true)
 
@@ -654,7 +654,7 @@
                             $isExcept = false;
                         @endphp
                     @else
-                      @include('generate_dtr.TableDtrDate')
+                      @include('generate_dtr.TableDtrDate',['schedule'=>$schedule])
                     @endif
                 @endif
 

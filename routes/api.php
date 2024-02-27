@@ -1538,6 +1538,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-DTRM view'])->group(function () {
+
             Route::get('dtr-md-records-self', 'DTRcontroller@monthDayRecordsSelf');
             Route::get('dtr-device-testdevice', 'BioMSController@testDeviceConnection');
             Route::get('dtr-fetchuser', 'DTRcontroller@fetchUserDTR');

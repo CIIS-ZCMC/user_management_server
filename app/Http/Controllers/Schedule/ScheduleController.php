@@ -363,9 +363,9 @@ class ScheduleController extends Controller
 
             $dates = Helpers::getDatesInMonth($year, Carbon::parse($month)->month, "");
 
-            $data = EmployeeProfile::where(function ($query) use ($user, $assigned_area) {
-                $query->whereHas('assignedArea', function ($innerQuery) use ($user, $assigned_area) {
-                    $innerQuery->where([strtolower($assigned_area['sector']) . '_id' => $user->assignedArea->id]);
+            $employee = EmployeeProfile::where(function ($query) use ($assigned_area) {
+                $query->whereHas('assignedArea', function ($innerQuery) use ($assigned_area) {
+                    $innerQuery->where([strtolower($assigned_area['sector']) . '_id' => $assigned_area['details']['id']]);
                 });
             })->with(['personalInformation', 'assignedArea', 'schedule.timeShift'])->get();
 
@@ -379,7 +379,7 @@ class ScheduleController extends Controller
             $options->set('isRemoteEnabled', true);
             $dompdf = new Dompdf($options);
             $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
-            $html = view('generate_schedule/section-schedule', compact('data', 'holiday', 'month', 'year', 'dates', 'user', 'head_officer'))->render();
+            $html = view('generate_schedule/section-schedule', compact('employee', 'holiday', 'month', 'year', 'dates', 'user', 'head_officer'))->render();
             $dompdf->loadHtml($html);
 
             $dompdf->setPaper('Legal', 'landscape');
