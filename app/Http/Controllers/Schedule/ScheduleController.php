@@ -81,7 +81,6 @@ class ScheduleController extends Controller
                 'time_shift' => TimeShiftResource::collection(TimeShift::all())
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
-
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -155,7 +154,6 @@ class ScheduleController extends Controller
                         $current_date->addDay();
                     }
                     break;
-
 
                     //If Toggle Show Day on
                 case ($selected_days >= 1 && $date_start === null && $date_end === null):
@@ -260,18 +258,9 @@ class ScheduleController extends Controller
 
             return response()->json(['data' => $data], Response::HTTP_OK);
         } catch (\Throwable $th) {
-
             Helpers::errorLog($this->CONTROLLER_NAME, 'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Schedule $schedule)
-    {
-        //
     }
 
     /**
@@ -331,7 +320,6 @@ class ScheduleController extends Controller
                 'message' => 'Schedule is updated'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
-
             Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -356,12 +344,10 @@ class ScheduleController extends Controller
             Helpers::registerSystemLogs($request, $id, true, 'Success in delete ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json(['data' => $data], Response::HTTP_OK);
         } catch (\Throwable $th) {
-
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
 
     /**
      * Generate PDF file of schedule
@@ -404,7 +390,6 @@ class ScheduleController extends Controller
             $dompdf->stream($filename, array("Attachment" => false));
             // return view('generate_schedule/section-schedule', compact('data','holiday', 'month', 'year', 'dates', 'user', 'head_officer'));
         } catch (\Throwable $th) {
-
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
