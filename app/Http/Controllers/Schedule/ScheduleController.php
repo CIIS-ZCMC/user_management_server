@@ -136,109 +136,136 @@ class ScheduleController extends Controller
             }
 
             $user = $request->user;
-            $message = null;
             $data = null;
-            $is_weekend = 0;
 
+            $is_weekend     = 0;
+            $employee       = $cleanData['employee'];
             $date_start     = $cleanData['date_start'];     // Replace with your start date
             $date_end       = $cleanData['date_end'];       // Replace with your end date
             $selected_days  = $cleanData['selected_days'];  // Replace with your selected days
             $selected_dates = [];                           // Replace with your selected dates
 
             switch ($selected_days) {
-                    //If Toggle Date Period On
-                case ($selected_days <= 0 && $date_start != null && $date_end != null):
-                    $current_date = Carbon::parse($date_start)->copy();
+                //If Toggle Date Period On
+                case ($selected_days <= 0):
+                    if($date_start !== null && $date_end !== null) {
+                        $current_date = Carbon::parse($date_start)->copy();
 
-                    while ($current_date->lte($date_end)) {
-                        $selected_dates[] = $current_date->toDateString();
-                        $current_date->addDay();
-                    }
-                    break;
-
-
-                    //If Toggle Show Day on
-                case ($selected_days >= 1 && $date_start === null && $date_end === null):
-                    $date = Carbon::now();  // Replace with your desired year
-                    $month = Carbon::parse($cleanData['month'])->month;   // Replace with your desired month
-
-                    $start_date = Carbon::create($date->year, $month, 1)->startOfMonth();
-                    $end_date = $start_date->copy()->endOfMonth();
-
-                    $current_date = $start_date->copy();
-
-                    while ($current_date->lte($end_date->startOfDay())) {
-                        if (in_array($current_date->englishDayOfWeek, $selected_days)) {
+                        while ($current_date->lte($date_end)) {
                             $selected_dates[] = $current_date->toDateString();
+                            $current_date->addDay();
                         }
-                        $current_date->addDay();
                     }
-                    break;
+                break;
 
-                    //If Toggle Date Period && Toggle Show Day On
+                //If Toggle Show Day on
+                case ($selected_days >= 1):
+                    if ( $date_start === null && $date_end === null) {
+                        $date = Carbon::now();  // Replace with your desired year
+                        $month = Carbon::parse($cleanData['month'])->month;   // Replace with your desired month
+    
+                        $start_date = Carbon::create($date->year, $month, 1)->startOfMonth();
+                        $end_date = $start_date->copy()->endOfMonth();
+    
+                        $current_date = $start_date->copy();
+    
+                        while ($current_date->lte($end_date->startOfDay())) {
+                            if (in_array($current_date->englishDayOfWeek, $selected_days)) {
+                                $selected_dates[] = $current_date->toDateString();
+                            }
+                            $current_date->addDay();
+                        }
+                    } else if ( $date_start !== null && $date_end !== null) {
+                        $current_date = Carbon::parse($date_start)->copy();
+
+                        while ($current_date->lte($date_end)) {
+                            if (in_array($current_date->englishDayOfWeek, $selected_days)) {
+                                $selected_dates[] = $current_date->toDateString();
+                            }
+                            $current_date->addDay();
+                        }
+                    }
+                break;
+
                 default:
-                    $current_date = Carbon::parse($date_start)->copy();
-
-                    while ($current_date->lte($date_end)) {
-                        if (in_array($current_date->englishDayOfWeek, $selected_days)) {
-                            $selected_dates[] = $current_date->toDateString();
-                        }
-                        $current_date->addDay();
-                    }
-                    break;
+                    $selected_dates[] = null;
+                break;
             }
 
-            foreach ($selected_dates as $date) {
-                $schedule = Schedule::where('time_shift_id', $cleanData['time_shift_id'])
-                    ->where('date', $date)
-                    ->first();
+            if (!empty($selected_dates)) {
+                foreach ($selected_dates as $date) {
+                    $schedule = Schedule::where('time_shift_id', $cleanData['time_shift_id'])->where('date', $date)->first();
 
-                if (!$schedule) {
-                    $date = Carbon::parse($date);
-                    $isWeekend = $date->dayOfWeek === 6 || $date->dayOfWeek === 0;
+                    if ($schedule) {
+                        $data = $schedule;
+                    } else {
+                        
+                        $dates = Carbon::parse($date);
+                        $isWeekend = $dates->dayOfWeek === 6 || $dates->dayOfWeek === 0;
 
-                    if ($isWeekend) {
-                        $is_weekend = 1;
+                        if ($isWeekend) {
+                            $is_weekend = 1;
+                        }
+
+                        $data = new Schedule;
+
+                        $data->time_shift_id    = $cleanData['time_shift_id'];
+                        $data->is_weekend       = $is_weekend;
+                        $data->date             = $date;
+                        $data->save();
                     }
 
-                    $data = new Schedule;
+                    foreach ($employee as $value) {
+                        $existing_employee_ids = EmployeeProfile::where('id', $value['employee_id'])->pluck('id');
 
-                    $data->time_shift_id    = $cleanData['time_shift_id'];
-                    $data->is_weekend       = $is_weekend;
-                    $data->date             = $date;
-                    $data->save();
-                } else {
+                        foreach ($existing_employee_ids as $employee_id) {
+                            $query[] = EmployeeSchedule::where('employee_profile_id', $employee_id)->where('schedule_id', $data->id)->first();
 
-                    $data = $schedule;
-                }
-
-                $employee = $cleanData['employee'];
-                foreach ($employee as $value) {
-                    $employee_ids = $value['employee_id']; // Array of employee IDs
-                    $existing_employee_ids = EmployeeProfile::whereIn('id', $employee_ids)->pluck('id');
-                    // $existing_employee_ids = EmployeeProfile::where('id', $employee_ids)->pluck('id');
-
-                    foreach ($existing_employee_ids as $employee_id) {
-                        $query = DB::table('employee_profile_schedule')->where([
-                            ['employee_profile_id', '=', $employee_id],
-                            ['schedule_id', '=', $data->id],
-                        ])->first();
-
-                        if ($query) {
-                            $message = 'Employee schedule already exists.';
-                        } else {
                             $data->employee()->attach($employee_id);
-                            $message = 'New employee schedule registered.';
                         }
                     }
                 }
+
+                return response()->json(['data' => $schedule]);
             }
+
+            $schedule = Schedule::where('time_shift_id', $cleanData['time_shift_id'])->where('date', $cleanData['date'])->first();
+ 
+            if ($schedule) {
+                $data = $schedule;
+            } else {
+                  
+                $dates = Carbon::parse($cleanData['selected_date']);
+                $isWeekend = $dates->dayOfWeek === 6 || $dates->dayOfWeek === 0;
+
+                if ($isWeekend) {
+                    $is_weekend = 1;
+                }
+
+                $data = new Schedule;
+
+                $data->time_shift_id    = $cleanData['time_shift_id'];
+                $data->is_weekend       = $is_weekend;
+                $data->date             = $cleanData['selected_date'];
+                $data->save();
+            }
+
+            foreach ($employee as $value) {
+                $existing_employee_ids = EmployeeProfile::where('id', $value['employee_id'])->pluck('id');
+
+                foreach ($existing_employee_ids as $employee_id) {
+                    $query[] = EmployeeSchedule::where('employee_profile_id', $employee_id)->where('schedule_id', $data->id)->first();
+
+                    $data->employee()->attach($employee_id);
+                }
+            }
+          
 
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json([
                 'data' =>  new ScheduleResource($data),
                 'logs' => Helpers::registerEmployeeScheduleLogs($data->id, $user->id, 'Store'),
-                'message' => $message
+                'message' => 'New employee schedule registered.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());

@@ -27,4 +27,9 @@ class TimeShift extends Model
     protected $softDelete = true;
 
     public $timestamps = true;
+
+    public function is24HourDuty(): bool
+    {
+        return $this->total_hours === 24;
+    }
 }
