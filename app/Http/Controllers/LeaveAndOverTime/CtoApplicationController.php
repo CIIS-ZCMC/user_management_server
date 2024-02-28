@@ -20,6 +20,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
+use Carbon\Carbon;
 
 class CtoApplicationController extends Controller
 {
@@ -87,6 +88,7 @@ class CtoApplicationController extends Controller
                     'user_management_db.cto_applications.created_at',
                     'user_management_db.cto_applications.updated_at',
                 )
+                ->orderBy('created_at', 'desc')
                 ->get();
 
             return response()->json([
@@ -235,63 +237,72 @@ class CtoApplicationController extends Controller
                     $reason[] = 'Insufficient overtime credit.';
                     continue;
                 }
-            
-                $cleanData['employee_profile_id'] = $employee_profile->id;
-                $cleanData['date'] = $value->date;
-                $cleanData['applied_credits'] = $value->applied_credits;
-                $cleanData['purpose'] = $value->purpose;
-                $cleanData['remarks'] = $value->remarks;
-                $cleanData['status'] = 'for recommending approval';
-                $cleanData['recommending_officer'] = $hrmo_officer;
-                $cleanData['approving_officer'] = $approving_officer;
+                $start = Carbon::parse($value->date);
+          
+              
+                $matchingRecords = CtoApplication::whereDate('date', $start)->get();
 
-                $credits = $value->applied_credits;
-                $cto_application = CtoApplication::create($cleanData);
-                
-                $current_overtime_credit = $employee_credit->earned_credit_by_hour;
-                $earned_credit = $employee_credit->earned_credit_by_hour;
-                $used_credit = $employee_credit->used_credit_by_hour;
-                $employee_credit->update(['earned_credit_by_hour' => $earned_credit - $credits, 'used_credit_by_hour' => $used_credit + $credits]);
-                $employeeCredit = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)->get();
-                $logs =  EmployeeOvertimeCreditLog::create([
-                    'employee_ot_credit_id' => $employee_credit->id,
-                    'cto_application_id' => $cto_application->id,
-                    'action' => 'CTO',
-                    'previous_overtime_hours' => $current_overtime_credit,
-                    'hours' => $value->applied_credits
-                ]);
+                if ($matchingRecords->isNotEmpty()) {
+                    return response()->json(['message' => 'You already have an application for the same dates.'], Response::HTTP_FORBIDDEN);
+                } else {
+                    
+                    $cleanData['employee_profile_id'] = $employee_profile->id;
+                    $cleanData['date'] = $value->date;
+                    $cleanData['applied_credits'] = $value->applied_credits;
+                    $cleanData['purpose'] = $value->purpose;
+                    $cleanData['remarks'] = $value->remarks;
+                    $cleanData['status'] = 'for recommending approval';
+                    $cleanData['recommending_officer'] = $hrmo_officer;
+                    $cleanData['approving_officer'] = $approving_officer;
 
-                CtoApplicationLog::create([
-                    'action_by' => $employee_profile->id,
-                    'cto_application_id' => $cto_application->id,
-                    'action' => 'Applied'
-                ]);
+                    $credits = $value->applied_credits;
+                    $cto_application = CtoApplication::create($cleanData);
+                    
+                    $current_overtime_credit = $employee_credit->earned_credit_by_hour;
+                    $earned_credit = $employee_credit->earned_credit_by_hour;
+                    $used_credit = $employee_credit->used_credit_by_hour;
+                    $employee_credit->update(['earned_credit_by_hour' => $earned_credit - $credits, 'used_credit_by_hour' => $used_credit + $credits]);
+                    $employeeCredit = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)->get();
+                    $logs =  EmployeeOvertimeCreditLog::create([
+                        'employee_ot_credit_id' => $employee_credit->id,
+                        'cto_application_id' => $cto_application->id,
+                        'action' => 'CTO',
+                        'previous_overtime_hours' => $current_overtime_credit,
+                        'hours' => $value->applied_credits
+                    ]);
 
-                $cto_applications[] = $cto_application;
+                    CtoApplicationLog::create([
+                        'action_by' => $employee_profile->id,
+                        'cto_application_id' => $cto_application->id,
+                        'action' => 'Applied'
+                    ]);
+
+                    $cto_applications[] = $cto_application;
+                }
             }
 
-            if (count($failed) === count(json_decode($request->cto_applications, true))) {
-                return response()->json([
-                    'failed' => $failed,
-                    'reason' => $reason,
-                    'message' => 'Failed to register all compensatory time off applications.'
-                ], Response::HTTP_BAD_REQUEST);
-            }
+                    if (count($failed) === count(json_decode($request->cto_applications, true))) {
+                        return response()->json([
+                            'failed' => $failed,
+                            'reason' => $reason,
+                            'message' => 'Failed to register all compensatory time off applications.'
+                        ], Response::HTTP_BAD_REQUEST);
+                    }
 
-            if (count($failed) > 0) {
-                return response()->json([
-                    'data' => new CtoApplicationResource($cto_applications),
-                    'failed' => $failed,
-                    'reason' => $reason,
-                    'message' => count($cto_applications) . ' of ' . count($request->cto_applications) . ' registered and ' . count($failed) . ' failed.'
-                ], Response::HTTP_BAD_REQUEST);
-            }
+                    if (count($failed) > 0) {
+                        return response()->json([
+                            'data' => new CtoApplicationResource($cto_applications),
+                            'failed' => $failed,
+                            'reason' => $reason,
+                            'message' => count($cto_applications) . ' of ' . count($request->cto_applications) . ' registered and ' . count($failed) . ' failed.'
+                        ], Response::HTTP_BAD_REQUEST);
+                    }
 
-            return response()->json([
-                'data' => CtoApplicationResource::collection($cto_applications),
-                'employee_credit' => EmployeeOvertimeCreditResource::collection($employeeCredit),
-                'message' => 'Request submitted sucessfully.'
-            ], Response::HTTP_OK);
+                    return response()->json([
+                        'data' => CtoApplicationResource::collection($cto_applications),
+                        'employee_credit' => EmployeeOvertimeCreditResource::collection($employeeCredit),
+                        'message' => 'Request submitted sucessfully.'
+                    ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\LeaveAndOverTime;
 
 use App\Http\Resources\LeaveTypeResource;
+use App\Models\EmployeeCreditLog;
 use App\Models\EmployeeOvertimeCredit;
 use App\Models\LeaveType;
 use App\Models\Section;
@@ -41,7 +42,7 @@ class LeaveApplicationController extends Controller
 
             if (Helpers::getHrmoOfficer() === $employee_profile->id) {
 
-                $leave_applications = LeaveApplication::where('hrmo_officer', $employee_profile->id)->get();
+                $leave_applications = LeaveApplication::where('hrmo_officer', $employee_profile->id)->orderBy('created_at', 'desc')->get();
 
                 return response()->json([
                     'data' => LeaveApplicationResource::collection($leave_applications),
@@ -90,6 +91,7 @@ class LeaveApplicationController extends Controller
                     'created_at',
                     'updated_at'
                 )
+                ->orderBy('created_at', 'desc')
                 ->get();
 
 
@@ -244,10 +246,18 @@ class LeaveApplicationController extends Controller
             $overtimeCredit->earned_credit_by_hour=$request->cto;
             $overtimeCredit->save();
 
+            EmployeeCreditLog::create([
+                'employee_profile_id'=> $employeeId,
+                'action_by' => $employee_profile->id,
+                'action' => 'add'
+            ]);
+
             $updatedLeaveCredits = EmployeeLeaveCredit::with(['employeeProfile.personalInformation', 'leaveType'])
             ->where('employee_profile_id', $request->employee_id)
             ->get()
             ->groupBy('employee_profile_id');
+
+          
 
         $response = [];
 
@@ -460,92 +470,35 @@ class LeaveApplicationController extends Controller
 
             $leave_type = LeaveType::find($request->leave_type_id);
           
+            $overlappingLeave = LeaveApplication::where(function ($query) use ($start, $end) {
+                $query->whereBetween('date_from', [$start, $end])
+                    ->orWhereBetween('date_to', [$start, $end])
+                    ->orWhere(function ($query) use ($start, $end) {
+                        $query->where('date_from', '<=', $start)
+                            ->where('date_to', '>=', $end);
+                    });
+            })->exists();
 
-            if ($leave_type->is_special) {
+            if ($overlappingLeave) {
+                return response()->json(['message' => 'You already have an application for the same dates.'], 403);
+            } else {
+
+                if ($leave_type->is_special) {
              
                
-                if ($leave_type->period < $daysDiff) {
-                    return response()->json(['message' => 'Exceeds days entitled for ' . $leave_type->name], Response::HTTP_FORBIDDEN);
-                }
-
-                $cleanData['applied_credits'] = $daysDiff;
-                $cleanData['employee_profile_id'] = $employee_profile->id;
-                $cleanData['hrmo_officer'] = $hrmo_officer;
-                $cleanData['recommending_officer'] = $recommending_and_approving['recommending_officer'];
-                $cleanData['approving_officer'] = $recommending_and_approving['approving_officer'];
-                $cleanData['status'] = 'applied';
-
-                foreach ($request->all() as $key => $leave) {
-                
-                    if (is_bool($leave)) {
-                        $cleanData[$key] = $leave === 0 ? false : true;
+                    if ($leave_type->period < $daysDiff) {
+                        return response()->json(['message' => 'Exceeds days entitled for ' . $leave_type->name], Response::HTTP_FORBIDDEN);
                     }
-                    if (is_array($leave)) {
-                        $cleanData[$key] = $leave;
-                        continue;
-                    }
-                    if ($key === 'user' || $key === 'requirements')
-                        continue;
-                    if ($leave === 'null') {
-                        $cleanData[$key] = $leave;
-                        continue;
-                    }
-                    $cleanData[$key] = strip_tags($leave);
-                }
-
-                $leave_application = LeaveApplication::create($cleanData);
-               
-               
-               
-                if ($request->requirements) {
-                    $index = 0;
-                    $requirements_name = $request->requirements_name;
-
-                    foreach ($request->file('requirements') as $key => $file) {
-                        $fileName = $file->getClientOriginalName();
-                        $size = filesize($file);
-                        $file_name_encrypted = Helpers::checkSaveFile($file, '/requirements');
-
-                        LeaveApplicationRequirement::create([
-                            'leave_application_id' => $leave_application->id,
-                            'file_name' => $fileName,
-                            'name' => $requirements_name[$index],
-                            'path' => $file_name_encrypted,
-                            'size' => $size,
-                        ]);
-                        $index++;
-                    }
-                }
-               
-                LeaveApplicationLog::create([
-                    'action_by' => $employee_profile->id,
-                    'leave_application_id' => $leave_application->id,
-                    'action' => 'Applied'
-                ]);
-
-               
-                
-            } 
-            else 
-            { 
-                 
-                $employee_credit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)
-                    ->where('leave_type_id', $request->leave_type_id)->first();
-
-
-                //  return response()->json(['message' => $request->without_pay == 0 && $employee_credit->total_leave_credits < $daysDiff], 401);
-                if ($request->without_pay == 0 && $employee_credit->total_leave_credits < $daysDiff) {
-
-                    return response()->json(['message' => 'Insufficient leave credits.'], Response::HTTP_BAD_REQUEST);
-                } else {
+    
                     $cleanData['applied_credits'] = $daysDiff;
                     $cleanData['employee_profile_id'] = $employee_profile->id;
                     $cleanData['hrmo_officer'] = $hrmo_officer;
                     $cleanData['recommending_officer'] = $recommending_and_approving['recommending_officer'];
                     $cleanData['approving_officer'] = $recommending_and_approving['approving_officer'];
                     $cleanData['status'] = 'applied';
-
+    
                     foreach ($request->all() as $key => $leave) {
+                    
                         if (is_bool($leave)) {
                             $cleanData[$key] = $leave === 0 ? false : true;
                         }
@@ -561,34 +514,20 @@ class LeaveApplicationController extends Controller
                         }
                         $cleanData[$key] = strip_tags($leave);
                     }
-
+    
                     $leave_application = LeaveApplication::create($cleanData);
-
-                    if ($request->without_pay == 0) {
-                        $previous_credit = $employee_credit->total_leave_credits;
-
-                        $employee_credit->update([
-                            'total_leave_credits' => $employee_credit->total_leave_credits - $daysDiff,
-                            'used_leave_credits' => $employee_credit->used_leave_credits + $daysDiff
-                        ]);
-
-                        EmployeeLeaveCreditLogs::create([
-                            'employee_leave_credit_id' => $employee_credit->id,
-                            'previous_credit' => $previous_credit,
-                            'leave_credits' => $daysDiff,
-                            'reason'=>'apply'
-                        ]);
-                    }
-
+                   
+                   
+                   
                     if ($request->requirements) {
                         $index = 0;
                         $requirements_name = $request->requirements_name;
-
+    
                         foreach ($request->file('requirements') as $key => $file) {
                             $fileName = $file->getClientOriginalName();
                             $size = filesize($file);
                             $file_name_encrypted = Helpers::checkSaveFile($file, '/requirements');
-
+    
                             LeaveApplicationRequirement::create([
                                 'leave_application_id' => $leave_application->id,
                                 'file_name' => $fileName,
@@ -599,36 +538,122 @@ class LeaveApplicationController extends Controller
                             $index++;
                         }
                     }
-
+                   
                     LeaveApplicationLog::create([
                         'action_by' => $employee_profile->id,
                         'leave_application_id' => $leave_application->id,
                         'action' => 'Applied'
                     ]);
-                }
- 
-                $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->get();
-           
     
-                foreach ($employeeCredit as $leaveCredit) {
-                 
-                    $leaveType = $leaveCredit->leaveType->name;
-                    $totalCredits = $leaveCredit->total_leave_credits;
-                    $usedCredits = $leaveCredit->used_leave_credits;
+                   
+                    
+                } 
+                else 
+                { 
+                     
+                    $employee_credit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)
+                        ->where('leave_type_id', $request->leave_type_id)->first();
     
-                    $result[] = [
-                        'leave_type_name' => $leaveType,
-                        'total_leave_credits' => $totalCredits,
-                        'used_leave_credits' => $usedCredits
-                    ];
-                }
-            }
+    
+                    //  return response()->json(['message' => $request->without_pay == 0 && $employee_credit->total_leave_credits < $daysDiff], 401);
+                    if ($request->without_pay == 0 && $employee_credit->total_leave_credits < $daysDiff) {
+    
+                        return response()->json(['message' => 'Insufficient leave credits.'], Response::HTTP_BAD_REQUEST);
+                    } else {
+                        $cleanData['applied_credits'] = $daysDiff;
+                        $cleanData['employee_profile_id'] = $employee_profile->id;
+                        $cleanData['hrmo_officer'] = $hrmo_officer;
+                        $cleanData['recommending_officer'] = $recommending_and_approving['recommending_officer'];
+                        $cleanData['approving_officer'] = $recommending_and_approving['approving_officer'];
+                        $cleanData['status'] = 'applied';
+    
+                        foreach ($request->all() as $key => $leave) {
+                            if (is_bool($leave)) {
+                                $cleanData[$key] = $leave === 0 ? false : true;
+                            }
+                            if (is_array($leave)) {
+                                $cleanData[$key] = $leave;
+                                continue;
+                            }
+                            if ($key === 'user' || $key === 'requirements')
+                                continue;
+                            if ($leave === 'null') {
+                                $cleanData[$key] = $leave;
+                                continue;
+                            }
+                            $cleanData[$key] = strip_tags($leave);
+                        }
+    
+                        $leave_application = LeaveApplication::create($cleanData);
+    
+                        if ($request->without_pay == 0) {
+                            $previous_credit = $employee_credit->total_leave_credits;
+    
+                            $employee_credit->update([
+                                'total_leave_credits' => $employee_credit->total_leave_credits - $daysDiff,
+                                'used_leave_credits' => $employee_credit->used_leave_credits + $daysDiff
+                            ]);
+    
+                            EmployeeLeaveCreditLogs::create([
+                                'employee_leave_credit_id' => $employee_credit->id,
+                                'previous_credit' => $previous_credit,
+                                'leave_credits' => $daysDiff,
+                                'reason'=>'apply'
+                            ]);
+                        }
+    
+                        if ($request->requirements) {
+                            $index = 0;
+                            $requirements_name = $request->requirements_name;
+    
+                            foreach ($request->file('requirements') as $key => $file) {
+                                $fileName = $file->getClientOriginalName();
+                                $size = filesize($file);
+                                $file_name_encrypted = Helpers::checkSaveFile($file, '/requirements');
+    
+                                LeaveApplicationRequirement::create([
+                                    'leave_application_id' => $leave_application->id,
+                                    'file_name' => $fileName,
+                                    'name' => $requirements_name[$index],
+                                    'path' => $file_name_encrypted,
+                                    'size' => $size,
+                                ]);
+                                $index++;
+                            }
+                        }
+    
+                        LeaveApplicationLog::create([
+                            'action_by' => $employee_profile->id,
+                            'leave_application_id' => $leave_application->id,
+                            'action' => 'Applied'
+                        ]);
+                    }
+     
+                    $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->get();
+               
         
-            return response()->json([
-                'data' => new LeaveApplicationResource($leave_application),
-                'credits' => $result ? $result : [],
-                'message' => 'Successfully applied for ' . $leave_type->name
-            ], Response::HTTP_OK);
+                    foreach ($employeeCredit as $leaveCredit) {
+                     
+                        $leaveType = $leaveCredit->leaveType->name;
+                        $totalCredits = $leaveCredit->total_leave_credits;
+                        $usedCredits = $leaveCredit->used_leave_credits;
+        
+                        $result[] = [
+                            'leave_type_name' => $leaveType,
+                            'total_leave_credits' => $totalCredits,
+                            'used_leave_credits' => $usedCredits
+                        ];
+                    }
+                }
+            
+                return response()->json([
+                    'data' => new LeaveApplicationResource($leave_application),
+                    'credits' => $result ? $result : [],
+                    'message' => 'Successfully applied for ' . $leave_type->name
+                ], Response::HTTP_OK);
+               
+            }
+           
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
