@@ -215,24 +215,7 @@ class Helpers
             'action' => $action
         ]);
     }
-
-    public static function randomHexColor()
-    {
-        // Generate a random RGB color
-        $red = mt_rand(0, 255);
-        $green = mt_rand(0, 255);
-        $blue = mt_rand(0, 255);
-
-        // Convert RGB to hex
-        $hexColor = sprintf("#%02x%02x%02x", $red, $green, $blue);
-
-        $query = TimeShift::where('color', $hexColor)->exists();
-
-        if (!$query) {
-            return $hexColor;
-        }
-    }
-
+    
     public static function getDatesInMonth($year, $month, $value)
     {
         $start = new DateTime("{$year}-{$month}-01");
