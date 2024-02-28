@@ -444,15 +444,19 @@ class SystemRoleController extends Controller
     public function show($id, Request $request)
     {
         try {
-
             $systemRole = SystemRole::find($id);
 
             if (!$systemRole) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
+            $data = [
+                'system_role' => new SystemRoleResource($systemRole),
+                'modules' => $this->buildRoleDetails($systemRole)
+            ];
+
             return response()->json([
-                'data' => new SystemRoleResource($systemRole),
+                'data' => $data,
                 'message' => 'System role record retrieved.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
