@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Schedule;
 
+use App\Models\EmployeeSchedule;
 use App\Models\PullOut;
 use App\Models\EmployeeProfile;
+use App\Models\Schedule;
 use App\Models\Section;
 
 use App\Http\Resources\PullOutResource;
@@ -130,7 +132,16 @@ class PullOutController extends Controller
                 }
 
                 $selectedEmployees[] = $employee;
+                
+                // $schedule = Schedule::with(['employee'])
+                // ->where(function ($query) use ($employee, $cleanData) {
+                //     $query->where('date', $cleanData['pull_out_date'])->whereHas('employee', function ($innerQuery) use ($employee) {
+                //         $innerQuery->where('employee_profile_id', $employee,);
+                //     });
+                // })->get();
             }
+
+            // return response()->json($schedule);
 
             foreach ($selectedEmployees as $selectedEmployee) {
                 $data = PullOut::create(array_merge($cleanData, [
@@ -142,7 +153,7 @@ class PullOutController extends Controller
             }
 
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
-            return response()->json(['data' => new PullOutRequest($data),
+            return response()->json(['data' => new PullOutResource($data),
                                     'logs' => Helpers::registerPullOutLogs($data->id, $user->id, 'Store'),
                                     'msg' => 'Pull out requested'], Response::HTTP_OK);
 
