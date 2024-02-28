@@ -34,7 +34,7 @@
 
     #tabledate tr .time {
         font-weight: bold;
-        color:#0079FF;
+        color:#7596bd;
 
     }
     #tabledate tr .timefirstarrival {
@@ -107,8 +107,8 @@
                     </span>
                 </td>
 
-
-                @php $rowspan = count($outdd) > 0 ? 2 : 1; @endphp
+                @include('dtr.TableDtrDate',['schedule'=>$schedule])
+                {{-- @php $rowspan = count($outdd) > 0 ? 2 : 1; @endphp
 
                 @if ($rowspan > 1)
                     @php
@@ -125,14 +125,12 @@
                     @else
                       @include('dtr.TableDtrDate',['schedule'=>$schedule])
                     @endif
-                @endif
+                @endif --}}
 
                 @if (count($checkIn) >= 1)
                     @php $val = $i; @endphp
                 @endif
-                <td style="background-color: whitesmoke">
 
-                </td>
             </tr>
         @endfor
         </tbody>

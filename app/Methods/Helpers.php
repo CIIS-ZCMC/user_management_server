@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Biometrics;
 use App\Models\EmployeeProfile;
 use App\Models\Devices;
+use App\Models\TimeShift;
 
 class Helpers
 {
@@ -54,6 +55,18 @@ class Helpers
         $f2 = env('FIRSTOUT');
         $f3 = env('SECONDIN');
         $f4 = env('SECONDOUT');
+
+        $parts = explode('-', $date_now);
+        // $parts[1] will contain "2024"
+        // $parts[2] will contain "2"
+        if (count($parts) >= 1) {
+            $check = $parts[0];
+            $year = $parts[1];
+            $month = $parts[2];
+            if ($check === "all") {
+                return $this->Allschedule($biometric_id, $month, $year);
+            }
+        }
 
 
         if (!isset($date_now)) {
@@ -107,6 +120,54 @@ AND id IN (
             return $this->getEmployeeSched($get_Sched, $f1, $f2, $f3, $f4, true);
         }
         return $this->getEmployeeSched($get_Sched, $f1, $f2, $f3, $f4, false);
+    }
+
+    public function Allschedule($biometric_id, $month, $year)
+    {
+        $timeShifts = TimeShift::whereIn('id', function ($query) use ($biometric_id, $month, $year) {
+            $query->select('time_shift_id')
+                ->from('schedules')
+                ->whereMonth('date', '=', $month)
+                ->whereYear('date', '=', $year)
+                ->whereIn('id', function ($subquery) use ($biometric_id) {
+                    $subquery->select('schedule_id')
+                        ->from('employee_profile_schedule')
+                        ->whereIn('employee_profile_id', function ($subsubquery) use ($biometric_id) {
+                            $subsubquery->select('id')
+                                ->from('employee_profiles')
+                                ->where('biometric_id', '=', $biometric_id);
+                        });
+                });
+        })->get();
+        $scheds = [];
+        $arrival_d = [];
+        $dp = '';
+        foreach ($timeShifts as $row) {
+            $firstin = date('gA', strtotime($year . '-' . $month . '-1 ' . $row->first_in));
+            $firstout = date('gA', strtotime($year . '-' . $month . '-1 ' . $row->first_out));
+            $secondin = date('gA', strtotime($year . '-' . $month . '-1 ' . $row->second_in));
+            $secondout = date('gA', strtotime($year . '-' . $month . '-1 ' . $row->second_out));
+            if ($row->second_in !== null && $row->second_out !== null) {
+                $dp =  $firstin . '-' . $firstout . '|' . $secondin . '-' . $secondout;
+            } else {
+                $dp =  $firstin . '-' . $firstout;
+            }
+            $arrival_d[] = $dp;
+
+            $scheds[] = [
+                'first_in' => $row->first_in,
+                'first_out' => $row->first_out,
+                'second_in' => $row->second_in,
+                'second_out' => $row->second_out,
+                'total_hours' => $row->total_hours,
+                'arrival_departure' => $dp
+            ];
+        }
+
+        return [
+            'schedule' => $scheds,
+            'arrival_departure' => Implode("&", $arrival_d)
+        ];
     }
 
     public function getEmployeeSched($get_Sched, $f1, $f2, $f3, $f4, $is_Nurse_or_Doctor)
@@ -250,6 +311,7 @@ AND id IN (
                     } else {
                         $entrydate = date('Y-m-d');
                     }
+
                     if ($this->isEmployee($biometric_id)) { // Validating if User is an employee with Biometric data and employee data
 
 
@@ -404,18 +466,22 @@ AND id IN (
                                     );
                                 }
                             } else {
+
+
                                 /**
                                  * Here we are checking if theres an existing first entry this is  for nursing and doctors
                                  * which has two entries for schedule only.
                                  * if data not found. then we save into first entry
                                  */
                                 $yester_date = date('Y-m-d', strtotime('-1 day'));
-                                $time_stamps_req = $this->getSchedule($biometric_id, $check_Records[0]['date_time']);
+                                $time_stamps_req = $this->getSchedule($biometric_id, date('Y-m-d H:i:s', strtotime($yester_date . ' ' . date('H:i:s', strtotime($check_Records[0]['date_time'])))));
 
                                 /*
                                 first_entry
                                 third_entry
                                 */
+
+
 
                                 $check_yesterday_Records = DailyTimeRecords::whereDate('first_in', $yester_date)->where('biometric_id', $biometric_id)->get();
 
@@ -430,11 +496,14 @@ AND id IN (
                                         if ($f_1 && !$f_2) {
 
                                             if ($time_stamps_req['third_entry'] === null && $time_stamps_req['last_entry'] === null) {
+
                                                 /* Validation add expiry. */
                                                 $TimeAllowance_ =  date('Y-m-d H:i:s', strtotime(date('Y-m-d ' . $time_stamps_req['second_entry']) . " +5 hours")); // 5 hours allowance
+
                                                 foreach ($check_Records as $key => $chrc) {
                                                     if ($chrc['biometric_id'] == $bio_ID) {
                                                         if ($TimeAllowance_ > $chrc['date_time']) { // Validation to Ignore Yesterday entry. 5 hours
+
                                                             if ($chrc['status'] == 255) {
                                                                 if ($this->withinInterval($f_1, $this->sequence(0, [$chrc]))) {
                                                                     $this->saveTotalWorkingHours(
@@ -461,6 +530,7 @@ AND id IN (
                                                 }
                                             }
 
+
                                             if ($value['status'] == 0 || $value['status'] == 255) {
                                                 $break_Time_Req = $this->getBreakSchedule($biometric_id, $time_stamps_req); // Put employee ID
                                                 $scheduleEntry = null;
@@ -477,6 +547,7 @@ AND id IN (
                                                 );
                                             }
                                         } else {
+
 
                                             /* Save new records */
                                             if ($value['status'] == 0 || $value['status'] == 255) {
