@@ -258,6 +258,14 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('system-role-all', 'SystemRoleController@index');
         });
 
+        Route::middleware(['auth.permission:UMIS-SM view'])->group(function () {
+            Route::get('system-roles-rights/{id}', 'SystemRoleController@systemRoleAccessRights');
+        });
+
+        Route::middleware(['auth.permission:UMIS-SM update'])->group(function () {
+            Route::post('system-roles-rights/{id}', 'SystemRoleController@systemRoleAccessRightsUpdate');
+        });
+
         Route::middleware(['auth.permission:UMIS-SM view-all'])->group(function () {
             Route::get('system-role/employees-with-special-access', 'SystemRoleController@employeesWithSpecialAccess');
         });
@@ -385,11 +393,7 @@ Route::middleware('auth.cookie')->group(function () {
         /**
          * Address Module
          */
-
-
         // Route::get('employees-dtr-list', 'EmployeeProfileController@employeesDTRList');
-
-
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('address-all-personal-info/{id}', 'AddressController@findByPersonalInformationID');
         });
@@ -1528,6 +1532,11 @@ Route::middleware('auth.cookie')->group(function () {
 
         // });
 
+        
+        Route::middleware(['auth.permission:UMIS-PAM view'])->group(function () {
+            Route::get('dtr-self', 'DTRcontroller@pullDTRuser');
+        });
+
         Route::middleware(['auth.permission:UMIS-DTRM view'])->group(function () {
 
             Route::get('dtr-md-records-self', 'DTRcontroller@monthDayRecordsSelf');
@@ -1657,10 +1666,6 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
             Route::get('leave-credit-leave-type', 'LeaveApplicationController@getLeaveTypes');
         });
-
-
-
-
 
         /**
          * Official Business Module

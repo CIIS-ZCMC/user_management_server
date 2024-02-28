@@ -81,7 +81,6 @@ class ScheduleController extends Controller
                 'time_shift' => TimeShiftResource::collection(TimeShift::all())
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
-
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -146,9 +145,9 @@ class ScheduleController extends Controller
             $selected_dates = [];                           // Replace with your selected dates
 
             switch ($selected_days) {
-                //If Toggle Date Period On
+                    //If Toggle Date Period On
                 case ($selected_days <= 0):
-                    if($date_start !== null && $date_end !== null) {
+                    if ($date_start !== null && $date_end !== null) {
                         $current_date = Carbon::parse($date_start)->copy();
 
                         while ($current_date->lte($date_end)) {
@@ -156,26 +155,44 @@ class ScheduleController extends Controller
                             $current_date->addDay();
                         }
                     }
-                break;
+                    break;
 
-                //If Toggle Show Day on
+                    //If Toggle Show Day on
+                case ($selected_days >= 1 && $date_start === null && $date_end === null):
+                    $date = Carbon::now();  // Replace with your desired year
+                    $month = Carbon::parse($cleanData['month'])->month;   // Replace with your desired month
+
+                    $start_date = Carbon::create($date->year, $month, 1)->startOfMonth();
+                    $end_date = $start_date->copy()->endOfMonth();
+
+                    $current_date = $start_date->copy();
+
+                    while ($current_date->lte($end_date->startOfDay())) {
+                        if (in_array($current_date->englishDayOfWeek, $selected_days)) {
+                            $selected_dates[] = $current_date->toDateString();
+                            $current_date->addDay();
+                        }
+                    }
+                    break;
+
+                    //If Toggle Show Day on
                 case ($selected_days >= 1):
-                    if ( $date_start === null && $date_end === null) {
+                    if ($date_start === null && $date_end === null) {
                         $date = Carbon::now();  // Replace with your desired year
                         $month = Carbon::parse($cleanData['month'])->month;   // Replace with your desired month
-    
+
                         $start_date = Carbon::create($date->year, $month, 1)->startOfMonth();
                         $end_date = $start_date->copy()->endOfMonth();
-    
+
                         $current_date = $start_date->copy();
-    
+
                         while ($current_date->lte($end_date->startOfDay())) {
                             if (in_array($current_date->englishDayOfWeek, $selected_days)) {
                                 $selected_dates[] = $current_date->toDateString();
                             }
                             $current_date->addDay();
                         }
-                    } else if ( $date_start !== null && $date_end !== null) {
+                    } else if ($date_start !== null && $date_end !== null) {
                         $current_date = Carbon::parse($date_start)->copy();
 
                         while ($current_date->lte($date_end)) {
@@ -185,11 +202,11 @@ class ScheduleController extends Controller
                             $current_date->addDay();
                         }
                     }
-                break;
+                    break;
 
                 default:
                     $selected_dates[] = null;
-                break;
+                    break;
             }
 
             if (!empty($selected_dates)) {
@@ -199,7 +216,7 @@ class ScheduleController extends Controller
                     if ($schedule) {
                         $data = $schedule;
                     } else {
-                        
+
                         $dates = Carbon::parse($date);
                         $isWeekend = $dates->dayOfWeek === 6 || $dates->dayOfWeek === 0;
 
@@ -230,11 +247,11 @@ class ScheduleController extends Controller
             }
 
             $schedule = Schedule::where('time_shift_id', $cleanData['time_shift_id'])->where('date', $cleanData['selected_date'])->first();
- 
+
             if ($schedule) {
                 $data = $schedule;
             } else {
-                  
+
                 $dates = Carbon::parse($cleanData['selected_date']);
                 $isWeekend = $dates->dayOfWeek === 6 || $dates->dayOfWeek === 0;
 
@@ -259,7 +276,7 @@ class ScheduleController extends Controller
                     $data->employee()->attach($employee_id);
                 }
             }
-          
+
 
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json([
@@ -287,18 +304,9 @@ class ScheduleController extends Controller
 
             return response()->json(['data' => $data], Response::HTTP_OK);
         } catch (\Throwable $th) {
-
             Helpers::errorLog($this->CONTROLLER_NAME, 'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Schedule $schedule)
-    {
-        //
     }
 
     /**
@@ -358,7 +366,6 @@ class ScheduleController extends Controller
                 'message' => 'Schedule is updated'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
-
             Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -383,12 +390,10 @@ class ScheduleController extends Controller
             Helpers::registerSystemLogs($request, $id, true, 'Success in delete ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json(['data' => $data], Response::HTTP_OK);
         } catch (\Throwable $th) {
-
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
 
     /**
      * Generate PDF file of schedule
@@ -431,7 +436,6 @@ class ScheduleController extends Controller
             $dompdf->stream($filename, array("Attachment" => false));
             // return view('generate_schedule/section-schedule', compact('data','holiday', 'month', 'year', 'dates', 'user', 'head_officer'));
         } catch (\Throwable $th) {
-
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }

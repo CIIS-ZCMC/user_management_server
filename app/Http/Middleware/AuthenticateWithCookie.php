@@ -27,7 +27,7 @@ class AuthenticateWithCookie
             $cookieValue = $request->cookie(env('COOKIE_NAME'));
 
             if (!$cookieValue) {
-                return response()->json(['message' => '/'], Response::HTTP_UNAUTHORIZED);
+                return response()->json(["data" => "/",'message' => 'un-authorized'], Response::HTTP_UNAUTHORIZED);
             }
 
 

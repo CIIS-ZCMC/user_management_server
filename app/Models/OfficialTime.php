@@ -54,7 +54,7 @@ class OfficialTime extends Model
         $dateTo = Carbon::parse($this->date_to);
 
         // Calculate the difference in days
-        $totalDays = $dateTo->diffInDays($dateFrom);
+        $totalDays = $dateTo->diffInDays($dateFrom) + 1;
 
         return $totalDays;
     }

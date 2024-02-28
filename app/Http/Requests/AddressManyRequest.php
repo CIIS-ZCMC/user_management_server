@@ -22,13 +22,13 @@ class AddressManyRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'is_permanent' => 'required|boolean',
-            'address.id' => 'nullable|integer',
-            'address.address' => 'required|string|max:255',
-            'address.is_residential_and_permanent' => 'required|boolean',
-            'address.is_residential' => 'required|boolean',
-            'address.telephone_no' => 'nullable|string|max:255',
-            'address.personal_information_id' => 'nullable|integer'
+            'is_permanent' => 'required|integer',
+            'address*.id' => 'nullable|integer',
+            'address*.address' => 'required|string|max:255',
+            'address*.is_residential_and_permanent' => 'required|integer',
+            'address*.is_residential' => 'required|integer',
+            'address*.telephone_no' => 'nullable|string|max:255',
+            'address*.personal_information_id' => 'nullable|integer'
         ];
     }
 }
