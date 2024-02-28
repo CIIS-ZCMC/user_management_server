@@ -229,7 +229,7 @@ class ScheduleController extends Controller
                 return response()->json(['data' => $schedule]);
             }
 
-            $schedule = Schedule::where('time_shift_id', $cleanData['time_shift_id'])->where('date', $cleanData['date'])->first();
+            $schedule = Schedule::where('time_shift_id', $cleanData['time_shift_id'])->where('date', $cleanData['selected_date'])->first();
  
             if ($schedule) {
                 $data = $schedule;
