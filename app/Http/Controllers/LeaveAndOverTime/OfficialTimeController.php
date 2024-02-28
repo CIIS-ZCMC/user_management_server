@@ -291,7 +291,7 @@ class OfficialTimeController extends Controller
             }
             
 
-            $data->update(['status' => $status, 'remarks' => $request->remarks]);
+            $data->update(['status' => $status, 'remarks' => $request->remarks==='null' || !$request->remarks ? null : $request->remarks]);
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.'); //System Logs
             return response()->json(['data' => OfficialTimeResource::collection(OfficialTime::where('id', $data->id)->get()),
