@@ -470,12 +470,17 @@ class LeaveApplicationController extends Controller
 
             $leave_type = LeaveType::find($request->leave_type_id);
           
-            $overlappingLeave = LeaveApplication::where(function ($query) use ($start, $end) {
-                $query->whereBetween('date_from', [$start, $end])
-                    ->orWhereBetween('date_to', [$start, $end])
-                    ->orWhere(function ($query) use ($start, $end) {
-                        $query->where('date_from', '<=', $start)
-                            ->where('date_to', '>=', $end);
+            $employeeId= $employee_profile->id;
+
+            $overlappingLeave = LeaveApplication::where(function ($query) use ($start, $end, $employeeId) {
+                $query->where('employee_profile_id', $employeeId)
+                    ->where(function ($query) use ($start, $end) {
+                        $query->whereBetween('date_from', [$start, $end])
+                            ->orWhereBetween('date_to', [$start, $end])
+                            ->orWhere(function ($query) use ($start, $end) {
+                                $query->where('date_from', '<=', $start)
+                                    ->where('date_to', '>=', $end);
+                            });
                     });
             })->exists();
 

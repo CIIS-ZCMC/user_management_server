@@ -238,9 +238,11 @@ class CtoApplicationController extends Controller
                     continue;
                 }
                 $start = Carbon::parse($value->date);
-          
+                $employeeId= $employee_profile->id;
               
-                $matchingRecords = CtoApplication::whereDate('date', $start)->get();
+                $matchingRecords = CtoApplication::where('employee_profile_id', $employeeId)
+                ->whereDate('date', $start)
+                ->get();
 
                 if ($matchingRecords->isNotEmpty()) {
                     return response()->json(['message' => 'You already have an application for the same dates.'], Response::HTTP_FORBIDDEN);
