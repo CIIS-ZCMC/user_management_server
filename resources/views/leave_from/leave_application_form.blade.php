@@ -155,7 +155,7 @@
 
 <header style="width: 100%;display: flex; align-items: center;">
         <!-- ZCMC Logo on the left -->
-        <img id="zcmclogo" src="{{ base_path() . '\public\storage\logo/zcmc.jpeg'}}" alt="ZCMC Logo" style="float: left; width: 40px;height:100px">
+        <img id="zcmclogo" src="{{ base_path() . '\public\storage\logo/zcmc.jpeg'}}" alt="ZCMC Logo" style="float: left; width: 60px;height:180px">
     
         <!-- Center Text -->
         <div style="float:left; width: 500px;text-align: center;  margin-left: 50px; font-weight: 300; line-height: 1">
@@ -166,14 +166,14 @@
         </div>
     
         <!-- DOH Logo on the right -->
-        <img id="dohlogo" src="{{ base_path() . '\public\storage\logo/doh.jpeg'}}" alt="DOH Logo" style="float: right; margin-right:105px; width: 50px;height:150px">
+        <img id="dohlogo" src="{{ base_path() . '\public\storage\logo/doh.jpeg'}}" alt="DOH Logo" style="float: right; margin-right:105px; width: 80px;height:350px">
     </header> 
     
     
 
     <div class="container-fluid">
         
-        <div  style="text-align: center; margin-top:5px">
+        <div  style="text-align: center; margin-top:40px">
             <small> <b> APPLICATION FOR LEAVE </b> </small>
         </div>
 
@@ -213,7 +213,7 @@
                     <td class="topleft" colspan="1"> 3. DATE OF FILING
                         <div class="mb-3 topcenter">
                             <label>
-                                {{-- {{ date(' F d, Y', strtotime($data->created_at)) }} --}}
+                                {{ date(' F d, Y', strtotime($data->created_at)) }}
                             </label>
                         </div>
                     </td>
@@ -245,7 +245,7 @@
                                 <div style="display: flex; align-items:center; padding:1"> 
                                     <label>
                                         @if($leaveType->id === $data->leave_type_id)
-                                        ( x )
+                                        ( X )
                                         @else 
                                         ( &nbsp;&nbsp;  )
                                         @endif  
@@ -275,12 +275,12 @@
                             <div>
                                
                                 <span class="small-underline">
-                                    @if ($data->country !== 'Philippines')
+                                    @if ($data->country && $data->country !== 'Philippines')
                                          x
                                     @endif
                                 </span>
                                 <span style="padding-right: 29px; font-size: 12px">Abroad (Specify)</span>    
-                                <span style="border-bottom: 1px solid #000; display: inline-block; width: 50px;"></span>
+                                <span style="border-bottom: 1px solid #000; display: inline-block; width: 50px;">{{$data->country}}</span>
                             </div>
                           
                             <br>
