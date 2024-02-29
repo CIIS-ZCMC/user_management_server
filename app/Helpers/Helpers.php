@@ -10,6 +10,7 @@ use App\Models\EmployeeScheduleLog;
 use App\Models\ExchangeDutyLog;
 use App\Models\PullOutLog;
 use App\Models\OfficialTimeLog;
+use App\Models\Schedule;
 use App\Models\Section;
 use App\Models\SystemLogs;
 use App\Models\TimeShift;
@@ -324,24 +325,7 @@ class Helpers
             'action' => $action
         ]);
     }
-
-    public static function randomHexColor()
-    {
-        // Generate a random RGB color
-        $red = mt_rand(0, 255);
-        $green = mt_rand(0, 255);
-        $blue = mt_rand(0, 255);
-
-        // Convert RGB to hex
-        $hexColor = sprintf("#%02x%02x%02x", $red, $green, $blue);
-
-        $query = TimeShift::where('color', $hexColor)->exists();
-
-        if (!$query) {
-            return $hexColor;
-        }
-    }
-
+    
     public static function getDatesInMonth($year, $month, $value)
     {
         $start = new DateTime("{$year}-{$month}-01");
@@ -540,41 +524,73 @@ class Helpers
         }
     }
 
-    public static function checkEmployeeHead($user, $assigned_area)
+    public static function checkEmployeeHead($user_id, $assigned_area)
     {
         switch ($assigned_area['sector']) {
             case 'Division':
                 // If employee is Division head
-                if (Division::find($assigned_area['details']->id)->chief_employee_profile_id === $user) {
+                if (Division::find($assigned_area['details']->id)->chief_employee_profile_id === $user_id) {
                     $chief_officer = Division::where('code', $assigned_area['details']['code'])->first();
-                    return ["head" => $chief_officer->chief_employee_profile_id];
+                    
+                    if ($chief_officer !== null) {
+                        $officer_assigned_area = EmployeeProfile::where('id', $chief_officer->chief_employee_profile_id)->first();
+                     }
+
+                    return [
+                        "head" => $chief_officer->chief_employee_profile_id,
+                        "area" => $officer_assigned_area->assignArea,
+                    ];
                 }
 
                 return ["head" => null];
 
             case 'Department':
                 // If employee is Department head
-                if (Department::find($assigned_area['details']->id)->head_employee_profile_id === $user) {
+                if (Department::find($assigned_area['details']->id)->head_employee_profile_id === $user_id) {
                     $chief_officer = Department::where('code', $assigned_area['details']['code'])->first();
-                    return ["head" => $chief_officer->head_employee_profile_id];
+
+                    if ($chief_officer !== null) {
+                        $officer_assigned_area = EmployeeProfile::where('id', $chief_officer->head_employee_profile_id)->first();
+                     }
+
+                    return [
+                        "head" => $chief_officer->head_employee_profile_id,
+                        "area" => $officer_assigned_area->assignArea,
+                    ];
                 }
 
                 return ["head" => null];
 
             case 'Section':
                 // If employee is Section head
-                if (Section::find($assigned_area['details']->id)->supervisor_employee_profile_id === $user) {
+                if (Section::find($assigned_area['details']->id)->supervisor_employee_profile_id === $user_id) {
                     $chief_officer = Section::where('code', $assigned_area['details']['code'])->first();
-                    return ["head" => $chief_officer->supervisor_employee_profile_id];
+                    
+                    if ($chief_officer !== null) {
+                       $officer_assigned_area = EmployeeProfile::where('id', $chief_officer->supervisor_employee_profile_id)->first();
+                    }
+
+                    return [
+                        "head" => $chief_officer->supervisor_employee_profile_id,
+                        "area" => $officer_assigned_area->assignedArea,
+                    ];
                 }
 
                 return ["head" => null];
 
             case 'Unit':
                 // If employee is Unit head
-                if (Unit::find($assigned_area['details']->id)->head_employee_profile_id === $user) {
+                if (Unit::find($assigned_area['details']->id)->head_employee_profile_id === $user_id) {
                     $chief_officer = Unit::where('code', $assigned_area['details']['code'])->first();
-                    return ["head" => $chief_officer->head_employee_profile_id];
+
+                    if ($chief_officer !== null) {
+                        $officer_assigned_area = EmployeeProfile::where('id', $chief_officer->head_employee_profile_id)->first();
+                     }
+
+                    return [
+                        "head" => $chief_officer->head_employee_profile_id,
+                        "area" => $officer_assigned_area->assignedArea,
+                    ];
                 }
 
                 return ["head" => null];
@@ -590,5 +606,48 @@ class Helpers
             'action_by' => $user_id,
             'action' => $action
         ]);
+    }
+
+    public static function checkIs24PrevNextSchedule($schedule, $employeeId, $date, $employeeSchedules) {
+        // Check if the schedule spans a 24-hour shift for the current date and the adjacent dates
+        $is24Hours = $schedule->timeShift->is24HourDuty();
+        $prevDate = $date->copy()->subDay();
+        $nextDate = $date->copy()->addDay();
+        
+        $isPrev24Hours = Schedule::whereHas('employee', function ($query) use ($employeeId) {
+                                $query->where('employee_profile_id', $employeeId);
+                            })
+                            ->where('date', $prevDate->toDateString())
+                            ->first()
+                            ?->timeShift->is24HourDuty() ?? false;
+
+        $isNext24Hours = Schedule::whereHas('employee', function ($query) use ($employeeId) {
+                                $query->where('employee_profile_id', $employeeId);
+                            })
+                            ->where('date', $nextDate->toDateString())
+                            ->first()
+                            ?->timeShift->is24HourDuty() ?? false;
+
+        // Check if the current date itself spans a 24-hour shift
+        $isCurrentDate24Hours = $is24Hours && $isPrev24Hours && $isNext24Hours;
+        
+        if ($is24Hours) {
+            return $employeeSchedules[$date->toDateString()] = '24hrs';
+        } 
+
+        if ($isPrev24Hours) {
+            return $employeeSchedules[$date->toDateString()] = 'Employee worked 24hrs yesterday';
+        } 
+
+        if ($isNext24Hours) {
+            return $employeeSchedules[$date->toDateString()] = 'Employee worked 24hrs tomorrow';
+        }
+
+        return $employeeSchedules[$date->toDateString()] = 'Employee worked 24hrs tomorrow';
+    }
+    
+    public static function hashKey($encryptedToken)
+    {
+        return openssl_decrypt($encryptedToken->token, "AES-256-CBC", "base64:fR8Lx8gzXJ57GafI840mU2jfx36HpIchVqnR8JbPUAg=", 0, substr(md5("base64:fR8Lx8gzXJ57GafI840mU2jfx36HpIchVqnR8JbPUAg="), 0, 16));
     }
 }
