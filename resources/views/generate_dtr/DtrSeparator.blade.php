@@ -320,32 +320,27 @@
 
             @if($biometric_ID  === $f4['biometric_ID'])
 
-
             @if (count($empSched)>=1)
-
-
-         @foreach($firstout as $f2)
-
-            @if(date('d',strtotime($f2['first_out'])) == $i)
-            @if (date('A',strtotime($f2['first_out'])) === "PM")
-            {{date('h:i a',strtotime($f2['first_out']))}}
-            @endif
-            @endif
-            @endforeach
+                            @foreach($firstout as $f2)
+                            @if(date('d',strtotime($f2['first_out'])) == $i)
+                            @if (date('A',strtotime($f2['first_out'])) === "PM")
+                            {{date('h:i a',strtotime($f2['first_out']))}}
+                            @endif
+                            @endif
+                            @endforeach
 
             @else
-
-            @endif
-
-
             @if($f4['second_out'])
 
             @if(date('d',strtotime($f4['dtr_date'])) == $i)
             {{date('h:i a',strtotime($f4['second_out']))}}
             @endif
-            @else
 
             @endif
+
+            @endif
+
+
 
 
 
