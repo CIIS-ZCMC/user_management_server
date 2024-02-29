@@ -41,8 +41,9 @@ class ScheduleController extends Controller
             $year = $request->year;     // Replace with the desired year
             $dates_with_day = Helpers::getDatesInMonth($year, $month, "Days of Week");
 
-            $user = $request->user;
-            $assigned_area = $user->assignedArea->findDetails();
+            $user               = $request->user;
+            $assigned_area      = $user->assignedArea->findDetails();
+            $assigned_area_head = Helpers::checkEmployeeHead($user->id, $assigned_area);
 
             $array = null;
             if ($assigned_area['details']['code'] === 'HRMO') {
@@ -53,16 +54,23 @@ class ScheduleController extends Controller
                     }
                 ])->get();
             } else {
-                $array = EmployeeProfile::with([
-                    'assignedArea',
-                    'schedule' => function ($query) use ($year, $month) {
-                        $query->with(['timeShift', 'holiday'])->whereYear('date', '=', $year)->whereMonth('date', '=', $month);
-                    }
-                ])->whereHas('assignedArea', function ($query) use ($user, $assigned_area) {
-                    $query->where([strtolower($assigned_area['sector']) . '_id' => $assigned_area['details']['id']]);
-                })->get();
-            }
+                $array = EmployeeProfile::with(['assignedArea',
+                                                'schedule' => function ($query) use ($year, $month) {
+                                                        $query->with(['timeShift', 'holiday'])->whereYear('date', '=', $year)->whereMonth('date', '=', $month);
+                                                }])->whereHas('assignedArea', function ($query) use ($assigned_area_head) {
+                                                    $query->where('id', $assigned_area_head['area']['id']);
+                                                })->get();
 
+                // $array = EmployeeProfile::with([
+                //     'assignedArea',
+                //     'schedule' => function ($query) use ($year, $month) {
+                //         $query->with(['timeShift', 'holiday'])->whereYear('date', '=', $year)->whereMonth('date', '=', $month);
+                //     }
+                // ])->whereHas('assignedArea', function ($query) use ($user, $assigned_area) {
+                //     $query->where([strtolower($assigned_area['sector']) . '_id' => $assigned_area['details']['id']]);
+                // })->get();
+            }
+            
             $data = [];
             foreach ($array as $key => $value) {
                 $data[] = [
@@ -134,20 +142,20 @@ class ScheduleController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $user = $request->user;
-            $data = null;
-
+            $user           = $request->user;
             $is_weekend     = 0;
             $employee       = $cleanData['employee'];
             $date_start     = $cleanData['date_start'];     // Replace with your start date
             $date_end       = $cleanData['date_end'];       // Replace with your end date
+            $selected_date  = $cleanData['selected_date'];   // Selected Date;
             $selected_days  = $cleanData['selected_days'];  // Replace with your selected days
             $selected_dates = [];                           // Replace with your selected dates
+            $responseData = [];
 
             switch ($selected_days) {
-                    //If Toggle Date Period On
+                //If Toggle Date Period On
                 case ($selected_days <= 0):
-                    if ($date_start !== null && $date_end !== null) {
+                    if($date_start !== null && $date_end !== null) {
                         $current_date = Carbon::parse($date_start)->copy();
 
                         while ($current_date->lte($date_end)) {
@@ -155,44 +163,26 @@ class ScheduleController extends Controller
                             $current_date->addDay();
                         }
                     }
-                    break;
+                break;
 
-                    //If Toggle Show Day on
-                case ($selected_days >= 1 && $date_start === null && $date_end === null):
-                    $date = Carbon::now();  // Replace with your desired year
-                    $month = Carbon::parse($cleanData['month'])->month;   // Replace with your desired month
-
-                    $start_date = Carbon::create($date->year, $month, 1)->startOfMonth();
-                    $end_date = $start_date->copy()->endOfMonth();
-
-                    $current_date = $start_date->copy();
-
-                    while ($current_date->lte($end_date->startOfDay())) {
-                        if (in_array($current_date->englishDayOfWeek, $selected_days)) {
-                            $selected_dates[] = $current_date->toDateString();
-                            $current_date->addDay();
-                        }
-                    }
-                    break;
-
-                    //If Toggle Show Day on
+                //If Toggle Show Day on
                 case ($selected_days >= 1):
-                    if ($date_start === null && $date_end === null) {
+                    if ( $date_start === null && $date_end === null) {
                         $date = Carbon::now();  // Replace with your desired year
                         $month = Carbon::parse($cleanData['month'])->month;   // Replace with your desired month
-
+    
                         $start_date = Carbon::create($date->year, $month, 1)->startOfMonth();
                         $end_date = $start_date->copy()->endOfMonth();
-
+    
                         $current_date = $start_date->copy();
-
+    
                         while ($current_date->lte($end_date->startOfDay())) {
                             if (in_array($current_date->englishDayOfWeek, $selected_days)) {
                                 $selected_dates[] = $current_date->toDateString();
                             }
                             $current_date->addDay();
                         }
-                    } else if ($date_start !== null && $date_end !== null) {
+                    } else if ( $date_start !== null && $date_end !== null) {
                         $current_date = Carbon::parse($date_start)->copy();
 
                         while ($current_date->lte($date_end)) {
@@ -202,22 +192,22 @@ class ScheduleController extends Controller
                             $current_date->addDay();
                         }
                     }
-                    break;
+                break;
 
                 default:
                     $selected_dates[] = null;
-                    break;
+                break;
             }
 
             if (!empty($selected_dates)) {
-                foreach ($selected_dates as $date) {
-                    $schedule = Schedule::where('time_shift_id', $cleanData['time_shift_id'])->where('date', $date)->first();
+                foreach ($selected_dates as $dateSelected) {
+                    $schedule = Schedule::where('time_shift_id', $cleanData['time_shift_id'])->where('date', $dateSelected)->first();
 
                     if ($schedule) {
                         $data = $schedule;
                     } else {
-
-                        $dates = Carbon::parse($date);
+                        
+                        $dates = Carbon::parse($dateSelected);
                         $isWeekend = $dates->dayOfWeek === 6 || $dates->dayOfWeek === 0;
 
                         if ($isWeekend) {
@@ -228,7 +218,7 @@ class ScheduleController extends Controller
 
                         $data->time_shift_id    = $cleanData['time_shift_id'];
                         $data->is_weekend       = $is_weekend;
-                        $data->date             = $date;
+                        $data->date             = $dateSelected;
                         $data->save();
                     }
 
@@ -242,38 +232,37 @@ class ScheduleController extends Controller
                         }
                     }
                 }
-
-                return response()->json(['data' => $schedule]);
-            }
-
-            $schedule = Schedule::where('time_shift_id', $cleanData['time_shift_id'])->where('date', $cleanData['selected_date'])->first();
-
-            if ($schedule) {
-                $data = $schedule;
             } else {
+                
+                $schedule = Schedule::where('time_shift_id', $cleanData['time_shift_id'])->where('date', $cleanData['selected_date'])->first();
+    
+                if ($schedule) {
+                    $data = $schedule;
+                } else {
+                    
+                    $dates = Carbon::parse($cleanData['selected_date']);
+                    $isWeekend = $dates->dayOfWeek === 6 || $dates->dayOfWeek === 0;
 
-                $dates = Carbon::parse($cleanData['selected_date']);
-                $isWeekend = $dates->dayOfWeek === 6 || $dates->dayOfWeek === 0;
+                    if ($isWeekend) {
+                        $is_weekend = 1;
+                    }
 
-                if ($isWeekend) {
-                    $is_weekend = 1;
+                    $data = new Schedule;
+
+                    $data->time_shift_id    = $cleanData['time_shift_id'];
+                    $data->is_weekend       = $is_weekend;
+                    $data->date             = $cleanData['selected_date'];
+                    $data->save();
                 }
 
-                $data = new Schedule;
+                foreach ($employee as $value) {
+                    $existing_employee_ids = EmployeeProfile::where('id', $value['employee_id'])->pluck('id');
 
-                $data->time_shift_id    = $cleanData['time_shift_id'];
-                $data->is_weekend       = $is_weekend;
-                $data->date             = $cleanData['selected_date'];
-                $data->save();
-            }
+                    foreach ($existing_employee_ids as $employee_id) {
+                        $query[] = EmployeeSchedule::where('employee_profile_id', $employee_id)->where('schedule_id', $data->id)->first();
 
-            foreach ($employee as $value) {
-                $existing_employee_ids = EmployeeProfile::where('id', $value['employee_id'])->pluck('id');
-
-                foreach ($existing_employee_ids as $employee_id) {
-                    $query[] = EmployeeSchedule::where('employee_profile_id', $employee_id)->where('schedule_id', $data->id)->first();
-
-                    $data->employee()->attach($employee_id);
+                        $data->employee()->attach($employee_id);
+                    }
                 }
             }
 
