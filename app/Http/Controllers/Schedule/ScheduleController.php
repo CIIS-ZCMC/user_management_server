@@ -200,14 +200,14 @@ class ScheduleController extends Controller
             }
 
             if (!empty($selected_dates)) {
-                foreach ($selected_dates as $date) {
-                    $schedule = Schedule::where('time_shift_id', $cleanData['time_shift_id'])->where('date', $date)->first();
+                foreach ($selected_dates as $dateSelected) {
+                    $schedule = Schedule::where('time_shift_id', $cleanData['time_shift_id'])->where('date', $dateSelected)->first();
 
                     if ($schedule) {
                         $data = $schedule;
                     } else {
                         
-                        $dates = Carbon::parse($date);
+                        $dates = Carbon::parse($dateSelected);
                         $isWeekend = $dates->dayOfWeek === 6 || $dates->dayOfWeek === 0;
 
                         if ($isWeekend) {
@@ -218,7 +218,7 @@ class ScheduleController extends Controller
 
                         $data->time_shift_id    = $cleanData['time_shift_id'];
                         $data->is_weekend       = $is_weekend;
-                        $data->date             = $date;
+                        $data->date             = $dateSelected;
                         $data->save();
                     }
 
@@ -232,41 +232,40 @@ class ScheduleController extends Controller
                         }
                     }
                 }
-
-                return response()->json(['data' => $schedule]);
-            }
-
-            $schedule = Schedule::where('time_shift_id', $cleanData['time_shift_id'])->where('date', $cleanData['selected_date'])->first();
- 
-            if ($schedule) {
-                $data = $schedule;
             } else {
-                  
-                $dates = Carbon::parse($cleanData['selected_date']);
-                $isWeekend = $dates->dayOfWeek === 6 || $dates->dayOfWeek === 0;
+                
+                $schedule = Schedule::where('time_shift_id', $cleanData['time_shift_id'])->where('date', $cleanData['selected_date'])->first();
+    
+                if ($schedule) {
+                    $data = $schedule;
+                } else {
+                    
+                    $dates = Carbon::parse($cleanData['selected_date']);
+                    $isWeekend = $dates->dayOfWeek === 6 || $dates->dayOfWeek === 0;
 
-                if ($isWeekend) {
-                    $is_weekend = 1;
+                    if ($isWeekend) {
+                        $is_weekend = 1;
+                    }
+
+                    $data = new Schedule;
+
+                    $data->time_shift_id    = $cleanData['time_shift_id'];
+                    $data->is_weekend       = $is_weekend;
+                    $data->date             = $cleanData['selected_date'];
+                    $data->save();
                 }
 
-                $data = new Schedule;
+                foreach ($employee as $value) {
+                    $existing_employee_ids = EmployeeProfile::where('id', $value['employee_id'])->pluck('id');
 
-                $data->time_shift_id    = $cleanData['time_shift_id'];
-                $data->is_weekend       = $is_weekend;
-                $data->date             = $cleanData['selected_date'];
-                $data->save();
-            }
+                    foreach ($existing_employee_ids as $employee_id) {
+                        $query[] = EmployeeSchedule::where('employee_profile_id', $employee_id)->where('schedule_id', $data->id)->first();
 
-            foreach ($employee as $value) {
-                $existing_employee_ids = EmployeeProfile::where('id', $value['employee_id'])->pluck('id');
-
-                foreach ($existing_employee_ids as $employee_id) {
-                    $query[] = EmployeeSchedule::where('employee_profile_id', $employee_id)->where('schedule_id', $data->id)->first();
-
-                    $data->employee()->attach($employee_id);
+                        $data->employee()->attach($employee_id);
+                    }
                 }
             }
-          
+
 
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json([
