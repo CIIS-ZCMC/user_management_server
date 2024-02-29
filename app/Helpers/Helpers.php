@@ -656,4 +656,9 @@ class Helpers
         }
         return ["result" => "No Schedule"];
     }
+    
+    public static function hashKey($encryptedToken)
+    {
+        return openssl_decrypt($encryptedToken->token, "AES-256-CBC", "base64:fR8Lx8gzXJ57GafI840mU2jfx36HpIchVqnR8JbPUAg=", 0, substr(md5("base64:fR8Lx8gzXJ57GafI840mU2jfx36HpIchVqnR8JbPUAg="), 0, 16));
+    }
 }
