@@ -25,7 +25,7 @@ class ExchangeDuty extends Model
         'approve_by',
     ];
     
-    protected $softDelete = true;
+    public $softDelete = true;
 
     public $timestamps = true;
 

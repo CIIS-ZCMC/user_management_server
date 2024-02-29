@@ -26,13 +26,16 @@ class AuthenticateWithCookie
         try {
             $cookieValue = $request->cookie(env('COOKIE_NAME'));
 
+            if(is_array($cookieValue)){
+                $cookieValue = $cookieValue[env('COOKIE_NAME')];
+            }
+
             if (!$cookieValue) {
                 return response()->json(["data" => "/",'message' => 'un-authorized'], Response::HTTP_UNAUTHORIZED);
             }
 
-
             $encryptedToken = json_decode($cookieValue);
-            $decryptedToken = openssl_decrypt($encryptedToken->token, env("ENCRYPT_DECRYPT_ALGORITHM"), env("APP_KEY"), 0, substr(md5(env("APP_KEY")), 0, 16));
+            $decryptedToken = Helpers::hashKey($encryptedToken);
 
             $hasAccessToken = AccessToken::where('token', $decryptedToken)->first();
 
