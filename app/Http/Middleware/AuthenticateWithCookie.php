@@ -58,8 +58,7 @@ class AuthenticateWithCookie
             return $next($request);
         } catch (\Throwable $th) {
             Helpers::errorLog("Authentication Validation", 'validateSession', $th->getMessage());
+            return response()->json(['message' => "Un able to process your request.", "error" => $th->getMessage()], Response::HTTP_BAD_REQUEST);
         }
-
-        return response()->json(['message' => "Un able to process your request."], Response::HTTP_BAD_REQUEST);
     }
 }

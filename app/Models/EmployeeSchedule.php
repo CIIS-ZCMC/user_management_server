@@ -13,13 +13,14 @@ class EmployeeSchedule extends Model
 
     protected $primaryKey = 'id';
 
+
     protected $fillable = [
         'employee_profile_id',
         'schedule_id',
         'is_on_call',
     ];
 
-    public $timestamps = true;
+    public $timestamps = false;
 
     public function employee()
     {
@@ -30,5 +31,4 @@ class EmployeeSchedule extends Model
     {
         return $this->belongsTo(Schedule::class, 'schedule_id');
     }
-
 }
