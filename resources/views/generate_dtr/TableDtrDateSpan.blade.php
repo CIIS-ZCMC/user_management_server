@@ -1,7 +1,7 @@
-           
+
     <td rowspan="{{$rowspan}}">
         <!--FIRST IN -->
-        @include('generate_dtr.DtrSeparator',['entry'=>'firstin'])
+        @include('generate_dtr.DtrSeparator',['entry'=>'firstin','schedule'=>$schedule])
     </td>
     <td rowspan="{{$rowspan}}">
         @include('generate_dtr.DtrSeparator',['entry'=>'firstout', 'fspan'=> true ])
@@ -20,4 +20,3 @@
         @include('generate_dtr.DtrSeparator',['entry'=>'undertime'])
     </td>
 
- 

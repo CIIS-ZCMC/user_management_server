@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
+use Carbon\Carbon;
 
 class OfficialTimeController extends Controller
 {
@@ -97,6 +98,7 @@ class OfficialTimeController extends Controller
                     'user_management_db.official_time_applications.created_at',
                     'user_management_db.official_time_applications.updated_at',
                 )
+                ->orderBy('created_at', 'desc')
                 ->get();
 
             return response()->json([
@@ -163,29 +165,49 @@ class OfficialTimeController extends Controller
 
             $recommending_officer   = $officers['recommending_officer'];
             $approving_officer      = $officers['approving_officer'];
+            
+            $start = Carbon::parse($request->date_from);
+            $end = Carbon::parse($request->date_to);
+            $employeeId = $user->id;
 
-            $data = new OfficialTime;
+            $overlappingOt = OfficialTime::where(function ($query) use ($start, $end, $employeeId) {
+                $query->where('employee_profile_id', $employeeId)
+                    ->where(function ($query) use ($start, $end) {
+                        $query->whereBetween('date_from', [$start, $end])
+                            ->orWhereBetween('date_to', [$start, $end])
+                            ->orWhere(function ($query) use ($start, $end) {
+                                $query->where('date_from', '<=', $start)
+                                    ->where('date_to', '>=', $end);
+                            });
+                    });
+            })->exists();
 
-            $data->employee_profile_id              = $user->id;
-            $data->date_from                        = $cleanData['date_from'];
-            $data->date_to                          = $cleanData['date_to'];
-            $data->purpose                          = $cleanData['purpose'];
-            $data->personal_order_file              = $cleanData['personal_order_file']->getClientOriginalName();;
-            $data->personal_order_size              = $cleanData['personal_order_file']->getSize();
-            $data->personal_order_path              = Helpers::checkSaveFile($cleanData['personal_order_file'], 'official_time');
-            $data->certificate_of_appearance        = $cleanData['certificate_of_appearance']->getClientOriginalName();
-            $data->certificate_of_appearance_size   = $cleanData['certificate_of_appearance']->getSize();
-            $data->certificate_of_appearance_path   = Helpers::checkSaveFile($cleanData['certificate_of_appearance'], 'official_time');
-            $data->approving_officer                = $approving_officer;
-            $data->recommending_officer             = $recommending_officer;
-            $data->save();
+            if ($overlappingOt) {
+                return response()->json(['message' => 'You already have an application for the same dates.'], Response::HTTP_FORBIDDEN);
+            } else {
+                    $data = new OfficialTime;
 
-            Helpers::registerSystemLogs($request, $data->id, true, 'Success in storing '.$this->PLURAL_MODULE_NAME.'.'); //System Logs
+                    $data->employee_profile_id              = $user->id;
+                    $data->date_from                        = $cleanData['date_from'];
+                    $data->date_to                          = $cleanData['date_to'];
+                    $data->purpose                          = $cleanData['purpose'];
+                    $data->personal_order_file              = $cleanData['personal_order_file']->getClientOriginalName();;
+                    $data->personal_order_size              = $cleanData['personal_order_file']->getSize();
+                    $data->personal_order_path              = Helpers::checkSaveFile($cleanData['personal_order_file'], 'official_time');
+                    $data->certificate_of_appearance        = $cleanData['certificate_of_appearance']->getClientOriginalName();
+                    $data->certificate_of_appearance_size   = $cleanData['certificate_of_appearance']->getSize();
+                    $data->certificate_of_appearance_path   = Helpers::checkSaveFile($cleanData['certificate_of_appearance'], 'official_time');
+                    $data->approving_officer                = $approving_officer;
+                    $data->recommending_officer             = $recommending_officer;
+                    $data->save();
 
-            return response()->json([
-                'data' => OfficialTimeResource::collection(OfficialTime::where('id', $data->id)->get()),
-                'logs' =>  Helpers::registerOfficialTimeLogs($data->id, $user['id'], 'Applied'), 
-                'msg' => 'Request Complete.'], Response::HTTP_OK);
+                    Helpers::registerSystemLogs($request, $data->id, true, 'Success in storing '.$this->PLURAL_MODULE_NAME.'.'); //System Logs
+
+                    return response()->json([
+                        'data' => OfficialTimeResource::collection(OfficialTime::where('id', $data->id)->get()),
+                        'logs' =>  Helpers::registerOfficialTimeLogs($data->id, $user['id'], 'Applied'), 
+                        'msg' => 'Request Complete.'], Response::HTTP_OK);
+            }
         } catch (\Throwable $th) {
 
             Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
@@ -269,7 +291,7 @@ class OfficialTimeController extends Controller
             }
             
 
-            $data->update(['status' => $status, 'remarks' => $request->remarks]);
+            $data->update(['status' => $status, 'remarks' => $request->remarks==='null' || !$request->remarks ? null : $request->remarks]);
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.'); //System Logs
             return response()->json(['data' => OfficialTimeResource::collection(OfficialTime::where('id', $data->id)->get()),

@@ -41,8 +41,9 @@ class ScheduleController extends Controller
             $year = $request->year;     // Replace with the desired year
             $dates_with_day = Helpers::getDatesInMonth($year, $month, "Days of Week");
 
-            $user = $request->user;
-            $assigned_area = $user->assignedArea->findDetails();
+            $user               = $request->user;
+            $assigned_area      = $user->assignedArea->findDetails();
+            $assigned_area_head = Helpers::checkEmployeeHead($user->id, $assigned_area);
 
             $array = null;
             if ($assigned_area['details']['code'] === 'HRMO') {
@@ -53,16 +54,23 @@ class ScheduleController extends Controller
                     }
                 ])->get();
             } else {
-                $array = EmployeeProfile::with([
-                    'assignedArea',
-                    'schedule' => function ($query) use ($year, $month) {
-                        $query->with(['timeShift', 'holiday'])->whereYear('date', '=', $year)->whereMonth('date', '=', $month);
-                    }
-                ])->whereHas('assignedArea', function ($query) use ($user, $assigned_area) {
-                    $query->where([strtolower($assigned_area['sector']) . '_id' => $assigned_area['details']['id']]);
-                })->get();
+                $array = EmployeeProfile::with(['assignedArea',
+                                                'schedule' => function ($query) use ($year, $month) {
+                                                        $query->with(['timeShift', 'holiday'])->whereYear('date', '=', $year)->whereMonth('date', '=', $month);
+                                                }])->whereHas('assignedArea', function ($query) use ($assigned_area_head) {
+                                                    $query->where('id', $assigned_area_head['area']['id']);
+                                                })->get();
+                                                
+                // $array = EmployeeProfile::with([
+                //     'assignedArea',
+                //     'schedule' => function ($query) use ($year, $month) {
+                //         $query->with(['timeShift', 'holiday'])->whereYear('date', '=', $year)->whereMonth('date', '=', $month);
+                //     }
+                // ])->whereHas('assignedArea', function ($query) use ($user, $assigned_area) {
+                //     $query->where([strtolower($assigned_area['sector']) . '_id' => $assigned_area['details']['id']]);
+                // })->get();
             }
-
+            
             $data = [];
             foreach ($array as $key => $value) {
                 $data[] = [
@@ -81,7 +89,6 @@ class ScheduleController extends Controller
                 'time_shift' => TimeShiftResource::collection(TimeShift::all())
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
-
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -142,8 +149,10 @@ class ScheduleController extends Controller
             $employee       = $cleanData['employee'];
             $date_start     = $cleanData['date_start'];     // Replace with your start date
             $date_end       = $cleanData['date_end'];       // Replace with your end date
+            $selected_date  = $cleanData['selected_date'];   // Selected Date;
             $selected_days  = $cleanData['selected_days'];  // Replace with your selected days
             $selected_dates = [];                           // Replace with your selected dates
+            $responseData = [];
 
             switch ($selected_days) {
                 //If Toggle Date Period On
@@ -287,18 +296,9 @@ class ScheduleController extends Controller
 
             return response()->json(['data' => $data], Response::HTTP_OK);
         } catch (\Throwable $th) {
-
             Helpers::errorLog($this->CONTROLLER_NAME, 'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Schedule $schedule)
-    {
-        //
     }
 
     /**
@@ -358,7 +358,6 @@ class ScheduleController extends Controller
                 'message' => 'Schedule is updated'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
-
             Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -383,12 +382,10 @@ class ScheduleController extends Controller
             Helpers::registerSystemLogs($request, $id, true, 'Success in delete ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json(['data' => $data], Response::HTTP_OK);
         } catch (\Throwable $th) {
-
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
 
     /**
      * Generate PDF file of schedule
@@ -431,7 +428,6 @@ class ScheduleController extends Controller
             $dompdf->stream($filename, array("Attachment" => false));
             // return view('generate_schedule/section-schedule', compact('data','holiday', 'month', 'year', 'dates', 'user', 'head_officer'));
         } catch (\Throwable $th) {
-
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }

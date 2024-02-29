@@ -13,6 +13,7 @@ class EmployeeSchedule extends Model
 
     protected $primaryKey = 'id';
 
+
     protected $fillable = [
         'employee_profile_id',
         'schedule_id',
@@ -30,5 +31,4 @@ class EmployeeSchedule extends Model
     {
         return $this->belongsTo(Schedule::class, 'schedule_id');
     }
-    
 }
