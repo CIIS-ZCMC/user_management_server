@@ -276,10 +276,7 @@ class LeaveTypeSeeder extends Seeder
             'leave_type_id' => $adoption_leave->id,
             'leave_requirement_id' => $requiment_seven->id
         ]);
-        LeaveTypeRequirement::create([
-            'leave_type_id' => $adoption_leave->id,
-            'leave_requirement_id' => $requiment_eight->id
-        ]);
+       
 
         $vawc_leave = LeaveType::create([
             'name' => "VAWC leave",
@@ -301,16 +298,9 @@ class LeaveTypeSeeder extends Seeder
         ]);
         LeaveTypeRequirement::create([
             'leave_type_id' => $vawc_leave->id,
-            'leave_requirement_id' => $requiment_nine->id
+            'leave_requirement_id' => $requiment_eight->id
         ]);
-        LeaveTypeRequirement::create([
-            'leave_type_id' => $vawc_leave->id,
-            'leave_requirement_id' => $requiment_ten->id
-        ]);
-        LeaveTypeRequirement::create([
-            'leave_type_id' => $vawc_leave->id,
-            'leave_requirement_id' => $requiment_eleven->id
-        ]);
+       
 
         $rehab_leave = LeaveType::create([
             'name' => "Rehabilitation leave",
@@ -363,7 +353,7 @@ class LeaveTypeSeeder extends Seeder
         ]);
         LeaveTypeRequirement::create([
             'leave_type_id' => $vawc_leave->id,
-            'leave_requirement_id' => $requiment_twelve->id
+            'leave_requirement_id' => $requiment_nine->id
         ]);
 
         

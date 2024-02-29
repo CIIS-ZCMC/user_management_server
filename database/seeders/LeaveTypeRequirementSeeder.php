@@ -51,35 +51,18 @@ class LeaveTypeRequirementSeeder extends Seeder
 
          //7
         Requirement::create([
-            'name' => 'Pre - Adoptive Placement Authority (Authentic copy from DSWD)',
+            'name' => 'Pre - Adoptive Placement Authority (Authentic copy from DSWD)/Decree of Adoption (Authentic copy issued by court)',
             'description' => null
         ]);
 
+
          //8
         Requirement::create([
-            'name' => 'Decree of Adoption (Authentic copy issued by court)',
+            'name' => 'Barangay Protection Order (BPO)/Temporary/Permanent Protection Order (TPO/PPO) – from the courts',
             'description' => null
         ]);
 
          //9
-        Requirement::create([
-            'name' => 'Barangay Protection Order (BPO)',
-            'description' => null
-        ]);
-
-         //10
-        Requirement::create([
-            'name' => 'Temporary/Permanent Protection Order (TPO/PPO) – from the courts',
-            'description' => null
-        ]);
-
-         //11
-        Requirement::create([
-            'name' => 'Certification of the Punong Barangay or Kagawad or Prosecutor',
-            'description' => null
-        ]);
-
-         //12
         Requirement::create([
             'name' => 'Fit to Work from the attending Physician',
             'description' => null
