@@ -39,7 +39,7 @@ class CtoApplicationResource extends JsonResource
                 "name" => $this->approvingOfficer->personalInformation->name(),
                 "designation" => $this->approvingOfficer->assignedArea->designation->name,
                 "designation_code" => $this->approvingOfficer->assignedArea->designation->code,
-                "profile_url" => env('SERVER_DOMAIN') . "/photo/profiles/" . $this->recommendingOfficer->profile_url,
+                "profile_url" => env('SERVER_DOMAIN') . "/photo/profiles/" . $this->approvingOfficer->profile_url,
             ],
             'logs'  => $this->CtoApplicationLogs ? CtoApplicationLogResource::collection($this->CtoApplicationLogs) : [],
         ];

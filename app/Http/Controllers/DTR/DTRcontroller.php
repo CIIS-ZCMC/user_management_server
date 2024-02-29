@@ -22,6 +22,7 @@ use App\Models\Section;
 use App\Models\Schedule;
 
 
+
 class DTRcontroller extends Controller
 {
     protected $helper;
@@ -123,9 +124,7 @@ class DTRcontroller extends Controller
                     $attendance = simplexml_load_string($logs);
                     $user_Inf = simplexml_load_string($all_user_info);
                     $attendance_Logs =  $this->helper->getAttendance($attendance);
-
                     $Employee_Info  = $this->helper->getEmployee($user_Inf);
-
                     $Employee_Attendance = $this->helper->getEmployeeAttendance(
                         $attendance_Logs,
                         $Employee_Info
@@ -382,7 +381,6 @@ class DTRcontroller extends Controller
             $view = $request->view;
             $FrontDisplay = $request->frontview;
 
-
             /*
             Multiple IDS for Multiple PDF generation
             */
@@ -405,6 +403,11 @@ class DTRcontroller extends Controller
                 $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
                 $emp_name = $employee->name();
             } else {
+
+                if ($FrontDisplay) {
+                    return view("dtr.notfound");
+                }
+
                 return response()->json([
                     'message' => 'Failed to Generate: No biometric data found'
                 ]);
@@ -428,6 +431,7 @@ class DTRcontroller extends Controller
             $time_stamps_req = [
                 'total_hours' => 8
             ];
+
 
 
             foreach ($dtr as $val) {
@@ -455,6 +459,10 @@ class DTRcontroller extends Controller
                     );
                 }
             }
+
+
+
+
 
 
             $ohf = isset($time_stamps_req) ? $time_stamps_req['total_hours'] . ' HOURS' : null;
@@ -505,39 +513,48 @@ class DTRcontroller extends Controller
             $entry = '';
 
 
+
             foreach ($dtr as $val) {
                 /* Validating DTR with its Matching Schedules */
                 /*
                 *   if no matching schedule then
                 *   it will not display the daily time record
                 */
-                $schedule = $this->helper->getSchedule($val->biometric_id, date('Y-m-d', strtotime($val->first_in)));
-
-                $is_Half_Schedule = $this->isHalfEntrySchedule($schedule);
-
-                if (isset($schedule['date'])) {
-
-                    $sdate =  $schedule['date'];
-
-
-                    if (isset($val->first_in)) {
-                        $entry = $val->first_in;
-                    } else {
-                        if (isset($val->second_in)) {
-                            $entry = $val->second_in;
-                        }
+                if (isset($val->first_in) && $val->first_in !== NULL) {
+                    $entry = $val->first_in;
+                } else {
+                    if (isset($val->second_in) && $val->second_in !== NULL) {
+                        $entry = $val->second_in;
                     }
+                }
 
+                $yearSched = date('Y', strtotime($entry));
+                $monthSched = date('m', strtotime($entry));
+                $schedule = $this->helper->getSchedule($val->biometric_id, "all-{$yearSched}-{$monthSched}")['schedule'];
+                //GET THE SCHEDULE
+                $daySched = array_values(array_filter($schedule, function ($row) use ($entry) {
+                    return date('Y-m-d', strtotime($row['scheduleDate'])) == date('Y-m-d', strtotime($entry));
+                }))[0];
+
+
+                $is_Half_Schedule = $this->isHalfEntrySchedule($daySched);
+
+
+
+
+                if (isset($daySched['scheduleDate'])) {
+
+                    $sdate =  $daySched['scheduleDate'];
 
 
 
                     if (date('Y-m-d', strtotime($entry)) ==   $sdate) {
                         //   echo $entry;
                         $date_entry = date('Y-m-d H:i', strtotime($entry));
-                        $schedule_fEntry = date('Y-m-d H:i', strtotime(date('Y-m-d', strtotime($date_entry)) . ' ' . $schedule['first_entry']));
+                        $schedule_fEntry = date('Y-m-d H:i', strtotime(date('Y-m-d', strtotime($date_entry)) . ' ' . $sdate));
                         //return $this->WithinScheduleRange($dateentry, $schedulefEntry);
 
-                        if ($this->WithinScheduleRange($date_entry, $schedule_fEntry)) {
+                        if ($this->withinScheduleRange($date_entry, $schedule_fEntry)) {
                             $dt_records[] = [
                                 'biometric_ID' => $val->biometric_id,
                                 'first_in' => $val->first_in,
@@ -564,15 +581,20 @@ class DTRcontroller extends Controller
             }
 
             $days_In_Month = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
+            $second_in = [];
+            $second_out = [];
             $first_in = array_map(function ($res) {
                 return [
+                    'dtr_date' => $res['created'],
                     'first_in' => $res['first_in'],
                     'biometric_ID' => $res['biometric_ID']
+
                 ];
             }, $dt_records);
 
             $first_out = array_map(function ($res) {
                 return [
+                    'dtr_date' => $res['created'],
                     'first_out' => $res['first_out'],
                     'biometric_ID' => $res['biometric_ID']
                 ];
@@ -580,13 +602,18 @@ class DTRcontroller extends Controller
 
             $second_in = array_map(function ($res) {
                 return [
+                    'dtr_date' => $res['created'],
                     'second_in' => $res['second_in'],
                     'biometric_ID' => $res['biometric_ID']
                 ];
             }, $dt_records);
 
+
+
+
             $second_out = array_map(function ($res) {
-                return [
+                return  [
+                    'dtr_date' => $res['created'],
                     'second_out' => $res['second_out'],
                     'biometric_ID' => $res['biometric_ID']
                 ];
@@ -602,16 +629,23 @@ class DTRcontroller extends Controller
             $holidays = DB::table('holidays')->get();
 
             $employeeSched = Schedule::select('date as schedule')
-                ->whereIn('id', function ($query) {
+                ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT first_in FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as first_in')
+                ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT first_out FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as first_out')
+                ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT second_in FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as second_in')
+                ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT second_out FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as second_out')
+                ->whereIn('id', function ($query) use ($biometric_id) {
                     $query->select('schedule_id')
                         ->from('employee_profile_schedule')
-                        ->whereIn('employee_profile_id', function ($innerQuery) {
+                        ->whereIn('employee_profile_id', function ($innerQuery) use ($biometric_id) {
                             $innerQuery->select('id')
                                 ->from('employee_profiles')
-                                ->where('biometric_id', 1);
+                                ->where('biometric_id', $biometric_id);
                         });
                 })
                 ->get();
+
+
+            $schedules = $this->helper->getSchedule($biometric_id, "all-{$year_of}-{$month_of}");
 
             if ($FrontDisplay) {
                 return view('dtr.PrintDTRPDF',  [
@@ -624,7 +658,7 @@ class DTRcontroller extends Controller
                     'secondout' => $second_out,
                     'undertime' => $ut,
                     'OHF' => $emp_Details['OHF'],
-                    'Arrival_Departure' => $emp_Details['Arrival_Departure'],
+                    'Arrival_Departure' => $schedules['arrival_departure'],
                     'Employee_Name' => $emp_Details['Employee_Name'],
                     'dtrRecords' => $dt_records,
                     'holidays' => $holidays,
@@ -632,6 +666,7 @@ class DTRcontroller extends Controller
                     'halfsched' => $is_Half_Schedule,
                     'biometric_ID' => $biometric_id,
                     'schedule' => $employeeSched
+
                 ]);
             }
 
@@ -646,7 +681,7 @@ class DTRcontroller extends Controller
                     'secondout' => $second_out,
                     'undertime' => $ut,
                     'OHF' => $emp_Details['OHF'],
-                    'Arrival_Departure' => $emp_Details['Arrival_Departure'],
+                    'Arrival_Departure' => $schedules['arrival_departure'],
                     'Employee_Name' => $emp_Details['Employee_Name'],
                     'dtrRecords' => $dt_records,
                     'holidays' => $holidays,
@@ -672,7 +707,7 @@ class DTRcontroller extends Controller
                     'secondout' => $second_out,
                     'undertime' => $ut,
                     'OHF' => $emp_Details['OHF'],
-                    'Arrival_Departure' => $emp_Details['Arrival_Departure'],
+                    'Arrival_Departure' => $schedules['arrival_departure'],
                     'Employee_Name' => $emp_Details['Employee_Name'],
                     'dtrRecords' => $dt_records,
                     'holidays' => $holidays,

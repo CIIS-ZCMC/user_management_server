@@ -1,6 +1,5 @@
 <style>
-   @import url('https://fonts.googleapis.com/css2?family=Onest:wght@200&family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&display=swap')
-    body {
+    @import url('https://fonts.googleapis.com/css2?family=Onest:wght@200&family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&display=swap') body {
         display: flex;
         justify-content: center;
         font-family: "Roboto Condensed", sans-serif;
@@ -23,7 +22,7 @@
     #tabledate tr th {
         font-size: 13px;
         text-transform: uppercase;
-        color:#597E52;
+        color: #597E52;
         border: 1px solid rgb(177, 181, 185);
     }
 
@@ -34,27 +33,28 @@
 
     #tabledate tr .time {
         font-weight: bold;
-        color:#0079FF;
+        color: #57805e;
 
     }
+
     #tabledate tr .timefirstarrival {
         font-weight: normal;
         text-transform: uppercase;
         font-size: 12px;
     }
+
     #tabledate #tblheader tr td {
         font-weight: normal;
         font-size: 13px;
-        color:#637A9F;
+        color: #637A9F;
     }
-
 </style>
 
-<div id="po" >
+<div id="po">
 
-    <table id="tabledate" >
+    <table id="tabledate">
         <tr>
-            <th colspan="2" style="background-color: whitesmoke" >
+            <th colspan="2" style="background-color: whitesmoke">
                 Day
             </th>
 
@@ -81,34 +81,34 @@
             @php
                 $isExcept = false;
             @endphp
-            @for($i = 1; $i <= $daysInMonth; $i++)
+            @for ($i = 1; $i <= $daysInMonth; $i++)
+                @php
+                    $checkIn = array_filter($dtrRecords, function ($res) use ($i) {
+                        return date('d', strtotime($res['first_in'])) == $i && date('d', strtotime($res['first_out'])) == $i + 1;
+                    });
 
-            @php
-            $checkIn = array_filter($dtrRecords, function ($res) use ($i) {
-                return date('d', strtotime($res['first_in'])) == $i
-                    && date('d', strtotime($res['first_out'])) == $i + 1;
-            });
+                    $val = 0;
+                    $outdd = array_map(function ($res) {
+                        return [
+                            'first_out' => $res['first_out'],
+                        ];
+                    }, $checkIn);
+                @endphp
 
-            $val = 0;
-            $outdd = array_map(function($res) {
-                return [
-                    'first_out' => $res['first_out']
-                ];
-            }, $checkIn);
-            @endphp
+                <tr>
+                    <td
+                        style="color:#3468C0;text-align:center;width:60px;border-right :1px solid rgb(196, 197, 201);background-color: whitesmoke">
+                        {{ date('d', strtotime(date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)))) }}
 
-            <tr>
-                <td style="color:#3468C0;text-align:center;width:60px;border-right :1px solid rgb(196, 197, 201);background-color: whitesmoke">   {{date('d', strtotime(date('Y-m-d', strtotime($year.'-'.$month.'-'.$i))))}}
+                    </td>
+                    <td style="width: 80px;border-right :1px solid rgb(196, 197, 201);background-color: whitesmoke">
+                        <span style="color:#637A9F; font-size:13px">
+                            {{ date('l', strtotime(date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)))) }}
+                        </span>
+                    </td>
 
-                </td>
-                <td style="width: 80px;border-right :1px solid rgb(196, 197, 201);background-color: whitesmoke">
-                    <span style="color:#637A9F; font-size:13px">
-                        {{date('l', strtotime(date('Y-m-d', strtotime($year.'-'.$month.'-'.$i))))}}
-                    </span>
-                </td>
-
-
-                @php $rowspan = count($outdd) > 0 ? 2 : 1; @endphp
+                    @include('dtr.TableDtrDate', ['schedule' => $schedule])
+                    {{-- @php $rowspan = count($outdd) > 0 ? 2 : 1; @endphp
 
                 @if ($rowspan > 1)
                     @php
@@ -125,16 +125,14 @@
                     @else
                       @include('dtr.TableDtrDate',['schedule'=>$schedule])
                     @endif
-                @endif
+                @endif --}}
 
-                @if (count($checkIn) >= 1)
-                    @php $val = $i; @endphp
-                @endif
-                <td style="background-color: whitesmoke">
+                    @if (count($checkIn) >= 1)
+                        @php $val = $i; @endphp
+                    @endif
 
-                </td>
-            </tr>
-        @endfor
+                </tr>
+            @endfor
         </tbody>
     </table>
 
@@ -144,21 +142,20 @@
 </div>
 
 <script>
-    document.addEventListener("keydown", function (event) {
-  if (event.keyCode === 123) {
-    event.preventDefault();
-  }
-});
+    document.addEventListener("keydown", function(event) {
+        if (event.keyCode === 123) {
+            event.preventDefault();
+        }
+    });
 
-document.addEventListener("contextmenu", function (e) {
-  e.preventDefault();
-});
+    document.addEventListener("contextmenu", function(e) {
+        e.preventDefault();
+    });
 
 
-document.addEventListener("keydown", function (e) {
-  if (e.key === "F12" || (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J"))) {
-    e.preventDefault();
-  }
-});
-
+    document.addEventListener("keydown", function(e) {
+        if (e.key === "F12" || (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J"))) {
+            e.preventDefault();
+        }
+    });
 </script>

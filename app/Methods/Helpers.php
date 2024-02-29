@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Biometrics;
 use App\Models\EmployeeProfile;
 use App\Models\Devices;
+use App\Models\TimeShift;
 
 class Helpers
 {
@@ -54,6 +55,18 @@ class Helpers
         $f2 = env('FIRSTOUT');
         $f3 = env('SECONDIN');
         $f4 = env('SECONDOUT');
+
+        $parts = explode('-', $date_now);
+        // $parts[1] will contain "2024"
+        // $parts[2] will contain "2"
+        if (count($parts) >= 3) {
+            $check = $parts[0];
+            $year = $parts[1];
+            $month = $parts[2];
+            if ($check === "all") {
+                return $this->Allschedule($biometric_id, $month, $year);
+            }
+        }
 
 
         if (!isset($date_now)) {
@@ -107,6 +120,66 @@ AND id IN (
             return $this->getEmployeeSched($get_Sched, $f1, $f2, $f3, $f4, true);
         }
         return $this->getEmployeeSched($get_Sched, $f1, $f2, $f3, $f4, false);
+    }
+
+    public function Allschedule($biometric_id, $month, $year)
+    {
+        $timeShifts = DB::table('time_shifts as ts')
+            ->select(
+                'sc.id as scheduleID',
+                'ts.first_in',
+                'ts.first_out',
+                'ts.second_in',
+                'ts.second_out',
+                'ts.total_hours',
+                'ep.biometric_id',
+                'sc.date',
+                'sc.is_weekend',
+                'sc.status',
+                'sc.remarks',
+                'esc.is_on_call'
+            )
+            ->join('schedules as sc', 'sc.time_shift_id', '=', 'ts.id')
+            ->join('employee_profile_schedule as esc', 'esc.schedule_id', '=', 'sc.id')
+            ->join('employee_profiles as ep', 'ep.id', '=', 'esc.employee_profile_id')
+            ->where('ep.biometric_id', $biometric_id)
+            ->whereYear('sc.date', $year)
+            ->whereMonth('sc.date', $month)
+            ->get();
+
+        $scheds = [];
+        $arrival_d = [];
+        $dp = '';
+        foreach ($timeShifts as $row) {
+            $firstin = date('gA', strtotime($year . '-' . $month . '-1 ' . $row->first_in));
+            $firstout = date('gA', strtotime($year . '-' . $month . '-1 ' . $row->first_out));
+            $secondin = date('gA', strtotime($year . '-' . $month . '-1 ' . $row->second_in));
+            $secondout = date('gA', strtotime($year . '-' . $month . '-1 ' . $row->second_out));
+            if ($row->second_in !== null && $row->second_out !== null) {
+                $dp =  $firstin . '-' . $firstout . '|' . $secondin . '-' . $secondout;
+            } else {
+                $dp =  $firstin . '-' . $firstout;
+            }
+            $arrival_d[] = $dp;
+
+
+            $scheds[] = [
+                'scheduleDate' => $row->date,
+                'first_entry' => $row->first_in,
+                'second_entry' => $row->first_out,
+                'third_entry' => $row->second_in,
+                'last_entry' => $row->second_out,
+                'total_hours' => $row->total_hours,
+                'is_on_call' => $row->is_on_call,
+                'arrival_departure' => $dp
+            ];
+        }
+        $Arrival_departure =  array_values(array_unique($arrival_d));
+
+        return [
+            'schedule' => $scheds,
+            'arrival_departure' => Implode("&", $Arrival_departure)
+        ];
     }
 
     public function getEmployeeSched($get_Sched, $f1, $f2, $f3, $f4, $is_Nurse_or_Doctor)
@@ -166,6 +239,7 @@ AND id IN (
 
     public function getBreakSchedule($biometric_id, $schedule)
     {
+
         if ($this->isNurseOrDoctor($biometric_id)) {
             return [];
         }
@@ -250,6 +324,7 @@ AND id IN (
                     } else {
                         $entrydate = date('Y-m-d');
                     }
+
                     if ($this->isEmployee($biometric_id)) { // Validating if User is an employee with Biometric data and employee data
 
 
@@ -404,18 +479,37 @@ AND id IN (
                                     );
                                 }
                             } else {
+
+
                                 /**
                                  * Here we are checking if theres an existing first entry this is  for nursing and doctors
                                  * which has two entries for schedule only.
                                  * if data not found. then we save into first entry
                                  */
                                 $yester_date = date('Y-m-d', strtotime('-1 day'));
-                                $time_stamps_req = $this->getSchedule($biometric_id, $check_Records[0]['date_time']);
+                                $time_stamps_req = $this->getSchedule($biometric_id, date('Y-m-d H:i:s', strtotime($yester_date . ' ' . date('H:i:s', strtotime($check_Records[0]['date_time'])))));
 
                                 /*
                                 first_entry
                                 third_entry
                                 */
+
+
+
+                                $entrydateYear = date('Y', strtotime($value['date_time']));
+                                $entrydateMonth = date('m', strtotime($value['date_time']));
+                                $schedule = $this->getSchedule($biometric_id, "all-{$entrydateYear}-{$entrydateMonth}");
+                                // Put employee ID
+
+                                $entry = date('Y-m-d', strtotime($value['date_time']));
+                                $daySchedule = array_values(array_filter($schedule['schedule'], function ($row) use ($entry) {
+                                    return date('Y-m-d', strtotime($row['scheduleDate'])) === $entry;
+                                }))[0];
+                                $break_Time_Req = $this->getBreakSchedule($biometric_id, $daySchedule);
+
+
+
+
 
                                 $check_yesterday_Records = DailyTimeRecords::whereDate('first_in', $yester_date)->where('biometric_id', $biometric_id)->get();
 
@@ -430,11 +524,14 @@ AND id IN (
                                         if ($f_1 && !$f_2) {
 
                                             if ($time_stamps_req['third_entry'] === null && $time_stamps_req['last_entry'] === null) {
+
                                                 /* Validation add expiry. */
                                                 $TimeAllowance_ =  date('Y-m-d H:i:s', strtotime(date('Y-m-d ' . $time_stamps_req['second_entry']) . " +5 hours")); // 5 hours allowance
+
                                                 foreach ($check_Records as $key => $chrc) {
                                                     if ($chrc['biometric_id'] == $bio_ID) {
                                                         if ($TimeAllowance_ > $chrc['date_time']) { // Validation to Ignore Yesterday entry. 5 hours
+
                                                             if ($chrc['status'] == 255) {
                                                                 if ($this->withinInterval($f_1, $this->sequence(0, [$chrc]))) {
                                                                     $this->saveTotalWorkingHours(
@@ -461,12 +558,13 @@ AND id IN (
                                                 }
                                             }
 
+
                                             if ($value['status'] == 0 || $value['status'] == 255) {
-                                                $break_Time_Req = $this->getBreakSchedule($biometric_id, $time_stamps_req); // Put employee ID
+
                                                 $scheduleEntry = null;
-                                                if (isset($time_stamps_req['is_on_call']) && $time_stamps_req['is_on_call']) {
+                                                if (isset($daySchedule['is_on_call']) && $daySchedule['is_on_call']) {
                                                     // $scheduleEntry = date('Y-m-d H:i:s', strtotime($time_stamps_req['date_start'] . ' ' . $time_stamps_req['first_entry'] . '+' . $max_allowed_entry_for_oncall . ' minutes'));
-                                                    $scheduleEntry = $time_stamps_req['first_entry'];
+                                                    $scheduleEntry = $daySchedule['first_entry'];
                                                 }
                                                 $this->SaveFirstEntry(
                                                     $this->sequence(0, [$value]),
@@ -478,13 +576,14 @@ AND id IN (
                                             }
                                         } else {
 
+
                                             /* Save new records */
                                             if ($value['status'] == 0 || $value['status'] == 255) {
-                                                $break_Time_Req = $this->getBreakSchedule($biometric_id, $time_stamps_req); // Put employee ID
+
                                                 $scheduleEntry = null;
-                                                if (isset($time_stamps_req['is_on_call']) && $time_stamps_req['is_on_call']) {
+                                                if (isset($daySchedule['is_on_call']) && $daySchedule['is_on_call']) {
                                                     // $scheduleEntry = date('Y-m-d H:i:s', strtotime($time_stamps_req['date_start'] . ' ' . $time_stamps_req['first_entry'] . '+' . $max_allowed_entry_for_oncall . ' minutes'));
-                                                    $scheduleEntry = $time_stamps_req['first_entry'];
+                                                    $scheduleEntry = $daySchedule['first_entry'];
                                                 }
                                                 $this->SaveFirstEntry(
                                                     $this->sequence(0, [$value]),
@@ -500,11 +599,12 @@ AND id IN (
 
                                     /* Save new records */
                                     if ($value['status'] == 0 || $value['status'] == 255) {
-                                        $break_Time_Req = $this->getBreakSchedule($biometric_id, $time_stamps_req); // Put employee ID
+
+
                                         $scheduleEntry = null;
-                                        if (isset($time_stamps_req['is_on_call']) && $time_stamps_req['is_on_call']) {
+                                        if (isset($daySchedule['is_on_call']) && $daySchedule['is_on_call']) {
                                             // $scheduleEntry = date('Y-m-d H:i:s', strtotime($time_stamps_req['date_start'] . ' ' . $time_stamps_req['first_entry'] . '+' . $max_allowed_entry_for_oncall . ' minutes'));
-                                            $scheduleEntry = $time_stamps_req['first_entry'];
+                                            $scheduleEntry = $daySchedule['first_entry'];
                                         }
                                         $this->SaveFirstEntry(
                                             $this->sequence(0, [$value]),
@@ -525,7 +625,7 @@ AND id IN (
         }
     }
 
-    public function saveFirstEntry($sequence, $break_Time_Req, $biometric_id, $delay, $scheduleEntry)
+    public function SaveFirstEntry($sequence, $break_Time_Req, $biometric_id, $delay, $scheduleEntry)
     {
         try {
 

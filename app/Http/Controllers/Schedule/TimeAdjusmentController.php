@@ -114,9 +114,10 @@ class TimeAdjusmentController extends Controller
                                 'second_in' => $value['secondIn'] ?? null,
                                 'second_out' => $value['secondOut'] ?? null,
                                 'employee_profile_id' => $value['employee_profile_id'],
-                                'date' => Carbon::parse($value['date']),
+                                'date' => Carbon::parse($value['date']->format('Y-m-d')),
                                 'recommended_by' => $user->id,
                                 'approve_by' => $approving_officer,
+                                'remarks' => $value['remarks'],
                             ]);
                     } else {
                         return response()->json(['message' => 'No DTR record found.'], Response::HTTP_NOT_FOUND);
@@ -156,9 +157,10 @@ class TimeAdjusmentController extends Controller
                         'second_out' => $value['secondOut'] ?? null,
                         'employee_profile_id' => $employee->id,
                         'daily_time_record_id' => $daily_time_record->id,
-                        'date' => Carbon::parse($value['date']),
-                        'recommended_by' => $recommending_officer,
+                        'date' => Carbon::parse($value['date'])->format('Y-m-d'),
+                        'recommended_by' => $recommending_officer->id,
                         'approve_by' => $approving_officer,
+                        'remarks' => $value['remarks'],
                     ]);
                 }
             }

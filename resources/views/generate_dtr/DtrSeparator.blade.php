@@ -1,218 +1,357 @@
-
 @switch($entry)
     @case('firstin')
-    @php
-    $isHoliday = false;
-    @endphp
+        @php
+            $isHoliday = false;
+        @endphp
 
-
-@foreach ($holidays as $item)
-    @if ($item->month_day == $month.'-'.$i)
-       @php
-           $isHoliday = true;
-       @endphp
-
-    @endif
-@endforeach
+        @foreach ($holidays as $item)
+            @if ($item->month_day == sprintf('%02d-%02d', $month, $i))
+                @php
+                    $isHoliday = true;
+                @endphp
+            @endif
+        @endforeach
 
 
 
 
-    @php
-    $countin = 0;
-    @endphp
+        @php
+            $countin = 0;
+        @endphp
 
-    @foreach($firstin as $key=> $f1)
-    @if($biometric_ID  == $f1['biometric_ID'])
-    @if($f1['first_in'])
-    @if(date('d',strtotime($f1['first_in'])) == $i)
-    <span class="fentry">
+        @foreach ($firstin as $key => $f1)
+            @php
 
-        {{date('h:i a',strtotime($f1['first_in']))}}
+                $empSched = $schedule->filter(function ($sched) use ($f1) {
+                    return date('Y-m-d', strtotime($sched['schedule'])) === date('Y-m-d', strtotime($f1['dtr_date'])) && $sched['second_in'] === null && $sched['second_out'] === null;
+                });
 
-    </span>
+            @endphp
 
-
-    @php
-    $countin ++ ;
-    @endphp
-
-
-    @endif
-    @endif
-    @endif
-    @endforeach
-
-    @if(date('D',strtotime(date('Y-m-d',strtotime($year.'-'.$month.'-'.$i)))) == 'Sun'
-    )
-     @if (!$isHoliday)
-     @if ($countin == 0)
-             <span style="color:gray">Day-off </span>
-     @endif
-
-    @endif
-
-    @elseif(date('D',strtotime(date('Y-m-d',strtotime($year.'-'.$month.'-'.$i)))) == 'Sat'
-    )
-    @if($countin == 0)
+            @if ($biometric_ID == $f1['biometric_ID'])
+                @if ($f1['first_in'])
+                    @if (date('d', strtotime($f1['dtr_date'])) == $i)
+                        @if (date('A', strtotime($f1['first_in'])) == 'AM')
+                            {{-- check if schedule is half , then check the time if its am or pm --}}
+                            @if (count($empSched) >= 1)
+                                {{-- checktime if its pm --}}
 
 
-    @php
-        $count2 = 0;
-    @endphp
+                                <span class="fentry">
+                                    {{ date('h:i a', strtotime($f1['first_in'])) }}
+                                </span>
+                            @else
+                                <span class="fentry">
+                                    {{ date('h:i a', strtotime($f1['first_in'])) }}
+                                </span>
+                            @endif
+                        @endif
 
 
-    @foreach ($secondin as $s1)
-        @if ($s1['second_in'])
-        @if(date('d',strtotime($s1['second_in'])) != $i)
-       @php
-           $count2 ++;
-       @endphp
-        @endif
 
-        @endif
-    @endforeach
+                        @php
+                            $countin++;
+                        @endphp
+                    @endif
+                @endif
+            @endif
+        @endforeach
+
+        @if (date('D', strtotime(date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)))) == 'Sun')
+            @if (!$isHoliday)
+                @if ($countin == 0)
+                    @php
+                        $checkSched = $schedule->filter(function ($row) use ($year, $month, $i) {
+                            return $row['schedule'] === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
+                        });
+
+                    @endphp
+                    @if (count($checkSched) >= 1)
+                        <span style="color:gray;font-style:italic;color:#FF6969;font-size:10px">ABSENT</span>
+                    @else
+                        <span style="color:gray;font-size:8px">Day-off</span>
+                    @endif
+                @endif
+
+            @endif
+        @elseif(date('D', strtotime(date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)))) == 'Sat')
+            @if ($countin == 0)
 
 
-    @if ($count2 >=1)
-    <span style="color:gray">Day-off</span>
-    @else
-    <span style="color:gray">Day-off</span>
-    @endif
-    @endif
+                @php
+                    $count2 = 0;
+                @endphp
 
 
-    @else
-    @if($countin == 0)
-    @if(date('Y-m-d',strtotime($year.'-'.$month.'-'.$i)) < date('Y-m-d') )
-    @if ($isHoliday)
+                @foreach ($secondin as $s1)
+                    @if ($s1['second_in'])
+                        @if (date('d', strtotime($s1['second_in'])) != $i)
+                            @php
+                                $count2++;
+                            @endphp
+                        @endif
+                    @endif
+                @endforeach
 
-     {{-- <span style="color:gray">HOLIDAY</span> --}}
-    @else
-    @php
-        $checkSched = $schedule->filter(function($row) use($year,$month,$i){
-            return $row['schedule'] === date('Y-m-d',strtotime($year.'-'.$month.'-'.$i));
-        });
 
-    @endphp
-        @if (count($checkSched)>=1)
-        <span style="color:gray;font-style:italic;color:#FF6969">ABSENT</span>
+                @if ($count2 >= 1)
+                    @php
+                        $checkSched = $schedule->filter(function ($row) use ($year, $month, $i) {
+                            return $row['schedule'] === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
+                        });
+
+                    @endphp
+                    @if (count($checkSched) >= 1)
+                        <span style="color:gray;font-style:italic;color:#FF6969;font-size:10px">ABSENT</span>
+                    @else
+                        <span style="color:gray;font-size:8px">Day-off</span>
+                    @endif
+                @else
+                    <span style="color:gray;font-size:8px">Day-off</span>
+                @endif
+            @endif
         @else
-        <span style="color:gray">Day-off</span>
-        @endif
+            @if ($countin == 0)
+                @if (date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) < date('Y-m-d'))
+                    @if ($isHoliday)
+                        {{-- <span style="color:gray">HOLIDAY</span> --}}
+                    @else
+                        @php
+                            $checkSched = $schedule->filter(function ($row) use ($year, $month, $i) {
+                                return $row['schedule'] === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
+                            });
 
+                        @endphp
+                        @if (count($checkSched) >= 1)
+                            <span style="color:gray;font-style:italic;color:#FF6969;font-size:10px">ABSENT</span>
+                        @else
+                            <span style="color:gray;font-size:8px">Day-off</span>
+                        @endif
+                    @endif
 
-    @endif
-
-        @endif
-        @endif
+                @endif
+            @endif
 
 
         @endif
         @if ($isHoliday)
-        @if (!$countin)
-        <span style="color:rgb(5, 128, 42)">HOLIDAY</span>
+            @if (!$countin)
+                <span style="color:rgb(5, 128, 42);font-size:8px">HOLIDAY</span>
+            @endif
         @endif
-        @endif
-        @break
+    @break
+
     @case('firstout')
-    <span class="fentry">
-        <!-- FIRST OUT -->
+        <span class="fentry">
+            <!-- FIRST OUT -->
 
-        @php
-        $fo = 0;
-            if($fspan){
-                $fo = $i + 1;
-            }else {
-                $fo = $i;
-            }
-        @endphp
-        @foreach($firstout as $f2)
-        @if($biometric_ID  == $f2['biometric_ID'])
-        @if($f2['first_out'])
-        @if(date('d',strtotime($f2['first_out'])) == $fo)
-        {{date('h:i a',strtotime($f2['first_out']))}}
-        @endif
-        @endif
-        @endif
-        @endforeach
-    </span>
-        @break
-        @case('secondin')
+            @php
+                $fo = 0;
+                if ($fspan) {
+                    $fo = $i + 1;
+                } else {
+                    $fo = $i;
+                }
 
+            @endphp
+            @foreach ($firstout as $f2)
+                @php
+
+                    $empSched = $schedule->filter(function ($sched) use ($f2) {
+                        return date('Y-m-d', strtotime($sched['schedule'])) === date('Y-m-d', strtotime($f2['dtr_date'])) && $sched['second_in'] === null && $sched['second_out'] === null;
+                    });
+
+                    // echo count($empSched);
+
+                @endphp
+
+
+                @if ($biometric_ID == $f2['biometric_ID'])
+                    @if ($f2['first_out'])
+                        @if (count($empSched) >= 1)
+                            @if (date('d', strtotime($f2['first_out'])) == $fo)
+                                @if (date('A', strtotime($f2['first_out'])) == 'AM')
+                                    {{ date('h:i a', strtotime($f2['first_out'])) }}
+                                @endif
+                            @endif
+                        @else
+                            @if (date('d', strtotime($f2['dtr_date'])) == $fo)
+                                @if (date('A', strtotime($f2['first_out'])) == 'PM')
+                                    {{ date('h:i a', strtotime($f2['first_out'])) }}
+                                @endif
+                            @endif
+                        @endif
+                    @endif
+                @endif
+            @endforeach
+        </span>
+    @break
+
+    @case('secondin')
         <span class="fentry">
             <!-- SECOND IN -->
-            @foreach($secondin as $f3)
-            @if($biometric_ID  == $f3['biometric_ID'])
-            @if($f3['second_in'])
 
-            @if(date('d',strtotime($f3['second_in'])) == $i)
 
-            {{date('h:i a',strtotime($f3['second_in']))}}
+            @php
 
-            @endif
-            @endif
-            @endif
+                $filteredSecondin = array_filter($secondin, function ($row) use ($i) {
+                    return date('d', strtotime($row['dtr_date'])) == $i;
+                });
+
+            @endphp
+
+            @foreach ($filteredSecondin as $f3)
+                @php
+
+                    $empSched = $schedule->filter(function ($sched) use ($f3) {
+                        return date('Y-m-d', strtotime($sched['schedule'])) === date('Y-m-d', strtotime($f3['dtr_date'])) && $sched['second_in'] === null && $sched['second_out'] === null;
+                    });
+                @endphp
+
+
+
+                @if ($biometric_ID == $f3['biometric_ID'])
+                    @if (date('d', strtotime($f3['dtr_date'])) == $i)
+                        @if (count($empSched) >= 1)
+                            @foreach ($firstin as $key => $f1)
+                                @if (date('d', strtotime($f1['dtr_date'])) == $i)
+                                    @if (date('A', strtotime($f1['first_in'])) == 'PM')
+                                        {{ date('h:i a', strtotime($f1['first_in'])) }}
+                                    @endif
+                                @endif
+                            @endforeach
+                        @else
+                            @if ($f3['second_in'])
+                                {{ date('h:i a', strtotime($f3['second_in'])) }}
+                            @else
+                                @foreach ($firstin as $f1)
+                                    @if (date('A', strtotime($f1['first_in'])) == 'PM')
+                                        @if ($biometric_ID == $f1['biometric_ID'])
+                                            @if (date('d', strtotime($f1['dtr_date'])) == $i)
+                                                {{ date('h:i a', strtotime($f1['first_in'])) }}
+                                            @endif
+                                        @endif
+                                    @endif
+                                @endforeach
+                            @endif
+                        @endif
+                    @endif
+                @endif
             @endforeach
         </span>
-        @break
-        @case('secondout')
+    @break
+
+    @case('secondout')
         <span class="fentry">
             <!-- SECOND OUT -->
-            @foreach($secondout as $f4)
-            @if($biometric_ID  == $f4['biometric_ID'])
-            @if($f4['second_out'])
-            @if(date('d',strtotime($f4['second_out'])) == $i)
-            {{date('h:i a',strtotime($f4['second_out']))}}
-            @endif
 
-            @endif
-            @endif
+            @php
+
+                $filteredSecondout = array_filter($secondout, function ($row) use ($i) {
+                    return date('d', strtotime($row['dtr_date'])) == $i;
+                });
+
+            @endphp
+
+            @foreach ($filteredSecondout as $f4)
+                @php
+
+                    $empSched = $schedule->filter(function ($sched) use ($f4) {
+                        return date('Y-m-d', strtotime($sched['schedule'])) === date('Y-m-d', strtotime($f4['dtr_date'])) && $sched['second_in'] === null && $sched['second_out'] === null;
+                    });
+
+                @endphp
+
+
+                @if ($biometric_ID === $f4['biometric_ID'])
+                    @if (count($empSched) >= 1)
+                        @foreach ($firstout as $f2)
+                            @if (date('d', strtotime($f2['first_out'])) == $i)
+                                @if (date('A', strtotime($f2['first_out'])) === 'PM')
+                                    {{ date('h:i a', strtotime($f2['first_out'])) }}
+                                @endif
+                            @endif
+                        @endforeach
+                    @else
+                        @if ($f4['second_out'])
+                            @if (date('d', strtotime($f4['dtr_date'])) == $i)
+                                {{ date('h:i a', strtotime($f4['second_out'])) }}
+                            @endif
+                        @endif
+                    @endif
+                @endif
             @endforeach
         </span>
-        @break
+    @break
 
-        @case('undertime')
-
-
-
+    @case('undertime_hours')
         <table id="tabledate" style="border:none">
             <tr style="border:none">
                 @php
-                $hours = '-';
-                $minutes = '-';
+                    $hours = '-';
+                    $minutes = '-';
                 @endphp
-                @foreach($undertime as $ut)
-                @if(date('d',strtotime($ut['created'])) == $i)
-                @php
-                $uttime = $ut['undertime'];
-                $hours = floor($uttime / 60);
-                $minutes = $uttime % 60;
+                @foreach ($undertime as $ut)
+                    @if (date('d', strtotime($ut['created'])) == $i)
+                        @php
+                            $uttime = $ut['undertime'];
+                            $hours = floor($uttime / 60);
+                            $minutes = $uttime % 60;
 
-                if($hours >=1){
-                $hours = $hours;
-                }else {
-                $hours = '-';
-                }
+                            if ($hours >= 1) {
+                                $hours = $hours;
+                            } else {
+                                $hours = '-';
+                            }
 
-                if($minutes >=1){
-                $minutes = $minutes;
-                }else {
-                $minutes = '-';
-                }
+                            if ($minutes >= 1) {
+                                $minutes = $minutes;
+                            } else {
+                                $minutes = '-';
+                            }
 
-                @endphp
-
-                @endif
+                        @endphp
+                    @endif
                 @endforeach
-                <td style="border: none; border-right: 1px solid gray !important; width: 50px;font-weight:bold;color:#04364A ">{{$hours}}</td>
-                <td style="border: none; width: 50px;font-weight:bold ;color:#04364A">{{$minutes}}</td>
+                {{-- <td style="border: none; border-right: 1px solid gray !important; width: 50px;font-weight:bold;color:#04364A ">{{$hours}}</td>
+                <td style="border: none; width: 50px;font-weight:bold ;color:#04364A">{{$minutes}}</td> --}}
 
 
             </tr>
         </table>
-        @break
+        {{ $hours }}
+    @break
+
+    @case('undertime_minutes')
+        @php
+            $hours = '-';
+            $minutes = '-';
+        @endphp
+        @foreach ($undertime as $ut)
+            @if (date('d', strtotime($ut['created'])) == $i)
+                @php
+                    $uttime = $ut['undertime'];
+                    $hours = floor($uttime / 60);
+                    $minutes = $uttime % 60;
+
+                    if ($hours >= 1) {
+                        $hours = $hours;
+                    } else {
+                        $hours = '-';
+                    }
+
+                    if ($minutes >= 1) {
+                        $minutes = $minutes;
+                    } else {
+                        $minutes = '-';
+                    }
+
+                @endphp
+            @endif
+        @endforeach
+
+        {{ $minutes }}
+    @break
 
     @default
-
 @endswitch

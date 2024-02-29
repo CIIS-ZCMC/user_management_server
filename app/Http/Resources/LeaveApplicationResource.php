@@ -15,7 +15,7 @@ class LeaveApplicationResource extends JsonResource
     public function toArray($request)
     {
         $area = $this->employeeProfile->assignedArea->findDetails();
-        $leave_credits = EmployeeLeaveCredit::where('employee_profile_id', $this->employeeProfile->id)->where('leave_type_id', $this->leave_type_id)->first();
+        // $leave_credits = EmployeeLeaveCredit::where('employee_profile_id', $this->employeeProfile->id)->where('leave_type_id', $this->leave_type_id)->first();
 
         return [
             "id" => $this->id,

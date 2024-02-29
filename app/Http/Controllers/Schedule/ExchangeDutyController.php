@@ -202,8 +202,7 @@ class ExchangeDutyController extends Controller
                     break;
 
                     default:
-                        $status = 'approved';
-                        break;
+                       return null;
                 }
             } else if ($request->approval_status === 'declined') {
                 $status = 'declined';
