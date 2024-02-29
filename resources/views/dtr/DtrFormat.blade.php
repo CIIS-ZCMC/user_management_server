@@ -34,7 +34,7 @@
 
     #tabledate tr .time {
         font-weight: bold;
-        color:#7596bd;
+        color:#57805e;
 
     }
     #tabledate tr .timefirstarrival {

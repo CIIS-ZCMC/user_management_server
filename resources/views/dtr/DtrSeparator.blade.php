@@ -27,6 +27,18 @@
     @endphp
 
     @foreach($firstin as $key=> $f1)
+
+    @php
+
+    $empSched = $schedule->filter(function($sched) use($f1){
+   return date('Y-m-d',strtotime($sched['schedule'])) === date('Y-m-d',strtotime($f1['dtr_date']))
+       && $sched['second_in'] === NULL && $sched['second_out'] === NULL;
+   });
+
+    @endphp
+
+
+
     @if($biometric_ID  == $f1['biometric_ID'])
     @if($f1['first_in'])
     @if(date('d',strtotime($f1['dtr_date'])) == $i)
@@ -35,7 +47,18 @@
         {{date('h:i a',strtotime($f1['first_in']))}}
 
     </span>
+    <script>
 
+        $(document).ready(function(){
+             $("#entry{{$i}}1").addClass("Present");
+            $("#entry{{$i}}2").addClass("Present");
+            $("#entry{{$i}}3").addClass("Present");
+            $("#entry{{$i}}4").addClass("Present");
+
+        })
+
+
+        </script>
 
     @php
     $countin ++ ;
@@ -50,8 +73,33 @@
     @if(date('D',strtotime(date('Y-m-d',strtotime($year.'-'.$month.'-'.$i)))) == 'Sun'
     )
      @if (!$isHoliday)
-     @if ($countin == 0)
-             <span class="timefirstarrival" style="color:gray">Day-off </span>
+     @if ($countin == 0)   @php
+     $checkSched = $schedule->filter(function($row) use($year,$month,$i){
+         return $row['schedule'] === date('Y-m-d',strtotime($year.'-'.$month.'-'.$i));
+     });
+
+ @endphp
+ @if (count($checkSched)>=1)
+
+ <span style="color:gray;font-style:italic;color:#FF6969;font-size:12px">ABSENT</span>
+
+ <script>
+
+$(document).ready(function(){
+     $("#entry{{$i}}1").addClass("Absent");
+    $("#entry{{$i}}2").addClass("Absent");
+    $("#entry{{$i}}3").addClass("Absent");
+    $("#entry{{$i}}4").addClass("Absent");
+
+})
+
+
+</script>
+ @else
+ <span class="timefirstarrival" style="color:gray">Day-off </span>
+ @endif
+
+
      @endif
 
     @endif
@@ -79,7 +127,28 @@
 
 
     @if ($count2 >=1)
-    <span class="timefirstarrival" style="color:gray">Day-off</span>
+    @php
+    $checkSched = $schedule->filter(function($row) use($year,$month,$i){
+        return $row['schedule'] === date('Y-m-d',strtotime($year.'-'.$month.'-'.$i));
+    });
+
+@endphp
+@if (count($checkSched)>=1)
+<script>
+    $(document).ready(function(){
+
+        $("#entry{{$i}}1").addClass("Absent");
+        $("#entry{{$i}}2").addClass("Absent");
+        $("#entry{{$i}}3").addClass("Absent");
+        $("#entry{{$i}}4").addClass("Absent");
+    })
+
+
+</script>
+<span style="color:gray;font-style:italic;color:#FF6969;font-size:12px">ABSENT</span>
+@else
+<span class="timefirstarrival" style="color:gray">Day-off </span>
+@endif
     @else
     <span class="timefirstarrival" style="color:gray">Day-off</span>
     @endif

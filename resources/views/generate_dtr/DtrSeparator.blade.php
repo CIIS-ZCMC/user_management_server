@@ -35,22 +35,24 @@
     @if($biometric_ID  == $f1['biometric_ID'])
     @if($f1['first_in'])
     @if(date('d',strtotime($f1['dtr_date'])) == $i)
-
+    @if (date('A',strtotime($f1['first_in'])) == "AM")
    {{-- check if schedule is half , then check the time if its am or pm --}}
    @if (count($empSched)>=1)
    {{-- checktime if its pm --}}
-   @if (date('A',strtotime($f1['first_in'])) == "AM")
+
 
     <span class="fentry">
         {{date('h:i a',strtotime($f1['first_in']))}}
     </span>
-   @endif
+
 
    @else
 
     <span class="fentry">
         {{date('h:i a',strtotime($f1['first_in']))}}
     </span>
+   @endif
+
    @endif
 
 
@@ -69,7 +71,17 @@
     )
      @if (!$isHoliday)
      @if ($countin == 0)
-             <span style="color:gray;font-size:8px">Day-off </span>
+     @php
+     $checkSched = $schedule->filter(function($row) use($year,$month,$i){
+         return $row['schedule'] === date('Y-m-d',strtotime($year.'-'.$month.'-'.$i));
+     });
+
+ @endphp
+ @if (count($checkSched)>=1)
+ <span style="color:gray;font-style:italic;color:#FF6969;font-size:10px">ABSENT</span>
+ @else
+ <span style="color:gray;font-size:8px">Day-off</span>
+ @endif
      @endif
 
     @endif
@@ -97,7 +109,17 @@
 
 
     @if ($count2 >=1)
-    <span style="color:gray;font-size:8px">Day-off</span>
+    @php
+    $checkSched = $schedule->filter(function($row) use($year,$month,$i){
+        return $row['schedule'] === date('Y-m-d',strtotime($year.'-'.$month.'-'.$i));
+    });
+
+@endphp
+@if (count($checkSched)>=1)
+<span style="color:gray;font-style:italic;color:#FF6969;font-size:10px">ABSENT</span>
+@else
+<span style="color:gray;font-size:8px">Day-off</span>
+@endif
     @else
     <span style="color:gray;font-size:8px">Day-off</span>
     @endif
@@ -173,11 +195,18 @@
         @if (date('A',strtotime($f2['first_out'])) == "AM")
         {{date('h:i a',strtotime($f2['first_out']))}}
         @endif
+
         @endif
         @else
+
+
                @if(date('d',strtotime($f2['dtr_date'])) == $fo)
-        {{date('h:i a',strtotime($f2['first_out']))}}
-        @endif
+
+                    @if (date('A',strtotime($f2['first_out'])) == "PM")
+                        {{date('h:i a',strtotime($f2['first_out']))}}
+                    @endif
+
+                 @endif
         @endif
 
 
@@ -193,15 +222,25 @@
 
         <span class="fentry">
             <!-- SECOND IN -->
-            @foreach($secondin as $f3)
+
+
+            @php
+
+            $filteredSecondin= array_filter($secondin, function ($row) use ($i) {
+                return date('d', strtotime($row['dtr_date'])) == $i;
+            });
+
+            @endphp
+
+            @foreach($filteredSecondin as $f3)
 
 
         @php
 
         $empSched = $schedule->filter(function($sched) use($f3){
-    return date('Y-m-d',strtotime($sched['schedule'])) === date('Y-m-d',strtotime($f3['dtr_date']))
-        && $sched['second_in'] === NULL && $sched['second_out'] === NULL;
-    });
+            return date('Y-m-d',strtotime($sched['schedule'])) === date('Y-m-d',strtotime($f3['dtr_date']))
+                && $sched['second_in'] === NULL && $sched['second_out'] === NULL;
+            });
         @endphp
 
 
@@ -229,8 +268,19 @@
         @if($f3['second_in'])
 
             {{date('h:i a',strtotime($f3['second_in']))}}
+          @else
 
+            @foreach($firstin as $f1)
+            @if (date('A',strtotime($f1['first_in'])) == "PM")
+            @if($biometric_ID  == $f1['biometric_ID'])
+            @if (date('d',strtotime($f1['dtr_date'])) == $i)
+            {{date('h:i a',strtotime($f1['first_in']))}}
             @endif
+            @endif
+            @endif
+            @endforeach
+
+        @endif
 
         @endif
 
@@ -307,7 +357,7 @@
         </span>
         @break
 
-        @case('undertime')
+        @case('undertime_hours')
 
 
 
@@ -349,12 +399,8 @@
         {{$hours}}
         @break
 
-        @case('undertime2')
+        @case('undertime_minutes')
 
-
-
-        <table id="tabledate" style="border:none">
-            <tr style="border:none">
                 @php
                 $hours = '-';
                 $minutes = '-';
@@ -382,13 +428,8 @@
 
                 @endif
                 @endforeach
-                {{-- <td style="border: none; border-right: 1px solid gray !important; width: 50px;font-weight:bold;color:#04364A ">{{$hours}}</td>
-                <td style="border: none; width: 50px;font-weight:bold ;color:#04364A"></td> --}}
 
-
-            </tr>
-            {{$minutes}}
-        </table>
+        {{$minutes}}
         @break
 
     @default

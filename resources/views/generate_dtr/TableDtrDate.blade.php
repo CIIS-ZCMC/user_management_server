@@ -25,9 +25,9 @@
     @include('generate_dtr.DtrSeparator',['entry'=>'secondout'])
 </td>
 <td style="width: 40px !important;font-size:10px;height:40px;">
-    @include('generate_dtr.DtrSeparator',['entry'=>'undertime'])
+    @include('generate_dtr.DtrSeparator',['entry'=>'undertime_hours'])
 </td>
-<td style="width: 40px !important;font-size:10px">
-    @include('generate_dtr.DtrSeparator',['entry'=>'undertime2'])
+<td style="width: 40px !important;font-size:10px;">
+    @include('generate_dtr.DtrSeparator',['entry'=>'undertime_minutes'])
 </td>
 
