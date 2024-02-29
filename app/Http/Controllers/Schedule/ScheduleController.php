@@ -60,7 +60,7 @@ class ScheduleController extends Controller
                                                 }])->whereHas('assignedArea', function ($query) use ($assigned_area_head) {
                                                     $query->where('id', $assigned_area_head['area']['id']);
                                                 })->get();
-                                                
+
                 // $array = EmployeeProfile::with([
                 //     'assignedArea',
                 //     'schedule' => function ($query) use ($year, $month) {
@@ -142,9 +142,7 @@ class ScheduleController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $user = $request->user;
-            $data = null;
-
+            $user           = $request->user;
             $is_weekend     = 0;
             $employee       = $cleanData['employee'];
             $date_start     = $cleanData['date_start'];     // Replace with your start date
