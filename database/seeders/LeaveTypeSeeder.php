@@ -43,7 +43,7 @@ class LeaveTypeSeeder extends Seeder
             'code' => "SL",
             'description' => 'On account of SICKNESS of the EMPLOYEE and IMMEDIATE family members',
             'period' => 0,
-            'file_date' => `Immediately upon the employee's return`,
+            'file_date' => 'Immediately upon the employee`s return',
             'month_value' => 12/15,
             'annual_credit' => 15,
             'is_active' => 1,

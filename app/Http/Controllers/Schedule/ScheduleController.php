@@ -56,10 +56,15 @@ class ScheduleController extends Controller
             } else {
                 $array = EmployeeProfile::with(['assignedArea',
                                                 'schedule' => function ($query) use ($year, $month) {
-                                                        $query->with(['timeShift', 'holiday'])->whereYear('date', '=', $year)->whereMonth('date', '=', $month);
+                                                        $query->with(['timeShift', 'holiday'])
+                                                            ->whereYear('date', '=', $year)
+                                                            ->whereMonth('date', '=', $month)
+                                                            ->where('employee_profile_schedule.deleted_at', '=', null);
                                                 }])->whereHas('assignedArea', function ($query) use ($assigned_area_head) {
                                                     $query->where('id', $assigned_area_head['area']['id']);
-                                                })->get();
+                                                })
+                                                ->where('id', '!=', $user->id)
+                                                ->get();
 
                 // $array = EmployeeProfile::with([
                 //     'assignedArea',
@@ -141,16 +146,15 @@ class ScheduleController extends Controller
 
                 $cleanData[$key] = strip_tags($value);
             }
-
-            $user           = $request->user;
             $is_weekend     = 0;
+            $data           = null;
+            $user           = $request->user;
             $employee       = $cleanData['employee'];
             $date_start     = $cleanData['date_start'];     // Replace with your start date
             $date_end       = $cleanData['date_end'];       // Replace with your end date
             $selected_date  = $cleanData['selected_date'];   // Selected Date;
             $selected_days  = $cleanData['selected_days'];  // Replace with your selected days
             $selected_dates = [];                           // Replace with your selected dates
-            $responseData = [];
 
             switch ($selected_days) {
                 //If Toggle Date Period On
@@ -198,7 +202,7 @@ class ScheduleController extends Controller
                     $selected_dates[] = null;
                 break;
             }
-
+        
             if (!empty($selected_dates)) {
                 foreach ($selected_dates as $dateSelected) {
                     $schedule = Schedule::where('time_shift_id', $cleanData['time_shift_id'])->where('date', $dateSelected)->first();
@@ -222,6 +226,12 @@ class ScheduleController extends Controller
                         $data->save();
                     }
 
+                    // $is24Hrs = Helpers::checkIs24PrevNextSchedule($data, $employee, $dateSelected);
+
+                    // if ($is24Hrs['result'] !== 'No Schedule') {
+                    //     return response()->json([$is24Hrs['result']], Response::HTTP_FOUND);
+                    // }
+
                     foreach ($employee as $value) {
                         $existing_employee_ids = EmployeeProfile::where('id', $value['employee_id'])->pluck('id');
 
@@ -234,13 +244,13 @@ class ScheduleController extends Controller
                 }
             } else {
                 
-                $schedule = Schedule::where('time_shift_id', $cleanData['time_shift_id'])->where('date', $cleanData['selected_date'])->first();
+                $schedule = Schedule::where('time_shift_id', $cleanData['time_shift_id'])->where('date', $selected_date)->first();
     
                 if ($schedule) {
                     $data = $schedule;
                 } else {
                     
-                    $dates = Carbon::parse($cleanData['selected_date']);
+                    $dates = Carbon::parse($selected_date);
                     $isWeekend = $dates->dayOfWeek === 6 || $dates->dayOfWeek === 0;
 
                     if ($isWeekend) {
@@ -251,9 +261,15 @@ class ScheduleController extends Controller
 
                     $data->time_shift_id    = $cleanData['time_shift_id'];
                     $data->is_weekend       = $is_weekend;
-                    $data->date             = $cleanData['selected_date'];
+                    $data->date             = $selected_date;
                     $data->save();
                 }
+
+                // $is24Hrs = Helpers::checkIs24PrevNextSchedule($data, $employee, $selected_date);
+
+                // if ($is24Hrs['result'] !== 'No Schedule') {
+                //     return response()->json([$is24Hrs['result']], Response::HTTP_FOUND);
+                // }
 
                 foreach ($employee as $value) {
                     $existing_employee_ids = EmployeeProfile::where('id', $value['employee_id'])->pluck('id');
@@ -266,14 +282,18 @@ class ScheduleController extends Controller
                 }
             }
 
+            foreach ($employee as $value) {
+                Helpers::registerEmployeeScheduleLogs($data->id, $user->id, 'Store');
+            }
 
-            Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
+            Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json([
                 'data' =>  new ScheduleResource($data),
                 'logs' => Helpers::registerEmployeeScheduleLogs($data->id, $user->id, 'Store'),
                 'message' => 'New employee schedule registered.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
+
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -344,6 +364,12 @@ class ScheduleController extends Controller
                 $schedule->date             = $cleanData['date'];
                 $schedule->save();
             }
+
+            // $is24Hrs = Helpers::checkIs24PrevNextSchedule($schedule, $data->employee_profile_id, $cleanData['date']);
+
+            // if ($is24Hrs['result'] !== 'No Schedule') {
+            //     return response()->json([$is24Hrs['result']], Response::HTTP_FOUND);
+            // }
 
             $data->schedule_id = $schedule->id;
             $data->update();
