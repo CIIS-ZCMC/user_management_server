@@ -350,4 +350,82 @@ class EmployeeProfile extends Authenticatable
     {
         return $this->personalInformation;
     }
+
+    
+    public function areaEmployee($assigned_area) 
+    {  
+        $key = null;
+
+        if(Division::where('chief_employee_profile_id', $this->id)->first()){
+            $key = 'division_id';
+        }
+        
+        if(Department::where('head_employee_profile_id', $this->id)->first()){
+            $key = 'department_id';
+        } 
+        
+        if(Section::where('supervisor_employee_profile_id', $this->id)->first()){
+            $key = 'section_id';
+        } 
+        
+        if(Unit::where('head_employee_profile_id', $this->id)->first()){
+            $key = 'unit_id';
+        } 
+
+        if($key === null) return null;
+
+        $assigned_areas = AssignArea::where($key, $assigned_area['details']->id)->get();
+     
+        $employees = [];
+        foreach ($assigned_areas as $assigned_area) {
+            $employees[] = $assigned_area->employeeProfile;
+        }
+
+        return $employees;
+    }
+
+    public function sectorHeads() 
+    {
+        
+       /** Division Chief */
+       $chief = Division::where('chief_employee_profile_id', $this->id)->first();
+
+       if ($chief) {
+            $departments = Department::where('division_id', $chief->id)->get();
+            $employees = [];
+            foreach ($departments as $department) {
+                $employees[] = $department->head;
+            }
+
+            return $employees;
+       }
+
+        /** Department Chief */
+        $head = Department::where('head_employee_profile_id', $this->id)->first();
+        if ($head) {
+            $sections = Section::where('department_id', $head->id)->get();
+    
+            $employees = [];
+            foreach ($sections as $key => $section) {
+                $employees[$key] = $section->supervisor;
+            }
+
+            return $employees;
+        }
+
+        /** Department Chief */
+        $supervisor = Section::where('supervisor_employee_profile_id', $this->id)->first();
+        if ($supervisor) {
+            $units = Unit::where('section_id', $supervisor->id)->get();
+    
+            $employees = [];
+            foreach ($units as $unit) {
+                $employees[] = $unit->head;
+            }
+
+            return $employees;
+        }
+
+        return [];
+    }
 }
