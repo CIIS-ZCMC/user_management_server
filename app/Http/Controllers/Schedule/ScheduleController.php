@@ -57,7 +57,7 @@ class ScheduleController extends Controller
                                             ->whereYear('date', '=', $year)
                                             ->whereMonth('date', '=', $month);
                                 }])->whereIn('id', $employee_ids)
-                                ->where('id', '!=', $user->id)
+                                // ->where('id', '!=', $user->id)
                                 ->get();
                     
             $data = [];
