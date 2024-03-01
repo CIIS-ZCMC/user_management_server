@@ -181,39 +181,36 @@ class TimeAdjusmentController extends Controller
             if ($request->status === 'approved') {
                 switch ($data->status) {
                     case 'applied':
-                        $status = 'approved';
+                        $dtr = DailyTimeRecords::where('dtr_date', Carbon::parse($data->date))->first();
 
-                        if ($status) {
-                            $dtr = DailyTimeRecords::where('dtr_date', Carbon::parse($data->date))->first();
-
-                            if ($dtr === null) {
-                                $employees = EmployeeProfile::find($data->employee_profile_id);
-                                $positions = 'CMPS II' || 'MCC I' || 'MCC II' || 'MO I'  || 'MO II' || 'MO III' || 'MO IV' || 'MS I' || 'MS I (PT)' || 'MS II' || 'MS II (PT)' ||
-                                                'MS III' || 'MS III (PT)' || 'MS IV' || 'MS IV (PT)';
-            
-                                if ($employees->findDesignation()['code'] !== $positions) {
-                                    return response()->json(['message' => 'User is not allowed to Time Adjust'], Response::HTTP_NOT_FOUND);
-                                }
-
-                                DailyTimeRecords::create([
-                                    'biometric_id' => $employees->biometric_id,
-                                    'dtr_date' => $data->date,
-                                    'first_in' => $data->first_in,
-                                    'first_out' => $data->first_out,
-                                    'second_in' => $data->second_in,
-                                    'second_out' => $data->second_out,
-                                ]);
-
-                            } else {
-
-                                $dtr->first_in = $data->first_in ?? $dtr->first_in;
-                                $dtr->first_out = $data->first_out ?? $dtr->first_out ;
-                                $dtr->second_in = $data->second_in ?? $dtr->second_in;
-                                $dtr->second_out = $data->second_out ?? $dtr->second_in;
-                                $dtr->update();
+                        if ($dtr === null) {
+                            $employees = EmployeeProfile::find($data->employee_profile_id);
+                            $positions = 'CMPS II' || 'MCC I' || 'MCC II' || 'MO I'  || 'MO II' || 'MO III' || 'MO IV' || 'MS I' || 'MS I (PT)' || 'MS II' || 'MS II (PT)' ||
+                                            'MS III' || 'MS III (PT)' || 'MS IV' || 'MS IV (PT)';
+        
+                            if ($employees->findDesignation()['code'] !== $positions) {
+                                return response()->json(['message' => 'User is not allowed to Time Adjust'], Response::HTTP_NOT_FOUND);
                             }
+
+                            DailyTimeRecords::create([
+                                'biometric_id' => $employees->biometric_id,
+                                'dtr_date' => $data->date,
+                                'first_in' => $data->first_in,
+                                'first_out' => $data->first_out,
+                                'second_in' => $data->second_in,
+                                'second_out' => $data->second_out,
+                            ]);
+
+                        } else {
+
+                            $dtr->first_in = $data->first_in ?? $dtr->first_in;
+                            $dtr->first_out = $data->first_out ?? $dtr->first_out ;
+                            $dtr->second_in = $data->second_in ?? $dtr->second_in;
+                            $dtr->second_out = $data->second_out ?? $dtr->second_in;
+                            $dtr->update();
                         }
 
+                        $status = 'approved';
                     break;
 
                     case 'declined':
