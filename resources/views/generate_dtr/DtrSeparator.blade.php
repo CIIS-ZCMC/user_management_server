@@ -23,7 +23,9 @@
             @php
 
                 $empSched = $schedule->filter(function ($sched) use ($f1) {
-                    return date('Y-m-d', strtotime($sched['schedule'])) === date('Y-m-d', strtotime($f1['dtr_date'])) && $sched['second_in'] === null && $sched['second_out'] === null;
+                    return date('Y-m-d', strtotime($sched['schedule'])) === date('Y-m-d', strtotime($f1['dtr_date'])) &&
+                        $sched['second_in'] === null &&
+                        $sched['second_out'] === null;
                 });
 
             @endphp
@@ -158,7 +160,10 @@
                 @php
 
                     $empSched = $schedule->filter(function ($sched) use ($f2) {
-                        return date('Y-m-d', strtotime($sched['schedule'])) === date('Y-m-d', strtotime($f2['dtr_date'])) && $sched['second_in'] === null && $sched['second_out'] === null;
+                        return date('Y-m-d', strtotime($sched['schedule'])) ===
+                            date('Y-m-d', strtotime($f2['dtr_date'])) &&
+                            $sched['second_in'] === null &&
+                            $sched['second_out'] === null;
                     });
 
                     // echo count($empSched);
@@ -204,7 +209,10 @@
                 @php
 
                     $empSched = $schedule->filter(function ($sched) use ($f3) {
-                        return date('Y-m-d', strtotime($sched['schedule'])) === date('Y-m-d', strtotime($f3['dtr_date'])) && $sched['second_in'] === null && $sched['second_out'] === null;
+                        return date('Y-m-d', strtotime($sched['schedule'])) ===
+                            date('Y-m-d', strtotime($f3['dtr_date'])) &&
+                            $sched['second_in'] === null &&
+                            $sched['second_out'] === null;
                     });
                 @endphp
 
@@ -213,13 +221,26 @@
                 @if ($biometric_ID == $f3['biometric_ID'])
                     @if (date('d', strtotime($f3['dtr_date'])) == $i)
                         @if (count($empSched) >= 1)
-                            @foreach ($firstin as $key => $f1)
-                                @if (date('d', strtotime($f1['dtr_date'])) == $i)
-                                    @if (date('A', strtotime($f1['first_in'])) == 'PM')
-                                        {{ date('h:i a', strtotime($f1['first_in'])) }}
+                            @php
+                                $firsti = array_filter($firstin, function ($res) use ($i) {
+                                    return date('d', strtotime($res['dtr_date'])) == $i &&
+                                        date('A', strtotime($res['first_in'])) === 'PM';
+                                });
+
+                            @endphp
+
+
+                            @if (count($firsti) >= 1)
+                                {{ date('h:i a', strtotime(array_values($firsti)[count($firsti) - 1]['first_in'])) }}
+                            @else
+                                @foreach ($firstin as $key => $f1)
+                                    @if (date('d', strtotime($f1['dtr_date'])) == $i)
+                                        @if (date('A', strtotime($f1['first_in'])) == 'PM')
+                                            {{ date('h:i a', strtotime($f1['first_in'])) }}
+                                        @endif
                                     @endif
-                                @endif
-                            @endforeach
+                                @endforeach
+                            @endif
                         @else
                             @if ($f3['second_in'])
                                 {{ date('h:i a', strtotime($f3['second_in'])) }}
@@ -257,7 +278,10 @@
                 @php
 
                     $empSched = $schedule->filter(function ($sched) use ($f4) {
-                        return date('Y-m-d', strtotime($sched['schedule'])) === date('Y-m-d', strtotime($f4['dtr_date'])) && $sched['second_in'] === null && $sched['second_out'] === null;
+                        return date('Y-m-d', strtotime($sched['schedule'])) ===
+                            date('Y-m-d', strtotime($f4['dtr_date'])) &&
+                            $sched['second_in'] === null &&
+                            $sched['second_out'] === null;
                     });
 
                 @endphp
@@ -265,13 +289,26 @@
 
                 @if ($biometric_ID === $f4['biometric_ID'])
                     @if (count($empSched) >= 1)
-                        @foreach ($firstout as $f2)
-                            @if (date('d', strtotime($f2['first_out'])) == $i)
-                                @if (date('A', strtotime($f2['first_out'])) === 'PM')
-                                    {{ date('h:i a', strtotime($f2['first_out'])) }}
+                        @php
+                            $firsto = array_filter($firstout, function ($res) use ($i) {
+                                return date('d', strtotime($res['first_out'])) == $i &&
+                                    date('A', strtotime($res['first_out'])) === 'PM';
+                            });
+
+                        @endphp
+
+
+                        @if (count($firsto) >= 1)
+                            {{ date('h:i a', strtotime(array_values($firsto)[count($firsto) - 1]['first_out'])) }}
+                        @else
+                            @foreach ($firstout as $f2)
+                                @if (date('d', strtotime($f2['first_out'])) == $i)
+                                    @if (date('A', strtotime($f2['first_out'])) === 'PM')
+                                        {{ date('h:i a', strtotime($f2['first_out'])) }}
+                                    @endif
                                 @endif
-                            @endif
-                        @endforeach
+                            @endforeach
+                        @endif
                     @else
                         @if ($f4['second_out'])
                             @if (date('d', strtotime($f4['dtr_date'])) == $i)
@@ -319,6 +356,7 @@
 
             </tr>
         </table>
+
         {{ $hours }}
     @break
 
