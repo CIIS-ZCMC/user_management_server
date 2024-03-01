@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use App\Models\Section;
 use App\Models\Schedule;
+use App\Helpers\Helpers as Help;
 
 
 
@@ -669,6 +670,9 @@ class DTRcontroller extends Controller
 
                 ]);
             }
+            $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
+            $approvingDTR = Help::getApprovingDTR($employee->assignedArea, $employee);
+            $approver = isset($approvingDTR['name']) ? $approvingDTR['name'] : null;
 
             if ($view) {
                 return view('generate_dtr.PrintDTRPDF',  [
@@ -688,7 +692,8 @@ class DTRcontroller extends Controller
                     'print_view' => true,
                     'halfsched' => $is_Half_Schedule,
                     'biometric_ID' => $biometric_id,
-                    'schedule' => $employeeSched
+                    'schedule' => $employeeSched,
+                    'Incharge' => $approver
                 ]);
             } else {
                 $options = new Options();
@@ -714,7 +719,8 @@ class DTRcontroller extends Controller
                     'print_view' => false,
                     'halfsched' => $is_Half_Schedule,
                     'biometric_ID' => $biometric_id,
-                    'schedule' => $employeeSched
+                    'schedule' => $employeeSched,
+                    'Incharge' => $approver
                 ]));
 
                 $dompdf->setPaper('Letter', 'portrait');

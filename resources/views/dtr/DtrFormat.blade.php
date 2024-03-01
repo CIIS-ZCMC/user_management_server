@@ -76,7 +76,7 @@
             </th>
         </tr>
 
-        {{-- {{print_r($dtrRecords)}} --}}
+
         <tbody>
             @php
                 $isExcept = false;
@@ -84,7 +84,8 @@
             @for ($i = 1; $i <= $daysInMonth; $i++)
                 @php
                     $checkIn = array_filter($dtrRecords, function ($res) use ($i) {
-                        return date('d', strtotime($res['first_in'])) == $i && date('d', strtotime($res['first_out'])) == $i + 1;
+                        return date('d', strtotime($res['first_in'])) == $i &&
+                            date('d', strtotime($res['first_out'])) == $i + 1;
                     });
 
                     $val = 0;

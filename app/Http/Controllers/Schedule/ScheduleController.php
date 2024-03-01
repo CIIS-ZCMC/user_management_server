@@ -37,47 +37,31 @@ class ScheduleController extends Controller
     public function index(Request $request)
     {
         try {
-            $month = $request->month;   // Replace with the desired month (1 to 12)
-            $year = $request->year;     // Replace with the desired year
+            $employees      = [];
+            $user           = $request->user;
+            $month          = $request->month;   // Replace with the desired month (1 to 12)
+            $year           = $request->year;     // Replace with the desired year
+            $assigned_area  = $user->assignedArea->findDetails();
             $dates_with_day = Helpers::getDatesInMonth($year, $month, "Days of Week");
 
-            $user               = $request->user;
-            $assigned_area      = $user->assignedArea->findDetails();
-            $assigned_area_head = Helpers::checkEmployeeHead($user->id, $assigned_area);
+            //Array
+            $myEmployees = $user->areaEmployee($assigned_area);
+            $supervisors = $user->sectorHeads();
 
-            $array = null;
-            if ($assigned_area['details']['code'] === 'HRMO') {
-                $array = EmployeeProfile::with([
-                    'assignedArea',
-                    'schedule' => function ($query) use ($year, $month) {
-                        $query->with(['timeShift', 'holiday'])->whereYear('date', '=', $year)->whereMonth('date', '=', $month);
-                    }
-                ])->get();
-            } else {
-                $array = EmployeeProfile::with(['assignedArea',
-                                                'schedule' => function ($query) use ($year, $month) {
-                                                        $query->with(['timeShift', 'holiday'])
-                                                            ->whereYear('date', '=', $year)
-                                                            ->whereMonth('date', '=', $month)
-                                                            ->where('employee_profile_schedule.deleted_at', '=', null);
-                                                }])->whereHas('assignedArea', function ($query) use ($assigned_area_head) {
-                                                    $query->where('id', $assigned_area_head['area']['id']);
-                                                })
-                                                ->where('id', '!=', $user->id)
-                                                ->get();
+            $employees = [ ...$myEmployees,...$supervisors];
+            $employee_ids = collect($employees)->pluck('id')->toArray();
 
-                // $array = EmployeeProfile::with([
-                //     'assignedArea',
-                //     'schedule' => function ($query) use ($year, $month) {
-                //         $query->with(['timeShift', 'holiday'])->whereYear('date', '=', $year)->whereMonth('date', '=', $month);
-                //     }
-                // ])->whereHas('assignedArea', function ($query) use ($user, $assigned_area) {
-                //     $query->where([strtolower($assigned_area['sector']) . '_id' => $assigned_area['details']['id']]);
-                // })->get();
-            }
-            
+            $array = EmployeeProfile::with(['assignedArea',
+                                'schedule' => function ($query) use ($year, $month) {
+                                        $query->with(['timeShift', 'holiday'])
+                                            ->whereYear('date', '=', $year)
+                                            ->whereMonth('date', '=', $month);
+                                }])->whereIn('id', $employee_ids)
+                                ->where('id', '!=', $user->id)
+                                ->get();
+                    
             $data = [];
-            foreach ($array as $key => $value) {
+            foreach ($array as $value) {
                 $data[] = [
                     'id' => $value['id'],
                     'name' => $value->name(),
@@ -91,7 +75,7 @@ class ScheduleController extends Controller
             return response()->json([
                 'data' => $data,
                 'dates' => $dates_with_day,
-                'time_shift' => TimeShiftResource::collection(TimeShift::all())
+                'time_shift' => TimeShiftResource::collection(TimeShift::all()),
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());

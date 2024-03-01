@@ -12,6 +12,7 @@ use Carbon\Carbon;
 
 use App\Models\AccessToken;
 
+
 class AuthenticateWithCookie
 {
     /**
@@ -24,14 +25,14 @@ class AuthenticateWithCookie
     public function handle(Request $request, Closure $next, ...$access)
     {
         try {
-            $cookieValue = $request->cookie(env('COOKIE_NAME'));
+            $cookieValue = $request->cookie(Helpers::Cookie_Name());
 
-            if(is_array($cookieValue)){
-                $cookieValue = $cookieValue[env('COOKIE_NAME')];
+            if (is_array($cookieValue)) {
+                $cookieValue = $cookieValue[Helpers::Cookie_Name()];
             }
 
             if (!$cookieValue) {
-                return response()->json(["data" => "/",'message' => 'un-authorized'], Response::HTTP_UNAUTHORIZED);
+                return response()->json(["data" => "/", 'message' => 'un-authorized'], Response::HTTP_UNAUTHORIZED);
             }
 
             $encryptedToken = json_decode($cookieValue);
