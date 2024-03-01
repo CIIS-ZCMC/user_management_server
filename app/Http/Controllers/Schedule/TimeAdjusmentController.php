@@ -184,7 +184,7 @@ class TimeAdjusmentController extends Controller
                         $status = 'approved';
 
                         if ($status) {
-                            $dtr = DailyTimeRecords::where('date', Carbon::parse($data->date))->first();
+                            $dtr = DailyTimeRecords::where('dtr_date', Carbon::parse($data->date))->first();
 
                             if ($dtr === null) {
                                 $employees = EmployeeProfile::find($data->employee_profile_id);
