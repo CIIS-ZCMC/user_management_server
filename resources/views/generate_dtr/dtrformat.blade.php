@@ -32,7 +32,7 @@
 
     #header {
         text-align: center;
-        margin-top: -17px;
+        margin-top: -21px;
     }
 
     #header h6 {
@@ -44,7 +44,7 @@
         text-align: center;
         text-transform: uppercase;
         margin-top: -20px;
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 500;
 
     }
@@ -150,7 +150,7 @@
         /* Add padding to data cells for spacing */
         font-size: 9px !important;
         width: 38px !important;
-        height: 22px !important;
+        height: 21px !important;
 
         text-transform: uppercase;
 
@@ -294,7 +294,7 @@
         @else
             <div></div>
         @endif
-        <span>NAME</span>
+        {{-- <span>NAME</span> --}}
     </div>
 
 
@@ -312,6 +312,9 @@
                     {{ $year }}</span>/<span style="font-size:10px">Regular Days</span>
             </td>
         </tr>
+        {{-- @if (count($dtrRecords) >= 1) --}}
+
+
         @if (strlen($Arrival_Departure) <= 35)
             <tr>
                 <td class="tit">
@@ -337,6 +340,7 @@
             </td>
         </tr>
 
+        {{-- @endif --}}
 
     </table>
 
@@ -383,7 +387,8 @@
             @for ($i = 1; $i <= $daysInMonth; $i++)
                 @php
                     $checkIn = array_filter($dtrRecords, function ($res) use ($i) {
-                        return date('d', strtotime($res['first_in'])) == $i && date('d', strtotime($res['first_out'])) == $i + 1;
+                        return date('d', strtotime($res['first_in'])) == $i &&
+                            date('d', strtotime($res['first_out'])) == $i + 1;
                     });
 
                     $val = 0;
@@ -442,8 +447,8 @@
     </div>
     <br>
     <div class="signature">
-        <div>
-
+        <div style="font-size: 12px;text-transform:uppercase">
+            {{ $Incharge }}
         </div>
         <div class="line"></div>
         <span> In Charge</span>
