@@ -261,7 +261,7 @@ class EmployeeProfileController extends Controller
 
             return response()
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
-                ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), false);
+                ->cookie(Helpers::Cookie_Name(), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), false);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'signIn', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -659,9 +659,9 @@ class EmployeeProfileController extends Controller
         $personal_information = $employee_profile->personalInformation;
         $assigned_area = $employee_profile->assignedArea;
         $area_assigned = $employee_profile->assignedArea->findDetails();
-        
+
         $position = $employee_profile->position();
-        
+
         $designation = null;
 
         if ($assigned_area['plantilla_id'] === null) {
@@ -675,7 +675,7 @@ class EmployeeProfileController extends Controller
         $last_login = LoginTrail::where('employee_profile_id', $employee_profile->id)->orderByDesc('created_at')->first();
 
         $special_access_role = SpecialAccessRole::where('employee_profile_id', $employee_profile->id)->where('system_role_id', 1)->first();
-        
+
         $employee = [
             'profile_url' => env('SERVER_DOMAIN') . "/photo/profiles/" . $employee_profile->profile_url,
             'employee_id' => $employee_profile->employee_id,
@@ -686,7 +686,7 @@ class EmployeeProfileController extends Controller
             'years_of_service' => $employee_profile->personalInformation->years_of_service,
             'last_login' => $last_login === null ? null : $last_login->created_at,
             'biometric_id' => $employee_profile->biometric_id,
-            'is_admin' => $special_access_role !== null? true:false
+            'is_admin' => $special_access_role !== null ? true : false
         ];
 
         $personal_information_data = [
@@ -868,7 +868,7 @@ class EmployeeProfileController extends Controller
 
             return response()
                 ->json(['data' => $data, 'message' => "Success signout to other device you are now login."], Response::HTTP_OK)
-                ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), false);
+                ->cookie(Helpers::Cookie_Name(), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), false);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'signOutFromOtherDevice', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -957,7 +957,7 @@ class EmployeeProfileController extends Controller
                 $token->delete();
             }
 
-            return response()->json(['message' => 'User signout.'], Response::HTTP_OK)->cookie(env('COOKIE_NAME'), '', -1);
+            return response()->json(['message' => 'User signout.'], Response::HTTP_OK)->cookie(Helpers::Cookie_Name(), '', -1);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'signOut', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -1073,7 +1073,7 @@ class EmployeeProfileController extends Controller
 
             return response()
                 ->json(['data' => $data, 'message' => "Success signin with two factor authentication."], Response::HTTP_OK)
-                ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), false);
+                ->cookie(Helpers::Cookie_Name(), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), false);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'signOut', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -1215,7 +1215,7 @@ class EmployeeProfileController extends Controller
 
             return response()
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
-                ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), false);
+                ->cookie(Helpers::Cookie_Name(), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), false);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'newPassword', $th->getMessage());
         }
@@ -1226,7 +1226,7 @@ class EmployeeProfileController extends Controller
 
         $my_old_password_collection = PasswordTrail::where('employee_profile_id', $employee_profile->id)->orderBy('created_at', 'desc')->limit(3)->get();
 
-        foreach($my_old_password_collection as $my_old_password){
+        foreach ($my_old_password_collection as $my_old_password) {
             $decryptedLastPassword = Crypt::decryptString($my_old_password->old_password);
             if (Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedLastPassword)) {
                 return true;
@@ -1544,7 +1544,7 @@ class EmployeeProfileController extends Controller
 
             return response()
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
-                ->cookie(env('COOKIE_NAME'), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), false);
+                ->cookie(Helpers::Cookie_Name(), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), false);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'updatePasswordExpiration', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -2374,7 +2374,7 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
 
     public function promotion($id, PromotionRequest $request)
     {
@@ -2391,7 +2391,7 @@ class EmployeeProfileController extends Controller
             //     return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
             // }
 
-            
+
             $employee_profile = EmployeeProfile::findOrFail($id);
             $effective_date = $request->effective_date;
             $designation_id = $request->designation_id;
@@ -2404,9 +2404,9 @@ class EmployeeProfileController extends Controller
             $areaid = trim($parts[0]);
             $sector = trim($parts[1]);
 
-           
+
             $assigned = $employee_profile->assignedArea;
-            
+
             $AssignareaRequest = new Request([
                 'area' => $areaid,
                 'sector' => $sector,
