@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use App\Models\Section;
 use App\Models\Schedule;
+use App\Helpers\Helpers as Help;
 
 
 
@@ -124,9 +125,7 @@ class DTRcontroller extends Controller
                     $attendance = simplexml_load_string($logs);
                     $user_Inf = simplexml_load_string($all_user_info);
                     $attendance_Logs =  $this->helper->getAttendance($attendance);
-
                     $Employee_Info  = $this->helper->getEmployee($user_Inf);
-
                     $Employee_Attendance = $this->helper->getEmployeeAttendance(
                         $attendance_Logs,
                         $Employee_Info
@@ -515,39 +514,48 @@ class DTRcontroller extends Controller
             $entry = '';
 
 
+
             foreach ($dtr as $val) {
                 /* Validating DTR with its Matching Schedules */
                 /*
                 *   if no matching schedule then
                 *   it will not display the daily time record
                 */
-                $schedule = $this->helper->getSchedule($val->biometric_id, date('Y-m-d', strtotime($val->first_in)));
-
-                $is_Half_Schedule = $this->isHalfEntrySchedule($schedule);
-
-                if (isset($schedule['date'])) {
-
-                    $sdate =  $schedule['date'];
-
-
-                    if (isset($val->first_in)) {
-                        $entry = $val->first_in;
-                    } else {
-                        if (isset($val->second_in)) {
-                            $entry = $val->second_in;
-                        }
+                if (isset($val->first_in) && $val->first_in !== NULL) {
+                    $entry = $val->first_in;
+                } else {
+                    if (isset($val->second_in) && $val->second_in !== NULL) {
+                        $entry = $val->second_in;
                     }
+                }
 
+                $yearSched = date('Y', strtotime($entry));
+                $monthSched = date('m', strtotime($entry));
+                $schedule = $this->helper->getSchedule($val->biometric_id, "all-{$yearSched}-{$monthSched}")['schedule'];
+                //GET THE SCHEDULE
+                $daySched = array_values(array_filter($schedule, function ($row) use ($entry) {
+                    return date('Y-m-d', strtotime($row['scheduleDate'])) == date('Y-m-d', strtotime($entry));
+                }))[0];
+
+
+                $is_Half_Schedule = $this->isHalfEntrySchedule($daySched);
+
+
+
+
+                if (isset($daySched['scheduleDate'])) {
+
+                    $sdate =  $daySched['scheduleDate'];
 
 
 
                     if (date('Y-m-d', strtotime($entry)) ==   $sdate) {
                         //   echo $entry;
                         $date_entry = date('Y-m-d H:i', strtotime($entry));
-                        $schedule_fEntry = date('Y-m-d H:i', strtotime(date('Y-m-d', strtotime($date_entry)) . ' ' . $schedule['first_entry']));
+                        $schedule_fEntry = date('Y-m-d H:i', strtotime(date('Y-m-d', strtotime($date_entry)) . ' ' . $sdate));
                         //return $this->WithinScheduleRange($dateentry, $schedulefEntry);
 
-                        if ($this->WithinScheduleRange($date_entry, $schedule_fEntry)) {
+                        if ($this->withinScheduleRange($date_entry, $schedule_fEntry)) {
                             $dt_records[] = [
                                 'biometric_ID' => $val->biometric_id,
                                 'first_in' => $val->first_in,
@@ -600,6 +608,9 @@ class DTRcontroller extends Controller
                     'biometric_ID' => $res['biometric_ID']
                 ];
             }, $dt_records);
+
+
+
 
             $second_out = array_map(function ($res) {
                 return  [
@@ -659,6 +670,9 @@ class DTRcontroller extends Controller
 
                 ]);
             }
+            $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
+            $approvingDTR = Help::getApprovingDTR($employee->assignedArea, $employee);
+            $approver = isset($approvingDTR['name']) ? $approvingDTR['name'] : null;
 
             if ($view) {
                 return view('generate_dtr.PrintDTRPDF',  [
@@ -678,7 +692,8 @@ class DTRcontroller extends Controller
                     'print_view' => true,
                     'halfsched' => $is_Half_Schedule,
                     'biometric_ID' => $biometric_id,
-                    'schedule' => $employeeSched
+                    'schedule' => $employeeSched,
+                    'Incharge' => $approver
                 ]);
             } else {
                 $options = new Options();
@@ -704,7 +719,8 @@ class DTRcontroller extends Controller
                     'print_view' => false,
                     'halfsched' => $is_Half_Schedule,
                     'biometric_ID' => $biometric_id,
-                    'schedule' => $employeeSched
+                    'schedule' => $employeeSched,
+                    'Incharge' => $approver
                 ]));
 
                 $dompdf->setPaper('Letter', 'portrait');

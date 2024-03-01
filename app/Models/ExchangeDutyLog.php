@@ -13,7 +13,7 @@ class ExchangeDutyLog extends Model
 
     protected $primaryKey = 'id';
 
-    protected $fillable = [
+    public $fillable = [
         'exchange_duty_id',
         'action_by',
         'action',

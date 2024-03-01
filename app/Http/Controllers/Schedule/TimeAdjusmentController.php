@@ -91,98 +91,70 @@ class TimeAdjusmentController extends Controller
             }
 
             $user = $request->user;
-            $data = null;
             $recommending_officer = null;
             $approving_officer = Section::where('code', 'HRMO')->first()->supervisor_employee_profile_id;
+            $employee = EmployeeProfile::find($cleanData['employee_profile_id'])->first();
+
 
             $dates = $cleanData['dtr_date'];
-            foreach ($dates as $key => $value) {
+            foreach ($dates as $value) {
+
                 $daily_time_record = DailyTimeRecords::where([
                     ['biometric_id', '=', $cleanData['biometric_id']],
                     ['dtr_date', '=', Carbon::parse($value['date'])],
-                ])->first();
+                ])->first() ?? null;
 
-                if ($daily_time_record === null) {
-                    $find_designation = EmployeeProfile::where('biometric_id', $cleanData['biometric_id'])->first()->findDesignation()['code'];
-                    $designation = 'CMPS II' || 'MCC I' || 'MCC II' || 'MO I'  || 'MO II' || 'MO III' || 'MO IV' || 'MS I' || 'MS I (PT)' || 'MS II' || 'MS II (PT)' ||
-                                    'MS III' || 'MS III (PT)' || 'MS IV' || 'MS IV (PT)';
+                if ($employee) {
+                    $employee_area = $employee->assignedArea->findDetails();
 
-                    if ($find_designation === $designation) {
-                            $data = TimeAdjusment::create([
-                                'first_in' => $value['firstIn'] ?? null,
-                                'first_out' => $value['firstOut'] ?? null,
-                                'second_in' => $value['secondIn'] ?? null,
-                                'second_out' => $value['secondOut'] ?? null,
-                                'employee_profile_id' => $value['employee_profile_id'],
-                                'date' => Carbon::parse($value['date']->format('Y-m-d')),
-                                'recommended_by' => $user->id,
-                                'approve_by' => $approving_officer,
-                                'remarks' => $value['remarks'],
-                            ]);
-                    } else {
-                        return response()->json(['message' => 'No DTR record found.'], Response::HTTP_NOT_FOUND);
+                    switch ($employee_area['sector']) {
+                        case 'Division':
+                            $recommending_officer = $employee->assignedArea->division->divisionHead;
+                            break;
+
+                        case 'Department':
+                            $recommending_officer = $employee->assignedArea->department->head;
+                            break;
+
+                        case 'Section':
+                            $recommending_officer = $employee->assignedArea->section->supervisor_employee_profile_id;
+                            break;
+
+                        case 'Unit':
+                            $recommending_officer = $employee->assignedArea->department->head;
+                            break;
+
+                        default:
+                            return response()->json(['message' => 'User has no sector'], Response::HTTP_NOT_FOUND);
                     }
-                    
-                } else {
-                    $employee = EmployeeProfile::find($cleanData['employee_profile_id'])->first();
-                    if ($employee) {
-                        $employee_area = $employee->assignedArea->findDetails();
-
-                        switch ($employee_area['sector']) {
-                            case 'Division':
-                                $recommending_officer = $employee->assignedArea->division->divisionHead;
-                                break;
-
-                            case 'Department':
-                                $recommending_officer = $employee->assignedArea->department->head;
-                                break;
-
-                            case 'Section':
-                                $recommending_officer = $employee->assignedArea->section->supervisor_employee_profile_id;
-                                break;
-
-                            case 'Unit':
-                                $recommending_officer = $employee->assignedArea->department->head;
-                                break;
-
-                            default:
-                                return response()->json(['message' => 'User has no sector'], Response::HTTP_NOT_FOUND);
-                        }
-                    }
-
-                    $data = TimeAdjusment::create([
-                        'first_in' => $value['firstIn'] ?? null,
-                        'first_out' => $value['firstOut'] ?? null,
-                        'second_in' => $value['secondIn'] ?? null,
-                        'second_out' => $value['secondOut'] ?? null,
-                        'employee_profile_id' => $employee->id,
-                        'daily_time_record_id' => $daily_time_record->id,
-                        'date' => Carbon::parse($value['date'])->format('Y-m-d'),
-                        'recommended_by' => $recommending_officer->id,
-                        'approve_by' => $approving_officer,
-                        'remarks' => $value['remarks'],
-                    ]);
                 }
+
+                $data = TimeAdjusment::create([
+                    'first_in' => $value['firstIn'] ?? null,
+                    'first_out' => $value['firstOut'] ?? null,
+                    'second_in' => $value['secondIn'] ?? null,
+                    'second_out' => $value['secondOut'] ?? null,
+                    'employee_profile_id' => $employee->id,
+                    'daily_time_record_id' => $daily_time_record->id ?? null,   
+                    'date' => $value['date'],
+                    'recommended_by' => $recommending_officer->id ?? $approving_officer ,
+                    'approve_by' => $approving_officer,
+                    'remarks' => $value['remarks'],
+                ]);
             }
 
             Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
-            return response()->json(['data' => $data], Response::HTTP_OK);
+            return response()->json([
+                'data' => new TimeAdjustmentResource($data),
+                'logs' => Helpers::registerTimeAdjustmentLogs($data->id, $user->id, 'Store'),
+                'message' => 'Request is now on-process'
+            ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(TimeAdjusment $timeAdjusment)
-    {
-        //
-    }
-
     /**
      * Update the specified resource in storage.
      */
@@ -204,31 +176,52 @@ class TimeAdjusmentController extends Controller
             if (!Hash::check($password . env("SALT_VALUE"), $password_decrypted)) {
                 return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
             }
-
+            
             $status = null;
             if ($request->status === 'approved') {
                 switch ($data->status) {
                     case 'applied':
                         $status = 'approved';
 
-                        // $find_designation = EmployeeProfile::where('biometric_id', $data['biometric_id'])->first()->findDesignation()['code'];
-                        // $designation = 'CMPS II' || 'MCC I' || 'MCC II' || 'MO I'  || 'MO II' || 'MO III' || 'MO IV' || 'MS I' || 'MS I (PT)' || 'MS II' || 'MS II (PT)' ||
-                        //                 'MS III' || 'MS III (PT)' || 'MS IV' || 'MS IV (PT)';
-    
-                        // if ($find_designation === $designation) {
-                        //     //
-                        // } else {
-                        //     $dtr = DailyTimeRecords::update(array_merge($request,['']));
-                        // }
+                        if ($status) {
+                            $dtr = DailyTimeRecords::where('date', Carbon::parse($data->date))->first();
+
+                            if ($dtr === null) {
+                                $employees = EmployeeProfile::find($data->employee_profile_id);
+                                $positions = 'CMPS II' || 'MCC I' || 'MCC II' || 'MO I'  || 'MO II' || 'MO III' || 'MO IV' || 'MS I' || 'MS I (PT)' || 'MS II' || 'MS II (PT)' ||
+                                                'MS III' || 'MS III (PT)' || 'MS IV' || 'MS IV (PT)';
+            
+                                if ($employees->findDesignation()['code'] !== $positions) {
+                                    return response()->json(['message' => 'User is not allowed to Time Adjust'], Response::HTTP_NOT_FOUND);
+                                }
+
+                                DailyTimeRecords::create([
+                                    'biometric_id' => $employees->biometric_id,
+                                    'dtr_date' => $data->date,
+                                    'first_in' => $data->first_in,
+                                    'first_out' => $data->first_out,
+                                    'second_in' => $data->second_in,
+                                    'second_out' => $data->second_out,
+                                ]);
+
+                            } else {
+
+                                $dtr->first_in = $data->first_in ?? $dtr->first_in;
+                                $dtr->first_out = $data->first_out ?? $dtr->first_out ;
+                                $dtr->second_in = $data->second_in ?? $dtr->second_in;
+                                $dtr->second_out = $data->second_out ?? $dtr->second_in;
+                                $dtr->update();
+                            }
+                        }
 
                     break;
 
                     case 'declined':
                         $status = 'declined';
-
+                    break;
+                    
                     default:
-                        $status = 'approved';
-                        break;
+                       return null;
                 }
             } else if ($request->status === 'declined') {
                 $status = 'declined';
@@ -239,12 +232,12 @@ class TimeAdjusmentController extends Controller
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in updating.' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json([
                 'data' => TimeAdjustmentResource::collection(TimeAdjusment::where('id', $data->id)->get()),
-                // 'logs' => Helpers::registerExchangeDutyLogs($data->id, $employee_profile->id, $status),
+                'logs' => Helpers::registerTimeAdjustmentLogs($data->id, $employee_profile->id, $status),
                 'msg' => 'Request '.$status
             ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
