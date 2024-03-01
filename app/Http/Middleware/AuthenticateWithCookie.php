@@ -12,6 +12,7 @@ use Carbon\Carbon;
 
 use App\Models\AccessToken;
 
+
 class AuthenticateWithCookie
 {
     /**
@@ -24,10 +25,10 @@ class AuthenticateWithCookie
     public function handle(Request $request, Closure $next, ...$access)
     {
         try {
-            $cookieValue = $request->cookie('ZCMCPortal');
+            $cookieValue = $request->cookie(Helpers::Cookie_Name());
 
             if (is_array($cookieValue)) {
-                $cookieValue = $cookieValue['ZCMCPortal'];
+                $cookieValue = $cookieValue[Helpers::Cookie_Name()];
             }
 
             if (!$cookieValue) {

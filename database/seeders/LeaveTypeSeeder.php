@@ -25,9 +25,6 @@ class LeaveTypeSeeder extends Seeder
         $requiment_seven = Requirement::find(7);
         $requiment_eight = Requirement::find(8);
         $requiment_nine = Requirement::find(9);
-        $requiment_ten = Requirement::find(10);
-        $requiment_eleven = Requirement::find(11);
-        $requiment_twelve = Requirement::find(12);
 
         $vacation_leave = LeaveType::create([
             'name' => "Vacation Leave",
