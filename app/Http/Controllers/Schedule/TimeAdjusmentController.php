@@ -216,10 +216,8 @@ class TimeAdjusmentController extends Controller
                     case 'declined':
                         $status = 'declined';
                     break;
-                    
-                    default:
-                       return null;
                 }
+                
             } else if ($request->status === 'declined') {
                 $status = 'declined';
             }
