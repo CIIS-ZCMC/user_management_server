@@ -53,7 +53,7 @@ class LeaveTypeSeeder extends Seeder
             'code' => "SL",
             'description' => 'On account of SICKNESS of the EMPLOYEE and IMMEDIATE family members',
             'period' => 0,
-            'file_date' => 'Immediately upon the employee`s return',
+            'file_date' => 'Immediately upon the employee return',
             'month_value' => 12/15,
             'annual_credit' => 15,
             'is_active' => 1,
@@ -74,7 +74,7 @@ class LeaveTypeSeeder extends Seeder
             'code' => "SL",
             'description' => 'To undergo medical examination/ Operation with scheduled date',
             'period' => 0,
-            'file_date' => `Advanced Application`,
+            'file_date' => 'Advanced Application',
             'month_value' => 12/15,
             'annual_credit' => 15,
             'is_active' => 1,
@@ -99,7 +99,7 @@ class LeaveTypeSeeder extends Seeder
             Granted to mark personal milestones and/or attend to filial and domestic responsibilities',
             'period' => 0,
             'file_date' => 'Personal milestone – One (1) week before. Other reasons under this leave can be filed 1 day after',
-            'month_value' => null,
+            'month_value' => 0,
             'annual_credit' => 3,
             'is_active' => 1,
             'is_special' => 0,
@@ -118,7 +118,7 @@ class LeaveTypeSeeder extends Seeder
             'description' => 'Balance of 10 days/more VL',
             'period' => 0,
             'file_date' => '5 days in advance prior to the effective date of leave',
-            'month_value' => null,
+            'month_value' => 0,
             'annual_credit' => 5,
             'is_active' => 1,
             'is_special' => 0,
@@ -320,11 +320,11 @@ class LeaveTypeSeeder extends Seeder
             'updated_at' => now()
         ]);
         LeaveTypeRequirement::create([
-            'leave_type_id' => $vawc_leave->id,
+            'leave_type_id' => $rehab_leave->id,
             'leave_requirement_id' => $requiment_six->id
         ]);
         LeaveTypeRequirement::create([
-            'leave_type_id' => $vawc_leave->id,
+            'leave_type_id' => $rehab_leave->id,
             'leave_requirement_id' => $requiment_two->id
         ]);
 
@@ -337,6 +337,7 @@ class LeaveTypeSeeder extends Seeder
             'file_date' => 'May be applied: 
             •In advance, that is, at least 5 days prior to the scheduled date of the gynecological surgery that will be undergone by the employee.
             •Can be filed IMMEDIATELY upon return during emergency surgical procedures.',
+            'month_value' => 0,
             'annual_credit' => 0,
             'is_active' => 1,
             'is_special' => 1,
@@ -348,11 +349,11 @@ class LeaveTypeSeeder extends Seeder
             'updated_at' => now()
         ]);
         LeaveTypeRequirement::create([
-            'leave_type_id' => $vawc_leave->id,
+            'leave_type_id' => $special_leave_women->id,
             'leave_requirement_id' => $requiment_two->id
         ]);
         LeaveTypeRequirement::create([
-            'leave_type_id' => $vawc_leave->id,
+            'leave_type_id' => $special_leave_women->id,
             'leave_requirement_id' => $requiment_nine->id
         ]);
 
@@ -363,6 +364,7 @@ class LeaveTypeSeeder extends Seeder
             'description' => 'May be availed of by the directly affected government employees',
             'period' => 5,
             'file_date' => 'Within 30 days from the first day of calamity declaration',
+            'month_value' => 0,
             'annual_credit' => 0,
             'is_active' => 1,
             'is_special' => 1,
