@@ -40,10 +40,10 @@ class Helpers
     }
 
     public static function getDivHead($user_area)
-    {   
+    {
         switch ($user_area['sector']) {
             case 'Division':
-                return Division::find($user_area['details']['id'])->chief_employee_profile_id;    
+                return Division::find($user_area['details']['id'])->chief_employee_profile_id;
             case 'Department':
                 $department = Department::find($user_area['details']['id']);
                 return $department->division->chief_employee_profile_id;
@@ -53,7 +53,7 @@ class Helpers
                     return $section->department->division->chief_employee_profile_id;
                 }
                 return $section->division->chief_employee_profile_id;
-                
+
             case 'Unit':
                 $unit = Unit::find($user_area['details']['id']);
                 if ($unit->section->department_id !== null) {
@@ -89,7 +89,7 @@ class Helpers
         $employee_otp = $employee_profile->otp;
         $otp_expiration = Carbon::parse($employee_profile->otp_expiration);
 
-        if($employee_otp === null){
+        if ($employee_otp === null) {
             return "Please click resend OTP.";
         }
 
@@ -194,16 +194,15 @@ class Helpers
     {
         $position = $employee_profile->position();
 
-        if($position !== null){
-            if($position['area']->code === 'OMCC'){
+        if ($position !== null) {
+            if ($position['area']->code === 'OMCC') {
                 return [
                     'id' => null,
                     'name' => null
                 ];
             }
 
-            switch($assigned_area['sector'])
-            {
+            switch ($assigned_area['sector']) {
                 case "Division":
                     $omcc = Division::where('code', 'OMCC')->first();
                     return [
@@ -219,7 +218,7 @@ class Helpers
                 case "Section":
                     $section = Section::find($assigned_area['details']->id);
 
-                    if($section->division_id !== null){
+                    if ($section->division_id !== null) {
                         $division = $section->division;
                         return [
                             'id' => $division->chief->biometric,
@@ -241,8 +240,7 @@ class Helpers
             }
         }
 
-        switch($assigned_area['sector'])
-        {
+        switch ($assigned_area['sector']) {
             case "Division":
                 $division = $employee_profile->assignedArea->division;
                 return [
@@ -268,7 +266,7 @@ class Helpers
                     'name' => $unit->head->personalInformation->name()
                 ];
         }
-        
+
         return null;
     }
 
@@ -325,7 +323,7 @@ class Helpers
             'action' => $action
         ]);
     }
-    
+
     public static function getDatesInMonth($year, $month, $value)
     {
         $start = new DateTime("{$year}-{$month}-01");
@@ -371,34 +369,34 @@ class Helpers
     {
         $fileName = '';
 
-        try{
+        try {
             if ($attachment->isValid()) {
                 $file = $attachment;
                 $filePath = $file->getRealPath();
-    
+
                 $finfo = new \finfo(FILEINFO_MIME);
                 $mime = $finfo->file($filePath);
                 $mime = explode(';', $mime)[0];
-    
+
                 $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
-    
+
                 if (!in_array($mime, $allowedMimeTypes)) {
                     return response()->json(['message' => 'Invalid file type'], Response::HTTP_BAD_REQUEST);
                 }
-    
+
                 // Check for potential malicious content
                 $fileContent = file_get_contents($filePath);
-    
+
                 if (preg_match('/<\s*script|eval|javascript|vbscript|onload|onerror/i', $fileContent)) {
                     return response()->json(['message' => 'File contains potential malicious content'], Response::HTTP_BAD_REQUEST);
                 }
-    
+
                 $file = $attachment;
                 $fileName = base64_encode(Hash::make(time())) . '.' . $file->getClientOriginalExtension();
-    
+
                 $file->move(public_path($FILE_URL), $fileName);
             }
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             return ['failed', $th->getMessage()];
         }
 
@@ -427,7 +425,7 @@ class Helpers
 
         return $code;
     }
-    
+
     public static function ScheduleApprovingOfficer($area, $user)
     {
         if ($area != null) {
@@ -435,11 +433,11 @@ class Helpers
                 $division = Division::where('id', $user->assignedArea->division->id)->first();
 
                 if ($division->chief_employee_profile_id !== null) {
-                  return ["approving_officer" => $division->chief_employee_profile_id];
+                    return ["approving_officer" => $division->chief_employee_profile_id];
                 }
 
                 if ($division->oic_employee_profile_id !== null) {
-                     return ["approving_officer" =>  $division->oic_employee_profile_id];
+                    return ["approving_officer" =>  $division->oic_employee_profile_id];
                 }
             }
 
@@ -447,52 +445,53 @@ class Helpers
                 $department = Department::where('id', $user->assignedArea->department->id)->first();
 
                 if ($department->head_employee_profile_id !== null) {
-                     return ["approving_officer" =>  $department->head_employee_profile_id];
+                    return ["approving_officer" =>  $department->head_employee_profile_id];
                 }
 
                 if ($department->oic_employee_profile_id  !== null) {
-                     return ["approving_officer" =>  $department->oic_employee_profile_id];
+                    return ["approving_officer" =>  $department->oic_employee_profile_id];
                 }
             }
 
             if ($area['sector'] === 'Section') {
-                $section = Section::where('id',$user->assignedArea->section->id)->first();
+                $section = Section::where('id', $user->assignedArea->section->id)->first();
                 if ($section) {
                     if ($section->department_id !== null) {
-                         return ["approving_officer" =>  Department::where('id', $section->department_id)->first()->head_employee_profile_id];
+                        return ["approving_officer" =>  Department::where('id', $section->department_id)->first()->head_employee_profile_id];
                     }
-                   
+
                     if ($section->supervisor_employee_profile_id !== null) {
-                         return ["approving_officer" =>  $section->supervisor_employee_profile_id];
+                        return ["approving_officer" =>  $section->supervisor_employee_profile_id];
                     }
 
                     if ($section->oic_employee_profile_id  !== null) {
-                         return ["approving_officer" =>  $section->oic_employee_profile_id];
+                        return ["approving_officer" =>  $section->oic_employee_profile_id];
                     }
                 }
             }
 
             if ($area['sector'] === 'Unit') {
-                $unit = Unit::where('id',$user->assignedArea->unit->id)->first();
+                $unit = Unit::where('id', $user->assignedArea->unit->id)->first();
                 if ($unit) {
                     if ($unit->section_id  !== null) {
-                         return ["approving_officer" =>  Section::where('id', $unit->section_id)->first()->supervisor_employee_profile_id];
+                        return ["approving_officer" =>  Section::where('id', $unit->section_id)->first()->supervisor_employee_profile_id];
                     }
-                   
+
                     if ($unit->head_employee_profile_id !== null) {
-                         return ["approving_officer" =>  $unit->head_employee_profile_id];
+                        return ["approving_officer" =>  $unit->head_employee_profile_id];
                     }
 
                     if ($unit->oic_employee_profile_id !== null) {
-                         return ["approving_officer" =>  $unit->oic_employee_profile_id];
+                        return ["approving_officer" =>  $unit->oic_employee_profile_id];
                     }
                 }
             }
         }
     }
 
-    public static function ExchangeDutyApproval($assigned_area, $employee_profile_id) {
-        switch($assigned_area['sector']){
+    public static function ExchangeDutyApproval($assigned_area, $employee_profile_id)
+    {
+        switch ($assigned_area['sector']) {
             case 'Division':
                 $division_head = Division::find($assigned_area['details']['id'])->chief_employee_profile_id;
                 return ["approve_by" => $division_head];
@@ -503,7 +502,7 @@ class Helpers
 
             case 'Section':
                 $section = Section::find($assigned_area['details']['id']);
-                if($section->division !== null){
+                if ($section->division !== null) {
                     return ["approve_by" => $section->supervisor_employee_profile_id];
                 }
 
@@ -512,7 +511,7 @@ class Helpers
 
             case 'Unit':
                 $section = Unit::find($assigned_area['details']['id'])->section;
-                if($section->department_id !== null){
+                if ($section->department_id !== null) {
                     $department = $section->department;
                     return ["approve_by" => $department->head_employee_profile_id];
                 }
@@ -531,10 +530,10 @@ class Helpers
                 // If employee is Division head
                 if (Division::find($assigned_area['details']->id)->chief_employee_profile_id === $user_id) {
                     $chief_officer = Division::where('code', $assigned_area['details']['code'])->first();
-                    
+
                     if ($chief_officer !== null) {
                         $officer_assigned_area = EmployeeProfile::where('id', $chief_officer->chief_employee_profile_id)->first();
-                     }
+                    }
 
                     return [
                         "head" => $chief_officer->chief_employee_profile_id,
@@ -551,7 +550,7 @@ class Helpers
 
                     if ($chief_officer !== null) {
                         $officer_assigned_area = EmployeeProfile::where('id', $chief_officer->head_employee_profile_id)->first();
-                     }
+                    }
 
                     return [
                         "head" => $chief_officer->head_employee_profile_id,
@@ -565,9 +564,9 @@ class Helpers
                 // If employee is Section head
                 if (Section::find($assigned_area['details']->id)->supervisor_employee_profile_id === $user_id) {
                     $chief_officer = Section::where('code', $assigned_area['details']['code'])->first();
-                    
+
                     if ($chief_officer !== null) {
-                       $officer_assigned_area = EmployeeProfile::where('id', $chief_officer->supervisor_employee_profile_id)->first();
+                        $officer_assigned_area = EmployeeProfile::where('id', $chief_officer->supervisor_employee_profile_id)->first();
                     }
 
                     return [
@@ -585,7 +584,7 @@ class Helpers
 
                     if ($chief_officer !== null) {
                         $officer_assigned_area = EmployeeProfile::where('id', $chief_officer->head_employee_profile_id)->first();
-                     }
+                    }
 
                     return [
                         "head" => $chief_officer->head_employee_profile_id,
@@ -613,40 +612,40 @@ class Helpers
     public static function checkIs24PrevNextSchedule($schedule, $employeeId, $date)
     {
         foreach ($employeeId as $employee_id) {
-            
+
             $employeeID = $employee_id['employee_id'];
 
             // Check if the schedule spans a 24-hour shift for the current date and the adjacent dates
             $is24Hours = $schedule->timeShift->is24HourDuty();
             $prevDate = Carbon::parse($date)->copy()->subDay();
             $nextDate = Carbon::parse($date)->copy()->addDay();
-            
+
             $isPrev24Hours = Schedule::whereHas('employee', function ($query) use ($employeeID) {
-                                    $query->where('employee_profile_id', $employeeID);
-                                })
-                                ->where('date', $prevDate->toDateString())
-                                ->first()
-                                ?->timeShift->is24HourDuty() ?? false;
+                $query->where('employee_profile_id', $employeeID);
+            })
+                ->where('date', $prevDate->toDateString())
+                ->first()
+                ?->timeShift->is24HourDuty() ?? false;
 
             $isNext24Hours = Schedule::whereHas('employee', function ($query) use ($employeeID) {
-                                    $query->where('employee_profile_id', $employeeID);
-                                })
-                                ->where('date', $nextDate->toDateString())
-                                ->first()
-                                ?->timeShift->is24HourDuty() ?? false;
+                $query->where('employee_profile_id', $employeeID);
+            })
+                ->where('date', $nextDate->toDateString())
+                ->first()
+                ?->timeShift->is24HourDuty() ?? false;
 
             // Check if the current date itself spans a 24-hour shift
             $isCurrentDate24Hours = $is24Hours && $isPrev24Hours && $isNext24Hours;
-            
+
             if ($is24Hours) {
                 // return $employeeSchedules[$date->toDateString()] = '24hrs';
                 return ["result" => "Employee has 24hrs duty"];
-            } 
+            }
 
             if ($isPrev24Hours) {
                 // return $employeeSchedules[$date->toDateString()] = 'Employee worked 24hrs yesterday';
                 return ["result" => 'Employee worked 24hrs yesterday'];
-            } 
+            }
 
             if ($isNext24Hours) {
                 // return $employeeSchedules[$date->toDateString()] = 'Employee worked 24hrs tomorrow';
@@ -656,9 +655,14 @@ class Helpers
         }
         return ["result" => "No Schedule"];
     }
-    
+
     public static function hashKey($encryptedToken)
     {
         return openssl_decrypt($encryptedToken->token, "AES-256-CBC", "base64:fR8Lx8gzXJ57GafI840mU2jfx36HpIchVqnR8JbPUAg=", 0, substr(md5("base64:fR8Lx8gzXJ57GafI840mU2jfx36HpIchVqnR8JbPUAg="), 0, 16));
+    }
+
+    public static function Cookie_Name()
+    {
+        return "ZCMCPortal";
     }
 }
