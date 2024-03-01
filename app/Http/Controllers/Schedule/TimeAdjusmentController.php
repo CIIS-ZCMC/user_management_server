@@ -166,7 +166,11 @@ class TimeAdjusmentController extends Controller
             }
 
             Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
-            return response()->json(['data' => $data], Response::HTTP_OK);
+            return response()->json([
+                'data' => new TimeAdjustmentResource($data),
+                'logs' => Helpers::registerTimeAdjustmentLogs($data->id, $user->id, 'Store'),
+                'message' => 'Request is now on-process'
+            ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
@@ -174,15 +178,6 @@ class TimeAdjusmentController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(TimeAdjusment $timeAdjusment)
-    {
-        //
-    }
-
     /**
      * Update the specified resource in storage.
      */
@@ -211,14 +206,37 @@ class TimeAdjusmentController extends Controller
                     case 'applied':
                         $status = 'approved';
 
+                        if ($status) {
+                            $dtr = DailyTimeRecords::where('date', Carbon::parse($data->date))->first();
+
+                            if ($dtr === null) {
+                                $employee = EmployeeProfile::find($data->employee_profile_id);
+
+                                DailyTimeRecords::create([
+                                    'biometric_id' => $employee->biometric_id,
+                                    'dtr_date' => $data->date,
+                                    'first_in' => $data->first_in,
+                                    'first_out' => $data->first_out,
+                                    'second_in' => $data->second_in,
+                                    'second_out' => $data->second_out,
+                                ]);
+                            } else {
+
+                                $dtr->first_in = $data->first_in ?? $dtr->first_in;
+                                $dtr->first_out = $data->first_out ?? $dtr->first_out ;
+                                $dtr->second_in = $data->second_in ?? $dtr->second_in;
+                                $dtr->second_out = $data->second_out ?? $dtr->second_in;
+                                $dtr->update();
+                            }
+                        }
+
                     break;
 
                     case 'declined':
                         $status = 'declined';
 
                     default:
-                        $status = 'approved';
-                        break;
+                       return null;
                 }
             } else if ($request->status === 'declined') {
                 $status = 'declined';
@@ -229,12 +247,12 @@ class TimeAdjusmentController extends Controller
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in updating.' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json([
                 'data' => TimeAdjustmentResource::collection(TimeAdjusment::where('id', $data->id)->get()),
-                // 'logs' => Helpers::registerExchangeDutyLogs($data->id, $employee_profile->id, $status),
+                'logs' => Helpers::registerTimeAdjustmentLogs($data->id, $employee_profile->id, $status),
                 'msg' => 'Request '.$status
             ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

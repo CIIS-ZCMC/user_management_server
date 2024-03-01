@@ -13,6 +13,7 @@ use App\Models\OfficialTimeLog;
 use App\Models\Schedule;
 use App\Models\Section;
 use App\Models\SystemLogs;
+use App\Models\TimeAdjustmentLog;
 use App\Models\TimeShift;
 use App\Models\OfficialBusinessLog;
 
@@ -529,8 +530,6 @@ class Helpers
             'employee_schedule_id' => $data_id,
             'action_by' => $user_id,
             'action' => $action,
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
         ]);
     }
 
@@ -590,4 +589,12 @@ class Helpers
     {
         return "ZCMCPortal";
     }
-}
+
+    public static function registerTimeAdjustmentLogs($data_id, $user_id, $action)
+    {
+        TimeAdjustmentLog::create([
+            'time_adjusment_id' => $data_id,
+            'action_by' => $user_id,
+            'action' => $action,
+        ]);
+    }}
