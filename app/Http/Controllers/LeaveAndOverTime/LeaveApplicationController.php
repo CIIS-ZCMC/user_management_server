@@ -40,16 +40,59 @@ class LeaveApplicationController extends Controller
              * Only newly applied leave application
              */
 
-            if (Helpers::getHrmoOfficer() === $employee_profile->id) {
-                $hrmo = ["applied", "for recommending approval", "approved", "declined by hrmo officer"];
-                $leave_applications = LeaveApplication::where('hrmo_officer', $employee_profile->id)->orderBy('created_at', 'desc')->get();
+             if (Helpers::getHrmoOfficer() === $employee_profile->id) {
+                
+            $employeeId = $employee_profile->id;
+                $hrmo = ["applied", "approved", "declined by hrmo officer"];
+                $recommending = ["for recommending approval", "approved", "declined by recommending officer"];
+           
+                $leave_applications = LeaveApplication::select('leave_applications.*')
+                ->where(function ($query) use ($hrmo, $employeeId) {
+                    $query->whereIn('leave_applications.status', $hrmo)
+                        ->where('leave_applications.hrmo_officer', $employeeId);
+                })
+                ->orWhere(function ($query) use ($recommending, $employeeId) {
+                    $query->whereIn('leave_applications.status', $recommending)
+                        ->where('leave_applications.recommending_officer', $employeeId);
+                })
+                ->groupBy(
+                    'id',
+                    'employee_profile_id',
+                    'leave_type_id',
+                    'date_from',
+                    'date_to',
+                    'country',
+                    'city',
+                    'is_outpatient',
+                    'illness',
+                    'is_masters',
+                    'is_board',
+                    'is_commutation',
+                    'applied_credits',
+                    'status',
+                    'remarks',
+                    'without_pay',
+                    'reason',
+                    'hrmo_officer',
+                    'recommending_officer',
+                    'approving_officer',
+                    'created_at',
+                    'updated_at'
+                )
+                ->orderBy('created_at', 'desc')
+                ->get();
 
+            
                 return response()->json([
                     'data' => LeaveApplicationResource::collection($leave_applications),
                     'message' => 'Retrieve all leave application records.'
                 ], Response::HTTP_OK);
-            }
 
+                
+            }
+            
+       
+            
 
             $employeeId = $employee_profile->id;
             $recommending = ["for recommending approval", "for approving approval", "approved", "declined by recommending officer"];
