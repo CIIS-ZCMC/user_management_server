@@ -41,7 +41,7 @@ class LeaveApplicationController extends Controller
              */
 
             if (Helpers::getHrmoOfficer() === $employee_profile->id) {
-               
+                $hrmo = ["applied", "for recommending approval", "approved", "declined by hrmo officer"];
                 $leave_applications = LeaveApplication::where('hrmo_officer', $employee_profile->id)->orderBy('created_at', 'desc')->get();
 
                 return response()->json([

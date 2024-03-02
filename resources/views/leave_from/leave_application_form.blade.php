@@ -248,7 +248,7 @@
                 </tr>
 
                 <tr>
-                    <td class="topleft" colspan="3"> 6. A.) TYPE OF LEAVE TO BE AVAILED OF
+                    <td class="topleft" colspan="4"> 6. A.) TYPE OF LEAVE TO BE AVAILED OF
                         <div class="mb-3 text-start" style="margin-top:5px">
                             @foreach ($leave_type as $leaveType)
                                 <div style="display: flex; align-items:center; padding:1"> 
@@ -259,16 +259,16 @@
                                         ( &nbsp;&nbsp;  )
                                         @endif  
                                     </label>
-                                    <label class="small" style="margin-left:1; font-weight: lighter">
-                                              
-                                    {{ $leaveType->name }}
+                                    <label class="small" style="margin-left: 1; font-weight: lighter; font-size: 11px">
+                                        {{ $leaveType->name }}
+                                        <span style="font-size: 9px; font-weight: lighter;">({{ $leaveType->republic_act }})</span>
                                     </label>
                                 </div>
                             @endforeach
                         </div>
                     </td>
                     
-                    <td class="topleft" colspan="4"> 6. B.) DETAILS OF LEAVE <br>
+                    <td class="topleft" colspan="3"> 6. B.) DETAILS OF LEAVE <br>
                         <div class="mb-3 text-start small" style="margin-top:5px; margin-left:4px">
                             <label class="rigthside-font">In case of Vacation/Special Privilege Leave:</label>
                           

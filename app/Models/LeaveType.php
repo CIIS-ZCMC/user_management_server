@@ -22,6 +22,7 @@ class LeaveType extends Model
 
     public $fillable = [
         'name',
+        'republic_act',
         'code',
         'description',
         'period',

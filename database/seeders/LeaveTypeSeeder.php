@@ -28,6 +28,7 @@ class LeaveTypeSeeder extends Seeder
 
         $vacation_leave = LeaveType::create([
             'name' => "Vacation Leave",
+            'republic_act' => 'Sec. 51, Rule XVI, Omnibus Rules Implementing E.O. No. 292',
             'code' => "VL",
             'description' => 'Depends on the leave credit balances',
             'period' => 0,
@@ -47,6 +48,7 @@ class LeaveTypeSeeder extends Seeder
 
         $sick_leave = LeaveType::create([
             'name' => "Sick Leave",
+            'republic_act' => 'Sec. 43, Rule XVI, Omnibus Rules Implementing E.O. No. 292',
             'code' => "SL",
             'description' => 'On account of SICKNESS of the EMPLOYEE and IMMEDIATE family members',
             'period' => 0,
@@ -66,8 +68,10 @@ class LeaveTypeSeeder extends Seeder
             'leave_type_id' => $sick_leave->id,
             'leave_requirement_id' => $requiment_two->id
         ]);
+
         $sick_leave_exam = LeaveType::create([
             'name' => "Sick Leave (Medical Examination)",
+            'republic_act' => 'Sec. 43, Rule XVI, Omnibus Rules Implementing E.O. No. 292',
             'code' => "SL",
             'description' => 'To undergo medical examination/ Operation with scheduled date',
             'period' => 0,
@@ -91,6 +95,7 @@ class LeaveTypeSeeder extends Seeder
 
         $special_privilege_leave = LeaveType::create([
             'name' => "Special Privilege Leave",
+            'republic_act' => 'ec. 21, Rule XVI, Omnibus Rules Implementing E.O. No. 292',
             'code' => "SPL",
             'description' => 'Maybe granted after the Probationary period (6 months continuous service)
             Granted to mark personal milestones and/or attend to filial and domestic responsibilities',
@@ -110,7 +115,8 @@ class LeaveTypeSeeder extends Seeder
 
 
         $force_leave = LeaveType::create([
-            'name' => "Forced/Mandatory Leave",
+            'name' => "Mandatory/Forced Leave",
+            'republic_act' => 'Sec. 25, Rule XVI, Omnibus Rules Implementing E.O. No. 292',
             'code' => "FL",
             'description' => 'Balance of 10 days/more VL',
             'period' => 0,
@@ -128,7 +134,8 @@ class LeaveTypeSeeder extends Seeder
         ]);
 
         $soloparent_leave = LeaveType::create([
-            'name' => "Solo Parent",
+            'name' => "Solo Parent Leave",
+            'republic_act' => 'RA No. 8972 / CSC MC No. 8, s. 2004',
             'code' => "SP",
             'description' => 'Any Individual who is left with responsibility of parenthood. Solo parent who has rendered service of at least ONE (1) year. Validated Solo parent ID from DSWDy',
             'period' => 0,
@@ -147,6 +154,7 @@ class LeaveTypeSeeder extends Seeder
 
         $maternity_leave = LeaveType::create([
             'name' => "Maternity Leave",
+            'republic_act' => 'R.A. No. 11210 / IRR issued by CSC, DOLE and SSS',
             'code' => "ML",
             'description' => 'Granted to a qualified FEMALE public servant in every instance of pregnancy',
             'period' => 105,
@@ -181,6 +189,7 @@ class LeaveTypeSeeder extends Seeder
         
         $allocation_maternity_leave = LeaveType::create([
             'name' => "Allocation of Maternity Leave (Paternity leave)",
+            'republic_act' => 'R.A. No. 11210 / IRR issued by CSC, DOLE and SSS',
             'code' => "AML(PL)",
             'description' => 'Granted to Child’s Father, whether or not the same is Married to the female worker',
             'period' => 7,
@@ -203,6 +212,7 @@ class LeaveTypeSeeder extends Seeder
 
         $paternity_leave = LeaveType::create([
             'name' => "Paternity leave (Regular Paternity leave)",
+            'republic_act' => 'R.A. No. 8187 / CSC MC No. 71, s. 1998, as amended',
             'code' => "PL",
             'description' => 'Granted to MARRIED Male Employees',
             'period' => 7,
@@ -220,7 +230,8 @@ class LeaveTypeSeeder extends Seeder
         ]);
         
         $study_leave = LeaveType::create([
-            'name' => "Study leave",
+            'name' => "Study Leave",
+            'republic_act' => 'Sec. 68, Rule XVI, Omnibus Rules Implementing E.O. No. 292',
             'code' => "STL",
             'description' => 'Graduated a bachelor’s degree
             Must have completed all the academic requirements for a master’s degree
@@ -253,7 +264,8 @@ class LeaveTypeSeeder extends Seeder
         ]);
         
         $adoption_leave = LeaveType::create([
-            'name' => "Adoption leave",
+            'name' => "Adoption Leave",
+            'republic_act' => 'R.A. No. 8552',
             'code' => "AL",
             'description' => 'SIMILAR as of the Maternity and Paternity leave',
             'period' => 60,
@@ -276,7 +288,8 @@ class LeaveTypeSeeder extends Seeder
        
 
         $vawc_leave = LeaveType::create([
-            'name' => "VAWC leave",
+            'name' => "10-Day VAWC Leave",
+            'republic_act' => '(RA No. 9262 / CSC MC No. 15, s. 2005',
             'code' => "VAWCL",
             'description' => 'For WOMEN who have been a victim of violence',
             'period' => 10,
@@ -300,7 +313,8 @@ class LeaveTypeSeeder extends Seeder
        
 
         $rehab_leave = LeaveType::create([
-            'name' => "Rehabilitation leave",
+            'name' => "Rehabilitation Leave",
+            'republic_act' => 'Sec. 55, Rule XVI, Omnibus Rules Implementing E.O. No. 292',
             'code' => "RL",
             'description' => 'All personnel with permanent, temporary, casual or contractual appointments, including those with fixed terms of office',
             'period' => 182.5,
@@ -327,7 +341,8 @@ class LeaveTypeSeeder extends Seeder
 
 
         $special_leave_women = LeaveType::create([
-            'name' => "Special leave for Women",
+            'name' => "Special Leave Benefits for Women",
+            'republic_act' => 'RA No. 9710 / CSC MC No. 25, s. 2010',
             'code' => "RL",
             'description' => 'Female public sector employees. Rendered 6 months aggregate services in any or various government agencies for the last twelve(12) months prior to undergoing surgery for gynecological disorders.',
             'period' => 61,
@@ -356,7 +371,8 @@ class LeaveTypeSeeder extends Seeder
 
         
         $special_calamity = LeaveType::create([
-            'name' => "Special Calamity/Emergency leave",
+            'name' => "Special Emergency (Calamity) Leave",
+            'republic_act' => 'CSC MC No. 2, s. 2012, as amended',
             'code' => "SCL",
             'description' => 'May be availed of by the directly affected government employees',
             'period' => 5,

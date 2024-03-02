@@ -26,6 +26,7 @@ class LeaveApplicationResource extends JsonResource
                 'designation_name' => $this->employeeProfile->assignedArea->designation->name,
                 'designation_code' => $this->employeeProfile->assignedArea->designation->code,
                 'area' => $area['details']->name,
+                'area_code' => $area['details']->code,
                 'area_sector' => $area['sector'],
                 'profile_url'=>env('SERVER_DOMAIN') . "/photo/profiles/" . $this->employeeProfile->profile_url,
             ],

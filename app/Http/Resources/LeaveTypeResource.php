@@ -53,6 +53,7 @@ class LeaveTypeResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'republic_act'=>$this->republic_act,
             'description' => $this->description,
             'period' => (double)$this->period,
             'file_date' => $this->file_date,
