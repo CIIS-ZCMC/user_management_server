@@ -101,8 +101,20 @@ td:nth-child(2) {
                 <tr >
                     <td style="width: 200px !important;
                     border: 1px solid rgb(150, 147, 147);
-  padding: 8px;
-  text-align: left;
+                    padding: 8px;
+                    text-align: left;
+                    "> <span style="font-size:14px;font-weight:normal">Approval Pin :</span></td>
+                    <td style="  border: 1px solid rgb(150, 147, 147);
+                    padding: 8px;
+                    text-align: left;">
+                        {{$authorization_pin}}
+                    </td>
+                </tr>
+                <tr >
+                    <td style="width: 200px !important;
+                    border: 1px solid rgb(150, 147, 147);
+                    padding: 8px;
+                    text-align: left;
                     "> <span style="font-size:14px;font-weight:normal">Employee-ID / Username :</span></td>
                     <td style="  border: 1px solid rgb(150, 147, 147);
                     padding: 8px;

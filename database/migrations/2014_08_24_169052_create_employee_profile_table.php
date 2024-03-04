@@ -20,6 +20,7 @@ return new class extends Migration
             $table->text('password_encrypted')->nullable();
             $table->datetime('password_created_at');
             $table->datetime('password_expiration_at');
+            $table->integer('authorization_pin')->nullable();
             $table->integer('biometric_id')->nullable();
             $table->integer('otp')->nullable();
             $table->datetime('otp_expiration')->nullable();

@@ -4,6 +4,8 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Http\Requests\AuthPinApprovalRequest;
+use App\Models\PersonalInformation;
 use Illuminate\Support\Str;
 use App\Http\Controllers\DTR\TwoFactorAuthController;
 use App\Http\Resources\ChildResource;
@@ -48,7 +50,6 @@ use App\Http\Requests\SignInRequest;
 use App\Http\Requests\EmployeeProfileRequest;
 use App\Http\Resources\EmployeeProfileResource;
 use App\Http\Resources\EmployeesByAreaAssignedResource;
-use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Resources\EmployeeDTRList;
 use App\Models\AssignArea;
 use App\Models\DefaultPassword;
@@ -546,6 +547,10 @@ class EmployeeProfileController extends Controller
                         }
                     }
                 }
+
+                if(count($side_bar_details['system'])  === 0){
+                    $side_bar_details['system'][] = $this->buildSystemDetails($reg_system_role);
+                }
             }
 
             if ($employment_type->name == "Job order") {
@@ -603,6 +608,10 @@ class EmployeeProfileController extends Controller
                             $system['modules'] = $modulesCollection->toArray();
                         }
                     }
+                }
+
+                if(count($side_bar_details['system'])  === 0){
+                    $side_bar_details['system'][] = $this->buildSystemDetails($jo_system_role);
                 }
             }
         }
@@ -1907,6 +1916,14 @@ class EmployeeProfileController extends Controller
 
             $new_biometric_id = $last_registered_employee->biometric_id + 1;
             $new_employee_id = $date_hired_string . $employee_id_random_digit;
+            
+            /** Create Authorization Pin */
+            $personal_information = PersonalInformation::find(strip_tags($request->personal_information_id));
+            $dobCarbonDate = Carbon::parse($personal_information->date_of_birth);
+            $dobString = $dobCarbonDate->format('md');
+            $ran = random_int(100, 999);
+
+            $authorization_pin = $dobString.$ran;
 
             $cleanData['employee_id'] = $new_employee_id;
             $cleanData['biometric_id'] = $new_biometric_id;
@@ -1932,7 +1949,7 @@ class EmployeeProfileController extends Controller
             $cleanData['date_hired'] = $request->date_hired;
             $cleanData['designation_id'] = $request->designation_id;
             $cleanData['effective_at'] = $request->date_hired;
-
+            $cleanData['authorization_pin'] = $authorization_pin;
 
             $plantilla_number_id = $request->plantilla_number_id === "null"  || $request->plantilla_number_id === null ? null : $request->plantilla_number_id;
             $sector_key = '';
@@ -2502,16 +2519,14 @@ class EmployeeProfileController extends Controller
     }
 
 
-    public function destroy($id, PasswordApprovalRequest $request)
+    public function destroy($id, AuthPinApprovalRequest $request)
     {
         try {
             $user = $request->user;
-            $cleanData['password'] = strip_tags($request->input('password'));
+            $cleanData['pin'] = strip_tags($request->password);
 
-            $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
-
-            if (!Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedPassword)) {
-                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
             }
 
             $employee_profile = EmployeeProfile::findOrFail($id);
@@ -2533,16 +2548,14 @@ class EmployeeProfileController extends Controller
         }
     }
 
-    public function revokeRights($id, $access_right_id, PasswordApprovalRequest $request)
+    public function revokeRights($id, $access_right_id, AuthPinApprovalRequest $request)
     {
         try {
             $user = $request->user;
-            $cleanData['password'] = strip_tags($request->input('password'));
+            $cleanData['pin'] = strip_tags($request->password);
 
-            $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
-
-            if (!Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedPassword)) {
-                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
             }
 
             $employee_profile = EmployeeProfile::findOrFail($id);

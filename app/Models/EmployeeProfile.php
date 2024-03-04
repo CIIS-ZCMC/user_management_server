@@ -25,6 +25,7 @@ class EmployeeProfile extends Authenticatable
         'password_encrypted',
         'password_created_at',
         'password_expiration_at',
+        'authorization_pin',
         'biometric_id',
         'otp',
         'otp_expiration',

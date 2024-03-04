@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\LeaveAndOverTime;
 
 use App\Helpers\Helpers;
+use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Resources\EmployeeOvertimeCreditResource;
 use App\Models\Section;
 use DateTime;
@@ -116,9 +117,10 @@ class CtoApplicationController extends Controller
         }
     }
 
-    public function approved($id, PasswordApprovalRequest $request)
+    public function approved($id, AuthPinApprovalRequest $request)
     {
         try {
+            $employee_profile = $request->user;
             $data = CtoApplication::findOrFail($id);
 
             if(!$data) {
@@ -128,14 +130,11 @@ class CtoApplicationController extends Controller
             $status     = null;
             $log_action = null;
 
-            $password = strip_tags($request->password);
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->pin);
 
-            $employee_profile = $request->user;
-
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
-
-            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
             }
 
             if ($request->status === 'approved') {
@@ -324,17 +323,14 @@ class CtoApplicationController extends Controller
         }
     }
 
-    public function declined($id, PasswordApprovalRequest $request)
+    public function declined($id, AuthPinApprovalRequest $request)
     {
         try {
-            $password = strip_tags($request->password);
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
 
-            $employee_profile = $request->user;
-
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
-
-            if (!Hash::check($password . env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
             }
 
             $cto_application = CtoApplication::find($id);
@@ -363,7 +359,7 @@ class CtoApplicationController extends Controller
             ]);
 
             CtoApplicationLog::create([
-                'action_by' => $employee_profile->id,
+                'action_by' => $user->id,
                 'cto_application_id' => $cto_application->id,
                 'action' => 'Declined'
             ]);

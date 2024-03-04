@@ -30,6 +30,7 @@ class Authorization
         $user = $request->user;
 
         $employe_designation = $user->findDesignation();
+        $employment_type = $user->employmentType;
 
         $permissions = Cache::get($employe_designation->name);
 
@@ -55,9 +56,34 @@ class Authorization
 
         $permissions = Cache::get($user->employee_id);
         
-        if(!$has_rights){
-            foreach ($permissions['system'] as $key => $value) {
-                foreach ($value['modules'] as $key => $data) {
+        if($permissions && !$has_rights){
+            try{
+                foreach ($permissions['system'] as $key => $value) {
+                    foreach ($value['modules'] as $key => $data) {
+                        if ($data['code'] === $system_module['code']) {
+                            if (in_array($action, $data['permissions'])) {
+                                $has_rights = true;
+                            }
+                        }
+                        if($has_rights) break;
+                    }
+                    if($has_rights) break;
+                }
+                
+                $request->merge(['permission' => $routePermission]);
+    
+                return $next($request);
+            }catch(\Throwable $th){
+                
+            }
+        }
+        
+        if($employment_type->name === "Permanent" || $employment_type === 'Temporary'){
+            
+            $permissions = Cache::get("COMMON-REG");
+            
+            if($permissions !== null && !$has_rights){
+                foreach ($permissions['modules'] as $key => $data) {
                     if ($data['code'] === $system_module['code']) {
                         if (in_array($action, $data['permissions'])) {
                             $has_rights = true;
@@ -65,46 +91,31 @@ class Authorization
                     }
                     if($has_rights) break;
                 }
-                if($has_rights) break;
-            }
-            
-            $request->merge(['permission' => $routePermission]);
+                
+                $request->merge(['permission' => $routePermission]);
 
-            return $next($request);
+                return $next($request);
+            }
         }
         
-        $permissions = Cache::get("COMMON-REG");
         
-        if(!$has_rights){
-            foreach ($permissions['modules'] as $key => $data) {
-                if ($data['code'] === $system_module['code']) {
-                    if (in_array($action, $data['permissions'])) {
-                        $has_rights = true;
-                    }
-                }
-                if($has_rights) break;
-            }
+        if($employment_type->name === "Job order"){
+            $permissions = Cache::get("COMMON-JO");
             
-            $request->merge(['permission' => $routePermission]);
-
-            return $next($request);
-        }
-        
-        $permissions = Cache::get("COMMON-JO");
-        
-        if(!$has_rights){
-            foreach ($permissions['modules'] as $key => $data) {
-                if ($data['code'] === $system_module['code']) {
-                    if (in_array($action, $data['permissions'])) {
-                        $has_rights = true;
+            if($permissions && !$has_rights){
+                foreach ($permissions['modules'] as $key => $data) {
+                    if ($data['code'] === $system_module['code']) {
+                        if (in_array($action, $data['permissions'])) {
+                            $has_rights = true;
+                        }
                     }
+                    if($has_rights) break;
                 }
-                if($has_rights) break;
-            }
-            
-            $request->merge(['permission' => $routePermission]);
+                
+                $request->merge(['permission' => $routePermission]);
 
-            return $next($request);
+                return $next($request);
+            }
         }
 
         if (!$has_rights) {
