@@ -192,7 +192,7 @@ class TimeAdjusmentController extends Controller
                                 return response()->json(['message' => 'User is not allowed to Time Adjust'], Response::HTTP_NOT_FOUND);
                             }
 
-                            DailyTimeRecords::create([
+                            $dtr = DailyTimeRecords::create([
                                 'biometric_id' => $employees->biometric_id,
                                 'dtr_date' => $data->date,
                                 'first_in' => $data->first_in,
@@ -222,7 +222,12 @@ class TimeAdjusmentController extends Controller
                 $status = 'declined';
             }
 
-            $data->update(['status' => $status, 'remarks' => $request->remarks, 'approval_date' => Carbon::now()]);
+            $data->update([
+                'daily_time_record_id' => $data->daily_time_record_id ?? $dtr->id,
+                'approval_date' => Carbon::now(),
+                'remarks' => $request->remarks,
+                'status' => $status,  
+            ]);
 
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in updating.' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json([
