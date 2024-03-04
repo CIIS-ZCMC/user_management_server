@@ -767,8 +767,8 @@ class LeaveApplicationController extends Controller
                 $current_used_leave_credit = $employee_credit->used_leave_credits;
 
                 $employee_credit->update([
-                    'total_leave_credits' => $current_leave_credit + $leave_application->leave_credits,
-                    'used_leave_credits' => $current_used_leave_credit - $leave_application->leave_credits
+                    'total_leave_credits' => $current_leave_credit + $leave_application->applied_credits,
+                    'used_leave_credits' => $current_used_leave_credit - $leave_application->applied_credits
                 ]);
 
                 EmployeeLeaveCreditLogs::create([
