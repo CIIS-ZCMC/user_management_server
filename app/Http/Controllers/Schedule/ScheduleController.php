@@ -279,7 +279,6 @@ class ScheduleController extends Controller
             Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json([
                 'data' =>  new ScheduleResource($data),
-                'logs' => Helpers::registerEmployeeScheduleLogs($data->id, $user->id, 'Store'),
                 'message' => 'New employee schedule registered.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
