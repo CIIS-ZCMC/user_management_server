@@ -677,23 +677,23 @@ class LeaveApplicationController extends Controller
                         ]);
                     }
      
-                    $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->get();
+                    
+                }
+                $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->get();
                
         
-                    foreach ($employeeCredit as $leaveCredit) {
-                     
-                        $leaveType = $leaveCredit->leaveType->name;
-                        $totalCredits = $leaveCredit->total_leave_credits;
-                        $usedCredits = $leaveCredit->used_leave_credits;
-        
-                        $result[] = [
-                            'leave_type_name' => $leaveType,
-                            'total_leave_credits' => $totalCredits,
-                            'used_leave_credits' => $usedCredits
-                        ];
-                    }
+                foreach ($employeeCredit as $leaveCredit) {
+                 
+                    $leaveType = $leaveCredit->leaveType->name;
+                    $totalCredits = $leaveCredit->total_leave_credits;
+                    $usedCredits = $leaveCredit->used_leave_credits;
+    
+                    $result[] = [
+                        'leave_type_name' => $leaveType,
+                        'total_leave_credits' => $totalCredits,
+                        'used_leave_credits' => $usedCredits
+                    ];
                 }
-            
                 return response()->json([
                     'data' => new LeaveApplicationResource($leave_application),
                     'credits' => $result ? $result : [],
