@@ -14,14 +14,14 @@ class EmployeeSchedule extends Model
 
     protected $primaryKey = 'id';
 
-
     protected $fillable = [
         'employee_profile_id',
         'schedule_id',
         'is_on_call',
     ];
-
-    public $timestamps = false;
+    public $softDelete = true;
+    
+    public $timestamps = true;
 
     public function employee()
     {

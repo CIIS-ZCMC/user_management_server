@@ -5,15 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class PullOutLog extends Model
+class TimeAdjustmentLog extends Model
 {
     use HasFactory;
-    protected $table = 'pull_out_logs';
+    protected $table = 'time_adjustment_logs';
 
     protected $primaryKey = 'id';
 
     public $fillable = [
-        'pull_out_id',
+        'time_adjusment_id',
         'action_by',
         'action',
     ];

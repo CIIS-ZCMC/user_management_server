@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\EmployeeLeaveCredit;
+use App\Models\EmployeeProfile;
 use App\Models\LeaveType;
 use App\Models\LeaveTypeRequirement;
 use App\Models\Requirement;
@@ -16,7 +18,6 @@ class LeaveTypeSeeder extends Seeder
     public function run(): void
     {
 
-        $requiment_one = Requirement::find(1);
         $requiment_two = Requirement::find(2);
         $requiment_three = Requirement::find(3);
         $requiment_four = Requirement::find(4);
@@ -26,6 +27,7 @@ class LeaveTypeSeeder extends Seeder
         $requiment_eight = Requirement::find(8);
         $requiment_nine = Requirement::find(9);
 
+        //Employee
         $vacation_leave = LeaveType::create([
             'name' => "Vacation Leave",
             'republic_act' => 'Sec. 51, Rule XVI, Omnibus Rules Implementing E.O. No. 292',
@@ -33,7 +35,7 @@ class LeaveTypeSeeder extends Seeder
             'description' => 'Depends on the leave credit balances',
             'period' => 0,
             'file_date' => '5 days in advance prior to the effective date of leave',
-            'month_value' => 12/15,
+            'month_value' => 15/12,
             'annual_credit' => 15,
             'is_active' => 1,
             'is_special' => 0,
@@ -46,6 +48,7 @@ class LeaveTypeSeeder extends Seeder
         ]);
 
 
+        //Employee
         $sick_leave = LeaveType::create([
             'name' => "Sick Leave",
             'republic_act' => 'Sec. 43, Rule XVI, Omnibus Rules Implementing E.O. No. 292',
@@ -53,7 +56,7 @@ class LeaveTypeSeeder extends Seeder
             'description' => 'On account of SICKNESS of the EMPLOYEE and IMMEDIATE family members',
             'period' => 0,
             'file_date' => 'Immediately upon the employee return',
-            'month_value' => 12/15,
+            'month_value' => 15/12,
             'annual_credit' => 15,
             'is_active' => 1,
             'is_special' => 0,
@@ -76,14 +79,14 @@ class LeaveTypeSeeder extends Seeder
             'description' => 'To undergo medical examination/ Operation with scheduled date',
             'period' => 0,
             'file_date' => 'Advanced Application',
-            'month_value' => 12/15,
+            'month_value' => 15/12,
             'annual_credit' => 15,
             'is_active' => 1,
             'is_special' => 0,
             'is_country' => 0,
             'is_illness' => 1,
             'is_study' => 0,
-            'is_days_recommended' => 0,
+            'is_days_recommended' => 1,
             'created_at' => now(),
             'updated_at' => now()
         ]);
@@ -93,6 +96,7 @@ class LeaveTypeSeeder extends Seeder
             'leave_requirement_id' => $requiment_two->id
         ]);
 
+        //Employee
         $special_privilege_leave = LeaveType::create([
             'name' => "Special Privilege Leave",
             'republic_act' => 'ec. 21, Rule XVI, Omnibus Rules Implementing E.O. No. 292',
@@ -113,7 +117,7 @@ class LeaveTypeSeeder extends Seeder
             'updated_at' => now()
         ]);
 
-
+        //Employee
         $force_leave = LeaveType::create([
             'name' => "Mandatory/Forced Leave",
             'republic_act' => 'Sec. 25, Rule XVI, Omnibus Rules Implementing E.O. No. 292',
@@ -152,6 +156,20 @@ class LeaveTypeSeeder extends Seeder
             'updated_at' => now()
         ]);
 
+        $employees = EmployeeProfile::where("employment_type_id", 1)->get();
+        $leave_types = [$vacation_leave->id, $sick_leave->id, $sick_leave_exam->id, $special_privilege_leave->id, $force_leave->id, $soloparent_leave->id];
+
+        foreach($employees as $employee){
+            foreach($leave_types as $leave_type){
+                EmployeeLeaveCredit::create([
+                    'employee_profile_id' => $employee->id,
+                    'leave_type_id' => $leave_type,
+                    'total_leave_credits' => 0,
+                    'used_leave_credits' => 0,
+                ]);
+            }
+        }
+
         $maternity_leave = LeaveType::create([
             'name' => "Maternity Leave",
             'republic_act' => 'R.A. No. 11210 / IRR issued by CSC, DOLE and SSS',
@@ -170,11 +188,6 @@ class LeaveTypeSeeder extends Seeder
             'created_at' => now(),
             'updated_at' => now()
         ]);
-
-        // LeaveTypeRequirement::create([
-        //     'leave_type_id' => $maternity_leave->id,
-        //     'leave_requirement_id' => $requiment_one->id
-        // ]);
 
         LeaveTypeRequirement::create([
             'leave_type_id' => $maternity_leave->id,
@@ -330,10 +343,12 @@ class LeaveTypeSeeder extends Seeder
             'created_at' => now(),
             'updated_at' => now()
         ]);
+        
         LeaveTypeRequirement::create([
             'leave_type_id' => $rehab_leave->id,
             'leave_requirement_id' => $requiment_six->id
         ]);
+
         LeaveTypeRequirement::create([
             'leave_type_id' => $rehab_leave->id,
             'leave_requirement_id' => $requiment_two->id

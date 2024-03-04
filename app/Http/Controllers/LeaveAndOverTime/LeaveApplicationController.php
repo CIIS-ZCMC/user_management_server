@@ -252,6 +252,7 @@ class LeaveApplicationController extends Controller
     {
         try {
             $LeaveTypes = LeaveType::where('is_special','0')->get();
+            
             return response()->json([
                 'data' => LeaveTypeResource::collection($LeaveTypes),
                 'message' => 'list of special leave type retrieved.'

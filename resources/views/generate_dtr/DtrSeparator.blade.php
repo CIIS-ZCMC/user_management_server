@@ -23,7 +23,9 @@
             @php
 
                 $empSched = $schedule->filter(function ($sched) use ($f1) {
-                    return date('Y-m-d', strtotime($sched['schedule'])) === date('Y-m-d', strtotime($f1['dtr_date'])) && $sched['second_in'] === null && $sched['second_out'] === null;
+                    return date('Y-m-d', strtotime($sched->schedule)) === date('Y-m-d', strtotime($f1['dtr_date'])) &&
+                        $sched->second_in === null &&
+                        $sched->second_out === null;
                 });
 
             @endphp
@@ -31,21 +33,20 @@
             @if ($biometric_ID == $f1['biometric_ID'])
                 @if ($f1['first_in'])
                     @if (date('d', strtotime($f1['dtr_date'])) == $i)
-                        @if (date('A', strtotime($f1['first_in'])) == 'AM')
-                            {{-- check if schedule is half , then check the time if its am or pm --}}
-                            @if (count($empSched) >= 1)
-                                {{-- checktime if its pm --}}
-
-
-                                <span class="fentry">
-                                    {{ date('h:i a', strtotime($f1['first_in'])) }}
-                                </span>
-                            @else
+                        {{-- check if schedule is half , then check the time if its am or pm --}}
+                        @if (count($empSched) >= 1)
+                            {{-- checktime if its pm --}}
+                            @if (date('A', strtotime($f1['first_in'])) == 'AM')
                                 <span class="fentry">
                                     {{ date('h:i a', strtotime($f1['first_in'])) }}
                                 </span>
                             @endif
+                        @else
+                            <span class="fentry">
+                                {{ date('h:i a', strtotime($f1['first_in'])) }}
+                            </span>
                         @endif
+
 
 
 
@@ -62,7 +63,7 @@
                 @if ($countin == 0)
                     @php
                         $checkSched = $schedule->filter(function ($row) use ($year, $month, $i) {
-                            return $row['schedule'] === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
+                            return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
                         });
 
                     @endphp
@@ -97,7 +98,8 @@
                 @if ($count2 >= 1)
                     @php
                         $checkSched = $schedule->filter(function ($row) use ($year, $month, $i) {
-                            return $row['schedule'] === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
+                            return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) &&
+                                $row->attendance_status == 0;
                         });
 
                     @endphp
@@ -118,14 +120,22 @@
                     @else
                         @php
                             $checkSched = $schedule->filter(function ($row) use ($year, $month, $i) {
-                                return $row['schedule'] === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
+                                return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) &&
+                                    $row->attendance_status == 0;
+                            });
+
+                            $presentSched = $schedule->filter(function ($row) use ($year, $month, $i) {
+                                return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) &&
+                                    $row->attendance_status == 1;
                             });
 
                         @endphp
                         @if (count($checkSched) >= 1)
                             <span style="color:gray;font-style:italic;color:#FF6969;font-size:10px">ABSENT</span>
                         @else
-                            <span style="color:gray;font-size:8px">Day-off</span>
+                            @if (count($presentSched) == 0)
+                                <span style="color:gray;font-size:8px">Day-off</span>
+                            @endif
                         @endif
                     @endif
 
@@ -158,7 +168,10 @@
                 @php
 
                     $empSched = $schedule->filter(function ($sched) use ($f2) {
-                        return date('Y-m-d', strtotime($sched['schedule'])) === date('Y-m-d', strtotime($f2['dtr_date'])) && $sched['second_in'] === null && $sched['second_out'] === null;
+                        return date('Y-m-d', strtotime($sched->schedule)) ===
+                            date('Y-m-d', strtotime($f2['dtr_date'])) &&
+                            $sched->second_in === null &&
+                            $sched->second_out === null;
                     });
 
                     // echo count($empSched);
@@ -177,6 +190,8 @@
                         @else
                             @if (date('d', strtotime($f2['dtr_date'])) == $fo)
                                 @if (date('A', strtotime($f2['first_out'])) == 'PM')
+                                    {{ date('h:i a', strtotime($f2['first_out'])) }}
+                                @else
                                     {{ date('h:i a', strtotime($f2['first_out'])) }}
                                 @endif
                             @endif
@@ -204,7 +219,10 @@
                 @php
 
                     $empSched = $schedule->filter(function ($sched) use ($f3) {
-                        return date('Y-m-d', strtotime($sched['schedule'])) === date('Y-m-d', strtotime($f3['dtr_date'])) && $sched['second_in'] === null && $sched['second_out'] === null;
+                        return date('Y-m-d', strtotime($sched->schedule)) ===
+                            date('Y-m-d', strtotime($f3['dtr_date'])) &&
+                            $sched->second_in === null &&
+                            $sched->second_out === null;
                     });
                 @endphp
 
@@ -213,18 +231,31 @@
                 @if ($biometric_ID == $f3['biometric_ID'])
                     @if (date('d', strtotime($f3['dtr_date'])) == $i)
                         @if (count($empSched) >= 1)
-                            @foreach ($firstin as $key => $f1)
-                                @if (date('d', strtotime($f1['dtr_date'])) == $i)
-                                    @if (date('A', strtotime($f1['first_in'])) == 'PM')
-                                        {{ date('h:i a', strtotime($f1['first_in'])) }}
+                            @php
+                                $firsti = array_filter($firstin, function ($res) use ($i) {
+                                    return date('d', strtotime($res['dtr_date'])) == $i &&
+                                        date('A', strtotime($res['first_in'])) === 'PM';
+                                });
+
+                            @endphp
+
+
+                            @if (count($firsti) >= 1)
+                                {{ date('h:i a', strtotime(array_values($firsti)[count($firsti) - 1]['first_in'])) }}
+                            @else
+                                @foreach ($firstin as $key => $f1)
+                                    @if (date('d', strtotime($f1['dtr_date'])) == $i)
+                                        @if (date('A', strtotime($f1['first_in'])) == 'PM')
+                                            {{ date('h:i a', strtotime($f1['first_in'])) }}
+                                        @endif
                                     @endif
-                                @endif
-                            @endforeach
+                                @endforeach
+                            @endif
                         @else
                             @if ($f3['second_in'])
                                 {{ date('h:i a', strtotime($f3['second_in'])) }}
                             @else
-                                @foreach ($firstin as $f1)
+                                {{-- @foreach ($firstin as $f1)
                                     @if (date('A', strtotime($f1['first_in'])) == 'PM')
                                         @if ($biometric_ID == $f1['biometric_ID'])
                                             @if (date('d', strtotime($f1['dtr_date'])) == $i)
@@ -232,7 +263,7 @@
                                             @endif
                                         @endif
                                     @endif
-                                @endforeach
+                                @endforeach --}}
                             @endif
                         @endif
                     @endif
@@ -247,8 +278,8 @@
 
             @php
 
-                $filteredSecondout = array_filter($secondout, function ($row) use ($i) {
-                    return date('d', strtotime($row['dtr_date'])) == $i;
+                $filteredSecondout = array_filter($secondout, function ($row) use ($i, $biometric_ID) {
+                    return date('d', strtotime($row['dtr_date'])) == $i && $row['biometric_ID'] == $biometric_ID;
                 });
 
             @endphp
@@ -257,7 +288,10 @@
                 @php
 
                     $empSched = $schedule->filter(function ($sched) use ($f4) {
-                        return date('Y-m-d', strtotime($sched['schedule'])) === date('Y-m-d', strtotime($f4['dtr_date'])) && $sched['second_in'] === null && $sched['second_out'] === null;
+                        return date('Y-m-d', strtotime($sched->schedule)) ===
+                            date('Y-m-d', strtotime($f4['dtr_date'])) &&
+                            $sched->second_in === null &&
+                            $sched->second_out === null;
                     });
 
                 @endphp
@@ -265,13 +299,29 @@
 
                 @if ($biometric_ID === $f4['biometric_ID'])
                     @if (count($empSched) >= 1)
-                        @foreach ($firstout as $f2)
-                            @if (date('d', strtotime($f2['first_out'])) == $i)
-                                @if (date('A', strtotime($f2['first_out'])) === 'PM')
-                                    {{ date('h:i a', strtotime($f2['first_out'])) }}
+                        @php
+                            $firsto = array_filter($firstout, function ($res) use ($i, $biometric_ID) {
+                                return date('d', strtotime($res['first_out'])) == $i &&
+                                    date('A', strtotime($res['first_out'])) === 'PM' &&
+                                    $res['biometric_ID'] == $biometric_ID;
+                            });
+
+                        @endphp
+
+
+                        @if (count($firsto) >= 1)
+                            {{ date('h:i a', strtotime(array_values($firsto)[count($firsto) - 1]['first_out'])) }}
+                        @else
+                            @foreach ($firstout as $f2)
+                                @if (date('d', strtotime($f2['first_out'])) == $i)
+                                    @if ($biometric_ID === $f2['biometric_ID'])
+                                        @if (date('A', strtotime($f2['first_out'])) === 'PM')
+                                            {{ date('h:i a', strtotime($f2['first_out'])) }}
+                                        @endif
+                                    @endif
                                 @endif
-                            @endif
-                        @endforeach
+                            @endforeach
+                        @endif
                     @else
                         @if ($f4['second_out'])
                             @if (date('d', strtotime($f4['dtr_date'])) == $i)
@@ -292,25 +342,27 @@
                     $minutes = '-';
                 @endphp
                 @foreach ($undertime as $ut)
-                    @if (date('d', strtotime($ut['created'])) == $i)
-                        @php
-                            $uttime = $ut['undertime'];
-                            $hours = floor($uttime / 60);
-                            $minutes = $uttime % 60;
+                    @if ($biometric_ID == $ut['biometric_ID'])
+                        @if (date('d', strtotime($ut['created'])) == $i)
+                            @php
+                                $uttime = $ut['undertime'];
+                                $hours = floor($uttime / 60);
+                                $minutes = $uttime % 60;
 
-                            if ($hours >= 1) {
-                                $hours = $hours;
-                            } else {
-                                $hours = '-';
-                            }
+                                if ($hours >= 1) {
+                                    $hours = $hours;
+                                } else {
+                                    $hours = '-';
+                                }
 
-                            if ($minutes >= 1) {
-                                $minutes = $minutes;
-                            } else {
-                                $minutes = '-';
-                            }
-
-                        @endphp
+                                if ($minutes >= 1) {
+                                    $minutes = $minutes;
+                                } else {
+                                    $minutes = '-';
+                                }
+                                echo $hours;
+                            @endphp
+                        @endif
                     @endif
                 @endforeach
                 {{-- <td style="border: none; border-right: 1px solid gray !important; width: 50px;font-weight:bold;color:#04364A ">{{$hours}}</td>
@@ -319,38 +371,39 @@
 
             </tr>
         </table>
-        {{ $hours }}
     @break
 
     @case('undertime_minutes')
         @php
             $hours = '-';
             $minutes = '-';
+
         @endphp
         @foreach ($undertime as $ut)
-            @if (date('d', strtotime($ut['created'])) == $i)
-                @php
-                    $uttime = $ut['undertime'];
-                    $hours = floor($uttime / 60);
-                    $minutes = $uttime % 60;
+            @if ($biometric_ID == $ut['biometric_ID'])
+                @if (date('d', strtotime($ut['created'])) == $i)
+                    @php
+                        $uttime = $ut['undertime'];
+                        $hours = floor($uttime / 60);
+                        $minutes = $uttime % 60;
 
-                    if ($hours >= 1) {
-                        $hours = $hours;
-                    } else {
-                        $hours = '-';
-                    }
+                        if ($hours >= 1) {
+                            $hours = $hours;
+                        } else {
+                            $hours = '-';
+                        }
 
-                    if ($minutes >= 1) {
-                        $minutes = $minutes;
-                    } else {
-                        $minutes = '-';
-                    }
+                        if ($minutes >= 1) {
+                            $minutes = $minutes;
+                        } else {
+                            $minutes = '-';
+                        }
 
-                @endphp
+                        echo $minutes;
+                    @endphp
+                @endif
             @endif
         @endforeach
-
-        {{ $minutes }}
     @break
 
     @default
