@@ -29,7 +29,9 @@
             @php
 
                 $empSched = $schedule->filter(function ($sched) use ($f1) {
-                    return date('Y-m-d', strtotime($sched['schedule'])) === date('Y-m-d', strtotime($f1['dtr_date'])) && $sched['second_in'] === null && $sched['second_out'] === null;
+                    return date('Y-m-d', strtotime($sched->schedule)) === date('Y-m-d', strtotime($f1['dtr_date'])) &&
+                        $sched->second_in === null &&
+                        $sched->second_out === null;
                 });
 
             @endphp
@@ -67,7 +69,7 @@
                 @if ($countin == 0)
                     @php
                         $checkSched = $schedule->filter(function ($row) use ($year, $month, $i) {
-                            return $row['schedule'] === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
+                            return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
                         });
 
                     @endphp
@@ -110,7 +112,7 @@
                 @if ($count2 >= 1)
                     @php
                         $checkSched = $schedule->filter(function ($row) use ($year, $month, $i) {
-                            return $row['schedule'] === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
+                            return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
                         });
 
                     @endphp
@@ -140,7 +142,7 @@
                     @else
                         @php
                             $checkSched = $schedule->filter(function ($row) use ($year, $month, $i) {
-                                return $row['schedule'] === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
+                                return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
                             });
 
                         @endphp
@@ -201,7 +203,10 @@
                 @if ($biometric_ID == $f2['biometric_ID'])
                     @php
                         $empSched = $schedule->filter(function ($sched) use ($f2) {
-                            return date('Y-m-d', strtotime($sched['schedule'])) === date('Y-m-d', strtotime($f2['dtr_date'])) && $sched['second_in'] === null && $sched['second_out'] === null;
+                            return date('Y-m-d', strtotime($sched->schedule)) ===
+                                date('Y-m-d', strtotime($f2['dtr_date'])) &&
+                                $sched->second_in === null &&
+                                $sched->second_out === null;
                         });
 
                     @endphp
@@ -239,7 +244,10 @@
                 @php
 
                     $empSched = $schedule->filter(function ($sched) use ($f3) {
-                        return date('Y-m-d', strtotime($sched['schedule'])) === date('Y-m-d', strtotime($f3['dtr_date'])) && $sched['second_in'] === null && $sched['second_out'] === null;
+                        return date('Y-m-d', strtotime($sched->schedule)) ===
+                            date('Y-m-d', strtotime($f3['dtr_date'])) &&
+                            $sched->second_in === null &&
+                            $sched->second_out === null;
                     });
 
                 @endphp
@@ -271,7 +279,10 @@
             @foreach ($secondout as $f4)
                 @php
                     $empSched = $schedule->filter(function ($sched) use ($f4) {
-                        return date('Y-m-d', strtotime($sched['schedule'])) === date('Y-m-d', strtotime($f4['dtr_date'])) && $sched['second_in'] === null && $sched['second_out'] === null;
+                        return date('Y-m-d', strtotime($sched->schedule)) ===
+                            date('Y-m-d', strtotime($f4['dtr_date'])) &&
+                            $sched->second_in === null &&
+                            $sched->second_out === null;
                     });
                 @endphp
 
