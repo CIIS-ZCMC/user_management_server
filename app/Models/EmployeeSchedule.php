@@ -19,9 +19,9 @@ class EmployeeSchedule extends Model
         'schedule_id',
         'is_on_call',
     ];
-    protected $softDelete = true;
+    public $softDelete = true;
     
-    public $timestamps = false;
+    public $timestamps = true;
 
     public function employee()
     {

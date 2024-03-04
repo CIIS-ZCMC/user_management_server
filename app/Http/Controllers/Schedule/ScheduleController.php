@@ -48,16 +48,17 @@ class ScheduleController extends Controller
             $myEmployees = $user->areaEmployee($assigned_area);
             $supervisors = $user->sectorHeads();
 
-            $employees = [ ...$myEmployees,...$supervisors];
+             $employees = [ ...$myEmployees,...$supervisors];
             $employee_ids = collect($employees)->pluck('id')->toArray();
 
             $array = EmployeeProfile::with(['assignedArea',
                                 'schedule' => function ($query) use ($year, $month) {
                                         $query->with(['timeShift', 'holiday'])
                                             ->whereYear('date', '=', $year)
-                                            ->whereMonth('date', '=', $month);
+                                            ->whereMonth('date', '=', $month)
+                                            ->where('employee_profile_schedule.deleted_at', '=', null );
                                 }])->whereIn('id', $employee_ids)
-                                // ->where('id', '!=', $user->id)
+                                ->where('id', '!=', $user->id)
                                 ->get();
                     
             $data = [];
@@ -97,7 +98,6 @@ class ScheduleController extends Controller
                 'holiday' => Holiday::all()
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
-
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
