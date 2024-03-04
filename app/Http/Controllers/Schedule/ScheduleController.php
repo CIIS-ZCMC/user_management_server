@@ -218,7 +218,11 @@ class ScheduleController extends Controller
                         $existing_employee_ids = EmployeeProfile::where('id', $value['employee_id'])->pluck('id');
 
                         foreach ($existing_employee_ids as $employee_id) {
-                            $query[] = EmployeeSchedule::where('employee_profile_id', $employee_id)->where('schedule_id', $data->id)->first();
+                            $check_employee_schedules = EmployeeSchedule::where('employee_profile_id', $employee_id)->where('schedule_id', $data->id)->first();
+
+                            if ($check_employee_schedules !== null) {
+                                return response()->json(['message' => 'Schedule Already Exist'], Response::HTTP_FOUND);
+                            }
 
                             $data->employee()->attach($employee_id);
                         }
@@ -257,8 +261,12 @@ class ScheduleController extends Controller
                     $existing_employee_ids = EmployeeProfile::where('id', $value['employee_id'])->pluck('id');
 
                     foreach ($existing_employee_ids as $employee_id) {
-                        $query[] = EmployeeSchedule::where('employee_profile_id', $employee_id)->where('schedule_id', $data->id)->first();
+                        $check_employee_schedules = EmployeeSchedule::where('employee_profile_id', $employee_id)->where('schedule_id', $data->id)->first();
 
+                        if ($check_employee_schedules !== null) {
+                            return response()->json(['message' => 'Schedule Already Exist'], Response::HTTP_FOUND);
+                        }
+                        
                         $data->employee()->attach($employee_id);
                     }
                 }
