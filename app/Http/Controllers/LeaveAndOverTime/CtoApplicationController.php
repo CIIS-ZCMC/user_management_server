@@ -30,8 +30,8 @@ class CtoApplicationController extends Controller
         try {
             $employee_profile   = $request->user;
             $employee_area      = $employee_profile->assignedArea->findDetails();
-            $recommending = ["for recommending approval", "for approving approval", "approved", "declined"];
-            $approving = ["for approving approval", "approved", "declined"];
+            $recommending = ["for recommending approval", "for approving approval", "approved", "declined by recommending officer"];
+            $approving = ["for approving approval", "approved", "declined by approving officer"];
             $position = $employee_profile->position();
             $employeeId = $employee_profile->id;
 

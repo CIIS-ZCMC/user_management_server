@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('leave_types', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('republic_act');
             $table->string('code');
             $table->text('description')->nullable();
             $table->double('period')->nullable();

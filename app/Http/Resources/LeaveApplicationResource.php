@@ -14,9 +14,10 @@ class LeaveApplicationResource extends JsonResource
      */
     public function toArray($request)
     {
-        $area = $this->employeeProfile->assignedArea->findDetails();
-        // $leave_credits = EmployeeLeaveCredit::where('employee_profile_id', $this->employeeProfile->id)->where('leave_type_id', $this->leave_type_id)->first();
 
+        $area = $this->employeeProfile->assignedArea->findDetails();
+        $leave_credits = EmployeeLeaveCredit::where('employee_profile_id', $this->employeeProfile->id)->where('leave_type_id', $this->leave_type_id)->first();
+  
         return [
             "id" => $this->id,
             "employee_profile" => [
@@ -25,6 +26,7 @@ class LeaveApplicationResource extends JsonResource
                 'designation_name' => $this->employeeProfile->assignedArea->designation->name,
                 'designation_code' => $this->employeeProfile->assignedArea->designation->code,
                 'area' => $area['details']->name,
+                'area_code' => $area['details']->code,
                 'area_sector' => $area['sector'],
                 'profile_url'=>env('SERVER_DOMAIN') . "/photo/profiles/" . $this->employeeProfile->profile_url,
             ],
@@ -43,7 +45,7 @@ class LeaveApplicationResource extends JsonResource
             "remarks" => $this->remarks, //Reason of leave application.
             "without_pay" => $this->without_pay,
             'reason' => $this->reason,
-            // 'credit_balance' => $leave_credits->total_leave_credits ? $leave_credits->total_leave_credits : null,
+            'credit_balance' => $this->leaveType->is_special ? null : $leave_credits->total_leave_credits,
             "hrmo_officer" => [
                 "employee_id" => $this->hrmoOfficer->employee_id,
                 "name" => $this->hrmoOfficer->personalInformation->name(),

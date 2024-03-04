@@ -145,7 +145,8 @@ class SystemRoleController extends Controller
             if (!in_array($permission_action, $modules[$module_name]['permissions'])) {
                 $modules[$module_name]['permissions'][] = [
                     'id' => $permission->id,
-                    'action' => $permission->action
+                    'action' => $permission->action,
+                    'name' => $permission->name
                 ];
             }
         }
