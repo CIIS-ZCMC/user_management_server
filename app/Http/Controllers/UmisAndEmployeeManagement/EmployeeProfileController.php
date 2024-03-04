@@ -4,6 +4,7 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use Illuminate\Support\Str;
 use App\Http\Controllers\DTR\TwoFactorAuthController;
 use App\Http\Resources\ChildResource;
 use App\Http\Resources\CivilServiceEligibilityResource;
@@ -1789,6 +1790,64 @@ class EmployeeProfileController extends Controller
             // ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function myEmployees(Request $request)
+    {
+        try {
+            $user = $request->user;
+            $position = $user->position();
+
+            if(!$position){
+                return response()->json(['message' => "You don't have authorization as a supervisor of area."], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $my_assigned_area = $user->assignedArea->findDetails();
+            $key = Str::lower($my_assigned_area['sector'])."_id";
+
+            $assign_areas = AssignArea::where($key, $my_assigned_area['details']->id)
+                ->where('employee_profile_id', "<>",  $user->id)->get();
+
+            $employees = $assign_areas->map(function ($assign_area) {
+                return $assign_area->employeeProfile;
+            })->flatten()->all();
+
+            return response()->json([
+                'data' => EmployeeProfileResource::collection($employees),
+                'message' => 'list of employees retrieved.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'myEmployees', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function areasEmployees($id, Request $request)
+    {
+        try {
+            $user = $request->user;
+            $position = $user->position();
+            $sector = strip_tags($request->sector);
+            $key = Str::lower($sector)."_id";
+
+            if(!$position){
+                return response()->json(['message' => "You don't have authorization as a supervisor of area."], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $assign_areas = AssignArea::where($key, $id)->get();
+
+            $employees = $assign_areas->map(function ($assign_area) {
+                return $assign_area->employeeProfile;
+            })->flatten()->all();
+
+            return response()->json([
+                'data' => EmployeeProfileResource::collection($employees),
+                'message' => 'list of employees retrieved.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'areasEmployees', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
