@@ -18,9 +18,7 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 
-use DateTime;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -376,14 +374,12 @@ class ScheduleController extends Controller
     public function destroy($id, Request $request)
     {
         try {
-            // $data = Schedule::withTrashed()->findOrFail($id);
             $data = EmployeeSchedule::findOrFail($id);
 
             if (!$data) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            // $data->employee()->detach($request->employee_id);
             $data->delete();
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in delete ' . $this->SINGULAR_MODULE_NAME . '.');
@@ -433,7 +429,6 @@ class ScheduleController extends Controller
 
             /* Downloads as PDF */
             $dompdf->stream($filename, array("Attachment" => false));
-            // return view('generate_schedule/section-schedule', compact('data','holiday', 'month', 'year', 'dates', 'user', 'head_officer'));
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
