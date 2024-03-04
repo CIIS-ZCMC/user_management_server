@@ -69,7 +69,8 @@
                 @if ($countin == 0)
                     @php
                         $checkSched = $schedule->filter(function ($row) use ($year, $month, $i) {
-                            return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
+                            return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) &&
+                                $row->attendance_status == 0;
                         });
 
                     @endphp
@@ -112,7 +113,8 @@
                 @if ($count2 >= 1)
                     @php
                         $checkSched = $schedule->filter(function ($row) use ($year, $month, $i) {
-                            return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
+                            return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) &&
+                                $row->attendance_status == 0;
                         });
 
                     @endphp
@@ -142,7 +144,13 @@
                     @else
                         @php
                             $checkSched = $schedule->filter(function ($row) use ($year, $month, $i) {
-                                return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
+                                return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) &&
+                                    $row->attendance_status == 0;
+                            });
+
+                            $presentSched = $schedule->filter(function ($row) use ($year, $month, $i) {
+                                return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) &&
+                                    $row->attendance_status == 1;
                             });
 
                         @endphp
@@ -159,7 +167,19 @@
                                 })
                             </script>
                         @else
-                            <span class="timefirstarrival" style="color:gray">Day-off</span>
+                            @if (count($presentSched) == 0)
+                                <span class="timefirstarrival" style="color:gray;">Day-off</span>
+                            @else
+                                <script>
+                                    $(document).ready(function() {
+                                        $("#entry{{ $i }}1").addClass("Present");
+                                        $("#entry{{ $i }}2").addClass("Present");
+                                        $("#entry{{ $i }}3").addClass("Present");
+                                        $("#entry{{ $i }}4").addClass("Present");
+
+                                    })
+                                </script>
+                            @endif
                         @endif
                     @endif
 

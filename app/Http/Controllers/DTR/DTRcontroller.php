@@ -652,7 +652,6 @@ class DTRcontroller extends Controller
                 ->get();
 
 
-
             $schedules = $this->helper->getSchedule($biometric_id, "all-{$year_of}-{$month_of}");
 
             if ($FrontDisplay) {
