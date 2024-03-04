@@ -400,6 +400,7 @@
                 @endphp
 
                 <tr>
+
                     <td style="width: 35px !important;font-size:10px">{{ $i }}</td>
                     <td
                         style="text-transform: capitalize; color:#05171f; font-size:10px;width: 35px !important;font-size:10px">
@@ -407,6 +408,8 @@
                     </td>
 
                     @include('generate_dtr.TableDtrDate', ['schedule' => $schedule])
+
+
                     {{-- @php $rowspan = count($outdd) > 0 ? 2 : 1; @endphp
 
                 @if ($rowspan > 1)

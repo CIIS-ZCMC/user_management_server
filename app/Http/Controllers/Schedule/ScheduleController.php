@@ -18,9 +18,7 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 
-use DateTime;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -48,14 +46,15 @@ class ScheduleController extends Controller
             $myEmployees = $user->areaEmployee($assigned_area);
             $supervisors = $user->sectorHeads();
 
-            $employees = [ ...$myEmployees,...$supervisors];
+             $employees = [ ...$myEmployees,...$supervisors];
             $employee_ids = collect($employees)->pluck('id')->toArray();
 
             $array = EmployeeProfile::with(['assignedArea',
                                 'schedule' => function ($query) use ($year, $month) {
                                         $query->with(['timeShift', 'holiday'])
                                             ->whereYear('date', '=', $year)
-                                            ->whereMonth('date', '=', $month);
+                                            ->whereMonth('date', '=', $month)
+                                            ->where('employee_profile_schedule.deleted_at', '=', null );
                                 }])->whereIn('id', $employee_ids)
                                 ->where('id', '!=', $user->id)
                                 ->get();
@@ -97,7 +96,6 @@ class ScheduleController extends Controller
                 'holiday' => Holiday::all()
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
-
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -376,14 +374,12 @@ class ScheduleController extends Controller
     public function destroy($id, Request $request)
     {
         try {
-            // $data = Schedule::withTrashed()->findOrFail($id);
             $data = EmployeeSchedule::findOrFail($id);
 
             if (!$data) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            // $data->employee()->detach($request->employee_id);
             $data->delete();
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in delete ' . $this->SINGULAR_MODULE_NAME . '.');
@@ -433,7 +429,6 @@ class ScheduleController extends Controller
 
             /* Downloads as PDF */
             $dompdf->stream($filename, array("Attachment" => false));
-            // return view('generate_schedule/section-schedule', compact('data','holiday', 'month', 'year', 'dates', 'user', 'head_officer'));
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

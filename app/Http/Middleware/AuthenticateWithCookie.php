@@ -25,10 +25,10 @@ class AuthenticateWithCookie
     public function handle(Request $request, Closure $next, ...$access)
     {
         try {
-            $cookieValue = $request->cookie(Helpers::Cookie_Name());
+            $cookieValue = $request->cookie('ZCMCPortal');
 
             if (is_array($cookieValue)) {
-                $cookieValue = $cookieValue[Helpers::Cookie_Name()];
+                $cookieValue = $cookieValue['ZCMCPortal'];
             }
 
             if (!$cookieValue) {

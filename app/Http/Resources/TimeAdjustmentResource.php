@@ -34,6 +34,7 @@ class TimeAdjustmentResource extends JsonResource
             'recommended_by'        => $recommendedBy,
             'approve_by'            => $approveBy,
             'approval_date'         => $this->approval_date,
+            'dtr_date'              => $this->date,
             'first_in'              => $this->first_in,
             'first_out'             => $this->first_out,
             'second_in'             => $this->second_in,
