@@ -626,17 +626,20 @@ class DTRcontroller extends Controller
             $ut =  array_map(function ($res) {
                 return [
                     'created' => $res['created'],
-                    'undertime' => $res['undertime_minutes']
+                    'undertime' => $res['undertime_minutes'],
+                    'biometric_ID' => $res['biometric_ID']
                 ];
             }, $dt_records);
 
             $holidays = DB::table('holidays')->get();
 
-            $employeeSched = Schedule::select('date as schedule')
+            $employeeSched = DB::table('schedules')
+                ->select('date as schedule')
                 ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT first_in FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as first_in')
                 ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT first_out FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as first_out')
                 ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT second_in FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as second_in')
                 ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT second_out FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as second_out')
+                ->selectRaw('(CASE WHEN date = (SELECT dtr_date FROM `daily_time_records` WHERE dtr_date = schedules.date AND biometric_id = ' . $biometric_id . ' LIMIT 1) THEN 1 ELSE 0 END) as attendance_status')
                 ->whereIn('id', function ($query) use ($biometric_id) {
                     $query->select('schedule_id')
                         ->from('employee_profile_schedule')
@@ -647,6 +650,7 @@ class DTRcontroller extends Controller
                         });
                 })
                 ->get();
+
 
 
             $schedules = $this->helper->getSchedule($biometric_id, "all-{$year_of}-{$month_of}");
@@ -968,17 +972,20 @@ class DTRcontroller extends Controller
                 $ut =  array_map(function ($res) {
                     return [
                         'created' => $res['created'],
-                        'undertime' => $res['undertime_minutes']
+                        'undertime' => $res['undertime_minutes'],
+                        'biometric_ID' => $res['biometric_ID']
                     ];
                 }, $dt_records);
 
                 $holidays = DB::table('holidays')->get();
 
-                $employeeSched = Schedule::select('date as schedule')
+                $employeeSched = DB::table('schedules')
+                    ->select('date as schedule')
                     ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT first_in FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as first_in')
                     ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT first_out FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as first_out')
                     ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT second_in FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as second_in')
                     ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT second_out FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as second_out')
+                    ->selectRaw('(CASE WHEN date = (SELECT dtr_date FROM `daily_time_records` WHERE dtr_date = schedules.date AND biometric_id = ' . $biometric_id . ' LIMIT 1) THEN 1 ELSE 0 END) as attendance_status')
                     ->whereIn('id', function ($query) use ($biometric_id) {
                         $query->select('schedule_id')
                             ->from('employee_profile_schedule')
