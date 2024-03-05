@@ -46,7 +46,7 @@ class ScheduleController extends Controller
             $myEmployees = $user->areaEmployee($assigned_area);
             $supervisors = $user->sectorHeads();
 
-             $employees = [ ...$myEmployees,...$supervisors];
+            $employees = [ ...$myEmployees,...$supervisors];
             $employee_ids = collect($employees)->pluck('id')->toArray();
 
             $array = EmployeeProfile::with(['assignedArea',
@@ -281,6 +281,8 @@ class ScheduleController extends Controller
                         $data->employee()->attach($employee_id);
                     }
                 }
+
+                Helpers::registerEmployeeScheduleLogs($data->id, $user->id, 'Store');
             }
 
             Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
@@ -473,10 +475,11 @@ class ScheduleController extends Controller
 
         // Convert time shift times to Carbon instances
         $newStart = Carbon::parse($newTimeShift->first_in);
-        $newEnd = Carbon::parse($newTimeShift->first_out);
+        $newEnd = $newTimeShift->second_out ? Carbon::parse($newTimeShift->second_out) : Carbon::parse($newTimeShift->first_out);
+    
         $existingStart = Carbon::parse($existingTimeShift->first_in);
-        $existingEnd = Carbon::parse($existingTimeShift->first_out);
-
+        $existingEnd = $existingTimeShift->second_out ? Carbon::parse($existingTimeShift->second_out) : Carbon::parse($existingTimeShift->first_out);
+    
         // Check for overlap
         return !($newStart >= $existingEnd || $newEnd <= $existingStart);
     }
