@@ -25,7 +25,8 @@ class TimeAdjusment extends Model
         'date',
         'recommended_by',
         'approve_by',
-        'remarks'
+        'remarks',
+        'status',
     ];
 
     protected $softDelete = true;

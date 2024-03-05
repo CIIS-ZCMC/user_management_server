@@ -61,7 +61,7 @@ class LeaveTypeSeeder extends Seeder
             'is_active' => 1,
             'is_special' => 0,
             'is_country' => 0,
-            'is_illness' => 0,
+            'is_illness' => 1,
             'is_study' => 0,
             'is_days_recommended' => 0,
             'created_at' => now(),
@@ -72,29 +72,29 @@ class LeaveTypeSeeder extends Seeder
             'leave_requirement_id' => $requiment_two->id
         ]);
 
-        $sick_leave_exam = LeaveType::create([
-            'name' => "Sick Leave (Medical Examination)",
-            'republic_act' => 'Sec. 43, Rule XVI, Omnibus Rules Implementing E.O. No. 292',
-            'code' => "SL",
-            'description' => 'To undergo medical examination/ Operation with scheduled date',
-            'period' => 0,
-            'file_date' => 'Advanced Application',
-            'month_value' => 15/12,
-            'annual_credit' => 15,
-            'is_active' => 1,
-            'is_special' => 0,
-            'is_country' => 0,
-            'is_illness' => 0,
-            'is_study' => 0,
-            'is_days_recommended' => 1,
-            'created_at' => now(),
-            'updated_at' => now()
-        ]);
+        // $sick_leave_exam = LeaveType::create([
+        //     'name' => "Sick Leave (Medical Examination)",
+        //     'republic_act' => 'Sec. 43, Rule XVI, Omnibus Rules Implementing E.O. No. 292',
+        //     'code' => "SL",
+        //     'description' => 'To undergo medical examination/ Operation with scheduled date',
+        //     'period' => 0,
+        //     'file_date' => 'Advanced Application',
+        //     'month_value' => 15/12,
+        //     'annual_credit' => 15,
+        //     'is_active' => 1,
+        //     'is_special' => 0,
+        //     'is_country' => 0,
+        //     'is_illness' => 1,
+        //     'is_study' => 0,
+        //     'is_days_recommended' => 1,
+        //     'created_at' => now(),
+        //     'updated_at' => now()
+        // ]);
 
-        LeaveTypeRequirement::create([
-            'leave_type_id' => $sick_leave_exam->id,
-            'leave_requirement_id' => $requiment_two->id
-        ]);
+        // LeaveTypeRequirement::create([
+        //     'leave_type_id' => $sick_leave_exam->id,
+        //     'leave_requirement_id' => $requiment_two->id
+        // ]);
 
         //Employee
         $special_privilege_leave = LeaveType::create([
@@ -157,7 +157,7 @@ class LeaveTypeSeeder extends Seeder
         ]);
 
         $employees = EmployeeProfile::where("employment_type_id", 1)->get();
-        $leave_types = [$vacation_leave->id, $sick_leave->id, $sick_leave_exam->id, $special_privilege_leave->id, $force_leave->id, $soloparent_leave->id];
+        $leave_types = [$vacation_leave->id, $sick_leave->id, $special_privilege_leave->id, $force_leave->id, $soloparent_leave->id];
 
         foreach($employees as $employee){
             foreach($leave_types as $leave_type){

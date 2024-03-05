@@ -756,6 +756,7 @@ class EmployeeProfileController extends Controller
         }
 
         return [
+            'employee_profile_id' => $employee_profile['id'],
             'employee_id' => $employee_profile['employee_id'],
             'name' => $personal_information->employeeName(),
             'designation' => $designation['name'],
@@ -781,6 +782,7 @@ class EmployeeProfileController extends Controller
             ],
             'area_assigned' => $area_assigned['details']->name,
             'area_sector' => $area_assigned['sector'],
+            'area_id' =>  $area_assigned['details']->id,
             'side_bar_details' => $side_bar_details
         ];
     }

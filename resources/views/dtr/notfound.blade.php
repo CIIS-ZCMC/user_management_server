@@ -23,7 +23,7 @@
     </style>
 </head>
 
-<body>A
+<body>
 
     <img id="fngprint" src="{{ asset('storage/logo/fingerprint.png') }}" alt="fngprint">
     <h3>

@@ -29,7 +29,9 @@
             @php
 
                 $empSched = $schedule->filter(function ($sched) use ($f1) {
-                    return date('Y-m-d', strtotime($sched['schedule'])) === date('Y-m-d', strtotime($f1['dtr_date'])) && $sched['second_in'] === null && $sched['second_out'] === null;
+                    return date('Y-m-d', strtotime($sched->schedule)) === date('Y-m-d', strtotime($f1['dtr_date'])) &&
+                        $sched->second_in === null &&
+                        $sched->second_out === null;
                 });
 
             @endphp
@@ -67,7 +69,8 @@
                 @if ($countin == 0)
                     @php
                         $checkSched = $schedule->filter(function ($row) use ($year, $month, $i) {
-                            return $row['schedule'] === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
+                            return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) &&
+                                $row->attendance_status == 0;
                         });
 
                     @endphp
@@ -110,7 +113,8 @@
                 @if ($count2 >= 1)
                     @php
                         $checkSched = $schedule->filter(function ($row) use ($year, $month, $i) {
-                            return $row['schedule'] === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
+                            return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) &&
+                                $row->attendance_status == 0;
                         });
 
                     @endphp
@@ -140,7 +144,13 @@
                     @else
                         @php
                             $checkSched = $schedule->filter(function ($row) use ($year, $month, $i) {
-                                return $row['schedule'] === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
+                                return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) &&
+                                    $row->attendance_status == 0;
+                            });
+
+                            $presentSched = $schedule->filter(function ($row) use ($year, $month, $i) {
+                                return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) &&
+                                    $row->attendance_status == 1;
                             });
 
                         @endphp
@@ -157,7 +167,19 @@
                                 })
                             </script>
                         @else
-                            <span class="timefirstarrival" style="color:gray">Day-off</span>
+                            @if (count($presentSched) == 0)
+                                <span class="timefirstarrival" style="color:gray;">Day-off</span>
+                            @else
+                                <script>
+                                    $(document).ready(function() {
+                                        $("#entry{{ $i }}1").addClass("Present");
+                                        $("#entry{{ $i }}2").addClass("Present");
+                                        $("#entry{{ $i }}3").addClass("Present");
+                                        $("#entry{{ $i }}4").addClass("Present");
+
+                                    })
+                                </script>
+                            @endif
                         @endif
                     @endif
 
@@ -201,7 +223,10 @@
                 @if ($biometric_ID == $f2['biometric_ID'])
                     @php
                         $empSched = $schedule->filter(function ($sched) use ($f2) {
-                            return date('Y-m-d', strtotime($sched['schedule'])) === date('Y-m-d', strtotime($f2['dtr_date'])) && $sched['second_in'] === null && $sched['second_out'] === null;
+                            return date('Y-m-d', strtotime($sched->schedule)) ===
+                                date('Y-m-d', strtotime($f2['dtr_date'])) &&
+                                $sched->second_in === null &&
+                                $sched->second_out === null;
                         });
 
                     @endphp
@@ -239,7 +264,10 @@
                 @php
 
                     $empSched = $schedule->filter(function ($sched) use ($f3) {
-                        return date('Y-m-d', strtotime($sched['schedule'])) === date('Y-m-d', strtotime($f3['dtr_date'])) && $sched['second_in'] === null && $sched['second_out'] === null;
+                        return date('Y-m-d', strtotime($sched->schedule)) ===
+                            date('Y-m-d', strtotime($f3['dtr_date'])) &&
+                            $sched->second_in === null &&
+                            $sched->second_out === null;
                     });
 
                 @endphp
@@ -271,7 +299,10 @@
             @foreach ($secondout as $f4)
                 @php
                     $empSched = $schedule->filter(function ($sched) use ($f4) {
-                        return date('Y-m-d', strtotime($sched['schedule'])) === date('Y-m-d', strtotime($f4['dtr_date'])) && $sched['second_in'] === null && $sched['second_out'] === null;
+                        return date('Y-m-d', strtotime($sched->schedule)) ===
+                            date('Y-m-d', strtotime($f4['dtr_date'])) &&
+                            $sched->second_in === null &&
+                            $sched->second_out === null;
                     });
                 @endphp
 
