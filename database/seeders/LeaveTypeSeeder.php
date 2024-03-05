@@ -157,7 +157,7 @@ class LeaveTypeSeeder extends Seeder
         ]);
 
         $employees = EmployeeProfile::where("employment_type_id", 1)->get();
-        $leave_types = [$vacation_leave->id, $sick_leave->id, $sick_leave_exam->id, $special_privilege_leave->id, $force_leave->id, $soloparent_leave->id];
+        $leave_types = [$vacation_leave->id, $sick_leave->id, $special_privilege_leave->id, $force_leave->id, $soloparent_leave->id];
 
         foreach($employees as $employee){
             foreach($leave_types as $leave_type){
