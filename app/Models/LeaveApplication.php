@@ -56,10 +56,6 @@ class LeaveApplication extends Model
     {
         return $this->hasMany(LeaveApplicationLog::class);
     }
-    // public function leaveApplicationLogs()
-    // {
-    //     return $this->hasMany(LeaveApplicationLog::class);
-    // }
 
     public function employeeProfile()
     {
