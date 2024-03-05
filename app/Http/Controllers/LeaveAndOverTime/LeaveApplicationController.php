@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\LeaveAndOverTime;
 
+use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Resources\LeaveTypeResource;
 use App\Models\EmployeeCreditLog;
 use App\Models\EmployeeOvertimeCredit;
@@ -263,16 +264,17 @@ class LeaveApplicationController extends Controller
         }
     }
 
-    public function updateCredit(PasswordApprovalRequest $request)
+    public function updateCredit(AuthPinApprovalRequest $request)
     {
         try {
-            $password = strip_tags($request->password);
             $employee_profile = $request->user;
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
 
-            if (!Hash::check($password . env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
             }
+
             foreach ($request->credits as $credit) {
                 $employeeId = $request->employee_id;
                 $leaveTypeId = $credit['leave_id'];
@@ -332,15 +334,14 @@ class LeaveApplicationController extends Controller
         }
     }
 
-    public function addCredit(PasswordApprovalRequest $request)
+    public function addCredit(AuthPinApprovalRequest $request)
     {
         try {
-            $password = strip_tags($request->password);
-            $employee_profile = $request->user;
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
 
-            if (!Hash::check($password . env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
             }
 
             foreach ($request->credits as $credit) {
@@ -393,19 +394,15 @@ class LeaveApplicationController extends Controller
         }
     }
 
-    public function approved($id, PasswordApprovalRequest $request)
+    public function approved($id, AuthPinApprovalRequest $request)
     {
         try {
+            $user = $request->user;
+            $employee_profile = $user;
+            $cleanData['pin'] = strip_tags($request->password);
 
-
-            $password = strip_tags($request->password);
-
-            $employee_profile = $request->user;
-
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
-
-            if (!Hash::check($password . env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
             }
 
 
@@ -722,17 +719,15 @@ class LeaveApplicationController extends Controller
         }
     }
 
-    public function declined($id, PasswordApprovalRequest $request)
+    public function declined($id, AuthPinApprovalRequest $request)
     {
         try {
-            $password = strip_tags($request->password);
+            $user = $request->user;
+            $employee_profile = $user;
+            $cleanData['pin'] = strip_tags($request->pin);
 
-            $employee_profile = $request->user;
-
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
-
-            if (!Hash::check($password . env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
             }
 
             $leave_application = LeaveApplication::find($id);

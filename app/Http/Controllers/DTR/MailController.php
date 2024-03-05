@@ -38,7 +38,7 @@ class MailController extends Controller
     public function sendCredentials(Request $request)
     {
 
-        $body = view('mail.credentials', ['employeeID' => $request->EmployeeID, 'Password' => $request->Password, 'Link' => env('CLIENT_DOMAIN')]);
+        $body = view('mail.credentials', ['employeeID' => $request->EmployeeID, 'Password' => $request->Password, 'Link' => env('CLIENT_DOMAIN'), "authorization_pin" => $request->authorization_pin]);
         $data = [
             'Subject' => 'Greetings from ZCMC-Portal-Team',
             'To_receiver' =>  $request->Email,

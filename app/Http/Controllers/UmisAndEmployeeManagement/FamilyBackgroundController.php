@@ -4,6 +4,7 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Resources\ChildResource;
 use App\Models\Child;
 use Illuminate\Http\Request;
@@ -197,17 +198,14 @@ class FamilyBackgroundController extends Controller
         }
     }
     
-    public function destroy($id, PasswordApprovalRequest $request)
+    public function destroy($id, AuthPinApprovalRequest $request)
     {
         try{
-            $password = strip_tags($request->password);
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->pin);
 
-            $employee_profile = $request->user;
-
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
-
-            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
             }
 
             $family_background = FamilyBackground::findOrFail($id);
@@ -228,17 +226,14 @@ class FamilyBackgroundController extends Controller
         }
     }
     
-    public function destroyByPersonalInformationID($id, PasswordApprovalRequest $request)
+    public function destroyByPersonalInformationID($id, AuthPinApprovalRequest $request)
     {
         try{
-            $password = strip_tags($request->password);
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->pin);
 
-            $employee_profile = $request->user;
-
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
-
-            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
             }
 
             $family_background = FamilyBackground::where('personal_information_id',$id)->first();
@@ -259,17 +254,14 @@ class FamilyBackgroundController extends Controller
         }
     }
     
-    public function destroyByEmployeeID($id, PasswordApprovalRequest $request)
+    public function destroyByEmployeeID($id, AuthPinApprovalRequest $request)
     {
         try{
-            $password = strip_tags($request->password);
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
 
-            $employee_profile = $request->user;
-
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
-
-            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
             }
 
             $employee = EmployeeProfile::find($id);
