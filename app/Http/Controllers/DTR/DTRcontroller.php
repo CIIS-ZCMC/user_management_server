@@ -1,1507 +1,1826 @@
 <?php
 
-namespace App\Methods;
+namespace App\Http\Controllers\DTR;
 
-use App\Models\DailyTimeRecords;
-use App\Models\DailyTimeRecordlogs;
-use DateTime;
-use Illuminate\Support\Facades\DB;
 use App\Models\Biometrics;
+use Illuminate\Http\Request;
+use App\Models\DailyTimeRecords;
+use App\Methods\Helpers;
+use App\Methods\BioControl;
+use App\Models\DtrAnomalies;
+use Illuminate\Support\Facades\DB;
+use Dompdf\Dompdf;
+use Dompdf\Options;
+use App\Http\Controllers\DTR\BioMSController;
+use App\Models\Holidaylist;
 use App\Models\EmployeeProfile;
-use App\Models\Devices;
-use App\Models\TimeShift;
+use App\Http\Controllers\Controller;
+use App\Models\DailyTimeRecordLogs;
+use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
+use App\Models\Section;
+use App\Models\Schedule;
+use App\Helpers\Helpers as Help;
 
-class Helpers
+
+
+class DTRcontroller extends Controller
 {
-    public function validatedDeviceDT($deviceDT)
+    protected $helper;
+    protected $device;
+    protected $ip;
+    protected $bioms;
+    protected $devices;
+
+    protected $emp;
+
+    public function __construct()
     {
-        return true;
-        // $datetime = '';
-        // foreach ($deviceDT as $key => $value) {
-        //     $datetime = date('Y-m-d H:i', strtotime($value->Date . ' ' . $value->Time));
-        // }
-        // if ($datetime == date('Y-m-d H:i')) {
-        //     return true;
-        // } else {
-        //     return false;
-        // }
+        $this->helper = new Helpers();
+        $this->device = new BioControl();
+        $this->bioms = new BioMSController();
+
+        try {
+            $content = $this->bioms->operatingDevice()->getContent();
+            $this->devices = $content !== null ? json_decode($content, true)['data'] : [];
+        } catch (\Throwable $th) {
+            Log::channel("custom-dtr-log-error")->error($th->getMessage());
+        }
     }
 
 
-    public function withinInterval($last_entry, $bio_entry)
+    public function pullDTRuser(Request $request)
     {
-        $With_Interval = date('Y-m-d H:i:s', strtotime($last_entry) + floor(env('ALLOTED_DTR_INTERVAL') * 60));
-        if ($With_Interval <= $bio_entry[0]['date_time']) {
-            return true;
-        }
-        return false;
-    }
+        try {
+            $user = $request->user;
+            $today = date('Y-m-d');
+            $biometric_id = $user->biometric_id;
+            $selfRecord = DailyTimeRecords::where('biometric_id', $biometric_id)->where('dtr_date', $today)->first();
+            $sched = $this->helper->getSchedule($biometric_id, null);
 
-    public function isEmployee($biometric_id)
-    {
-        $biometric = Biometrics::where('biometric_id', $biometric_id)->get();
-        if (count($biometric) >= 1) {
-            $is_employee = EmployeeProfile::where('biometric_id', $biometric_id)->get();
-            if (count($is_employee) >= 1) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public function getSchedule($biometric_id, $date_now)
-    {
-        $f1 = env('FIRSTIN');
-        $f2 = env('FIRSTOUT');
-        $f3 = env('SECONDIN');
-        $f4 = env('SECONDOUT');
-
-        $parts = explode('-', $date_now);
-        // $parts[1] will contain "2024"
-        // $parts[2] will contain "2"
-        if (count($parts) >= 3) {
-            $check = $parts[0];
-            $year = $parts[1];
-            $month = $parts[2];
-            if ($check === "all") {
-                return $this->Allschedule($biometric_id, $month, $year);
-            }
-        }
-
-
-        if (!isset($date_now)) {
-            $date_now = date('Y-m-d');
-        }
-
-        $date_now = date('Y-m-d', strtotime($date_now));
-        $get_Sched = DB::select("
- SELECT s.*,
- CASE
-     WHEN s.id IS NOT NULL THEN
-         (SELECT date
-          FROM schedules
-          WHERE '$date_now' = date
-          AND status = 1
-          AND time_shift_id = s.id
-          LIMIT 1)
-     ELSE 'NONE'
- END AS date,
-
-  CASE
-     WHEN s.id IS NOT NULL THEN
-          (SELECT is_on_call
-          FROM employee_profile_schedule
-          WHERE schedule_id = s.id limit 1)
-     ELSE 'NONE'
- END AS is_on_call
-FROM time_shifts s
-WHERE s.id IN (
-SELECT time_shift_id
-FROM schedules
-WHERE '$date_now' = date
-AND status = 1
-AND id IN (
-  SELECT schedule_id
-  FROM employee_profile_schedule
-  WHERE employee_profile_id IN (
-      SELECT id
-      FROM employee_profiles
-      WHERE biometric_id = '$biometric_id'
-  )
-)
-);
-
-    ");
-
-
-
-        if ($this->isNurseOrDoctor($biometric_id)) {
-            /* Check if Available Schedule */
-            return $this->getEmployeeSched($get_Sched, $f1, $f2, $f3, $f4, true);
-        }
-        return $this->getEmployeeSched($get_Sched, $f1, $f2, $f3, $f4, false);
-    }
-
-    public function Allschedule($biometric_id, $month, $year)
-    {
-        $timeShifts = DB::table('time_shifts as ts')
-            ->select(
-                'sc.id as scheduleID',
-                'ts.first_in',
-                'ts.first_out',
-                'ts.second_in',
-                'ts.second_out',
-                'ts.total_hours',
-                'ep.biometric_id',
-                'sc.date',
-                'sc.is_weekend',
-                'sc.status',
-                'sc.remarks',
-                'esc.is_on_call'
-            )
-            ->join('schedules as sc', 'sc.time_shift_id', '=', 'ts.id')
-            ->join('employee_profile_schedule as esc', 'esc.schedule_id', '=', 'sc.id')
-            ->join('employee_profiles as ep', 'ep.id', '=', 'esc.employee_profile_id')
-            ->where('ep.biometric_id', $biometric_id)
-            ->whereYear('sc.date', $year)
-            ->whereMonth('sc.date', $month)
-            ->get();
-
-        $scheds = [];
-        $arrival_d = [];
-        $dp = '';
-        foreach ($timeShifts as $row) {
-            $firstin = date('gA', strtotime($year . '-' . $month . '-1 ' . $row->first_in));
-            $firstout = date('gA', strtotime($year . '-' . $month . '-1 ' . $row->first_out));
-            $secondin = date('gA', strtotime($year . '-' . $month . '-1 ' . $row->second_in));
-            $secondout = date('gA', strtotime($year . '-' . $month . '-1 ' . $row->second_out));
-            if ($row->second_in !== null && $row->second_out !== null) {
-                $dp =  $firstin . '-' . $firstout . '|' . $secondin . '-' . $secondout;
-            } else {
-                $dp =  $firstin . '-' . $firstout;
-            }
-            $arrival_d[] = $dp;
-
-
-            $scheds[] = [
-                'scheduleDate' => $row->date,
-                'first_entry' => $row->first_in,
-                'second_entry' => $row->first_out,
-                'third_entry' => $row->second_in,
-                'last_entry' => $row->second_out,
-                'total_hours' => $row->total_hours,
-                'is_on_call' => $row->is_on_call,
-                'arrival_departure' => $dp
-            ];
-        }
-        $Arrival_departure =  array_values(array_unique($arrival_d));
-
-        return [
-            'schedule' => $scheds,
-            'arrival_departure' => Implode("&", $Arrival_departure)
-        ];
-    }
-
-    public function getEmployeeSched($get_Sched, $f1, $f2, $f3, $f4, $is_Nurse_or_Doctor)
-    {
-        if (count($get_Sched) >= 1) {
-            return [
-                'first_entry' => $get_Sched[0]->first_in,
-                'second_entry' => $get_Sched[0]->first_out,
-                'third_entry' => $get_Sched[0]->second_in,
-                'last_entry' => $get_Sched[0]->second_out,
-                'total_hours' => $get_Sched[0]->total_hours,
-                'date' => $get_Sched[0]->date,
-                'is_on_call' => $get_Sched[0]->is_on_call,
-            ];
-        }
-        return [
-            'first_entry' => null,
-            'second_entry' => null,
-            'third_entry' => null,
-            'last_entry' => null,
-            'total_hours' => env('REQUIRED_WORKING_HOURS'),
-            'date' => null,
-            'date_end' => null,
-            'is_on_call' => null,
-        ];
-    }
-
-
-    private function extractBreakSchedule($time_String, $opposite)
-    {
-        $time_Parts = explode(':', $time_String, 3);
-        $extracted_Time = $time_Parts[0] . ':' . $time_Parts[1];
-        if ($opposite) {
-            $timeParts = explode(':', $time_String);
-            $hours = (int)$time_Parts[0];
-            $minutes = (int)$time_Parts[1];
-            if ($hours === 12 && $minutes === 0) {
-                $time_String = '00:00:00';
-            } else
-            if ($hours >= 12) {
-                if ($hours > 12) {
-                    $hours -= 12;
+            if ($selfRecord) {
+                if ($sched['third_entry'] == NULL && $sched['last_entry']  == NULL) {
+                    return [
+                        'dtr_date' => $selfRecord->dtr_date,
+                        'first_in' => $selfRecord->first_in ? date('H:i', strtotime($selfRecord->first_in)) : ' --:--',
+                        'first_out' => ' --:--',
+                        'second_in' =>  ' --:--',
+                        'second_out' => $selfRecord->first_out ? date('H:i', strtotime($selfRecord->first_out)) : ' --:--',
+                    ];
                 }
-                $time_String = sprintf("%02d:%02d", $hours, $minutes);
+
+                return [
+                    'dtr_date' => $selfRecord->dtr_date,
+                    'first_in' => $selfRecord->first_in ? date('H:i', strtotime($selfRecord->first_in)) : ' --:--',
+                    'first_out' => $selfRecord->first_out ? date('H:i', strtotime($selfRecord->first_out)) : ' --:--',
+                    'second_in' => $selfRecord->second_in ? date('H:i', strtotime($selfRecord->second_in)) : ' --:--',
+                    'second_out' => $selfRecord->second_out ? date('H:i', strtotime($selfRecord->second_out)) : ' --:--',
+                ];
             } else {
-                $hours += 12;
-                $time_String = sprintf("%02d:%02d", $hours, $minutes);
+                return [
+                    'dtr_date' => $today,
+                    'first_in' => ' --:--',
+                    'first_out' => ' --:--',
+                    'second_in' => ' --:--',
+                    'second_out' => ' --:--',
+                ];
             }
-            $time_Parts = explode(':', $time_String, 3);
-            $extracted_Time = $time_Parts[0] . ':' . $time_Parts[1];
-            return $extracted_Time;
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], 401);
         }
-        return $extracted_Time;
     }
 
 
-
-    public function getBreakSchedule($biometric_id, $schedule)
+    public function monthDayRecordsSelf(Request $request)
     {
-
-        if ($this->isNurseOrDoctor($biometric_id)) {
-            return [];
+        try {
+            $user = $request->user;
+            $biometric_id = $user->biometric_id;
+            $selfRecord = DailyTimeRecords::where('biometric_id', $biometric_id)->get();
+            foreach ($selfRecord as $dtr) {
+                $records[date('F', strtotime($dtr->dtr_date))][] = date('Y', strtotime($dtr->dtr_date));
+            }
+            $result = [];
+            foreach ($records as $month => $years) {
+                $result[] = [
+                    'month' => $month,
+                    'year' => array_values(array_unique($years))
+                ];
+            }
+            return $result;
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], 401);
         }
-        if (isset($schedule['third_entry'])) {
-            return  [
-                'break1' => $this->extractBreakSchedule($schedule['second_entry'], false),
-                'break2' => $this->extractBreakSchedule($schedule['second_entry'], true),
-                'otherout' => $this->extractBreakSchedule($schedule['last_entry'], true),
-                'adminOut' => $this->extractBreakSchedule($schedule['last_entry'], false),
-            ];
-        }
-        return [];
     }
 
-    public function isNurseOrDoctor($biometric_id)
+    public function fetchDTRFromDevice()
     {
-        /**
-         * Get the employee status
-         * if whther he/shes a nurse or a doctor
-         * 0  = Admin employee
-         * 1  = Nurse or Doctor
-         */
-        $jobposition_ID = 0;
-        if ($jobposition_ID) {
+
+        try {
+
+            foreach ($this->devices as $device) {
+                if ($tad = $this->device->bIO($device)) { //Checking if connected to device
+                    $logs = $tad->get_att_log();
+                    $all_user_info = $tad->get_all_user_info();
+                    $attendance = simplexml_load_string($logs);
+                    $user_Inf = simplexml_load_string($all_user_info);
+                    $attendance_Logs =  $this->helper->getAttendance($attendance);
+                    $Employee_Info  = $this->helper->getEmployee($user_Inf);
+                    $Employee_Attendance = $this->helper->getEmployeeAttendance(
+                        $attendance_Logs,
+                        $Employee_Info
+                    );
+
+
+                    $date_and_timeD = simplexml_load_string($tad->get_date());
+                    if ($this->helper->validatedDeviceDT($date_and_timeD)) { //Validating Time of server and time of device
+                        $date_now = date('Y-m-d');
+
+                        $check_Records = array_filter($Employee_Attendance, function ($attd) use ($date_now) {
+                            return date('Y-m-d', strtotime($attd['date_time'])) == $date_now;
+                        });
+
+                        if (count($check_Records) >= 1) {
+
+                            //Normal pull
+                            $this->helper->saveDTRRecords($check_Records, false);
+                            /* Save DTR Logs */
+                            $this->helper->saveDTRLogs($check_Records, 1, $device, 0);
+                            /* Clear device data */
+                            $tad->delete_data(['value' => 3]);
+                        } else {
+                            //yesterday Time
+                            // Save the past 24 hours records
+                            $datenow = date('Y-m-d');
+                            $late_Records = array_filter($Employee_Attendance, function ($attd) use ($datenow) {
+                                return date('Y-m-d', strtotime($attd['date_time'])) < $datenow;
+                            });
+                            $this->helper->saveDTRRecords($late_Records, true);
+                            // /* Save DTR Logs */
+                            $this->helper->saveDTRLogs($late_Records, 1, $device, 1);
+                            // /* Clear device data */
+                            $tad->delete_data(['value' => 3]);
+                        }
+                    } else {
+                        //Save anomaly entries
+                        /**
+                         * Here we saved all entries that the device date and time and server
+                         * does not match..
+                         *
+                         */
+                        foreach ($Employee_Attendance as $key => $value) {
+                            DtrAnomalies::create([
+                                'biometric_id' => $value['biometric_id'],
+                                'name' => $value['name'],
+                                'dtr_entry' => $value['date_time'],
+                                'status' => $value['status'],
+                                'status_desc' => $value['status_description']
+                            ]);
+                        }
+                        $tad->delete_data(['value' => 3]);
+                    }
+                    // End of Validation of Time
+                } // End Checking if Connected to Device
+            }
+        } catch (\Throwable $th) {
+            return $th;
+            // Log::channel("custom-dtr-log-error")->error($th->getMessage());
+            // return response()->json(['message' => 'Unable to connect to device', 'Throw error' => $th->getMessage()]);
+        }
+    }
+
+    public function formatDate($date)
+    {
+        if ($date === null) {
+            return null;
+        }
+        //return date('Y-m-d H:i:s', $date);
+        return $date;
+    }
+
+
+    public function fetchUserDTR(Request $request)
+    {
+        try {
+            $bio = json_decode($request->biometric_id);
+            $month_of = $request->monthof;
+            $year_of = $request->yearof;
+            $udata = [];
+
+            if (count($bio) >= 1) {
+                foreach ($bio as $biometric_id) {
+                    if ($this->helper->isEmployee($biometric_id)) {
+                        $dtr = DB::table('daily_time_records')
+                            ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
+                            ->where(function ($query) use ($biometric_id, $month_of, $year_of) {
+                                $query->where('biometric_id', $biometric_id)
+                                    ->whereMonth(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
+                                    ->whereYear(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+                            })
+                            ->orWhere(function ($query) use ($biometric_id, $month_of, $year_of) {
+                                $query->where('biometric_id', $biometric_id)
+                                    ->whereMonth(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
+                                    ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+                            })
+                            ->get();
+                        $mdtr = [];
+                        foreach ($dtr as $key => $value) {
+                            $mdtr[] =   [
+                                'first_in' => $this->FormatDate($value->first_in),
+                                'first_out' => $this->FormatDate($value->first_out),
+                                'second_in' => $this->FormatDate($value->second_in),
+                                'second_out' => $this->FormatDate($value->second_out),
+                                'interval_req' => $value->interval_req,
+                                'required_working_hours' => $value->required_working_hours,
+                                'required_working_minutes' => $value->required_working_minutes,
+                                'total_working_hours' => $value->total_working_hours,
+                                'total_working_minutes' => $value->total_working_minutes,
+                                'overtime' => $value->overtime,
+                                'overtime_minutes' => $value->overtime_minutes,
+                                'undertime' => $value->undertime,
+                                'undertime_minutes' => $value->undertime_minutes,
+                                'overall_minutes_rendered' => $value->overall_minutes_rendered,
+                                'total_minutes_reg' => $value->total_minutes_reg,
+                                'day' => $value->day,
+                                'created_at' => $value->created_at,
+                            ];
+                        }
+
+                        $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
+                        $emp_name = $employee->name();
+
+                        $udata[] = [
+                            'biometric_id' => $biometric_id,
+                            'employee_id' => $employee->id, // replace with employee details
+                            'employeeName' =>  $emp_name,
+                            'sex' => $employee->GetPersonalInfo()->sex,
+                            'dateofbirth' => $employee->GetPersonalInfo()->date_of_birth,
+                            'date_hired' => $employee->date_hired,
+                            'dtr_records' => $mdtr
+                        ];
+                    }
+                }
+            } else {
+                $all_biometric = Biometrics::all();
+                foreach ($all_biometric as $bio) {
+                    $biometric_id = $bio->biometric_id;
+                    if ($this->helper->isEmployee($biometric_id)) {
+                        $dtr = DB::table('daily_time_records')
+                            ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
+                            ->where(function ($query) use ($biometric_id, $month_of, $year_of) {
+                                $query->where('biometric_id', $biometric_id)
+                                    ->whereMonth(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
+                                    ->whereYear(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+                            })
+                            ->orWhere(function ($query) use ($biometric_id, $month_of, $year_of) {
+                                $query->where('biometric_id', $biometric_id)
+                                    ->whereMonth(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
+                                    ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+                            })
+                            ->get();
+                        $mdtr = [];
+                        foreach ($dtr as $key => $value) {
+                            $mdtr[] =   [
+                                'first_in' => $this->FormatDate($value->first_in),
+                                'first_out' => $this->FormatDate($value->first_out),
+                                'second_in' => $this->FormatDate($value->second_in),
+                                'second_out' => $this->FormatDate($value->second_out),
+                                'interval_req' => $value->interval_req,
+                                'required_working_hours' => $value->required_working_hours,
+                                'required_working_minutes' => $value->required_working_minutes,
+                                'total_working_hours' => $value->total_working_hours,
+                                'total_working_minutes' => $value->total_working_minutes,
+                                'overtime' => $value->overtime,
+                                'overtime_minutes' => $value->overtime_minutes,
+                                'undertime' => $value->undertime,
+                                'undertime_minutes' => $value->undertime_minutes,
+                                'overall_minutes_rendered' => $value->overall_minutes_rendered,
+                                'total_minutes_reg' => $value->total_minutes_reg,
+                                'day' => $value->day,
+                                'created_at' => $value->created_at,
+                            ];
+                        }
+
+                        $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
+                        $emp_name = $employee->name();
+
+                        $udata[] = [
+                            'biometric_id' => $biometric_id,
+                            'employee_id' => $employee->id, // replace with employee details
+                            'employeeName' =>  $emp_name,
+                            'sex' => $employee->GetPersonalInfo()->sex,
+                            'dateofbirth' => $employee->GetPersonalInfo()->date_of_birth,
+                            'date_hired' => $employee->date_hired,
+                            'dtr_records' => $mdtr
+                        ];
+                    }
+                }
+            }
+
+
+
+            return response()->json(['data' => $udata]);
+        } catch (\Throwable $th) {
+            return response()->json(['message' =>  $th->getMessage()]);
+        }
+    }
+
+    private function arrivalDeparture($time_stamps_req, $year_of, $month_of)
+    {
+        $f1 = strtoupper(date('h:ia', strtotime($year_of . '-' . $month_of . '-1 ' . $time_stamps_req['first_entry'])));
+        $f2 = strtoupper(date('h:ia', strtotime($year_of . '-' . $month_of . '-1 ' . $time_stamps_req['second_entry'])));
+        $f3 = strtoupper(date('h:ia', strtotime($year_of . '-' . $month_of . '-1 ' . $time_stamps_req['third_entry'])));
+        $f4 = strtoupper(date('h:ia', strtotime($year_of . '-' . $month_of . '-1 ' . $time_stamps_req['last_entry'])));
+
+        if (!$time_stamps_req['first_entry'] && !$time_stamps_req['second_entry'] && !$time_stamps_req['third_entry'] && !$time_stamps_req['last_entry']) {
+            return "NO SCHEDULE";
+        } elseif ($time_stamps_req['first_entry'] && $time_stamps_req['second_entry'] && !$time_stamps_req['third_entry'] && !$time_stamps_req['last_entry']) {
+            return $f1 . '-' . $f2;
+        } else {
+            return $f1 . '-' . $f2 . '/' . $f3 . '-' . $f4;
+        }
+    }
+
+    private function isHalfEntrySchedule($time_stamps_req)
+    {
+        if (!$time_stamps_req['first_entry'] && !$time_stamps_req['second_entry'] && !$time_stamps_req['third_entry'] && !$time_stamps_req['last_entry']) {
+            return false;
+        } elseif ($time_stamps_req['first_entry'] && $time_stamps_req['second_entry'] && !$time_stamps_req['third_entry'] && !$time_stamps_req['last_entry']) {
             return true;
         }
         return false;
     }
 
-    public function CurrentSchedule($biometric_id, $value, $yesterdayRecord)
+    private function withinScheduleRange($entry, $schedule)
     {
+        $start_Time_stamp = $this->helper->forceToStrtimeFormat($entry);
+        $end_Time_stamp = $this->helper->forceToStrtimeFormat($schedule);
+        $seconds_Difference = $end_Time_stamp - $start_Time_stamp;
+        $hours = $seconds_Difference / 3600;
+        $accepted_Entry_Range = 3; // 3 Hours is considered entry
 
-        $entrydateYear = date('Y', strtotime($value['date_time']));
-        $entrydateMonth = date('m', strtotime($value['date_time']));
-        $schedule = $this->getSchedule($biometric_id, "all-{$entrydateYear}-{$entrydateMonth}");
-        // Put employee ID
-
-        $dsched = [];
-        $entry = date('Y-m-d', strtotime($value['date_time']));
-        $entryTime = date('H:i', strtotime($value['date_time']));
-        if ($yesterdayRecord) {
-            $entrydateYear = date('Y', strtotime($value['first_in']));
-            $entrydateMonth = date('m', strtotime($value['first_in']));
-            $schedule = $this->getSchedule($biometric_id, "all-{$entrydateYear}-{$entrydateMonth}");
-
-            $entry = date('Y-m-d', strtotime($value['first_in']));
-            $entryTime = date('H:i', strtotime($value['first_in']));
+        if ($hours <= $accepted_Entry_Range) {
+            return true;
         }
-
-        $daySchedule = array_values(array_filter($schedule['schedule'], function ($row) use ($entry, $entryTime) {
-            return date('Y-m-d', strtotime($row['scheduleDate'])) === $entry &&
-                date('Y-m-d H:i', strtotime($entry . ' ' . $entryTime)) <= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['first_entry'] . ' +4 hours')) ||
-                date('Y-m-d H:i', strtotime($entry . ' ' . $entryTime)) <= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['second_entry'] . ' +4 hours'));
-        }));
-        $break_Time_Req = $this->getBreakSchedule($biometric_id, $daySchedule);
-
-        if (count($daySchedule) >= 1) {
-            $dsched = $daySchedule[0];
-        }
-
-        return [
-            'daySchedule' => $dsched,
-            'break_Time_Req' => $break_Time_Req,
-
-        ];
+        return false;
     }
 
+    /* ----------------------------------------------------------------GENERATION OF DAILY TIME RECORDS----------------------------------------------------------------------------------------------------------------------------- */
 
+    /***
+     * Table Requirements
+     * time-shifts | schedules | biometrics | employee_profiles | employee_profile_schedule
+     * Each of these tables should contain data linked to the biometric_id below in order to generate records
 
-    public  function inEntry($biometric_id, $alloted_hours, $sc, $sched, $delay)
+     */
+    public function generateDTR(Request $request)
     {
+        try {
+            $biometric_id =  $request->biometric_id;
+            $month_of = $request->monthof;
+            $year_of = $request->yearof;
+            $view = $request->view;
+            $FrontDisplay = $request->frontview;
 
+            /*
+            Multiple IDS for Multiple PDF generation
+            */
+            $id = json_decode($biometric_id);
 
-        $first_Entry = $sched['first_entry'];
-
-        $time_stamp = strtotime($first_Entry);
-
-        $new_Time_stamp = $time_stamp - ($alloted_hours * 3600);
-        $Calculated_allotedHours = date('Y-m-d H:i:s', $new_Time_stamp);
-
-        $employee_In = date('Y-m-d H:i:s', strtotime($sc['date_time']));
-        $dtr_date = date('Y-m-d', strtotime($sc['date_time']));
-
-        if ($delay) {
-            DailyTimeRecords::create([
-                'biometric_id' => $biometric_id,
-                // 'first_in' => strtotime($sc['date_time']),
-                'dtr_date' => $dtr_date,
-                'first_in' => $sc['date_time'],
-                'is_biometric' => 1,
-            ]);
-        } else {
-            if ($Calculated_allotedHours <= $employee_In) {
-                DailyTimeRecords::create([
-                    'biometric_id' => $biometric_id,
-                    // 'first_in' => strtotime($sc['date_time']),
-                    'dtr_date' => $dtr_date,
-                    'first_in' => $sc['date_time'],
-                    'is_biometric' => 1,
+            if (count($id) == 0) {
+                return response()->json([
+                    'message' => 'Failed to Generate: No Employee data found'
                 ]);
             }
 
-            // if ($first_Entry == null) {
-            //     return $sc['date_time'];
-            // }
+            if (count($id) >= 2) {
+                return $this->GenerateMultiple($id, $month_of, $year_of, $view);
+            }
+
+            $emp_name = '';
+            $biometric_id = $id[0];
+
+            if ($this->helper->isEmployee($id[0])) {
+                $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
+                $emp_name = $employee->name();
+            } else {
+
+                if ($FrontDisplay) {
+                    return view("dtr.notfound");
+                }
+
+                return response()->json([
+                    'message' => 'Failed to Generate: No biometric data found'
+                ]);
+            }
+            $dtr = DB::table('daily_time_records')
+                ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
+                ->where(function ($query) use ($biometric_id, $month_of, $year_of) {
+                    $query->where('biometric_id', $biometric_id)
+                        ->whereMonth(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
+                        ->whereYear(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+                })
+                ->orWhere(function ($query) use ($biometric_id, $month_of, $year_of) {
+                    $query->where('biometric_id', $biometric_id)
+                        ->whereMonth(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
+                        ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+                })
+                ->get();
+
+
+            $arrival_Departure = [];
+            $time_stamps_req = [
+                'total_hours' => 8
+            ];
+
+
+
+            foreach ($dtr as $val) {
+                $time_stamps_req = $this->helper->getSchedule($biometric_id, $val->first_in); //biometricID
+                $arrival_Departure[] = $this->arrivalDeparture($time_stamps_req, $year_of, $month_of);
+
+
+                if (count($time_stamps_req) >= 1) {
+                    $validate = [
+                        (object)[
+                            'id' => $val->id,
+                            'first_in' => $val->first_in,
+                            'first_out' => $val->first_out,
+                            'second_in' => $val->second_in,
+                            'second_out' => $val->second_out
+                        ],
+                    ];
+
+                    $this->helper->saveTotalWorkingHours(
+                        $validate,
+                        $val,
+                        $val,
+                        $time_stamps_req,
+                        true
+                    );
+                }
+            }
+
+
+
+
+
+
+            $ohf = isset($time_stamps_req) ? $time_stamps_req['total_hours'] . ' HOURS' : null;
+
+            $emp_Details = [
+                'OHF' => $ohf,
+                'Arrival_Departure' => $arrival_Departure[0] ?? 'NO SCHEDULE',
+                'Employee_Name' => $emp_name,
+                'DTRFile_Name' => $emp_name,
+                'biometric_ID' => $biometric_id
+            ];
+
+            return $this->PrintDtr($month_of, $year_of, $biometric_id, $emp_Details, $view, $FrontDisplay);
+        } catch (\Throwable $th) {
+            return $th;
+            return response()->json(['message' =>  $th->getMessage()]);
         }
     }
 
 
-    public function saveDTRRecords($check_Records, $delay)
+    /*
+    *    This is either view or print as PDF
+    *
+    */
+
+    public function printDtr($month_of, $year_of, $biometric_id, $emp_Details, $view, $FrontDisplay)
     {
+
+
+
         try {
-            if (count($check_Records) >= 1) {
+            $dtr = DB::table('daily_time_records')
+                ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
+                ->where(function ($query) use ($biometric_id, $month_of, $year_of) {
+                    $query->where('biometric_id', $biometric_id)
+                        ->whereMonth(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
+                        ->whereYear(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+                })
+                ->orWhere(function ($query) use ($biometric_id, $month_of, $year_of) {
+                    $query->where('biometric_id', $biometric_id)
+                        ->whereMonth(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
+                        ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+                })
+                ->get();
 
-                foreach ($check_Records as $key => $value) {
+            $dt_records = [];
+            $No_schedule_DTR = [];
+            $is_Half_Schedule = false;
+            $day = [];
+            $entry = '';
 
-                    $biometric_id =  $value['biometric_id'];
 
-                    if ($delay) {
-                        $entrydate = date('Y-m-d', strtotime($value['date_time']));
+            foreach ($dtr as $val) {
+                /* Validating DTR with its Matching Schedules */
+                /*
+                *   if no matching schedule then
+                *   it will not display the daily time record
+                */
+                if (isset($val->first_in) && $val->first_in !== NULL) {
+                    $entry = $val->first_in;
+                } else {
+                    if (isset($val->second_in) && $val->second_in !== NULL) {
+                        $entry = $val->second_in;
+                    }
+                }
+
+                $yearSched = date('Y', strtotime($entry));
+                $monthSched = date('m', strtotime($entry));
+                $schedule = $this->helper->getSchedule($val->biometric_id, "all-{$yearSched}-{$monthSched}")['schedule'];
+                //GET THE SCHEDULE
+
+                if ($schedule) {
+                    $daySched = array_values(array_filter($schedule, function ($row) use ($entry) {
+                        return date('Y-m-d', strtotime($row['scheduleDate'])) == date('Y-m-d', strtotime($entry));
+                    }))[0];
+
+                    $is_Half_Schedule = $this->isHalfEntrySchedule($daySched);
+                }
+
+
+
+
+                if (isset($daySched['scheduleDate'])) {
+
+                    $sdate =  $daySched['scheduleDate'];
+
+
+
+                    if (date('Y-m-d', strtotime($entry)) ==   $sdate) {
+                        //   echo $entry;
+                        $date_entry = date('Y-m-d H:i', strtotime($entry));
+                        $schedule_fEntry = date('Y-m-d H:i', strtotime(date('Y-m-d', strtotime($date_entry)) . ' ' . $sdate));
+                        //return $this->WithinScheduleRange($dateentry, $schedulefEntry);
+
+                        if ($this->withinScheduleRange($date_entry, $schedule_fEntry)) {
+                            $dt_records[] = [
+                                'biometric_ID' => $val->biometric_id,
+                                'first_in' => $val->first_in,
+                                'first_out' => $val->first_out,
+                                'second_in' => $val->second_in,
+                                'second_out' => $val->second_out,
+                                'undertime_minutes' => $val->undertime_minutes,
+                                'created' => $val->dtr_date
+                            ];
+                        }
+                    }
+                } else {
+                    $No_schedule_DTR[] = [
+                        'biometric_ID' => $val->biometric_id,
+                        'first_in' => $val->first_in,
+                        'first_out' => $val->first_out,
+                        'second_in' => $val->second_in,
+                        'second_out' => $val->second_out,
+                        'undertime_minutes' => $val->undertime_minutes,
+                        'created' => $val->dtr_date
+                    ];
+                    //  echo $val->first_in;
+                }
+            }
+
+            $days_In_Month = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
+            $second_in = [];
+            $second_out = [];
+            $first_in = array_map(function ($res) {
+                return [
+                    'dtr_date' => $res['created'],
+                    'first_in' => $res['first_in'],
+                    'biometric_ID' => $res['biometric_ID']
+
+                ];
+            }, $dt_records);
+
+            $first_out = array_map(function ($res) {
+                return [
+                    'dtr_date' => $res['created'],
+                    'first_out' => $res['first_out'],
+                    'biometric_ID' => $res['biometric_ID']
+                ];
+            }, $dt_records);
+
+            $second_in = array_map(function ($res) {
+                return [
+                    'dtr_date' => $res['created'],
+                    'second_in' => $res['second_in'],
+                    'biometric_ID' => $res['biometric_ID']
+                ];
+            }, $dt_records);
+
+
+
+
+            $second_out = array_map(function ($res) {
+                return  [
+                    'dtr_date' => $res['created'],
+                    'second_out' => $res['second_out'],
+                    'biometric_ID' => $res['biometric_ID']
+                ];
+            }, $dt_records);
+
+            $ut =  array_map(function ($res) {
+                return [
+                    'created' => $res['created'],
+                    'undertime' => $res['undertime_minutes'],
+                    'biometric_ID' => $res['biometric_ID']
+                ];
+            }, $dt_records);
+
+            $holidays = DB::table('holidays')->get();
+
+            $employeeSched = DB::table('schedules')
+                ->select('date as schedule')
+                ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT first_in FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as first_in')
+                ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT first_out FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as first_out')
+                ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT second_in FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as second_in')
+                ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT second_out FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as second_out')
+                ->selectRaw('(CASE WHEN date = (SELECT dtr_date FROM `daily_time_records` WHERE dtr_date = schedules.date AND biometric_id = ' . $biometric_id . ' LIMIT 1) THEN 1 ELSE 0 END) as attendance_status')
+                ->whereIn('id', function ($query) use ($biometric_id) {
+                    $query->select('schedule_id')
+                        ->from('employee_profile_schedule')
+                        ->whereIn('employee_profile_id', function ($innerQuery) use ($biometric_id) {
+                            $innerQuery->select('id')
+                                ->from('employee_profiles')
+                                ->where('biometric_id', $biometric_id);
+                        });
+                })
+                ->get();
+
+
+            $schedules = $this->helper->getSchedule($biometric_id, "all-{$year_of}-{$month_of}");
+
+            if ($FrontDisplay) {
+                return view('dtr.PrintDTRPDF',  [
+                    'daysInMonth' => $days_In_Month,
+                    'year' => $year_of,
+                    'month' => $month_of,
+                    'firstin' => $first_in,
+                    'firstout' => $first_out,
+                    'secondin' => $second_in,
+                    'secondout' => $second_out,
+                    'undertime' => $ut,
+                    'OHF' => $emp_Details['OHF'],
+                    'Arrival_Departure' => $schedules['arrival_departure'],
+                    'Employee_Name' => $emp_Details['Employee_Name'],
+                    'dtrRecords' => $dt_records,
+                    'holidays' => $holidays,
+                    'print_view' => true,
+                    'halfsched' => $is_Half_Schedule,
+                    'biometric_ID' => $biometric_id,
+                    'schedule' => $employeeSched
+
+                ]);
+            }
+            $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
+            $approvingDTR = Help::getApprovingDTR($employee->assignedArea, $employee);
+            $approver = isset($approvingDTR['name']) ? $approvingDTR['name'] : null;
+
+            if ($view) {
+                return view('generate_dtr.PrintDTRPDF',  [
+                    'daysInMonth' => $days_In_Month,
+                    'year' => $year_of,
+                    'month' => $month_of,
+                    'firstin' => $first_in,
+                    'firstout' => $first_out,
+                    'secondin' => $second_in,
+                    'secondout' => $second_out,
+                    'undertime' => $ut,
+                    'OHF' => $emp_Details['OHF'],
+                    'Arrival_Departure' => $schedules['arrival_departure'],
+                    'Employee_Name' => $emp_Details['Employee_Name'],
+                    'dtrRecords' => $dt_records,
+                    'holidays' => $holidays,
+                    'print_view' => true,
+                    'halfsched' => $is_Half_Schedule,
+                    'biometric_ID' => $biometric_id,
+                    'schedule' => $employeeSched,
+                    'Incharge' => $approver
+                ]);
+            } else {
+                $options = new Options();
+                $options->set('isPhpEnabled', true);
+                $options->set('isHtml5ParserEnabled', true);
+                $options->set('isRemoteEnabled', true);
+                $dompdf = new Dompdf($options);
+                $dompdf->getOptions()->setChroot([base_path() . '\public\storage']);
+                $dompdf->loadHtml(view('generate_dtr.PrintDTRPDF',  [
+                    'daysInMonth' => $days_In_Month,
+                    'year' => $year_of,
+                    'month' => $month_of,
+                    'firstin' => $first_in,
+                    'firstout' => $first_out,
+                    'secondin' => $second_in,
+                    'secondout' => $second_out,
+                    'undertime' => $ut,
+                    'OHF' => $emp_Details['OHF'],
+                    'Arrival_Departure' => $schedules['arrival_departure'],
+                    'Employee_Name' => $emp_Details['Employee_Name'],
+                    'dtrRecords' => $dt_records,
+                    'holidays' => $holidays,
+                    'print_view' => false,
+                    'halfsched' => $is_Half_Schedule,
+                    'biometric_ID' => $biometric_id,
+                    'schedule' => $employeeSched,
+                    'Incharge' => $approver
+                ]));
+
+                $dompdf->setPaper('Letter', 'portrait');
+                $dompdf->render();
+                $monthName = date('F', strtotime($year_of . '-' . sprintf('%02d', $month_of) . '-1'));
+                $filename = $emp_Details['DTRFile_Name'] . ' (DTR ' . $monthName . '-' . $year_of . ').pdf';
+
+                /* Downloads as PDF */
+                $dompdf->stream($filename);
+            }
+        } catch (\Throwable $th) {
+            return $th;
+            return response()->json(['message' =>  $th->getMessage()]);
+        }
+    }
+
+
+    public function GenerateMultiple($id, $month_of, $year_of, $view)
+    {
+        $data = [];
+        $emp_Details = [];
+        foreach ($id as $key => $biometric_id) {
+
+            if ($this->helper->isEmployee($biometric_id)) {
+                $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
+                $emp_name = $employee->name();
+
+
+
+                try {
+                    $dtr = DB::table('daily_time_records')
+                        ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
+                        ->where(function ($query) use ($biometric_id, $month_of, $year_of) {
+                            $query->where('biometric_id', $biometric_id)
+                                ->whereMonth(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
+                                ->whereYear(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+                        })
+                        ->orWhere(function ($query) use ($biometric_id, $month_of, $year_of) {
+                            $query->where('biometric_id', $biometric_id)
+                                ->whereMonth(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
+                                ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+                        })
+                        ->get();
+
+
+
+                    $arrival_Departure = [];
+                    $time_stamps_req = [
+                        'total_hours' => 8
+                    ];
+
+
+                    foreach ($dtr as $val) {
+                        /* Validating DTR with its Matching Schedules */
+                        /*
+                        *   if no matching schedule then
+                        *   it will not display the daily time record
+                        */
+                        $time_stamps_req = $this->helper->getSchedule($biometric_id, $val->first_in); //biometricID
+                        $arrival_Departure[] = $this->arrivalDeparture($time_stamps_req, $year_of, $month_of);
+
+                        if (count($time_stamps_req) >= 1) {
+                            $validate = [
+                                (object)[
+                                    'id' => $val->id,
+                                    'first_in' => $val->first_in,
+                                    'first_out' => $val->first_out,
+                                    'second_in' => $val->second_in,
+                                    'second_out' => $val->second_out
+                                ],
+                            ];
+                            $this->helper->saveTotalWorkingHours(
+                                $validate,
+                                $val,
+                                $val,
+                                $time_stamps_req,
+                                true
+                            );
+                        }
+                    }
+                } catch (\Throwable $th) {
+                    return response()->json(['message' =>  $th->getMessage()]);
+                }
+
+                $ohf[] = isset($time_stamps_req) ? $time_stamps_req['total_hours'] . ' HOURS' : null;
+
+                $emp_Details[] = [
+                    'OHF' => $ohf,
+                    'Arrival_Departure' => $arrival_Departure[0] ?? 'NO SCHEDULE',
+                    'Employee_Name' => $emp_name,
+                    'DTRFile_Name' => $emp_name,
+                    'biometric_ID' => $biometric_id
+                ];
+            }
+        }
+
+
+
+        return $this->MultiplePrintOrView($id, $month_of, $year_of, $view, $emp_Details);
+    }
+
+
+    public function MultiplePrintOrView($id, $month_of, $year_of, $view, $emp_Details)
+    {
+
+        $data = [];
+        $dt_records = [];
+
+        foreach ($id as $key => $biometric_id) {
+
+            if ($this->helper->isEmployee($biometric_id)) {
+                $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
+                $emp_name = $employee->name();
+
+                $dtr = DB::table('daily_time_records')
+                    ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
+                    ->where(function ($query) use ($biometric_id, $month_of, $year_of) {
+                        $query->where('biometric_id', $biometric_id)
+                            ->whereMonth(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
+                            ->whereYear(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+                    })
+                    ->orWhere(function ($query) use ($biometric_id, $month_of, $year_of) {
+                        $query->where('biometric_id', $biometric_id)
+                            ->whereMonth(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
+                            ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+                    })
+                    ->get();
+
+
+                $No_schedule_DTR = [];
+                $is_Half_Schedule = false;
+                $day = [];
+                $entry = '';
+
+                foreach ($dtr as $val) {
+                    /* Validating DTR with its Matching Schedules */
+                    /*
+                *   if no matching schedule then
+                *   it will not display the daily time record
+                */
+                    if (isset($val->first_in) && $val->first_in !== NULL) {
+                        $entry = $val->first_in;
                     } else {
-                        $entrydate = date('Y-m-d');
+                        if (isset($val->second_in) && $val->second_in !== NULL) {
+                            $entry = $val->second_in;
+                        }
                     }
 
-                    $break_Time_Req = $this->CurrentSchedule($biometric_id, $value, false)['break_Time_Req'];
-                    $daySchedule = $this->CurrentSchedule($biometric_id, $value, false)['daySchedule'];
+                    $yearSched = date('Y', strtotime($entry));
+                    $monthSched = date('m', strtotime($entry));
+                    $schedule = $this->helper->getSchedule($val->biometric_id, "all-{$yearSched}-{$monthSched}")['schedule'];
+                    //GET THE SCHEDULE
+
+                    if ($schedule) {
+                        $daySched = array_values(array_filter($schedule, function ($row) use ($entry) {
+                            return date('Y-m-d', strtotime($row['scheduleDate'])) == date('Y-m-d', strtotime($entry));
+                        }))[0];
+
+                        $is_Half_Schedule = $this->isHalfEntrySchedule($daySched);
+                    }
 
 
-                    if ($this->isEmployee($biometric_id)) { // Validating if User is an employee with Biometric data and employee data
 
 
-                        $validate = DailyTimeRecords::whereDate('dtr_date', $entrydate)->where('biometric_id', $biometric_id)->latest()->first();
+                    if (isset($daySched['scheduleDate'])) {
+
+                        $sdate =  $daySched['scheduleDate'];
 
 
-                        if ($validate !== null) {
-                            /* Updating All existing  Records */
 
-                            $f1 = $validate->first_in;
-                            $f2 =  $validate->first_out;
-                            $f3 = $validate->second_in;
-                            $f4 = $validate->second_out;
-                            $rwm = $validate->required_working_minutes;
-                            $o_all_min = $validate->total_working_minutes;
+                        if (date('Y-m-d', strtotime($entry)) ==   $sdate) {
+                            //   echo $entry;
+                            $date_entry = date('Y-m-d H:i', strtotime($entry));
+                            $schedule_fEntry = date('Y-m-d H:i', strtotime(date('Y-m-d', strtotime($date_entry)) . ' ' . $sdate));
+                            //return $this->WithinScheduleRange($dateentry, $schedulefEntry);
 
-                            /* -------------    -----------------------------------------Replace this values-------------------------------------------------------------------- */
-
-                            /* GET THE DATA BASED ON EMPLOYEE SCHEDULE */
-                            $time_stamps_req = $this->getSchedule($biometric_id,  $check_Records[0]['date_time']); //biometricID
-
-                            /* ---------------------------------------------------------------------------------------------------------------------------------------------- */
-
-                            if ($f1 && !$f2 && !$f3 && !$f4) {
-
-                                if ($value['status'] == 255) {
-                                    if ($this->withinInterval($f1, $this->sequence(0, [$value]))) {
-                                        $this->saveTotalWorkingHours(
-                                            $validate,
-                                            $value,
-                                            $this->sequence(0, [$value]),
-                                            $time_stamps_req,
-                                            false
-                                        );
-                                    }
-                                }
-                                if ($value['status'] == 1) {
-                                    $this->saveTotalWorkingHours(
-                                        $validate,
-                                        $value,
-                                        $this->sequence(0, [$value]),
-                                        $time_stamps_req,
-                                        false
-                                    );
-                                }
+                            if ($this->withinScheduleRange($date_entry, $schedule_fEntry)) {
+                                $dt_records[] = [
+                                    'biometric_ID' => $val->biometric_id,
+                                    'first_in' => $val->first_in,
+                                    'first_out' => $val->first_out,
+                                    'second_in' => $val->second_in,
+                                    'second_out' => $val->second_out,
+                                    'undertime_minutes' => $val->undertime_minutes,
+                                    'created' => $val->dtr_date
+                                ];
                             }
+                        }
+                    } else {
+                        $No_schedule_DTR[] = [
+                            'biometric_ID' => $val->biometric_id,
+                            'first_in' => $val->first_in,
+                            'first_out' => $val->first_out,
+                            'second_in' => $val->second_in,
+                            'second_out' => $val->second_out,
+                            'undertime_minutes' => $val->undertime_minutes,
+                            'created' => $val->dtr_date
+                        ];
+                        //  echo $val->first_in;
+                    }
+                }
 
-                            /* check In_am and out_am and not set in_pm */
-                            /*
-                   -here we are validating the Out and In interval between second Entry to third entry
-                   -if the Time of IN is within the interval Requirements. We mark status as OK. else
-                    Invalid 3rd Entry
-                   */
+                $days_In_Month = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
 
-                            if ($f1 && $f2 && !$f3 && !$f4) {
+                $first_in = array_map(function ($res) {
+                    return [
+                        'dtr_date' => $res['created'],
+                        'first_in' => $res['first_in'],
+                        'biometric_ID' => $res['biometric_ID']
 
-                                $percent_Trendered = floor($rwm * 0.6); //60% of Time rendered. then considered as 1 entry
-                                if (count($break_Time_Req) >= 1) {
-                                    if ($o_all_min <= $percent_Trendered) { // if allmins rendered is less than the 60% time req . then accept a second entry
-
-                                        if ($value['status'] == 255) {
-                                            if ($this->withinInterval($f2, $this->sequence(0, [$value]))) {
-                                                $this->saveIntervalValidation(
-                                                    $this->sequence(0, [$value]),
-                                                    $validate
-                                                );
-                                            }
-                                        }
-                                        if ($value['status'] == 0) {
-
-                                            $this->saveIntervalValidation(
-                                                $this->sequence(0, [$value]),
-                                                $validate
-                                            );
-                                        }
-                                    }
-                                } else {
-                                    //Save new DTR|
-
-                                    $daySchedule = $this->CurrentSchedule($biometric_id, $check_Records[0], false)['daySchedule'];
+                    ];
+                }, $dt_records);
 
 
-                                    if ($value['status'] == 0 || $value['status'] == 255) {
+                $first_out = array_map(function ($res) {
+                    return [
+                        'dtr_date' => $res['created'],
+                        'first_out' => $res['first_out'],
+                        'biometric_ID' => $res['biometric_ID']
+                    ];
+                }, $dt_records);
 
-                                        $scheduleEntry = null;
-                                        if (isset($daySchedule['is_on_call']) && $daySchedule['is_on_call']) {
-                                            // $scheduleEntry = date('Y-m-d H:i:s', strtotime($time_stamps_req['date_start'] . ' ' . $time_stamps_req['first_entry'] . '+' . $max_allowed_entry_for_oncall . ' minutes'));
-                                            $scheduleEntry = $daySchedule['first_entry'];
-                                        }
-                                        $this->SaveFirstEntry(
-                                            $this->sequence(0, [$value]),
-                                            $break_Time_Req,
-                                            $biometric_id,
-                                            $delay,
-                                            $scheduleEntry
-                                        );
-                                    }
-                                }
-                            }
-                            /* check In_am and out_am and  in_pm and not set out_pm */
-                            /*
-                   We have set the last entry,
-                   assuming that the first, second, and third entries have also been established.
-                   Overtime and undertime, as well as working hours, have already been calculated.
-                */
-                            if ($f1 && $f2 && $f3 && !$f4) {
-
-                                if (count($break_Time_Req) >= 1) {
-                                    if ($value['status'] == 255) {
-                                        if ($this->withinInterval($f3, $this->sequence(0, [$value]))) {
-                                            $this->saveTotalWorkingHours(
-                                                $validate,
-                                                $value,
-                                                $this->sequence(0, [$value]),
-                                                $time_stamps_req,
-                                                false
-                                            );
-                                        }
-                                    }
+                $second_in = array_map(function ($res) {
+                    return [
+                        'dtr_date' => $res['created'],
+                        'second_in' => $res['second_in'],
+                        'biometric_ID' => $res['biometric_ID']
+                    ];
+                }, $dt_records);
 
 
-                                    if ($value['status'] == 1) {
-                                        $this->saveTotalWorkingHours(
-                                            $validate,
-                                            $value,
-                                            $this->sequence(0, [$value]),
-                                            $time_stamps_req,
-                                            false
-                                        );
-                                    }
-                                }
-                            }
-                            /*Check notset in_am and notset out_pm and  check In_pm and not set out_pm */
-                            /*
-                    Here we are setting the Last entry of Second half. with no First half of Entries.
-                    Overtime and undertime, as well as working hours, have already been calculated.
-                */
-                            if (!$f1 && !$f2 && $f3 && !$f4) {
 
-                                if (count($break_Time_Req) >= 1) {
 
-                                    if ($value['status'] == 255) {
-                                        if ($this->withinInterval($f3, $this->sequence(0, [$value]))) {
-                                            $this->saveTotalWorkingHours(
-                                                $validate,
-                                                $value,
-                                                $this->sequence(0, [$value]),
-                                                $time_stamps_req,
-                                                false
-                                            );
-                                        }
-                                    }
+                $second_out = array_map(function ($res) {
+                    return  [
+                        'dtr_date' => $res['created'],
+                        'second_out' => $res['second_out'],
+                        'biometric_ID' => $res['biometric_ID']
+                    ];
+                }, $dt_records);
 
-                                    if ($value['status'] == 1) {
-                                        $this->saveTotalWorkingHours(
-                                            $validate,
-                                            $value,
-                                            $this->sequence(0, [$value]),
-                                            $time_stamps_req,
-                                            false
-                                        );
-                                    }
+                $ut =  array_map(function ($res) {
+                    return [
+                        'created' => $res['created'],
+                        'undertime' => $res['undertime_minutes'],
+                        'biometric_ID' => $res['biometric_ID']
+                    ];
+                }, $dt_records);
+
+                $holidays = DB::table('holidays')->get();
+
+                $employeeSched = DB::table('schedules')
+                    ->select('date as schedule')
+                    ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT first_in FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as first_in')
+                    ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT first_out FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as first_out')
+                    ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT second_in FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as second_in')
+                    ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT second_out FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as second_out')
+                    ->selectRaw('(CASE WHEN date = (SELECT dtr_date FROM `daily_time_records` WHERE dtr_date = schedules.date AND biometric_id = ' . $biometric_id . ' LIMIT 1) THEN 1 ELSE 0 END) as attendance_status')
+                    ->whereIn('id', function ($query) use ($biometric_id) {
+                        $query->select('schedule_id')
+                            ->from('employee_profile_schedule')
+                            ->whereIn('employee_profile_id', function ($innerQuery) use ($biometric_id) {
+                                $innerQuery->select('id')
+                                    ->from('employee_profiles')
+                                    ->where('biometric_id', $biometric_id);
+                            });
+                    })
+                    ->get();
+
+
+
+                $schedules = $this->helper->getSchedule($biometric_id, "all-{$year_of}-{$month_of}");
+
+
+                $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
+                $approvingDTR = Help::getApprovingDTR($employee->assignedArea, $employee);
+                $approver = isset($approvingDTR['name']) ? $approvingDTR['name'] : null;
+                $data[] = [
+                    'daysInMonth' => $days_In_Month,
+                    'year' => $year_of,
+                    'month' => $month_of,
+                    'firstin' => $first_in,
+                    'firstout' => $first_out,
+                    'secondin' => $second_in,
+                    'secondout' => $second_out,
+                    'undertime' => $ut,
+                    'dtrRecords' => $dt_records,
+                    'holidays' => $holidays,
+                    'print_view' => true,
+                    'halfsched' => $is_Half_Schedule,
+                    'biometric_ID' => $biometric_id,
+                    'schedule' => $employeeSched,
+                    'Incharge' => $approver,
+                    'emp_Details' => $emp_Details
+
+                ];
+            }
+        }
+
+
+
+
+
+        //$view
+
+        return view('generate_dtr.PrintDTRPDF',  [
+            'data' => $data
+        ]);
+    }
+    /* ----------------------------------------------------------------END OF GENERATION OF DAILY TIME RECORDS----------------------------------------------------------------------------------------------------------------------------- */
+
+
+    public function getHolidays()
+    {
+        try {
+            return response()->json(['data' => Holidaylist::all()]);
+        } catch (\Throwable $th) {
+            return response()->json(['message' =>  $th->getMessage()]);
+        }
+    }
+
+    public function setHolidays(Request $request)
+    {
+        try {
+            $description = $request->description;
+            $month = $request->month;
+            $day = $request->day;
+            $is_special = $request->isspecial;
+            $effective_Date = $request->effectiveDate;
+
+            Holidaylist::create([
+                'description' => $description,
+                'month_day' => $month . '-' . $day,
+                'isspecial' => $is_special,
+                'effectiveDate' => $effective_Date,
+            ]);
+            return response()->json(['message' =>  "Holiday Set Successfully!"]);
+        } catch (\Throwable $th) {
+            return response()->json(['message' =>  $th->getMessage()]);
+        }
+    }
+
+    public function modifyHolidays(Request $request)
+    {
+        try {
+            $holiday_id = $request->holiday_id;
+            $description = $request->description;
+            $month = $request->month;
+            $day = $request->day;
+            $is_special = $request->isspecial;
+            $effective_Date = $request->effectiveDate;
+
+            Holidaylist::where('id', $holiday_id)->update([
+                'description' => $description,
+                'month_day' => $month . '-' . $day,
+                'isspecial' => $is_special,
+                'effectiveDate' => $effective_Date,
+            ]);
+
+            return response()->json(['message' =>  "Item Updated Successfully!"]);
+        } catch (\Throwable $th) {
+            return response()->json(['message' =>  $th->getMessage()]);
+        }
+    }
+
+    private function getWeekdayStatus($date)
+    {
+        if (date('D', strtotime($date)) == "Sun" || date('D', strtotime($date)) == "Sat") {
+            return "Weekend";
+        }
+        return "Weekdays";
+    }
+
+    private function isHoliday($date)
+    {
+        $holiday_list = Holidaylist::where('effectiveDate', date('Y-m-d', strtotime($date)))->get();
+        if (count($holiday_list) >= 1) {
+            return true;
+        }
+        return false;
+    }
+
+    /*
+    *
+    *
+     Report Generation
+     Undertime, Overtime , present dates and its absences
+    **
+    */
+    public function dtrUTOTReport(Request $request)
+    {
+        try {
+            $bio = json_decode($request->biometric_id);
+            $month_of = $request->monthof;
+            $year_of = $request->yearof;
+
+
+
+
+            $is_15th_days = $request->is15thdays;
+            $dt_records = [];
+            $is_Half_Schedule = false;
+            $dtr = [];
+            $mdtr = [];
+            if (count($bio) >= 1) {
+
+                foreach ($bio as $biometric_id) {
+
+                    if ($this->helper->isEmployee($biometric_id)) {
+
+                        $data = new Request([
+                            'biometric_id' => json_encode([$biometric_id]),
+                            'monthof' => $month_of,
+                            'yearof' => $year_of,
+                            'view' => 1
+                        ]);
+                        $this->generateDTR($data);
+
+                        if ($is_15th_days) {
+                            $first_half = $request->firsthalf;
+                            $second_half = $request->secondhalf;
+                            if ($first_half) {
+                                $dt_records = $this->GenerateFirstHalf($month_of, $year_of, $biometric_id);
+                            } else {
+                                if ($second_half) {
+                                    $dt_records = $this->GenerateSecondHalf($month_of, $year_of, $biometric_id);
                                 }
                             }
                         } else {
+                            $dt_records = $this->generateMonthly($month_of, $year_of, $biometric_id);
+                        }
+
+                        $no_Sched_dtr = [];
+                        $number_Of_Days = 0;
+                        $number_Of_all_Days_past = 0;
+                        $date_ranges = [];
+                        $entryf = '';
 
 
-                            if ($delay) {
-                                /* Save new records */
-                                if ($value['status'] == 0 || $value['status'] == 255) {
+                        foreach ($dt_records as $key => $value) {
+                            $schedule = $this->helper->getSchedule($value->biometric_id, $value->first_in);
 
-                                    $scheduleEntry = null;
-                                    if (isset($daySchedule['is_on_call']) && $daySchedule['is_on_call']) {
-                                        // $scheduleEntry = date('Y-m-d H:i:s', strtotime($time_stamps_req['date_start'] . ' ' . $time_stamps_req['first_entry'] . '+' . $max_allowed_entry_for_oncall . ' minutes'));
-                                        $scheduleEntry = $daySchedule['first_entry'];
-                                    }
-                                    $this->SaveFirstEntry(
-                                        $this->sequence(0, [$value]),
-                                        $break_Time_Req,
-                                        $biometric_id,
-                                        $delay,
-                                        $scheduleEntry
-                                    );
+                            $is_Half_Schedule = $this->isHalfEntrySchedule($schedule);
+
+
+
+                            if (isset($schedule['date'])) {
+
+                                $date_now = date('Y-m-d');
+                                $sdate =  $schedule['date'];
+                                $date_Range = array();
+                                $current_Date = strtotime($sdate);
+
+                                $date_Range[] = date('Y-m-d', $current_Date);
+                                $current_Date = strtotime('+1 day', $current_Date);
+
+
+                                $date_ranges = $date_Range;
+                                $number_Of_Days += count($date_Range);
+                                if ($sdate < $date_now) {
+                                    $number_Of_all_Days_past = count($date_Range);
+                                }
+                                if (isset($value->first_in) && $value->first_in != NULL) {
+                                    $entryf = $value->first_in;
+                                }
+
+                                if (isset($value->second_in) && $value->second_in != NULL) {
+                                    $entryf = $value->second_in;
+                                }
+
+
+
+                                if (date('Y-m-d', strtotime($entryf)) == $sdate) {
+                                    $mdtr[] = $this->mDTR($value);
                                 }
                             } else {
+                                $no_Sched_dtr[] = $this->mDTR($value);
+                            }
+                        }
 
 
-                                /**
-                                 * Here we are checking if theres an existing first entry this is  for nursing and doctors
-                                 * which has two entries for schedule only.
-                                 * if data not found. then we save into first entry
-                                 */
-                                $yester_date = date('Y-m-d', strtotime('-1 day'));
-                                $time_stamps_req = $this->getSchedule($biometric_id, date('Y-m-d H:i:s', strtotime($yester_date . ' ' . date('H:i:s', strtotime($check_Records[0]['date_time'])))));
+                        $Records_with_Overtime = array_values(array_filter($mdtr, function ($res) {
+                            return $res['overtime_minutes'] >= 1;
+                        }));
+                        $Records_with_Undertime = array_values(array_filter($mdtr, function ($res) {
+                            return $res['undertime_minutes'] >= 1;
+                        }));
+                        $Time_Records = array_values(array_filter($mdtr, function ($res) {
+                            return $res['total_working_minutes'] >= 1;
+                        }));
+                        $overtime_Sum = 0;
+                        foreach ($Records_with_Overtime as $record) {
+                            $overtime_Sum += $record['overtime_minutes'];
+                        }
+                        $undertime_Sum = 0;
+                        foreach ($Records_with_Undertime as $record) {
+                            $undertime_Sum += $record['undertime_minutes'];
+                        }
+                        $total_Hours_of_Duty = 0;
+                        foreach ($Time_Records as $record) {
+                            $total_Hours_of_Duty += floor($record['total_working_minutes'] - $record['undertime_minutes']); ////
+                        }
+                        $total_Hours_of_Duty = floor($total_Hours_of_Duty / 60);
+                        $total_minutes_of_Duty = floor($total_Hours_of_Duty * 60);
+                        $days_In_Month = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
+                        $days_of_duty = 0;
+                        $days_Rendered = [];
 
-                                /*
-                                first_entry
-                                third_entry
-                                */
+                        for ($i = 1; $i <= $days_In_Month; $i++) {
+                            $count = array_filter($mdtr, function ($res) use ($i) {
+                                if (!is_null($res['first_in'])) {
+                                    return date('d', strtotime($res['first_in'])) == $i;
+                                } elseif (!is_null($res['second_in'])) {
+                                    return date('d', strtotime($res['second_in'])) == $i;
+                                }
+                            });
+                            $days_of_duty += count($count);
+                            $days_Rendered[] = array_values($count);
+                        }
 
 
+                        $days = $days_Rendered;
+                        $present_days = [];
+                        foreach ($days as $entry) {
 
-                                $check_yesterday_Records = DailyTimeRecords::whereDate('first_in', $yester_date)->where('biometric_id', $biometric_id)->latest()->first();
-                                $daySchedule = $this->CurrentSchedule($biometric_id, $check_yesterday_Records, true)['daySchedule'];
+                            if (is_array($entry)) {
 
-
-
-                                if ($check_yesterday_Records !== null) {
-
-
-                                    $f_1 = $check_yesterday_Records->first_in;
-                                    $f_2 = $check_yesterday_Records->first_out;
-                                    $bio_ID = $check_yesterday_Records->biometric_id;
-
-
-                                    /* this entry only */
-                                    if ($f_1 && !$f_2) {
-
-                                        if (count($this->CurrentSchedule($biometric_id, $check_yesterday_Records, true)['break_Time_Req']) === 0) {
-
-                                            /* Validation add expiry. */
-                                            $TimeAllowance_ =  date('Y-m-d H:i:s', strtotime(date('Y-m-d ' . $time_stamps_req['second_entry']) . " +5 hours")); // 5 hours allowance
-
-                                            foreach ($check_Records as $key => $chrc) {
-                                                if ($chrc['biometric_id'] == $bio_ID) {
-                                                    if ($TimeAllowance_ > $chrc['date_time']) { // Validation to Ignore Yesterday entry. 5 hours
-
-                                                        if ($chrc['status'] == 255) {
-                                                            if ($this->withinInterval($f_1, $this->sequence(0, [$chrc]))) {
-                                                                $this->saveTotalWorkingHours(
-                                                                    $check_yesterday_Records,
-                                                                    $chrc,
-                                                                    $this->sequence(0, [$chrc]),
-                                                                    $time_stamps_req,
-                                                                    false
-                                                                );
-                                                            }
-                                                        }
-                                                        if ($chrc['status'] == 1) {
-                                                            //employeeID
-                                                            $this->SaveTotalWorkingHours(
-                                                                $check_yesterday_Records,
-                                                                $chrc,
-                                                                $this->sequence(0, [$chrc]),
-                                                                $time_stamps_req,
-                                                                false
-                                                            );
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        } else {
-                                            if ($value['status'] == 0 || $value['status'] == 255) {
-
-                                                $scheduleEntry = null;
-                                                if (isset($daySchedule['is_on_call']) && $daySchedule['is_on_call']) {
-                                                    // $scheduleEntry = date('Y-m-d H:i:s', strtotime($time_stamps_req['date_start'] . ' ' . $time_stamps_req['first_entry'] . '+' . $max_allowed_entry_for_oncall . ' minutes'));
-                                                    $scheduleEntry = $daySchedule['first_entry'];
-                                                }
-                                                $this->SaveFirstEntry(
-                                                    $this->sequence(0, [$value]),
-                                                    $break_Time_Req,
-                                                    $biometric_id,
-                                                    $delay,
-                                                    $scheduleEntry
-                                                );
-                                            }
-                                        }
-                                    } else {
-
-                                        /* Save new records */
-                                        if ($value['status'] == 0 || $value['status'] == 255) {
-
-                                            $scheduleEntry = null;
-                                            if (isset($daySchedule['is_on_call']) && $daySchedule['is_on_call']) {
-                                                // $scheduleEntry = date('Y-m-d H:i:s', strtotime($time_stamps_req['date_start'] . ' ' . $time_stamps_req['first_entry'] . '+' . $max_allowed_entry_for_oncall . ' minutes'));
-                                                $scheduleEntry = $daySchedule['first_entry'];
-                                            }
-                                            $this->SaveFirstEntry(
-                                                $this->sequence(0, [$value]),
-                                                $break_Time_Req,
-                                                $biometric_id,
-                                                $delay,
-                                                $scheduleEntry
-                                            );
-                                        }
-                                    }
-                                } else {
-
-                                    /* Save new records */
-                                    if ($value['status'] == 0 || $value['status'] == 255) {
-                                        $scheduleEntry = null;
-                                        if (isset($daySchedule['is_on_call']) && $daySchedule['is_on_call']) {
-                                            // $scheduleEntry = date('Y-m-d H:i:s', strtotime($time_stamps_req['date_start'] . ' ' . $time_stamps_req['first_entry'] . '+' . $max_allowed_entry_for_oncall . ' minutes'));
-                                            $scheduleEntry = $daySchedule['first_entry'];
-                                        }
-                                        $this->SaveFirstEntry(
-                                            $this->sequence(0, [$value]),
-                                            $break_Time_Req,
-                                            $biometric_id,
-                                            $delay,
-                                            $scheduleEntry
-                                        );
-                                    }
+                                foreach ($entry as $nested_Entry) {
+                                    $present_days[] = $nested_Entry;
                                 }
                             }
                         }
+
+
+                        $days_absences = [];
+                        $days_present = [];
+
+                        foreach ($date_ranges as $key => $value) {
+                            $day_Entries = date('j', strtotime($value));
+                            $count = array_filter($present_days, function ($res) use ($day_Entries) {
+                                return $res['day'] == $day_Entries;
+                            });
+
+                            if (count($count) == 0) {
+                                if (date('Y-m-d') > date('Y-m-d', strtotime($value))) {
+                                    $days_absences[] = $value;
+                                }
+                            } else {
+                                $days_present[] = $value;
+                            }
+                        }
+
+
+                        $numeric_days = array_map(function ($res) {
+                            $timestamp = strtotime($res);
+                            $formatted_date = date('Y-m-d', $timestamp);
+                            $numerical_value = date('j', $timestamp);
+                            return $numerical_value + 1;
+                        }, $days_present);
+
+
+                        /**
+                         * IF Two schedules only
+                         */
+                        $absences = floor($days_of_duty - $number_Of_all_Days_past);
+                        if ($is_Half_Schedule) {
+                            $new_Days_Absences = [];
+                            foreach ($days_absences as $value) {
+                                $day_Entries = date('j', strtotime($value));
+                                $cnt = array_filter($numeric_days, function ($res) use ($day_Entries) {
+                                    return $res == $day_Entries;
+                                });
+                                if (count($cnt) == 0) {
+                                    if (date('Y-m-d') > date('Y-m-d', strtotime($value))) {
+                                        $new_Days_Absences[] = $value;
+                                    }
+                                }
+                            }
+                            $days_absences = $new_Days_Absences;
+                            $absences = count($days_absences);
+                        }
+
+                        $dtr[] = [
+                            'biometric_ID' => $biometric_id,
+                            'employeeName' => EmployeeProfile::where('biometric_id', $biometric_id)->first()->name(),
+                            'Total_Undertime' =>  $undertime_Sum,
+                            'Total_Overtime' =>   $overtime_Sum,
+                            'TotalHoursofDuty' => $total_Hours_of_Duty,
+                            'TotalMinutesofDuty' => $total_minutes_of_Duty,
+                            'TotalScheduleDays' => $number_Of_Days,
+                            'TotalDaysRendered' => $days_of_duty,
+                            'TotalAbsences' => count($days_absences),
+                            'TotalDayswLate' => count($Records_with_Undertime),
+                            'TotalDutywNosched' => count($no_Sched_dtr),
+                            'fortheMonth' => date('F', strtotime($year_of . '-' . $month_of . '-1')),
+                            'fortheYear' => $year_of,
+                            'Absences' => $days_absences,
+                            'AllRecords' => $mdtr,
+                            'RecordsWithOvertime' => $Records_with_Overtime,
+                            'RecordsWithUndertime' => $Records_with_Undertime,
+                            'NoschedDTR' => $no_Sched_dtr
+                        ];
+                    }
+                }
+            } else {
+                $all_biometric = Biometrics::all();
+                foreach ($all_biometric as $bio) {
+                    $biometric_id = $bio->biometric_id;
+                    if ($this->helper->isEmployee($biometric_id)) {
+
+                        if ($is_15th_days) {
+                            $first_half = $request->firsthalf;
+                            $second_half = $request->secondhalf;
+                            if ($first_half) {
+                                $dt_records = $this->GenerateFirstHalf($month_of, $year_of, $biometric_id);
+                            } else {
+                                if ($second_half) {
+                                    $dt_records = $this->GenerateSecondHalf($month_of, $year_of, $biometric_id);
+                                }
+                            }
+                        } else {
+                            $dt_records = $this->generateMonthly($month_of, $year_of, $biometric_id);
+                        }
+
+
+                        $mdtr = [];
+                        $no_Sched_dtr = [];
+                        $number_Of_Days = 0;
+                        $number_Of_all_Days_past = 0;
+                        $date_ranges = [];
+                        $entryf = '';
+                        foreach ($dt_records as $key => $value) {
+                            $schedule = $this->helper->getSchedule($value->biometric_id, $value->first_in);
+                            $is_Half_Schedule = $this->isHalfEntrySchedule($schedule);
+
+                            if (isset($schedule['date'])) {
+                                $date_now = date('Y-m-d');
+                                $sdate =  $schedule['date'];
+
+                                $date_Range = array();
+                                $current_Date = strtotime($sdate);
+
+
+                                $date_Range[] = date('Y-m-d', $current_Date);
+                                $current_Date = strtotime('+1 day', $current_Date);
+                                $date_ranges = $date_Range;
+                                $number_Of_Days = count($date_Range);
+                                if ($sdate < $date_now) {
+                                    $number_Of_all_Days_past = count($date_Range);
+                                }
+
+                                if (isset($value->first_in)  && $value->first_in != NULL) {
+                                    $entryf = $value->first_in;
+                                } else if (isset($value->second_in) && $value->second_in != NULL) {
+                                    $entryf = $value->second_in;
+                                }
+
+
+
+                                if (date('Y-m-d', strtotime($entryf)) == $sdate) {
+                                    $mdtr[] = $this->mDTR($value);
+                                }
+                            } else {
+                                $no_Sched_dtr[] = $this->mDTR($value);
+                            }
+                        }
+
+
+                        $Records_with_Overtime = array_values(array_filter($mdtr, function ($res) {
+                            return $res['overtime_minutes'] >= 1;
+                        }));
+                        $Records_with_Undertime = array_values(array_filter($mdtr, function ($res) {
+                            return $res['undertime_minutes'] >= 1;
+                        }));
+                        $Time_Records = array_values(array_filter($mdtr, function ($res) {
+                            return $res['total_working_minutes'] >= 1;
+                        }));
+                        $overtime_Sum = 0;
+                        foreach ($Records_with_Overtime as $record) {
+                            $overtime_Sum += $record['overtime_minutes'];
+                        }
+                        $undertime_Sum = 0;
+                        foreach ($Records_with_Undertime as $record) {
+                            $undertime_Sum += $record['undertime_minutes'];
+                        }
+                        $total_Hours_of_Duty = 0;
+                        foreach ($Time_Records as $record) {
+                            $total_Hours_of_Duty += floor($record['total_working_minutes'] - $record['undertime_minutes']);
+                        }
+                        $total_Hours_of_Duty = floor($total_Hours_of_Duty / 60);
+                        $total_minutes_of_Duty = floor($total_Hours_of_Duty * 60);
+                        $days_In_Month = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
+                        $days_of_duty = 0;
+                        $days_Rendered = [];
+
+                        for ($i = 1; $i <= $days_In_Month; $i++) {
+                            $count = array_filter($mdtr, function ($res) use ($i) {
+                                return date('d', strtotime($res['first_in'])) == $i;
+                            });
+
+                            $days_of_duty += count($count);
+                            $days_Rendered[] = array_values($count);
+                        }
+
+
+                        $days = $days_Rendered;
+
+                        $present_days = [];
+                        foreach ($days as $entry) {
+
+                            if (is_array($entry)) {
+
+                                foreach ($entry as $nested_Entry) {
+                                    $present_days[] = $nested_Entry;
+                                }
+                            }
+                        }
+
+
+                        $days_absences = [];
+                        $days_present = [];
+
+                        foreach ($date_ranges as $key => $value) {
+                            $day_Entries = date('j', strtotime($value));
+                            $count = array_filter($present_days, function ($res) use ($day_Entries) {
+                                return $res['day'] == $day_Entries;
+                            });
+
+                            if (count($count) == 0) {
+                                if (date('Y-m-d') > date('Y-m-d', strtotime($value))) {
+                                    $days_absences[] = $value;
+                                }
+                            } else {
+                                $days_present[] = $value;
+                            }
+                        }
+
+                        $numeric_days = array_map(function ($res) {
+                            $timestamp = strtotime($res);
+                            $formatted_date = date('Y-m-d', $timestamp);
+                            $numerical_value = date('j', $timestamp);
+                            return $numerical_value + 1;
+                        }, $days_present);
+
+
+                        /**
+                         * IF Two schedules only
+                         */
+                        $absences = floor($days_of_duty - $number_Of_all_Days_past);
+                        if ($is_Half_Schedule) {
+                            $new_Days_Absences = [];
+                            foreach ($days_absences as $value) {
+                                $day_Entries = date('j', strtotime($value));
+                                $cnt = array_filter($numeric_days, function ($res) use ($day_Entries) {
+                                    return $res == $day_Entries;
+                                });
+                                if (count($cnt) == 0) {
+                                    if (date('Y-m-d') > date('Y-m-d', strtotime($value))) {
+                                        $new_Days_Absences[] = $value;
+                                    }
+                                }
+                            }
+                            $days_absences = $new_Days_Absences;
+                            $absences = count($days_absences);
+                        }
+
+                        $dtr[] = [
+                            'biometric_ID' => $biometric_id,
+                            'employeeName' => EmployeeProfile::where('biometric_id', $biometric_id)->first()->name(),
+                            'Total_Undertime' =>  $undertime_Sum,
+                            'Total_Overtime' =>   $overtime_Sum,
+                            'TotalHoursofDuty' => $total_Hours_of_Duty,
+                            'TotalMinutesofDuty' => $total_minutes_of_Duty,
+                            'TotalScheduleDays' => $number_Of_Days,
+                            'TotalDaysRendered' => $days_of_duty,
+                            'TotalAbsences' => count($days_absences),
+                            'TotalDayswLate' => count($Records_with_Undertime),
+                            'TotalDutywNosched' => count($no_Sched_dtr),
+                            'fortheMonth' => date('F', strtotime($year_of . '-' . $month_of . '-1')),
+                            'fortheYear' => $year_of,
+                            'Absences' => $days_absences,
+                            'AllRecords' => $mdtr,
+                            'RecordsWithOvertime' => $Records_with_Overtime,
+                            'RecordsWithUndertime' => $Records_with_Undertime,
+                            'NoschedDTR' => $no_Sched_dtr
+                        ];
                     }
                 }
             }
+
+
+
+            $days_In_Month = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
+            $mdt = [];
+            for ($i = 1; $i <= $days_In_Month; $i++) {
+                $found = false;
+                foreach ($mdtr as $d) {
+                    if (!is_null($d['first_in'])) {
+                        if (date('d', strtotime($d['first_in'])) == $i) {
+                            $d['date'] = Carbon::create("$year_of-$month_of-$i")->format('Y-m-d');
+                            $mdt[] = $d;  // Use the day from $mdtr
+                            $found = true;
+                        }
+                    } else if (!is_null($d['second_in'])) {
+                        if (date('d', strtotime($d['second_in'])) == $i) {
+                            $d['date'] = Carbon::create("$year_of-$month_of-$i")->format('Y-m-d');
+                            $mdt[] = $d;  // Use the day from $mdtr
+                            $found = true;
+                        }
+                    }
+                }
+                if (!$found) {
+                    $mdt[] =  [
+                        'dtr_ID' => '',
+                        'first_in' => '',
+                        'first_out' => '',
+                        'second_in' => '',
+                        'second_out' => '',
+                        'interval_req' => '',
+                        'required_working_hours' => '',
+                        'required_working_minutes' => '',
+                        'total_working_hours' => '',
+                        'total_working_minutes' => '',
+                        'overtime' => '',
+                        'overtime_minutes' => '',
+                        'undertime' => '',
+                        'undertime_minutes' => '',
+                        'overall_minutes_rendered' => '',
+                        'total_minutes_reg' => '',
+                        'day' => $i,
+                        'created_at' => '',
+                        'weekStatus' => '',
+                        'isHoliday' => '',
+                        'date' => Carbon::create("$year_of-$month_of-$i")->format('Y-m-d')
+                    ];
+                }
+            }
+
+            $dtr[0]['AllRecords'] = $mdt;
+
+            return $dtr;
         } catch (\Throwable $th) {
             return $th;
+            return response()->json(['message' => $th->getMessage()]);
         }
     }
 
-    public function SaveFirstEntry($sequence, $break_Time_Req, $biometric_id, $delay, $scheduleEntry)
+
+    private function generateMonthly($month_of, $year_of, $biometric_id)
+    {
+
+        return  DB::table('daily_time_records')
+            ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
+            ->where(function ($query) use ($biometric_id, $month_of, $year_of) {
+                $query->where('biometric_id', $biometric_id)
+                    ->whereMonth(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
+                    ->whereYear(DB::raw('STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+            })
+            ->orWhere(function ($query) use ($biometric_id, $month_of, $year_of) {
+                $query->where('biometric_id', $biometric_id)
+                    ->whereMonth(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $month_of)
+                    ->whereYear(DB::raw('STR_TO_DATE(second_in, "%Y-%m-%d %H:%i:%s")'), $year_of);
+            })
+            ->get();
+    }
+
+    private function generateFirstHalf($month_of, $year_of, $biometric_id)
+    {
+        $start_Date = date('Y-m-d', strtotime($year_of . '-' . $month_of . '-1'));
+        $end_Date = date('Y-m-d', strtotime($year_of . '-' . $month_of . '-15'));
+        $dt_records = DB::table('daily_time_records')
+            ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
+            ->where('biometric_id',  $biometric_id)
+            ->where(function ($query) use ($start_Date, $end_Date) {
+                $query->where('first_in', '>=', $start_Date)
+                    ->where('first_in', '<=', $end_Date);
+            })
+            ->orWhere(function ($query) use ($start_Date, $end_Date) {
+                $query->where('second_in', '>=', $start_Date)
+                    ->where('second_in', '<=', $end_Date);
+            })
+            ->get();
+        return $dt_records;
+    }
+
+    private function generateSecondHalf($month_of, $year_of, $biometric_id)
+    {
+        $start_Date = date('Y-m-d', strtotime($year_of . '-' . $month_of . '-16'));
+        $end_Date = date('Y-m-d', strtotime($year_of . '-' . $month_of . '-31'));
+        $dt_records = DB::table('daily_time_records')
+            ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
+            ->where('biometric_id', $biometric_id)
+            ->where(function ($query) use ($start_Date, $end_Date, $month_of, $year_of) {
+                $query->whereMonth('first_in', '=', $month_of)
+                    ->whereYear('first_in', '=', $year_of)
+                    ->where('first_in', '>=', $start_Date)
+                    ->where('first_in', '<=', $end_Date);
+            })
+            ->orWhere(function ($query) use ($start_Date, $end_Date,  $month_of, $year_of) {
+                $query->whereMonth('second_in', '=', $month_of)
+                    ->whereYear('second_in', '=', $year_of)
+                    ->where('second_in', '>=', $start_Date)
+                    ->where('second_in', '<=', $end_Date);
+            })
+            ->get();
+        return $dt_records;
+    }
+
+    // private function getDifferenceDate($date_start, $date_end)
+    // {
+    //     $start_Time_stamp = strtotime($date_start);
+    //     $end_Time_stamp = strtotime($date_end);
+    //     $seconds_Difference = $end_Time_stamp - $start_Time_stamp;
+    //     $number_Of_Days = floor($seconds_Difference / (60 * 60 * 24));
+    //     return $number_Of_Days;
+    // }
+
+    private function mDTR($value)
+    {
+
+        $sched = $this->helper->getSchedule($value->biometric_id, null);
+        if ($sched['third_entry'] == NULL && $sched['last_entry']  == NULL) {
+            return   [
+                'dtr_ID' => $value->id,
+                'first_in' => $this->FormatDate($value->first_in),
+                'first_out' => null,
+                'second_in' => null,
+                'second_out' => $this->FormatDate($value->first_out),
+                'interval_req' => $value->interval_req,
+                'required_working_hours' => $value->required_working_hours,
+                'required_working_minutes' => $value->required_working_minutes,
+                'total_working_hours' => $value->total_working_hours,
+                'total_working_minutes' => $value->total_working_minutes,
+                'overtime' => $value->overtime,
+                'overtime_minutes' => $value->overtime_minutes,
+                'undertime' => $value->undertime,
+                'undertime_minutes' => $value->undertime_minutes,
+                'overall_minutes_rendered' => $value->overall_minutes_rendered,
+                'total_minutes_reg' => $value->total_minutes_reg,
+                'day' => $this->getDAy($value),
+                'created_at' => $value->created_at,
+                'weekStatus' => $this->getWeekdayStatus($value->created_at),
+                'isHoliday' => $this->isHoliday($value->created_at)
+            ];
+        }
+
+        return   [
+            'dtr_ID' => $value->id,
+            'first_in' => $this->FormatDate($value->first_in),
+            'first_out' => $this->FormatDate($value->first_out),
+            'second_in' => $this->FormatDate($value->second_in),
+            'second_out' => $this->FormatDate($value->second_out),
+            'interval_req' => $value->interval_req,
+            'required_working_hours' => $value->required_working_hours,
+            'required_working_minutes' => $value->required_working_minutes,
+            'total_working_hours' => $value->total_working_hours,
+            'total_working_minutes' => $value->total_working_minutes,
+            'overtime' => $value->overtime,
+            'overtime_minutes' => $value->overtime_minutes,
+            'undertime' => $value->undertime,
+            'undertime_minutes' => $value->undertime_minutes,
+            'overall_minutes_rendered' => $value->overall_minutes_rendered,
+            'total_minutes_reg' => $value->total_minutes_reg,
+            'day' => $this->getDAy($value),
+            'created_at' => $value->created_at,
+            'weekStatus' => $this->getWeekdayStatus($value->created_at),
+            'isHoliday' => $this->isHoliday($value->created_at)
+        ];
+    }
+
+    public function getDAy($value)
+    {
+        if ($value->first_in) {
+            return date('d', strtotime($value->first_in));
+        }
+        if (!$value->first_in && $value->second_in) {
+            return date('d', strtotime($value->second_in));
+        }
+    }
+
+    public function getUsersLogs(Request $request)
     {
         try {
+            $biometric_ids = DB::select('SELECT biometric_id FROM `employee_profiles` WHERE biometric_id in (SELECT biometric_id FROM `biometrics`) and personal_information_id in (select id from personal_informations)');
+            $data = [];
 
-            $alloted_hours = env('ALLOTED_VALID_TIME_FOR_FIRSTENTRY');
 
-            $sched = $this->getSchedule($biometric_id, null);
+            foreach ($biometric_ids as $ids) {
+                $emp =  EmployeeProfile::where('biometric_id', $ids->biometric_id)->first();
+                $dtrlogs =  DailyTimeRecordLogs::where('biometric_id', $ids->biometric_id)->get();
 
-            foreach ($sequence as $sc) {
-                $in = date('H:i', strtotime($sc['date_time']));  // From Bio
+                $latestDate = null;
+                $logs = [];
+                $recentlog = '';
+                $date = '';
 
-                if (count($break_Time_Req) >= 1) {
-                    if ($in >= $break_Time_Req['break1'] && $in < $break_Time_Req['adminOut'] || $in >= $break_Time_Req['break2'] && $in <  $break_Time_Req['otherout']) {
-                        /* SECOND IN ENTRY */
-                        $save =  DailyTimeRecords::create([
-                            'biometric_id' => $biometric_id,
-                            //  'second_in' => strtotime($sc['date_time']), //USE THIS
-                            'dtr_date' => date('Y-m-d', strtotime($sc['date_time'])),
-                            'second_in' => $sc['date_time'],
-                            'is_biometric' => 1,
-                        ]);
-                    } else {
-                        /* Adjust time in - if on call based on allowed entry */
-                        /* FIRST IN ENTRY */
-                        $this->inEntry($biometric_id, $alloted_hours, $this->calculatedEntry($scheduleEntry, $sc), $sched, $delay);
+                $dtrstatus = '';
+                foreach ($dtrlogs as $dtr) {
+                    $date = $dtr->dtr_date;
+
+                    $jlogs = json_decode($dtr->json_logs);
+                    if ($latestDate === null || $date > $latestDate) {
+                        $latestDate = $date;
+                        $dtrstatus = $jlogs[count($jlogs) - 1]->status_description->description;
+                        $recentlog = $jlogs[count($jlogs) - 1];
                     }
-                } else {
-
-                    /* Adjust time in - if on call based on allowed entry */
-                    $this->inEntry($biometric_id, $alloted_hours, $this->calculatedEntry($scheduleEntry, $sc), $sched, $delay);
+                    $employeeProfileId = $emp->id;
+                    $sections = Section::select('name', 'code as sectcode')
+                        ->whereIn('id', function ($query) use ($employeeProfileId) {
+                            $query->select('section_id')
+                                ->from('assigned_areas')
+                                ->where('employee_profile_id', $employeeProfileId);
+                        })
+                        ->first();
+                    $logs[] = [
+                        'DTR_date' => $date,
+                        'Logs' => $jlogs,
+                    ];
+                }
+                /**
+                 * Just Returning Records with logs
+                 */
+                if (count($logs) >= 1) {
+                    usort($logs, function ($a, $b) {
+                        return strtotime($a['DTR_date']) - strtotime($b['DTR_date']);
+                    });
+                    $data[] = [
+                        'id' => $emp->id,
+                        'biometric_id' => $ids->biometric_id,
+                        'name' =>  $emp->name(),
+                        'position' => $emp->findDesignation()->name,
+                        'designation' =>  $sections,
+                        'recentDTRdates' => $recentlog->date_time,
+                        'device' => $recentlog->device_name,
+                        'status' => $dtrstatus,
+                        'Records' => $logs,
+                        // 'recentBiometricLog'=>
+                    ];
                 }
             }
+            return $data;
         } catch (\Throwable $th) {
-            return $th;
+            //throw $th;
         }
     }
 
-    public function calculatedEntry($scheduleEntry, $sc)
+    public function adjustDTR(Request $request)
     {
-        $entry = $sc;
-
-        if ($scheduleEntry) {
-
-            $max_allowed_entry_for_oncall = env('MAX_ALLOWED_ENTRY_ONCALL'); // Max entry for on call
-            $sc_Entry = date('Y-m-d H:i:s', strtotime(date('Y-m-d', strtotime($sc['date_time'])) . ' ' . $scheduleEntry . '+' . $max_allowed_entry_for_oncall . ' minutes'));
-
-            if (strtotime($sc_Entry) > strtotime($sc['date_time'])) {
-                /* Check if the entry is greater than 8am if not then return 8:00 exact. if its less than ,. return the orig time */
-                if (strtotime($sc['date_time']) > strtotime($sc_Entry . ' - ' . $max_allowed_entry_for_oncall . ' minutes')) {
-                    /* Greater */
-                    $entry = [
-                        "date_time" => date('Y-m-d H:i:s', strtotime(date('Y-m-d', strtotime($sc['date_time'])) . ' ' . $scheduleEntry))
-                    ];
-                } else {
-                    /* Lesser */
-                    $entry = [
-                        "date_time" => $sc['date_time']
-                    ];
-                }
-            } else {
-                //Exceed the allowance time .. we are returning the difference of 8:30 and its entry;
-                $fixentry = strtotime($sc['date_time']) - strtotime($sc_Entry);
-                $calculated_entry = strtotime(date('Y-m-d H:i:s', strtotime(date('Y-m-d', strtotime($sc['date_time'])) . ' ' . $scheduleEntry))) + $fixentry;
-                $entry = [
-                    "date_time" => date('Y-m-d H:i:s', $calculated_entry)
-                ];
-            }
-        }
-        return $entry;
-    }
-
-    public function getTotalTimeRegistered($f1, $f2, $f3, $f4)
-    {
-        $total_rendered = 0;
-        $time = $this->forceToStrTimeFormat($f2) - $this->forceToStrTimeFormat($f1);
-        $hours = floor($time / 3600);
-        $minutes = floor(($time % 3600) / 60);
-        $total_rendered = floor(($hours * 60) + $minutes);
-        if ($f3 && $f4) {
-            $time1 = $this->forceToStrTimeFormat($f4) - $this->forceToStrTimeFormat($f3);
-            $hours1 = floor($time1 / 3600);
-            $minutes1 = floor(($time1 % 3600) / 60);
-            $oah = $hours + $hours1;
-            $oam = $minutes + $minutes1;
-            $total_rendered = floor(($oah * 60) + $oam);
-        }
-        return $total_rendered >= 1 ? $total_rendered : 0;
-    }
-
-    public function settingDateSchedule($entry, $sched)
-    {
-        $date = date('Y-m-d', strtotime($entry));
-        $pattern = '/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/';
-        if (!isset($entry)) {
-            return null;
-        }
-        if (preg_match($pattern, $sched)) {
-            return "{$date} {$sched}";
-        }
-        return null;
-    }
-
-    public function validateSchedule($time_stamps_req)
-    {
-        if (
-            isset($time_stamps_req['first_entry']) ||
-            isset($time_stamps_req['second_entry']) ||
-            isset($time_stamps_req['third_entry']) ||
-            isset($time_stamps_req['last_entry'])
-        ) {
-            return true;
-        }
-        return false;
-    }
-
-
-    public function saveTotalWorkingHours($validate, $value, $sequence, $time_stamps_req, $check_for_generate)
-    {
-        //return $this->toWordsMinutes(59.71);
-
-        foreach ($sequence as $sc) {
-            /* Entries */
-            $f1_entry = $validate->first_in;
-            $f2_entry = $validate->first_out;
-            $f3_entry =  $validate->second_in;
-            $f4_entry = $validate->second_out;
-
-            $f3_entry_Time_stamp = 0;
-            $f4_entry_Time_stamp = 0;
-            $s3_Time_stamp = 0;
-            $s4_Time_stamp = 0;
-
-            $underTime_inWords = null;
-            $underTime_Minutes = 0;
-            $overTime_inWords = null;
-            $overTime_Minutes = 0;
-            $ut = 0;
-            $Schedule_Minutes = 0;
-
-
-            if (!$check_for_generate) {
-                if ($f1_entry && !$f2_entry) {
-                    $f2_entry = $sc['date_time'];
-                } else {
-
-                    if (!$f1_entry  && !$f2_entry && $f3_entry) {
-                        $f4_entry = $sc['date_time'];
-                    }
-                }
-            }
-            if (isset($validate->second_in) || isset($validate->second_out)) {
-                $f3entry = $validate[0]->second_in;
-                $f4entry = $validate[0]->second_out;
-            }
-            if (!$check_for_generate) {
-                if (!isset($f2entry) && !isset($f3entry)) {
-                    $f2entry = $sc['date_time'];
-                } else {
-                    $f4entry = $sc['date_time'];
-                }
-            }
-            $required_WH = $time_stamps_req['total_hours'];
-            $required_WH_Minutes = $required_WH * 60;
-
-            if ($this->validateSchedule($time_stamps_req)) {
-                /* Schedule */
-
-                $s1 = $this->settingDateSchedule($f1_entry, $time_stamps_req['first_entry']);
-                $s2 = $this->settingDateSchedule($f2_entry, $time_stamps_req['second_entry']);
-                $s3 = $this->settingDateSchedule($f3_entry, $time_stamps_req['third_entry']);
-                $s4 = $this->settingDateSchedule($f4_entry, $time_stamps_req['last_entry']);
-                /* End Schedule */
-                $undertime_3rd_entry = 0;
-                $undertime_Minutes_4th_entry = 0;
-                $f1_entry_Time_stamp = strtotime($f1_entry);
-                $s1_Time_stamp = strtotime($s1);
-                $f2_entry_Time_stamp = strtotime($f2_entry);
-                $s2_Time_stamp = strtotime($s2);
-                if ($f3_entry && $f4_entry) {
-                    if (isset($s3) && isset($s4)) {
-                        $f3_entry_Time_stamp = strtotime($f3entry);
-                        $s3_Time_stamp = strtotime($s3);
-                        $f4_entry_Time_stamp = strtotime($f4entry);
-                        $s4_Time_stamp = strtotime($s4);
-                    }
-                }
-                $undertime_1st_entry = max(0, $f1_entry_Time_stamp - $s1_Time_stamp);
-                $undertime_2nd_entry = max(0, $s2_Time_stamp - $f2_entry_Time_stamp);
-                $overtime_2nd_entry = max(0, $f2_entry_Time_stamp - $s2_Time_stamp);
-                if ($f3_entry && $f4_entry) {
-                    $undert_3rd_entry = max(0, $f3_entry_Time_stamp - $s3_Time_stamp);
-                    $undertime_4th_entry = max(0, $s4_Time_stamp - $f4_entry_Time_stamp);
-                    $overtime_4th_entry = max(0, $f4_entry_Time_stamp - $s4_Time_stamp);
-                }
-                $undertime_Minutes_1st_entry = $undertime_1st_entry / 60;
-                $undertime_Minutes_2nd_entry = $undertime_2nd_entry / 60;
-                $overtime_2nd_entry = $overtime_2nd_entry / 60;
-                if ($f3_entry && $f4_entry) {
-                    $undertime_3rd_entry = $undert_3rd_entry / 60;
-                    $undertime_Minutes_4th_entry = $undertime_4th_entry / 60;
-                    $overtime_4th_entry = $overtime_4th_entry / 60;
-                }
-
-                $undertime = $undertime_Minutes_1st_entry + $undertime_Minutes_2nd_entry + $undertime_3rd_entry + $undertime_Minutes_4th_entry;
-
-                if ($f3_entry && $f4_entry) {
-                    $overtime = $overtime_4th_entry;
-                } else {
-                    $overtime = $overtime_2nd_entry;
-                }
-
-
-                $ot = round($overtime, 2);
-                $ut = round($undertime, 2);
-
-
-                $Schedule_Minutes  = $this->getTotalTimeRegistered(
-                    $s1,
-                    $s2,
-                    $s3,
-                    $s4
-                );
-
-                /* Overtime */
-                $overTime_inWords = $this->toWordsMinutes($ot)['InWords'];
-                $overTime_Minutes =  $this->toWordsMinutes($ot)['InMinutes'];
-
-                /* Undertime  */
-                $underTime_inWords = $this->toWordsMinutes($ut)['InWords'];
-                $underTime_Minutes =  $this->toWordsMinutes($ut)['InMinutes'];
-            }
-
-
-            $Registered_minutes = $this->getTotalTimeRegistered(
-                $f1_entry,
-                $f2_entry,
-                $f3_entry,
-                $f4_entry
-            );
-
-            /* Required Working Hours */
-            //$requiredWH         | required_working_hours
-            //$requiredWH_Minutes | required_working_minutes
-            /* Total Working Hours */
-
-            $tWH = floor($Registered_minutes - $ut);
-
-            if ($Schedule_Minutes <= $tWH) {
-                $tWH = floor($Schedule_Minutes - $underTime_Minutes);
-                $total_WH_words = $this->toWordsMinutes($tWH)['InWords'];
-                $total_WH_minutes = $this->toWordsMinutes($tWH)['InMinutes'];
-            } else {
-                $tWH = floor($Schedule_Minutes - $underTime_Minutes);
-                $total_WH_words = $this->toWordsMinutes($tWH)['InWords'];
-                $total_WH_minutes = $this->toWordsMinutes($tWH)['InMinutes'];
-            }
-            /* Registered Minutes */
-            //$Registered_minutes | total_minutes_reg
-
-            /* ValueIn */
-            // echo "First Entry:" . $f1_entry . "\n";
-            // echo "Second Entry:" . $f2_entry . "\n";
-            // echo "Third Entry:" . $f3_entry . "\n";
-            // echo "Fourth Entry:" . $f4_entry . "\n\n\n";
-            // echo "Bio Entry_ :" . $sc['date_time'] . "\n";
-
-            if (!isset($s1) && !isset($s2)) {
-                $underTime_inWords = null;
-                $overTime_inWords = null;
-                $totalWH_words = null;
-            }
-            //  Output undertime in minutes
-            // echo "Undertime : " . $underTime_inWords  . "\n";
-            // echo "Undertime Minutes: " . $underTime_Minutes  . "\n";
-            // echo "Overtime : " .  $overTime_inWords . " \n";
-            // echo "Overtime Minutes : " .  $overTime_Minutes . " \n";
-            // echo "Total Working Hours :" . $totalWH_words . "\n";
-            // echo "Total Working Minutes :" . $totalWH_minutes . "\n";
-            // echo "Registered Minutes :" . $Registered_minutes . "\n";
-            // echo "Schedule Minutes :" . $Schedule_Minutes . "\n";
-
-            // echo "Schedule :" . $s1 . " | " . $s2 . " | " . $s3 . " | " . $s4 . "\n";
-        }
-
-        $over_all_minutes_Rendered = floor(($total_WH_minutes + $overTime_Minutes) - $underTime_Minutes);
-
-        // return [
-        //     //   'first_out' => strtotime($sc['date_time']),
-        //     'second_out' => $sc['date_time'],
-        //     'total_working_hours' => $total_WH_words,
-        //     'required_working_hours' => $required_WH,
-        //     'required_working_minutes' => $required_WH_Minutes,
-        //     'total_working_minutes' => $total_WH_minutes,
-        //     'overall_minutes_rendered' => $over_all_minutes_Rendered,
-        //     'total_minutes_reg' => $Registered_minutes,
-        //     'undertime' => $underTime_inWords,
-        //     'undertime_minutes' => $underTime_Minutes,
-        //     'overtime' => $overTime_inWords,
-        //     'overtime_minutes' => $overTime_Minutes
-        // ];
-
-        if ($total_WH_minutes < 0) {
-            $total_WH_words = '0 minute';
-            $total_WH_minutes = 0;
-            $over_all_minutes_Rendered = 0;
-            $underTime_inWords = 'undefined';
-            $underTime_Minutes = 0;
-        }
-        //  echo "Overall Minutes Rendered :" . $overallminutesRendered . "\n";
-        $attr = [
-            'total_WH_words' => $total_WH_words,
-            'required_WH' => $required_WH,
-            'required_WH_Minutes' => $required_WH_Minutes,
-            'total_WH_minutes' => $total_WH_minutes,
-            'over_all_minutes_Rendered' => $over_all_minutes_Rendered,
-            'Registered_minutes' => $Registered_minutes,
-            'underTime_inWords' => $underTime_inWords,
-            'underTime_Minutes' => $underTime_Minutes,
-            'overTime_inWords' => $overTime_inWords,
-            'overTime_Minutes' => $overTime_Minutes
-        ];
-
-        if (isset($f3_entry) && isset($f4_entry)) {
-            $this->SaveToDTR($check_for_generate, $validate, $attr, $sc, 'second_out');
-        } else {
-            if ($f1_entry && $f2_entry && $f3_entry && !$f4_entry) {
-                $this->SaveToDTR($check_for_generate, $validate, $attr, $sc, 'second_out');
-            } else {
-                $this->SaveToDTR($check_for_generate, $validate, $attr, $sc, 'first_out');
-            }
+        try {
+        } catch (\Throwable $th) {
+            //throw $th;
         }
     }
 
-    public function SaveToDTR($check_for_generate, $validate, $attr, $sc, $out)
+    public function test()
     {
-        if ($check_for_generate) {
-            DailyTimeRecords::find($validate->id)->update([
-                'total_working_hours' => $attr['total_WH_words'],
-                'required_working_hours' => $attr['required_WH'],
-                'required_working_minutes' => $attr['required_WH_Minutes'],
-                'total_working_minutes' => $attr['total_WH_minutes'],
-                'overall_minutes_rendered' => $attr['over_all_minutes_Rendered'],
-                'total_minutes_reg' => $attr['Registered_minutes'],
-                'undertime' => $attr['underTime_inWords'],
-                'undertime_minutes' => $attr['underTime_Minutes'],
-                'overtime' => $attr['overTime_inWords'],
-                'overtime_minutes' => $attr['overTime_Minutes']
-            ]);
-        } else {
-
-            DailyTimeRecords::find($validate->id)->update([
-                //   'first_out' => strtotime($sc['date_time']),
-                $out => $sc['date_time'],
-                'total_working_hours' => $attr['total_WH_words'],
-                'required_working_hours' => $attr['required_WH'],
-                'required_working_minutes' => $attr['required_WH_Minutes'],
-                'total_working_minutes' => $attr['total_WH_minutes'],
-                'overall_minutes_rendered' => $attr['over_all_minutes_Rendered'],
-                'total_minutes_reg' => $attr['Registered_minutes'],
-                'undertime' => $attr['underTime_inWords'],
-                'undertime_minutes' => $attr['underTime_Minutes'],
-                'overtime' => $attr['overTime_inWords'],
-                'overtime_minutes' => $attr['overTime_Minutes']
-            ]);
-        }
-    }
+        /*
+        **
+        * test on how to access request function on another controller for instance
+        */
 
 
-    public function saveIntervalValidation($sequence, $validate)
-    {
-        foreach ($sequence as $sc) {
-            $time_out = new DateTime(date('Y-m-d H:i:s', strtotime($validate[0]->first_out)));
-            $time_in = new DateTime($sc['date_time']);
-            $interval =  $time_out->diff($time_in);
-            $minutes = $interval->i; // Minutes
-            $seconds = $interval->s; // Seconds
-            $time_interval = '';
-            $IntervalStatus = '';
-            if ($minutes < env('ALLOTED_DTR_INTERVAL')) {
-                /* Calculate the time interval */
-                $Interval_Status = 'Invalid';
-            } else {
-                $Interval_Status = 'OK';
-            }
-            $time_interval = [
-                'Status' => $Interval_Status,
-                'alloted_dtr_interval' => env('ALLOTED_DTR_INTERVAL'),
-                'minutes' => $minutes,
-                'seconds' => $seconds,
-            ];
-            DailyTimeRecords::find($validate[0]->id)->update([
-                // 'second_in' => strtotime($sc['date_time']),
-                'second_in' => $sc['date_time'],
-                'interval_req' => json_encode($time_interval),
-            ]);
-        }
-    }
+        for ($i = 1; $i <= 30; $i++) {
 
-    public function sequence($sched, $attdData)
-    {
-        $sequences = array();
-        $temp_Sequence = array();
-        $prev_Timing = null;
-        foreach ($attdData as $value) {
-            $timing = $value['timing'];
-            if ($prev_Timing !== null && $timing !== ($prev_Timing + 1)) {
-                if (!empty($temp_Sequence)) {
-                    $sequences[] = $temp_Sequence;
-                }
-                $temp_Sequence = array();
-            }
-            $temp_Sequence[] = $value;
-            $prevTiming = $timing;
-        }
-        if (!empty($temp_Sequence)) {
-            $sequences[] = $temp_Sequence;
-        }
-        return $sequences[$sched];
-    }
+            $date = date('Y-m-d', strtotime('2024-01-' . $i));
 
-    public function statusDescription($attendance_Log, $key)
-    {
-        $status_description = '';
-        $Status_Entry = '';
-        $active_entry = 'f1';
-        $biometric_id = 0;
-        $on_Active_Status = date('Y-m-d H:i:s', strtotime($attendance_Log['date_time'] . '-5 minutes'));
-        switch ($attendance_Log['status']) {
-            case 0:
-                $status_description = 'CHECK-IN';
-                break;
-            case 1:
-                $status_description = 'CHECK-OUT';
-                break;
-            case 2:
-                $status_description = 'BREAK-OUT';
-                break;
-            case 3:
-                $status_description = 'BREAK-IN';
-                break;
-            case 4:
-                $status_description = 'OVERTIME-IN';
-                break;
-            case 5:
-                $status_description = 'OVERTIME-OUT';
-                break;
-            case 255:
-                $biometric_id = $attendance_Log['biometric_id'];
-                $date_now = date('Y-m-d');
-                $Records = DailyTimeRecords::where('biometric_id', $biometric_id)
-                    ->whereDate('created_at', $date_now)->get();
-                if (count($Records) >= 1) {
-                    foreach ($Records as $row) {
-                        if ($row->first_in) {
-                            $on_Active_Status = $row->first_in;
-                            $status_description = 'CHECK-OUT';
-                        }
-                        if ($row->first_out) {
-                            $on_Active_Status = $row->first_out;
-                            $status_description = 'CHECK-IN';
-                        }
-                        if ($row->second_in) {
-                            $on_Active_Status = $row->second_in;
-                            $status_description = 'CHECK-OUT';
-                        }
-                    }
-                } else {
-                    $status_description = 'CHECK-IN';
-                }
-                break;
-        }
-        $dt = [
-            0 => ['date_time' => $attendance_Log['date_time']],
-        ];
-        if (!$this->withinInterval($on_Active_Status, $dt)) {
-            $Within_interval = "NO";
-        } else {
-            $Within_interval = "YES";
-        }
+            if (date('D', strtotime($date)) != 'Sun') {
+                $firstin = date('H:i:s', strtotime('today') + rand(25200, 30600));
+                $firstout =  date('H:i:s', strtotime('today') + rand(42600, 47400));
+                $secondin =  date('H:i:s', strtotime('today') + rand(45000, 49800));
+                $secondout = date('H:i:s', strtotime('today') + rand(59400, 77400));
 
-        return [
-            'description' => $status_description,
-            'within_interval' => $Within_interval,
-            'isEmployee' => $this->isEmployee($biometric_id)
-        ];
-    }
-
-    public function checkIfFingerPrintExist($tad, $userPin)
-    {
-        $usertemp = $tad->get_user_template(['pin' => $userPin]);
-        $utemp = simplexml_load_string($usertemp);
-        if (empty($utemp->Row->Result)) {
-            return false;
-        }
-        return true;
-    }
-
-    private function getDeviceName($deviceid)
-    {
-        $data = Devices::where('id', $deviceid)->get();
-        if (count($data) >= 1) {
-            return $data[0]->device_name;
-        }
-    }
-
-    public function saveDTRLogs($check_Records, $validate, $device, $yesterdate)
-    {
-
-
-        $new_timing = 0;
-        $unique_Employee_IDs = [];
-        $date = date('Y-m-d');
-
-
-
-        foreach ($check_Records as $record) {
-            $employee_ID = $record['biometric_id'];
-            if (!in_array($employee_ID, $unique_Employee_IDs)) {
-                $unique_Employee_IDs[] = $employee_ID;
-            }
-            if ($yesterdate) {
-                $date = date('Y-m-d', strtotime($record['date_time']));
-            }
-        }
-
-
-        foreach ($unique_Employee_IDs as $id) {
-
-            $employee_Records = array_filter($check_Records, function ($att) use ($id) {
-                return $att['biometric_id'] == $id;
-            });
-
-            foreach ($employee_Records as $kk => $new) {
-                $new_Rec[] = [
-                    'timing' => $new_timing,
-                    'biometric_id' => $new['biometric_id'],
-                    'name' => $new['name'],
-                    'date_time' => $new['date_time'],
-                    'status' => $new['status'],
-                    'status_description' => $new['status_description'],
-                ];
-                $new_timing++;
-            }
-            // /* Checking if DTR logs for the day is generated */
-
-            $check_DTR_Logs = DailyTimeRecordlogs::whereDate('dtr_date', $date)->where('biometric_id', $id)->where('validated', 1);
-
-            if (count($check_DTR_Logs->get()) >= 1) {
-                // /* Counting logs data */
-                $log_Data = count($check_DTR_Logs->get()) >= 1 ? $check_DTR_Logs->get()[0]->json_logs : '';
-                $log_data_Array = json_decode($log_Data, true);
-                // /* Saving individually to user-attendance jsonLogs */
-                $log_data_Array = array_merge($log_data_Array, $new_Rec);
-                $ndata = [];
-                foreach ($log_data_Array as $n) {
-                    if ($n['biometric_id'] == $id) {
-                        $ndata[] = $n;
-                    }
-                }
-                $newt = 0;
-                $nr = [];
-                foreach ($ndata as $new) {
-                    $nr[] = [
-                        'timing' => $newt,
-                        'biometric_id' => $new['biometric_id'],
-                        'name' => $new['name'],
-                        'date_time' => $new['date_time'],
-                        'status' => $new['status'],
-                        'status_description' => $new['status_description'],
-                        'device_id' => $device['id'],
-                        'device_name' => $this->getDeviceName($device['id'])
-                    ];
-                    $newt++;
-                }
-                $check_DTR_Logs->update([
-                    'json_logs' => json_encode($nr)
+                DailyTimeRecords::create([
+                    'biometric_id' => 1,
+                    'dtr_date' => $date,
+                    'first_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin)),
+                    'first_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstout)),
+                    'second_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $secondin)),
+                    'second_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $secondout)),
+                    'interval_req' => null,
+                    'required_working_hours' => null,
+                    'required_working_minutes' => null,
+                    'total_working_hours' => null,
+                    'total_working_minutes' => null,
+                    'overtime' => null,
+                    'overtime_minutes' => null,
+                    'undertime' => null,
+                    'undertime_minutes' => null,
+                    'overall_minutes_rendered' => null,
+                    'total_minutes_reg' => null,
+                    'is_biometric' => 1,
+                    'created_at' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin))
                 ]);
-            } else {
-
-
-                $ndata = [];
-                foreach ($new_Rec as $n) {
-                    if ($n['biometric_id'] == $id) {
-                        $ndata[] = $n;
-                    }
-                }
-                $newt = 0;
-                $nr = [];
-                foreach ($ndata as $new) {
-                    $nr[] = [
-                        'timing' => $newt,
-                        'biometric_id' => $new['biometric_id'],
-                        'name' => $new['name'],
-                        'date_time' => $new['date_time'],
-                        'status' => $new['status'],
-                        'status_description' => $new['status_description'],
-                        'device_id' => $device['id'],
-                        'device_name' => $this->getDeviceName($device['id'])
-                    ];
-                    $newt++;
-                }
-
-                $chec_kDTR = DailyTimeRecords::whereDate('first_in', $date)->where('biometric_id', $id);
-                if (count($chec_kDTR->get()) >= 1) {
-                    DailyTimeRecordlogs::create([
-                        'biometric_id' => $id,
-                        'dtr_id' => $chec_kDTR->get()[0]->id,
-                        'json_logs' => json_encode($nr),
-                        'validated' => $validate,
-                        'dtr_date' => $date
-                    ]);
-                } else {
-                    $check_DTR_Logs_Invalid = DailyTimeRecordlogs::whereDate('dtr_date', $date)->where('biometric_id', $id)->where('validated', 0)->get();
-                    if (count($check_DTR_Logs_Invalid) == 0) {
-                        DailyTimeRecordlogs::create([
-                            'biometric_id' => $id,
-                            'dtr_id' => 0,
-                            'json_logs' => json_encode($nr),
-                            'validated' => $validate,
-                            'dtr_date' => $date
-                        ]);
-                    } else {
-                        if ($validate == 0) {
-                            $log_Inv = count($check_DTR_Logs_Invalid) >= 1 ? $check_DTR_Logs_Invalid[0]->json_logs : '';
-                            $log_data_Array_inv = json_decode($log_Inv, true);
-                            // /* Saving individually to user-attendance jsonLogs */
-                            $log_data_Array_inv = array_merge($log_data_Array_inv, $nr);
-                            DailyTimeRecordlogs::where('id', $check_DTR_Logs_Invalid[0]->id)->update([
-                                'json_logs' => json_encode($log_data_Array_inv),
-                            ]);
-                        }
-                    }
-                }
             }
         }
-    }
-
-
-    public function getAttendance($attendance)
-    {
-        $attendance_Logs = [];
-        foreach ($attendance->Row as $row) {
-            $result = [
-                'biometric_id' => (string) $row->PIN,
-                'date_time' => (string) $row->DateTime,
-                'verified' => (string) $row->Verified,
-                'status' => (string) $row->Status,
-                'workcode' => (string) $row->WorkCode,
-            ];
-            $attendance_Logs[] = $result;
-        }
-        return $attendance_Logs;
-    }
-
-    public function getEmployee($user_Inf)
-    {
-        $Employee_Info = [];
-        foreach ($user_Inf->Row as $row) {
-            $result = [
-                'biometric_id' => (string) $row->PIN2,
-                'name' => (string) $row->Name,
-            ];
-            $Employee_Info[] = $result;
-        }
-        return $Employee_Info;
-    }
-
-
-
-    public function getEmployeeAttendance($attendance_Logs, $Employee_Info)
-    {
-
-        $Employee_Attendance = [];
-        foreach ($attendance_Logs as $key =>  $attendance_Log) {
-            $employee_ID = $attendance_Log['biometric_id'];
-            $employee_Name = '';
-            $count = 0;
-            foreach ($Employee_Info as  $k => $info) {
-                if ($info['biometric_id'] === $employee_ID) {
-                    $employee_Name = $info['name'];
-                    $count++;
-                    break;
-                }
-            }
-
-            if (!empty($employee_Name)) {
-                $Employee_Attendance[] = [
-                    'timing' => $key,
-                    'biometric_id' => $employee_ID,
-                    'name' => $employee_Name,
-                    'date_time' => $attendance_Log['date_time'],
-                    'status' => $attendance_Log['status'],
-                    'status_description' => $this->statusDescription($attendance_Log, $key)
-
-                ];
-            }
-        }
-        return $Employee_Attendance;
-    }
-
-
-    public function forceToStrTimeFormat($date_Or_Timestamp)
-    {
-        if (is_numeric($date_Or_Timestamp) && (int)$date_Or_Timestamp == $date_Or_Timestamp) {
-            return $date_Or_Timestamp;
-        } elseif (strtotime($date_Or_Timestamp) !== false || DateTime::createFromFormat('Y-m-d', $date_Or_Timestamp) instanceof DateTime) {
-            return strtotime($date_Or_Timestamp);
-        } else {
-            return null;
-        }
-    }
-
-
-
-
-    public function toWordsMinutes($totalMinutes)
-    {
-        // $totalMinutes = 40.75;
-        $hours = '';
-        $minutes = floor($totalMinutes);
-        $seconds = fmod($totalMinutes, 1) * 100;
-
-        //   echo 'minutes : ' . $minutes . " seconds : " . $seconds . "\n";
-
-        if ($seconds >= 60) {
-            $extmin = floor($seconds / 60); // Get the whole minutes
-            $extsecs = $seconds % 60; // Get the remaining seconds
-
-            $minutes += $extmin;
-            $seconds = $extsecs;
-        }
-        //  echo $minutes . ' minutes and ' . round($seconds) . ' seconds' . "\n";
-        if ($minutes >= 60) {
-            $hours = floor($minutes / 60);
-            $minutes %= 60;
-
-            if ($hours > 0) {
-                $inWords = $hours . ' hour';
-                if ($hours > 1) {
-                    $inWords .= 's';
-                }
-
-                if ($minutes > 0) {
-                    $inWords .= ' and ' . $minutes . ' minute';
-                    if ($minutes > 1) {
-                        $inWords .= 's';
-                    }
-                }
-            } else {
-                $inWords = $minutes . ' minute';
-                if ($minutes > 1) {
-                    $inWords .= 's';
-                }
-            }
-        } else {
-            $inWords = $minutes . ' minute';
-            if ($minutes > 1) {
-                $inWords .= 's';
-            }
-        }
-
-        if ($seconds) {
-            $inWords .= ' and ' . round($seconds) . ' second';
-            if ($seconds > 1) {
-                $inWords .= 's';
-            }
-        }
-
-
-        return [
-            'InWords' => $inWords,
-            'InMinutes' => $totalMinutes,
-
-        ];
-    }
-
-
-
-
-    /**
-     * This Function backups selected table in database.
-     * which will be stored in : Storage/Backup
-     */
-    public function backUpTable($table)
-    {
-        $validateFile = storage_path('backups/' . $table . '_' . now()->format('Y_m_d') . '.sql');
-        /***
-         * Requirements for the system to validate file--
-         */
-        $pullingRequirements = "30 minutes";
-        /* --------------------------------- */
-        if (file_exists($validateFile)) {
-            $fileContent = file_get_contents($validateFile);
-            // Extract the line with the timestamp using a regular expression
-            if (preg_match('/--(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})/', $fileContent, $matches)) {
-                $timestampLine = ltrim($matches[0], '-');
-                $convertedDate = date('Y-m-d H:i:s', strtotime($timestampLine . ' +' . $pullingRequirements));
-                if (now() < $convertedDate) {
-                    return;
-                } else {
-                    unlink($validateFile);
-                }
-            }
-        }
-        $currentDate = now()->toDateString();
-        $data = DB::table($table)->whereDate('created_at', $currentDate)->get();
-        $header = "--" . now() . PHP_EOL . "-- ZCMC_CIIS@2023 " . PHP_EOL;
-        $sqlDump =  $header . "-- Daily Backup of table '{$table}' "  . PHP_EOL;
-        foreach ($data as $row) {
-            $values = implode(', ', array_map(function ($value) {
-                return "'" . addslashes($value) . "'";
-            }, (array)$row));
-            $sqlDump .= "INSERT INTO {$table} VALUES ({$values});" . PHP_EOL;
-        }
-        $directory = storage_path('backups');
-        if (!file_exists($directory)) {
-            mkdir($directory, 0755, true);
-        }
-        $backupPath = $directory . '/' . $table . '_' . now()->format('Y_m_d') . '.sql';
-        file_put_contents($backupPath, $sqlDump);
     }
 }
