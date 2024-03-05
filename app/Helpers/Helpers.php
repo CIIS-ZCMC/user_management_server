@@ -6,6 +6,7 @@ use App\Models\AssignArea;
 use App\Models\Department;
 use App\Models\Division;
 use App\Models\EmployeeProfile;
+use App\Models\EmployeeSchedule;
 use App\Models\EmployeeScheduleLog;
 use App\Models\ExchangeDutyLog;
 use App\Models\PullOutLog;
@@ -597,4 +598,6 @@ class Helpers
             'action_by' => $user_id,
             'action' => $action,
         ]);
-    }}
+    }
+}
+
