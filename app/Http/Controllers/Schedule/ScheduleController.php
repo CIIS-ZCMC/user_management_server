@@ -230,6 +230,9 @@ class ScheduleController extends Controller
                             }
 
                             $data->employee()->attach($employee_id);
+
+                            $employee_schedule = $data->employee()->where('employee_profile_id', $employee_id)->first()->id;
+                            Helpers::registerEmployeeScheduleLogs($employee_schedule, $user->id, 'Store');
                         }
                     }
                 }
@@ -279,16 +282,16 @@ class ScheduleController extends Controller
                         }
                         
                         $data->employee()->attach($employee_id);
+
+                        $employee_schedule = $data->employee()->where('employee_profile_id', $employee_id)->first()->id;
+                        Helpers::registerEmployeeScheduleLogs($employee_schedule, $user->id, 'Store');
                     }
                 }
-
-                Helpers::registerEmployeeScheduleLogs($data->id, $user->id, 'Store');
             }
 
             Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json([
                 'data' =>  new ScheduleResource($data),
-                // 'logs' => Helpers::registerEmployeeScheduleLogs($data->id, $user->id, 'Store'),
                 'message' => 'New employee schedule registered.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -369,6 +372,10 @@ class ScheduleController extends Controller
             // if ($is24Hrs['result'] !== 'No Schedule') {
             //     return response()->json([$is24Hrs['result']], Response::HTTP_FOUND);
             // }
+
+            if ($this->hasOverlappingSchedule($cleanData['time_shift_id'], $cleanData['date'], $data['employee_profile_id'])) {
+                return response()->json(['message' => 'Overlap with existing schedule'], Response::HTTP_FOUND);
+            }
 
             $data->schedule_id = $schedule->id;
             $data->update();
@@ -484,4 +491,3 @@ class ScheduleController extends Controller
         return !($newStart >= $existingEnd || $newEnd <= $existingStart);
     }
 }
-

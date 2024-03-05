@@ -599,10 +599,5 @@ class Helpers
             'action' => $action,
         ]);
     }
-
-    
-    public function checkOverlappingSchedules($timeShiftId, $dates, $employees)
-    {
-    }
 }
 
