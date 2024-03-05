@@ -804,6 +804,19 @@ class LeaveApplicationController extends Controller
             $leave_type = LeaveTypeResource::collection(LeaveType::all());
             $hrmo_officer = Section::with(['supervisor'])->where('code', 'HRMO')->first();
 
+            $employeeLeaveCredit = EmployeeLeaveCredit::with('employeeLeaveCreditLogs')
+            ->where('employee_profile_id', $data->employee_profile_id)
+            ->where('leave_type_id', $data->leave_type_id)
+            ->first();
+
+            if($employeeLeaveCredit) {
+                $creditLogs = $employeeLeaveCredit->employeeLeaveCreditLogs;
+                // Now you can work with $creditLogs
+            } else {
+                // Handle the case when no matching record is found
+                $creditLogs = null; // Or any other appropriate action
+            }
+
             // return view('leave_from.leave_application_form', compact('data', 'leave_type', 'hrmo_officer'));
 
             $options = new Options();
