@@ -834,8 +834,8 @@ AND id IN (
                 }
             }
             if (isset($validate->second_in) || isset($validate->second_out)) {
-                $f3entry = $validate[0]->second_in;
-                $f4entry = $validate[0]->second_out;
+                $f3entry = $validate->second_in;
+                $f4entry = $validate->second_out;
             }
             if (!$check_for_generate) {
                 if (!isset($f2entry) && !isset($f3entry)) {
