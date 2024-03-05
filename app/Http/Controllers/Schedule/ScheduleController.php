@@ -56,7 +56,7 @@ class ScheduleController extends Controller
                                             ->whereMonth('date', '=', $month)
                                             ->where('employee_profile_schedule.deleted_at', '=', null );
                                 }])->whereIn('id', $employee_ids)
-                                // ->where('id', '!=', $user->id)
+                                ->where('id', '!=', $user->id)
                                 ->get();
                     
             $data = [];
