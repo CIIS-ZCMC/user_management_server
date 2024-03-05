@@ -833,7 +833,7 @@ AND id IN (
                     }
                 }
             }
-            if (isset($validate[0]->second_in) || isset($validate[0]->second_out)) {
+            if (isset($validate->second_in) || isset($validate->second_out)) {
                 $f3entry = $validate[0]->second_in;
                 $f4entry = $validate[0]->second_out;
             }
@@ -1019,7 +1019,7 @@ AND id IN (
     public function SaveToDTR($check_for_generate, $validate, $attr, $sc, $out)
     {
         if ($check_for_generate) {
-            DailyTimeRecords::find($validate[0]->id)->update([
+            DailyTimeRecords::find($validate->id)->update([
                 'total_working_hours' => $attr['total_WH_words'],
                 'required_working_hours' => $attr['required_WH'],
                 'required_working_minutes' => $attr['required_WH_Minutes'],
