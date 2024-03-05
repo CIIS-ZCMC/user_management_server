@@ -1614,7 +1614,7 @@ class EmployeeProfileController extends Controller
                 ], Response::HTTP_OK);
             }
 
-            $employee_profiles = EmployeeProfile::all();
+            $employee_profiles = EmployeeProfile::whereNotIn('id', [1,2,3,4,5])->get();
             Helpers::registerSystemLogs($request, null, true, 'Success in fetching a ' . $this->PLURAL_MODULE_NAME . '.');
 
             return response()->json([
@@ -1791,8 +1791,9 @@ class EmployeeProfileController extends Controller
             $cacheExpiration = Carbon::now()->addDay();
 
             $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () {
-                return EmployeeProfile::all();
+                return EmployeeProfile::whereNotIn('id', [1,2,3,4,5])->get();
             });
+
             return EmployeeProfileResource::collection($employee_profiles);
 
             // return response()->json([
@@ -1801,6 +1802,89 @@ class EmployeeProfileController extends Controller
             // ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function retrieveEmployees($employees, $key, $id, $myId){
+        
+        $assign_areas = AssignArea::where($key, $id)
+            ->whereNotIn('employee_profile_id', $myId)->get();
+
+        $new_employee_list = $assign_areas->map(function ($assign_area) {
+            return $assign_area->employeeProfile;
+        })->flatten()->all();
+        
+        return [...$employees, ...$new_employee_list];
+    }
+
+    public function myAllEmployees(Request $request)
+    {
+        try {
+            $user = $request->user;
+            $position = $user->position();
+            $employees = [];
+
+            if(!$position){
+                return response()->json(['message' => "You don't have authorization as a supervisor of area."], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $my_assigned_area = $user->assignedArea->findDetails();
+
+            $employees = $this->retrieveEmployees($employees, Str::lower($my_assigned_area['sector'])."_id", $my_assigned_area['details']->id, [$user->id, 1,2,3,4,5]);
+            
+            /** Retrieve entire employees of Division to Unit if it has  unit */
+            if($my_assigned_area['sector'] === 'Division'){
+                $departments = Department::where('division_id', $my_assigned_area['details']->id)->get();
+
+                foreach($departments as $department){
+                    $employees = $this->retrieveEmployees($employees, 'department_id', $department->id, [$user->id, 1,2,3,4,5]);
+                    $sections = Section::where('department_id', $department->id)->get();
+                    foreach($sections as $section){
+                        $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1,2,3,4,5]);
+                        $units = Unit::where('section_id', $section->id)->get();
+                        foreach($units as $unit){
+                            $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1,2,3,4,5]);
+                        }
+                    }
+                }
+                
+                $sections = Section::where('division_id', $my_assigned_area['details']->id)->get();
+                foreach($sections as $section){
+                    $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1,2,3,4,5]);
+                    $units = Unit::where('section_id', $section->id)->get();
+                    foreach($units as $unit){
+                        $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1,2,3,4,5]);
+                    }
+                }
+            }
+
+            /** Retrieve entire emplyoees of Department to Unit */
+            if($my_assigned_area['sector'] === 'Department'){
+                $sections = Section::where('department_id', $my_assigned_area['details']->id)->get();
+                foreach($sections as $section){
+                    $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1,2,3,4,5]);
+                    $units = Unit::where('section_id', $section->id)->get();
+                    foreach($units as $unit){
+                        $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1,2,3,4,5]);
+                    }
+                }
+            }
+            
+            /** Retrieve entire employees of Section to Unit if it has Unit */
+            if($my_assigned_area['sector'] === 'Section'){
+                $units = Unit::where('section_id', $my_assigned_area['details']->id)->get();
+                foreach($units as $unit){
+                    $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1,2,3,4,5]);
+                }
+            }
+
+            return response()->json([
+                'data' => EmployeeProfileResource::collection($employees),
+                'message' => 'list of employees retrieved.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'myEmployees', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -1869,7 +1953,7 @@ class EmployeeProfileController extends Controller
             $cacheExpiration = Carbon::now()->addDay();
 
             $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () {
-                return EmployeeProfile::all();
+                return EmployeeProfile::whereNotIn('id', [1,2,3,4,5])->get();
             });
 
             $temp_perm = EmployeeProfileResource::collection($employee_profiles->filter(function ($profile) {

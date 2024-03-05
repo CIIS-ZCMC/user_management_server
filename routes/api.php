@@ -780,6 +780,10 @@ Route::middleware('auth.cookie')->group(function () {
          * Employee Profile Module
          */
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('my-all-employees', 'EmployeeProfileController@myAllEmployees');
+        }); 
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('my-employees', 'EmployeeProfileController@myEmployees');
         });
 
