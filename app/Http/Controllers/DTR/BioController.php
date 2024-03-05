@@ -78,7 +78,8 @@ class BioController extends Controller
                     'EmployeeID' => $employee->employee_id,
                     'Email' => $employee->personalInformation->contact->email_address,
                     'Receiver' => $employee->name(),
-                    'Password' => $defpassword
+                    'Password' => $defpassword,
+                    "AuthorizationPIN" => $employee->authorization_pin
                 ]);
 
                 $this->mailer->sendCredentials($credential);

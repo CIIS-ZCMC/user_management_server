@@ -18,6 +18,4 @@ class EmployeeScheduleLog extends Model
         'action_by',
         'action',
     ];
-
-    public $timestamps = true;
 }
