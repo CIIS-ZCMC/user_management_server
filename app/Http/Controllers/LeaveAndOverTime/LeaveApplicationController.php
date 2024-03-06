@@ -4,6 +4,7 @@ namespace App\Http\Controllers\LeaveAndOverTime;
 
 use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Resources\LeaveTypeResource;
+use App\Models\Division;
 use App\Models\EmployeeCreditLog;
 use App\Models\EmployeeOvertimeCredit;
 use App\Models\LeaveType;
@@ -539,8 +540,14 @@ class LeaveApplicationController extends Controller
                     $cleanData['applied_credits'] = $daysDiff;
                     $cleanData['employee_profile_id'] = $employee_profile->id;
                     $cleanData['hrmo_officer'] = $hrmo_officer;
-                    $cleanData['recommending_officer'] = $recommending_and_approving['recommending_officer'];
-                    $cleanData['approving_officer'] = $recommending_and_approving['approving_officer'];
+
+                    $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $employee_profile->id)->get();
+
+                    if($isMCC){
+                        $cleanData['recommending_officer'] = $recommending_and_approving['recommending_officer'];
+                        $cleanData['approving_officer'] = $recommending_and_approving['approving_officer'];
+                    }
+
                     $cleanData['status'] = 'applied';
     
                     foreach ($request->all() as $key => $leave) {
@@ -562,8 +569,6 @@ class LeaveApplicationController extends Controller
                     }
     
                     $leave_application = LeaveApplication::create($cleanData);
-                   
-                   
                    
                     if ($request->requirements) {
                         $index = 0;
@@ -609,9 +614,15 @@ class LeaveApplicationController extends Controller
                         $cleanData['applied_credits'] = $daysDiff;
                         $cleanData['employee_profile_id'] = $employee_profile->id;
                         $cleanData['hrmo_officer'] = $hrmo_officer;
-                        $cleanData['recommending_officer'] = $recommending_and_approving['recommending_officer'];
-                        $cleanData['approving_officer'] = $recommending_and_approving['approving_officer'];
-                        $cleanData['status'] = 'applied';
+                        
+                        $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $employee_profile->id)->get();
+
+                        if($isMCC){
+                            $cleanData['recommending_officer'] = $recommending_and_approving['recommending_officer'];
+                            $cleanData['approving_officer'] = $recommending_and_approving['approving_officer'];
+                        }
+                    
+                        $cleanData['status'] = 'Applied';
     
                         foreach ($request->all() as $key => $leave) {
                             if (is_bool($leave)) {
@@ -677,9 +688,9 @@ class LeaveApplicationController extends Controller
      
                     
                 }
+
                 $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->get();
                
-        
                 foreach ($employeeCredit as $leaveCredit) {
                  
                     $leaveType = $leaveCredit->leaveType->name;
@@ -798,6 +809,19 @@ class LeaveApplicationController extends Controller
             // return $data;
             $leave_type = LeaveTypeResource::collection(LeaveType::all());
             $hrmo_officer = Section::with(['supervisor'])->where('code', 'HRMO')->first();
+
+            $employeeLeaveCredit = EmployeeLeaveCredit::with('employeeLeaveCreditLogs')
+            ->where('employee_profile_id', $data->employee_profile_id)
+            ->where('leave_type_id', $data->leave_type_id)
+            ->first();
+
+            if($employeeLeaveCredit) {
+                $creditLogs = $employeeLeaveCredit->employeeLeaveCreditLogs;
+                // Now you can work with $creditLogs
+            } else {
+                // Handle the case when no matching record is found
+                $creditLogs = null; // Or any other appropriate action
+            }
 
             // return view('leave_from.leave_application_form', compact('data', 'leave_type', 'hrmo_officer'));
 
