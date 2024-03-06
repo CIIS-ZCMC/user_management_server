@@ -19,7 +19,7 @@ class LeaveApplicationResource extends JsonResource
         $area = $this->employeeProfile->assignedArea->findDetails();
         $leave_credits = EmployeeLeaveCredit::where('employee_profile_id', $this->employeeProfile->id)->where('leave_type_id', $this->leave_type_id)->first();
 
-        $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $this->employeeProfile->id)->get();
+        $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $this->employeeProfile->id)->first();
 
   
         if($isMCC){
