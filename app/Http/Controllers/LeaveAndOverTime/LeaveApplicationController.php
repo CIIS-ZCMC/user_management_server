@@ -43,11 +43,10 @@ class LeaveApplicationController extends Controller
              */
 
              if (Helpers::getHrmoOfficer() === $employee_profile->id) {
-                
-            $employeeId = $employee_profile->id;
-                $hrmo = ["applied", "approved", "declined by hrmo officer"];
-                $recommending = ["for recommending approval", "approved", "declined by recommending officer"];
-           
+                $employeeId = $employee_profile->id;
+                $hrmo = ["applied","for recommending approval", "approved", "declined by hrmo officer"];
+                $recommending = ["for recommending approval", "for approving approval","approved", "declined by recommending officer"];
+        
                 $leave_applications = LeaveApplication::select('leave_applications.*')
                 ->where(function ($query) use ($hrmo, $employeeId) {
                     $query->whereIn('leave_applications.status', $hrmo)
@@ -84,17 +83,16 @@ class LeaveApplicationController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->get();
 
-            
+                $leave_applications = collect($leave_applications)->filter(function ($leave_application) use ($employeeId) {
+                    // Keep the leave application if the status is "applied" or if the employee profile ID is not equal to $employeeId
+                    return $leave_application->status === "applied" || $leave_application->employee_profile_id !== $employeeId;
+                })->all();
+
                 return response()->json([
                     'data' => LeaveApplicationResource::collection($leave_applications),
                     'message' => 'Retrieve all leave application records.'
                 ], Response::HTTP_OK);
-
-                
             }
-            
-       
-            
 
             $employeeId = $employee_profile->id;
             $recommending = ["for recommending approval", "for approving approval", "approved", "declined by recommending officer"];
@@ -735,7 +733,7 @@ class LeaveApplicationController extends Controller
         try {
             $user = $request->user;
             $employee_profile = $user;
-            $cleanData['pin'] = strip_tags($request->pin);
+            $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);

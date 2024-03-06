@@ -2,8 +2,10 @@
 
 namespace App\Http\Resources;
 
+use App\Models\AssignArea;
 use App\Models\Division;
 use App\Models\EmployeeLeaveCredit;
+use App\Models\Section;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class LeaveApplicationResource extends JsonResource
@@ -20,8 +22,11 @@ class LeaveApplicationResource extends JsonResource
         $leave_credits = EmployeeLeaveCredit::where('employee_profile_id', $this->employeeProfile->id)->where('leave_type_id', $this->leave_type_id)->first();
 
         $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $this->employeeProfile->id)->first();
+        $hrmo = Section::where('code', 'HRMO')->first();
 
-  
+        //Check if requester is under HRMO
+        $isUnderHRM = AssignArea::where('employee_profile_id', $this->employeeProfile->id)->where('section_id', $hrmo->id)->first();
+
         if($isMCC){
             return [
                 "id" => $this->id,
@@ -62,7 +67,7 @@ class LeaveApplicationResource extends JsonResource
                 'logs' => $this->logs ? LeaveApplicationLog::collection($this->logs):[],
                 'created_at'=>$this->created_at,
                 'updated_at'=>$this->updated_at,
-                
+                'is_under_hrmo' => $isUnderHRM == null? false:true
             ];
         }
 
@@ -119,7 +124,7 @@ class LeaveApplicationResource extends JsonResource
             'logs' => $this->logs ? LeaveApplicationLog::collection($this->logs):[],
             'created_at'=>$this->created_at,
             'updated_at'=>$this->updated_at,
-            
+            'is_under_hrmo' => $isUnderHRM == null? false:true
         ];
     }
 }
