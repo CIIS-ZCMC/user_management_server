@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\LeaveAndOvertime;
 
+use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Resources\OfficialBusinessResource;
 use App\Http\Requests\OfficialBusinessRequest;
 use App\Helpers\Helpers;
@@ -234,7 +235,7 @@ class OfficialBusinessController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update($id, Request $request)
+    public function update($id, AuthPinApprovalRequest $request)
     {
         try {        
             $data = OfficialBusiness::findOrFail($id);
@@ -245,17 +246,15 @@ class OfficialBusinessController extends Controller
 
             $status     = null;
             $log_action = null;
-
-            $password = strip_tags($request->password);
-
             $employee_profile = $request->user;
 
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+            $cleanData['pin'] = strip_tags($request->password);
+           
 
-            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            if ($employee_profile['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
             }
-
+      
             if ($request->status === 'approved') {
                 switch ($data->status) {
                     case 'for recommending approval':
