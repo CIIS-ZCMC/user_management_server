@@ -541,11 +541,11 @@ class LeaveApplicationController extends Controller
                     $cleanData['employee_profile_id'] = $employee_profile->id;
                     $cleanData['hrmo_officer'] = $hrmo_officer;
 
-                    $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $employee_profile->id)->get();
+                    $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $employee_profile->id)->first();
 
-                    if($isMCC){
+                    if(!$isMCC){
                         $cleanData['recommending_officer'] = $recommending_and_approving['recommending_officer'];
-                        $cleanData['approving_officer'] = $recommending_and_approving['approving_officer'];
+                        $cleanData['approving_officer'] = $recommending_and_approving['approving_officer']; 
                     }
 
                     $cleanData['status'] = 'applied';
@@ -615,14 +615,14 @@ class LeaveApplicationController extends Controller
                         $cleanData['employee_profile_id'] = $employee_profile->id;
                         $cleanData['hrmo_officer'] = $hrmo_officer;
                         
-                        $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $employee_profile->id)->get();
+                        $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $employee_profile->id)->first();
 
-                        if($isMCC){
+                        if(!$isMCC){
                             $cleanData['recommending_officer'] = $recommending_and_approving['recommending_officer'];
                             $cleanData['approving_officer'] = $recommending_and_approving['approving_officer'];
                         }
                     
-                        $cleanData['status'] = 'Applied';
+                        $cleanData['status'] = 'applied';
     
                         foreach ($request->all() as $key => $leave) {
                             if (is_bool($leave)) {
@@ -735,7 +735,7 @@ class LeaveApplicationController extends Controller
         try {
             $user = $request->user;
             $employee_profile = $user;
-            $cleanData['pin'] = strip_tags($request->pin);
+            $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);

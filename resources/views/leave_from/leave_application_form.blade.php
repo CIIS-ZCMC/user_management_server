@@ -518,9 +518,12 @@
         
                                     <div style="" class="text-center">
                                         <span style="font-size: 13px; padding-top:40px; border-bottom: 1px solid #000; display: inline-block; width: 300px; text-transform:uppercase">
+                                            @if ($data->recommendingOfficer)
                                             {{ $data->recommendingOfficer->personalInformation->first_name }}
                                             {{ substr($data->recommendingOfficer->personalInformation->middle_name, 0, 1) }}
                                             {{ $data->recommendingOfficer->personalInformation->last_name }} 
+                                        @endif
+                                      
                                         </span>
                                         <br> 
                                         <label style="display: block; font-weight:lighter; font-size:12px;">Unit/Section/Department Head</label>
@@ -593,13 +596,22 @@
                         <br>
                         <span style="font-size: 13px; border-bottom: 1px solid #000; display: inline-block; width: 250px; padding-top: 30px; text-transform:uppercase">
                             <b>
+                                @if ($data->approvingOfficer)
                                 {{ $data->approvingOfficer->personalInformation->first_name }}
                                 {{ substr($data->approvingOfficer->personalInformation->middle_name, 0, 1) }}
-                                {{ $data->approvingOfficer->personalInformation->last_name }}         
+                                {{ $data->approvingOfficer->personalInformation->last_name }} 
+                            @endif
+                                 
                             </b>
                         </span>
                         <br>
-                        <span style="font-size:12px; font-weight:lighter">{{ $data->approvingOfficer->findDesignation()['name']  }}</span>
+                        <span style="font-size:12px; font-weight:lighter">
+                            @if ($data->approvingOfficer)
+                            {{ $data->approvingOfficer->findDesignation()['name']  }}
+                            @else
+                                Regional Director
+                            @endif
+                          </span>
                         <br>
                         <p style="text-align: left; font-size:11px; font-weight:bold">Date:
                             <span style="border-bottom: 1px solid #000;width: 180px; font-size:11px; font-weight:lighter"> {{ date(' F d, Y', strtotime($data->updated_at)) }}</span>

@@ -348,6 +348,9 @@ class DTRcontroller extends Controller
         } elseif ($time_stamps_req['first_entry'] && $time_stamps_req['second_entry'] && !$time_stamps_req['third_entry'] && !$time_stamps_req['last_entry']) {
             return true;
         }
+
+
+
         return false;
     }
 
@@ -536,13 +539,13 @@ class DTRcontroller extends Controller
                 //GET THE SCHEDULE
 
                 if ($schedule) {
-                    $daySched = array_values(array_filter($schedule, function ($row) use ($entry) {
-                        return date('Y-m-d', strtotime($row['scheduleDate'])) == date('Y-m-d', strtotime($entry));
-                    }))[0];
-
-                    $is_Half_Schedule = $this->isHalfEntrySchedule($daySched);
+                    $value = [
+                        'date_time' => date('Y-m-d H:i:s', strtotime($entry)),
+                        'first_in' => $entry
+                    ];
+                    $daySched = $this->helper->CurrentSchedule($val->biometric_id,  $value, false)['daySchedule'];
+                    $is_Half_Schedule = count($this->helper->CurrentSchedule($val->biometric_id,  $value, false)['break_Time_Req']);
                 }
-
 
 
 
@@ -881,11 +884,12 @@ class DTRcontroller extends Controller
                     //GET THE SCHEDULE
 
                     if ($schedule) {
-                        $daySched = array_values(array_filter($schedule, function ($row) use ($entry) {
-                            return date('Y-m-d', strtotime($row['scheduleDate'])) == date('Y-m-d', strtotime($entry));
-                        }))[0];
-
-                        $is_Half_Schedule = $this->isHalfEntrySchedule($daySched);
+                        $value = [
+                            'date_time' => date('Y-m-d H:i:s', strtotime($entry)),
+                            'first_in' => $entry
+                        ];
+                        $daySched = $this->helper->CurrentSchedule($val->biometric_id,  $value, false)['daySchedule'];
+                        $is_Half_Schedule = count($this->helper->CurrentSchedule($val->biometric_id,  $value, false)['break_Time_Req']);
                     }
 
 
