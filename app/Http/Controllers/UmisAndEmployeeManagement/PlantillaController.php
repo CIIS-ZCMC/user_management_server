@@ -630,6 +630,13 @@ class PlantillaController extends Controller
     public function update($id, PlantillaRequest $request)
     {
         try {
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
+
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+            }
+            
             $plantilla = Plantilla::find($id);
 
             if (!$plantilla) {

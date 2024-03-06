@@ -131,7 +131,7 @@ class CtoApplicationController extends Controller
             $log_action = null;
 
             $user = $request->user;
-            $cleanData['pin'] = strip_tags($request->pin);
+            $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);

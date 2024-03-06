@@ -55,6 +55,7 @@ class DepartmentResource extends JsonResource
                 'head' => $head,
                 'head_designation' => $this->head->assignedArea->designation,
                 'head_status' => $head_status,
+                'head_profile_url' => env('SERVER_DOMAIN') . "/photo/profiles/". $this->head->profile_url,
                 'training_officer' => $training_officer,
                 'training_officer_designation' => $toe_designation,
                 'approving_officer' => $approving_officer,

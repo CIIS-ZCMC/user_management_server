@@ -43,6 +43,7 @@ class SectionResource extends JsonResource
                 'department'=> new DepartmentResource($this->department),
                 'supervisor' => $supervisor,
                 'supervisor_designation' => $this->supervisor->assignedArea->designation,
+                'supervisor_profile_url' =>  env('SERVER_DOMAIN') . "/photo/profiles/".  $this->supervisor->profile_url,
                 'supervisor_status' => $supervisor_status,
                 'approving_officer' => $approving_officer,
                 'officer_in_charge' => $officer_in_charge,
