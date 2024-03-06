@@ -279,7 +279,9 @@
                                     @endif
                                 </span>
                                 <span style="font-size: 12px; font-weight:lighter">Within the Philippines</span>    
-                                <span style="border-bottom: 1px solid #000; display: inline-block; width: 98px;">{{$data->city}}</span>
+                                <span style="border-bottom: 1px solid #000; display: inline-block; width: 98px;">   @if ($data->country === 'Philippines')
+                                    {{$data->city}}
+                                @endif</span>
                             </div>
                             <div>
                                
@@ -299,13 +301,13 @@
                             <label class="rigthside-font" style="margin-bottom: 3px">In case of Sick Leave:</label>
                             <div>
                                 <span class="small-underline">
-                                    @if ($data->is_outpatient === false)
+                                    @if ($my_leave_type->name === "Sick Leave" && $data->is_outpatient === false)
                                         x
                                     @endif
                                 </span>
                                 <span style="padding-right: 4px; font-size: 12px; font-weight:lighter">In Hospital (Specify Illness)</span>    
                                 <span style="border-bottom: 1px solid #000; display: inline-block; width: 65px;">
-                                    @if ($data->is_outpatient === false)
+                                    @if ($my_leave_type->name === "Sick Leave" && $data->is_outpatient === false)
                                         {{ $data->illness }}
                                     @endif
                                 </span>
@@ -313,13 +315,13 @@
                                     
                             <div>
                                 <span class="small-underline">
-                                    @if ($data->is_outpatient === true)
+                                    @if ($my_leave_type->name === "Sick Leave" && $data->is_outpatient === true)
                                         x
                                     @endif
                                 </span>
                                 <span style="padding-right: 2px; font-size: 12px; font-weight:lighter">Out Patient (Specify Illness)</span>
                                 <span style="border-bottom: 1px solid #000; display: inline-block; width: 63px;">
-                                    @if ($data->is_outpatient === true)
+                                    @if ($my_leave_type->name === "Sick Leave" && $data->is_outpatient === true)
                                         {{ $data->illness }}
                                     @endif
                                 </span>
@@ -334,7 +336,9 @@
                             <div style="margin-bottom: 10px">
                                 <span style="font-size: 12px; font-weight:lighter">(Specify Illness)</span>
                                 <span style="padding-top:5px;border-bottom: 1px solid #000; display: inline-block; width: 150px;">
+                                    @if ($my_leave_type->name === "Special Leave Benefits for Women")
                                     {{ $data->illness }}
+                                @endif
                                 </span>
                             </div>  
                            
