@@ -26,7 +26,7 @@ class UnitRequest extends FormRequest
             'code' => 'required|string|max:255',
             'section_id' => 'required|integer',
             'attachment' => 'nullable|file|mimes:jpeg,png,pdf,doc,docx',
-            'password' => 'nullable|string|max:255'
+            // 'password' => 'nullable|string|max:255'
         ];
     }
 }

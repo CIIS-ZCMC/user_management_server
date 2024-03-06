@@ -518,7 +518,7 @@ class DTRcontroller extends Controller
             $day = [];
             $entry = '';
 
-
+            $sctest = [];
             foreach ($dtr as $val) {
                 /* Validating DTR with its Matching Schedules */
                 /*
@@ -532,6 +532,7 @@ class DTRcontroller extends Controller
                         $entry = $val->second_in;
                     }
                 }
+                $day[] = $val->dtr_date;
 
                 $yearSched = date('Y', strtotime($entry));
                 $monthSched = date('m', strtotime($entry));
@@ -548,9 +549,11 @@ class DTRcontroller extends Controller
                 }
 
 
+                // $sctest[] = $daySched;
+
 
                 if (isset($daySched['scheduleDate'])) {
-
+                    // $sctest[] = $daySched['scheduleDate'];
                     $sdate =  $daySched['scheduleDate'];
 
 
@@ -586,6 +589,8 @@ class DTRcontroller extends Controller
                     //  echo $val->first_in;
                 }
             }
+
+            // return $sctest;
 
             $days_In_Month = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
             $second_in = [];
