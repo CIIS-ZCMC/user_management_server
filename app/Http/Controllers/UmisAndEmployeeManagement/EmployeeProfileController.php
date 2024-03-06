@@ -5,6 +5,7 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 use App\Http\Controllers\Controller;
 
 use App\Http\Requests\AuthPinApprovalRequest;
+use App\Http\Requests\PasswordApprovalRequest;
 use App\Models\PersonalInformation;
 use Illuminate\Support\Str;
 use App\Http\Controllers\DTR\TwoFactorAuthController;
@@ -139,7 +140,7 @@ class EmployeeProfileController extends Controller
             /**
              * For new account need to reset the password
              */
-            if (count($employee_profile->passwordTrail) === 0) {
+            if ($employee_profile->authorization_pin === null) {
                 return response()->json(['message' => 'New account'], Response::HTTP_TEMPORARY_REDIRECT)
                     ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', env('SESSION_DOMAIN'), false); //status 307
             }
@@ -1118,6 +1119,30 @@ class EmployeeProfileController extends Controller
         }
     }
 
+    public function updatePin(Request $request)
+    {
+        try{
+            $employee_profile = $request->user;
+            $password = strip_tags($request->password);
+            $pin = strip_tags($request->pin);
+
+            $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password . env("SALT_VALUE"), $decryptedPassword)) {
+                return response()->json(['message' => "Employee id or password incorrect."], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $employee_profile->update(['authorization_pin' => $pin]);
+
+            return response()->json([ 
+                'data' => new EmployeeProfileResource($employee_profile),
+                'message' => "Pin updated."], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, 'updatePin', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public function newPassword(Request $request)
     {
         try {
@@ -1163,7 +1188,8 @@ class EmployeeProfileController extends Controller
                 'password_encrypted' => $encryptedPassword,
                 'password_created_at' => now(),
                 'password_expiration_at' => $threeMonths,
-                'is_2fa' => $request->two_factor ?? false
+                'is_2fa' => $request->two_factor ?? false,
+                'authorization_pin' => strip_tags($request->pin)
             ]);
 
             $agent = new Agent();
@@ -2005,11 +2031,7 @@ class EmployeeProfileController extends Controller
             
             /** Create Authorization Pin */
             $personal_information = PersonalInformation::find(strip_tags($request->personal_information_id));
-            $dobCarbonDate = Carbon::parse($personal_information->date_of_birth);
-            $dobString = $dobCarbonDate->format('md');
-            $ran = random_int(100, 999);
 
-            $authorization_pin = $dobString.$ran;
 
             $cleanData['employee_id'] = $new_employee_id;
             $cleanData['biometric_id'] = $new_biometric_id;
@@ -2035,7 +2057,6 @@ class EmployeeProfileController extends Controller
             $cleanData['date_hired'] = $request->date_hired;
             $cleanData['designation_id'] = $request->designation_id;
             $cleanData['effective_at'] = $request->date_hired;
-            $cleanData['authorization_pin'] = $authorization_pin;
 
             $plantilla_number_id = $request->plantilla_number_id === "null"  || $request->plantilla_number_id === null ? null : $request->plantilla_number_id;
             $sector_key = '';
