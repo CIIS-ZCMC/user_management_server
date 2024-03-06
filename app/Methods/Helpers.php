@@ -408,6 +408,7 @@ AND id IN (
                             if ($f1 && !$f2 && !$f3 && !$f4) {
 
                                 if ($value['status'] == 255) {
+
                                     if ($this->withinInterval($f1, $this->sequence(0, [$value]))) {
                                         $this->saveTotalWorkingHours(
                                             $validate,
@@ -823,14 +824,17 @@ AND id IN (
 
     public function validateSchedule($time_stamps_req)
     {
-        if (
-            isset($time_stamps_req['first_entry']) ||
-            isset($time_stamps_req['second_entry']) ||
-            isset($time_stamps_req['third_entry']) ||
-            isset($time_stamps_req['last_entry'])
-        ) {
-            return true;
+        if (count($time_stamps_req) >= 1) {
+            if (
+                isset($time_stamps_req['first_entry']) ||
+                isset($time_stamps_req['second_entry']) ||
+                isset($time_stamps_req['third_entry']) ||
+                isset($time_stamps_req['last_entry'])
+            ) {
+                return true;
+            }
         }
+
         return false;
     }
 
@@ -841,11 +845,19 @@ AND id IN (
 
         foreach ($sequence as $sc) {
             /* Entries */
-            $validate = $data[0];
+            $validate = $data;
+            if (!empty($data) && (is_object($data) || (is_array($data) && count($data) > 0))) {
+                // $data is either an object or an array with at least one element
+                // You can access $data as needed
+                $validate = is_array($data) ? $data[0] : $data;
+            }
+
+
             $f1_entry = $validate->first_in;
             $f2_entry = $validate->first_out;
             $f3_entry =  $validate->second_in;
             $f4_entry = $validate->second_out;
+
 
             $f3_entry_Time_stamp = 0;
             $f4_entry_Time_stamp = 0;
@@ -883,6 +895,7 @@ AND id IN (
             }
             $required_WH = $time_stamps_req['total_hours'];
             $required_WH_Minutes = $required_WH * 60;
+
 
             if ($this->validateSchedule($time_stamps_req)) {
                 /* Schedule */
