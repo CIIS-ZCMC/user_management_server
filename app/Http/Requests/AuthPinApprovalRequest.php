@@ -22,7 +22,7 @@ class AuthPinApprovalRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'pin' => 'required|string|max:255'
+            'password' => 'required|string|max:255'
         ];
     }
 }
