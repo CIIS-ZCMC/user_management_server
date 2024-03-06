@@ -543,9 +543,9 @@ class LeaveApplicationController extends Controller
 
                     $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $employee_profile->id)->get();
 
-                    if($isMCC){
+                    if(!$isMCC){
                         $cleanData['recommending_officer'] = $recommending_and_approving['recommending_officer'];
-                        $cleanData['approving_officer'] = $recommending_and_approving['approving_officer'];
+                        $cleanData['approving_officer'] = $recommending_and_approving['approving_officer']; 
                     }
 
                     $cleanData['status'] = 'applied';
@@ -617,7 +617,7 @@ class LeaveApplicationController extends Controller
                         
                         $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $employee_profile->id)->get();
 
-                        if($isMCC){
+                        if(!$isMCC){
                             $cleanData['recommending_officer'] = $recommending_and_approving['recommending_officer'];
                             $cleanData['approving_officer'] = $recommending_and_approving['approving_officer'];
                         }
