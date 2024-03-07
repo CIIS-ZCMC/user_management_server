@@ -85,7 +85,7 @@ class TrainingController extends Controller
             
             return response()->json([
                 'data' => new TrainingResource($training),
-                'message' => 'New training record retrived.'
+                'message' => 'New Learning and Development (L&D) record added.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
@@ -249,15 +249,15 @@ class TrainingController extends Controller
         }
     }
     
-    public function destroy($id, AuthPinApprovalRequest $request)
+    public function destroy($id, Request $request)
     {
         try{
-            $user = $request->user;
-            $cleanData['pin'] = strip_tags($request->password);
+            // $user = $request->user;
+            // $cleanData['pin'] = strip_tags($request->password);
 
-            if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
-            }
+            // if ($user['authorization_pin'] !==  $cleanData['pin']) {
+            //     return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+            // }
 
             $training = Training::findOrFail($id);
 
@@ -270,7 +270,7 @@ class TrainingController extends Controller
             
             Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['message' => 'Training record deleted'], Response::HTTP_OK);
+            return response()->json(['message' => 'Learning and Development (L&D) record deleted'], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
