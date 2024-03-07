@@ -21,7 +21,7 @@ use Carbon\Carbon;
 use App\Models\Section;
 use App\Models\Schedule;
 use App\Helpers\Helpers as Help;
-
+use App\Methods\DTRPull;
 
 
 class DTRcontroller extends Controller
@@ -34,12 +34,14 @@ class DTRcontroller extends Controller
 
     protected $emp;
 
+    protected $DTR;
+
     public function __construct()
     {
         $this->helper = new Helpers();
         $this->device = new BioControl();
         $this->bioms = new BioMSController();
-
+        $this->DTR = new DTRPull();
         try {
             $content = $this->bioms->operatingDevice()->getContent();
             $this->devices = $content !== null ? json_decode($content, true)['data'] : [];
@@ -142,6 +144,39 @@ class DTRcontroller extends Controller
 
                         if (count($check_Records) >= 1) {
 
+                            foreach ($check_Records as $bioEntry) {
+                                $biometric_id = $bioEntry['biometric_id'];
+                                $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
+                                $DaySchedule = $Schedule['daySchedule'];
+                                $BreakTime = $Schedule['break_Time_Req'];
+
+
+                                if (count($DaySchedule) >= 1) {
+                                    if (count($BreakTime) >= 1) {
+                                        /**
+                                         * With Schedule
+                                         * 4 sets of sched
+                                         */
+                                        return $this->DTR->HasBreaktimePull($DaySchedule, $BreakTime, $bioEntry, $biometric_id);
+                                    } else {
+                                        /**
+                                         * With Schedule
+                                         * 2 sets of sched
+                                         */
+
+                                        return $this->DTR->NoBreaktimePull($DaySchedule, $bioEntry, $biometric_id);
+                                    }
+                                } else {
+
+                                    /**
+                                     * No Schedule Pulling
+                                     */
+                                    return $this->DTR->NoSchedulePull($bioEntry, $biometric_id);
+                                }
+                            }
+
+
+                            return;
                             //Normal pull
                             $this->helper->saveDTRRecords($check_Records, false);
                             /* Save DTR Logs */
