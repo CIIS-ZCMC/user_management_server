@@ -4,6 +4,7 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Http\Requests\AuthPinApprovalRequest;
 use App\Models\Address;
 use App\Models\Child;
 use App\Models\CivilServiceEligibility;
@@ -541,17 +542,14 @@ class ProfileUpdateRequestController extends Controller
         }
     }
 
-    public function approveRequest($id, PasswordApprovalRequest $request)
+    public function approveRequest($id, AuthPinApprovalRequest $request)
     {
         try{
-            $password = strip_tags($request->password);
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->pin);
 
-            $employee_profile = $request->user;
-
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
-
-            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
             }
 
             $profile_update_request = ProfileUpdateRequest::find($id);
@@ -601,7 +599,7 @@ class ProfileUpdateRequestController extends Controller
                     return response()->json(['message' => 'Table name is not found.'], Response::HTTP_BAD_REQUEST);
             }
 
-            $profile_update_request->update(['approved_by' => $employee_profile->id]);
+            $profile_update_request->update(['approved_by' => $user->id]);
 
             return response()->json(['message' => 'Request approved and changes applied.'], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -766,17 +764,14 @@ class ProfileUpdateRequestController extends Controller
         return OtherInformation::find($profile_update_request->target_id)->update($other_information->toArray());
     }
     
-    public function destroy($id, PasswordApprovalRequest $request)
+    public function destroy($id, AuthPinApprovalRequest $request)
     {
         try{
-            $password = strip_tags($request->password);
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
 
-            $employee_profile = $request->user;
-
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
-
-            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
             }
 
             $profile_update_request = ProfileUpdateRequest::findOrFail($id);

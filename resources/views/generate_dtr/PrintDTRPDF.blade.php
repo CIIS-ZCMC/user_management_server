@@ -71,7 +71,7 @@
         </style>
     @endif
     <script>
-        window.print()
+        // window.print()
     </script>
 </head>
 
@@ -84,8 +84,9 @@
 
     <table id="tbleformat">
         @if (isset($data))
-            @foreach ($data as $item)
+            @foreach ($data as $key => $item)
                 @php
+
                     $daysInMonth = $item['daysInMonth'];
                     $year = $item['year'];
                     $month = $item['month'];
@@ -94,24 +95,40 @@
                     $secondin = $item['secondin'];
                     $secondout = $item['secondout'];
                     $undertime = $item['undertime'];
-                    $OHF = $item['emp_Details']['OHF'];
-                    $Arrival_Departure = $item['emp_Details']['Arrival_Departure'];
-                    $Employee_Name = $item['emp_Details']['Employee_Name'];
+                    $OHF = isset($item['emp_Details'][$key]['OHF'][$key])
+                        ? $item['emp_Details'][$key]['OHF'][$key]
+                        : '';
+                    $Arrival_Departure = isset($item['emp_Details'][$key]['Arrival_Departure'])
+                        ? $item['emp_Details'][$key]['Arrival_Departure']
+                        : '';
+                    $Employee_Name = isset($item['emp_Details'][$key]['Employee_Name'])
+                        ? $item['emp_Details'][$key]['Employee_Name']
+                        : '';
                     $dtrRecords = $item['dtrRecords'];
                     $holidays = $item['holidays'];
                     $print_view = $item['print_view'];
                     $halfsched = $item['halfsched'];
-                    $biometric_ID = $item['emp_Details']['biometric_ID'];
+                    $biometric_ID = isset($item['emp_Details'][$key]['biometric_ID'])
+                        ? $item['emp_Details'][$key]['biometric_ID']
+                        : '';
                     $employeeSched = $item['schedule'];
+                    $incharge = $item['Incharge'];
 
                 @endphp
                 <tr>
-                    <td style="border-right: 1px solid black;">
-                        @include('generate_dtr.DtrFormat')
 
+
+                    <td style="border-right: 1px solid black;">
+                        @include('generate_dtr.dtrformat', [
+                            'schedule' => $employeeSched,
+                            'Incharge' => $incharge,
+                        ])
                     </td>
                     <td>
-                        @include('generate_dtr.DtrFormat')
+                        @include('generate_dtr.dtrformat', [
+                            'schedule' => $employeeSched,
+                            'Incharge' => $incharge,
+                        ])
                     </td>
                 </tr>
                 <tr>
@@ -126,10 +143,10 @@
         @else
             <tr>
                 <td style="border-right: 1px solid black;">
-                    @include('generate_dtr.DtrFormat', ['schedule' => $schedule])
+                    @include('generate_dtr.dtrformat', ['schedule' => $schedule])
                 </td>
                 <td>
-                    @include('generate_dtr.DtrFormat', ['schedule' => $schedule])
+                    @include('generate_dtr.dtrformat', ['schedule' => $schedule])
                 </td>
             </tr>
         @endif

@@ -11,12 +11,18 @@
             margin: 0;
             padding: 0;
             width: 8.5in; /* Width of a standard long bond paper in inches */
-            height: 14in; /* Height of a standard long bond paper in inches */
+            height: 13in; /* Height of a standard long bond paper in inches */
             margin-left: 0;
+            margin-top: 0.5px; 
             margin-right: 0;
             display: flex;
             flex-direction: column;
             justify-content: center;
+        }
+        .col {
+            flex: 1;
+            padding: 10px;
+            box-sizing: border-box;
         }
         header {
             padding: 10px;
@@ -81,7 +87,7 @@
         }
 
         .rigthside-font {
-            font-size: 11px;
+            font-size: 12px;
             font-weight: bolder;
         }
 
@@ -153,27 +159,30 @@
         <span style="display: block; font-size: 8px;">Revised 2020</span>
     </div>
 
-<header style="width: 100%;display: flex; align-items: center;">
+    <div id="boxes" style="text-align: center; margin-right: 50px">
+
         <!-- ZCMC Logo on the left -->
-        <img id="zcmclogo" src="{{ base_path() . '\public\storage\logo/zcmc.jpeg'}}" alt="ZCMC Logo" style="float: left; width: 60px;height:180px">
+        <div style="float:left; width: 25%; height:80px; text-align:right;">
+            <img id="zcmclogo" src="{{ base_path() . '\public\storage\logo/zcmc.jpeg'}}" alt="ZCMC Logo" style="width: 60px; height: 70px;">
+        </div>
     
         <!-- Center Text -->
-        <div style="float:left; width: 500px;text-align: center;  margin-left: 50px; font-weight: 300; line-height: 1">
-            <p style="font-size: 10px; margin: 0;font-weight:lighter">Republic of the Philippines</p>
-            <p style="font-size: 10px; margin: 0;font-weight:lighter">Department of Health</p>
-            <p style="font-size: 12px; margin: 0;font-weight:lighter">ZAMBOANGA CITY MEDICAL CENTER</p>
-            <p style="font-size: 10px; margin: 0;font-weight:lighter">Dr. Evangelista Street, Sta. Catalina, Zamboanga City</p>
+        <div style="float:left; width: 50%; height:80px; text-align:center;">
+            <p style="font-size: 11px; margin: 0; font-weight: lighter">Republic of the Philippines</p>
+            <p style="font-size: 11px; margin: 0; font-weight: lighter">Department of Health</p>
+            <p style="font-size: 13px; margin: 0; font-weight: lighter">ZAMBOANGA CITY MEDICAL CENTER</p>
+            <p style="font-size: 11px; margin: 0; font-weight: lighter; text-transform:uppercase">Dr. Evangelista Street, Sta. Catalina, Zamboanga City</p>
         </div>
     
         <!-- DOH Logo on the right -->
-        <img id="dohlogo" src="{{ base_path() . '\public\storage\logo/doh.jpeg'}}" alt="DOH Logo" style="float: right; margin-right:105px; width: 80px;height:350px">
-    </header> 
-    
-    
+        <div style="float:right; width: 25%; height:80px; text-align:left">
+            <img id="dohlogo" src="{{ base_path() . '\public\storage\logo/doh.jpeg'}}" alt="DOH Logo" style="width: 70px; height: 70px;">
+        </div>
+    </div>
 
     <div class="container-fluid">
         
-        <div  style="text-align: center; margin-top:40px">
+        <div  style="text-align: center; font-size:large; margin-right: 50px">
             <small> <b> APPLICATION FOR LEAVE </b> </small>
         </div>
 
@@ -195,17 +204,17 @@
 
                     <td class="topleft" colspan="2" style="border-left:#ddd; border-right:#ddd">
                         <label> (Last) </label> <br>
-                        <label class="text-center" style="padding:4px"> {{ $data->employeeProfile->personalInformation->last_name ?? null }} </label>
+                        <label class="text-center" style="padding:4px; font-weight:lighter"> {{ $data->employeeProfile->personalInformation->last_name ?? null }} </label>
                     </td>
 
                     <td class="topleft" colspan="2"style="border-left:#ddd; border-right:#ddd">
                         <label> (First) </label> <br>
-                        <label class="text-center" style="padding:4px"> {{ $data->employeeProfile->personalInformation->first_name ?? null }} </label>
+                        <label class="text-center" style="padding:4px; font-weight:lighter"> {{ $data->employeeProfile->personalInformation->first_name ?? null }} </label>
                     </td>
 
                     <td class="topleft" colspan="1" style="border-left:#ddd">
                         <label> (Middle) </label> <br>
-                        <label class="text-center" style="padding:4px"> {{ $data->employeeProfile->personalInformation->last_name ?? null }} </label>
+                        <label class="text-center" style="padding:4px; font-weight:lighter"> {{ $data->employeeProfile->personalInformation->last_name ?? null }} </label>
                     </td>
                 </tr>
 
@@ -239,27 +248,27 @@
                 </tr>
 
                 <tr>
-                    <td class="topleft" colspan="3"> 6. A.) TYPE OF LEAVE TO BE AVAILED OF
+                    <td class="topleft" colspan="4"> 6. A.) TYPE OF LEAVE TO BE AVAILED OF
                         <div class="mb-3 text-start" style="margin-top:5px">
                             @foreach ($leave_type as $leaveType)
-                                <div style="display: flex; align-items:center; padding:1"> 
-                                    <label>
+                                <div style="display: flex; align-items:center; padding:0.5px"> 
+                                    <label style="font-weight:lighter; font-size: 11px">
                                         @if($leaveType->id === $data->leave_type_id)
                                         ( X )
                                         @else 
-                                        ( &nbsp;&nbsp;  )
+                                        (  &nbsp;&nbsp;  )
                                         @endif  
                                     </label>
-                                    <label class="small" style="margin-left:1">
-                                              
-                                    {{ $leaveType->name }}
+                                    <label class="small" style="margin-left: 1; font-weight: lighter; font-size: 11px">
+                                        {{ $leaveType->name }}
+                                        <span style="font-size: 9px; font-weight: lighter;">({{ $leaveType->republic_act }})</span>
                                     </label>
                                 </div>
                             @endforeach
                         </div>
                     </td>
                     
-                    <td class="topleft" colspan="4"> 6. B.) DETAILS OF LEAVE <br>
+                    <td class="topleft" colspan="3"> 6. B.) DETAILS OF LEAVE <br>
                         <div class="mb-3 text-start small" style="margin-top:5px; margin-left:4px">
                             <label class="rigthside-font">In case of Vacation/Special Privilege Leave:</label>
                           
@@ -269,8 +278,10 @@
                                         x
                                     @endif
                                 </span>
-                                <span style="font-size: 12px;">Within the Philippines</span>    
-                                <span style="border-bottom: 1px solid #000; display: inline-block; width: 50px;"></span>
+                                <span style="font-size: 12px; font-weight:lighter">Within the Philippines</span>    
+                                <span style="border-bottom: 1px solid #000; display: inline-block; width: 98px;">   @if ($data->country === 'Philippines')
+                                    {{$data->city}}
+                                @endif</span>
                             </div>
                             <div>
                                
@@ -279,22 +290,24 @@
                                          x
                                     @endif
                                 </span>
-                                <span style="padding-right: 29px; font-size: 12px">Abroad (Specify)</span>    
-                                <span style="border-bottom: 1px solid #000; display: inline-block; width: 50px;">{{$data->country}}</span>
+                                <span style="padding-right: 25px; font-size: 12px; font-weight:lighter">Abroad (Specify)</span>    
+                                <span style="border-bottom: 1px solid #000; display: inline-block; width: 98px;">@if ($data->country && $data->country !== 'Philippines')
+                                    {{$data->city}}
+                               @endif</span>
                             </div>
                           
                             <br>
 
-                            <label class="rigthside-font">In case of Sick Leave:</label>
+                            <label class="rigthside-font" style="margin-bottom: 3px">In case of Sick Leave:</label>
                             <div>
                                 <span class="small-underline">
-                                    @if ($data->is_outpatient === false)
+                                    @if ($my_leave_type->name === "Sick Leave" && $data->is_outpatient === false)
                                         x
                                     @endif
                                 </span>
-                                <span style="padding-right: 4px; font-size: 12px">In Hospital (Specify Illness)</span>    
-                                <span style="border-bottom: 1px solid #000; display: inline-block; width: 50px;">
-                                    @if ($data->is_outpatient === false)
+                                <span style="padding-right: 4px; font-size: 12px; font-weight:lighter">In Hospital (Specify Illness)</span>    
+                                <span style="border-bottom: 1px solid #000; display: inline-block; width: 65px;">
+                                    @if ($my_leave_type->name === "Sick Leave" && $data->is_outpatient === false)
                                         {{ $data->illness }}
                                     @endif
                                 </span>
@@ -302,32 +315,34 @@
                                     
                             <div>
                                 <span class="small-underline">
-                                    @if ($data->is_outpatient === true)
+                                    @if ($my_leave_type->name === "Sick Leave" && $data->is_outpatient === true)
                                         x
                                     @endif
                                 </span>
-                                <span style="padding-right: 2px; font-size: 12px">Out Patient (Specify Illness)</span>
-                                <span style="border-bottom: 1px solid #000; display: inline-block; width: 50px;">
-                                    @if ($data->is_outpatient === true)
+                                <span style="padding-right: 2px; font-size: 12px; font-weight:lighter">Out Patient (Specify Illness)</span>
+                                <span style="border-bottom: 1px solid #000; display: inline-block; width: 63px;">
+                                    @if ($my_leave_type->name === "Sick Leave" && $data->is_outpatient === true)
                                         {{ $data->illness }}
                                     @endif
                                 </span>
                             </div>
                                   
-                             
+                       
 
-                            <hr style="margin-top: 10px; margin-bottom: 10px; border: 0; border-top: 1px solid black;">
+                            <hr style="margin-top: 10px; margin-bottom: 10px; border: 0; border-top: 1px solid black;"/>
 
-                            <label class="rigthside-font">In case of Special Leave Benefits for Women:</label>
+                            <label class="rigthside-font" style="font-size:">In case of Special Leave Benefits for Women:</label>
 
-                            <div>
-                                <span style="font-size: 12px">(Specify Illness)</span>
-                                <span style="padding-top:5px;border-bottom: 1px solid #000; display: inline-block; width: 135px;">
+                            <div style="margin-bottom: 10px">
+                                <span style="font-size: 12px; font-weight:lighter">(Specify Illness)</span>
+                                <span style="padding-top:5px;border-bottom: 1px solid #000; display: inline-block; width: 150px;">
+                                    @if ($my_leave_type->name === "Special Leave Benefits for Women")
                                     {{ $data->illness }}
+                                @endif
                                 </span>
                             </div>  
-
-                            <hr  style="margin-top: 10px; margin-bottom: 10px; border: 0; border-top: 2px solid black;">
+                           
+                            <hr  style="margin-top: 10px; margin-bottom: 10px; border: 0; border-top: 1px solid black;"/>
 
                             <label class="rigthside-font">In case of Study Leave:</label>
 
@@ -337,7 +352,7 @@
                                         x
                                     @endif
                                 </span>
-                                <span style="padding-right: 2px; font-size: 12px">Completion of Master's Degree</span>
+                                <span style="padding-right: 2px; font-size: 12px; font-weight:lighter">Completion of Master's Degree</span>
                             </div>
                             <div>
                                 <span class="small-underline">
@@ -345,19 +360,19 @@
                                         x
                                     @endif
                                 </span>
-                                <span style="padding-right: 2px; font-size: 12px">BAR/Board Examination Review</span>
+                                <span style="padding-right: 2px; font-size: 12px; font-weight:lighter">BAR/Board Examination Review</span>
                             </div>
 
-                            <label class="rigthside-font" style="margin-top:2px">Other Purpose:</label>
+                            <label class="rigthside-font" style="margin-top:5px">Other Purpose:</label>
                             
                             <div>
                                 <span class="small-underline"></span>
-                                <span style="padding-right: 2px; font-size: 12px">Monetization of Leave Credits</span>
+                                <span style="padding-right: 2px; font-size: 12px; font-weight:lighter">Monetization of Leave Credits</span>
                             </div>
 
                             <div>
                                 <span class="small-underline"></span>
-                                <span style="padding-right: 2px; font-size: 12px">Terminal Leave</span>
+                                <span style="padding-right: 2px; font-size: 12px; font-weight:lighter">Terminal Leave</span>
                             </div>
                         </div>
                     </td>
@@ -371,7 +386,7 @@
                                     <div>
                                         <div class="text-center">
                                             <span style="font-size: 12px; font-weight:lighter; border-bottom: 1px solid #000; display: inline-block; width: 300px;">
-                                                {{ number_format($data->applied_credits, 1) }} Day(s)
+                                                {{ number_format($data->applied_credits, 1) }} day(s)
                                             </span>
                                          
                                         </div>
@@ -400,7 +415,7 @@
                                         </div>
             
                                         <div class="form-check form-check-inline">
-                                            <label> ( x ) Not Requested</label>
+                                            <label> ( X ) Not Requested</label>
                                        
                                         </div>
             
@@ -456,15 +471,15 @@
                                             <td style="padding: 8px; font-size:12px"></td>
                                           </tr>
                                           <tr>
-                                            <td class="text-end">DAYS</td>
-                                            <td class="text-end">DAYS</td>
-                                            <td class="text-end">DAYS</td>
+                                            <td class="text-end" style="font-weight: lighter">DAYS</td>
+                                            <td class="text-end" style="font-weight: lighter">DAYS</td>
+                                            <td class="text-end" style="font-weight: lighter">DAYS</td>
                                           </tr>
                                         </tbody>
                                     </table>
         
                                     <div class="text-center" style="padding-top: 20px;">
-                                        <span style="font-size: 13px; border-bottom: 1px solid #000; display: inline-block; width: 300px;">
+                                        <span style="font-size: 13px; border-bottom: 1px solid #000; display: inline-block; width: 300px; text-transform:uppercase">
                                             {{ $hrmo_officer->supervisor->personalInformation->first_name }}
                                             {{ substr($hrmo_officer->supervisor->personalInformation->middle_name, 0, 1) }}
                                             {{ $hrmo_officer->supervisor->personalInformation->last_name }} 
@@ -481,8 +496,8 @@
                                 <div class="mb-3" style="margin-top: 5px">
                                     <div>
                                         <div class="form-check form-check-inline">
-                                            @if ($data->status === 'for approving officer')
-                                                <label> ( x ) Approved </label>
+                                            @if ($data->status === 'for approving officer' ||$data->status === 'approved' )
+                                                <label> ( X ) Approved </label>
                                             @else
                                                 <label> ( &nbsp;&nbsp; ) Approved </label>
                                             @endif
@@ -491,7 +506,7 @@
                                         <br>
                                         <div class="form-check form-check-inline">
                                             @if ($data->status === 'declined by recommending officer')
-                                                <label> ( x ) Disapproval due to </label>
+                                                <label> ( X ) Disapproval due to </label>
                                             @else
                                                 <label> ( &nbsp;&nbsp; ) Disapproval due to </label>
                                             @endif
@@ -506,10 +521,13 @@
                                     </div>
         
                                     <div style="" class="text-center">
-                                        <span style="font-size: 13px; padding-top:40px; border-bottom: 1px solid #000; display: inline-block; width: 300px;">
+                                        <span style="font-size: 13px; padding-top:40px; border-bottom: 1px solid #000; display: inline-block; width: 300px; text-transform:uppercase">
+                                            @if ($data->recommendingOfficer)
                                             {{ $data->recommendingOfficer->personalInformation->first_name }}
                                             {{ substr($data->recommendingOfficer->personalInformation->middle_name, 0, 1) }}
                                             {{ $data->recommendingOfficer->personalInformation->last_name }} 
+                                        @endif
+                                      
                                         </span>
                                         <br> 
                                         <label style="display: block; font-weight:lighter; font-size:12px;">Unit/Section/Department Head</label>
@@ -531,8 +549,8 @@
                                     {{ $data->applied_credits }}
                                 @endif
                             </span>
-                            <span style="padding-right: 20px">Days with pay</span>    
-                            <span style="font-size: 12px;font-weight:lighter; border-bottom: 1px solid #000; display: inline-block; width: 100px;">
+                            <span style="padding-right: 20px; font-size: 12px">Days with pay</span>    
+                            <span style="font-size: 11px;font-weight:lighter; border-bottom: 1px solid #000; display: inline-block; width: 200px;">
                                 @if ($data->without_pay === 0 ||$data->without_pay === false)
                                     @if ($data->date_from === $data->date_to)
                                         {{ date(' F d, Y', strtotime($data->date_from)) }}
@@ -547,8 +565,8 @@
                                     {{ $data->applied_credits }}
                                 @endif
                             </span>
-                            <span style="padding-right: 5px">Days without pay</span>    
-                            <span style="font-weight:lighter; border-bottom: 1px solid #000; display: inline-block; width: 100px;">
+                            <span style="padding-right: 3px; font-size: 12px">Days without pay</span>    
+                            <span style="font-weight:lighter; border-bottom: 1px solid #000; display: inline-block; width: 200px;">
                                 @if ($data->without_pay === 1 ||$data->without_pay === true)
                                     @if ($data->date_from === $data->date_to)
                                         {{ date(' F d, Y', strtotime($data->date_from)) }}
@@ -559,8 +577,8 @@
                             </span>    
                             <br>
                             <span class="small-underline"></span>
-                            <span style="padding-right: 10px">Others (Specify)</span>    
-                            <span style="border-bottom: 1px solid #000; display: inline-block; width: 100px;"></span>    
+                            <span style="padding-right: 10px; font-size: 12px">Others (Specify)</span>    
+                            <span style="border-bottom: 1px solid #000; display: inline-block; width: 200px;"></span>    
                         </div>
                     </td>
                     
@@ -580,19 +598,28 @@
                         <br> 
                         <span style="font-size:12px"><b> Signature </b></span>
                         <br>
-                        <span style="font-size: 13px; border-bottom: 1px solid #000; display: inline-block; width: 250px; padding-top: 30px">
+                        <span style="font-size: 13px; border-bottom: 1px solid #000; display: inline-block; width: 250px; padding-top: 30px; text-transform:uppercase">
                             <b>
+                                @if ($data->approvingOfficer)
                                 {{ $data->approvingOfficer->personalInformation->first_name }}
                                 {{ substr($data->approvingOfficer->personalInformation->middle_name, 0, 1) }}
-                                {{ $data->approvingOfficer->personalInformation->last_name }}         
+                                {{ $data->approvingOfficer->personalInformation->last_name }} 
+                            @endif
+                                 
                             </b>
                         </span>
                         <br>
-                        <span style="font-size:12px; font-weight:lighter">{{ $data->approvingOfficer->findDesignation()['name']  }}</span>
+                        <span style="font-size:12px; font-weight:lighter">
+                            @if ($data->approvingOfficer)
+                            {{ $data->approvingOfficer->findDesignation()['name']  }}
+                            @else
+                                Regional Director
+                            @endif
+                          </span>
                         <br>
-                        <h6 class="topleft" style="padding-top: 20px; padding-left: 20px">Date
-                            <span style="border-bottom: 1px solid #000; display: inline-block; width: 250px;"></span>
-                        </h6>
+                        <p style="text-align: left; font-size:11px; font-weight:bold">Date:
+                            <span style="border-bottom: 1px solid #000;width: 180px; font-size:11px; font-weight:lighter"> {{ date(' F d, Y', strtotime($data->updated_at)) }}</span>
+                        </p>
                     </td>
                 </tr>
             </tbody>
@@ -619,9 +646,9 @@
         
         <br>
 
-        <h5 class="text-center">INSTRUCTIONS AND REQUIREMENTS</h5>
-        <div class="row" style="width: 90%;">
-            <div class="col-6">
+        <h5 class="text-center" style="margin-right: 50px">INSTRUCTIONS AND REQUIREMENTS</h5>
+        <div style="width: 90%;">
+            <div style="float:left; gn:justify; width: 48%; text-align:justify; margin-right: 5px;">
                 <p class="small-p">Application for any type of leave shall be made on this Form and to be
                     accomplished at least in duplicate with documentary requirements, as follows:
                 </p>
@@ -713,7 +740,7 @@
             </div>
             
             
-            <div class="col-6">
+            <div style="float:right;justify;  width: 48%;  text-align:justify;">
                 <p class="small-p">
                     10. Rehabilitation leave* – up to 6 months <br>
                     • Application shall be made within one (1) week from the time of the accident
@@ -779,14 +806,15 @@
                 </p>
             </div>
 
-            <span style="border-bottom: 2px solid #000; display: inline-block; width: 8.5in;"></span>
+           
+        </div>
 
-            <div class="col-12">
-                <p class="small-p">
-                    * For leave of absence for thirty (30) calendar days or more and terminal leave, application shall be accompanied by a clearance from money, property and
-                    work-related accountabilities (pursuant to CSC Memorandum Circular No. 2, s. 1985).
-                </p>
-            </div>
+        <div style="width: 90%; box-sizing: border-box; margin-top: 20px; clear:both">
+            <span style="border-bottom: 2px solid #000; display: block; width: 100%"></span>
+            <p class="small-p">
+                * For leave of absence for thirty (30) calendar days or more and terminal leave, application shall be accompanied by a clearance from money, property and
+                work-related accountabilities (pursuant to CSC Memorandum Circular No. 2, s. 1985).
+            </p>
         </div>
     </div>
 

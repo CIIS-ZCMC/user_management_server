@@ -53,6 +53,7 @@ class LeaveTypeResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'republic_act'=>$this->republic_act,
             'description' => $this->description,
             'period' => (double)$this->period,
             'file_date' => $this->file_date,
@@ -67,7 +68,7 @@ class LeaveTypeResource extends JsonResource
             'created_at' => (string) $this->created_at,
             'updated_at' => (string) $this->updated_at,
             'attachments' => $file_attached,
-            'requirements' => LeaveTypeRequirementResource::collection($this->leaveTypeRequirements),
+            'requirements' => Requirement::collection($this->leaveTypeRequirements),
             'logs'  => $added_by,
         ];
     }

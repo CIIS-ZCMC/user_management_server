@@ -779,8 +779,24 @@ Route::middleware('auth.cookie')->group(function () {
         /**
          * Employee Profile Module
          */
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('my-all-employees', 'EmployeeProfileController@myAllEmployees');
+        }); 
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('my-employees', 'EmployeeProfileController@myEmployees');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('area-employees/{id}', 'EmployeeProfileController@areasEmployees');
+        });
+
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::post('employee-reassign-area/{id}', 'EmployeeProfileController@reAssignArea');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::post('employee-profile-update-pin', 'EmployeeProfileController@updatePin');
         });
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {

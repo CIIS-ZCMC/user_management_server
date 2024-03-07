@@ -26,6 +26,7 @@ class DivisionRequest extends FormRequest
             'code' => 'required|string|max:255',
             // 'designation_id' => 'required|integer',
             'attachment' => 'nullable|file|mimes:jpeg,png,pdf,doc,docx',
+            // 'password' => 'required|string|max:255'
         ];
     }
 }

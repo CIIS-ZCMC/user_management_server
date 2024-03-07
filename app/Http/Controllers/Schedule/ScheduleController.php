@@ -18,9 +18,7 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 
-use DateTime;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -48,7 +46,7 @@ class ScheduleController extends Controller
             $myEmployees = $user->areaEmployee($assigned_area);
             $supervisors = $user->sectorHeads();
 
-             $employees = [ ...$myEmployees,...$supervisors];
+            $employees = [ ...$myEmployees,...$supervisors];
             $employee_ids = collect($employees)->pluck('id')->toArray();
 
             $array = EmployeeProfile::with(['assignedArea',
@@ -189,6 +187,11 @@ class ScheduleController extends Controller
         
             if (!empty($selected_dates)) {
                 foreach ($selected_dates as $dateSelected) {
+                    
+                    if ($this->hasOverlappingSchedule($cleanData['time_shift_id'], $dateSelected, $employee)) {
+                        return response()->json(['message' => 'Overlap with existing schedule'], Response::HTTP_FOUND);
+                    }
+                    
                     $schedule = Schedule::where('time_shift_id', $cleanData['time_shift_id'])->where('date', $dateSelected)->first();
 
                     if ($schedule) {
@@ -220,14 +223,24 @@ class ScheduleController extends Controller
                         $existing_employee_ids = EmployeeProfile::where('id', $value['employee_id'])->pluck('id');
 
                         foreach ($existing_employee_ids as $employee_id) {
-                            $query[] = EmployeeSchedule::where('employee_profile_id', $employee_id)->where('schedule_id', $data->id)->first();
+                            $check_employee_schedules = EmployeeSchedule::where('employee_profile_id', $employee_id)->where('schedule_id', $data->id)->first();
+
+                            if ($check_employee_schedules !== null) {
+                                return response()->json(['message' => 'Schedule Already Exist'], Response::HTTP_FOUND);
+                            }
 
                             $data->employee()->attach($employee_id);
+
+                            $employee_schedule = $data->employee()->where('employee_profile_id', $employee_id)->first()->id;
+                            Helpers::registerEmployeeScheduleLogs($employee_schedule, $user->id, 'Store');
                         }
                     }
                 }
             } else {
-                
+                if ($this->hasOverlappingSchedule($cleanData['time_shift_id'], $selected_date, $employee)) {
+                    return response()->json(['message' => 'Overlap with existing schedule'], Response::HTTP_FOUND);
+                }
+
                 $schedule = Schedule::where('time_shift_id', $cleanData['time_shift_id'])->where('date', $selected_date)->first();
     
                 if ($schedule) {
@@ -259,21 +272,26 @@ class ScheduleController extends Controller
                     $existing_employee_ids = EmployeeProfile::where('id', $value['employee_id'])->pluck('id');
 
                     foreach ($existing_employee_ids as $employee_id) {
-                        $query[] = EmployeeSchedule::where('employee_profile_id', $employee_id)->where('schedule_id', $data->id)->first();
+                        $check_employee_schedules = EmployeeSchedule::where('employee_profile_id', $employee_id)
+                                                                    ->where('schedule_id', $data->id)
+                                                                    ->where('deleted_at', null)
+                                                                    ->first();
 
+                        if ($check_employee_schedules !== null) {
+                            return response()->json(['message' => 'Schedule Already Exist'], Response::HTTP_FOUND);
+                        }
+                        
                         $data->employee()->attach($employee_id);
+
+                        $employee_schedule = $data->employee()->where('employee_profile_id', $employee_id)->first()->id;
+                        Helpers::registerEmployeeScheduleLogs($employee_schedule, $user->id, 'Store');
                     }
                 }
-            }
-
-            foreach ($employee as $value) {
-                Helpers::registerEmployeeScheduleLogs($data->id, $user->id, 'Store');
             }
 
             Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json([
                 'data' =>  new ScheduleResource($data),
-                'logs' => Helpers::registerEmployeeScheduleLogs($data->id, $user->id, 'Store'),
                 'message' => 'New employee schedule registered.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -355,6 +373,10 @@ class ScheduleController extends Controller
             //     return response()->json([$is24Hrs['result']], Response::HTTP_FOUND);
             // }
 
+            if ($this->hasOverlappingSchedule($cleanData['time_shift_id'], $cleanData['date'], $data['employee_profile_id'])) {
+                return response()->json(['message' => 'Overlap with existing schedule'], Response::HTTP_FOUND);
+            }
+
             $data->schedule_id = $schedule->id;
             $data->update();
 
@@ -376,14 +398,12 @@ class ScheduleController extends Controller
     public function destroy($id, Request $request)
     {
         try {
-            // $data = Schedule::withTrashed()->findOrFail($id);
             $data = EmployeeSchedule::findOrFail($id);
 
             if (!$data) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            // $data->employee()->detach($request->employee_id);
             $data->delete();
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in delete ' . $this->SINGULAR_MODULE_NAME . '.');
@@ -433,10 +453,41 @@ class ScheduleController extends Controller
 
             /* Downloads as PDF */
             $dompdf->stream($filename, array("Attachment" => false));
-            // return view('generate_schedule/section-schedule', compact('data','holiday', 'month', 'year', 'dates', 'user', 'head_officer'));
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+    
+    private function hasOverlappingSchedule($timeShiftId, $date, $employees)
+    {
+        foreach ($employees as $employee) {
+            foreach ($employee['employee_id'] as $employeeId) {
+                $existingSchedules = EmployeeProfile::find($employeeId)->schedule()->where('date', $date)->where('employee_profile_schedule.deleted_at', null)->get();
+
+                foreach ($existingSchedules as $existingSchedule) {
+                    if ($this->checkOverlap($timeShiftId, $existingSchedule->timeShift)) {
+                        return true; // Overlapping schedule found
+                    }
+                }
+            }
+        }
+
+        return false; // No overlapping schedule found
+    }
+
+    private function checkOverlap($newTimeShiftId, $existingTimeShift)
+    {
+        $newTimeShift = TimeShift::find($newTimeShiftId);
+
+        // Convert time shift times to Carbon instances
+        $newStart = Carbon::parse($newTimeShift->first_in);
+        $newEnd = $newTimeShift->second_out ? Carbon::parse($newTimeShift->second_out) : Carbon::parse($newTimeShift->first_out);
+    
+        $existingStart = Carbon::parse($existingTimeShift->first_in);
+        $existingEnd = $existingTimeShift->second_out ? Carbon::parse($existingTimeShift->second_out) : Carbon::parse($existingTimeShift->first_out);
+    
+        // Check for overlap
+        return !($newStart >= $existingEnd || $newEnd <= $existingStart);
     }
 }

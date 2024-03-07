@@ -4,6 +4,7 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Http\Requests\AuthPinApprovalRequest;
 use App\Models\Section;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -61,12 +62,10 @@ class UnitController extends Controller
     {
         try{
             $user = $request->user;
-            $cleanData['password'] = strip_tags($request->password);
+            $cleanData['pin'] = strip_tags($request->password);
 
-            $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
-
-            if (!Hash::check($cleanData['password'].env("SALT_VALUE"), $decryptedPassword)) {
-                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
             }
 
             $unit = Unit::find($id);
@@ -111,12 +110,10 @@ class UnitController extends Controller
     {
         try{
             $user = $request->user;
-            $cleanData['password'] = strip_tags($request->password);
+            $cleanData['pin'] = strip_tags($request->password);
 
-            $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
-
-            if (!Hash::check($cleanData['password'].env("SALT_VALUE"), $decryptedPassword)) {
-                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
             }
 
             $unit = Unit::find($id);
@@ -219,14 +216,11 @@ class UnitController extends Controller
     {
 
         try{
-            $password = strip_tags($request->password);
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
 
-            $employee_profile = $request->user;
-
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
-
-            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
             }
 
             $unit = Unit::find($id);
@@ -272,17 +266,14 @@ class UnitController extends Controller
         }
     }
     
-    public function destroy($id, PasswordApprovalRequest $request)
+    public function destroy($id, AuthPinApprovalRequest $request)
     {
         try{
-            $password = strip_tags($request->password);
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
 
-            $employee_profile = $request->user;
-
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
-
-            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
             }
 
             $unit = Unit::findOrFail($id);

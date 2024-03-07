@@ -93,8 +93,7 @@ class TimeAdjusmentController extends Controller
             $user = $request->user;
             $recommending_officer = null;
             $approving_officer = Section::where('code', 'HRMO')->first()->supervisor_employee_profile_id;
-            $employee = EmployeeProfile::find($cleanData['employee_profile_id'])->first();
-
+            $employee = EmployeeProfile::find($cleanData['employee_profile_id']);
 
             $dates = $cleanData['dtr_date'];
             foreach ($dates as $value) {

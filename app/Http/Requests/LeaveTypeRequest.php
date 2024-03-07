@@ -24,6 +24,7 @@ class LeaveTypeRequest extends FormRequest
         return [
             'is_special' => 'required|boolean',
             'name' => 'required|string|max:255',
+            'republic_act' => 'required|string',
             'description' => 'required|string',
             'file_date' => 'required|string',
             'is_country' => 'required|boolean',

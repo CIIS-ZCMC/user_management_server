@@ -4,6 +4,7 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Resources\PlantillaReferrenceResource;
 use App\Http\Resources\PlantillaWithDesignationResource;
 use App\Models\Designation;
@@ -629,6 +630,13 @@ class PlantillaController extends Controller
     public function update($id, PlantillaRequest $request)
     {
         try {
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
+
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+            }
+            
             $plantilla = Plantilla::find($id);
 
             if (!$plantilla) {
@@ -661,17 +669,14 @@ class PlantillaController extends Controller
         }
     }
 
-    public function destroy($id, PasswordApprovalRequest $request)
+    public function destroy($id, AuthPinApprovalRequest $request)
     {
         try {
-            $password = strip_tags($request->password);
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
 
-            $employee_profile = $request->user;
-
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
-
-            if (!Hash::check($password . env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
             }
 
             $plantilla = Plantilla::findOrFail($id);
@@ -714,17 +719,14 @@ class PlantillaController extends Controller
         }
     }
 
-    public function destroyPlantillaNumber($id, PasswordApprovalRequest $request)
+    public function destroyPlantillaNumber($id, AuthPinApprovalRequest $request)
     {
         try {
-            $password = strip_tags($request->password);
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
 
-            $employee_profile = $request->user;
-
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
-
-            if (!Hash::check($password . env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
             }
 
             $plantilla_number = PlantillaNumber::findOrFail($id);

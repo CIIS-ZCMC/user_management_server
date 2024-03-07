@@ -13,11 +13,9 @@ class EmployeeScheduleLog extends Model
 
     protected $primaryKey = 'id';
 
-    public $fillable = [
+    protected $fillable = [
         'employee_schedule_id',
         'action_by',
         'action',
     ];
-
-    public $timestamps = true;
 }

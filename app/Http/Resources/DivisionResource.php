@@ -46,7 +46,7 @@ class DivisionResource extends JsonResource
                 'code' => $code,
                 'chief' => $chief,
                 'chief_designation' => $this->chief->assignedArea->designation,
-                'chief_profile_url' => $this->chief->profile_url,
+                'chief_profile_url' => env('SERVER_DOMAIN') . "/photo/profiles/". $this->chief->profile_url,
                 'chief_status' => $chief_status,
                 'approving_officer' => $approving_officer,
                 'officer_in_charge' => $officer_in_charge
