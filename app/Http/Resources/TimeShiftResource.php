@@ -21,6 +21,7 @@ class TimeShiftResource extends JsonResource
             'second_in'     => $this->second_in,
             'second_out'    => $this->second_out,
             'total_hours'   => $this->total_hours,
+            'color'         => $this->color,
             'deleted_at'    => (string) $this->deleted_at,
             'created_at'    => (string) $this->created_at,
             'updated_at'    => (string) $this->updated_at,
