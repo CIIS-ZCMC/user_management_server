@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\LeaveAndOvertime;
 
+use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Resources\OfficialBusinessResource;
 use App\Http\Requests\OfficialBusinessRequest;
 use App\Helpers\Helpers;
@@ -77,25 +78,25 @@ class OfficialBusinessController extends Controller
                         ->where('official_business_applications.approving_officer', $employeeId);
                 })
                 ->groupBy(
-                    'official_business_applications.id',
-                    'official_business_applications.date_from',
-                    'official_business_applications.date_to',
-                    'official_business_applications.time_from',
-                    'official_business_applications.time_to',
-                    'official_business_applications.status',
-                    'official_business_applications.purpose',
-                    'official_business_applications.personal_order_file',
-                    'official_business_applications.personal_order_path',
-                    'official_business_applications.personal_order_size',
-                    'official_business_applications.certificate_of_appearance',
-                    'official_business_applications.certificate_of_appearance_path',
-                    'official_business_applications.certificate_of_appearance_size',
-                    'official_business_applications.recommending_officer',
-                    'official_business_applications.approving_officer',
-                    'official_business_applications.remarks',
-                    'official_business_applications.employee_profile_id',
-                    'user_management_db.official_business_applications.created_at',
-                    'user_management_db.official_business_applications.updated_at',
+                    'id',
+                    'date_from',
+                    'date_to',
+                    'time_from',
+                    'time_to',
+                    'status',
+                    'purpose',
+                    'personal_order_file',
+                    'personal_order_path',
+                    'personal_order_size',
+                    'certificate_of_appearance',
+                    'certificate_of_appearance_path',
+                    'certificate_of_appearance_size',
+                    'recommending_officer',
+                    'approving_officer',
+                    'remarks',
+                    'employee_profile_id',
+                    'created_at',
+                    'updated_at',
                 )
                 ->orderBy('created_at', 'desc')
                 ->get();
@@ -234,7 +235,7 @@ class OfficialBusinessController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update($id, Request $request)
+    public function update($id, AuthPinApprovalRequest $request)
     {
         try {        
             $data = OfficialBusiness::findOrFail($id);
@@ -245,17 +246,15 @@ class OfficialBusinessController extends Controller
 
             $status     = null;
             $log_action = null;
-
-            $password = strip_tags($request->password);
-
             $employee_profile = $request->user;
 
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
+            $cleanData['pin'] = strip_tags($request->password);
+           
 
-            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            if ($employee_profile['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
             }
-
+      
             if ($request->status === 'approved') {
                 switch ($data->status) {
                     case 'for recommending approval':

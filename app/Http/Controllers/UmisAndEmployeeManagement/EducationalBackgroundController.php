@@ -72,7 +72,7 @@ class EducationalBackgroundController extends Controller
         try{
             $cleanData = [];
 
-            foreach (json_decode($request->all()) as $key => $value) {
+            foreach ($request->all() as $key => $value) {
                 if ($value === null) {
                     $cleanData[$key] = $value;
                     continue;
@@ -150,7 +150,7 @@ class EducationalBackgroundController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            return response()->json(['data' => new EducationalBackground($educational_background), 'message' => 'Educational record found.'], Response::HTTP_OK);
+            return response()->json(['data' => new EducationalBackgroundResource($educational_background), 'message' => 'Educational record found.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -181,7 +181,7 @@ class EducationalBackgroundController extends Controller
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
-            return response()->json(['data' => new EducationalBackgroundResource($educational_background), 'message' => 'Employee educational_background data is updated.'], Response::HTTP_OK);
+            return response()->json(['data' => new EducationalBackgroundResource($educational_background), 'message' => 'Employee educational background data has been updated.'], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -248,15 +248,15 @@ class EducationalBackgroundController extends Controller
         }
     }
     
-    public function destroy($id, AuthPinApprovalRequest $request)
+    public function destroy($id, Request $request)
     {
         try{
-            $user = $request->user;
-            $cleanData['pin'] = strip_tags($request->password);
+            // $user = $request->user;
+            // $cleanData['pin'] = strip_tags($request->password);
 
-            if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
-            }
+            // if ($user['authorization_pin'] !==  $cleanData['pin']) {
+            //     return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+            // }
 
             $educational_background = EducationalBackground::findOrFail($id);
 

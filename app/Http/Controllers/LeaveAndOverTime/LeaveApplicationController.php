@@ -4,6 +4,7 @@ namespace App\Http\Controllers\LeaveAndOverTime;
 
 use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Resources\LeaveTypeResource;
+use App\Models\Division;
 use App\Models\EmployeeCreditLog;
 use App\Models\EmployeeOvertimeCredit;
 use App\Models\LeaveType;
@@ -42,11 +43,10 @@ class LeaveApplicationController extends Controller
              */
 
              if (Helpers::getHrmoOfficer() === $employee_profile->id) {
-                
-            $employeeId = $employee_profile->id;
-                $hrmo = ["applied", "approved", "declined by hrmo officer"];
-                $recommending = ["for recommending approval", "approved", "declined by recommending officer"];
-           
+                $employeeId = $employee_profile->id;
+                $hrmo = ["applied","for recommending approval", "approved", "declined by hrmo officer"];
+                $recommending = ["for recommending approval", "for approving approval","approved", "declined by recommending officer"];
+        
                 $leave_applications = LeaveApplication::select('leave_applications.*')
                 ->where(function ($query) use ($hrmo, $employeeId) {
                     $query->whereIn('leave_applications.status', $hrmo)
@@ -83,17 +83,16 @@ class LeaveApplicationController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->get();
 
-            
+                $leave_applications = collect($leave_applications)->filter(function ($leave_application) use ($employeeId) {
+                    // Keep the leave application if the status is "applied" or if the employee profile ID is not equal to $employeeId
+                    return $leave_application->status === "applied" || $leave_application->employee_profile_id !== $employeeId;
+                })->all();
+
                 return response()->json([
                     'data' => LeaveApplicationResource::collection($leave_applications),
                     'message' => 'Retrieve all leave application records.'
                 ], Response::HTTP_OK);
-
-                
             }
-            
-       
-            
 
             $employeeId = $employee_profile->id;
             $recommending = ["for recommending approval", "for approving approval", "approved", "declined by recommending officer"];
@@ -539,8 +538,14 @@ class LeaveApplicationController extends Controller
                     $cleanData['applied_credits'] = $daysDiff;
                     $cleanData['employee_profile_id'] = $employee_profile->id;
                     $cleanData['hrmo_officer'] = $hrmo_officer;
-                    $cleanData['recommending_officer'] = $recommending_and_approving['recommending_officer'];
-                    $cleanData['approving_officer'] = $recommending_and_approving['approving_officer'];
+
+                    $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $employee_profile->id)->first();
+
+                    if(!$isMCC){
+                        $cleanData['recommending_officer'] = $recommending_and_approving['recommending_officer'];
+                        $cleanData['approving_officer'] = $recommending_and_approving['approving_officer']; 
+                    }
+
                     $cleanData['status'] = 'applied';
     
                     foreach ($request->all() as $key => $leave) {
@@ -562,8 +567,6 @@ class LeaveApplicationController extends Controller
                     }
     
                     $leave_application = LeaveApplication::create($cleanData);
-                   
-                   
                    
                     if ($request->requirements) {
                         $index = 0;
@@ -609,8 +612,14 @@ class LeaveApplicationController extends Controller
                         $cleanData['applied_credits'] = $daysDiff;
                         $cleanData['employee_profile_id'] = $employee_profile->id;
                         $cleanData['hrmo_officer'] = $hrmo_officer;
-                        $cleanData['recommending_officer'] = $recommending_and_approving['recommending_officer'];
-                        $cleanData['approving_officer'] = $recommending_and_approving['approving_officer'];
+                        
+                        $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $employee_profile->id)->first();
+
+                        if(!$isMCC){
+                            $cleanData['recommending_officer'] = $recommending_and_approving['recommending_officer'];
+                            $cleanData['approving_officer'] = $recommending_and_approving['approving_officer'];
+                        }
+                    
                         $cleanData['status'] = 'applied';
     
                         foreach ($request->all() as $key => $leave) {
@@ -677,9 +686,9 @@ class LeaveApplicationController extends Controller
      
                     
                 }
+
                 $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->get();
                
-        
                 foreach ($employeeCredit as $leaveCredit) {
                  
                     $leaveType = $leaveCredit->leaveType->name;
@@ -724,7 +733,7 @@ class LeaveApplicationController extends Controller
         try {
             $user = $request->user;
             $employee_profile = $user;
-            $cleanData['pin'] = strip_tags($request->pin);
+            $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
@@ -797,7 +806,21 @@ class LeaveApplicationController extends Controller
             $data = LeaveApplication::with(['employeeProfile', 'leaveType', 'recommendingOfficer', 'approvingOfficer'])->where('id', $id)->first();
             // return $data;
             $leave_type = LeaveTypeResource::collection(LeaveType::all());
+            $my_leave_type = new LeaveTypeResource(LeaveType::find($data->leave_type_id));
             $hrmo_officer = Section::with(['supervisor'])->where('code', 'HRMO')->first();
+
+            $employeeLeaveCredit = EmployeeLeaveCredit::with('employeeLeaveCreditLogs')
+            ->where('employee_profile_id', $data->employee_profile_id)
+            ->where('leave_type_id', $data->leave_type_id)
+            ->first();
+
+            if($employeeLeaveCredit) {
+                $creditLogs = $employeeLeaveCredit->employeeLeaveCreditLogs;
+                // Now you can work with $creditLogs
+            } else {
+                // Handle the case when no matching record is found
+                $creditLogs = null; // Or any other appropriate action
+            }
 
             // return view('leave_from.leave_application_form', compact('data', 'leave_type', 'hrmo_officer'));
 
@@ -807,7 +830,7 @@ class LeaveApplicationController extends Controller
             $options->set('isRemoteEnabled', true);
             $dompdf = new Dompdf($options);
             $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
-            $html = view('leave_from.leave_application_form', compact('data', 'leave_type', 'hrmo_officer'))->render();
+            $html = view('leave_from.leave_application_form', compact('data', 'leave_type', 'hrmo_officer', 'my_leave_type'))->render();
             $dompdf->loadHtml($html);
 
             $dompdf->setPaper('Legal', 'portrait');
