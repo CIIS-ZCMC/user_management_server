@@ -49,7 +49,6 @@
 
 
 
-
                         @php
                             $countin++;
                         @endphp
@@ -57,17 +56,21 @@
                 @endif
             @endif
         @endforeach
+        @php
+            $checkSched = $schedule->filter(function ($row) use ($year, $month, $i) {
+                return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) &&
+                    $row->attendance_status == 0;
+            });
+
+        @endphp
+
+
+
+
 
         @if (date('D', strtotime(date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)))) == 'Sun')
             @if (!$isHoliday)
                 @if ($countin == 0)
-                    @php
-                        $checkSched = $schedule->filter(function ($row) use ($year, $month, $i) {
-                            return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) &&
-                                $row->attendance_status == 0;
-                        });
-
-                    @endphp
                     @if (count($checkSched) >= 1)
                         <span style="color:gray;font-style:italic;color:#FF6969;font-size:10px">ABSENT</span>
                     @else
@@ -112,6 +115,7 @@
                 @else
                     <span style="color:gray;font-size:8px">Day-off</span>
                 @endif
+            @else
             @endif
         @else
             @if ($countin == 0)
@@ -214,6 +218,8 @@
                     return date('d', strtotime($row['dtr_date'])) == $i;
                 });
 
+                $filteredSecondin = array_slice($filteredSecondin, 0, 1);
+
             @endphp
 
             @foreach ($filteredSecondin as $f3)
@@ -235,7 +241,7 @@
                             @php
                                 $firsti = array_filter($firstin, function ($res) use ($i) {
                                     return date('d', strtotime($res['dtr_date'])) == $i &&
-                                        date('A', strtotime($res['first_in'])) === 'PM';
+                                        date('A', strtotime($res['first_in'])) == 'PM';
                                 });
 
                             @endphp
@@ -339,8 +345,9 @@
         <table id="tabledate" style="border:none">
             <tr style="border:none">
                 @php
-                    $hours = '-';
-                    $minutes = '-';
+                    $hours = 0;
+                    $minutes = '';
+                    $hrs = 0;
                 @endphp
                 @foreach ($undertime as $ut)
                     @if ($biometric_ID == $ut['biometric_ID'])
@@ -353,32 +360,32 @@
                                 if ($hours >= 1) {
                                     $hours = $hours;
                                 } else {
-                                    $hours = '-';
+                                    $hours = 0;
                                 }
 
                                 if ($minutes >= 1) {
                                     $minutes = $minutes;
                                 } else {
-                                    $minutes = '-';
+                                    $minutes = '';
                                 }
-                                echo $hours;
+                                $hrs += $hours;
                             @endphp
                         @endif
                     @endif
                 @endforeach
-                {{-- <td style="border: none; border-right: 1px solid gray !important; width: 50px;font-weight:bold;color:#04364A ">{{$hours}}</td>
-                <td style="border: none; width: 50px;font-weight:bold ;color:#04364A">{{$minutes}}</td> --}}
-
-
+                @if ($hrs >= 1)
+                    {{ $hrs }}
+                @endif
             </tr>
         </table>
     @break
 
     @case('undertime_minutes')
         @php
-            $hours = '-';
-            $minutes = '-';
+            $hours = '';
+            $minutes = 0;
 
+            $min = 0;
         @endphp
         @foreach ($undertime as $ut)
             @if ($biometric_ID == $ut['biometric_ID'])
@@ -391,20 +398,23 @@
                         if ($hours >= 1) {
                             $hours = $hours;
                         } else {
-                            $hours = '-';
+                            $hours = '';
                         }
 
                         if ($minutes >= 1) {
                             $minutes = $minutes;
                         } else {
-                            $minutes = '-';
+                            $minutes = 0;
                         }
+                        $min += $minutes;
 
-                        echo $minutes;
                     @endphp
                 @endif
             @endif
         @endforeach
+        @if ($min >= 1)
+            {{ $min }}
+        @endif
     @break
 
     @default

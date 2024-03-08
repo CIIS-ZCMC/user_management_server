@@ -91,6 +91,7 @@ class TimeShiftController extends Controller
                 $cleanData['total_hours'] = $AM + $PM;
             }
 
+            $cleanData['color'] = Helpers::randomHexColor();
             $data = TimeShift::create($cleanData);
             
             Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');

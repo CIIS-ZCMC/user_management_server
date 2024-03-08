@@ -128,126 +128,21 @@ class ScheduleController extends Controller
 
                 $cleanData[$key] = strip_tags($value);
             }
+
             $is_weekend     = 0;
             $data           = null;
             $user           = $request->user;
-            $employee       = $cleanData['employee'];
-            $date_start     = $cleanData['date_start'];     // Replace with your start date
-            $date_end       = $cleanData['date_end'];       // Replace with your end date
+            $employees      = $cleanData['employee'];
             $selected_date  = $cleanData['selected_date'];   // Selected Date;
-            $selected_days  = $cleanData['selected_days'];  // Replace with your selected days
-            $selected_dates = [];                           // Replace with your selected dates
 
-            switch ($selected_days) {
-                //If Toggle Date Period On
-                case ($selected_days <= 0):
-                    if($date_start !== null && $date_end !== null) {
-                        $current_date = Carbon::parse($date_start)->copy();
-
-                        while ($current_date->lte($date_end)) {
-                            $selected_dates[] = $current_date->toDateString();
-                            $current_date->addDay();
-                        }
-                    }
-                break;
-
-                //If Toggle Show Day on
-                case ($selected_days >= 1):
-                    if ( $date_start === null && $date_end === null) {
-                        $date = Carbon::now();  // Replace with your desired year
-                        $month = Carbon::parse($cleanData['month'])->month;   // Replace with your desired month
-    
-                        $start_date = Carbon::create($date->year, $month, 1)->startOfMonth();
-                        $end_date = $start_date->copy()->endOfMonth();
-    
-                        $current_date = $start_date->copy();
-    
-                        while ($current_date->lte($end_date->startOfDay())) {
-                            if (in_array($current_date->englishDayOfWeek, $selected_days)) {
-                                $selected_dates[] = $current_date->toDateString();
-                            }
-                            $current_date->addDay();
-                        }
-                    } else if ( $date_start !== null && $date_end !== null) {
-                        $current_date = Carbon::parse($date_start)->copy();
-
-                        while ($current_date->lte($date_end)) {
-                            if (in_array($current_date->englishDayOfWeek, $selected_days)) {
-                                $selected_dates[] = $current_date->toDateString();
-                            }
-                            $current_date->addDay();
-                        }
-                    }
-                break;
-
-                default:
-                    $selected_dates[] = null;
-                break;
-            }
+            foreach ($selected_date as $value) {
+                $schedule = Schedule::where('time_shift_id', $value['time_shift_id'])->where('date', $value['date'])->first();
         
-            if (!empty($selected_dates)) {
-                foreach ($selected_dates as $dateSelected) {
-                    
-                    if ($this->hasOverlappingSchedule($cleanData['time_shift_id'], $dateSelected, $employee)) {
-                        return response()->json(['message' => 'Overlap with existing schedule'], Response::HTTP_FOUND);
-                    }
-                    
-                    $schedule = Schedule::where('time_shift_id', $cleanData['time_shift_id'])->where('date', $dateSelected)->first();
-
-                    if ($schedule) {
-                        $data = $schedule;
-                    } else {
-                        
-                        $dates = Carbon::parse($dateSelected);
-                        $isWeekend = $dates->dayOfWeek === 6 || $dates->dayOfWeek === 0;
-
-                        if ($isWeekend) {
-                            $is_weekend = 1;
-                        }
-
-                        $data = new Schedule;
-
-                        $data->time_shift_id    = $cleanData['time_shift_id'];
-                        $data->is_weekend       = $is_weekend;
-                        $data->date             = $dateSelected;
-                        $data->save();
-                    }
-
-                    // $is24Hrs = Helpers::checkIs24PrevNextSchedule($data, $employee, $dateSelected);
-
-                    // if ($is24Hrs['result'] !== 'No Schedule') {
-                    //     return response()->json([$is24Hrs['result']], Response::HTTP_FOUND);
-                    // }
-
-                    foreach ($employee as $value) {
-                        $existing_employee_ids = EmployeeProfile::where('id', $value['employee_id'])->pluck('id');
-
-                        foreach ($existing_employee_ids as $employee_id) {
-                            $check_employee_schedules = EmployeeSchedule::where('employee_profile_id', $employee_id)->where('schedule_id', $data->id)->first();
-
-                            if ($check_employee_schedules !== null) {
-                                return response()->json(['message' => 'Schedule Already Exist'], Response::HTTP_FOUND);
-                            }
-
-                            $data->employee()->attach($employee_id);
-
-                            $employee_schedule = $data->employee()->where('employee_profile_id', $employee_id)->first()->id;
-                            Helpers::registerEmployeeScheduleLogs($employee_schedule, $user->id, 'Store');
-                        }
-                    }
-                }
-            } else {
-                if ($this->hasOverlappingSchedule($cleanData['time_shift_id'], $selected_date, $employee)) {
-                    return response()->json(['message' => 'Overlap with existing schedule'], Response::HTTP_FOUND);
-                }
-
-                $schedule = Schedule::where('time_shift_id', $cleanData['time_shift_id'])->where('date', $selected_date)->first();
-    
                 if ($schedule) {
                     $data = $schedule;
                 } else {
                     
-                    $dates = Carbon::parse($selected_date);
+                    $dates = Carbon::parse($value['date']);
                     $isWeekend = $dates->dayOfWeek === 6 || $dates->dayOfWeek === 0;
 
                     if ($isWeekend) {
@@ -256,9 +151,9 @@ class ScheduleController extends Controller
 
                     $data = new Schedule;
 
-                    $data->time_shift_id    = $cleanData['time_shift_id'];
+                    $data->time_shift_id    = $value['time_shift_id'];
+                    $data->date             = $value['date'];
                     $data->is_weekend       = $is_weekend;
-                    $data->date             = $selected_date;
                     $data->save();
                 }
 
@@ -268,8 +163,13 @@ class ScheduleController extends Controller
                 //     return response()->json([$is24Hrs['result']], Response::HTTP_FOUND);
                 // }
 
-                foreach ($employee as $value) {
-                    $existing_employee_ids = EmployeeProfile::where('id', $value['employee_id'])->pluck('id');
+                foreach ($employees as $employee) {
+                    
+                    if ($this->hasOverlappingSchedule($value['time_shift_id'], $value['date'], $employee['employee_id'])) {
+                        return response()->json(['message' => 'Overlap with existing schedule'], Response::HTTP_FOUND);
+                    }
+                    
+                    $existing_employee_ids = EmployeeProfile::where('id', $employee['employee_id'])->pluck('id');
 
                     foreach ($existing_employee_ids as $employee_id) {
                         $check_employee_schedules = EmployeeSchedule::where('employee_profile_id', $employee_id)
@@ -278,11 +178,14 @@ class ScheduleController extends Controller
                                                                     ->first();
 
                         if ($check_employee_schedules !== null) {
-                            return response()->json(['message' => 'Schedule Already Exist'], Response::HTTP_FOUND);
+                            // Schedule already exists for this employee, update the schedule ID
+                            $check_employee_schedules->schedule_id = $schedule->id;
+                            $check_employee_schedules->update();
+                        } else {
+                            // No schedule exists for this employee, attach the employee to the schedule
+                            $data->employee()->attach($employee_id);
                         }
                         
-                        $data->employee()->attach($employee_id);
-
                         $employee_schedule = $data->employee()->where('employee_profile_id', $employee_id)->first()->id;
                         Helpers::registerEmployeeScheduleLogs($employee_schedule, $user->id, 'Store');
                     }
@@ -427,19 +330,28 @@ class ScheduleController extends Controller
             $year   = $request->year;   // Replace with the desired year
 
             $dates = Helpers::getDatesInMonth($year, Carbon::parse($month)->month, "");
+            
+            //Array
+            $myEmployees = $user->areaEmployee($assigned_area);
+            $supervisors = $user->sectorHeads();
 
+            $employees = [ ...$myEmployees,...$supervisors];
+            $employee_ids = collect($employees)->pluck('id')->toArray();
+
+            
             $employee = EmployeeProfile::where(function ($query) use ($assigned_area) {
-                $query->whereHas('assignedArea', function ($innerQuery) use ($assigned_area) {
-                    $innerQuery->where([strtolower($assigned_area['sector']) . '_id' => $assigned_area['details']['id']]);
+                $query->whereHas('schedule', function ($innerQuery) use ($assigned_area) {
+                    $innerQuery->with(['timeShift', 'holiday'])->where('employee_profile_schedule.deleted_at', '=', null );
                 });
-            })->with(['personalInformation', 'assignedArea', 'schedule.timeShift'])->get();
+            })->whereIn('id', $employee_ids)
+            ->with(['personalInformation', 'assignedArea', 'schedule.timeShift'])->get();
 
             $approving_officer  = Helpers::ScheduleApprovingOfficer($assigned_area, $user);
             $head_officer       = EmployeeProfile::where('id', $approving_officer['approving_officer'])->first();
             $holiday            = Holiday::all();
 
             $options = new Options();
-            $options->set('isPhpEnabled', true);
+            $options->set('isPhpEnabled', true);    
             $options->set('isHtml5ParserEnabled', true);
             $options->set('isRemoteEnabled', true);
             $dompdf = new Dompdf($options);
