@@ -358,17 +358,23 @@ class DTRcontroller extends Controller
 
     private function arrivalDeparture($time_stamps_req, $year_of, $month_of)
     {
-        $f1 = strtoupper(date('h:ia', strtotime($year_of . '-' . $month_of . '-1 ' . $time_stamps_req['first_entry'])));
-        $f2 = strtoupper(date('h:ia', strtotime($year_of . '-' . $month_of . '-1 ' . $time_stamps_req['second_entry'])));
-        $f3 = strtoupper(date('h:ia', strtotime($year_of . '-' . $month_of . '-1 ' . $time_stamps_req['third_entry'])));
-        $f4 = strtoupper(date('h:ia', strtotime($year_of . '-' . $month_of . '-1 ' . $time_stamps_req['last_entry'])));
+        if (count($time_stamps_req) >= 1) {
+            if (!$time_stamps_req['first_entry'] && !$time_stamps_req['second_entry'] && !$time_stamps_req['third_entry'] && !$time_stamps_req['last_entry']) {
+                return "NO SCHEDULE";
+            }
 
-        if (!$time_stamps_req['first_entry'] && !$time_stamps_req['second_entry'] && !$time_stamps_req['third_entry'] && !$time_stamps_req['last_entry']) {
-            return "NO SCHEDULE";
-        } elseif ($time_stamps_req['first_entry'] && $time_stamps_req['second_entry'] && !$time_stamps_req['third_entry'] && !$time_stamps_req['last_entry']) {
-            return $f1 . '-' . $f2;
-        } else {
-            return $f1 . '-' . $f2 . '/' . $f3 . '-' . $f4;
+            $f1 = strtoupper(date('h:ia', strtotime($year_of . '-' . $month_of . '-1 ' . $time_stamps_req['first_entry'])));
+            $f2 = strtoupper(date('h:ia', strtotime($year_of . '-' . $month_of . '-1 ' . $time_stamps_req['second_entry'])));
+            $f3 = strtoupper(date('h:ia', strtotime($year_of . '-' . $month_of . '-1 ' . $time_stamps_req['third_entry'])));
+            $f4 = strtoupper(date('h:ia', strtotime($year_of . '-' . $month_of . '-1 ' . $time_stamps_req['last_entry'])));
+
+
+
+            if ($time_stamps_req['first_entry'] && $time_stamps_req['second_entry'] && !$time_stamps_req['third_entry'] && !$time_stamps_req['last_entry']) {
+                return $f1 . '-' . $f2;
+            } else {
+                return $f1 . '-' . $f2 . '/' . $f3 . '-' . $f4;
+            }
         }
     }
 
@@ -474,9 +480,11 @@ class DTRcontroller extends Controller
                     'first_entry' => $val->first_in,
                     'date_time' => $val->first_in
                 ];
+
                 $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
                 $DaySchedule = $Schedule['daySchedule'];
                 $BreakTime = $Schedule['break_Time_Req'];
+
 
                 $arrival_Departure[] = $this->arrivalDeparture($DaySchedule, $year_of, $month_of);
 
@@ -830,8 +838,15 @@ class DTRcontroller extends Controller
                         *   if no matching schedule then
                         *   it will not display the daily time record
                         */
-                        $time_stamps_req = $this->helper->getSchedule($biometric_id, $val->first_in); //biometricID
-                        $arrival_Departure[] = $this->arrivalDeparture($time_stamps_req, $year_of, $month_of);
+                        $bioEntry = [
+                            'first_entry' => $val->first_in,
+                            'date_time' => $val->first_in
+                        ];
+                        $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
+                        $DaySchedule = $Schedule['daySchedule'];
+                        $BreakTime = $Schedule['break_Time_Req'];
+
+                        $arrival_Departure[] = $this->arrivalDeparture($DaySchedule, $year_of, $month_of);
 
                         if (count($time_stamps_req) >= 1) {
                             $validate = [
@@ -856,7 +871,7 @@ class DTRcontroller extends Controller
                     return response()->json(['message' =>  $th->getMessage()]);
                 }
 
-                $ohf[] = isset($time_stamps_req) ? $time_stamps_req['total_hours'] . ' HOURS' : null;
+                $ohf[] = isset($DaySchedule) ? $DaySchedule['total_hours'] . ' HOURS' : null;
 
                 $emp_Details[] = [
                     'OHF' => $ohf,
