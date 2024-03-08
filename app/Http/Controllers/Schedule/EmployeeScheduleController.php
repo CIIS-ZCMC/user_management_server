@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers\Schedule;
 
+use App\Http\Resources\ScheduleResource;
 use App\Models\EmployeeProfile;
 use App\Helpers\Helpers;
 
+use App\Models\EmployeeSchedule;
+use App\Models\Schedule;
+use App\Models\TimeShift;
 use Carbon\Carbon;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -93,5 +97,38 @@ class EmployeeScheduleController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    
+    private function hasOverlappingSchedule($timeShiftId, $date, $employees)
+    {
+        foreach ($employees as $employee) {
+            foreach ($employee['employee_id'] as $employeeId) {
+                $existingSchedules = EmployeeProfile::find($employeeId)->schedule()->where('date', $date)->where('employee_profile_schedule.deleted_at', null)->get();
+
+                foreach ($existingSchedules as $existingSchedule) {
+                    if ($this->checkOverlap($timeShiftId, $existingSchedule->timeShift)) {
+                        return true; // Overlapping schedule found
+                    }
+                }
+            }
+        }
+
+        return false; // No overlapping schedule found
+    }
+
+    private function checkOverlap($newTimeShiftId, $existingTimeShift)
+    {
+        $newTimeShift = TimeShift::find($newTimeShiftId);
+
+        // Convert time shift times to Carbon instances
+        $newStart = Carbon::parse($newTimeShift->first_in);
+        $newEnd = $newTimeShift->second_out ? Carbon::parse($newTimeShift->second_out) : Carbon::parse($newTimeShift->first_out);
+    
+        $existingStart = Carbon::parse($existingTimeShift->first_in);
+        $existingEnd = $existingTimeShift->second_out ? Carbon::parse($existingTimeShift->second_out) : Carbon::parse($existingTimeShift->first_out);
+    
+        // Check for overlap
+        return !($newStart >= $existingEnd || $newEnd <= $existingStart);
     }
 }

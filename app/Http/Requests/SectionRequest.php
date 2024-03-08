@@ -27,7 +27,7 @@ class SectionRequest extends FormRequest
             'attachment' => 'nullable|file|mimes:jpeg,png,pdf,doc,docx',
             'division_id' => 'nullable|integer',
             'department_id' => 'nullable|integer',
-            'password' => 'required|string|max:255'
+            // 'password' => 'required|string|max:255'
         ];
     }
 }

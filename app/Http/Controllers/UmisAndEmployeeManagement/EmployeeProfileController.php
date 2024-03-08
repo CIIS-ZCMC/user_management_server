@@ -192,7 +192,7 @@ class EmployeeProfileController extends Controller
             // }
 
             // if ($access_token !== null) {
-                AccessToken::where('employee_profile_id', $employee_profile->id)->delete();
+            AccessToken::where('employee_profile_id', $employee_profile->id)->delete();
             // }
 
             /**
@@ -549,7 +549,7 @@ class EmployeeProfileController extends Controller
                     }
                 }
 
-                if(count($side_bar_details['system'])  === 0){
+                if (count($side_bar_details['system'])  === 0) {
                     $side_bar_details['system'][] = $this->buildSystemDetails($reg_system_role);
                 }
             }
@@ -611,7 +611,7 @@ class EmployeeProfileController extends Controller
                     }
                 }
 
-                if(count($side_bar_details['system'])  === 0){
+                if (count($side_bar_details['system'])  === 0) {
                     $side_bar_details['system'][] = $this->buildSystemDetails($jo_system_role);
                 }
             }
@@ -1121,7 +1121,7 @@ class EmployeeProfileController extends Controller
 
     public function updatePin(Request $request)
     {
-        try{
+        try {
             $employee_profile = $request->user;
             $password = strip_tags($request->password);
             $pin = strip_tags($request->pin);
@@ -1134,10 +1134,11 @@ class EmployeeProfileController extends Controller
 
             $employee_profile->update(['authorization_pin' => $pin]);
 
-            return response()->json([ 
+            return response()->json([
                 'data' => new EmployeeProfileResource($employee_profile),
-                'message' => "Pin updated."], Response::HTTP_OK);
-        }catch(\Throwable $th){
+                'message' => "Pin updated."
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'updatePin', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -1708,7 +1709,7 @@ class EmployeeProfileController extends Controller
                 ], Response::HTTP_OK);
             }
 
-            $employee_profiles = EmployeeProfile::whereNotIn('id', [1,2,3,4,5])->get();
+            $employee_profiles = EmployeeProfile::whereNotIn('id', [1, 2, 3, 4, 5])->get();
             Helpers::registerSystemLogs($request, null, true, 'Success in fetching a ' . $this->PLURAL_MODULE_NAME . '.');
 
             return response()->json([
@@ -1885,7 +1886,7 @@ class EmployeeProfileController extends Controller
             $cacheExpiration = Carbon::now()->addDay();
 
             $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () {
-                return EmployeeProfile::whereNotIn('id', [1,2,3,4,5])->get();
+                return EmployeeProfile::whereNotIn('id', [1, 2, 3, 4, 5])->get();
             });
 
             return EmployeeProfileResource::collection($employee_profiles);
@@ -1900,15 +1901,16 @@ class EmployeeProfileController extends Controller
         }
     }
 
-    public function retrieveEmployees($employees, $key, $id, $myId){
-        
+    public function retrieveEmployees($employees, $key, $id, $myId)
+    {
+
         $assign_areas = AssignArea::where($key, $id)
             ->whereNotIn('employee_profile_id', $myId)->get();
 
         $new_employee_list = $assign_areas->map(function ($assign_area) {
             return $assign_area->employeeProfile;
         })->flatten()->all();
-        
+
         return [...$employees, ...$new_employee_list];
     }
 
@@ -1919,57 +1921,57 @@ class EmployeeProfileController extends Controller
             $position = $user->position();
             $employees = [];
 
-            if(!$position){
+            if (!$position) {
                 return response()->json(['message' => "You don't have authorization as a supervisor of area."], Response::HTTP_UNAUTHORIZED);
             }
 
             $my_assigned_area = $user->assignedArea->findDetails();
 
-            $employees = $this->retrieveEmployees($employees, Str::lower($my_assigned_area['sector'])."_id", $my_assigned_area['details']->id, [$user->id, 1,2,3,4,5]);
-            
+            $employees = $this->retrieveEmployees($employees, Str::lower($my_assigned_area['sector']) . "_id", $my_assigned_area['details']->id, [$user->id, 1, 2, 3, 4, 5]);
+
             /** Retrieve entire employees of Division to Unit if it has  unit */
-            if($my_assigned_area['sector'] === 'Division'){
+            if ($my_assigned_area['sector'] === 'Division') {
                 $departments = Department::where('division_id', $my_assigned_area['details']->id)->get();
 
-                foreach($departments as $department){
-                    $employees = $this->retrieveEmployees($employees, 'department_id', $department->id, [$user->id, 1,2,3,4,5]);
+                foreach ($departments as $department) {
+                    $employees = $this->retrieveEmployees($employees, 'department_id', $department->id, [$user->id, 1, 2, 3, 4, 5]);
                     $sections = Section::where('department_id', $department->id)->get();
-                    foreach($sections as $section){
-                        $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1,2,3,4,5]);
+                    foreach ($sections as $section) {
+                        $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1, 2, 3, 4, 5]);
                         $units = Unit::where('section_id', $section->id)->get();
-                        foreach($units as $unit){
-                            $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1,2,3,4,5]);
+                        foreach ($units as $unit) {
+                            $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1, 2, 3, 4, 5]);
                         }
                     }
                 }
-                
+
                 $sections = Section::where('division_id', $my_assigned_area['details']->id)->get();
-                foreach($sections as $section){
-                    $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1,2,3,4,5]);
+                foreach ($sections as $section) {
+                    $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1, 2, 3, 4, 5]);
                     $units = Unit::where('section_id', $section->id)->get();
-                    foreach($units as $unit){
-                        $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1,2,3,4,5]);
+                    foreach ($units as $unit) {
+                        $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1, 2, 3, 4, 5]);
                     }
                 }
             }
 
             /** Retrieve entire emplyoees of Department to Unit */
-            if($my_assigned_area['sector'] === 'Department'){
+            if ($my_assigned_area['sector'] === 'Department') {
                 $sections = Section::where('department_id', $my_assigned_area['details']->id)->get();
-                foreach($sections as $section){
-                    $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1,2,3,4,5]);
+                foreach ($sections as $section) {
+                    $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1, 2, 3, 4, 5]);
                     $units = Unit::where('section_id', $section->id)->get();
-                    foreach($units as $unit){
-                        $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1,2,3,4,5]);
+                    foreach ($units as $unit) {
+                        $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1, 2, 3, 4, 5]);
                     }
                 }
             }
-            
+
             /** Retrieve entire employees of Section to Unit if it has Unit */
-            if($my_assigned_area['sector'] === 'Section'){
+            if ($my_assigned_area['sector'] === 'Section') {
                 $units = Unit::where('section_id', $my_assigned_area['details']->id)->get();
-                foreach($units as $unit){
-                    $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1,2,3,4,5]);
+                foreach ($units as $unit) {
+                    $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1, 2, 3, 4, 5]);
                 }
             }
 
@@ -1989,12 +1991,12 @@ class EmployeeProfileController extends Controller
             $user = $request->user;
             $position = $user->position();
 
-            if(!$position){
+            if (!$position) {
                 return response()->json(['message' => "You don't have authorization as a supervisor of area."], Response::HTTP_UNAUTHORIZED);
             }
 
             $my_assigned_area = $user->assignedArea->findDetails();
-            $key = Str::lower($my_assigned_area['sector'])."_id";
+            $key = Str::lower($my_assigned_area['sector']) . "_id";
 
             $assign_areas = AssignArea::where($key, $my_assigned_area['details']->id)
                 ->where('employee_profile_id', "<>",  $user->id)->get();
@@ -2012,16 +2014,16 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function areasEmployees($id, Request $request)
     {
         try {
             $user = $request->user;
             $position = $user->position();
             $sector = strip_tags($request->sector);
-            $key = Str::lower($sector)."_id";
+            $key = Str::lower($sector) . "_id";
 
-            if(!$position){
+            if (!$position) {
                 return response()->json(['message' => "You don't have authorization as a supervisor of area."], Response::HTTP_UNAUTHORIZED);
             }
 
@@ -2047,7 +2049,7 @@ class EmployeeProfileController extends Controller
             $cacheExpiration = Carbon::now()->addDay();
 
             $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () {
-                return EmployeeProfile::whereNotIn('id', [1,2,3,4,5])->get();
+                return EmployeeProfile::whereNotIn('id', [1, 2, 3, 4, 5])->get();
             });
 
             $temp_perm = EmployeeProfileResource::collection($employee_profiles->filter(function ($profile) {
@@ -2096,7 +2098,7 @@ class EmployeeProfileController extends Controller
 
             $new_biometric_id = $last_registered_employee->biometric_id + 1;
             $new_employee_id = $date_hired_string . $employee_id_random_digit;
-            
+
             /** Create Authorization Pin */
             $personal_information = PersonalInformation::find(strip_tags($request->personal_information_id));
 
