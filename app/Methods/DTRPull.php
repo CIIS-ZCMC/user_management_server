@@ -57,9 +57,9 @@ class DTRPull
             $entry = $bioEntry['date_time'];
             $status = $bioEntry['status'];
             $validate = DailyTimeRecords::whereDate('dtr_date', $entrydate)->where('biometric_id', $biometric_id)->latest()->first();
-
+            return "awwww";
             if ($validate !== null) {
-                return  $this->With_2Set_Schedule->Update($validate, $DaySchedule, $entrydate, $entry, $biometric_id, $bioEntry, $status);
+                $this->With_2Set_Schedule->Update($validate, $DaySchedule, $entrydate, $entry, $biometric_id, $bioEntry, $status);
             } else {
                 $this->With_2Set_Schedule->New($DaySchedule, $entrydate, $entry, $biometric_id, $bioEntry, $status);
             }
@@ -73,11 +73,10 @@ class DTRPull
             $entry = $bioEntry['date_time'];
             $status = $bioEntry['status'];
             $validate = DailyTimeRecords::whereDate('dtr_date', $entrydate)->where('biometric_id', $biometric_id)->latest()->first();
+
             if ($validate !== null) {
-
-                $this->NoSchedule->Update($validate, $biometric_id, $entry, $bioEntry, $status);
+                $this->NoSchedule->Update($validate, $biometric_id, $entry, $entrydate, $bioEntry, $status);
             } else {
-
                 $this->NoSchedule->New($entrydate, $entry, $biometric_id, $bioEntry, $status);
             }
         }

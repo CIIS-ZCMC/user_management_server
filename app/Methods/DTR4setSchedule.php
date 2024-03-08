@@ -95,7 +95,6 @@ class DTR4setSchedule
                         );
                     }
                 }
-
                 //////////////////////////////////////////////////////////////////////////////////
 
             } else {
@@ -143,9 +142,7 @@ class DTR4setSchedule
         $rwm = $validate->required_working_minutes;
         $o_all_min = $validate->total_working_minutes;
         if ($f1 && !$f2 && !$f3 && !$f4) {
-
             if ($status == 255) {
-
                 if ($this->helper->withinInterval($f1, $this->helper->sequence(0, [$data]))) {
                     $this->helper->saveTotalWorkingHours(
                         $validate,

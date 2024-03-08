@@ -141,18 +141,42 @@ class DTR2setSchedule
     public function Update($validate, $DaySchedule,  $entrydate, $entry, $biometric_id, $data, $status)
     {
 
+
         $f1 = $validate->first_in;
         $f2 =  $validate->first_out;
         $f3 = $validate->second_in;
         $f4 = $validate->second_out;
         $rwm = $validate->required_working_minutes;
         $o_all_min = $validate->total_working_minutes;
-        if ($f1 && !$f2) {
-            return "awwwww";
-            /* Add validation for timeout... add expiration function */
-            if ($status == 255) {
 
-                if ($this->helper->withinInterval($f1, $this->helper->sequence(0, [$data]))) {
+        if ($f1 && !$f2) {
+
+            $Outexpiration = date('Y-m-d H:i:s', strtotime($entrydate . ' ' . $DaySchedule['second_entry'] . '+4 hours'));
+            $isValidEntry = True; // By default all entry in NoSchedule is Valid
+            if ($entry > $Outexpiration) {
+                /**
+                 * If this entry has schedule
+                 *  we are Checking if entry is within the alloted time requirement
+                 *if not then we set to false .
+                 * so that only logs will be saved.
+                 */
+                $isValidEntry = false;
+            }
+            /* Add validation for timeout... add expiration function */
+            if ($isValidEntry) {
+                if ($status == 255) {
+
+                    if ($this->helper->withinInterval($f1, $this->helper->sequence(0, [$data]))) {
+                        $this->helper->saveTotalWorkingHours(
+                            $validate,
+                            $data,
+                            $this->helper->sequence(0, [$data]),
+                            $DaySchedule,
+                            false
+                        );
+                    }
+                }
+                if ($status == 1) {
                     $this->helper->saveTotalWorkingHours(
                         $validate,
                         $data,
@@ -162,13 +186,19 @@ class DTR2setSchedule
                     );
                 }
             }
-            if ($status == 1) {
-                $this->helper->saveTotalWorkingHours(
-                    $validate,
-                    $data,
+        } else {
+            if ($status == 0 || $status == 255) {
+                $scheduleEntry = null;
+                if (isset($DaySchedule['is_on_call']) && $DaySchedule['is_on_call']) {
+                    // $scheduleEntry = date('Y-m-d H:i:s', strtotime($time_stamps_req['date_start'] . ' ' . $time_stamps_req['first_entry'] . '+' . $max_allowed_entry_for_oncall . ' minutes'));
+                    $scheduleEntry = $DaySchedule['first_entry'];
+                }
+                $this->helper->SaveFirstEntry(
                     $this->helper->sequence(0, [$data]),
-                    $DaySchedule,
-                    false
+                    [],
+                    $biometric_id,
+                    false,
+                    $scheduleEntry
                 );
             }
         }

@@ -26,6 +26,7 @@ class DTRNoSchedule
      */
     public function New($entrydate, $entry, $biometric_id, $bioEntry, $status)
     {
+
         /**
          * Feautures **
          * Save First Entry
@@ -35,8 +36,6 @@ class DTRNoSchedule
         $yester_date = date('Y-m-d', strtotime($entrydate . '-1 day'));
         $check_yesterday_Records = DailyTimeRecords::whereDate('first_in', $yester_date)->where('biometric_id', $biometric_id)->latest()->first();
         if ($check_yesterday_Records !== null) {
-
-
             $f_1 = $check_yesterday_Records->first_in;
             $f_2 = $check_yesterday_Records->first_out;
             if ($f_1 && !$f_2) {
@@ -53,8 +52,9 @@ class DTRNoSchedule
                 /* Get the yesterdaySchedule */
                 $Schedule = $this->helper->CurrentSchedule($biometric_id, $yesterday_Entry, false);
                 $Schedule = $Schedule['daySchedule'];
-                $Outexpiration = date('Y-m-d H:i:s', strtotime($entrydate . ' ' . $Schedule['second_entry'] . '+4 hours'));
+                $Outexpiration = date('Y-m-d H:i:s', strtotime($entrydate . ' ' . $Schedule['second_entry'] . '+4 hours')); // Allowable entry until 4 hours
                 $isValidEntry = True; // By default all entry in NoSchedule is Valid
+
                 if (count($Schedule) >= 1) {
                     if ($entry > $Outexpiration) {
                         /**
@@ -88,6 +88,10 @@ class DTRNoSchedule
                             false
                         );
                     }
+                } else {
+                    /**
+                     * If entry is not allowed anymore . well save it to LOGS
+                     */
                 }
             } else {
                 //CHECKIN
@@ -120,8 +124,7 @@ class DTRNoSchedule
             }
         }
     }
-
-    public function Update($validate, $biometric_id, $entry, $data, $status)
+    public function Update($validate, $biometric_id, $entry, $entrydate, $data, $status)
     {
         /* Updating All existing  Records */
 
@@ -132,7 +135,6 @@ class DTRNoSchedule
         if ($f1 && !$f2 && !$f3 && !$f4) {
 
             if ($status == 255) {
-
                 if ($this->helper->withinInterval($f1, $this->helper->sequence(0, [$data]))) {
                     $this->helper->saveTotalWorkingHours(
                         $validate,
@@ -153,14 +155,12 @@ class DTRNoSchedule
                 );
             }
         }
-
         /* check In_am and out_am and not set in_pm */
         /*
            -here we are validating the Out and In interval between second Entry to third entry
            -if the Time of IN is within the interval Requirements. We mark status as OK. else
             Invalid 3rd Entry
            */
-
         if ($f1 && $f2 && !$f3 && !$f4) {
             if ($status == 255) {
                 if ($this->helper->withinInterval($f2, $this->helper->sequence(0, [$data]))) {

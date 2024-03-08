@@ -143,9 +143,9 @@ class DTRcontroller extends Controller
                         });
 
                         if (count($check_Records) >= 1) {
-
                             foreach ($check_Records as $bioEntry) {
                                 $biometric_id = $bioEntry['biometric_id'];
+
                                 $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
                                 $DaySchedule = $Schedule['daySchedule'];
                                 $BreakTime = $Schedule['break_Time_Req'];
@@ -157,28 +157,24 @@ class DTRcontroller extends Controller
                                          * With Schedule
                                          * 4 sets of sched
                                          */
-                                        return $this->DTR->HasBreaktimePull($DaySchedule, $BreakTime, $bioEntry, $biometric_id);
+                                        $this->DTR->HasBreaktimePull($DaySchedule, $BreakTime, $bioEntry, $biometric_id);
                                     } else {
                                         /**
                                          * With Schedule
                                          * 2 sets of sched
                                          */
 
-                                        return $this->DTR->NoBreaktimePull($DaySchedule, $bioEntry, $biometric_id);
+                                        $this->DTR->NoBreaktimePull($DaySchedule, $bioEntry, $biometric_id);
                                     }
                                 } else {
-
                                     /**
                                      * No Schedule Pulling
                                      */
-                                    return $this->DTR->NoSchedulePull($bioEntry, $biometric_id);
+
+                                    $this->DTR->NoSchedulePull($bioEntry, $biometric_id);
                                 }
                             }
-
-
-                            return;
-                            //Normal pull
-                            $this->helper->saveDTRRecords($check_Records, false);
+                            //$this->helper->saveDTRRecords($check_Records, false);
                             /* Save DTR Logs */
                             $this->helper->saveDTRLogs($check_Records, 1, $device, 0);
                             /* Clear device data */
@@ -474,11 +470,17 @@ class DTRcontroller extends Controller
 
 
             foreach ($dtr as $val) {
-                $time_stamps_req = $this->helper->getSchedule($biometric_id, $val->first_in); //biometricID
-                $arrival_Departure[] = $this->arrivalDeparture($time_stamps_req, $year_of, $month_of);
+                $bioEntry = [
+                    'first_entry' => $val->first_in,
+                    'date_time' => $val->first_in
+                ];
+                $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
+                $DaySchedule = $Schedule['daySchedule'];
+                $BreakTime = $Schedule['break_Time_Req'];
 
+                $arrival_Departure[] = $this->arrivalDeparture($DaySchedule, $year_of, $month_of);
 
-                if (count($time_stamps_req) >= 1) {
+                if (count($DaySchedule) >= 1) {
                     $validate = [
                         (object)[
                             'id' => $val->id,
@@ -493,7 +495,7 @@ class DTRcontroller extends Controller
                         $validate,
                         $val,
                         $val,
-                        $time_stamps_req,
+                        $DaySchedule,
                         true
                     );
                 }
