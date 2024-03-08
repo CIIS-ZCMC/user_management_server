@@ -779,6 +779,19 @@ Route::middleware('auth.cookie')->group(function () {
         /**
          * Employee Profile Module
          */
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::put('employee-profile-update-pin', 'EmployeeProfileController@updatePin');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::put('employee-profile-update-password', 'EmployeeProfileController@updatePassword');
+        }); 
+        
+        
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::put('employee-profile-twofa-status', 'EmployeeProfileController@update2fa');
+        }); 
+
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('my-all-employees', 'EmployeeProfileController@myAllEmployees');
         }); 
@@ -793,10 +806,6 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::post('employee-reassign-area/{id}', 'EmployeeProfileController@reAssignArea');
-        });
-
-        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
-            Route::post('employee-profile-update-pin', 'EmployeeProfileController@updatePin');
         });
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {

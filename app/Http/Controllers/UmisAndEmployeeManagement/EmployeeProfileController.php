@@ -1143,6 +1143,74 @@ class EmployeeProfileController extends Controller
         }
     }
 
+    public function updatePassword(Request $request)
+    {
+        try{
+            $employee_profile = $request->user;
+            $password = strip_tags($request->password);
+            $new_password = strip_tags($request->new_password);
+
+            if ($this->CheckPasswordRepetition($password, 3, $employee_profile)) {
+                return response()->json(['message' => "Please consider changing your password, as it appears you have reused an old password."], Response::HTTP_BAD_REQUEST);
+            }
+
+            $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password . env("SALT_VALUE"), $decryptedPassword)) {
+                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
+            }
+            
+            $hashPassword = Hash::make($new_password . env('SALT_VALUE'));
+            $encryptedPassword = Crypt::encryptString($hashPassword);
+
+            $threeMonths = Carbon::now()->addMonths(3);
+
+            $old_password = PasswordTrail::create([
+                'old_password' => $employee_profile->password_encrypted,
+                'password_created_at' => $employee_profile->password_created_at,
+                'expired_at' => $employee_profile->password_expiration_at,
+                'employee_profile_id' => $employee_profile->id
+            ]);
+
+            if (!$old_password) {
+                return response()->json(['message' => "A problem encounter while trying to register new password."], Response::HTTP_BAD_REQUEST);
+            }
+
+            $employee_profile->update([
+                'password_encrypted' => $encryptedPassword,
+                'password_created_at' => now(),
+                'password_expiration_at' => $threeMonths
+            ]);
+
+            return response()->json(['message' => 'Password updated.'], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, 'updatePassword', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function update2fa(Request $request)
+    {
+        try{
+            $employee_profile = $request->user;
+            $password = strip_tags($request->password);
+            $status = strip_tags($request->status);
+
+            $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password . env("SALT_VALUE"), $decryptedPassword)) {
+                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $employee_profile->update(['is_2fa' => $status]);
+
+            return response()->json(['message' => '2fa updated.'], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, 'updatePassword', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public function newPassword(Request $request)
     {
         try {
