@@ -1657,6 +1657,38 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+    
+    public function employeesForOIC($id, $sector, Request $request)
+    {
+        try {
+            $employee_profile = $request->user;
+
+            $is_mcc = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $employee_profile->id)->first();
+
+            if($is_mcc){
+                $employees = EmployeeProfile::where('biometric_id', '<>', null)->where('authorization_pin', '<>', null)->get();
+          
+                return response()->json([
+                    "data" => EmployeeProfileResource::collection($employees), 
+                    'message' => "Success login."], Response::HTTP_OK);
+            }
+
+            $my_assigned_area = $employee_profile->assignedArea->findDetails();
+            
+            $assign_areas = AssignArea::where(Str::lower($my_assigned_area['sector']) . "_id", $my_assigned_area['details']->id)->get();
+
+            $employees = $assign_areas->map(function ($assign_area) {
+                return $assign_area->employeeProfile;
+            })->flatten()->all();
+
+            return response()->json([
+                "data" => EmployeeProfileResource::collection($employees), 
+                'message' => "Success login."], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'updatePasswordExpiration', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 
     public function employeesByAreaAssigned($id, $sector, Request $request)
     {

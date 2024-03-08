@@ -779,6 +779,10 @@ Route::middleware('auth.cookie')->group(function () {
         /**
          * Employee Profile Module
          */
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function () {
+            Route::put('employees-for-oic', 'EmployeeProfileController@employeesForOIC');
+        });
+
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::put('employee-profile-update-pin', 'EmployeeProfileController@updatePin');
         });
