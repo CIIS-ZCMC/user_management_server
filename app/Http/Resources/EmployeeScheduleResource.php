@@ -21,7 +21,7 @@ class EmployeeScheduleResource extends JsonResource
                 $scheduleData = [
                     "id"    => $schedule->timeShift->id, // time shift id
                     "start" => $schedule->date,
-                    'title' => $schedule->timeShiftDetails(),
+                    'title' => $schedule->timeShift->timeShiftDetails(),
                     'color' => $schedule->timeShift->color,
                 ];
 
