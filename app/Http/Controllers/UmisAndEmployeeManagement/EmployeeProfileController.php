@@ -1144,6 +1144,74 @@ class EmployeeProfileController extends Controller
         }
     }
 
+    public function updatePassword(Request $request)
+    {
+        try{
+            $employee_profile = $request->user;
+            $password = strip_tags($request->password);
+            $new_password = strip_tags($request->new_password);
+
+            if ($this->CheckPasswordRepetition($password, 3, $employee_profile)) {
+                return response()->json(['message' => "Please consider changing your password, as it appears you have reused an old password."], Response::HTTP_BAD_REQUEST);
+            }
+
+            $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password . env("SALT_VALUE"), $decryptedPassword)) {
+                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
+            }
+            
+            $hashPassword = Hash::make($new_password . env('SALT_VALUE'));
+            $encryptedPassword = Crypt::encryptString($hashPassword);
+
+            $threeMonths = Carbon::now()->addMonths(3);
+
+            $old_password = PasswordTrail::create([
+                'old_password' => $employee_profile->password_encrypted,
+                'password_created_at' => $employee_profile->password_created_at,
+                'expired_at' => $employee_profile->password_expiration_at,
+                'employee_profile_id' => $employee_profile->id
+            ]);
+
+            if (!$old_password) {
+                return response()->json(['message' => "A problem encounter while trying to register new password."], Response::HTTP_BAD_REQUEST);
+            }
+
+            $employee_profile->update([
+                'password_encrypted' => $encryptedPassword,
+                'password_created_at' => now(),
+                'password_expiration_at' => $threeMonths
+            ]);
+
+            return response()->json(['message' => 'Password updated.'], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, 'updatePassword', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function update2fa(Request $request)
+    {
+        try{
+            $employee_profile = $request->user;
+            $password = strip_tags($request->password);
+            $status = strip_tags($request->status);
+
+            $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
+
+            if (!Hash::check($password . env("SALT_VALUE"), $decryptedPassword)) {
+                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $employee_profile->update(['is_2fa' => $status]);
+
+            return response()->json(['message' => '2fa updated.'], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, 'updatePassword', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public function newPassword(Request $request)
     {
         try {
@@ -1584,6 +1652,89 @@ class EmployeeProfileController extends Controller
             return response()
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
                 ->cookie(Helpers::Cookie_Name(), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), false);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'updatePasswordExpiration', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    public function employeesForOIC(Request $request)
+    {
+        try {
+            $employee_profile = $request->user;
+
+            $is_mcc = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $employee_profile->id)->first();
+
+            if($is_mcc){
+                $employees = EmployeeProfile::where('biometric_id', '<>', null)->where('authorization_pin', '<>', null)
+                    ->where('id', '<>', $employee_profile->id)->get();
+          
+                return response()->json([
+                    "data" => EmployeeProfileResource::collection($employees), 
+                    'message' => "Success login."], Response::HTTP_OK);
+            }
+
+            
+            $position = $employee_profile->position();
+            $employees = [];
+
+            if (!$position) {
+                return response()->json(['message' => "You don't have authorization as a supervisor of area."], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $my_assigned_area = $employee_profile->assignedArea->findDetails();
+
+            $employees = $this->retrieveEmployees($employees, Str::lower($my_assigned_area['sector']) . "_id", $my_assigned_area['details']->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+
+            /** Retrieve entire employees of Division to Unit if it has  unit */
+            if ($my_assigned_area['sector'] === 'Division') {
+                $departments = Department::where('division_id', $my_assigned_area['details']->id)->get();
+
+                foreach ($departments as $department) {
+                    $employees = $this->retrieveEmployees($employees, 'department_id', $department->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+                    $sections = Section::where('department_id', $department->id)->get();
+                    foreach ($sections as $section) {
+                        $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+                        $units = Unit::where('section_id', $section->id)->get();
+                        foreach ($units as $unit) {
+                            $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+                        }
+                    }
+                }
+
+                $sections = Section::where('division_id', $my_assigned_area['details']->id)->get();
+                foreach ($sections as $section) {
+                    $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+                    $units = Unit::where('section_id', $section->id)->get();
+                    foreach ($units as $unit) {
+                        $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+                    }
+                }
+            }
+
+            /** Retrieve entire emplyoees of Department to Unit */
+            if ($my_assigned_area['sector'] === 'Department') {
+                $sections = Section::where('department_id', $my_assigned_area['details']->id)->get();
+                foreach ($sections as $section) {
+                    $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+                    $units = Unit::where('section_id', $section->id)->get();
+                    foreach ($units as $unit) {
+                        $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+                    }
+                }
+            }
+
+            /** Retrieve entire employees of Section to Unit if it has Unit */
+            if ($my_assigned_area['sector'] === 'Section') {
+                $units = Unit::where('section_id', $my_assigned_area['details']->id)->get();
+                foreach ($units as $unit) {
+                    $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+                }
+            }
+
+            return response()->json([
+                "data" => EmployeeProfileResource::collection($employees), 
+                'message' => "Success login."], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'updatePasswordExpiration', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
