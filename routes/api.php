@@ -780,6 +780,10 @@ Route::middleware('auth.cookie')->group(function () {
          * Employee Profile Module
          */
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function () {
+            Route::post('employees-assign-oic', 'EmployeeProfileController@assignOICByEmployeeID');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function () {
             Route::put('employees-for-oic', 'EmployeeProfileController@employeesForOIC');
         });
 

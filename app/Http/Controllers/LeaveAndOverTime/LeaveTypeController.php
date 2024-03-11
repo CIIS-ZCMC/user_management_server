@@ -134,7 +134,7 @@ class LeaveTypeController extends Controller
            $employee_profile = $request->user;
 
             if(!$employee_profile){
-                return response()->json(['message' => 'Unauthorized.'], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => 'Unauthorized.'], Response::HTTP_FORBIDDEN);
             }
 
             $cleanData = [];
@@ -233,7 +233,7 @@ class LeaveTypeController extends Controller
             $employee_profile = $request->user;
 
             if(!$employee_profile){
-                return response()->json(['message' => 'Unauthorized.'], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => 'Unauthorized.'], Response::HTTP_FORBIDDEN);
             }
 
             $leave_type = LeaveType::find($id);
@@ -331,7 +331,7 @@ class LeaveTypeController extends Controller
             $cleanData['pin'] = strip_tags($request->pin);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $leave_type = LeaveType::find($id);
@@ -353,7 +353,7 @@ class LeaveTypeController extends Controller
             $cleanData['pin'] = strip_tags($request->pin);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $leave_type = LeaveType::find($id);
@@ -375,7 +375,7 @@ class LeaveTypeController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $leave_type = LeaveType::find($id);

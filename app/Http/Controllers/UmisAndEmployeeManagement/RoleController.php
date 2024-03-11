@@ -95,7 +95,7 @@ class RoleController extends Controller
             $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
 
             if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_FORBIDDEN);
             }
 
             $role = Role::find($id);
@@ -132,7 +132,7 @@ class RoleController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $role = Role::findOrFail($id);

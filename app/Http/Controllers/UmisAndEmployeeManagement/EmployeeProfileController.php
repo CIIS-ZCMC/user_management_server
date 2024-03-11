@@ -5,6 +5,7 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 use App\Http\Controllers\Controller;
 
 use App\Http\Requests\AuthPinApprovalRequest;
+use App\Http\Requests\DivisionAssignOICRequest;
 use App\Http\Requests\PasswordApprovalRequest;
 use App\Models\PersonalInformation;
 use Illuminate\Support\Str;
@@ -115,7 +116,7 @@ class EmployeeProfileController extends Controller
             }
 
             if (!$employee_profile) {
-                return response()->json(['message' => "Employee id or password incorrect."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Employee id or password incorrect."], Response::HTTP_FORBIDDEN);
             }
 
             if (!$employee_profile->isDeactivated()) {
@@ -125,7 +126,7 @@ class EmployeeProfileController extends Controller
             $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
 
             if (!Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedPassword)) {
-                return response()->json(['message' => "Employee id or password incorrect."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Employee id or password incorrect."], Response::HTTP_FORBIDDEN);
             }
 
             $agent = new Agent();
@@ -247,7 +248,7 @@ class EmployeeProfileController extends Controller
                 return response()->json([
                     'data' => $side_bar_details,
                     'message' => "Please be inform that your account currently doesn't have access to the system."
-                ], Response::HTTP_UNAUTHORIZED);
+                ], Response::HTTP_FORBIDDEN);
             }
 
             $data = $this->generateEmployeeProfileDetails($employee_profile, $side_bar_details);
@@ -864,7 +865,7 @@ class EmployeeProfileController extends Controller
                 return response()->json([
                     'data' => $side_bar_details,
                     'message' => "Please be inform that your account currently doesn't have access to the system."
-                ], Response::HTTP_UNAUTHORIZED);
+                ], Response::HTTP_FORBIDDEN);
             }
 
             $data = $this->generateEmployeeProfileDetails($employee_profile, $side_bar_details);
@@ -936,7 +937,7 @@ class EmployeeProfileController extends Controller
                 return response()->json([
                     'data' => $side_bar_details,
                     'message' => "Please be inform that your account currently doesn't have access to the system."
-                ], Response::HTTP_UNAUTHORIZED);
+                ], Response::HTTP_FORBIDDEN);
             }
 
             $data = $this->generateEmployeeProfileDetails($employee_profile, $side_bar_details);
@@ -984,7 +985,7 @@ class EmployeeProfileController extends Controller
             $contact = Contact::where('email_address', $email)->first();
 
             if (!$contact) {
-                return response()->json(['message' => "Email doesn't exist."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Email doesn't exist."], Response::HTTP_FORBIDDEN);
             }
 
             $employee = $contact->personalInformation->employeeProfile;
@@ -1069,7 +1070,7 @@ class EmployeeProfileController extends Controller
                 return response()->json([
                     'data' => $side_bar_details,
                     'message' => "Please be inform that your account currently doesn't have access to the system."
-                ], Response::HTTP_UNAUTHORIZED);
+                ], Response::HTTP_FORBIDDEN);
             }
 
             $data = $this->generateEmployeeProfileDetails($employee_profile, $side_bar_details);
@@ -1129,7 +1130,7 @@ class EmployeeProfileController extends Controller
             $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
 
             if (!Hash::check($password . env("SALT_VALUE"), $decryptedPassword)) {
-                return response()->json(['message' => "Employee id or password incorrect."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Employee id or password incorrect."], Response::HTTP_FORBIDDEN);
             }
 
             $employee_profile->update(['authorization_pin' => $pin]);
@@ -1158,7 +1159,7 @@ class EmployeeProfileController extends Controller
             $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
 
             if (!Hash::check($password . env("SALT_VALUE"), $decryptedPassword)) {
-                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
             }
             
             $hashPassword = Hash::make($new_password . env('SALT_VALUE'));
@@ -1200,7 +1201,7 @@ class EmployeeProfileController extends Controller
             $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
 
             if (!Hash::check($password . env("SALT_VALUE"), $decryptedPassword)) {
-                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
             }
 
             $employee_profile->update(['is_2fa' => $status]);
@@ -1305,7 +1306,7 @@ class EmployeeProfileController extends Controller
                 return response()->json([
                     'data' => $side_bar_details,
                     'message' => "Please be inform that your account currently doesn't have access to the system."
-                ], Response::HTTP_UNAUTHORIZED);
+                ], Response::HTTP_FORBIDDEN);
             }
 
             $data = $this->generateEmployeeProfileDetails($employee_profile, $side_bar_details);
@@ -1397,7 +1398,7 @@ class EmployeeProfileController extends Controller
             $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
 
             if (!Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedPassword)) {
-                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
             }
 
             $employee_id = strip_tags($request->employee_id);
@@ -1634,7 +1635,7 @@ class EmployeeProfileController extends Controller
                 return response()->json([
                     'data' => $side_bar_details,
                     'message' => "Please be inform that your account currently doesn't have access to the system."
-                ], Response::HTTP_UNAUTHORIZED);
+                ], Response::HTTP_FORBIDDEN);
             }
 
             $data = $this->generateEmployeeProfileDetails($employee_profile, $side_bar_details);
@@ -1686,6 +1687,65 @@ class EmployeeProfileController extends Controller
                 'message' => "Success login."], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'updatePasswordExpiration', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    /**
+     * Assign Officer in charge
+     * This must be in division/department/section/unit
+     * Validate first for rights to assigned OIC by password of chief/head/supervisor
+     */
+    public function assignOICByEmployeeID($id, DivisionAssignOICRequest $request)
+    {
+        try{
+            $employee_profile = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
+
+            if ($employee_profile['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+            }
+
+            $area_details = $employee_profile->assignedArea->findDetails();
+            $area = null;
+
+            switch($area_details['sector']){
+                case 'Division':
+                    $area = Division::where('chief_employee_profile_id', $employee_profile->id)->first();
+                    break;
+                case 'Department':
+                    $area = Department::where('head_employee_profile_id', $employee_profile->id)->first();
+                    break;
+                case 'Section':
+                    $area = Section::where('supervisor_employee_profile_id', $employee_profile->id)->first();
+                    break;
+                case 'Unit':
+                    $area = Unit::where('head_employee_profile_id', $employee_profile->id)->first();
+                    break;
+                default:
+                    return response()->json(['message' => "Invalid sector."], Response::HTTP_BAD_REQUEST);
+            }
+            
+            if(!$area) return response()->json(['message' => "forbidden"], Response::HTTP_FORBIDDEN);
+            
+            $area->update(['oic_employee_profile_id' => strip_tags($request->employee_profile_id)]);
+
+            Helpers::registerSystemLogs($request, $id, true, 'Success in assigning chief '.$this->PLURAL_MODULE_NAME.'.');
+
+            $response = [
+                'id' => $area->id,
+                'name' => $area->name,
+                'code' => $area->code,
+                'oic' => $area->oic->personalInformation->name(),
+                'updated_at' => $area->updated_at
+            ];
+            
+            return response()->json([
+                'data' => $response,
+                'message' => 'New officer incharge assign in department.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME,'assignOICByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -1954,7 +2014,7 @@ class EmployeeProfileController extends Controller
             $employees = [];
 
             if (!$position) {
-                return response()->json(['message' => "You don't have authorization as a supervisor of area."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "You don't have authorization as a supervisor of area."], Response::HTTP_FORBIDDEN);
             }
 
             $my_assigned_area = $user->assignedArea->findDetails();
@@ -2024,7 +2084,7 @@ class EmployeeProfileController extends Controller
             $position = $user->position();
 
             if (!$position) {
-                return response()->json(['message' => "You don't have authorization as a supervisor of area."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "You don't have authorization as a supervisor of area."], Response::HTTP_FORBIDDEN);
             }
 
             $my_assigned_area = $user->assignedArea->findDetails();
@@ -2056,7 +2116,7 @@ class EmployeeProfileController extends Controller
             $key = Str::lower($sector) . "_id";
 
             if (!$position) {
-                return response()->json(['message' => "You don't have authorization as a supervisor of area."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "You don't have authorization as a supervisor of area."], Response::HTTP_FORBIDDEN);
             }
 
             $assign_areas = AssignArea::where($key, $id)->get();
@@ -2369,7 +2429,7 @@ class EmployeeProfileController extends Controller
             $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
 
             if (!Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedPassword)) {
-                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
             }
 
             $employee_profile = EmployeeProfile::find($id);
@@ -2596,7 +2656,7 @@ class EmployeeProfileController extends Controller
             $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
 
             if (!Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedPassword)) {
-                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
             }
 
             $employee_profile = EmployeeProfile::find($id);
@@ -2638,7 +2698,7 @@ class EmployeeProfileController extends Controller
             $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
 
             if (!Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedPassword)) {
-                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
             }
 
             $employee_profile = EmployeeProfile::find($id);
@@ -2673,7 +2733,7 @@ class EmployeeProfileController extends Controller
             // $cleanData['password'] = strip_tags($request->input('password'));
             // $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
             // if (!Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedPassword)) {
-            //     return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
+            //     return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
             // }
 
 
@@ -2735,7 +2795,7 @@ class EmployeeProfileController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $employee_profile = EmployeeProfile::findOrFail($id);
@@ -2764,7 +2824,7 @@ class EmployeeProfileController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $employee_profile = EmployeeProfile::findOrFail($id);
@@ -2798,7 +2858,7 @@ class EmployeeProfileController extends Controller
             $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
 
             if (!Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedPassword)) {
-                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
             }
 
             $employee_profile = EmployeeProfile::findOrFail($id);
