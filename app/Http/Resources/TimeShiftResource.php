@@ -16,7 +16,7 @@ class TimeShiftResource extends JsonResource
     {
         return [
             'id'            => $this->id,
-            'time_shift'         => $this->timeShiftDetails(),
+            'label'         => $this->timeShiftDetails(),
             // 'first_in'      => $this->first_in,
             // 'first_out'     => $this->first_out,
             // 'second_in'     => $this->second_in,
