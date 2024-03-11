@@ -5,8 +5,6 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 use App\Http\Controllers\Controller;
 
 use App\Http\Requests\AuthPinApprovalRequest;
-use App\Http\Requests\DivisionAssignOICRequest;
-use App\Http\Requests\PasswordApprovalRequest;
 use App\Models\PersonalInformation;
 use Illuminate\Support\Str;
 use App\Http\Controllers\DTR\TwoFactorAuthController;
@@ -17,7 +15,6 @@ use App\Http\Resources\EducationalBackgroundResource;
 use App\Http\Resources\FamilyBackGroundResource;
 use App\Http\Resources\IdentificationNumberResource;
 use App\Http\Resources\OtherInformationResource;
-use App\Http\Resources\PlantillaNumberResource;
 use App\Http\Resources\TrainingResource;
 use App\Http\Resources\VoluntaryWorkResource;
 use App\Http\Resources\WorkExperienceResource;
@@ -1133,7 +1130,7 @@ class EmployeeProfileController extends Controller
                 return response()->json(['message' => "Employee id or password incorrect."], Response::HTTP_FORBIDDEN);
             }
 
-            $employee_profile->update(['authorization_pin' => $pin]);
+            $employee_profile->update(['authorization_pin' => $pin, 'pin_created_at' => now()]);
 
             return response()->json([
                 'data' => new EmployeeProfileResource($employee_profile),
@@ -1259,7 +1256,8 @@ class EmployeeProfileController extends Controller
                 'password_created_at' => now(),
                 'password_expiration_at' => $threeMonths,
                 'is_2fa' => $request->two_factor ?? false,
-                'authorization_pin' => strip_tags($request->pin)
+                'authorization_pin' => strip_tags($request->pin),
+                'pin_created_at' => now()
             ]);
 
             $agent = new Agent();

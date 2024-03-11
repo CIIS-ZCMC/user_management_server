@@ -216,14 +216,11 @@ class SystemModuleController extends Controller
     public function update($id, SystemModuleRequest $request)
     {
         try{ 
-            $password = strip_tags($request->password);
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
 
-            $employee_profile = $request->user;
-
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
-
-            if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_FORBIDDEN);
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $system_module = SystemModule::find($id);

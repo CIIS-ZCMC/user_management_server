@@ -59,7 +59,7 @@ class EmploymentTypeController extends Controller
 
             $name = strip_tags($request->input('name'));
 
-            $employment_type = EmploymentType::create($name);
+            $employment_type = EmploymentType::create(['name' => $name]);
 
             Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             

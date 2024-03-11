@@ -75,10 +75,10 @@ class PlantillaController extends Controller
             password : userPassword
             */
             $user = $request->user;
-            $cleanData['password'] = strip_tags($request->password);;
-            $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
-            if (!Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedPassword)) {
-                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
+            $cleanData['pin'] = strip_tags($request->password);
+
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
             $employee_profile = EmployeeProfile::findOrFail($id);
             $to_assign = $request->toassign;
