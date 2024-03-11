@@ -21,7 +21,7 @@ use Carbon\Carbon;
 use App\Models\Section;
 use App\Models\Schedule;
 use App\Helpers\Helpers as Help;
-
+use App\Methods\DTRPull;
 
 
 class DTRcontroller extends Controller
@@ -34,12 +34,14 @@ class DTRcontroller extends Controller
 
     protected $emp;
 
+    protected $DTR;
+
     public function __construct()
     {
         $this->helper = new Helpers();
         $this->device = new BioControl();
         $this->bioms = new BioMSController();
-
+        $this->DTR = new DTRPull();
         try {
             $content = $this->bioms->operatingDevice()->getContent();
             $this->devices = $content !== null ? json_decode($content, true)['data'] : [];
@@ -141,9 +143,38 @@ class DTRcontroller extends Controller
                         });
 
                         if (count($check_Records) >= 1) {
+                            foreach ($check_Records as $bioEntry) {
+                                $biometric_id = $bioEntry['biometric_id'];
 
-                            //Normal pull
-                            $this->helper->saveDTRRecords($check_Records, false);
+                                $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
+                                $DaySchedule = $Schedule['daySchedule'];
+                                $BreakTime = $Schedule['break_Time_Req'];
+
+
+                                if (count($DaySchedule) >= 1) {
+                                    if (count($BreakTime) >= 1) {
+                                        /**
+                                         * With Schedule
+                                         * 4 sets of sched
+                                         */
+                                        $this->DTR->HasBreaktimePull($DaySchedule, $BreakTime, $bioEntry, $biometric_id);
+                                    } else {
+                                        /**
+                                         * With Schedule
+                                         * 2 sets of sched
+                                         */
+
+                                        $this->DTR->NoBreaktimePull($DaySchedule, $bioEntry, $biometric_id);
+                                    }
+                                } else {
+                                    /**
+                                     * No Schedule Pulling
+                                     */
+
+                                    $this->DTR->NoSchedulePull($bioEntry, $biometric_id);
+                                }
+                            }
+                            //$this->helper->saveDTRRecords($check_Records, false);
                             /* Save DTR Logs */
                             $this->helper->saveDTRLogs($check_Records, 1, $device, 0);
                             /* Clear device data */
@@ -327,17 +358,23 @@ class DTRcontroller extends Controller
 
     private function arrivalDeparture($time_stamps_req, $year_of, $month_of)
     {
-        $f1 = strtoupper(date('h:ia', strtotime($year_of . '-' . $month_of . '-1 ' . $time_stamps_req['first_entry'])));
-        $f2 = strtoupper(date('h:ia', strtotime($year_of . '-' . $month_of . '-1 ' . $time_stamps_req['second_entry'])));
-        $f3 = strtoupper(date('h:ia', strtotime($year_of . '-' . $month_of . '-1 ' . $time_stamps_req['third_entry'])));
-        $f4 = strtoupper(date('h:ia', strtotime($year_of . '-' . $month_of . '-1 ' . $time_stamps_req['last_entry'])));
+        if (count($time_stamps_req) >= 1) {
+            if (!$time_stamps_req['first_entry'] && !$time_stamps_req['second_entry'] && !$time_stamps_req['third_entry'] && !$time_stamps_req['last_entry']) {
+                return "NO SCHEDULE";
+            }
 
-        if (!$time_stamps_req['first_entry'] && !$time_stamps_req['second_entry'] && !$time_stamps_req['third_entry'] && !$time_stamps_req['last_entry']) {
-            return "NO SCHEDULE";
-        } elseif ($time_stamps_req['first_entry'] && $time_stamps_req['second_entry'] && !$time_stamps_req['third_entry'] && !$time_stamps_req['last_entry']) {
-            return $f1 . '-' . $f2;
-        } else {
-            return $f1 . '-' . $f2 . '/' . $f3 . '-' . $f4;
+            $f1 = strtoupper(date('h:ia', strtotime($year_of . '-' . $month_of . '-1 ' . $time_stamps_req['first_entry'])));
+            $f2 = strtoupper(date('h:ia', strtotime($year_of . '-' . $month_of . '-1 ' . $time_stamps_req['second_entry'])));
+            $f3 = strtoupper(date('h:ia', strtotime($year_of . '-' . $month_of . '-1 ' . $time_stamps_req['third_entry'])));
+            $f4 = strtoupper(date('h:ia', strtotime($year_of . '-' . $month_of . '-1 ' . $time_stamps_req['last_entry'])));
+
+
+
+            if ($time_stamps_req['first_entry'] && $time_stamps_req['second_entry'] && !$time_stamps_req['third_entry'] && !$time_stamps_req['last_entry']) {
+                return $f1 . '-' . $f2;
+            } else {
+                return $f1 . '-' . $f2 . '/' . $f3 . '-' . $f4;
+            }
         }
     }
 
@@ -439,11 +476,19 @@ class DTRcontroller extends Controller
 
 
             foreach ($dtr as $val) {
-                $time_stamps_req = $this->helper->getSchedule($biometric_id, $val->first_in); //biometricID
-                $arrival_Departure[] = $this->arrivalDeparture($time_stamps_req, $year_of, $month_of);
+                $bioEntry = [
+                    'first_entry' => $val->first_in,
+                    'date_time' => $val->first_in
+                ];
+
+                $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
+                $DaySchedule = $Schedule['daySchedule'];
+                $BreakTime = $Schedule['break_Time_Req'];
 
 
-                if (count($time_stamps_req) >= 1) {
+                $arrival_Departure[] = $this->arrivalDeparture($DaySchedule, $year_of, $month_of);
+
+                if (count($DaySchedule) >= 1) {
                     $validate = [
                         (object)[
                             'id' => $val->id,
@@ -458,7 +503,7 @@ class DTRcontroller extends Controller
                         $validate,
                         $val,
                         $val,
-                        $time_stamps_req,
+                        $DaySchedule,
                         true
                     );
                 }
@@ -793,8 +838,15 @@ class DTRcontroller extends Controller
                         *   if no matching schedule then
                         *   it will not display the daily time record
                         */
-                        $time_stamps_req = $this->helper->getSchedule($biometric_id, $val->first_in); //biometricID
-                        $arrival_Departure[] = $this->arrivalDeparture($time_stamps_req, $year_of, $month_of);
+                        $bioEntry = [
+                            'first_entry' => $val->first_in,
+                            'date_time' => $val->first_in
+                        ];
+                        $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
+                        $DaySchedule = $Schedule['daySchedule'];
+                        $BreakTime = $Schedule['break_Time_Req'];
+
+                        $arrival_Departure[] = $this->arrivalDeparture($DaySchedule, $year_of, $month_of);
 
                         if (count($time_stamps_req) >= 1) {
                             $validate = [
@@ -819,7 +871,7 @@ class DTRcontroller extends Controller
                     return response()->json(['message' =>  $th->getMessage()]);
                 }
 
-                $ohf[] = isset($time_stamps_req) ? $time_stamps_req['total_hours'] . ' HOURS' : null;
+                $ohf[] = isset($DaySchedule) ? $DaySchedule['total_hours'] . ' HOURS' : null;
 
                 $emp_Details[] = [
                     'OHF' => $ohf,

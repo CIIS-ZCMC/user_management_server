@@ -151,7 +151,7 @@ class VoluntaryWorkController extends Controller
             }
 
             return response()->json([
-                'data' => new VoluntaryWork($voluntary_work), 
+                'data' => new VoluntaryWorkResource ($voluntary_work), 
                 'message' => 'Voluntary work record found.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -253,15 +253,10 @@ class VoluntaryWorkController extends Controller
         }
     }
     
-    public function destroy($id, AuthPinApprovalRequest $request)
+    public function destroy($id, Request $request)
     {
         try{
-            $user = $request->user;
-            $cleanData['pin'] = strip_tags($request->password);
-
-            if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
-            }
+            
 
             $voluntary_work = VoluntaryWork::findOrFail($id);
 

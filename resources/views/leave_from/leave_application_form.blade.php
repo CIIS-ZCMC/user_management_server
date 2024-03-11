@@ -331,14 +331,14 @@
 
                             <hr style="margin-top: 10px; margin-bottom: 10px; border: 0; border-top: 1px solid black;"/>
 
-                            <label class="rigthside-font" style="font-size:">In case of Special Leave Benefits for Women:</label>
+                            <label class="rigthside-font" style="font-size:11px">In case of Special Leave Benefits for Women:</label>
 
                             <div style="margin-bottom: 10px">
                                 <span style="font-size: 12px; font-weight:lighter">(Specify Illness)</span>
-                                <span style="padding-top:5px;border-bottom: 1px solid #000; display: inline-block; width: 150px;">
+                                <span style="border-bottom: 1px solid #000; display: inline-block; width: 145px;">
                                     @if ($my_leave_type->name === "Special Leave Benefits for Women")
-                                    {{ $data->illness }}
-                                @endif
+                                        {{ $data->illness }}
+                                    @endif
                                 </span>
                             </div>  
                            

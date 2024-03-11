@@ -206,7 +206,7 @@ class LeaveTypeController extends Controller
 
             return response()->json([
                 'data' => new LeaveTypeResource($leave_type),
-                'message' => 'Retrieve all leave types records.'
+                'message' => 'Leave type record created successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
