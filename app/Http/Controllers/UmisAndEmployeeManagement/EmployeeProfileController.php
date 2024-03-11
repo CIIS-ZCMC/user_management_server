@@ -689,6 +689,7 @@ class EmployeeProfileController extends Controller
             'profile_url' => env('SERVER_DOMAIN') . "/photo/profiles/" . $employee_profile->profile_url,
             'employee_id' => $employee_profile->employee_id,
             'position' => $position,
+            'is_2fa' => $employee_profile->is_2fa,
             'job_position' => $designation->name,
             'date_hired' => $employee_profile->date_hired,
             'job_type' => $employee_profile->employmentType->name,
@@ -758,7 +759,12 @@ class EmployeeProfileController extends Controller
             'employee_profile_id' => $employee_profile['id'],
             'employee_id' => $employee_profile['employee_id'],
             'name' => $personal_information->employeeName(),
-            'designation' => $designation['name'],
+            'is_2fa' => $employee_profile->is_2fa,
+            'password_expiration_at' => $employee_profile->password_expiration_at,
+            'password_updated_at' => $employee_profile->password_created_at,
+            'designation' => $designation['name'], 
+            'plantilla_number_id' => $assigned_area['plantilla_number_id'],
+            'plantilla_number' => $assigned_area['plantilla_number_id'] === NULL ? NULL : $assigned_area->plantillaNumber['number'],
             'employee_details' => [
                 'employee' => $employee,
                 'personal_information' => $personal_information_data,
@@ -1148,8 +1154,9 @@ class EmployeeProfileController extends Controller
             $employee_profile = $request->user;
             $password = strip_tags($request->password);
             $new_password = strip_tags($request->new_password);
+            $cleanData = ["password" => $new_password];
 
-            if ($this->CheckPasswordRepetition($password, 3, $employee_profile)) {
+            if ($this->CheckPasswordRepetition($cleanData, 3, $employee_profile)) {
                 return response()->json(['message' => "Please consider changing your password, as it appears you have reused an old password."], Response::HTTP_BAD_REQUEST);
             }
 

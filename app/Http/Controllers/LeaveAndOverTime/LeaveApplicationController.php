@@ -569,7 +569,7 @@ class LeaveApplicationController extends Controller
     
                     $leave_application = LeaveApplication::create($cleanData);
                     
-                    if($request->employee_profile_id !== null){
+                    if($request->OIC !== null){
                         $result = $employee_profile_controller->assignOICByEmployeeID($request);
 
                         if($result->getStatusCode() === Response::HTTP_OK){ // Check if the data key exists in the response
@@ -649,7 +649,7 @@ class LeaveApplicationController extends Controller
     
                         $leave_application = LeaveApplication::create($cleanData);
                     
-                        if($request->employee_profile_id !== null){
+                        if($request->OIC!== null){
                             $result = $employee_profile_controller->assignOICByEmployeeID($request);
     
                             if($result->getStatusCode() === Response::HTTP_OK){ // Check if the data key exists in the response
