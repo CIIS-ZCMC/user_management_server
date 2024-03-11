@@ -48,4 +48,24 @@ class TimeShift extends Model
 
         return $firstIn . '-' . $firstOut;
     }
+
+    public function timeShiftDetails()
+    {
+        $firstIn = isset($this->first_in) ? Carbon::parse($this->first_in)->format('H:i A') : null;
+        $firstOut = isset($this->first_out) ? Carbon::parse($this->first_out)->format('H:i A') : null;
+        $SecondIn = isset($this->second_in) ? Carbon::parse($this->second_in)->format('H:i A') : null;
+        $SecondOut = isset($this->second_out) ? Carbon::parse($this->second_out)->format('H:i A') : null;
+        
+        if ($SecondIn !== null) {
+            return [
+                "id" => $this->id,
+                "label" => $firstIn . '-' . $firstOut . '|' . $SecondIn . '-' . $SecondOut,
+            ];
+        }
+
+        return [
+            "id" => $this->id,
+            "label" =>  $firstIn . '-' . $firstOut,
+        ];
+    }
 }
