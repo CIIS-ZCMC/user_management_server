@@ -17,7 +17,7 @@ class EmployeeScheduleResource extends JsonResource
 
         $schedules = [];
 
-        foreach ($this->employee->schedules as $schedule) {
+        foreach ($this->employee->schedule as $schedule) {
             $schedules[] = [
                 "id"    => $schedule->timeShift->id,
                 "start" => $schedule->date,
