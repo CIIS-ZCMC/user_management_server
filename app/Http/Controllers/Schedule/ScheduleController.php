@@ -222,6 +222,34 @@ class ScheduleController extends Controller
         }
     }
 
+    public function edit(Request $request, $id)
+    {
+        try {
+            // API For Personal Calendar
+            $model = EmployeeSchedule::findOrFail($id);
+            
+            $data = [];
+            foreach ($model as $value) {
+                $data = [
+                    'employee_id' => $value->id,
+                    'schedule' => [
+                        'start' => $value->date,
+                        'title' => $value->schedule->timeShift->timeShiftDetails(),
+                        'color' => $value->schedule->timeShift->color,
+                    ]
+                ];
+            }
+
+            return response()->json([
+                'data' => $data,
+                'holiday' => Holiday::all()
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     /**
      * Update the specified resource in storage.
      */
