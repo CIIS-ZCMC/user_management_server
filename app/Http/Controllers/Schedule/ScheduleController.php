@@ -187,13 +187,12 @@ class ScheduleController extends Controller
                             foreach ($existing_employee_ids as $employee_id) {
                                 $check_employee_schedules = EmployeeSchedule::where('employee_profile_id', $employee_id)->whereNull('deleted_at')->first();    
                                 $check_employee_schedules->forceDelete();
-        
-                                // No schedule exists for this employee, attach the employee to the schedule
-                                $data->employee()->attach($employee_id);
-                                
                                 // $employee_schedule = $data->employee()->where('employee_profile_id', $employee_id)->first()->id;
                                 // Helpers::registerEmployeeScheduleLogs($employee_schedule, $user->id, 'Store');
                             }
+
+                            // No schedule exists for this employee, attach the employee to the schedule
+                            $data->employee()->attach($employee_id);
                         }
                     }
                 }
