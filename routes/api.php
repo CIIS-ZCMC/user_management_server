@@ -1874,6 +1874,10 @@ Route::middleware('auth.cookie')->group(function () {
             Route::post('schedule', 'ScheduleController@store');
         });
 
+        Route::middleware(['auth.permission:UMIS-ScM view'])->group(function () {
+            Route::get('schedule/{id}', 'ScheduleController@edit');
+        });
+
         Route::middleware(['auth.permission:UMIS-ScM update'])->group(function () {
             Route::put('schedule/{id}', 'ScheduleController@update');
         });
@@ -1892,6 +1896,10 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function () {
             Route::get('employee-schedule', 'EmployeeScheduleController@create');
         });
+
+        // Route::middleware(['auth.permission:UMIS-ScM write'])->group(function () {
+            // Route::post('employee-schedule', 'EmployeeScheduleController@store');
+        // });
 
         /**
          * Exchange Schedule Module
