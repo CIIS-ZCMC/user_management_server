@@ -1751,11 +1751,11 @@ class EmployeeProfileController extends Controller
     {
         try{
             $employee_profile = $request->user;
-            $cleanData['pin'] = strip_tags($request->password);
+            // $cleanData['pin'] = strip_tags($request->password);
 
-            if ($employee_profile['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
-            }
+            // if ($employee_profile['authorization_pin'] !==  $cleanData['pin']) {
+            //     return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+            // }
 
             $area_details = $employee_profile->assignedArea->findDetails();
             $area = null;
@@ -1779,7 +1779,7 @@ class EmployeeProfileController extends Controller
             
             if(!$area) return response()->json(['message' => "forbidden"], Response::HTTP_FORBIDDEN);
             
-            $area->update(['oic_employee_profile_id' => strip_tags($request->employee_profile_id)]);
+            $area->update(['oic_employee_profile_id' => strip_tags($request->OIC)]);
 
             Helpers::registerSystemLogs($request, null, true, 'Success in assigning chief '.$this->PLURAL_MODULE_NAME.'.');
 

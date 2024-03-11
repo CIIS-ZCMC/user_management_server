@@ -784,7 +784,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function () {
-            Route::put('employees-for-oic', 'EmployeeProfileController@employeesForOIC');
+            Route::get('employees-for-oic', 'EmployeeProfileController@employeesForOIC');
         });
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
