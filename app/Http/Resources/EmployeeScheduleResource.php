@@ -14,26 +14,22 @@ class EmployeeScheduleResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $employee = [
-            "name" => $this->employee->personalInformation->name(),
-            "profile_url" => $this->employee->profile_url,
-            "designation" => [
-                "name" => $this->employee->assignedArea->designation->name,
-                "code" => $this->employee->assignedArea->designation->code,
-            ],
-            "area" => $this->employee->assignedArea->findDetails()['details']->name,
+        $schedules = [];
 
-        ];
-
-        $schedule = [
-            "start" => $this->schedule->date,
-            'title' => $this->schedule->timeShift->timeShiftDetails(),
-            'color' => $this->schedule->timeShift->color,
-        ];
+        foreach ($this->employee->schedules as $schedule) {
+            $scheduleData = [
+                "id"    => $schedule->timeShift->id, // time shift id
+                "start" => $schedule->date,
+                'title' => $schedule->timeShift->timeShiftDetails(),
+                'color' => $schedule->timeShift->color,
+            ];
+            
+            $schedules[] = $scheduleData;
+        }
 
         return [
             'employee_id' => $this->employee->id,
-            'schedule' => $schedule
+            'schedule' => $schedules
         ];
     }
         // return [
