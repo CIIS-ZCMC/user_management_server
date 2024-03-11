@@ -74,7 +74,6 @@ class ScheduleController extends Controller
             return response()->json([
                 'data' => $data,
                 'dates' => $dates_with_day,
-                'time_shift' => TimeShiftResource::collection(TimeShift::all()),
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
