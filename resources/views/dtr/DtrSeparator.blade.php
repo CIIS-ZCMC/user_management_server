@@ -78,7 +78,7 @@
 
                     @endphp
                     @if (count($checkSched) >= 1)
-                        <span style="color:gray;font-style:italic;color:#FF6969;">ABSENT</span>
+                        <span class="timefirstarrival" style="color:gray;font-style:italic;color:#FF6969;">ABSENT</span>
 
                         <script>
                             $(document).ready(function() {
@@ -131,7 +131,7 @@
                                 $("#entry{{ $i }}4").addClass("Absent");
                             })
                         </script>
-                        <span style="color:gray;font-style:italic;color:#FF6969;">ABSENT</span>
+                        <span class="timefirstarrival" style="color:gray;font-style:italic;color:#FF6969;">ABSENT</span>
                     @else
                         <span class="timefirstarrival" style="color:gray">Day-off </span>
                     @endif
@@ -219,31 +219,41 @@
                 }
 
             @endphp
-
-
-
             @foreach ($firstout as $f2)
-                @if ($biometric_ID == $f2['biometric_ID'])
-                    @php
-                        $empSched = $schedule->filter(function ($sched) use ($f2) {
-                            return date('Y-m-d', strtotime($sched->schedule)) ===
-                                date('Y-m-d', strtotime($f2['dtr_date'])) &&
-                                $sched->second_in === null &&
-                                $sched->second_out === null;
-                        });
+                @php
 
-                    @endphp
-                    @if (date('d', strtotime($f2['first_out'])) == $fo)
-                        @if ($f2['first_out'])
-                            {{ date('h:i a', strtotime($f2['first_out'])) }}
+                    $empSched = $schedule->filter(function ($sched) use ($f2) {
+                        return date('Y-m-d', strtotime($sched->schedule)) ===
+                            date('Y-m-d', strtotime($f2['dtr_date'])) &&
+                            $sched->second_in === null &&
+                            $sched->second_out === null;
+                    });
+
+                    // echo count($empSched);
+
+                @endphp
+
+
+                @if ($biometric_ID == $f2['biometric_ID'])
+                    @if ($f2['first_out'])
+                        @if (count($empSched) >= 1)
+                            @if (date('d', strtotime($f2['first_out'])) == $fo)
+                                @if (date('A', strtotime($f2['first_out'])) == 'AM')
+                                    {{ date('h:i a', strtotime($f2['first_out'])) }}
+                                @endif
+                            @endif
+                        @else
+                            @if (date('d', strtotime($f2['dtr_date'])) == $fo)
+                                @if (date('A', strtotime($f2['first_out'])) == 'PM')
+                                    {{ date('h:i a', strtotime($f2['first_out'])) }}
+                                @else
+                                    {{ date('h:i a', strtotime($f2['first_out'])) }}
+                                @endif
+                            @endif
                         @endif
                     @endif
                 @endif
             @endforeach
-
-
-
-
         </span>
     @break
 
@@ -296,36 +306,61 @@
         <span class="fentry">
             <!-- SECOND OUT -->
 
+            @php
 
+                $filteredSecondout = array_filter($secondout, function ($row) use ($i, $biometric_ID) {
+                    return date('d', strtotime($row['dtr_date'])) == $i && $row['biometric_ID'] == $biometric_ID;
+                });
 
+            @endphp
 
-
-            @foreach ($secondout as $f4)
+            @foreach ($filteredSecondout as $f4)
                 @php
+
                     $empSched = $schedule->filter(function ($sched) use ($f4) {
                         return date('Y-m-d', strtotime($sched->schedule)) ===
                             date('Y-m-d', strtotime($f4['dtr_date'])) &&
                             $sched->second_in === null &&
                             $sched->second_out === null;
                     });
+
                 @endphp
 
 
+                @if ($biometric_ID === $f4['biometric_ID'])
+                    @if (count($empSched) >= 1)
+                        @php
+                            $firsto = array_filter($firstout, function ($res) use ($i, $biometric_ID) {
+                                return date('d', strtotime($res['first_out'])) == $i &&
+                                    date('A', strtotime($res['first_out'])) === 'PM' &&
+                                    $res['biometric_ID'] == $biometric_ID;
+                            });
 
-                @if ($biometric_ID == $f4['biometric_ID'])
-                    @if (date('d', strtotime($f4['second_out'])) == $i)
+                        @endphp
+
+
+                        @if (count($firsto) >= 1)
+                            {{ date('h:i a', strtotime(array_values($firsto)[count($firsto) - 1]['first_out'])) }}
+                        @else
+                            @foreach ($firstout as $f2)
+                                @if (date('d', strtotime($f2['first_out'])) == $i)
+                                    @if ($biometric_ID === $f2['biometric_ID'])
+                                        @if (date('A', strtotime($f2['first_out'])) === 'PM')
+                                            {{ date('h:i a', strtotime($f2['first_out'])) }}
+                                        @endif
+                                    @endif
+                                @endif
+                            @endforeach
+                        @endif
+                    @else
                         @if ($f4['second_out'])
-                            @if (date('A', strtotime($f4['second_out'])) === 'PM')
+                            @if (date('d', strtotime($f4['dtr_date'])) == $i)
                                 {{ date('h:i a', strtotime($f4['second_out'])) }}
                             @endif
                         @endif
                     @endif
                 @endif
             @endforeach
-
-
-
-
         </span>
     @break
 

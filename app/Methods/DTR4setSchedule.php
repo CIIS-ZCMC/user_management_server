@@ -23,6 +23,7 @@ class DTR4setSchedule
 
     public function New($DaySchedule, $BreakTime, $entrydate, $entry, $biometric_id, $data, $status)
     {
+
         /**
          * Here we are checking if theres an existing first entry this is  for nursing and doctors
          * which has two entries for schedule only.
@@ -73,9 +74,21 @@ class DTR4setSchedule
                      * As long as yesterday records does not have timeout at 2nd entry. it will fill the second entry..
                      * Soon add validation here to handle if employee is  nurse or admin
                      */
-                    if ($status == 255) {
-                        if ($this->helper->withinInterval($f_1, $this->helper->sequence(0, [$data]))) {
-                            $this->helper->saveTotalWorkingHours(
+                    if ($this->helper->EntryisAm($this->helper->sequence(0, [$data])[0]['date_time'])) {
+                        if ($status == 255) {
+                            if ($this->helper->withinInterval($f_1, $this->helper->sequence(0, [$data]))) {
+                                $this->helper->saveTotalWorkingHours(
+                                    $check_yesterday_Records,
+                                    $data,
+                                    $this->helper->sequence(0, [$data]),
+                                    $DaySchedule,
+                                    false
+                                );
+                            }
+                        }
+                        if ($status == 1) {
+                            //employeeID
+                            $this->helper->SaveTotalWorkingHours(
                                 $check_yesterday_Records,
                                 $data,
                                 $this->helper->sequence(0, [$data]),
@@ -84,21 +97,52 @@ class DTR4setSchedule
                             );
                         }
                     }
-                    if ($status == 1) {
-                        //employeeID
-                        $this->helper->SaveTotalWorkingHours(
-                            $check_yesterday_Records,
-                            $data,
-                            $this->helper->sequence(0, [$data]),
-                            $DaySchedule,
-                            false
-                        );
-                    }
                 }
                 //////////////////////////////////////////////////////////////////////////////////
 
             } else {
                 /* Save */
+                if ($this->helper->EntryisAm($this->helper->sequence(0, [$data])[0]['date_time'])) {
+                    if ($status == 0 || $status == 255) {
+                        $scheduleEntry = null;
+                        if (isset($DaySchedule['is_on_call']) && $DaySchedule['is_on_call']) {
+                            // $scheduleEntry = date('Y-m-d H:i:s', strtotime($time_stamps_req['date_start'] . ' ' . $time_stamps_req['first_entry'] . '+' . $max_allowed_entry_for_oncall . ' minutes'));
+                            $scheduleEntry = $DaySchedule['first_entry'];
+                        }
+                        $this->helper->SaveFirstEntry(
+                            $this->helper->sequence(0, [$data])[0],
+                            $BreakTime,
+                            $biometric_id,
+                            false,
+                            $scheduleEntry,
+                            'AM'
+                        );
+                    }
+                }
+
+
+                if ($this->helper->EntryisPm($this->helper->sequence(0, [$data])[0]['date_time'])) {
+
+                    if ($status == 0 || $status == 255) {
+                        $scheduleEntry = null;
+                        if (isset($DaySchedule['is_on_call']) && $DaySchedule['is_on_call']) {
+                            // $scheduleEntry = date('Y-m-d H:i:s', strtotime($time_stamps_req['date_start'] . ' ' . $time_stamps_req['first_entry'] . '+' . $max_allowed_entry_for_oncall . ' minutes'));
+                            $scheduleEntry = $DaySchedule['first_entry'];
+                        }
+
+                        $this->helper->SaveFirstEntry(
+                            $this->helper->sequence(0, [$data])[0],
+                            $BreakTime,
+                            $biometric_id,
+                            false,
+                            $DaySchedule,
+                            'PM'
+                        );
+                    }
+                }
+            }
+        } else {
+            if ($this->helper->EntryisAm($this->helper->sequence(0, [$data])[0]['date_time'])) {
                 if ($status == 0 || $status == 255) {
                     $scheduleEntry = null;
                     if (isset($DaySchedule['is_on_call']) && $DaySchedule['is_on_call']) {
@@ -106,28 +150,35 @@ class DTR4setSchedule
                         $scheduleEntry = $DaySchedule['first_entry'];
                     }
                     $this->helper->SaveFirstEntry(
-                        $this->helper->sequence(0, [$data]),
+                        $this->helper->sequence(0, [$data])[0],
                         $BreakTime,
                         $biometric_id,
                         false,
-                        $scheduleEntry
+                        $DaySchedule,
+                        'AM'
                     );
                 }
             }
-        } else {
-            if ($status == 0 || $status == 255) {
-                $scheduleEntry = null;
-                if (isset($DaySchedule['is_on_call']) && $DaySchedule['is_on_call']) {
-                    // $scheduleEntry = date('Y-m-d H:i:s', strtotime($time_stamps_req['date_start'] . ' ' . $time_stamps_req['first_entry'] . '+' . $max_allowed_entry_for_oncall . ' minutes'));
-                    $scheduleEntry = $DaySchedule['first_entry'];
+
+
+            if ($this->helper->EntryisPm($this->helper->sequence(0, [$data])[0]['date_time'])) {
+
+                if ($status == 0 || $status == 255) {
+                    $scheduleEntry = null;
+                    if (isset($DaySchedule['is_on_call']) && $DaySchedule['is_on_call']) {
+                        // $scheduleEntry = date('Y-m-d H:i:s', strtotime($time_stamps_req['date_start'] . ' ' . $time_stamps_req['first_entry'] . '+' . $max_allowed_entry_for_oncall . ' minutes'));
+                        $scheduleEntry = $DaySchedule['first_entry'];
+                    }
+
+                    $this->helper->SaveFirstEntry(
+                        $this->helper->sequence(0, [$data])[0],
+                        $BreakTime,
+                        $biometric_id,
+                        false,
+                        $DaySchedule,
+                        'PM'
+                    );
                 }
-                $this->helper->SaveFirstEntry(
-                    $this->helper->sequence(0, [$data]),
-                    $BreakTime,
-                    $biometric_id,
-                    false,
-                    $scheduleEntry
-                );
             }
         }
     }
@@ -172,23 +223,25 @@ class DTR4setSchedule
            */
 
         if ($f1 && $f2 && !$f3 && !$f4) {
-            $percent_Trendered = floor($rwm * 0.6);
+            if ($this->helper->EntryisPm($this->helper->sequence(0, [$data])[0]['date_time'])) {
+                $percent_Trendered = floor($rwm * 0.6);
 
-            if ($o_all_min <= $percent_Trendered) { // if allmins rendered is less than the 60% time req . then accept a second entry
+                if ($o_all_min <= $percent_Trendered) { // if allmins rendered is less than the 60% time req . then accept a second entry
 
-                if ($status == 255) {
-                    if ($this->helper->withinInterval($f2, $this->helper->sequence(0, [$data]))) {
+                    if ($status == 255) {
+                        if ($this->helper->withinInterval($f2, $this->helper->sequence(0, [$data]))) {
+                            $this->helper->saveIntervalValidation(
+                                $this->helper->sequence(0, [$data]),
+                                $validate
+                            );
+                        }
+                    }
+                    if ($status == 0) {
                         $this->helper->saveIntervalValidation(
                             $this->helper->sequence(0, [$data]),
                             $validate
                         );
                     }
-                }
-                if ($status == 0) {
-                    $this->helper->saveIntervalValidation(
-                        $this->helper->sequence(0, [$data]),
-                        $validate
-                    );
                 }
             }
         }
@@ -199,8 +252,19 @@ class DTR4setSchedule
            Overtime and undertime, as well as working hours, have already been calculated.
         */
         if ($f1 && $f2 && $f3 && !$f4) {
-            if ($status == 255) {
-                if ($this->helper->withinInterval($f3, $this->helper->sequence(0, [$data]))) {
+            if ($this->helper->EntryisPm($this->helper->sequence(0, [$data])[0]['date_time'])) {
+                if ($status == 255) {
+                    if ($this->helper->withinInterval($f3, $this->helper->sequence(0, [$data]))) {
+                        $this->helper->saveTotalWorkingHours(
+                            $validate,
+                            $data,
+                            $this->helper->sequence(0, [$data]),
+                            $DaySchedule,
+                            false
+                        );
+                    }
+                }
+                if ($status == 1) {
                     $this->helper->saveTotalWorkingHours(
                         $validate,
                         $data,
@@ -209,15 +273,6 @@ class DTR4setSchedule
                         false
                     );
                 }
-            }
-            if ($status == 1) {
-                $this->helper->saveTotalWorkingHours(
-                    $validate,
-                    $data,
-                    $this->helper->sequence(0, [$data]),
-                    $DaySchedule,
-                    false
-                );
             }
         }
         /*Check notset in_am and notset out_pm and  check In_pm and not set out_pm */
@@ -226,8 +281,19 @@ class DTR4setSchedule
             Overtime and undertime, as well as working hours, have already been calculated.
         */
         if (!$f1 && !$f2 && $f3 && !$f4) {
-            if ($status == 255) {
-                if ($this->helper->withinInterval($f3, $this->helper->sequence(0, [$data]))) {
+            if ($this->helper->EntryisPm($this->helper->sequence(0, [$data])[0]['date_time'])) {
+                if ($status == 255) {
+                    if ($this->helper->withinInterval($f3, $this->helper->sequence(0, [$data]))) {
+                        $this->helper->saveTotalWorkingHours(
+                            $validate,
+                            $data,
+                            $this->helper->sequence(0, [$data]),
+                            $DaySchedule,
+                            false
+                        );
+                    }
+                }
+                if ($status == 1) {
                     $this->helper->saveTotalWorkingHours(
                         $validate,
                         $data,
@@ -236,15 +302,6 @@ class DTR4setSchedule
                         false
                     );
                 }
-            }
-            if ($status == 1) {
-                $this->helper->saveTotalWorkingHours(
-                    $validate,
-                    $data,
-                    $this->helper->sequence(0, [$data]),
-                    $DaySchedule,
-                    false
-                );
             }
         }
     }
