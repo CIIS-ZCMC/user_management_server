@@ -136,23 +136,23 @@ class ScheduleController extends Controller
 
             foreach ($selected_date as $time_shift) {
                 foreach ($time_shift['date'] as $date_selected) {
-                    $schedule = Schedule::where('time_shift_id', $time_shift['time_shift_id'])->where('date', $date_selected['date'])->first();
-        
+                    
+                    $schedule = Schedule::where('time_shift_id', $time_shift['time_shift_id'])->where('date', $date_selected)->first();
+                    
                     if ($schedule) {
                         $data = $schedule;
                     } else {
-                        
-                        $dates = Carbon::parse($date_selected['date']);
+                        $dates = Carbon::parse($date_selected);
                         $isWeekend = $dates->dayOfWeek === 6 || $dates->dayOfWeek === 0;
-    
+                        
                         if ($isWeekend) {
                             $is_weekend = 1;
                         }
     
                         $data = new Schedule;
-    
+                        
                         $data->time_shift_id    = $time_shift['time_shift_id'];
-                        $data->date             = $date_selected['date'];
+                        $data->date             = $date_selected;
                         $data->is_weekend       = $is_weekend;
                         $data->save();
                     }
@@ -164,12 +164,10 @@ class ScheduleController extends Controller
                     // }
 
                     foreach ($employees as $employee) {
-                        
-                        if ($this->hasOverlappingSchedule($time_shift['time_shift_id'], $date_selected['date'], $employee['employee_id'])) {
-                            return response()->json(['message' => 'Overlap with existing schedule'], Response::HTTP_FOUND);
-                        }
-                        
-                        $existing_employee_ids = EmployeeProfile::where('id', $employee['employee_id'])->pluck('id');
+                        // if ($this->hasOverlappingSchedule($time_shift['time_shift_id'], $date_selected['date'], $employee['employee_id'])) {
+                        //     return response()->json(['message' => 'Overlap with existing schedule'], Response::HTTP_FOUND);
+                        // }
+                        $existing_employee_ids = EmployeeProfile::where('id', $employee)->pluck('id');
 
                         foreach ($existing_employee_ids as $employee_id) {
                             $check_employee_schedules = EmployeeSchedule::where('employee_profile_id', $employee_id)

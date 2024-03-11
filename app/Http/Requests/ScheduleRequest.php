@@ -23,13 +23,13 @@ class ScheduleRequest extends FormRequest
     {
         return [
             // 'employee.*.employee_id' => 'required|array',
-            'employee*.employee_id' => 'required|array',
-            'month' => 'required|date_format:M|',
-            'time_shift_id' => 'required|integer',
-            'is_weekend.*' => 'required|integer',
-            'date_start' => 'nullable|date_format:Y-m-d',
-            'date_end' => 'nullable|date_format:Y-m-d',
-            'selected_days.*' => 'nullable|string',
+            // 'employee*.employee_id' => 'required|array',
+            // 'month' => 'required|date_format:M|',
+            // 'time_shift_id' => 'required|integer',
+            // 'is_weekend.*' => 'required|integer',
+            // 'date_start' => 'nullable|date_format:Y-m-d',
+            // 'date_end' => 'nullable|date_format:Y-m-d',
+            // 'selected_days.*' => 'nullable|string',
         ];
     }
 }
