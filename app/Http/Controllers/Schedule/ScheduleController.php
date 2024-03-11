@@ -177,12 +177,11 @@ class ScheduleController extends Controller
 
                             if ($check_employee_schedules !== null) {
                                 // Schedule already exists for this employee, update the schedule ID
-                                $check_employee_schedules->schedule_id = $schedule->id;
-                                $check_employee_schedules->update();
-                            } else {
-                                // No schedule exists for this employee, attach the employee to the schedule
-                                $data->employee()->attach($employee_id);
+                                $check_employee_schedules->delete();
                             }
+                            
+                            // No schedule exists for this employee, attach the employee to the schedule
+                            $data->employee()->attach($employee_id);
                             
                             $employee_schedule = $data->employee()->where('employee_profile_id', $employee_id)->first()->id;
                             Helpers::registerEmployeeScheduleLogs($employee_schedule, $user->id, 'Store');
