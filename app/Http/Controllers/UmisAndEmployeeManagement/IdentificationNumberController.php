@@ -5,11 +5,8 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 use App\Http\Controllers\Controller;
 
 use App\Http\Requests\AuthPinApprovalRequest;
-use App\Http\Requests\PasswordApprovalRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\Hash;
 use App\Helpers\Helpers;
 use App\Http\Requests\IdentificationNumberRequest;
 use App\Http\Resources\IdentificationNumberResource;
@@ -140,7 +137,7 @@ class IdentificationNumberController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $identification = IdentificationNumber::findOrFail($id);
@@ -168,7 +165,7 @@ class IdentificationNumberController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $identification = IdentificationNumber::where('personal_information_id', $id)->first();
@@ -196,7 +193,7 @@ class IdentificationNumberController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $employee_profile = EmployeeProfile::find($id);

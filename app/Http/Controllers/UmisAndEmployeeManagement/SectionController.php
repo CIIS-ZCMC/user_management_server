@@ -66,7 +66,7 @@ class SectionController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $section = Section::find($id);
@@ -114,7 +114,7 @@ class SectionController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $section = Section::find($id);
@@ -132,7 +132,7 @@ class SectionController extends Controller
             } 
 
             if($employee_profile->id !== $section->supervisor_employee_profile_id){
-                return response()->json(['message' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => 'Unauthorized'], Response::HTTP_FORBIDDEN);
             }
 
             $user = $request->user;
@@ -141,7 +141,7 @@ class SectionController extends Controller
             $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
 
             if (!Hash::check($cleanData['password'].env("SALT_VALUE"), $decryptedPassword)) {
-                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
             }
 
             $cleanData = [];
@@ -265,7 +265,7 @@ class SectionController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
             
             $section = Section::find($id);
@@ -347,7 +347,7 @@ class SectionController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $section = Section::findOrFail($id);

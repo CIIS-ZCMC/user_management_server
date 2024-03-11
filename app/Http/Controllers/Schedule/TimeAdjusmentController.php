@@ -173,7 +173,7 @@ class TimeAdjusmentController extends Controller
             $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
 
             if (!Hash::check($password . env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Password incorrect."], Response::HTTP_FORBIDDEN);
             }
             
             $status = null;
