@@ -225,9 +225,7 @@ class ScheduleController extends Controller
     public function edit(Request $request, $id)
     {
         try {
-            $user = $request->user;
-            // API For Personal Calendar
-            $model = EmployeeSchedule::where('employee_profile_id', $user->id)->get();
+            $model = EmployeeSchedule::where('employee_profile_id', $id)->get();
             return response()->json([
                 'data' => EmployeeScheduleResource::collection($model),
                 'holiday' => Holiday::all()
