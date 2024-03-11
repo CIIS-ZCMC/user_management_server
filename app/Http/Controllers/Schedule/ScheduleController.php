@@ -199,8 +199,6 @@ class ScheduleController extends Controller
                         }
                     }
                 }
-
-                return $check_employee_schedules;
             }
            
 
