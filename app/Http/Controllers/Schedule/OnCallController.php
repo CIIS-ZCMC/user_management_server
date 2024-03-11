@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Schedule;
 
+use App\Http\Requests\OnCallRequest;
 use App\Http\Resources\EmployeeScheduleResource;
+use App\Http\Resources\OnCallResource;
 use App\Models\EmployeeSchedule;
-use App\Models\Schedule;
+use App\Models\OnCall;
 use App\Models\EmployeeProfile;
 
 use App\Helpers\Helpers;
@@ -29,29 +31,22 @@ class OnCallController extends Controller
     public function index(Request $request)
     {
         try {
-            
+
             $user = $request->user;
             $assigned_area = $user->assignedArea->findDetails();
+            //Array
+            $employees  = [];
+            $myEmployees = $user->areaEmployee($assigned_area);
+            $supervisors = $user->sectorHeads();
 
-            $sql = EmployeeProfile::with(['schedule' => function ($query) use ($request) {
-                    $query->with(['timeShift'])->whereYear('date', '=', $request->year)->whereMonth('date', '=', $request->month)
-                    ->where('is_on_call', '=', 1);
-            }])->whereHas('assignedArea', function ($query) use ($user, $assigned_area) {
-                $query->where([strtolower($assigned_area['sector']) . '_id' => $user->assignedArea->id]);
-            })->get();
+            $employees = [ ...$myEmployees,...$supervisors];
+            $employee_ids = collect($employees)->pluck('id')->toArray();
 
-            $data = [];
-            foreach ($sql as $key => $value) {
-                $data[] = [
-                    'id' => $value['id'],
-                    'name' => $value->name(),
-                    'employee_id' => $value['employee_id'],
-                    'biometric_id' => $value['biometric_id'],
-                    'schedule' => $value['schedule'],
-                ];
-            }
+            $model = OnCall::with(['employee' => function ($query) use ($employee_ids) {
+                $query->whereIn('id', $employee_ids);
+            }])->get();
 
-            return response()->json(['data' => $data], Response::HTTP_OK);
+            return response()->json(['data' => OnCallResource::collection($model)], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
@@ -68,8 +63,8 @@ class OnCallController extends Controller
         try {
 
             $user = $request->user;
-            $data = EmployeeSchedule::where('requested_employee_id', $user->id)->get();
-            return response()->json(['data' => $data], Response::HTTP_OK);
+            $model = OnCall::where('employee_profile_id', $user->id)->get();
+            return response()->json(['data' => OnCallResource::collection($model)], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
@@ -81,9 +76,65 @@ class OnCallController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(OnCallRequest $request)
     {
         try {
+            $cleanData = [];
+
+            foreach ($request->all() as $key => $value) {
+                if (empty($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                if (is_array($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                if (strtotime($value)) {
+                    $datetime = Carbon::parse($value);
+                    $cleanData[$key] = $datetime->format('Y-m-d'); // Adjust the format as needed
+                    continue;
+                }
+
+                $cleanData[$key] = strip_tags($value);
+            }
+
+            $employee_on_calls = OnCall::where('employee_profile_id', $cleanData['employee_profile_id'])
+                            ->where('date', $cleanData['date'])
+                            ->first();
+
+            if ($employee_on_calls) {
+                return response()->json(['message' => "On Call Schedule already exist"], Response::HTTP_FOUND);
+            } 
+
+            $data = OnCall::create($cleanData);
+
+            Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
+            return response()->json([
+                'data' =>  new OnCallResource($data),
+                // 'logs' => Helpers::registerEmployeeScheduleLogs($data->id, $request->user->id, 'Store'),
+                'message' => 'New On Call Schedule has been added.',
+            ], Response::HTTP_OK);
+
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, $id)
+    {
+        try {
+            $data = OnCall::findOrFail($id);
+
+            if (!$data) {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
 
             $cleanData = [];
 
@@ -103,63 +154,26 @@ class OnCallController extends Controller
                     $cleanData[$key] = $datetime->format('Y-m-d'); // Adjust the format as needed
                     continue;
                 }
-                if (is_int($value)) {
-                    $cleanData[$key] = $value;
-                    continue;
-                }
 
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $data = null;
-            $msg = null;
-            $is_weekend = 0;
+            $employee_on_calls = OnCall::where('employee_profile_id', $cleanData['employee_profile_id'])
+                                        ->where('date', $cleanData['date'])
+                                        ->first();
 
-            $schedule = Schedule::where('time_shift_id', $cleanData['time_shift_id'])
-                ->where('date', $cleanData['date'])
-                ->first();
+            if ($employee_on_calls) {
+                return response()->json(['message' => "On Call Schedule already exist"], Response::HTTP_FOUND);
+            } 
 
-            if (!$schedule) {
-                $date = Carbon::parse($cleanData['date']);
-                $isWeekend = $date->dayOfWeek === 6 || $date->dayOfWeek === 0;
+            $data->employee_profile_id = $cleanData['employee_profile_id'];
+            $data->update();
 
-                if ($isWeekend) {
-                    $is_weekend = 1;
-                }
-
-                $data = new Schedule;
-                $data->time_shift_id = $cleanData['time_shift_id'];
-                $data->date = $cleanData['date'];
-                $data->remarks = $cleanData['remarks'];
-                $data->is_weekend = $is_weekend;
-                $data->save();
-            } else {
-                $data = $schedule;
-            }
-
-            $employee_id = EmployeeProfile::select('id')->where('id', $cleanData['employee_id'])->first();
-            if ($employee_id != null) {
-
-                $query = DB::table('employee_profile_schedule')->where([
-                    ['employee_profile_id', '=', $employee_id],
-                    ['schedule_id', '=', $data->id],
-                    ['is_on_call', '=', true],
-                ])->first();
-
-                if ($query) {
-                    $msg = 'request already exist';
-
-                } else {
-                    $data->employee()->attach($employee_id, ['is_on_call' => true]);
-                    $msg = 'New employee schedule registered.';
-                }
-            }
-
-            Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
+            Helpers::registerSystemLogs($request, $data->id, true, 'Success in updating ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json([
-                'data' =>  new EmployeeScheduleResource($data),
-                'logs' => Helpers::registerEmployeeScheduleLogs($data->id, $request->user->id, 'Store'),
-                'msg' => $msg,
+                'data' =>  new OnCallResource($data),
+                // 'logs' => Helpers::registerEmployeeScheduleLogs($data->id, $request->user->id, 'Store'),
+                'message' => 'On Call Schedule is up to date.',
             ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
@@ -169,20 +183,12 @@ class OnCallController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
      * Remove the specified resource from storage.
      */
     public function destroy($id, Request $request)
     {
         try {
-            $data = EmployeeSchedule::find($id);
+            $data = OnCall::find($id);
 
             if (!$data) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);

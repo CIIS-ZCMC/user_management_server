@@ -1659,7 +1659,7 @@ class EmployeeProfileController extends Controller
         }
     }
     
-    public function employeesForOIC($id, $sector, Request $request)
+    public function employeesForOIC(Request $request)
     {
         try {
             $employee_profile = $request->user;
@@ -1667,20 +1667,71 @@ class EmployeeProfileController extends Controller
             $is_mcc = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $employee_profile->id)->first();
 
             if($is_mcc){
-                $employees = EmployeeProfile::where('biometric_id', '<>', null)->where('authorization_pin', '<>', null)->get();
+                $employees = EmployeeProfile::where('biometric_id', '<>', null)->where('authorization_pin', '<>', null)
+                    ->where('id', '<>', $employee_profile->id)->get();
           
                 return response()->json([
                     "data" => EmployeeProfileResource::collection($employees), 
                     'message' => "Success login."], Response::HTTP_OK);
             }
 
-            $my_assigned_area = $employee_profile->assignedArea->findDetails();
             
-            $assign_areas = AssignArea::where(Str::lower($my_assigned_area['sector']) . "_id", $my_assigned_area['details']->id)->get();
+            $position = $employee_profile->position();
+            $employees = [];
 
-            $employees = $assign_areas->map(function ($assign_area) {
-                return $assign_area->employeeProfile;
-            })->flatten()->all();
+            if (!$position) {
+                return response()->json(['message' => "You don't have authorization as a supervisor of area."], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $my_assigned_area = $employee_profile->assignedArea->findDetails();
+
+            $employees = $this->retrieveEmployees($employees, Str::lower($my_assigned_area['sector']) . "_id", $my_assigned_area['details']->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+
+            /** Retrieve entire employees of Division to Unit if it has  unit */
+            if ($my_assigned_area['sector'] === 'Division') {
+                $departments = Department::where('division_id', $my_assigned_area['details']->id)->get();
+
+                foreach ($departments as $department) {
+                    $employees = $this->retrieveEmployees($employees, 'department_id', $department->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+                    $sections = Section::where('department_id', $department->id)->get();
+                    foreach ($sections as $section) {
+                        $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+                        $units = Unit::where('section_id', $section->id)->get();
+                        foreach ($units as $unit) {
+                            $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+                        }
+                    }
+                }
+
+                $sections = Section::where('division_id', $my_assigned_area['details']->id)->get();
+                foreach ($sections as $section) {
+                    $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+                    $units = Unit::where('section_id', $section->id)->get();
+                    foreach ($units as $unit) {
+                        $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+                    }
+                }
+            }
+
+            /** Retrieve entire emplyoees of Department to Unit */
+            if ($my_assigned_area['sector'] === 'Department') {
+                $sections = Section::where('department_id', $my_assigned_area['details']->id)->get();
+                foreach ($sections as $section) {
+                    $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+                    $units = Unit::where('section_id', $section->id)->get();
+                    foreach ($units as $unit) {
+                        $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+                    }
+                }
+            }
+
+            /** Retrieve entire employees of Section to Unit if it has Unit */
+            if ($my_assigned_area['sector'] === 'Section') {
+                $units = Unit::where('section_id', $my_assigned_area['details']->id)->get();
+                foreach ($units as $unit) {
+                    $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+                }
+            }
 
             return response()->json([
                 "data" => EmployeeProfileResource::collection($employees), 

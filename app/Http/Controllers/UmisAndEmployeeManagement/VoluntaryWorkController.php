@@ -151,7 +151,7 @@ class VoluntaryWorkController extends Controller
             }
 
             return response()->json([
-                'data' => new VoluntaryWork($voluntary_work), 
+                'data' => new VoluntaryWorkResource ($voluntary_work), 
                 'message' => 'Voluntary work record found.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
