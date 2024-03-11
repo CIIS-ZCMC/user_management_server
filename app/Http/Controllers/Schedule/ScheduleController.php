@@ -226,7 +226,7 @@ class ScheduleController extends Controller
     {
         try {
             // API For Personal Calendar
-            $model = EmployeeSchedule::findOrFail($id);
+            $model = EmployeeSchedule::where('employee_profile_id', $id)->get();
             
             $data = [];
             foreach ($model as $value) {
