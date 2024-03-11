@@ -400,7 +400,6 @@ class LeaveApplicationController extends Controller
             $user = $request->user;
             $employee_profile = $user;
             $cleanData['pin'] = strip_tags($request->password);
-            $area = null;
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
@@ -448,45 +447,14 @@ class LeaveApplicationController extends Controller
 
             $employee_profile = $leave_application->employeeProfile;
 
-            $area_details = $employee_profile->assignedArea->findDetails();
-
-            switch($area_details['sector']){
-                case "Division":
-                    $area = $employee_profile->assignedArea->division;
-                    break;
-                case "Department":
-                    $area = $employee_profile->assignedArea->department;
-                    break;
-                case "Section":
-                    $area = $employee_profile->assignedArea->section;
-                    break;
-                case "Unit":
-                    $area = $employee_profile->assignedArea->unit;
-                    break;
-                default:
-                    return response()->json(['message' => "Invalid area."], Response::HTTP_BAD_REQUEST);
-            }
-
             LeaveApplicationLog::create([
                 'action_by' => $employee_profile->id,
                 'leave_application_id' => $leave_application->id,
                 'action' => $log_status
             ]);
-
-            $oic = [
-                'id' => $area->id,
-                'name' => $area->name,
-                'code' => $area->code,
-                'oic' => $area->oic->personalInformation->name(),
-                'position' => $area->oic->assignedArea->designation->name,
-                'updated_at' => $area->updated_at
-            ];
-
-            $response = new LeaveApplicationResource($leave_application);
-            $response['oic'] = $oic;
-
+           
             return response()->json([
-                'data' => $response,
+                'data' =>  new LeaveApplicationResource($leave_application),
                 'message' => 'Successfully approved application.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -783,16 +751,12 @@ class LeaveApplicationController extends Controller
                         'used_leave_credits' => $usedCredits
                     ];
                 }
-
-                $response = new LeaveApplicationResource($leave_application);
-                $response['oic'] = $oic;
-
+               
                 return response()->json([
-                    'data' => $response,
+                    'data' =>  new LeaveApplicationResource($leave_application),
                     'credits' => $result ? $result : [],
                     'message' => 'Successfully applied for ' . $leave_type->name
                 ], Response::HTTP_OK);
-               
             }
            
         } catch (\Throwable $th) {
@@ -804,44 +768,13 @@ class LeaveApplicationController extends Controller
     {
         try {
             $leave_application = LeaveApplication::find($id);
-            $area = null;
 
-            $employee_profile = $leave_application->employeeProfile;
-
-            $area_details = $employee_profile->assignedArea->findDetails();
-
-            switch($area_details['sector']){
-                case "Division":
-                    $area = $employee_profile->assignedArea->division;
-                    break;
-                case "Department":
-                    $area = $employee_profile->assignedArea->department;
-                    break;
-                case "Section":
-                    $area = $employee_profile->assignedArea->section;
-                    break;
-                case "Unit":
-                    $area = $employee_profile->assignedArea->unit;
-                    break;
-                default:
-                    return response()->json(['message' => "Invalid area."], Response::HTTP_BAD_REQUEST);
+            if(!$leave_application){
+                return response()->json(['message' => "No leave application record."], Response::HTTP_NOT_FOUND);
             }
 
-
-            $oic = [
-                'id' => $area->id,
-                'name' => $area->name,
-                'code' => $area->code,
-                'oic' => $area->oic->personalInformation->name(),
-                'position' => $area->oic->assignedArea->designation->name,
-                'updated_at' => $area->updated_at
-            ];
-
-            $response = new LeaveApplicationResource($leave_application);
-            $response['oic'] = $oic;
-
             return response()->json([
-                'data' => $response,
+                'data' => new LeaveApplicationResource($leave_application),
                 'message' => 'Retrieve leave application record.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -855,7 +788,6 @@ class LeaveApplicationController extends Controller
             $user = $request->user;
             $employee_profile = $user;
             $cleanData['pin'] = strip_tags($request->password);
-            $area = null;
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
@@ -878,8 +810,6 @@ class LeaveApplicationController extends Controller
             {
                 $status='declined by approving officer';
             }
-
-            // return response()->json(['message' => $leave_type->is_special], 401);
 
             $leave_application->update([
                 'status' => $status,
@@ -906,41 +836,8 @@ class LeaveApplicationController extends Controller
                 ]);
             }
 
-            $employee_profile = $leave_application->employeeProfile;
-
-            $area_details = $employee_profile->assignedArea->findDetails();
-
-            switch($area_details['sector']){
-                case "Division":
-                    $area = $employee_profile->assignedArea->division;
-                    break;
-                case "Department":
-                    $area = $employee_profile->assignedArea->department;
-                    break;
-                case "Section":
-                    $area = $employee_profile->assignedArea->section;
-                    break;
-                case "Unit":
-                    $area = $employee_profile->assignedArea->unit;
-                    break;
-                default:
-                    return response()->json(['message' => "Invalid area."], Response::HTTP_BAD_REQUEST);
-            }
-
-            $oic = [
-                'id' => $area->id,
-                'name' => $area->name,
-                'code' => $area->code,
-                'oic' => $area->oic->personalInformation->name(),
-                'position' => $area->oic->assignedArea->designation->name,
-                'updated_at' => $area->updated_at
-            ];
-
-            $response = new LeaveApplicationResource($leave_application);
-            $response['oic'] = $oic;
-
             return response()->json([
-                'data' => $response,
+                'data' => new LeaveApplicationResource($leave_application),
                 'message' => 'Declined leave application successfully.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
