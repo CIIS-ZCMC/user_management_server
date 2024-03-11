@@ -64,7 +64,86 @@ class EmployeeScheduleController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        try {
+            $cleanData = [];
+
+            foreach ($request->all() as $key => $value) {
+                if (empty($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                if (is_array($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                if (is_int($value)) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+
+                $cleanData[$key] = strip_tags($value);
+            }
+
+            $is_weekend     = 0;
+            $data           = null;
+            $user           = $request->user;
+
+            foreach ($cleanData['selected_date'] as $value) {
+                // if ($this->hasOverlappingSchedule($value['time_shift_id'], $value['date'], $cleanData['employee_id'])) {
+                //     return response()->json(['message' => 'Overlap with existing schedule'], Response::HTTP_FOUND);
+                // }
+
+                $schedule = Schedule::where('time_shift_id', $value['time_shift_id'])->where('date', $value['date'])->first();
+        
+                if ($schedule) {
+                    $data = $schedule;
+                } else {
+                    
+                    $dates = Carbon::parse($value['date']);
+                    $isWeekend = $dates->dayOfWeek === 6 || $dates->dayOfWeek === 0;
+
+                    if ($isWeekend) {
+                        $is_weekend = 1;
+                    }
+
+                    $data = new Schedule;
+
+                    $data->time_shift_id    = $value['time_shift_id'];
+                    $data->date             = $value['date'];
+                    $data->is_weekend       = $is_weekend;
+                    $data->save();
+                }
+
+                $employee_id = EmployeeProfile::where('id', $cleanData['employee_id'])->pluck('id');
+                
+                $check_employee_schedules = EmployeeSchedule::where('employee_profile_id', $employee_id)
+                                                            ->where('schedule_id', $data->id)
+                                                            ->where('deleted_at', null)
+                                                            ->first();
+
+                if ($check_employee_schedules !== null) {
+                    return response()->json(['message' => 'Schedule Already Exist'], Response::HTTP_FOUND);
+                }
+                
+                $data->employee()->attach($employee_id);
+
+                $employee_schedule = $data->employee()->where('employee_profile_id', $employee_id)->first()->id;
+                // Helpers::registerEmployeeScheduleLogs($employee_schedule, $user->id, 'Store');
+            }
+
+            // Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
+            return response()->json([
+                'data' =>  new ScheduleResource($data),
+                'message' => 'New employee schedule registered.'
+            ], Response::HTTP_OK);
+            
+        } catch (\Throwable $th) {
+            return $th;
+            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**
