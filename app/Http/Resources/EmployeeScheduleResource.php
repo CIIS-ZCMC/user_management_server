@@ -14,24 +14,19 @@ class EmployeeScheduleResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        // $schedule = [
-        //     "id"    => $this->schedule->timeShift->id, // time shift id
-        //     "start" => $this->schedule->date,
-        //     'title' => $this->schedule->timeShift->timeShiftDetails(),
-        //     'color' => $this->schedule->timeShift->color,
-        // ];
-
         $schedules = [];
 
-        foreach ($this->schedule as $value) {
-            $scheduleData = [
-                "id"    => $value->timeShift, // time shift id
-                "start" => $value->date,
-                'title' => $value->timeShift->timeShiftDetails(),
-                'color' => $value->timeShift,
-            ];
-            
-            $schedules[] = $scheduleData;
+        foreach ($this->employee->schedule as $schedule) {
+            if ($schedule->timeShift) {
+                $scheduleData = [
+                    "id"    => $schedule->timeShift->id, // time shift id
+                    "start" => $schedule->date,
+                    'title' => $schedule->timeShiftDetails(),
+                    'color' => $schedule->timeShift->color,
+                ];
+
+                $schedules[] = $scheduleData;
+            }
         }
 
         return [
@@ -39,9 +34,4 @@ class EmployeeScheduleResource extends JsonResource
             'schedule' => $schedules
         ];
     }
-        // return [
-        //     "employee_id" => $this->id,
-        //     "employee_profile" => $employee,
-        //     "schedule" => $schedule,
-        // ];
 }
