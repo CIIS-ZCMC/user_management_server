@@ -133,6 +133,7 @@ class ScheduleController extends Controller
             $user           = $request->user;
             $employees      = $cleanData['employee'];
             $selected_date  = $cleanData['selected_date'];   // Selected Date;
+            $check_employee_schedules = null;
 
             if ($selected_date === "") {
                 foreach ($employees as $employee) {
@@ -177,29 +178,29 @@ class ScheduleController extends Controller
                         // }
     
                         foreach ($employees as $employee) {
-                            if ($this->hasOverlappingSchedule($time_shift['time_shift_id'], $date_selected['date'], $employee['employee_id'])) {
-                                return response()->json(['message' => 'Overlap with existing schedule'], Response::HTTP_FOUND);
-                            }
+                            // if ($this->hasOverlappingSchedule($time_shift['time_shift_id'], $date_selected['date'], $employee['employee_id'])) {
+                            //     return response()->json(['message' => 'Overlap with existing schedule'], Response::HTTP_FOUND);
+                            // }
 
                             $existing_employee_ids = EmployeeProfile::where('id', $employee)->pluck('id');
-    
+                                
                             foreach ($existing_employee_ids as $employee_id) {
-                                $check_employee_schedules = EmployeeSchedule::where('employee_profile_id', $employee_id)->first();
+                                $check_employee_schedules = EmployeeSchedule::where('employee_profile_id', $employee_id)->whereNull('deleted_at')->first();
     
                                 if ($check_employee_schedules !== null) {
-                                    // Schedule already exists for this employee, update the schedule ID
-                                    $check_employee_schedules->delete();
+                                    $check_employee_schedules->forceDelete();
                                 }
-    
                                 // No schedule exists for this employee, attach the employee to the schedule
                                 $data->employee()->attach($employee_id);
                                 
-                                $employee_schedule = $data->employee()->where('employee_profile_id', $employee_id)->first()->id;
-                                Helpers::registerEmployeeScheduleLogs($employee_schedule, $user->id, 'Store');
+                                // $employee_schedule = $data->employee()->where('employee_profile_id', $employee_id)->first()->id;
+                                // Helpers::registerEmployeeScheduleLogs($employee_schedule, $user->id, 'Store');
                             }
                         }
                     }
                 }
+
+                return $check_employee_schedules;
             }
            
 
