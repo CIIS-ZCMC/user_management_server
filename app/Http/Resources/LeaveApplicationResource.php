@@ -20,15 +20,13 @@ class LeaveApplicationResource extends JsonResource
 
         $employee_profile = $this->employeeProfile;
         $area = $this->employeeProfile->assignedArea->findDetails();
-        $area_details = [];
-        $position = $this->employeeProfile->position();
-        $oic = [];
         $leave_credits = EmployeeLeaveCredit::where('employee_profile_id', $this->employeeProfile->id)->where('leave_type_id', $this->leave_type_id)->first();
+        $oic = null;
 
         $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $this->employeeProfile->id)->first();
         $hrmo = Section::where('code', 'HRMO')->first();
-
-        if($position !== null){
+        
+        if($this->candidate_oic_id  !== null){
             switch($area['sector']){
                 case "Division":
                     $area_details = $employee_profile->assignedArea->division;
@@ -43,14 +41,13 @@ class LeaveApplicationResource extends JsonResource
                     $area_details = $employee_profile->assignedArea->unit;
                     break;
             }
-            
+
             $oic = [
                 'id' => $area_details->id,
                 'name' => $area_details->name,
                 'code' => $area_details->code,
-                'oic' => $area_details->oic->personalInformation->name(),
-                'position' => $area_details->oic->assignedArea->designation->name,
-                'updated_at' => $area_details->updated_at
+                'oic' => $this->oic->personalInformation->name(),
+                'position' => $this->oic->assignedArea->designation->name
             ];
         }
 

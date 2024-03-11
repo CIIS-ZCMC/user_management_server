@@ -26,9 +26,6 @@ use App\Models\EmployeeLeaveCreditLogs;
 use App\Models\EmployeeProfile;
 use App\Models\LeaveApplicationLog;
 use App\Models\LeaveApplicationRequirement;
-use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\Hash;
-use App\Http\Resources\EmployeeLeaveCredit as EmployeeLeaveCreditResource;
 
 class LeaveApplicationController extends Controller
 {
@@ -496,8 +493,6 @@ class LeaveApplicationController extends Controller
     public function store(LeaveApplicationRequest $request)
     {
         try {
-            $employee_profile_controller = new EmployeeProfileController();
-            
             $employee_profile = $request->user;
             $recommending_and_approving = Helpers::getRecommendingAndApprovingOfficer($employee_profile->assignedArea->findDetails(), $employee_profile->id);
             $hrmo_officer = Helpers::getHrmoOfficer();
@@ -539,6 +534,7 @@ class LeaveApplicationController extends Controller
                     $cleanData['applied_credits'] = $daysDiff;
                     $cleanData['employee_profile_id'] = $employee_profile->id;
                     $cleanData['hrmo_officer'] = $hrmo_officer;
+                    $cleanData['candicate_oic_id'] = strip_tags($request->candidate_oic_id);
 
                     $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $employee_profile->id)->first();
 
@@ -568,18 +564,6 @@ class LeaveApplicationController extends Controller
                     }
     
                     $leave_application = LeaveApplication::create($cleanData);
-                    
-                    if($request->OIC !== null){
-                        $result = $employee_profile_controller->assignOICByEmployeeID($request);
-
-                        if($result->getStatusCode() === Response::HTTP_OK){ // Check if the data key exists in the response
-                            $responseData = json_decode($result->getContent(), true);
-                        
-                            if (isset($responseData['data'])) {
-                                $oic = $responseData['data'];
-                            }
-                        }
-                    }
                    
                     if ($request->requirements) {
                         $index = 0;
@@ -620,6 +604,7 @@ class LeaveApplicationController extends Controller
                         $cleanData['applied_credits'] = $daysDiff;
                         $cleanData['employee_profile_id'] = $employee_profile->id;
                         $cleanData['hrmo_officer'] = $hrmo_officer;
+                        $cleanData['candicate_oic_id'] = strip_tags($request->candidate_oic_id);
                         
                         $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $employee_profile->id)->first();
 
@@ -648,18 +633,6 @@ class LeaveApplicationController extends Controller
                         }
     
                         $leave_application = LeaveApplication::create($cleanData);
-                    
-                        if($request->OIC!== null){
-                            $result = $employee_profile_controller->assignOICByEmployeeID($request);
-    
-                            if($result->getStatusCode() === Response::HTTP_OK){ // Check if the data key exists in the response
-                                $responseData = json_decode($result->getContent(), true);
-                            
-                                if (isset($responseData['data'])) {
-                                    $oic = $responseData['data'];
-                                }
-                            }
-                        }
     
                         if ($request->without_pay == 0) {
                             $previous_credit = $employee_credit->total_leave_credits;

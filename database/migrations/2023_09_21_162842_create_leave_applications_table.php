@@ -29,6 +29,8 @@ return new class extends Migration
             $table->text('reason')->nullable();
             $table->unsignedBigInteger('employee_profile_id')->unsigned();
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles')->onDelete('cascade');
+            $table->unsignedBigInteger('candidate_oic_id')->unsigned()->nullable();
+            $table->foreign('candidate_oic_id')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->unsignedBigInteger('leave_type_id')->unsigned();
             $table->foreign('leave_type_id')->references('id')->on('leave_types')->onDelete('cascade');
             $table->unsignedBigInteger('hrmo_officer')->unsigned()->nullable();
