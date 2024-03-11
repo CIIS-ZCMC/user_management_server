@@ -185,11 +185,9 @@ class ScheduleController extends Controller
                             $existing_employee_ids = EmployeeProfile::where('id', $employee)->pluck('id');
                                 
                             foreach ($existing_employee_ids as $employee_id) {
-                                $check_employee_schedules = EmployeeSchedule::where('employee_profile_id', $employee_id)->whereNull('deleted_at')->first();
-    
-                                if ($check_employee_schedules !== null) {
-                                    $check_employee_schedules->forceDelete();
-                                }
+                                $check_employee_schedules = EmployeeSchedule::where('employee_profile_id', $employee_id)->whereNull('deleted_at')->first();    
+                                $check_employee_schedules->forceDelete();
+        
                                 // No schedule exists for this employee, attach the employee to the schedule
                                 $data->employee()->attach($employee_id);
                                 
