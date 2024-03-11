@@ -205,7 +205,7 @@ class FamilyBackgroundController extends Controller
             $cleanData['pin'] = strip_tags($request->pin);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $family_background = FamilyBackground::findOrFail($id);
@@ -233,7 +233,7 @@ class FamilyBackgroundController extends Controller
             $cleanData['pin'] = strip_tags($request->pin);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $family_background = FamilyBackground::where('personal_information_id',$id)->first();
@@ -261,7 +261,7 @@ class FamilyBackgroundController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $employee = EmployeeProfile::find($id);

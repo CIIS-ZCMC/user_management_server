@@ -103,7 +103,7 @@ class TwoFactorAuthController extends Controller
                 $this->getOTP($employee);
                 return redirect()->route('mail.sendOTP', ['data' => $employee_Data])->cookie('access', json_encode(['email' => $email, 'employeeID' => $employee_ID]), 60, '/', env('SESSION_DOMAIN'), true);
             }
-            return response()->json(['message' => 'Records not found'], Response::HTTP_UNAUTHORIZED);
+            return response()->json(['message' => 'Records not found'], Response::HTTP_FORBIDDEN);
         } catch (\Throwable $th) {
             //throw $th;
         }
@@ -131,14 +131,14 @@ class TwoFactorAuthController extends Controller
                 if ($this->isOTPActive($employee)) {
                     $activecode  =   $this->getOTP($employee);
                 } else {
-                    return response()->json(['message' => 'Code Expired'], Response::HTTP_UNAUTHORIZED);
+                    return response()->json(['message' => 'Code Expired'], Response::HTTP_FORBIDDEN);
                 }
                 if ($otpCode == $activecode) {
                     return response()->json(['message' => 'OTP code matched'], Response::HTTP_OK);
                 }
             }
 
-            return response()->json(['message' => 'Invalid code'], Response::HTTP_UNAUTHORIZED);
+            return response()->json(['message' => 'Invalid code'], Response::HTTP_FORBIDDEN);
         } catch (\Throwable $th) {
             return $th;
         }
