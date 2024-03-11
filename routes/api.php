@@ -1870,7 +1870,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function () {
-            Route::get('schedules-time-shift', 'ScheduleController@scheduleTimeShift');
+            Route::get('schedules-time-shift', 'TimeShiftController@index');
         });
 
         /**
