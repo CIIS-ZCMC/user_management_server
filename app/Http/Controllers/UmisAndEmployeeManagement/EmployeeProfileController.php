@@ -1788,6 +1788,7 @@ class EmployeeProfileController extends Controller
                 'name' => $area->name,
                 'code' => $area->code,
                 'oic' => $area->oic->personalInformation->name(),
+                'position' => $area->oic->assignedArea->designation->name,
                 'updated_at' => $area->updated_at
             ];
             
