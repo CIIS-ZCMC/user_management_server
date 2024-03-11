@@ -89,7 +89,7 @@ class ScheduleController extends Controller
         try {
             $user = $request->user;
             // API For Personal Calendar
-            $model = EmployeeSchedule::where('employee_profile_id', $user->id)->get();
+            $model = EmployeeSchedule::where('employee_profile_id', $user->id)->where('deleted_at', null)->get();
             return response()->json([
                 'data' => EmployeeScheduleResource::collection($model),
                 'holiday' => Holiday::all()
@@ -241,9 +241,9 @@ class ScheduleController extends Controller
                 'employee_id' => $model->isEmpty() ? null : $model->first()->employee_profile_id,
                 'schedule'    => $schedule,
             ];
-            
+
             return response()->json([
-                'data' => new EmployeeScheduleResource($data),
+                'data' => new $data,
                 'holiday' => Holiday::all()
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
