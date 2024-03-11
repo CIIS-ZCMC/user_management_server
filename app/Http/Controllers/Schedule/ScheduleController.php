@@ -225,23 +225,11 @@ class ScheduleController extends Controller
     public function edit(Request $request, $id)
     {
         try {
+            $user = $request->user;
             // API For Personal Calendar
-            $model = EmployeeSchedule::where('employee_profile_id', $id)->get();
-            
-            $data = [];
-            foreach ($model as $value) {
-                $data = [
-                    'employee_id' => $value->id,
-                    'schedule' => [
-                        'start' => $value->date,
-                        'title' => $value->schedule->timeShift->timeShiftDetails(),
-                        'color' => $value->schedule->timeShift->color,
-                    ]
-                ];
-            }
-
+            $model = EmployeeSchedule::where('employee_profile_id', $user->id)->get();
             return response()->json([
-                'data' => $data,
+                'data' => EmployeeScheduleResource::collection($model),
                 'holiday' => Holiday::all()
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
