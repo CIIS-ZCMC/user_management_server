@@ -167,10 +167,10 @@ class DTRcontroller extends Controller
                                         $this->DTR->NoBreaktimePull($DaySchedule, $bioEntry, $biometric_id);
                                     }
                                 } else {
+
                                     /**
                                      * No Schedule Pulling
                                      */
-
                                     $this->DTR->NoSchedulePull($bioEntry, $biometric_id);
                                 }
                             }
@@ -186,7 +186,11 @@ class DTRcontroller extends Controller
                             $late_Records = array_filter($Employee_Attendance, function ($attd) use ($datenow) {
                                 return date('Y-m-d', strtotime($attd['date_time'])) < $datenow;
                             });
-                            $this->helper->saveDTRRecords($late_Records, true);
+
+
+
+                            return;
+                            // $this->helper->saveDTRRecords($late_Records, true);
                             // /* Save DTR Logs */
                             $this->helper->saveDTRLogs($late_Records, 1, $device, 1);
                             // /* Clear device data */
@@ -477,8 +481,8 @@ class DTRcontroller extends Controller
 
             foreach ($dtr as $val) {
                 $bioEntry = [
-                    'first_entry' => $val->first_in,
-                    'date_time' => $val->first_in
+                    'first_entry' => $val->first_in ?? $val->second_in,
+                    'date_time' => $val->first_in ?? $val->second_in
                 ];
 
                 $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);

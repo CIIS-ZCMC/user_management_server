@@ -63,9 +63,9 @@
 
             </th>
 
-            <th colspan="2" style="border-bottom: 1px solid black;font-size:15px">AM</th>
+            <th colspan="2" style="border-bottom: 1px solid rgb(197, 196, 196);font-size:15px">AM</th>
 
-            <th colspan="2">PM</th>
+            <th colspan="2" style="border-bottom: 1px solid rgb(197, 196, 196);font-size:15px">PM</th>
             <th>
 
                 <table id="tblheader">
@@ -86,7 +86,7 @@
             </th>
 
             <th>Arrival</th>
-            <th>Departure</th>
+            <th style="border-right: 1px solid rgb(184, 184, 184) ">Departure</th>
             <th>Arrival</th>
             <th>Departure</th>
             <th>
