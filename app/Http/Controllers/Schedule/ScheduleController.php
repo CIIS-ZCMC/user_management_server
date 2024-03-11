@@ -134,7 +134,7 @@ class ScheduleController extends Controller
             $employees      = $cleanData['employee'];
             $selected_date  = $cleanData['selected_date'];   // Selected Date;
 
-            if (empty($selected_date)) {
+            if ($selected_date === "") {
                 foreach ($employees as $employee) {
                     $existing_employee_ids = EmployeeProfile::where('id', $employee)->pluck('id');
 
@@ -180,6 +180,7 @@ class ScheduleController extends Controller
                             // if ($this->hasOverlappingSchedule($time_shift['time_shift_id'], $date_selected['date'], $employee['employee_id'])) {
                             //     return response()->json(['message' => 'Overlap with existing schedule'], Response::HTTP_FOUND);
                             // }
+
                             $existing_employee_ids = EmployeeProfile::where('id', $employee)->pluck('id');
     
                             foreach ($existing_employee_ids as $employee_id) {
