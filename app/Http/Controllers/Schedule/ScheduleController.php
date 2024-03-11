@@ -225,9 +225,25 @@ class ScheduleController extends Controller
     public function edit(Request $request, $id)
     {
         try {
-            $model = EmployeeSchedule::where('employee_profile_id', $id)->get();
+            $model = EmployeeSchedule::where('employee_profile_id', $id)->where('deleted_at', null)->get();
+            
+            $schedule = [];
+            foreach ($model as $value) {
+                $schedule[] = [
+                    'id'    => $value->schedule->timeShift->id,
+                    'start' => $value->schedule->date,
+                    'title' => $value->schedule->timeShift->timeShiftDetails(),
+                    'color' => $value->schedule->timeShift->color,
+                ];
+            }
+            
+            $data = [
+                'employee_id' => $model->isEmpty() ? null : $model->first()->employee_profile_id,
+                'schedule'    => $schedule,
+            ];
+            
             return response()->json([
-                'data' => EmployeeScheduleResource::collection($model),
+                'data' => new EmployeeScheduleResource($data),
                 'holiday' => Holiday::all()
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
