@@ -177,16 +177,14 @@ class ScheduleController extends Controller
                         // }
     
                         foreach ($employees as $employee) {
-                            // if ($this->hasOverlappingSchedule($time_shift['time_shift_id'], $date_selected['date'], $employee['employee_id'])) {
-                            //     return response()->json(['message' => 'Overlap with existing schedule'], Response::HTTP_FOUND);
-                            // }
+                            if ($this->hasOverlappingSchedule($time_shift['time_shift_id'], $date_selected['date'], $employee['employee_id'])) {
+                                return response()->json(['message' => 'Overlap with existing schedule'], Response::HTTP_FOUND);
+                            }
 
                             $existing_employee_ids = EmployeeProfile::where('id', $employee)->pluck('id');
     
                             foreach ($existing_employee_ids as $employee_id) {
-                                $check_employee_schedules = EmployeeSchedule::where('employee_profile_id', $employee_id)
-                                                                            ->where('deleted_at', null)
-                                                                            ->first();
+                                $check_employee_schedules = EmployeeSchedule::where('employee_profile_id', $employee_id)->first();
     
                                 if ($check_employee_schedules !== null) {
                                     // Schedule already exists for this employee, update the schedule ID
