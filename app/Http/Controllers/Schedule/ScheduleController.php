@@ -171,7 +171,6 @@ class ScheduleController extends Controller
 
                         foreach ($existing_employee_ids as $employee_id) {
                             $check_employee_schedules = EmployeeSchedule::where('employee_profile_id', $employee_id)
-                                                                        ->where('schedule_id', $data->id)
                                                                         ->where('deleted_at', null)
                                                                         ->first();
 
@@ -179,7 +178,7 @@ class ScheduleController extends Controller
                                 // Schedule already exists for this employee, update the schedule ID
                                 $check_employee_schedules->delete();
                             }
-                            
+
                             // No schedule exists for this employee, attach the employee to the schedule
                             $data->employee()->attach($employee_id);
                             
