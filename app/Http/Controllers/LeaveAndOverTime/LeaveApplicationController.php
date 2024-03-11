@@ -484,40 +484,8 @@ class LeaveApplicationController extends Controller
                 ];
             }
 
-            $area_details = $employee_profile->assignedArea->findDetails();
-
-            switch($area_details['sector']){
-                case "Division":
-                    $area = $employee_profile->assignedArea->division;
-                    break;
-                case "Department":
-                    $area = $employee_profile->assignedArea->department;
-                    break;
-                case "Section":
-                    $area = $employee_profile->assignedArea->section;
-                    break;
-                case "Unit":
-                    $area = $employee_profile->assignedArea->unit;
-                    break;
-                default:
-                    return response()->json(['message' => "Invalid area."], Response::HTTP_BAD_REQUEST);
-            }
-
-            $oic = [
-                'id' => $area->id,
-                'name' => $area->name,
-                'code' => $area->code,
-                'oic' => $area->oic->personalInformation->name(),
-                'position' => $area->oic->assignedArea->designation->name,
-                'updated_at' => $area->updated_at
-            ];
-
-            $response = LeaveApplicationResource::collection($leave_applications);
-            $response['oic'] = $oic;
-            
-
             return response()->json([
-                'data' => $response,
+                'data' => LeaveApplicationResource::collection($leave_applications),
                 'credits'=>$result,
                 'message' => 'Retrieve all leave application records.'
             ], Response::HTTP_OK);
@@ -602,7 +570,7 @@ class LeaveApplicationController extends Controller
     
                     $leave_application = LeaveApplication::create($cleanData);
                     
-                    if($request->employee_profile_id !== null){
+                    if($request->OIC !== null){
                         $result = $employee_profile_controller->assignOICByEmployeeID($request);
 
                         if($result->getStatusCode() === Response::HTTP_OK){ // Check if the data key exists in the response
@@ -682,7 +650,7 @@ class LeaveApplicationController extends Controller
     
                         $leave_application = LeaveApplication::create($cleanData);
                     
-                        if($request->employee_profile_id !== null){
+                        if($request->OIC!== null){
                             $result = $employee_profile_controller->assignOICByEmployeeID($request);
     
                             if($result->getStatusCode() === Response::HTTP_OK){ // Check if the data key exists in the response
