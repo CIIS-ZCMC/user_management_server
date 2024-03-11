@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\LeaveAndOverTime;
 
+use App\Http\Controllers\UmisAndEmployeeManagement\EmployeeProfileController;
 use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Resources\LeaveTypeResource;
 use App\Models\Division;
@@ -492,10 +493,10 @@ class LeaveApplicationController extends Controller
     }
 
     public function store(LeaveApplicationRequest $request)
-
     {
         try {
-
+            $employee_profile_controller = new EmployeeProfileController();
+            
             $employee_profile = $request->user;
             $recommending_and_approving = Helpers::getRecommendingAndApprovingOfficer($employee_profile->assignedArea->findDetails(), $employee_profile->id);
             $hrmo_officer = Helpers::getHrmoOfficer();
@@ -505,6 +506,8 @@ class LeaveApplicationController extends Controller
 
             $start = Carbon::parse($request->date_from);
             $end = Carbon::parse($request->date_to);
+
+            $oic = [];
 
             $daysDiff = $start->diffInDays($end) + 1;
 
@@ -527,10 +530,7 @@ class LeaveApplicationController extends Controller
             if ($overlappingLeave) {
                 return response()->json(['message' => 'You already have an application for the same dates.'], 403);
             } else {
-
                 if ($leave_type->is_special) {
-             
-               
                     if ($leave_type->period < $daysDiff) {
                         return response()->json(['message' => 'Exceeds days entitled for ' . $leave_type->name], Response::HTTP_FORBIDDEN);
                     }
@@ -567,6 +567,18 @@ class LeaveApplicationController extends Controller
                     }
     
                     $leave_application = LeaveApplication::create($cleanData);
+                    
+                    if($request->employee_profile_id !== null){
+                        $result = $employee_profile_controller->assignOICByEmployeeID($request);
+
+                        if($result->getStatusCode() === Response::HTTP_OK){ // Check if the data key exists in the response
+                            $responseData = json_decode($result->getContent(), true);
+                        
+                            if (isset($responseData['data'])) {
+                                $oic = $responseData['data'];
+                            }
+                        }
+                    }
                    
                     if ($request->requirements) {
                         $index = 0;
@@ -593,20 +605,15 @@ class LeaveApplicationController extends Controller
                         'leave_application_id' => $leave_application->id,
                         'action' => 'Applied'
                     ]);
-    
-                   
-                    
                 } 
                 else 
                 { 
-                     
                     $employee_credit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)
                         ->where('leave_type_id', $request->leave_type_id)->first();
     
     
                     //  return response()->json(['message' => $request->without_pay == 0 && $employee_credit->total_leave_credits < $daysDiff], 401);
                     if ($request->without_pay == 0 && $employee_credit->total_leave_credits < $daysDiff) {
-    
                         return response()->json(['message' => 'Insufficient leave credits.'], Response::HTTP_BAD_REQUEST);
                     } else {
                         $cleanData['applied_credits'] = $daysDiff;
@@ -640,6 +647,18 @@ class LeaveApplicationController extends Controller
                         }
     
                         $leave_application = LeaveApplication::create($cleanData);
+                    
+                        if($request->employee_profile_id !== null){
+                            $result = $employee_profile_controller->assignOICByEmployeeID($request);
+    
+                            if($result->getStatusCode() === Response::HTTP_OK){ // Check if the data key exists in the response
+                                $responseData = json_decode($result->getContent(), true);
+                            
+                                if (isset($responseData['data'])) {
+                                    $oic = $responseData['data'];
+                                }
+                            }
+                        }
     
                         if ($request->without_pay == 0) {
                             $previous_credit = $employee_credit->total_leave_credits;
@@ -682,15 +701,12 @@ class LeaveApplicationController extends Controller
                             'leave_application_id' => $leave_application->id,
                             'action' => 'Applied'
                         ]);
-                    }
-     
-                    
+                    }  
                 }
 
                 $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->get();
                
                 foreach ($employeeCredit as $leaveCredit) {
-                 
                     $leaveType = $leaveCredit->leaveType->name;
                     $totalCredits = $leaveCredit->total_leave_credits;
                     $usedCredits = $leaveCredit->used_leave_credits;
@@ -701,8 +717,12 @@ class LeaveApplicationController extends Controller
                         'used_leave_credits' => $usedCredits
                     ];
                 }
+
+                $response = new LeaveApplicationResource($leave_application);
+                $response['oic'] = $oic;
+
                 return response()->json([
-                    'data' => new LeaveApplicationResource($leave_application),
+                    'data' => $response,
                     'credits' => $result ? $result : [],
                     'message' => 'Successfully applied for ' . $leave_type->name
                 ], Response::HTTP_OK);

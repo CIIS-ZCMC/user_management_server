@@ -1747,7 +1747,7 @@ class EmployeeProfileController extends Controller
      * This must be in division/department/section/unit
      * Validate first for rights to assigned OIC by password of chief/head/supervisor
      */
-    public function assignOICByEmployeeID($id, DivisionAssignOICRequest $request)
+    public function assignOICByEmployeeID(Request $request)
     {
         try{
             $employee_profile = $request->user;
@@ -1781,7 +1781,7 @@ class EmployeeProfileController extends Controller
             
             $area->update(['oic_employee_profile_id' => strip_tags($request->employee_profile_id)]);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in assigning chief '.$this->PLURAL_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, null, true, 'Success in assigning chief '.$this->PLURAL_MODULE_NAME.'.');
 
             $response = [
                 'id' => $area->id,
