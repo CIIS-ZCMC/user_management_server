@@ -134,60 +134,75 @@ class ScheduleController extends Controller
             $employees      = $cleanData['employee'];
             $selected_date  = $cleanData['selected_date'];   // Selected Date;
 
-            foreach ($selected_date as $time_shift) {
-                foreach ($time_shift['date'] as $date_selected) {
-                    
-                    $schedule = Schedule::where('time_shift_id', $time_shift['time_shift_id'])->where('date', $date_selected)->first();
-                    
-                    if ($schedule) {
-                        $data = $schedule;
-                    } else {
-                        $dates = Carbon::parse($date_selected);
-                        $isWeekend = $dates->dayOfWeek === 6 || $dates->dayOfWeek === 0;
+            if (empty($selected_date)) {
+                foreach ($employees as $employee) {
+                    $existing_employee_ids = EmployeeProfile::where('id', $employee)->pluck('id');
+
+                    foreach ($existing_employee_ids as $employee_id) {
+                        $check_employee_schedules = EmployeeSchedule::where('employee_profile_id', $employee_id)
+                                                                    ->where('deleted_at', null)
+                                                                    ->first();
+
+                        $check_employee_schedules->delete();
+                    }
+                }
+            } else {
+                foreach ($selected_date as $time_shift) {
+                    foreach ($time_shift['date'] as $date_selected) {
                         
-                        if ($isWeekend) {
-                            $is_weekend = 1;
+                        $schedule = Schedule::where('time_shift_id', $time_shift['time_shift_id'])->where('date', $date_selected)->first();
+                        
+                        if ($schedule) {
+                            $data = $schedule;
+                        } else {
+                            $dates = Carbon::parse($date_selected);
+                            $isWeekend = $dates->dayOfWeek === 6 || $dates->dayOfWeek === 0;
+                            
+                            if ($isWeekend) {
+                                $is_weekend = 1;
+                            }
+        
+                            $data = new Schedule;
+                            
+                            $data->time_shift_id    = $time_shift['time_shift_id'];
+                            $data->date             = $date_selected;
+                            $data->is_weekend       = $is_weekend;
+                            $data->save();
                         }
     
-                        $data = new Schedule;
-                        
-                        $data->time_shift_id    = $time_shift['time_shift_id'];
-                        $data->date             = $date_selected;
-                        $data->is_weekend       = $is_weekend;
-                        $data->save();
-                    }
-
-                    // $is24Hrs = Helpers::checkIs24PrevNextSchedule($data, $employee, $selected_date);
-
-                    // if ($is24Hrs['result'] !== 'No Schedule') {
-                    //     return response()->json([$is24Hrs['result']], Response::HTTP_FOUND);
-                    // }
-
-                    foreach ($employees as $employee) {
-                        // if ($this->hasOverlappingSchedule($time_shift['time_shift_id'], $date_selected['date'], $employee['employee_id'])) {
-                        //     return response()->json(['message' => 'Overlap with existing schedule'], Response::HTTP_FOUND);
+                        // $is24Hrs = Helpers::checkIs24PrevNextSchedule($data, $employee, $selected_date);
+    
+                        // if ($is24Hrs['result'] !== 'No Schedule') {
+                        //     return response()->json([$is24Hrs['result']], Response::HTTP_FOUND);
                         // }
-                        $existing_employee_ids = EmployeeProfile::where('id', $employee)->pluck('id');
-
-                        foreach ($existing_employee_ids as $employee_id) {
-                            $check_employee_schedules = EmployeeSchedule::where('employee_profile_id', $employee_id)
-                                                                        ->where('deleted_at', null)
-                                                                        ->first();
-
-                            if ($check_employee_schedules !== null) {
-                                // Schedule already exists for this employee, update the schedule ID
-                                $check_employee_schedules->delete();
+    
+                        foreach ($employees as $employee) {
+                            // if ($this->hasOverlappingSchedule($time_shift['time_shift_id'], $date_selected['date'], $employee['employee_id'])) {
+                            //     return response()->json(['message' => 'Overlap with existing schedule'], Response::HTTP_FOUND);
+                            // }
+                            $existing_employee_ids = EmployeeProfile::where('id', $employee)->pluck('id');
+    
+                            foreach ($existing_employee_ids as $employee_id) {
+                                $check_employee_schedules = EmployeeSchedule::where('employee_profile_id', $employee_id)
+                                                                            ->where('deleted_at', null)
+                                                                            ->first();
+    
+                                if ($check_employee_schedules !== null) {
+                                    // Schedule already exists for this employee, update the schedule ID
+                                    $check_employee_schedules->delete();
+                                }
+    
+                                // No schedule exists for this employee, attach the employee to the schedule
+                                $data->employee()->attach($employee_id);
+                                
+                                $employee_schedule = $data->employee()->where('employee_profile_id', $employee_id)->first()->id;
+                                Helpers::registerEmployeeScheduleLogs($employee_schedule, $user->id, 'Store');
                             }
-
-                            // No schedule exists for this employee, attach the employee to the schedule
-                            $data->employee()->attach($employee_id);
-                            
-                            $employee_schedule = $data->employee()->where('employee_profile_id', $employee_id)->first()->id;
-                            Helpers::registerEmployeeScheduleLogs($employee_schedule, $user->id, 'Store');
                         }
                     }
                 }
             }
+           
 
             Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json([
