@@ -27,6 +27,7 @@ class DTRNoSchedule
     public function New($entrydate, $entry, $biometric_id, $bioEntry, $status)
     {
 
+
         /**
          * Feautures **
          * Save First Entry
@@ -34,7 +35,9 @@ class DTRNoSchedule
          */
         //Check yesterday Record
         $yester_date = date('Y-m-d', strtotime($entrydate . '-1 day'));
-        $check_yesterday_Records = DailyTimeRecords::whereDate('first_in', $yester_date)->where('biometric_id', $biometric_id)->latest()->first();
+        $check_yesterday_Records = DailyTimeRecords::whereDate('dtr_date', $yester_date)->where('biometric_id', $biometric_id)->latest()->first();
+
+
         if ($check_yesterday_Records !== null) {
             $f_1 = $check_yesterday_Records->first_in;
             $f_2 = $check_yesterday_Records->first_out;
@@ -44,10 +47,12 @@ class DTRNoSchedule
                  * Here we validate OUT for nursing or Doctor with out entry
                  *
                  */
+
                 $yesterday_Entry = [
                     'first_in' => $f_1,
                     'date_time' => $f_1
                 ];
+
 
                 /* Get the yesterdaySchedule */
                 $Schedule = $this->helper->CurrentSchedule($biometric_id, $yesterday_Entry, false);
@@ -66,6 +71,7 @@ class DTRNoSchedule
                         $isValidEntry = false;
                     }
                 }
+
                 if ($isValidEntry) {
                     if ($status == 255) { //Global State
                         if ($this->helper->withinInterval($f_1, $this->helper->sequence(0, [$bioEntry]))) {
@@ -98,14 +104,32 @@ class DTRNoSchedule
                 /**
                  * Save New
                  */
-                if ($status == 0 || $status == 255) { // Both Global and Check in State
-                    $this->helper->SaveFirstEntry(
-                        $this->helper->sequence(0, [$bioEntry]),
-                        [],
-                        $biometric_id,
-                        false,
-                        []
-                    );
+                if ($this->helper->EntryisAm($this->helper->sequence(0, [$bioEntry]))) {
+                    if ($status == 0 || $status == 255) { // Both Global and Check in State
+                        $this->helper->SaveFirstEntry(
+                            $this->helper->sequence(0, [$bioEntry])[0],
+                            [],
+                            $biometric_id,
+                            false,
+                            [],
+                            'AM'
+                        );
+                    }
+                }
+
+
+                if ($this->helper->EntryisPm($this->helper->sequence(0, [$bioEntry])[0]['date_time'])) {
+
+                    if ($status == 0 || $status == 255) { // Both Global and Check in State
+                        $this->helper->SaveFirstEntry(
+                            $this->helper->sequence(0, [$bioEntry])[0],
+                            [],
+                            $biometric_id,
+                            false,
+                            [],
+                            'PM'
+                        );
+                    }
                 }
             }
         } else {
@@ -113,14 +137,32 @@ class DTRNoSchedule
             /**
              * Save New
              */
-            if ($status == 0 || $status == 255) { // Both Global and Check in State
-                $this->helper->SaveFirstEntry(
-                    $this->helper->sequence(0, [$bioEntry]),
-                    [],
-                    $biometric_id,
-                    false,
-                    []
-                );
+
+            if ($this->helper->EntryisAm($this->helper->sequence(0, [$bioEntry])[0]['date_time'])) {
+                if ($status == 0 || $status == 255) { // Both Global and Check in State
+                    $this->helper->SaveFirstEntry(
+                        $this->helper->sequence(0, [$bioEntry])[0],
+                        [],
+                        $biometric_id,
+                        false,
+                        [],
+                        'AM'
+                    );
+                }
+            }
+
+            if ($this->helper->EntryisPm($this->helper->sequence(0, [$bioEntry])[0]['date_time'])) {
+
+                if ($status == 0 || $status == 255) { // Both Global and Check in State
+                    $this->helper->SaveFirstEntry(
+                        $this->helper->sequence(0, [$bioEntry])[0],
+                        [],
+                        $biometric_id,
+                        false,
+                        [],
+                        'PM'
+                    );
+                }
             }
         }
     }
@@ -162,19 +204,22 @@ class DTRNoSchedule
             Invalid 3rd Entry
            */
         if ($f1 && $f2 && !$f3 && !$f4) {
-            if ($status == 255) {
-                if ($this->helper->withinInterval($f2, $this->helper->sequence(0, [$data]))) {
+
+            if ($this->helper->EntryisPM($this->helper->sequence(0, [$data])[0]['date_time'])) {
+                if ($status == 255) {
+                    if ($this->helper->withinInterval($f2, $this->helper->sequence(0, [$data]))) {
+                        $this->helper->saveIntervalValidation(
+                            $this->helper->sequence(0, [$data]),
+                            $validate
+                        );
+                    }
+                }
+                if ($status == 0) {
                     $this->helper->saveIntervalValidation(
                         $this->helper->sequence(0, [$data]),
                         $validate
                     );
                 }
-            }
-            if ($status == 0) {
-                $this->helper->saveIntervalValidation(
-                    $this->helper->sequence(0, [$data]),
-                    $validate
-                );
             }
         }
         /* check In_am and out_am and  in_pm and not set out_pm */
@@ -184,8 +229,19 @@ class DTRNoSchedule
            Overtime and undertime, as well as working hours, have already been calculated.
         */
         if ($f1 && $f2 && $f3 && !$f4) {
-            if ($status == 255) {
-                if ($this->helper->withinInterval($f3, $this->helper->sequence(0, [$data]))) {
+            if ($this->helper->EntryisPM($this->helper->sequence(0, [$data])[0]['date_time'])) {
+                if ($status == 255) {
+                    if ($this->helper->withinInterval($f3, $this->helper->sequence(0, [$data]))) {
+                        $this->helper->saveTotalWorkingHours(
+                            $validate,
+                            $data,
+                            $this->helper->sequence(0, [$data]),
+                            [],
+                            false
+                        );
+                    }
+                }
+                if ($status == 1) {
                     $this->helper->saveTotalWorkingHours(
                         $validate,
                         $data,
@@ -194,15 +250,6 @@ class DTRNoSchedule
                         false
                     );
                 }
-            }
-            if ($status == 1) {
-                $this->helper->saveTotalWorkingHours(
-                    $validate,
-                    $data,
-                    $this->helper->sequence(0, [$data]),
-                    [],
-                    false
-                );
             }
         }
         /*Check notset in_am and notset out_pm and  check In_pm and not set out_pm */
@@ -211,8 +258,19 @@ class DTRNoSchedule
             Overtime and undertime, as well as working hours, have already been calculated.
         */
         if (!$f1 && !$f2 && $f3 && !$f4) {
-            if ($status == 255) {
-                if ($this->helper->withinInterval($f3, $this->helper->sequence(0, [$data]))) {
+            if ($this->helper->EntryisPM($this->helper->sequence(0, [$data])[0]['date_time'])) {
+                if ($status == 255) {
+                    if ($this->helper->withinInterval($f3, $this->helper->sequence(0, [$data]))) {
+                        $this->helper->saveTotalWorkingHours(
+                            $validate,
+                            $data,
+                            $this->helper->sequence(0, [$data]),
+                            [],
+                            false
+                        );
+                    }
+                }
+                if ($status == 1) {
                     $this->helper->saveTotalWorkingHours(
                         $validate,
                         $data,
@@ -221,15 +279,6 @@ class DTRNoSchedule
                         false
                     );
                 }
-            }
-            if ($status == 1) {
-                $this->helper->saveTotalWorkingHours(
-                    $validate,
-                    $data,
-                    $this->helper->sequence(0, [$data]),
-                    [],
-                    false
-                );
             }
         }
     }

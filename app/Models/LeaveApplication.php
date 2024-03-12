@@ -22,6 +22,7 @@ class LeaveApplication extends Model
 
     public $fillable = [
         'employee_profile_id',
+        'candidate_oic_id',
         'leave_type_id',
         'date_from',
         'date_to',
@@ -41,6 +42,10 @@ class LeaveApplication extends Model
         'recommending_officer',
         'approving_officer'
     ];
+
+    public function oic(){
+        return $this->belongsTo(EmployeeProfile::class, 'candidate_oic_id');
+    }
 
     public function leaveType()
     {

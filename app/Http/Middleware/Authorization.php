@@ -98,7 +98,6 @@ class Authorization
             }
         }
         
-        
         if($employment_type->name === "Job order"){
             $permissions = Cache::get("COMMON-JO");
             
@@ -119,7 +118,7 @@ class Authorization
         }
 
         if (!$has_rights) {
-            return response()->json(['message' => 'Un-Authorized.'], 401);
+            return response()->json(['message' => "Forbidden"], 403);
         }
 
         $request->merge(['permission' => $routePermission]);

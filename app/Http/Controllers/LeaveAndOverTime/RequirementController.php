@@ -41,7 +41,7 @@ class RequirementController extends Controller
             $employee_profile = $request->user;
 
             if(!$employee_profile){
-                return response()->json(['message' => 'Unauthorized.'], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => 'Unauthorized.'], Response::HTTP_FORBIDDEN);
             }
 
             $cleanData = [];
@@ -97,7 +97,7 @@ class RequirementController extends Controller
             $employee_profile = $request->user;
 
             if(!$employee_profile){
-                return response()->json(['message' => 'Unauthorized.'], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => 'Unauthorized.'], Response::HTTP_FORBIDDEN);
             }
 
             $leave_requirement = Requirement::find($id);
@@ -140,7 +140,7 @@ class RequirementController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $leave_requirements = Requirement::find($id);

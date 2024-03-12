@@ -278,7 +278,7 @@ class ChildController extends Controller
             // $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
 
             // if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
-            //     return response()->json(['message' => "Password incorrect."], Response::HTTP_UNAUTHORIZED);
+            //     return response()->json(['message' => "Password incorrect."], Response::HTTP_FORBIDDEN);
             // }
 
             $child = Child::findOrFail($id);
@@ -306,7 +306,7 @@ class ChildController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $children = Child::where('personal_information_id', $id)->get();
@@ -336,7 +336,7 @@ class ChildController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $employee_profile = EmployeeProfile::where('employee_id',$request->input('employee_id'))->get();

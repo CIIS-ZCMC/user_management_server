@@ -261,14 +261,14 @@ class CivilServiceEligibilityController extends Controller
             // $cleanData['pin'] = strip_tags($request->password);
 
             // if ($user['authorization_pin'] !==  $cleanData['pin']) {
-            //     return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+            //     return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             // }
 
             $civil_service_eligibility = CivilServiceEligibility::findOrFail($id);
 
             if(!$civil_service_eligibility)
             {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+                return response()->json(['message' => 'No record found.'], Response::HTTP_FORBIDDEN);
             }
 
             $civil_service_eligibility -> delete();
@@ -289,7 +289,7 @@ class CivilServiceEligibilityController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $civil_service_eligibilities = CivilServiceEligibility::where('personal_information_id',$id)->get();
@@ -320,7 +320,7 @@ class CivilServiceEligibilityController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $employee_profile = EmployeeProfile::find($id);
