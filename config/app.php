@@ -31,6 +31,16 @@ return [
 
     'env' => env('APP_ENV', 'production'),
 
+    'server_domain' => env('SERVER_DOMAIN'),
+
+    'cookie_name' => env('COOKIE_NAME'),
+    'system_abbreviation' => env('SYSTEM_ABBREVIATION'),
+    'data_storing_key' => env('DATA_STORING_ENCRYPTION_KEY'),
+    'encrypt_decrypt_algorithm' => env('ENCRYPT_DECRYPT_ALGORITHM'),
+    'database_encryption_key' => env('DATABASE_ENCRYPTION_KEY'),
+    'salt_value' => env('SALT_VALUE'),
+    'data_key_encryption' => env('DATA_KEY_ENCRYPTION'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Debug Mode
