@@ -75,6 +75,7 @@ class LeaveApplicationController extends Controller
                     'hrmo_officer',
                     'recommending_officer',
                     'approving_officer',
+                    'candidate_oic_id',
                     'created_at',
                     'updated_at'
                 )
@@ -129,6 +130,7 @@ class LeaveApplicationController extends Controller
                     'hrmo_officer',
                     'recommending_officer',
                     'approving_officer',
+                    'candidate_oic_id',
                     'created_at',
                     'updated_at'
                 )
@@ -503,8 +505,6 @@ class LeaveApplicationController extends Controller
             $start = Carbon::parse($request->date_from);
             $end = Carbon::parse($request->date_to);
 
-            $oic = [];
-
             $daysDiff = $start->diffInDays($end) + 1;
 
             $leave_type = LeaveType::find($request->leave_type_id);
@@ -534,7 +534,10 @@ class LeaveApplicationController extends Controller
                     $cleanData['applied_credits'] = $daysDiff;
                     $cleanData['employee_profile_id'] = $employee_profile->id;
                     $cleanData['hrmo_officer'] = $hrmo_officer;
-                    $cleanData['candicate_oic_id'] = strip_tags($request->candidate_oic_id);
+
+                    // if($request->employee_oic_id !== "null" && $request->employee_oic_id !== null ){
+                    //     $cleanData['employee_oic_id'] = (int) strip_tags($request->employee_oic_id);
+                    // }
 
                     $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $employee_profile->id)->first();
 
@@ -601,10 +604,14 @@ class LeaveApplicationController extends Controller
                     if ($request->without_pay == 0 && $employee_credit->total_leave_credits < $daysDiff) {
                         return response()->json(['message' => 'Insufficient leave credits.'], Response::HTTP_BAD_REQUEST);
                     } else {
+
                         $cleanData['applied_credits'] = $daysDiff;
                         $cleanData['employee_profile_id'] = $employee_profile->id;
                         $cleanData['hrmo_officer'] = $hrmo_officer;
-                        $cleanData['candicate_oic_id'] = strip_tags($request->candidate_oic_id);
+    
+                        // if($request->employee_oic_id !== "null" && $request->employee_oic_id !== null ){
+                        //     $cleanData['employee_oic_id'] = (int) strip_tags($request->employee_oic_id);
+                        // }
                         
                         $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $employee_profile->id)->first();
 

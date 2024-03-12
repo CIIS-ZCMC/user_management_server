@@ -157,26 +157,27 @@ class ScheduleController extends Controller
                 }
 
                 // Save new data
-                foreach ($selected_date as $time_shift) {
-                    foreach ($time_shift['date'] as $date_selected) {
-                        $schedule = Schedule::where('time_shift_id', $time_shift['time_shift_id'])
-                                            ->where('date', $date_selected)
-                                            ->first();
+                foreach ($selected_date as $selectedDate) {
+                    $timeShiftId = $selectedDate['time_shift_id'];
 
+                    foreach ($selectedDate['date'] as $date) {
+                        $schedule = Schedule::where('time_shift_id', $selectedDate['time_shift_id'])
+                                            ->where('date', $date)
+                                            ->first();
+                
                         if (!$schedule) {
                             // Create a new schedule if it doesn't exist
-                            $isWeekend = (Carbon::parse($date_selected))->isWeekend();
+                            $isWeekend = (Carbon::parse($date))->isWeekend();
+                            
                             $schedule = new Schedule;
-                            $schedule->time_shift_id = $time_shift['time_shift_id'];
-                            $schedule->date = $date_selected;
-                            $schedule->is_weekend = $isWeekend ? 1 : 0;
+                            $schedule->time_shift_id    = $timeShiftId;
+                            $schedule->date             = $date;
+                            $schedule->is_weekend       = $isWeekend ? 1 : 0;
                             $schedule->save();
                         }
-
+                
                         // Attach employees to the schedule
-                        foreach ($employees as $employee) {
-                            $schedule->employee()->attach($employee);
-                        }
+                        $schedule->employee()->sync($employees);
                     }
                 }
             }

@@ -104,7 +104,7 @@ class DTRNoSchedule
                 /**
                  * Save New
                  */
-                if ($this->helper->EntryisAm($this->helper->sequence(0, [$bioEntry]))) {
+                if ($this->helper->EntryisAm($this->helper->sequence(0, [$bioEntry])[0]['date_time'])) {
                     if ($status == 0 || $status == 255) { // Both Global and Check in State
                         $this->helper->SaveFirstEntry(
                             $this->helper->sequence(0, [$bioEntry])[0],
