@@ -75,7 +75,7 @@ class LeaveApplicationController extends Controller
                     'hrmo_officer',
                     'recommending_officer',
                     'approving_officer',
-                    'candidate_oic_id',
+                    'employee_oic_id',
                     'created_at',
                     'updated_at'
                 )
@@ -130,7 +130,7 @@ class LeaveApplicationController extends Controller
                     'hrmo_officer',
                     'recommending_officer',
                     'approving_officer',
-                    'candidate_oic_id',
+                    'employee_oic_id',
                     'created_at',
                     'updated_at'
                 )
