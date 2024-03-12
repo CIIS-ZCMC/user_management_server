@@ -26,7 +26,7 @@ class LeaveApplicationResource extends JsonResource
         $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $this->employeeProfile->id)->first();
         $hrmo = Section::where('code', 'HRMO')->first();
         
-        if($this->candidate_oic_id  !== null){
+        if($this->employee_oic_id  !== null){
             switch($area['sector']){
                 case "Division":
                     $area_details = $employee_profile->assignedArea->division;
