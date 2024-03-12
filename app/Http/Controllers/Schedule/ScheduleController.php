@@ -177,7 +177,7 @@ class ScheduleController extends Controller
                         }
                 
                         // Attach employees to the schedule
-                        $schedule->employee()->sync($employees);
+                        $schedule->employee()->attach($employees);
                     }
                 }
             }
