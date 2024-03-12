@@ -1253,6 +1253,20 @@ AND id IN (
             });
 
             foreach ($employee_Records as $kk => $new) {
+
+                $rec = DailyTimeRecords::whereDate('dtr_date', date('Y-m-d', strtotime($new['date_time'])))->where('biometric_id', $new['biometric_id'])->first();
+                $entry = "Logged";
+                if ($rec) {
+                    $f1 = $rec->first_in;
+                    $f2 = $rec->first_out;
+                    $f3 = $rec->second_in;
+                    $f4 = $rec->second_out;
+
+                    if ($f1 == $new['date_time'] || $f2 == $new['date_time'] || $f3 == $new['date_time'] || $f4 == $new['date_time']) {
+                        $entry = "Daily Time Recorded";
+                    }
+                }
+
                 $new_Rec[] = [
                     'timing' => $new_timing,
                     'biometric_id' => $new['biometric_id'],
@@ -1260,6 +1274,7 @@ AND id IN (
                     'date_time' => $new['date_time'],
                     'status' => $new['status'],
                     'status_description' => $new['status_description'],
+                    'entry_status' =>  $entry
                 ];
                 $new_timing++;
             }
@@ -1282,6 +1297,22 @@ AND id IN (
                 $newt = 0;
                 $nr = [];
                 foreach ($ndata as $new) {
+
+                    $rec = DailyTimeRecords::whereDate('dtr_date', date('Y-m-d', strtotime($new['date_time'])))->where('biometric_id', $new['biometric_id'])->first();
+                    $entry = "Logged";
+                    if ($rec) {
+                        $f1 = $rec->first_in;
+                        $f2 = $rec->first_out;
+                        $f3 = $rec->second_in;
+                        $f4 = $rec->second_out;
+
+                        if ($f1 == $new['date_time'] || $f2 == $new['date_time'] || $f3 == $new['date_time'] || $f4 == $new['date_time']) {
+                            $entry = "Daily Time Recorded";
+                        }
+                    }
+
+
+
                     $nr[] = [
                         'timing' => $newt,
                         'biometric_id' => $new['biometric_id'],
@@ -1290,7 +1321,8 @@ AND id IN (
                         'status' => $new['status'],
                         'status_description' => $new['status_description'],
                         'device_id' => $device['id'],
-                        'device_name' => $this->getDeviceName($device['id'])
+                        'device_name' => $this->getDeviceName($device['id']),
+                        'entry_status' =>  $entry
                     ];
                     $newt++;
                 }
@@ -1309,6 +1341,20 @@ AND id IN (
                 $newt = 0;
                 $nr = [];
                 foreach ($ndata as $new) {
+                    $rec = DailyTimeRecords::whereDate('dtr_date', date('Y-m-d', strtotime($new['date_time'])))->where('biometric_id', $new['biometric_id'])->first();
+                    $entry = "Logged";
+                    if ($rec) {
+                        $f1 = $rec->first_in;
+                        $f2 = $rec->first_out;
+                        $f3 = $rec->second_in;
+                        $f4 = $rec->second_out;
+
+                        if ($f1 == $new['date_time'] || $f2 == $new['date_time'] || $f3 == $new['date_time'] || $f4 == $new['date_time']) {
+                            $entry = "Daily Time Recorded";
+                        }
+                    }
+
+
                     $nr[] = [
                         'timing' => $newt,
                         'biometric_id' => $new['biometric_id'],
@@ -1317,7 +1363,8 @@ AND id IN (
                         'status' => $new['status'],
                         'status_description' => $new['status_description'],
                         'device_id' => $device['id'],
-                        'device_name' => $this->getDeviceName($device['id'])
+                        'device_name' => $this->getDeviceName($device['id']),
+                        'entry_status' =>  $entry
                     ];
                     $newt++;
                 }
