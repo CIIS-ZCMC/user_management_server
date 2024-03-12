@@ -49,7 +49,9 @@ class DivisionResource extends JsonResource
                 'chief_profile_url' => env('SERVER_DOMAIN') . "/photo/profiles/". $this->chief->profile_url,
                 'chief_status' => $chief_status,
                 'approving_officer' => $approving_officer,
-                'officer_in_charge' => $officer_in_charge
+                'officer_in_charge' => $officer_in_charge,
+                'created_at' =>  $this->created_at,
+                'updated_at' =>  $this->updated_at,
             ];
         }
 
@@ -62,7 +64,9 @@ class DivisionResource extends JsonResource
             'chief_designation' => 'NONE',
             'chief_status' => 'No Chief',
             'approving_officer' => 'NONE',
-            'officer_in_charge' => 'NONE'
+            'officer_in_charge' => 'NONE',
+            'created_at' =>  $this->created_at,
+            'updated_at' =>  $this->updated_at,
         ];
     }
 }
