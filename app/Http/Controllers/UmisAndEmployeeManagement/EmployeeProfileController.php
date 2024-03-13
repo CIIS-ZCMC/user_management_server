@@ -762,6 +762,7 @@ class EmployeeProfileController extends Controller
             'is_2fa' => $employee_profile->is_2fa,
             'password_expiration_at' => $employee_profile->password_expiration_at,
             'password_updated_at' => $employee_profile->password_created_at,
+            'pin_created_at' => $employee_profile->pin_created_at,
             'designation' => $designation['name'], 
             'plantilla_number_id' => $assigned_area['plantilla_number_id'],
             'plantilla_number' => $assigned_area['plantilla_number_id'] === NULL ? NULL : $assigned_area->plantillaNumber['number'],
