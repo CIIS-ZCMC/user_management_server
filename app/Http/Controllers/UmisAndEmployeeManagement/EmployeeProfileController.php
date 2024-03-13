@@ -198,7 +198,7 @@ class EmployeeProfileController extends Controller
              * if 2FA is activated send OTP to email to validate ownership
              */
             if ((bool) $employee_profile->is_2fa) {
-                $data = Helpers::generateMyOTP($request);
+                $data = Helpers::generateMyOTP($employee_profile);
 
                 if ($this->mail->send($data)) {
                     return response()->json(['message' => "OTP has sent to your email, submit the OTP to verify that this is your account."], Response::HTTP_OK)
@@ -762,6 +762,7 @@ class EmployeeProfileController extends Controller
             'is_2fa' => $employee_profile->is_2fa,
             'password_expiration_at' => $employee_profile->password_expiration_at,
             'password_updated_at' => $employee_profile->password_created_at,
+            'pin_created_at' => $employee_profile->pin_created_at,
             'designation' => $designation['name'], 
             'plantilla_number_id' => $assigned_area['plantilla_number_id'],
             'plantilla_number' => $assigned_area['plantilla_number_id'] === NULL ? NULL : $assigned_area->plantillaNumber['number'],
@@ -1150,7 +1151,7 @@ class EmployeeProfileController extends Controller
 
     public function updatePassword(Request $request)
     {
-        try{
+        try {
             $employee_profile = $request->user;
             $password = strip_tags($request->password);
             $new_password = strip_tags($request->new_password);
@@ -1165,7 +1166,7 @@ class EmployeeProfileController extends Controller
             if (!Hash::check($password . env("SALT_VALUE"), $decryptedPassword)) {
                 return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
             }
-            
+
             $hashPassword = Hash::make($new_password . env('SALT_VALUE'));
             $encryptedPassword = Crypt::encryptString($hashPassword);
 
@@ -1189,7 +1190,7 @@ class EmployeeProfileController extends Controller
             ]);
 
             return response()->json(['message' => 'Password updated.'], Response::HTTP_OK);
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'updatePassword', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -1197,7 +1198,7 @@ class EmployeeProfileController extends Controller
 
     public function update2fa(Request $request)
     {
-        try{
+        try {
             $employee_profile = $request->user;
             $password = strip_tags($request->password);
             $status = strip_tags($request->status);
@@ -1211,7 +1212,7 @@ class EmployeeProfileController extends Controller
             $employee_profile->update(['is_2fa' => $status]);
 
             return response()->json(['message' => '2fa updated.'], Response::HTTP_OK);
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'updatePassword', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -1663,7 +1664,7 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function employeesForOIC(Request $request)
     {
         try {
@@ -1671,16 +1672,17 @@ class EmployeeProfileController extends Controller
 
             $is_mcc = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $employee_profile->id)->first();
 
-            if($is_mcc){
+            if ($is_mcc) {
                 $employees = EmployeeProfile::where('biometric_id', '<>', null)->where('authorization_pin', '<>', null)
                     ->where('id', '<>', $employee_profile->id)->get();
-          
+
                 return response()->json([
-                    "data" => EmployeeProfileResource::collection($employees), 
-                    'message' => "Success login."], Response::HTTP_OK);
+                    "data" => EmployeeProfileResource::collection($employees),
+                    'message' => "Success login."
+                ], Response::HTTP_OK);
             }
 
-            
+
             $position = $employee_profile->position();
             $employees = [];
 
@@ -1739,14 +1741,15 @@ class EmployeeProfileController extends Controller
             }
 
             return response()->json([
-                "data" => EmployeeProfileResource::collection($employees), 
-                'message' => "Success login."], Response::HTTP_OK);
+                "data" => EmployeeProfileResource::collection($employees),
+                'message' => "Success login."
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'updatePasswordExpiration', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     /**
      * Assign Officer in charge
      * This must be in division/department/section/unit
@@ -1754,7 +1757,7 @@ class EmployeeProfileController extends Controller
      */
     public function assignOICByEmployeeID(Request $request)
     {
-        try{
+        try {
             $employee_profile = $request->user;
             // $cleanData['pin'] = strip_tags($request->password);
 
@@ -1765,7 +1768,7 @@ class EmployeeProfileController extends Controller
             $area_details = $employee_profile->assignedArea->findDetails();
             $area = null;
 
-            switch($area_details['sector']){
+            switch ($area_details['sector']) {
                 case 'Division':
                     $area = Division::where('chief_employee_profile_id', $employee_profile->id)->first();
                     break;
@@ -1781,12 +1784,12 @@ class EmployeeProfileController extends Controller
                 default:
                     return response()->json(['message' => "Invalid sector."], Response::HTTP_BAD_REQUEST);
             }
-            
-            if(!$area) return response()->json(['message' => "forbidden"], Response::HTTP_FORBIDDEN);
-            
+
+            if (!$area) return response()->json(['message' => "forbidden"], Response::HTTP_FORBIDDEN);
+
             $area->update(['oic_employee_profile_id' => strip_tags($request->OIC)]);
 
-            Helpers::registerSystemLogs($request, null, true, 'Success in assigning chief '.$this->PLURAL_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, null, true, 'Success in assigning chief ' . $this->PLURAL_MODULE_NAME . '.');
 
             $response = [
                 'id' => $area->id,
@@ -1796,13 +1799,13 @@ class EmployeeProfileController extends Controller
                 'position' => $area->oic->assignedArea->designation->name,
                 'updated_at' => $area->updated_at
             ];
-            
+
             return response()->json([
                 'data' => $response,
                 'message' => 'New officer incharge assign in department.'
             ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'assignOICByEmployeeID', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'assignOICByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -2843,7 +2846,6 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
 
     public function destroy($id, AuthPinApprovalRequest $request)
     {

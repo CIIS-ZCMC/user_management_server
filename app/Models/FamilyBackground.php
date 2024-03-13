@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Crypt;
 
 class FamilyBackground extends Model
 {
@@ -34,7 +35,7 @@ class FamilyBackground extends Model
     ];
 
     public $timestamps = TRUE;
-    
+
     public function personalInformation()
     {
         return $this->belongsTo(PersonalInformation::class);
@@ -42,33 +43,32 @@ class FamilyBackground extends Model
 
     public function fatherName()
     {
-        if ($this->father_middle_name === NULL ) {
-            return $this->father_last_name.', '.$this->father_first_name;
+        if ($this->father_middle_name === NULL) {
+            return $this->father_last_name . ', ' . $this->father_first_name;
         }
 
-        return $this->father_last_name.', '.$this->father_first_name.' '.$this->father_middle_name;
+        return $this->father_last_name . ', ' . $this->father_first_name . ' ' . $this->father_middle_name;
     }
 
     public function motherName()
     {
-        if ($this->mother_middle_name === NULL ) {
-            return $this->mother_last_name.', '.$this->mother_first_name;
+        if ($this->mother_middle_name === NULL) {
+            return $this->mother_last_name . ', ' . $this->mother_first_name;
         }
 
-        return $this->mother_last_name.', '.$this->mother_first_name.' '.$this->mother_middle_name;
-      
+        return $this->mother_last_name . ', ' . $this->mother_first_name . ' ' . $this->mother_middle_name;
     }
 
     public function decryptData($toEncrypt)
     {
         $encryptedData = null;
 
-        if($toEncrypt === 'tin_no'){
-            $encryptedData = $this->tin_no;
-        }else{
-            $encryptedData = $this->rdo_no;
+        if ($toEncrypt === 'tin_no') {
+            $encryptedData = $this->tin_no === null ? $this->tin_no : Crypt::decrypt($this->tin_no);
+        } else {
+            $encryptedData = $this->rdo_no === null ? $this->rdo_no : Crypt::decrypt($this->rdo_no);
         }
 
-        return openssl_decrypt($encryptedData, env("ENCRYPT_DECRYPT_ALGORITHM"), env("DATA_KEY_ENCRYPTION"), 0, substr(md5(env("DATA_KEY_ENCRYPTION")), 0, 16));
+        return $encryptedData;
     }
 }
