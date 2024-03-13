@@ -250,7 +250,7 @@ class OtherInformationController extends Controller
             // $cleanData['pin'] = strip_tags($request->password);
 
             // if ($user['authorization_pin'] !==  $cleanData['pin']) {
-            //     return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+            //     return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             // }
 
             $other_information = OtherInformation::findOrFail($id);
@@ -278,7 +278,7 @@ class OtherInformationController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $other_information = OtherInformation::where('personal_information_id', $id)->get();
@@ -306,7 +306,7 @@ class OtherInformationController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $employee_profile = EmployeeProfile::find($id);

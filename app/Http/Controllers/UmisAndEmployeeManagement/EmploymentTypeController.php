@@ -59,7 +59,7 @@ class EmploymentTypeController extends Controller
 
             $name = strip_tags($request->input('name'));
 
-            $employment_type = EmploymentType::create($name);
+            $employment_type = EmploymentType::create(['name' => $name]);
 
             Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
@@ -127,7 +127,7 @@ class EmploymentTypeController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $employment_type = EmploymentType::findOrFail($id);

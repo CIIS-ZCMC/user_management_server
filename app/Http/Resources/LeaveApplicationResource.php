@@ -18,11 +18,38 @@ class LeaveApplicationResource extends JsonResource
     public function toArray($request)
     {
 
+        $employee_profile = $this->employeeProfile;
         $area = $this->employeeProfile->assignedArea->findDetails();
         $leave_credits = EmployeeLeaveCredit::where('employee_profile_id', $this->employeeProfile->id)->where('leave_type_id', $this->leave_type_id)->first();
+        $oic = null;
 
         $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $this->employeeProfile->id)->first();
         $hrmo = Section::where('code', 'HRMO')->first();
+        
+        if($this->employee_oic_id  !== null){
+            switch($area['sector']){
+                case "Division":
+                    $area_details = $employee_profile->assignedArea->division;
+                    break;
+                case "Department":
+                    $area_details = $employee_profile->assignedArea->department;
+                    break;
+                case "Section":
+                    $area_details = $employee_profile->assignedArea->section;
+                    break;
+                case "Unit":
+                    $area_details = $employee_profile->assignedArea->unit;
+                    break;
+            }
+
+            $oic = [
+                'id' => $area_details->id,
+                'name' => $area_details->name,
+                'code' => $area_details->code,
+                'oic' => $this->oic->personalInformation->name(),
+                'position' => $this->oic->assignedArea->designation->name
+            ];
+        }
 
         //Check if requester is under HRMO
         $isUnderHRM = AssignArea::where('employee_profile_id', $this->employeeProfile->id)->where('section_id', $hrmo->id)->first();
@@ -63,6 +90,7 @@ class LeaveApplicationResource extends JsonResource
                     "designation_code" => $this->hrmoOfficer->assignedArea->designation->code,
                     "profile_url" => env('SERVER_DOMAIN') . "/photo/profiles/" . $this->hrmoOfficer->profile_url,
                 ],
+                "oic" => $oic,
                 'attachments' =>$this->leaveApplicationRequirements === null? []: LeaveApplicationAttachmentResource::collection($this->leaveApplicationRequirements),
                 'logs' => $this->logs ? LeaveApplicationLog::collection($this->logs):[],
                 'created_at'=>$this->created_at,
@@ -120,6 +148,7 @@ class LeaveApplicationResource extends JsonResource
                 "designation_code" => $this->approvingOfficer->assignedArea->designation->code,
                 "profile_url" => env('SERVER_DOMAIN') . "/photo/profiles/" . $this->approvingOfficer->profile_url,
             ],
+            "oic" => $oic,
             'attachments' =>$this->leaveApplicationRequirements === null? []: LeaveApplicationAttachmentResource::collection($this->leaveApplicationRequirements),
             'logs' => $this->logs ? LeaveApplicationLog::collection($this->logs):[],
             'created_at'=>$this->created_at,

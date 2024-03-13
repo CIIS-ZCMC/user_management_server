@@ -7,7 +7,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Requests\NewRolePermissionRequest;
 use App\Http\Resources\DesignationAssignedSystemRolesResource;
-use App\Http\Resources\DesignationWithSystemRoleResource;
 use App\Http\Resources\EmployeeWithSpecialAccessResource;
 use App\Http\Resources\PositionSystemRoleOnlyResource;
 use App\Http\Resources\SpecialAccessRoleAssignResource;
@@ -15,15 +14,9 @@ use App\Models\Designation;
 use App\Models\EmployeeProfile;
 use App\Models\Role;
 use App\Models\SpecialAccessRole;
-use App\Models\SystemModule;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Helpers\Helpers;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\Hash;
-use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\SystemRoleRequest;
 use App\Http\Resources\SystemRoleResource;
 use App\Http\Resources\SystemRolePermissionsResource;
@@ -212,7 +205,7 @@ class SystemRoleController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
             
             $system = System::find($id);
@@ -480,7 +473,7 @@ class SystemRoleController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $systemRole = SystemRole::find($id);
@@ -512,7 +505,7 @@ class SystemRoleController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $systemRole = SystemRole::findOrFail($id);

@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class ScheduleRequest extends FormRequest
+class OnCallRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -17,15 +17,14 @@ class ScheduleRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         return [
-            // 'employee.*' => 'required|array',
-            // 'selected_date.*' => 'required|array',
-            // 'time_shift_id' => 'required|integer',
-            // 'date' => 'nullable|date_format:Y-m-d',
+            'employee_profile_id*'   => 'required|integer',
+            'date'                  => 'required|date',
+            'remarks'               => 'required|string',
         ];
     }
 }

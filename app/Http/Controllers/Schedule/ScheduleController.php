@@ -56,7 +56,7 @@ class ScheduleController extends Controller
                                             ->whereMonth('date', '=', $month)
                                             ->where('employee_profile_schedule.deleted_at', '=', null );
                                 }])->whereIn('id', $employee_ids)
-                                ->where('id', '!=', $user->id)
+                                // ->where('id', '!=', $user->id)
                                 ->get();
                     
             $data = [];
@@ -74,7 +74,6 @@ class ScheduleController extends Controller
             return response()->json([
                 'data' => $data,
                 'dates' => $dates_with_day,
-                'time_shift' => TimeShiftResource::collection(TimeShift::all()),
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
@@ -90,7 +89,7 @@ class ScheduleController extends Controller
         try {
             $user = $request->user;
             // API For Personal Calendar
-            $model = EmployeeSchedule::where('employee_profile_id', $user->id)->get();
+            $model = EmployeeSchedule::where('employee_profile_id', $user->id)->where('deleted_at', null)->get();
             return response()->json([
                 'data' => EmployeeScheduleResource::collection($model),
                 'holiday' => Holiday::all()
@@ -134,71 +133,63 @@ class ScheduleController extends Controller
             $user           = $request->user;
             $employees      = $cleanData['employee'];
             $selected_date  = $cleanData['selected_date'];   // Selected Date;
+            $check_employee_schedules = null;
 
-            foreach ($selected_date as $value) {
-                $schedule = Schedule::where('time_shift_id', $value['time_shift_id'])->where('date', $value['date'])->first();
-        
-                if ($schedule) {
-                    $data = $schedule;
-                } else {
-                    
-                    $dates = Carbon::parse($value['date']);
-                    $isWeekend = $dates->dayOfWeek === 6 || $dates->dayOfWeek === 0;
-
-                    if ($isWeekend) {
-                        $is_weekend = 1;
-                    }
-
-                    $data = new Schedule;
-
-                    $data->time_shift_id    = $value['time_shift_id'];
-                    $data->date             = $value['date'];
-                    $data->is_weekend       = $is_weekend;
-                    $data->save();
-                }
-
-                // $is24Hrs = Helpers::checkIs24PrevNextSchedule($data, $employee, $selected_date);
-
-                // if ($is24Hrs['result'] !== 'No Schedule') {
-                //     return response()->json([$is24Hrs['result']], Response::HTTP_FOUND);
-                // }
-
+            if ($selected_date === "") {
                 foreach ($employees as $employee) {
-                    
-                    if ($this->hasOverlappingSchedule($value['time_shift_id'], $value['date'], $employee['employee_id'])) {
-                        return response()->json(['message' => 'Overlap with existing schedule'], Response::HTTP_FOUND);
-                    }
-                    
-                    $existing_employee_ids = EmployeeProfile::where('id', $employee['employee_id'])->pluck('id');
+                    $existing_employee_ids = EmployeeProfile::where('id', $employee)->pluck('id');
 
                     foreach ($existing_employee_ids as $employee_id) {
                         $check_employee_schedules = EmployeeSchedule::where('employee_profile_id', $employee_id)
-                                                                    ->where('schedule_id', $data->id)
                                                                     ->where('deleted_at', null)
                                                                     ->first();
 
-                        if ($check_employee_schedules !== null) {
-                            // Schedule already exists for this employee, update the schedule ID
-                            $check_employee_schedules->schedule_id = $schedule->id;
-                            $check_employee_schedules->update();
-                        } else {
-                            // No schedule exists for this employee, attach the employee to the schedule
-                            $data->employee()->attach($employee_id);
+                        $check_employee_schedules->delete();
+                    }
+                }
+            } else {
+                // Delete existing data for the selected dates and time shifts
+                foreach ($employees as $employee) {
+                    $schedule = EmployeeSchedule::where('employee_profile_id', $employee)->get();
+                    foreach ($schedule as $value) {
+                       $value->forceDelete();
+                    }
+                }
+
+                // Save new data
+                foreach ($selected_date as $selectedDate) {
+                    $timeShiftId = $selectedDate['time_shift_id'];
+
+                    foreach ($selectedDate['date'] as $date) {
+                        $schedule = Schedule::where('time_shift_id', $selectedDate['time_shift_id'])
+                                            ->where('date', $date)
+                                            ->first();
+                
+                        if (!$schedule) {
+                            // Create a new schedule if it doesn't exist
+                            $isWeekend = (Carbon::parse($date))->isWeekend();
+                            
+                            $schedule = new Schedule;
+                            $schedule->time_shift_id    = $timeShiftId;
+                            $schedule->date             = $date;
+                            $schedule->is_weekend       = $isWeekend ? 1 : 0;
+                            $schedule->save();
                         }
-                        
-                        $employee_schedule = $data->employee()->where('employee_profile_id', $employee_id)->first()->id;
-                        Helpers::registerEmployeeScheduleLogs($employee_schedule, $user->id, 'Store');
+                
+                        // Attach employees to the schedule
+                        $schedule->employee()->attach($employees);
                     }
                 }
             }
+           
 
-            Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
+            // Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json([
-                'data' =>  new ScheduleResource($data),
+                // 'data' =>  new ScheduleResource($data),
                 'message' => 'New employee schedule registered.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
-
+            return $th;
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -219,6 +210,36 @@ class ScheduleController extends Controller
             return response()->json(['data' => $data], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'show', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function edit(Request $request, $id)
+    {
+        try {
+            $model = EmployeeSchedule::where('employee_profile_id', $id)->where('deleted_at', null)->get();
+            
+            $schedule = [];
+            foreach ($model as $value) {
+                $schedule[] = [
+                    'id'    => $value->schedule->timeShift->id,
+                    'start' => $value->schedule->date,
+                    'title' => $value->schedule->timeShift->timeShiftDetails(),
+                    'color' => $value->schedule->timeShift->color,
+                ];
+            }
+            
+            $data = [
+                'employee_id' => $model->isEmpty() ? null : $model->first()->employee_profile_id,
+                'schedule'    => $schedule,
+            ];
+
+            return response()->json([
+                'data' => new EmployeeScheduleResource($data),
+                'holiday' => Holiday::all()
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

@@ -780,6 +780,10 @@ Route::middleware('auth.cookie')->group(function () {
          * Employee Profile Module
          */
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function () {
+            Route::post('employees-assign-oic', 'EmployeeProfileController@assignOICByEmployeeID');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function () {
             Route::get('employees-for-oic', 'EmployeeProfileController@employeesForOIC');
         });
 
@@ -1874,6 +1878,10 @@ Route::middleware('auth.cookie')->group(function () {
             Route::post('schedule', 'ScheduleController@store');
         });
 
+        Route::middleware(['auth.permission:UMIS-ScM view'])->group(function () {
+            Route::get('schedule/{id}', 'ScheduleController@edit');
+        });
+
         Route::middleware(['auth.permission:UMIS-ScM update'])->group(function () {
             Route::put('schedule/{id}', 'ScheduleController@update');
         });
@@ -1883,7 +1891,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function () {
-            Route::get('schedules-time-shift', 'ScheduleController@scheduleTimeShift');
+            Route::get('schedules-time-shift', 'TimeShiftController@index');
         });
 
         /**
@@ -1892,6 +1900,10 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function () {
             Route::get('employee-schedule', 'EmployeeScheduleController@create');
         });
+
+        // Route::middleware(['auth.permission:UMIS-ScM write'])->group(function () {
+            // Route::post('employee-schedule', 'EmployeeScheduleController@store');
+        // });
 
         /**
          * Exchange Schedule Module

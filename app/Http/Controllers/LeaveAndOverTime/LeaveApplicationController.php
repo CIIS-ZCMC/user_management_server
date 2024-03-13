@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\LeaveAndOverTime;
 
+use App\Http\Controllers\UmisAndEmployeeManagement\EmployeeProfileController;
 use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Resources\LeaveTypeResource;
 use App\Models\Division;
@@ -25,9 +26,6 @@ use App\Models\EmployeeLeaveCreditLogs;
 use App\Models\EmployeeProfile;
 use App\Models\LeaveApplicationLog;
 use App\Models\LeaveApplicationRequirement;
-use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\Hash;
-use App\Http\Resources\EmployeeLeaveCredit as EmployeeLeaveCreditResource;
 
 class LeaveApplicationController extends Controller
 {
@@ -77,6 +75,7 @@ class LeaveApplicationController extends Controller
                     'hrmo_officer',
                     'recommending_officer',
                     'approving_officer',
+                    'employee_oic_id',
                     'created_at',
                     'updated_at'
                 )
@@ -131,6 +130,7 @@ class LeaveApplicationController extends Controller
                     'hrmo_officer',
                     'recommending_officer',
                     'approving_officer',
+                    'employee_oic_id',
                     'created_at',
                     'updated_at'
                 )
@@ -271,7 +271,7 @@ class LeaveApplicationController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             foreach ($request->credits as $credit) {
@@ -340,7 +340,7 @@ class LeaveApplicationController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             foreach ($request->credits as $credit) {
@@ -401,9 +401,8 @@ class LeaveApplicationController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
-
 
             $leave_application = LeaveApplication::find($id);
 
@@ -445,14 +444,16 @@ class LeaveApplicationController extends Controller
                     break;
             }
 
+            $employee_profile = $leave_application->employeeProfile;
+
             LeaveApplicationLog::create([
                 'action_by' => $employee_profile->id,
                 'leave_application_id' => $leave_application->id,
                 'action' => $log_status
             ]);
-
+           
             return response()->json([
-                'data' => new LeaveApplicationResource($leave_application),
+                'data' =>  new LeaveApplicationResource($leave_application),
                 'message' => 'Successfully approved application.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -492,10 +493,8 @@ class LeaveApplicationController extends Controller
     }
 
     public function store(LeaveApplicationRequest $request)
-
     {
         try {
-
             $employee_profile = $request->user;
             $recommending_and_approving = Helpers::getRecommendingAndApprovingOfficer($employee_profile->assignedArea->findDetails(), $employee_profile->id);
             $hrmo_officer = Helpers::getHrmoOfficer();
@@ -527,10 +526,7 @@ class LeaveApplicationController extends Controller
             if ($overlappingLeave) {
                 return response()->json(['message' => 'You already have an application for the same dates.'], 403);
             } else {
-
                 if ($leave_type->is_special) {
-             
-               
                     if ($leave_type->period < $daysDiff) {
                         return response()->json(['message' => 'Exceeds days entitled for ' . $leave_type->name], Response::HTTP_FORBIDDEN);
                     }
@@ -538,6 +534,10 @@ class LeaveApplicationController extends Controller
                     $cleanData['applied_credits'] = $daysDiff;
                     $cleanData['employee_profile_id'] = $employee_profile->id;
                     $cleanData['hrmo_officer'] = $hrmo_officer;
+
+                    // if($request->employee_oic_id !== "null" && $request->employee_oic_id !== null ){
+                    //     $cleanData['employee_oic_id'] = (int) strip_tags($request->employee_oic_id);
+                    // }
 
                     $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $employee_profile->id)->first();
 
@@ -593,25 +593,25 @@ class LeaveApplicationController extends Controller
                         'leave_application_id' => $leave_application->id,
                         'action' => 'Applied'
                     ]);
-    
-                   
-                    
                 } 
                 else 
                 { 
-                     
                     $employee_credit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)
                         ->where('leave_type_id', $request->leave_type_id)->first();
     
     
                     //  return response()->json(['message' => $request->without_pay == 0 && $employee_credit->total_leave_credits < $daysDiff], 401);
                     if ($request->without_pay == 0 && $employee_credit->total_leave_credits < $daysDiff) {
-    
                         return response()->json(['message' => 'Insufficient leave credits.'], Response::HTTP_BAD_REQUEST);
                     } else {
+
                         $cleanData['applied_credits'] = $daysDiff;
                         $cleanData['employee_profile_id'] = $employee_profile->id;
                         $cleanData['hrmo_officer'] = $hrmo_officer;
+    
+                        // if($request->employee_oic_id !== "null" && $request->employee_oic_id !== null ){
+                        //     $cleanData['employee_oic_id'] = (int) strip_tags($request->employee_oic_id);
+                        // }
                         
                         $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $employee_profile->id)->first();
 
@@ -682,15 +682,12 @@ class LeaveApplicationController extends Controller
                             'leave_application_id' => $leave_application->id,
                             'action' => 'Applied'
                         ]);
-                    }
-     
-                    
+                    }  
                 }
 
                 $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->get();
                
                 foreach ($employeeCredit as $leaveCredit) {
-                 
                     $leaveType = $leaveCredit->leaveType->name;
                     $totalCredits = $leaveCredit->total_leave_credits;
                     $usedCredits = $leaveCredit->used_leave_credits;
@@ -701,12 +698,12 @@ class LeaveApplicationController extends Controller
                         'used_leave_credits' => $usedCredits
                     ];
                 }
+               
                 return response()->json([
-                    'data' => new LeaveApplicationResource($leave_application),
+                    'data' =>  new LeaveApplicationResource($leave_application),
                     'credits' => $result ? $result : [],
                     'message' => 'Successfully applied for ' . $leave_type->name
                 ], Response::HTTP_OK);
-               
             }
            
         } catch (\Throwable $th) {
@@ -718,6 +715,10 @@ class LeaveApplicationController extends Controller
     {
         try {
             $leave_application = LeaveApplication::find($id);
+
+            if(!$leave_application){
+                return response()->json(['message' => "No leave application record."], Response::HTTP_NOT_FOUND);
+            }
 
             return response()->json([
                 'data' => new LeaveApplicationResource($leave_application),
@@ -736,7 +737,7 @@ class LeaveApplicationController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $leave_application = LeaveApplication::find($id);
@@ -756,8 +757,6 @@ class LeaveApplicationController extends Controller
             {
                 $status='declined by approving officer';
             }
-
-            // return response()->json(['message' => $leave_type->is_special], 401);
 
             $leave_application->update([
                 'status' => $status,
@@ -783,13 +782,6 @@ class LeaveApplicationController extends Controller
                     'reason' => "declined"
                 ]);
             }
-
-
-            LeaveApplicationLog::create([
-                'action_by' => $employee_profile->id,
-                'leave_application_id' => $leave_application->id,
-                'action' => 'Declined'
-            ]);
 
             return response()->json([
                 'data' => new LeaveApplicationResource($leave_application),

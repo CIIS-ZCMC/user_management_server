@@ -39,8 +39,13 @@ class LeaveApplication extends Model
         'reason',
         'hrmo_officer',
         'recommending_officer',
-        'approving_officer'
+        'approving_officer',
+        'employee_oic_id',
     ];
+
+    public function oic(){
+        return $this->belongsTo(EmployeeProfile::class, 'employee_oic_id');
+    }
 
     public function leaveType()
     {

@@ -65,7 +65,7 @@ class DivisionController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $division = Division::find($id);
@@ -113,7 +113,7 @@ class DivisionController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
             
             $division = Division::find($id);
@@ -131,7 +131,7 @@ class DivisionController extends Controller
             }
 
             if($employee_profile->id !== $division->chief_employee_profile_id){
-                return response()->json(['message' => 'UnAuthorized.'], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => 'UnAuthorized.'], Response::HTTP_FORBIDDEN);
             }
 
             $user = $request->user;
@@ -140,7 +140,7 @@ class DivisionController extends Controller
             $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
 
             if (!Hash::check($cleanData['password'].env("SALT_VALUE"), $decryptedPassword)) {
-                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
             }
 
             $cleanData = [];
@@ -230,7 +230,7 @@ class DivisionController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $division = Division::find($id);
@@ -277,7 +277,7 @@ class DivisionController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $division = Division::findOrFail($id);

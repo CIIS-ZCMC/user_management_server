@@ -11,41 +11,45 @@
         padding: 5px;
     }
 
+    .fentry {
+        font-size: 13px
+    }
+
     #tabledate {
         width: 100%;
         background-color: #F8F4EA;
-        padding: 10px;
-        border-collapse: collapse;
+
+        border-collapse: separate;
         text-align: center;
     }
 
     #tabledate tr th {
-        font-size: 13px;
+        font-size: 11px;
         text-transform: uppercase;
         color: #597E52;
-        border: 1px solid rgb(177, 181, 185);
+
     }
 
     #tabledate tr td {
-        padding: 5px;
+
         border-top: 1px solid rgb(196, 197, 201);
     }
 
     #tabledate tr .time {
         font-weight: bold;
         color: #57805e;
-
+        padding: 12px;
     }
 
     #tabledate tr .timefirstarrival {
         font-weight: normal;
         text-transform: uppercase;
-        font-size: 12px;
+        font-size: 10px;
     }
 
     #tabledate #tblheader tr td {
         font-weight: normal;
-        font-size: 13px;
+        font-size: 11px;
         color: #637A9F;
     }
 </style>
@@ -53,13 +57,36 @@
 <div id="po">
 
     <table id="tabledate">
+
+        <tr>
+            <th colspan="2" style="background-color: whitesmoke">
+
+            </th>
+
+            <th colspan="2" style="border-bottom: 1px solid rgb(197, 196, 196);font-size:15px">AM</th>
+
+            <th colspan="2" style="border-bottom: 1px solid rgb(197, 196, 196);font-size:15px">PM</th>
+            <th>
+
+                <table id="tblheader">
+                    <tr>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </table>
+            </th>
+            <th style="background-color: whitesmoke">
+
+            </th>
+        </tr>
+
         <tr>
             <th colspan="2" style="background-color: whitesmoke">
                 Day
             </th>
 
             <th>Arrival</th>
-            <th>Departure</th>
+            <th style="border-right: 1px solid rgb(184, 184, 184) ">Departure</th>
             <th>Arrival</th>
             <th>Departure</th>
             <th>
@@ -103,7 +130,7 @@
 
                     </td>
                     <td style="width: 80px;border-right :1px solid rgb(196, 197, 201);background-color: whitesmoke">
-                        <span style="color:#637A9F; font-size:13px">
+                        <span style="color:#637A9F; font-size:12px">
                             {{ date('l', strtotime(date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)))) }}
                         </span>
                     </td>

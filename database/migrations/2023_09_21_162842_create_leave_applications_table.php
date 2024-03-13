@@ -37,6 +37,8 @@ return new class extends Migration
             $table->foreign('recommending_officer')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->unsignedBigInteger('approving_officer')->unsigned()->nullable();
             $table->foreign('approving_officer')->references('id')->on('employee_profiles')->onDelete('cascade');
+            $table->unsignedBigInteger('employee_oic_id')->unsigned()->nullable();
+            $table->foreign('employee_oic_id')->references('id')->on('employee_profiles')->onDelete('no action');
             $table->timestamps();
         });
     }

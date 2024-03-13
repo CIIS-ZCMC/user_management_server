@@ -27,56 +27,53 @@ class FamilyBackgroundController extends Controller
 
     public function findByEmployeeID($id, Request $request)
     {
-        try{
+        try {
             $employee = EmployeeProfile::find($id);
 
-            if(!$employee)
-            {
+            if (!$employee) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
             $personal_information = $employee->personalInformation;
 
 
-            $family_background = FamilyBackground::where('personal_information_id',$personal_information['id'])->first();
+            $family_background = FamilyBackground::where('personal_information_id', $personal_information['id'])->first();
 
-            if(!$family_background)
-            {
+            if (!$family_background) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            return response()->json(['data' => new FamilyBackgroundResource($family_background),'message' => 'Employee family background record retrieved.'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'familyBackGroundEmployee', $th->getMessage());
+            return response()->json(['data' => new FamilyBackgroundResource($family_background), 'message' => 'Employee family background record retrieved.'], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'familyBackGroundEmployee', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function findByPersonalInformationID($id, Request $request)
     {
-        try{
-            $family_background = FamilyBackground::where('personal_information_id',$id)->first();
+        try {
+            $family_background = FamilyBackground::where('personal_information_id', $id)->first();
 
-            if(!$family_background)
-            {
+            if (!$family_background) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            return response()->json(['data' => new FamilyBackgroundResource($family_background),'message' => 'Employee family background record retrieved.'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'familyBackGroundPersonalInformation', $th->getMessage());
+            return response()->json(['data' => new FamilyBackgroundResource($family_background), 'message' => 'Employee family background record retrieved.'], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'familyBackGroundPersonalInformation', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     /**
      * Family background registration and Children registration
      */
     public function store(FamilyBackgroundRequest $request)
     {
 
-        
-        try{
+
+        try {
             $failed = [];
             $success = [];
             $cleanData = [];
@@ -85,18 +82,17 @@ class FamilyBackgroundController extends Controller
 
             $personal_information = PersonalInformation::find($personal_information_id);
 
-            if(!$personal_information)
-            {
-                return response()->json(['message'=> 'No record found.'], Response::HTTP_NOT_FOUND);
+            if (!$personal_information) {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
             foreach ($request->all() as $key => $value) {
-                if($key === 'user' || $key === 'children') continue;
-                if($value === null){
+                if ($key === 'user' || $key === 'children') continue;
+                if ($value === null) {
                     $cleanData[$key] = $value;
                     continue;
                 }
-                if($key === 'tin_no' || $key === 'rdo_no'){
+                if ($key === 'tin_no' || $key === 'rdo_no') {
                     $cleanData[$key] = $this->encryptData($value);
                     continue;
                 }
@@ -106,12 +102,12 @@ class FamilyBackgroundController extends Controller
             $family_background = FamilyBackground::create($cleanData);
 
 
-            
-            foreach(json_decode($request->children) as $child){
+
+            foreach (json_decode($request->children) as $child) {
                 $child_data = [];
                 $child_data['personal_information_id'] = $personal_information_id;
-                foreach($child as $key => $value) {
-                    if($value === null){
+                foreach ($child as $key => $value) {
+                    if ($value === null) {
                         $child_data[$key] = $value;
                         continue;
                     }
@@ -119,7 +115,7 @@ class FamilyBackgroundController extends Controller
                 }
                 $child_store = Child::create($child_data);
 
-                if(!$child_store) {
+                if (!$child_store) {
                     $failed[] = $child;
                     continue;
                 }
@@ -127,7 +123,7 @@ class FamilyBackgroundController extends Controller
                 $success[] = $child_store;
             }
 
-            if(count($failed) > 0){
+            if (count($failed) > 0) {
                 return response()->json([
                     'data' => [
                         'family' => new FamilyBackgroundResource($family_background),
@@ -135,8 +131,8 @@ class FamilyBackgroundController extends Controller
                     ]
                 ], Response::HTTP_OK);
             }
-            
-            Helpers::registerSystemLogs($request, $family_background['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+
+            Helpers::registerSystemLogs($request, $family_background['id'], true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
 
             return response()->json([
                 'data' => [
@@ -145,148 +141,144 @@ class FamilyBackgroundController extends Controller
                 ],
                 'message' => 'New family background registered.'
             ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function show($id, Request $request)
     {
-        try{
+        try {
             $family_background = FamilyBackground::findOrFail($id);
 
-            if(!$family_background)
-            {
+            if (!$family_background) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
             return response()->json(['data' => new FamilyBackgroundResource($family_background), 'message' => 'Family background record retrieved.'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'show', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function update($id, FamilyBackgroundRequest $request)
     {
-        try{
+        try {
             $family_background = FamilyBackground::find($id);
 
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if($value === null){
+                if ($value === null) {
                     $cleanData[$key] = $value;
                     continue;
                 }
-                if($key === 'tin_no' || $key === 'rdo_no'){
+                if ($key === 'tin_no' || $key === 'rdo_no') {
                     $cleanData[$key] = $this->encryptData($value);
                     continue;
                 }
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $family_background -> update($cleanData);
+            $family_background->update($cleanData);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            Helpers::registerSystemLogs($request, $id, true, 'Success in updating ' . $this->SINGULAR_MODULE_NAME . '.');
 
-            return response()->json(['data' => new FamilyBackgroundResource($family_background) ,'message' => 'Employee family background details updated.'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+            return response()->json(['data' => new FamilyBackgroundResource($family_background), 'message' => 'Employee family background details updated.'], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function destroy($id, AuthPinApprovalRequest $request)
     {
-        try{
+        try {
             $user = $request->user;
             $cleanData['pin'] = strip_tags($request->pin);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $family_background = FamilyBackground::findOrFail($id);
 
-            if(!$family_background)
-            {
+            if (!$family_background) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $family_background -> delete();
-            
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
+            $family_background->delete();
+
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting ' . $this->SINGULAR_MODULE_NAME . '.');
+
             return response()->json(['message' => 'Employee family background record deleted.'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function destroyByPersonalInformationID($id, AuthPinApprovalRequest $request)
     {
-        try{
+        try {
             $user = $request->user;
             $cleanData['pin'] = strip_tags($request->pin);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
-            $family_background = FamilyBackground::where('personal_information_id',$id)->first();
+            $family_background = FamilyBackground::where('personal_information_id', $id)->first();
 
-            if(!$family_background)
-            {
+            if (!$family_background) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $family_background -> delete();
+            $family_background->delete();
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting employee '.$this->SINGULAR_MODULE_NAME.'.');
-            
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting employee ' . $this->SINGULAR_MODULE_NAME . '.');
+
             return response()->json(['message' => 'Employee family background record deleted.'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'destroyPersonalInformation', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'destroyPersonalInformation', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function destroyByEmployeeID($id, AuthPinApprovalRequest $request)
     {
-        try{
+        try {
             $user = $request->user;
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_UNAUTHORIZED);
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $employee = EmployeeProfile::find($id);
 
-            if(!$employee)
-            {
+            if (!$employee) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
             $personal_information = $employee->personalInformation;
 
             $family_background = $personal_information->familyBackground;
-            $family_background -> delete();
+            $family_background->delete();
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting employee '.$this->SINGULAR_MODULE_NAME.'.');
-            
+            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting employee ' . $this->SINGULAR_MODULE_NAME . '.');
+
             return response()->json(['message' => 'Employee family background record deleted.'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'destroyEmployee', $th->getMessage());
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'destroyEmployee', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
     protected function encryptData($dataToEncrypt)
     {
-        return openssl_encrypt($dataToEncrypt, env("ENCRYPT_DECRYPT_ALGORITHM"), env("DATA_KEY_ENCRYPTION"), 0, substr(md5(env("DATA_KEY_ENCRYPTION")), 0, 16));
+        return Crypt::encrypt($dataToEncrypt);
     }
 }
