@@ -155,6 +155,7 @@ class DesignationController extends Controller
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
+
             
             $failed = [];
             $designations = [];
