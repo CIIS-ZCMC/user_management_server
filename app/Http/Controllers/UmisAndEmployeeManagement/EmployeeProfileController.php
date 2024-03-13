@@ -1598,7 +1598,7 @@ class EmployeeProfileController extends Controller
                 $data = Helpers::generateMyOTP($employee_profile);
 
                 if ($this->mail->send($data)) {
-                    return response()->json(['message' => "OTP has sent to your email, submit the OTP to verify that this is your account."], Response::HTTP_OK)
+                    return response()->json(['message' => "OTP has sent to your email, submit the OTP to verify that this is your account."], Response::HTTP_FOUND)
                         ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', env('SESSION_DOMAIN'), false);
                 }
 
