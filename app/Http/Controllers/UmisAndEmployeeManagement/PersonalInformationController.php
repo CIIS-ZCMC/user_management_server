@@ -143,6 +143,10 @@ class PersonalInformationController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
+                if($key === 'height' || $key === 'weight'){
+                    $cleanData[$key] = $value === '' || $value==='null' || $value===null? null:$value;
+                    continue;
+                }
                 $cleanData[$key] = strip_tags($value);
             }
 
