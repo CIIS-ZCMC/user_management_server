@@ -214,7 +214,7 @@
 
                     <td class="topleft" colspan="1" style="border-left:#ddd">
                         <label> (Middle) </label> <br>
-                        <label class="text-center" style="padding:4px; font-weight:lighter"> {{ $data->employeeProfile->personalInformation->last_name ?? null }} </label>
+                        <label class="text-center" style="padding:4px; font-weight:lighter"> {{ $data->employeeProfile->personalInformation->middle_name ?? null }} </label>
                     </td>
                 </tr>
 
@@ -461,20 +461,34 @@
                                         </thead>
                                         <tbody>
                                           <tr>
-                                            <td style="padding: 8px; font-size:12px"></td>
-                                            <td style="padding: 8px; font-size:12px"></td>
-                                            <td style="padding: 8px; font-size:12px"></td>
+                                            <td style="padding: 3px; font-size:11px">{{$vl_employee_credit->total_leave_credits}}</td>
+                                            <td style="padding: 3px; font-size:11px">{{$sl_employee_credit->total_leave_credits}}</td>
+                                            <td style="padding: 3px; font-size:11px">{{$vl_employee_credit->total_leave_credits + $sl_employee_credit->total_leave_credits}}</td>
+                                          </tr>
+                                      
+
+                                          <tr>
+                                            @if($data->without_pay === true)
+                                                <td style="padding: 3px; font-size:11px">&nbsp;</td>
+                                                <td style="padding: 3px; font-size:11px">&nbsp;</td>
+                                                <td style="padding: 3px; font-size:11px">&nbsp;</td>
+                                            @else
+                                                <td style="padding: 3px; font-size:11px">{{$data->leave_type_id === $vl_employee_credit->leave_type_id? $data->applied_credits:0}}</td>
+                                                <td style="padding: 3px; font-size:11px">{{$data->leave_type_id === $sl_employee_credit->leave_type_id? $data->applied_credits:0}}</td>
+                                                <td style="padding: 3px; font-size:11px">{{$data->applied_credits}}</td>
+                                            @endif
                                           </tr>
                                           <tr>
-                                            <td style="padding: 8px; font-size:12px"></td>
-                                            <td style="padding: 8px; font-size:12px"></td>
-                                            <td style="padding: 8px; font-size:12px"></td>
-                                          </tr>
-                                          <tr>
-                                            <td class="text-end" style="font-weight: lighter">DAYS</td>
-                                            <td class="text-end" style="font-weight: lighter">DAYS</td>
-                                            <td class="text-end" style="font-weight: lighter">DAYS</td>
-                                          </tr>
+                                            @if($data->without_pay === true)
+                                                <td class="text-end" style="font-weight: lighter; font-size:11px">{{ $vl_employee_credit->total_leave_credits }} DAYS</td>
+                                                <td class="text-end" style="font-weight: lighter; font-size:11px">{{$sl_employee_credit->total_leave_credits}} DAYS</td>
+                                                <td class="text-end" style="font-weight: lighter; font-size:11px">{{$vl_employee_credit->total_leave_credits + $sl_employee_credit->total_leave_credits - 0}} DAYS</td>
+                                            @else
+                                                <td class="text-end" style="font-weight: lighter; font-size:11px">{{$data->leave_type_id !== $vl_employee_credit->leave_type_id? $vl_employee_credit->total_leave_credits :$vl_employee_credit->total_leave_credits - $data->applied_credits}} DAYS</td>
+                                                <td class="text-end" style="font-weight: lighter; font-size:11px">{{$data->leave_type_id !== $sl_employee_credit->leave_type_id? $sl_employee_credit->total_leave_credits :$sl_employee_credit->total_leave_credits - $data->applied_credits}} DAYS</td>
+                                                <td class="text-end" style="font-weight: lighter; font-size:11px">{{$vl_employee_credit->total_leave_credits + $sl_employee_credit->total_leave_credits - $data->applied_credits}} DAYS</td>
+                                            @endif
+                                            </tr>
                                         </tbody>
                                     </table>
         
