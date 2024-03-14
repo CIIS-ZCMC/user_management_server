@@ -33,6 +33,7 @@ class EmployeeScheduleResource extends JsonResource
                 "first_out" => $this->schedule->timeShift->first_out,
                 "second_in" => $this->schedule->timeShift->second_in,
                 "second_out" => $this->schedule->timeShift->second_out,
+                "color" => $this->schedule->timeShift->color,
             ],
             "remarks" => $this->remarks
         ];

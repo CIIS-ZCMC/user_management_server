@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Schedule;
 
 use App\Http\Requests\OnCallRequest;
+use App\Http\Resources\EmployeeProfileResource;
 use App\Http\Resources\OnCallResource;
 use App\Models\EmployeeProfile;
 use App\Models\OnCall;
@@ -39,13 +40,15 @@ class OnCallController extends Controller
             $employee_ids = collect($employees)->pluck('id')->toArray();
 
             $model = OnCall::with(['employee' => function ($query) use ($employee_ids) {
-                $query->whereIn('id', $employee_ids);
-            }])->get();
-
+                $query->with('personalInformation')->whereIn('id', $employee_ids);
+            }])
+            ->whereYear('date', '=', $request->year)
+            ->whereMonth('date', '=', $request->month)
+            ->get();
 
             return response()->json([
                 'data' => OnCallResource::collection($model),
-                'employee' => $employees,
+                'employee' => EmployeeProfileResource::collection($employees),
             ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
