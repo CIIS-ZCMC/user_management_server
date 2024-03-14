@@ -201,7 +201,7 @@ class EmployeeProfileController extends Controller
                 $data = Helpers::generateMyOTP($employee_profile);
 
                 if ($this->mail->send($data)) {
-                    return response()->json(['message' => "OTP has sent to your email, submit the OTP to verify that this is your account."], Response::HTTP_OK)
+                    return response()->json(['message' => "OTP has sent to your email, submit the OTP to verify that this is your account."], Response::HTTP_FOUND)
                         ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', env('SESSION_DOMAIN'), false);
                 }
 
@@ -763,7 +763,7 @@ class EmployeeProfileController extends Controller
             'password_expiration_at' => $employee_profile->password_expiration_at,
             'password_updated_at' => $employee_profile->password_created_at,
             'pin_created_at' => $employee_profile->pin_created_at,
-            'designation' => $designation['name'], 
+            'designation' => $designation['name'],
             'plantilla_number_id' => $assigned_area['plantilla_number_id'],
             'plantilla_number' => $assigned_area['plantilla_number_id'] === NULL ? NULL : $assigned_area->plantillaNumber['number'],
             'employee_details' => [
