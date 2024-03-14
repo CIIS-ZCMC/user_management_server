@@ -111,7 +111,7 @@ class ScheduleController extends Controller
             ];
 
             return response()->json([
-                'data' => EmployeeScheduleResource::collection($data),
+                'data' => new EmployeeScheduleResource($data),
                 'holiday' => Holiday::all()
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -257,8 +257,7 @@ class ScheduleController extends Controller
             ];
 
             return response()->json([
-                // 'data' => new EmployeeScheduleResource($data),
-                'data' => $data,
+                'data' => new EmployeeScheduleResource($data),
                 'holiday' => Holiday::all()
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
