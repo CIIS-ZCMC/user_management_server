@@ -43,10 +43,10 @@ class BioController extends Controller
 
         $user = $request->user;
 
-        $password_decrypted = Crypt::decryptString($user['password_encrypted']);
-        $password = strip_tags($request->password);
-        if (!Hash::check($password . env("SALT_VALUE"), $password_decrypted)) {
-            return response()->json(['message' => "Password incorrect."], Response::HTTP_FORBIDDEN);
+        $cleanData['pin'] = strip_tags($request->pin);
+
+        if ($user['authorization_pin'] !==  $cleanData['pin']) {
+            return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
         }
 
 
@@ -283,10 +283,10 @@ class BioController extends Controller
     {
         try {
             $user = $request->user;
-            $password_decrypted = Crypt::decryptString($user['password_encrypted']);
-            $password = strip_tags($request->password);
-            if (!Hash::check($password . env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_FORBIDDEN);
+            $cleanData['pin'] = strip_tags($request->pin);
+
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $this->device_ids = $request->deviceID;

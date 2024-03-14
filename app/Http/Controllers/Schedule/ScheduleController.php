@@ -22,6 +22,7 @@ use Illuminate\Support\Carbon;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class ScheduleController extends Controller
 {
@@ -58,6 +59,8 @@ class ScheduleController extends Controller
                                 }])->whereIn('id', $employee_ids)
                                 // ->where('id', '!=', $user->id)
                                 ->get();
+
+            // return ScheduleResource::collection($array); STILL NOT DONE
                     
             $data = [];
             foreach ($array as $value) {
@@ -74,6 +77,7 @@ class ScheduleController extends Controller
             return response()->json([
                 'data' => $data,
                 'dates' => $dates_with_day,
+                'time_shift' => TimeShiftResource::collection(TimeShift::all())
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
@@ -128,23 +132,24 @@ class ScheduleController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $is_weekend     = 0;
-            $data           = null;
-            $user           = $request->user;
-            $employees      = $cleanData['employee'];
-            $selected_date  = $cleanData['selected_date'];   // Selected Date;
-            $check_employee_schedules = null;
+            $user               = $request->user;
+            $employees          = $cleanData['employee'];
+            $selected_date      = $cleanData['selected_date'];   // Selected Date;
+            
+            $schedule               = null;
+            $employee_schedules     = null;
+            $all_employee_schedules = new Collection();
 
             if ($selected_date === "") {
                 foreach ($employees as $employee) {
                     $existing_employee_ids = EmployeeProfile::where('id', $employee)->pluck('id');
 
                     foreach ($existing_employee_ids as $employee_id) {
-                        $check_employee_schedules = EmployeeSchedule::where('employee_profile_id', $employee_id)
+                        $employee_schedules = EmployeeSchedule::where('employee_profile_id', $employee_id)
                                                                     ->where('deleted_at', null)
                                                                     ->first();
 
-                        $check_employee_schedules->delete();
+                        $employee_schedules->delete();
                     }
                 }
             } else {
@@ -175,41 +180,42 @@ class ScheduleController extends Controller
                             $schedule->is_weekend       = $isWeekend ? 1 : 0;
                             $schedule->save();
                         }
+
+                        //ALL COMMENT STILL NOT DONE
+                        // $is24Hrs = Helpers::checkIs24PrevNextSchedule($data, $employees, $selectedDate);
+
+                        // if ($is24Hrs['result'] !== 'No Schedule') {
+                        //     return response()->json([$is24Hrs['result']], Response::HTTP_FOUND);
+                        // }
+
+                        // if ($this->hasOverlappingSchedule($selectedDate['time_shift_id'], $date, $employees)) {
+                        //     return response()->json(['message' => 'Overlap with existing schedule'], Response::HTTP_FOUND);
+                        // }
                 
                         // Attach employees to the schedule
                         $schedule->employee()->attach($employees);
+                        // $all_employee_schedules->push(new ScheduleResource($schedule));
+
+                        // foreach ($employees  as $employeeID) {
+                        //     $pivotId = $schedule->employee->find($employeeID)->pivot->id;
+                        //     return response()->json(['pivot' => $pivotId], Response::HTTP_FOUND);
+                        // }
+
+                        // $employee_schedule = $schedule->employee()->where('id', $employees)->first()->id;
+                        // return response()->json(['data' => $employee_schedule], Response::HTTP_FOUND);
+                        // Helpers::registerEmployeeScheduleLogs($employee_schedule, $user->id, 'Store');
                     }
                 }
             }
-           
 
-            // Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
+            // Helpers::registerSystemLogs($request, $schedule['id'], true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json([
-                // 'data' =>  new ScheduleResource($data),
+                // 'data' =>  $all_employee_schedules,
                 'message' => 'New employee schedule registered.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            return $th;
+
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Request $request, $id)
-    {
-        try {
-            $data = new ScheduleResource(Schedule::findOrFail($id));
-
-            if (!$data) {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }
-
-            return response()->json(['data' => $data], Response::HTTP_OK);
-        } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -235,7 +241,8 @@ class ScheduleController extends Controller
             ];
 
             return response()->json([
-                'data' => new EmployeeScheduleResource($data),
+                // 'data' => new EmployeeScheduleResource($data),
+                'data' => $data,
                 'holiday' => Holiday::all()
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -297,9 +304,9 @@ class ScheduleController extends Controller
             //     return response()->json([$is24Hrs['result']], Response::HTTP_FOUND);
             // }
 
-            if ($this->hasOverlappingSchedule($cleanData['time_shift_id'], $cleanData['date'], $data['employee_profile_id'])) {
-                return response()->json(['message' => 'Overlap with existing schedule'], Response::HTTP_FOUND);
-            }
+            // if ($this->hasOverlappingSchedule($cleanData['time_shift_id'], $cleanData['date'], $data['employee_profile_id'])) {
+            //     return response()->json(['message' => 'Overlap with existing schedule'], Response::HTTP_FOUND);
+            // }
 
             $data->schedule_id = $schedule->id;
             $data->update();

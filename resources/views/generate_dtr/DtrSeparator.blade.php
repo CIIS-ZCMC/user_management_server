@@ -72,9 +72,9 @@
             @if (!$isHoliday)
                 @if ($countin == 0)
                     @if (count($checkSched) >= 1)
-                        <span style="color:gray;font-style:italic;color:#FF6969;font-size:10px">ABSENT</span>
+                        <span style="font-size:8px;font-weight:bold">ABSENT</span>
                     @else
-                        <span style="color:gray;font-size:8px">Day-off</span>
+                        <span style="font-size:8px;font-weight:bold">Day-off</span>
                     @endif
                 @endif
 
@@ -108,12 +108,12 @@
 
                     @endphp
                     @if (count($checkSched) >= 1)
-                        <span style="color:gray;font-style:italic;color:#FF6969;font-size:10px">ABSENT</span>
+                        <span style=";font-size:8px;font-weight:bold">ABSENT</span>
                     @else
-                        <span style="color:gray;font-size:8px">Day-off</span>
+                        <span style="font-size:8px;font-weight:bold">Day-off</span>
                     @endif
                 @else
-                    <span style="color:gray;font-size:8px">Day-off</span>
+                    <span style="font-size:8px;font-weight:bold">Day-off</span>
                 @endif
             @else
             @endif
@@ -136,10 +136,10 @@
 
                         @endphp
                         @if (count($checkSched) >= 1)
-                            <span style="color:gray;font-style:italic;color:#FF6969;font-size:10px">ABSENT</span>
+                            <span style="font-size:8px;font-weight:bold">ABSENT</span>
                         @else
                             @if (count($presentSched) == 0)
-                                <span style="color:gray;font-size:8px">Day-off</span>
+                                <span style="font-size:8px;font-weight:bold">Day-off</span>
                             @endif
                         @endif
                     @endif
@@ -151,7 +151,7 @@
         @endif
         @if ($isHoliday)
             @if (!$countin)
-                <span style="color:rgb(5, 128, 42);font-size:8px">HOLIDAY</span>
+                <span style="font-size:8px;font-weight:bold">HOLIDAY</span>
             @endif
         @endif
     @break
@@ -342,7 +342,7 @@
     @break
 
     @case('undertime_hours')
-        <table id="tabledate" style="border:none">
+        <table style="border:none">
             <tr style="border:none">
                 @php
                     $hours = 0;
@@ -374,7 +374,9 @@
                     @endif
                 @endforeach
                 @if ($hrs >= 1)
-                    {{ $hrs }}
+                    <span style="color: black">
+                        {{ $hrs }}
+                    </span>
                 @endif
             </tr>
         </table>
@@ -413,7 +415,9 @@
             @endif
         @endforeach
         @if ($min >= 1)
-            {{ $min }}
+            <span style="color: black !important;font-weight:bold">
+                {{ $min }}
+            </span>
         @endif
     @break
 
