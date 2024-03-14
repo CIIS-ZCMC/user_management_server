@@ -13,14 +13,14 @@ return new class extends Migration
     {
         Schema::create('identification_numbers', function (Blueprint $table) {
             $table->id();
-            $table->string('gsis_id_no')->nullable();
-            $table->string('pag_ibig_id_no')->nullable();
-            $table->string('philhealth_id_no')->nullable();
-            $table->string('sss_id_no')->nullable();
-            $table->string('prc_id_no')->nullable();
-            $table->string('tin_id_no')->nullable();
-            $table->string('rdo_no')->nullable();
-            $table->string('bank_account_no')->nullable();
+            $table->text('gsis_id_no')->nullable();
+            $table->text('pag_ibig_id_no')->nullable();
+            $table->text('philhealth_id_no')->nullable();
+            $table->text('sss_id_no')->nullable();
+            $table->text('prc_id_no')->nullable();
+            $table->text('tin_id_no')->nullable();
+            $table->text('rdo_no')->nullable();
+            $table->text('bank_account_no')->nullable();
             $table->unsignedBigInteger('personal_information_id')->nullable();
             $table->foreign('personal_information_id')->references('id')->on('personal_informations');
             $table->timestamps();
