@@ -45,8 +45,8 @@
         text-transform: uppercase;
         margin-top: -20px;
         font-size: 12px;
-        font-weight: 500;
 
+        font-weight: bold
     }
 
     #userName div {
@@ -54,17 +54,20 @@
         height: 1.5px;
         width: 100%;
         background-color: gray;
+
     }
 
     #userName span {
         font-size: 10px;
         font-weight: 520;
+        font-weight: bold;
     }
 
     .ftmo {
         display: flex;
         width: 100%;
         font-weight: normal;
+        font-weight: bold
     }
 
     .ftmo>* {
@@ -96,11 +99,13 @@
 
     .tit {
         font-weight: 500;
-        font-size: 11px
+        font-size: 11px;
+
     }
 
     .ot {
-        font-size: 10px
+        font-size: 10px;
+        font-weight: bold
     }
 
     #zcmclogo {
@@ -224,7 +229,7 @@
     }
 
     .fentry {
-        color: #12486B;
+        color: black;
         font-weight: bold
     }
 
@@ -242,6 +247,7 @@
     #headertop {
         border-bottom: 1px solid rgb(197, 194, 194);
         border-top: 1px solid rgb(197, 194, 194);
+        font-weight: bold
     }
 
     #headertop th {
@@ -401,9 +407,9 @@
 
                 <tr>
 
-                    <td style="width: 35px !important;font-size:10px">{{ $i }}</td>
+                    <td style="width: 35px !important;font-size:10px;font-weight:bold">{{ $i }}</td>
                     <td
-                        style="text-transform: capitalize; color:#05171f; font-size:10px;width: 35px !important;font-size:10px">
+                        style="font-weight:bold;text-transform: capitalize; color:#010b0f; font-size:10px;width: 35px !important;font-size:10px">
                         {{ date('D', strtotime(date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)))) }}
                     </td>
 
