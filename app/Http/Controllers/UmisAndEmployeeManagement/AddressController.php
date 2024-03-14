@@ -157,6 +157,7 @@ class AddressController extends Controller
     {
         try{
             $cleanData = [];
+            $cleanData['is_permanent'] = (int) strip_tags($request->is_permanent);
 
             foreach ($request->address as $key => $address) {
                 $new_clean_data = [];
@@ -167,7 +168,7 @@ class AddressController extends Controller
                     }
                     $new_clean_data[$key] = strip_tags($value);
                 }
-                $cleanData[] = $new_clean_data;
+                $cleanData["new_address"][] = $new_clean_data;
             }
 
             $employee_profile = EmployeeProfile::find($id);
@@ -190,9 +191,10 @@ class AddressController extends Controller
 
                     foreach($addresses as $address){
                         if($index === 0){
-                            $address->update(...$cleanData[0]);
+                            $address->update(['is_residential_and_permanent' => 1, ...$cleanData['new_address']]);
                             $updated_address[] = $address;
                             $updated_address[] = $address;
+                            $index++;
                             continue;
                         }
                         $address->delete();
@@ -204,16 +206,22 @@ class AddressController extends Controller
                     ], Response::HTTP_OK);
                 }
                 
+
                 /**
                  * Updating existing addresses
                  */
                 $updated_address = [];
 
-                foreach($addresses as $address){
-                    foreach($cleanData as $value){
-                        $address->update(...$value);
-                        $updated_address[] = $address;
-                    }
+                $index = 0;
+
+                foreach($cleanData['new_address'] as $value){
+                    $data = collect($value);
+                    $data->forget('id');
+                    $data->forget('personal_information_id');
+                    $filteredArray = $data->toArray();
+                    $addresses[$index]->update($filteredArray);
+                    $updated_address[] = $addresses[$index];
+                    $index++;
                 }
 
                 return response()->json([
@@ -227,25 +235,26 @@ class AddressController extends Controller
              * this will update only the existing permanent address
              * and return as both residential and permanent
              */
-            if($cleanData['is_permanent'] === 0){
+            if($cleanData['is_permanent'] === 1){
                 $address = Address::where('personal_information_id', $employee_profile->personalInformation->id)
-                    ->first()->update(...$cleanData[0]);
+                    ->first();
+                $address->update($cleanData['new_address'][0]);
                 
                 return response()->json([
                     'data' => AddressResource::collection([$address, $address]),
                     'message' => 'Employee address detail updated.'
                 ], Response::HTTP_OK);
             }   
-
             /**
              * If employee has 1 previous address and the update will be 1 permanent and 1 residential
              * this will update the existing address
              * and register new address
              */
             $existing_address = Address::where('personal_information_id', $employee_profile->personalInformation->id)
-                ->first()->update(...$cleanData[0]);
+                ->first();
+            $existing_address->update($cleanData['new_address'][0]);
 
-            $new_address = Address::create(...$cleanData[1]);
+            $new_address = Address::create($cleanData['new_address'][1]);
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
@@ -310,7 +319,7 @@ class AddressController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+                return response()->json(['message' => "show rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $employee_profile = EmployeeProfile::find($id);
