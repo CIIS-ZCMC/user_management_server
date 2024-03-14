@@ -33,4 +33,9 @@ class EmployeeSchedule extends Model
     {
         return $this->belongsTo(Schedule::class, 'schedule_id');
     }
+
+    public function employeeProfile()
+    {
+        return $this->belongsToMany(EmployeeProfile::class);
+    }
 }
