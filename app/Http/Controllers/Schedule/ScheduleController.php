@@ -57,7 +57,7 @@ class ScheduleController extends Controller
                                             ->whereMonth('date', '=', $month)
                                             ->where('employee_profile_schedule.deleted_at', '=', null );
                                 }])->whereIn('id', $employee_ids)
-                                ->where('id', '!=', $user->id)
+                                // ->where('id', '!=', $user->id)
                                 ->get();
 
             // return ScheduleResource::collection($array); STILL NOT DONE
@@ -77,6 +77,7 @@ class ScheduleController extends Controller
             return response()->json([
                 'data' => $data,
                 'dates' => $dates_with_day,
+                'time_shift' => TimeShiftResource::collection(TimeShift::all())
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
@@ -219,25 +220,6 @@ class ScheduleController extends Controller
         }
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Request $request, $id)
-    {
-        try {
-            $data = new ScheduleResource(Schedule::findOrFail($id));
-
-            if (!$data) {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }
-
-            return response()->json(['data' => $data], Response::HTTP_OK);
-        } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'show', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-
     public function edit(Request $request, $id)
     {
         try {
@@ -322,9 +304,9 @@ class ScheduleController extends Controller
             //     return response()->json([$is24Hrs['result']], Response::HTTP_FOUND);
             // }
 
-            if ($this->hasOverlappingSchedule($cleanData['time_shift_id'], $cleanData['date'], $data['employee_profile_id'])) {
-                return response()->json(['message' => 'Overlap with existing schedule'], Response::HTTP_FOUND);
-            }
+            // if ($this->hasOverlappingSchedule($cleanData['time_shift_id'], $cleanData['date'], $data['employee_profile_id'])) {
+            //     return response()->json(['message' => 'Overlap with existing schedule'], Response::HTTP_FOUND);
+            // }
 
             $data->schedule_id = $schedule->id;
             $data->update();

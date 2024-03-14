@@ -202,7 +202,7 @@ class EmployeeProfileController extends Controller
                 $data = Helpers::generateMyOTP($employee_profile);
 
                 if ($this->mail->send($data)) {
-                    return response()->json(['message' => "OTP has sent to your email, submit the OTP to verify that this is your account."], Response::HTTP_OK)
+                    return response()->json(['message' => "OTP has sent to your email, submit the OTP to verify that this is your account."], Response::HTTP_FOUND)
                         ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', env('SESSION_DOMAIN'), false);
                 }
 
@@ -764,7 +764,7 @@ class EmployeeProfileController extends Controller
             'password_expiration_at' => $employee_profile->password_expiration_at,
             'password_updated_at' => $employee_profile->password_created_at,
             'pin_created_at' => $employee_profile->pin_created_at,
-            'designation' => $designation['name'], 
+            'designation' => $designation['name'],
             'plantilla_number_id' => $assigned_area['plantilla_number_id'],
             'plantilla_number' => $assigned_area['plantilla_number_id'] === NULL ? NULL : $assigned_area->plantillaNumber['number'],
             'employee_details' => [
@@ -1693,30 +1693,30 @@ class EmployeeProfileController extends Controller
 
             $my_assigned_area = $employee_profile->assignedArea->findDetails();
 
-            $employees = $this->retrieveEmployees($employees, Str::lower($my_assigned_area['sector']) . "_id", $my_assigned_area['details']->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+            $employees = $this->retrieveEmployees($employees, Str::lower($my_assigned_area['sector']) . "_id", $my_assigned_area['details']->id, [$employee_profile->id, 1]);
 
             /** Retrieve entire employees of Division to Unit if it has  unit */
             if ($my_assigned_area['sector'] === 'Division') {
                 $departments = Department::where('division_id', $my_assigned_area['details']->id)->get();
 
                 foreach ($departments as $department) {
-                    $employees = $this->retrieveEmployees($employees, 'department_id', $department->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+                    $employees = $this->retrieveEmployees($employees, 'department_id', $department->id, [$employee_profile->id, 1]);
                     $sections = Section::where('department_id', $department->id)->get();
                     foreach ($sections as $section) {
-                        $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+                        $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$employee_profile->id, 1]);
                         $units = Unit::where('section_id', $section->id)->get();
                         foreach ($units as $unit) {
-                            $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+                            $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$employee_profile->id, 1]);
                         }
                     }
                 }
 
                 $sections = Section::where('division_id', $my_assigned_area['details']->id)->get();
                 foreach ($sections as $section) {
-                    $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+                    $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$employee_profile->id, 1]);
                     $units = Unit::where('section_id', $section->id)->get();
                     foreach ($units as $unit) {
-                        $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+                        $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$employee_profile->id, 1]);
                     }
                 }
             }
@@ -1725,10 +1725,10 @@ class EmployeeProfileController extends Controller
             if ($my_assigned_area['sector'] === 'Department') {
                 $sections = Section::where('department_id', $my_assigned_area['details']->id)->get();
                 foreach ($sections as $section) {
-                    $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+                    $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$employee_profile->id, 1]);
                     $units = Unit::where('section_id', $section->id)->get();
                     foreach ($units as $unit) {
-                        $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+                        $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$employee_profile->id, 1]);
                     }
                 }
             }
@@ -1737,7 +1737,7 @@ class EmployeeProfileController extends Controller
             if ($my_assigned_area['sector'] === 'Section') {
                 $units = Unit::where('section_id', $my_assigned_area['details']->id)->get();
                 foreach ($units as $unit) {
-                    $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+                    $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$employee_profile->id, 1]);
                 }
             }
 
@@ -1862,7 +1862,7 @@ class EmployeeProfileController extends Controller
                 ], Response::HTTP_OK);
             }
 
-            $employee_profiles = EmployeeProfile::whereNotIn('id', [1, 2, 3, 4, 5])->get();
+            $employee_profiles = EmployeeProfile::whereNotIn('id', [1])->get();
             Helpers::registerSystemLogs($request, null, true, 'Success in fetching a ' . $this->PLURAL_MODULE_NAME . '.');
 
             return response()->json([
@@ -2039,7 +2039,7 @@ class EmployeeProfileController extends Controller
             $cacheExpiration = Carbon::now()->addDay();
 
             $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () {
-                return EmployeeProfile::whereNotIn('id', [1, 2, 3, 4, 5])->get();
+                return EmployeeProfile::whereNotIn('id', [1])->get();
             });
 
             return EmployeeProfileResource::collection($employee_profiles);
@@ -2080,30 +2080,30 @@ class EmployeeProfileController extends Controller
 
             $my_assigned_area = $user->assignedArea->findDetails();
 
-            $employees = $this->retrieveEmployees($employees, Str::lower($my_assigned_area['sector']) . "_id", $my_assigned_area['details']->id, [$user->id, 1, 2, 3, 4, 5]);
+            $employees = $this->retrieveEmployees($employees, Str::lower($my_assigned_area['sector']) . "_id", $my_assigned_area['details']->id, [$user->id, 1]);
 
             /** Retrieve entire employees of Division to Unit if it has  unit */
             if ($my_assigned_area['sector'] === 'Division') {
                 $departments = Department::where('division_id', $my_assigned_area['details']->id)->get();
 
                 foreach ($departments as $department) {
-                    $employees = $this->retrieveEmployees($employees, 'department_id', $department->id, [$user->id, 1, 2, 3, 4, 5]);
+                    $employees = $this->retrieveEmployees($employees, 'department_id', $department->id, [$user->id, 1]);
                     $sections = Section::where('department_id', $department->id)->get();
                     foreach ($sections as $section) {
-                        $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1, 2, 3, 4, 5]);
+                        $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1]);
                         $units = Unit::where('section_id', $section->id)->get();
                         foreach ($units as $unit) {
-                            $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1, 2, 3, 4, 5]);
+                            $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1]);
                         }
                     }
                 }
 
                 $sections = Section::where('division_id', $my_assigned_area['details']->id)->get();
                 foreach ($sections as $section) {
-                    $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1, 2, 3, 4, 5]);
+                    $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1]);
                     $units = Unit::where('section_id', $section->id)->get();
                     foreach ($units as $unit) {
-                        $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1, 2, 3, 4, 5]);
+                        $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1]);
                     }
                 }
             }
@@ -2112,10 +2112,10 @@ class EmployeeProfileController extends Controller
             if ($my_assigned_area['sector'] === 'Department') {
                 $sections = Section::where('department_id', $my_assigned_area['details']->id)->get();
                 foreach ($sections as $section) {
-                    $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1, 2, 3, 4, 5]);
+                    $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1]);
                     $units = Unit::where('section_id', $section->id)->get();
                     foreach ($units as $unit) {
-                        $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1, 2, 3, 4, 5]);
+                        $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1]);
                     }
                 }
             }
@@ -2124,7 +2124,7 @@ class EmployeeProfileController extends Controller
             if ($my_assigned_area['sector'] === 'Section') {
                 $units = Unit::where('section_id', $my_assigned_area['details']->id)->get();
                 foreach ($units as $unit) {
-                    $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1, 2, 3, 4, 5]);
+                    $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1]);
                 }
             }
 
@@ -2202,7 +2202,7 @@ class EmployeeProfileController extends Controller
             $cacheExpiration = Carbon::now()->addDay();
 
             $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () {
-                return EmployeeProfile::whereNotIn('id', [1, 2, 3, 4, 5])->get();
+                return EmployeeProfile::whereNotIn('id', [1])->get();
             });
 
             $temp_perm = EmployeeProfileResource::collection($employee_profiles->filter(function ($profile) {
