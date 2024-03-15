@@ -651,5 +651,40 @@ class ModulePermissionSeeder extends Seeder
             'permission_id' => $permission_delete['id'],
             'system_module_id' => $system_module_time_adjustment['id']
         ]);
+
+         /**
+         * Holiday
+         */
+        $system_module_holiday = SystemModule::where('code', 'UMIS-HOL')->first();
+
+        ModulePermission::create([
+            'code' => $system_module_holiday['code'].' '.$permission_read_all['action'],
+            'permission_id' => $permission_read_all['id'],
+            'system_module_id' => $system_module_holiday['id']
+        ]);
+
+        ModulePermission::create([
+            'code' => $system_module_holiday['code'].' '.$permission_read['action'],
+            'permission_id' => $permission_read['id'],
+            'system_module_id' => $system_module_holiday['id']
+        ]);
+
+        ModulePermission::create([
+            'code' => $system_module_holiday['code'].' '.$permission_write['action'],
+            'permission_id' => $permission_write['id'],
+            'system_module_id' => $system_module_holiday['id']
+        ]);
+
+        ModulePermission::create([
+            'code' => $system_module_holiday['code'].' '.$permission_approve['action'],
+            'permission_id' => $permission_approve['id'],
+            'system_module_id' => $system_module_holiday['id']
+        ]);
+
+        ModulePermission::create([
+            'code' => $system_module_holiday['code'].' '.$permission_delete['action'],
+            'permission_id' => $permission_delete['id'],
+            'system_module_id' => $system_module_holiday['id']
+        ]);
     }
 }

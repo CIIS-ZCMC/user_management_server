@@ -3,19 +3,16 @@
 namespace App\Http\Controllers\Schedule;
 
 use App\Http\Requests\OnCallRequest;
-use App\Http\Resources\EmployeeScheduleResource;
+use App\Http\Resources\EmployeeProfileResource;
 use App\Http\Resources\OnCallResource;
-use App\Models\EmployeeSchedule;
-use App\Models\OnCall;
 use App\Models\EmployeeProfile;
+use App\Models\OnCall;
 
 use App\Helpers\Helpers;
 
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\DB;
 
 use Carbon\Carbon;
-use DateTime;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -31,9 +28,9 @@ class OnCallController extends Controller
     public function index(Request $request)
     {
         try {
-
             $user = $request->user;
             $assigned_area = $user->assignedArea->findDetails();
+
             //Array
             $employees  = [];
             $myEmployees = $user->areaEmployee($assigned_area);
@@ -43,10 +40,16 @@ class OnCallController extends Controller
             $employee_ids = collect($employees)->pluck('id')->toArray();
 
             $model = OnCall::with(['employee' => function ($query) use ($employee_ids) {
-                $query->whereIn('id', $employee_ids);
-            }])->get();
+                $query->with('personalInformation')->whereIn('id', $employee_ids);
+            }])
+            ->whereYear('date', '=', $request->year)
+            ->whereMonth('date', '=', $request->month)
+            ->get();
 
-            return response()->json(['data' => OnCallResource::collection($model)], Response::HTTP_OK);
+            return response()->json([
+                'data' => OnCallResource::collection($model),
+                'employee' => EmployeeProfileResource::collection($employees),
+            ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 

@@ -24,6 +24,6 @@ class OnCall extends Model
 
     public function employee() 
     {
-        return $this->belongsTo(EmployeeProfile::class);
+        return $this->belongsTo(EmployeeProfile::class, 'employee_profile_id');
     }
 }

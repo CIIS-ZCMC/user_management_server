@@ -14,19 +14,23 @@ class ScheduleResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $employee = [
+            'name'=> $this->employeeProfile->personalInformation->name(),
+            'profile_url' => $this->profile_url,
+            'designation' => [
+                'name' => $this->employeeProfile->assignedArea->designation->name,
+                'code' => $this->employeeProfile->assignedArea->designation->code,
+            ],
+            'area' => $this->employeeProfile->assignedArea->findDetails()['details']->name,
+        ];
+
         return [
             'id' => $this->id,
-            'date' => $this->date,
-            'is_weekend' => $this->remarks,
-            'is_on_call' => $this->is_on_call,
-            'status' => $this->status,
-            'remarks' => $this->remarks,
-            'time_shift' => $this->timeShift ? new TimeShiftResource($this->timeShift) : null,
-            'holiday' => $this->holiday ? new HolidayResource($this->holiday) : null,
-            'employee_profile' => $this->employee ? EmployeeProfileResource::collection($this->employee) : [],
-            'deleted_at' => (string) $this->deleted_at,
-            'created_at' => (string) $this->created_at,
-            'updated_at' => (string) $this->updated_at,
+            'name' => $employee,
+            'employee_id' => $this->employee_id,
+            'biometric_id' => $this->biometric_id,
+            'assigned_area' => $this->assignedArea,
+            'schedule' => $this->schedule,
         ];
     }
 }
