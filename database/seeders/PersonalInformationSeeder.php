@@ -250,6 +250,8 @@ class PersonalInformationSeeder extends Seeder
         foreach ($designations as $designation) {
             Cache::forget($designation['name']);
         }
+
+        Cache::flush();
     }
 
     protected function encryptData($dataToEncrypt)
