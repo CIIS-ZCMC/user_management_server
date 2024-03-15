@@ -15,8 +15,9 @@ class OnCallResource extends JsonResource
     public function toArray(Request $request): array
     {
         $employee = [
-            'name'=> $this->employee->personalInformation->name(),
+            'name'=> $this->employee->name(),
             'profile_url' => $this->profile_url,
+            'contact' => $this->employee->personalInformation->contact->phone_number,
             'designation' => [
                 'name' => $this->employee->assignedArea->designation->name,
                 'code' => $this->employee->assignedArea->designation->code,
