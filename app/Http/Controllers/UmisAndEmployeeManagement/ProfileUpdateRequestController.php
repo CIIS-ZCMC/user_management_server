@@ -21,6 +21,7 @@ use App\Services\FileValidationAndUpload;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Helpers\Helpers;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Requests\PasswordApprovalRequest;
@@ -794,6 +795,6 @@ class ProfileUpdateRequestController extends Controller
     
     protected function encryptData($dataToEncrypt)
     {
-        return openssl_encrypt($dataToEncrypt, env("ENCRYPT_DECRYPT_ALGORITHM"), env("DATA_KEY_ENCRYPTION"), 0, substr(md5(env("DATA_KEY_ENCRYPTION")), 0, 16));
+        return openssl_encrypt($dataToEncrypt, Cache::get('encrypt_decrypt_algorithm'),Cache::get('data_key_encryption'), 0, substr(md5(Cache::get('data_key_encryption')), 0, 16));
     }
 }

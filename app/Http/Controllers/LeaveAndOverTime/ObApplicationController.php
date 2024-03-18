@@ -1565,7 +1565,7 @@ class ObApplicationController extends Controller
                 $user=$request->user;
                 $password_decrypted = Crypt::decryptString($user['password_encrypted']);
                 $password = strip_tags($request->password);
-                if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                if (!Hash::check($password.Cache::get('salt_value'), $password_decrypted)) {
                         return response()->json(['message' => "Password incorrect."], Response::HTTP_FORBIDDEN);
                 }
                 else
@@ -2131,7 +2131,7 @@ class ObApplicationController extends Controller
                         $user=$request->user;
                         $password_decrypted = Crypt::decryptString($user['password_encrypted']);
                         $password = strip_tags($request->password);
-                        if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                        if (!Hash::check($password.Cache::get('salt_value'), $password_decrypted)) {
                                 return response()->json(['message' => "Password incorrect."], Response::HTTP_FORBIDDEN);
                         }
                         else{
@@ -2521,5 +2521,4 @@ class ObApplicationController extends Controller
             return response()->json(['message' => $e->getMessage(),  'error'=>true]);
         }
     }
-
 }
