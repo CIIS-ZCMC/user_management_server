@@ -1997,5 +1997,24 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-OCM delete'])->group(function () {
             Route::delete('on-call/{id}', 'OnCallController@destroy');
         });
+
+        /**
+         * Holiday Module
+         */
+        Route::middleware(['auth.permission:UMIS-HOL view-all'])->group(function () {
+            Route::get('holiday', 'HolidayController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-HOL write'])->group(function () {
+            Route::post('holiday', 'HolidayController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-HOL update'])->group(function () {
+            Route::put('holiday/{id}', 'HolidayController@update');
+        });
+
+        Route::middleware(['auth.permission:UMIS-HOL delete'])->group(function () {
+            Route::delete('holiday/{id}', 'HolidayController@destroy');
+        });
     });
 });
