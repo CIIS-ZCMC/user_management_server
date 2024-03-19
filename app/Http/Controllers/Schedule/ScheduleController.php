@@ -51,33 +51,35 @@ class ScheduleController extends Controller
             $employee_ids = collect($employees)->pluck('id')->toArray();
 
             $array = EmployeeProfile::with(['assignedArea',
-                                'schedule' => function ($query) use ($year, $month) {
-                                        $query->with(['timeShift', 'holiday'])
-                                            ->whereYear('date', '=', $year)
-                                            ->whereMonth('date', '=', $month)
-                                            ->where('employee_profile_schedule.deleted_at', '=', null );
-                                }])->whereIn('id', $employee_ids)
-                                // ->where('id', '!=', $user->id)
-                                ->get();
-
-            // return ScheduleResource::collection($array); STILL NOT DONE
+                                            'schedule' => function ($query) use ($year, $month) {
+                                                $query->with(['timeShift', 'holiday'])
+                                                    ->whereYear('date', '=', $year)
+                                                    ->whereMonth('date', '=', $month)
+                                                    ->where('employee_profile_schedule.deleted_at', '=', null );
+                                            }])->whereIn('id', $employee_ids)
+                                            ->where(function ($query) use ($user, $assigned_area) {
+                                                return $assigned_area['details']['code'] === "HRMO" ?
+                                                        $query->whereNotIn('id', [$user->id, 1, 2, 3, 4, 5]) :
+                                                        []; // $query->where('id', '!=', $user->id);
+                                            })
+                                            ->get();
                     
-            $data = [];
-            foreach ($array as $value) {
-                $data[] = [
-                    'id' => $value['id'],
-                    'name' => $value->name(),
-                    'employee_id' => $value['employee_id'],
-                    'biometric_id' => $value['biometric_id'],
-                    'assigned_area' => $value->assignedArea,
-                    'schedule' => $value['schedule'],
-                ];
-            }
+            // $data = [];
+            // foreach ($array as $value) {
+            //     $data[] = [
+            //         'id' => $value['id'],
+            //         'name' => $value->name(),
+            //         'employee_id' => $value['employee_id'],
+            //         'biometric_id' => $value['biometric_id'],
+            //         'schedule' => $value['schedule'],
+            //     ];
+            // }
 
             return response()->json([
-                'data' => $data,
+                // 'data' => $data,
+                'data' => ScheduleResource::collection($array),
                 'dates' => $dates_with_day,
-                'time_shift' => TimeShiftResource::collection(TimeShift::all())
+                'time_shift' => TimeShiftResource::collection(TimeShift::all()),
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
