@@ -184,7 +184,7 @@ class PullOutController extends Controller
 
             $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
 
-            if (!Hash::check($password . env("SALT_VALUE"), $password_decrypted)) {
+            if (!Hash::check($password . Cache::get('salt_value'), $password_decrypted)) {
                 return response()->json(['message' => "Password incorrect."], Response::HTTP_FORBIDDEN);
             }
 

@@ -833,7 +833,7 @@ class LeaveApplicationController extends Controller
             $filename = 'LEAVE REPORT - ('. $data->employeeProfile->personalInformation->name() .').pdf';
 
             // Use 'I' instead of 'D' to open in the browser
-                $dompdf->stream($filename, array('Attachment' => false));
+                $dompdf->stream($filename, array('Attachment' => true));
             // $dompdf->stream($filename);
 
 
