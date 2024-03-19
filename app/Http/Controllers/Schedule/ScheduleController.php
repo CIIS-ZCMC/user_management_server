@@ -64,19 +64,7 @@ class ScheduleController extends Controller
                                             })
                                             ->get();
                     
-            // $data = [];
-            // foreach ($array as $value) {
-            //     $data[] = [
-            //         'id' => $value['id'],
-            //         'name' => $value->name(),
-            //         'employee_id' => $value['employee_id'],
-            //         'biometric_id' => $value['biometric_id'],
-            //         'schedule' => $value['schedule'],
-            //     ];
-            // }
-
             return response()->json([
-                // 'data' => $data,
                 'data' => ScheduleResource::collection($array),
                 'dates' => $dates_with_day,
                 'time_shift' => TimeShiftResource::collection(TimeShift::all()),
@@ -228,7 +216,7 @@ class ScheduleController extends Controller
 
             // Helpers::registerSystemLogs($request, $schedule['id'], true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json([
-                // 'data' =>  $all_employee_schedules,
+                'data' =>  $all_employee_schedules,
                 'message' => 'New employee schedule registered.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -419,13 +407,11 @@ class ScheduleController extends Controller
     private function hasOverlappingSchedule($timeShiftId, $date, $employees)
     {
         foreach ($employees as $employee) {
-            foreach ($employee['employee_id'] as $employeeId) {
-                $existingSchedules = EmployeeProfile::find($employeeId)->schedule()->where('date', $date)->where('employee_profile_schedule.deleted_at', null)->get();
+            $existingSchedules = EmployeeProfile::find($employee)->schedule()->where('date', $date)->where('employee_profile_schedule.deleted_at', null)->get();
 
-                foreach ($existingSchedules as $existingSchedule) {
-                    if ($this->checkOverlap($timeShiftId, $existingSchedule->timeShift)) {
-                        return true; // Overlapping schedule found
-                    }
+            foreach ($existingSchedules as $existingSchedule) {
+                if ($this->checkOverlap($timeShiftId, $existingSchedule->timeShift)) {
+                    return true; // Overlapping schedule found
                 }
             }
         }
