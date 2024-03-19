@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Schedule;
 
 use App\Http\Resources\EmployeeScheduleResource;
+use App\Http\Resources\HolidayResource;
 use App\Http\Resources\TimeShiftResource;
 use App\Models\EmployeeSchedule;
 use App\Models\Holiday;
@@ -102,7 +103,7 @@ class ScheduleController extends Controller
 
             return response()->json([
                 'data' => new EmployeeScheduleResource($data),
-                'holiday' => Holiday::all()
+                'holiday' => HolidayResource::collection(Holiday::all())
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
