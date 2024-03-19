@@ -61,7 +61,7 @@ class ScheduleController extends Controller
                                             ->where(function ($query) use ($user, $assigned_area) {
                                                 return $assigned_area['details']['code'] === "HRMO" ?
                                                         $query->whereNotIn('id', [$user->id, 1, 2, 3, 4, 5]) :
-                                                        []; // $query->where('id', '!=', $user->id);
+                                                        $query->where('id', '!=', $user->id);
                                             })
                                             ->get();
                     
@@ -217,7 +217,7 @@ class ScheduleController extends Controller
 
             // Helpers::registerSystemLogs($request, $schedule['id'], true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json([
-                'data' =>  $all_employee_schedules,
+                // 'data' =>  $all_employee_schedules,
                 'message' => 'New employee schedule registered.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
