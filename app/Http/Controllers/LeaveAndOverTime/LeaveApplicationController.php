@@ -648,7 +648,34 @@ class LeaveApplicationController extends Controller
                                 'total_leave_credits' => $employee_credit->total_leave_credits - $daysDiff,
                                 'used_leave_credits' => $employee_credit->used_leave_credits + $daysDiff
                             ]);
-    
+   
+                            // IF request is for Vacation leave subtract FL
+                            if(LeaveType::find($request->leave_type_id)->code === 'VL' ){
+                                $employee_credit_fl = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)
+                                    ->where('leave_type_id', LeaveType::where('code','FL')->id)->first();
+
+                                /**
+                                 * Only if fl credis is not zero and vl credit is less or equal to 5 credit
+                                 * This approach ensure that the Force Leave will be deduct only if the employee doesn't have a Vacation Leave Credit
+                                 * as VL credit is maximum of 10 credit and 5 credit is for FL.
+                                 */
+                                if($employee_credit_fl->total_leave_credits !== 0 && $previous_credit <= 5){
+                                    $previous_credit_fl = $employee_credit_fl->total_leave_credits;
+                                    
+                                    $employee_credit_fl->update([
+                                        'total_leave_credits' => $employee_credit_fl->total_leave_credits - $daysDiff,
+                                        'used_leave_credits' => $employee_credit_fl->used_leave_credits + $daysDiff
+                                    ]);
+
+                                    EmployeeLeaveCreditLogs::create([
+                                        'employee_leave_credit_id' => $employee_credit->id,
+                                        'previous_credit' => $previous_credit_fl,
+                                        'leave_credits' => $daysDiff,
+                                        'reason'=>'apply'
+                                    ]);
+                                }
+                            }
+
                             EmployeeLeaveCreditLogs::create([
                                 'employee_leave_credit_id' => $employee_credit->id,
                                 'previous_credit' => $previous_credit,
