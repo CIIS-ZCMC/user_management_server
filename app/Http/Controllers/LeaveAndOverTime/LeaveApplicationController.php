@@ -648,7 +648,26 @@ class LeaveApplicationController extends Controller
                                 'total_leave_credits' => $employee_credit->total_leave_credits - $daysDiff,
                                 'used_leave_credits' => $employee_credit->used_leave_credits + $daysDiff
                             ]);
-    
+   
+                            if(LeaveType::find($request->leave_type_id)->code === 'FL' ){
+                                $employee_credit_vl = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)
+                                    ->where('leave_type_id', LeaveType::where('code','VL')->id)->first();
+                                
+                                $previous_credit_vl = $employee_credit_vl->total_leave_credits;
+                                
+                                $employee_credit_vl->update([
+                                    'total_leave_credits' => $employee_credit_vl->total_leave_credits - $daysDiff,
+                                    'used_leave_credits' => $employee_credit_vl->used_leave_credits + $daysDiff
+                                ]);
+
+                                EmployeeLeaveCreditLogs::create([
+                                    'employee_leave_credit_id' => $employee_credit->id,
+                                    'previous_credit' => $previous_credit_vl,
+                                    'leave_credits' => $daysDiff,
+                                    'reason'=>'apply'
+                                ]);
+                            }
+
                             EmployeeLeaveCreditLogs::create([
                                 'employee_leave_credit_id' => $employee_credit->id,
                                 'previous_credit' => $previous_credit,
@@ -833,7 +852,7 @@ class LeaveApplicationController extends Controller
             $filename = 'LEAVE REPORT - ('. $data->employeeProfile->personalInformation->name() .').pdf';
 
             // Use 'I' instead of 'D' to open in the browser
-                $dompdf->stream($filename, array('Attachment' => false));
+                $dompdf->stream($filename, array('Attachment' => true));
             // $dompdf->stream($filename);
 
 
