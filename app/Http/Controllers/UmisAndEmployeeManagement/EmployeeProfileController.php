@@ -86,7 +86,7 @@ class EmployeeProfileController extends Controller
      *
      */
     public function signIn(SignInRequest $request)
-    {
+    {   
         try {
 
             /**

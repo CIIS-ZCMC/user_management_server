@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Schedule;
 
 use App\Http\Resources\EmployeeScheduleResource;
+use App\Http\Resources\HolidayResource;
 use App\Http\Resources\TimeShiftResource;
 use App\Models\EmployeeSchedule;
 use App\Models\Holiday;
@@ -60,23 +61,11 @@ class ScheduleController extends Controller
                                             ->where(function ($query) use ($user, $assigned_area) {
                                                 return $assigned_area['details']['code'] === "HRMO" ?
                                                         $query->whereNotIn('id', [$user->id, 1, 2, 3, 4, 5]) :
-                                                        []; // $query->where('id', '!=', $user->id);
+                                                        $query->where('id', '!=', $user->id);
                                             })
                                             ->get();
                     
-            // $data = [];
-            // foreach ($array as $value) {
-            //     $data[] = [
-            //         'id' => $value['id'],
-            //         'name' => $value->name(),
-            //         'employee_id' => $value['employee_id'],
-            //         'biometric_id' => $value['biometric_id'],
-            //         'schedule' => $value['schedule'],
-            //     ];
-            // }
-
             return response()->json([
-                // 'data' => $data,
                 'data' => ScheduleResource::collection($array),
                 'dates' => $dates_with_day,
                 'time_shift' => TimeShiftResource::collection(TimeShift::all()),
@@ -114,7 +103,7 @@ class ScheduleController extends Controller
 
             return response()->json([
                 'data' => new EmployeeScheduleResource($data),
-                'holiday' => Holiday::all()
+                'holiday' => HolidayResource::collection(Holiday::all())
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
@@ -419,13 +408,11 @@ class ScheduleController extends Controller
     private function hasOverlappingSchedule($timeShiftId, $date, $employees)
     {
         foreach ($employees as $employee) {
-            foreach ($employee['employee_id'] as $employeeId) {
-                $existingSchedules = EmployeeProfile::find($employeeId)->schedule()->where('date', $date)->where('employee_profile_schedule.deleted_at', null)->get();
+            $existingSchedules = EmployeeProfile::find($employee)->schedule()->where('date', $date)->where('employee_profile_schedule.deleted_at', null)->get();
 
-                foreach ($existingSchedules as $existingSchedule) {
-                    if ($this->checkOverlap($timeShiftId, $existingSchedule->timeShift)) {
-                        return true; // Overlapping schedule found
-                    }
+            foreach ($existingSchedules as $existingSchedule) {
+                if ($this->checkOverlap($timeShiftId, $existingSchedule->timeShift)) {
+                    return true; // Overlapping schedule found
                 }
             }
         }
