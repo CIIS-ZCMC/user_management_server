@@ -701,6 +701,7 @@ AND id IN (
     public function SaveFirstEntry($dtrentry, $break_Time_Req, $biometric_id, $delay, $scheduleEntry, $InType)
     {
         $alloted_hours = env('ALLOTED_VALID_TIME_FOR_FIRSTENTRY');
+
         switch ($InType) {
             case "AM":
                 $this->inEntryAM($biometric_id, $alloted_hours, $scheduleEntry, $dtrentry);
@@ -714,6 +715,7 @@ AND id IN (
     public  function inEntryAM($biometric_id, $alloted_hours, $scheduleEntry, $dtrentry)
     {
         $dtr_date = date('Y-m-d', strtotime($dtrentry['date_time']));
+        $max_allowed_entry_for_oncall = env('MAX_ALLOWED_ENTRY_ONCALL');
         if (count($scheduleEntry) >= 1) {
             /* With Schedule Entry */
             $in_Entry = $scheduleEntry['first_entry'];
@@ -746,7 +748,7 @@ AND id IN (
     public  function inEntryPM($biometric_id, $alloted_hours, $scheduleEntry, $dtrentry)
     {
         $dtr_date = date('Y-m-d', strtotime($dtrentry['date_time']));
-
+        $max_allowed_entry_for_oncall = env('MAX_ALLOWED_ENTRY_ONCALL');
         if (count($scheduleEntry) >= 1) {
             /* With Schedule Entry */
             $in_Entry = $scheduleEntry['second_entry'];

@@ -120,6 +120,7 @@ class EmployeeProfileController extends Controller
             if (!$employee_profile->isDeactivated()) {
                 return response()->json(['message' => "Account is deactivated."], Response::HTTP_FORBIDDEN);
             }
+            
 
             $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
 
@@ -1991,10 +1992,11 @@ class EmployeeProfileController extends Controller
     public function index(Request $request)
     {
         try {
+            $user = $request->user;
             $cacheExpiration = Carbon::now()->addDay();
 
-            $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () {
-                return EmployeeProfile::whereNotIn('id', [1])->get();
+            $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () use ($user) {
+                return EmployeeProfile::whereNotIn('id', [1, $user->id])->get();
             });
 
             return EmployeeProfileResource::collection($employee_profiles);
@@ -2088,7 +2090,7 @@ class EmployeeProfileController extends Controller
                 'message' => 'list of employees retrieved.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'myEmployees', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'myAllEmployees', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -2123,12 +2125,12 @@ class EmployeeProfileController extends Controller
         }
     }
 
-    public function areasEmployees($id, Request $request)
+    public function areasEmployees($id, $sector,Request $request)
     {
         try {
             $user = $request->user;
             $position = $user->position();
-            $sector = strip_tags($request->sector);
+            $sector = strip_tags($sector);
             $key = Str::lower($sector) . "_id";
 
             if (!$position) {
@@ -2147,6 +2149,75 @@ class EmployeeProfileController extends Controller
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'areasEmployees', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function myAreas(Request $request)
+    {
+        try {
+            $user = $request->user;
+            $position = $user->position();
+
+            if (!$position) {
+                return response()->json(['message' => "You don't have authorization as a supervisor of area."], Response::HTTP_FORBIDDEN);
+            }
+
+            $my_area = $user->assignedArea->findDetails();
+            $areas = [];
+
+            switch($my_area['sector']){
+                case "Division":
+                    $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'sector' => $my_area['sector']];
+                    $deparmtents = Department::where('division_id', $my_area['details']->id)->get();
+                    
+                    foreach($deparmtents as $department)
+                    {
+                        $areas[] = ['id' => $department->id, 'name' => $department->name, 'sector' => 'Department'];
+
+                        $sections = Section::where('department_id', $department->id)->get();
+                        foreach($sections as $section){
+                            $areas[] = ['id' => $section->id, 'name' => $section->name, 'sector' => 'Section'];
+
+                            $units = Unit::where('section_id', $section->id)->get();
+                            foreach($units as $unit){
+                                $areas[] = ['id' => $unit->id, 'name' => $unit->name, 'sector' => 'Unit'];
+                            }
+                        }
+                    }
+                    break;
+                case "Department":
+                    $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'sector' => $my_area['sector']];
+                    $sections = Section::where('department_id', $my_area['details']->id)->get();
+
+                    foreach($sections as $section){
+                        $areas[] = ['id' => $section->id, 'name' => $section->name, 'sector' => 'Section'];
+
+                        $units = Unit::where('section_id', $section->id)->get();
+                        foreach($units as $unit){
+                            $areas[] = ['id' => $unit->id, 'name' => $unit->name, 'sector' => 'Unit'];
+                        }
+                    }
+                    break;
+                case "Section":
+                    $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'sector' => $my_area['sector']];
+
+                    $units = Unit::where('section_id', $my_area['details']->id)->get();
+                    foreach($units as $unit){
+                        $areas[] = ['id' => $unit->id, 'name' => $unit->name, 'sector' => 'Unit'];
+                    }
+                    break;
+                case "Unit":
+                    $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'sector' => $my_area['sector']];
+                    break;
+            }
+
+            return response()->json([
+                'data' => $areas,
+                'message' => 'Successfully retrieved all my areas.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'myAreas', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
