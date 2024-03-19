@@ -120,6 +120,7 @@ class EmployeeProfileController extends Controller
             if (!$employee_profile->isDeactivated()) {
                 return response()->json(['message' => "Account is deactivated."], Response::HTTP_FORBIDDEN);
             }
+            
 
             $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
 
