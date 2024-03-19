@@ -5,22 +5,15 @@ namespace App\Http\Controllers\LeaveAndOverTime;
 use App\Helpers\Helpers;
 use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Resources\EmployeeOvertimeCreditResource;
-use App\Models\Section;
-use DateTime;
-use Illuminate\Support\Facades\DB;
 use App\Models\CtoApplication;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CtoApplicationRequest;
-use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Resources\CtoApplicationResource;
 use App\Models\CtoApplicationLog;
-use App\Models\Division;
 use App\Models\EmployeeOvertimeCredit;
 use App\Models\EmployeeOvertimeCreditLog;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
 
 class CtoApplicationController extends Controller
@@ -102,7 +95,8 @@ class CtoApplicationController extends Controller
         }
     }
 
-    public function create(Request $request) {
+    public function create(Request $request) 
+    {
         try {
 
             $user = $request->user;
