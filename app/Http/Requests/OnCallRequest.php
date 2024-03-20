@@ -24,7 +24,6 @@ class OnCallRequest extends FormRequest
         return [
             'employee_profile_id*'   => 'required|integer',
             'date'                  => 'required|date',
-            'remarks'               => 'required|string',
         ];
     }
 }

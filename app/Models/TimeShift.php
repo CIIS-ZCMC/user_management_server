@@ -63,4 +63,19 @@ class TimeShift extends Model
         
         return $firstIn . ' - ' . $firstOut;
     }
+
+    public function calendarTimeShiftDetails()
+    {
+        $firstIn = isset($this->first_in) ? Carbon::parse($this->first_in)->format('h') : null;
+        $firstOut = isset($this->first_out) ? Carbon::parse($this->first_out)->format('h') : null;
+        $SecondIn = isset($this->second_in) ? Carbon::parse($this->second_in)->format('h') : null;
+        $SecondOut = isset($this->second_out) ? Carbon::parse($this->second_out)->format('h') : null;
+        
+        
+        if ($SecondIn !== null) {
+            return $firstIn . '-' . $firstOut . '<br>' . $SecondIn . '-' . $SecondOut;
+        }
+        
+        return $firstIn . '<br>' . $firstOut;
+    }
 }

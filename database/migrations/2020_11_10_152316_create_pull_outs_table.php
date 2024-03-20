@@ -26,7 +26,7 @@ return new class extends Migration
             $table->date('pull_out_date');
             $table->date('approval_date')->nullable();
             $table->string('status')->default('pending');
-            $table->string('reason');
+            $table->string('reason')->nullable();
             $table->softDeletes();
             $table->timestamps();
         });

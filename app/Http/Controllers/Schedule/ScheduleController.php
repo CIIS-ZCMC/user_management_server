@@ -373,13 +373,20 @@ class ScheduleController extends Controller
             $employee_ids = collect($employees)->pluck('id')->toArray();
 
             
-            $employee = EmployeeProfile::where(function ($query) use ($assigned_area) {
+            $sql = EmployeeProfile::where(function ($query) use ($assigned_area) {
                 $query->whereHas('schedule', function ($innerQuery) use ($assigned_area) {
                     $innerQuery->with(['timeShift', 'holiday'])->where('employee_profile_schedule.deleted_at', '=', null );
                 });
             })->whereIn('id', $employee_ids)
+            ->where(function ($query) use ($user, $assigned_area) {
+                return $assigned_area['details']['code'] === "HRMO" ?
+                        $query->whereNotIn('id', [$user->id, 1, 2, 3, 4, 5]) : 
+                        $query->where('id', '!=', $user->id);
+            })
             ->with(['personalInformation', 'assignedArea', 'schedule.timeShift'])->get();
 
+            $employee = ScheduleResource::collection($sql);
+            
             $approving_officer  = Helpers::ScheduleApprovingOfficer($assigned_area, $user);
             $head_officer       = EmployeeProfile::where('id', $approving_officer['approving_officer'])->first();
             $holiday            = Holiday::all();
