@@ -33,6 +33,7 @@ class EmployeeProfile extends Authenticatable
         'deactivated_at',
         'agency_employee_no',
         'allow_time_adjustment',
+        'shifting',
         'is_2fa',
         'employee_type_id',
         'employment_type_id'
