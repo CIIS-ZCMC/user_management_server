@@ -60,7 +60,7 @@ class ScheduleController extends Controller
                                             }])->whereIn('id', $employee_ids)
                                             ->where(function ($query) use ($user, $assigned_area) {
                                                 return $assigned_area['details']['code'] === "HRMO" ?
-                                                        $query->whereNotIn('id', [$user->id, 1, 2, 3, 4, 5]) :
+                                                        $query->whereNotIn('id', [$user->id, 1, 2, 3, 4, 5]) : 
                                                         $query->where('id', '!=', $user->id);
                                             })
                                             ->get();
@@ -154,8 +154,11 @@ class ScheduleController extends Controller
                     foreach ($existing_employee_ids as $employee_id) {
                         $employee_schedules = EmployeeSchedule::where('employee_profile_id', $employee_id)
                                                                     ->where('deleted_at', null)
+                                                                    // ->whereHas('schedule', function ($query) use ($employee_id) {
+                                                                    //     $query->whereYear('date', '=', $year)
+                                                                    //         ->whereMonth('date', '=', $month);
+                                                                    // })
                                                                     ->first();
-
                         $employee_schedules->delete();
                     }
                 }
@@ -202,15 +205,6 @@ class ScheduleController extends Controller
                         // Attach employees to the schedule
                         $schedule->employee()->attach($employees);
                         // $all_employee_schedules->push(new ScheduleResource($schedule));
-
-                        // foreach ($employees  as $employeeID) {
-                        //     $pivotId = $schedule->employee->find($employeeID)->pivot->id;
-                        //     return response()->json(['pivot' => $pivotId], Response::HTTP_FOUND);
-                        // }
-
-                        // $employee_schedule = $schedule->employee()->where('id', $employees)->first()->id;
-                        // return response()->json(['data' => $employee_schedule], Response::HTTP_FOUND);
-                        // Helpers::registerEmployeeScheduleLogs($employee_schedule, $user->id, 'Store');
                     }
                 }
             }
@@ -230,6 +224,9 @@ class ScheduleController extends Controller
     public function edit(Request $request, $id)
     {
         try {
+            // $year = $request->year;
+            // $month = $request->month;
+            
             $model = EmployeeSchedule::where('employee_profile_id', $id)->where('deleted_at', null)->get();
             
             $schedule = [];
@@ -246,10 +243,13 @@ class ScheduleController extends Controller
                 'employee_id' => $model->isEmpty() ? null : $model->first()->employee_profile_id,
                 'schedule'    => $schedule,
             ];
+            
+            // $schedule = new Schedule();
 
             return response()->json([
                 'data' => new EmployeeScheduleResource($data),
-                'holiday' => Holiday::all()
+                'holiday' => Holiday::all(),
+                // 'week_end' => $schedule->countWeekEnd($year, $month)
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
