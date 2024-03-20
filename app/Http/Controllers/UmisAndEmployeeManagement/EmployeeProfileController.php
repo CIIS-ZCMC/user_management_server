@@ -2267,9 +2267,9 @@ class EmployeeProfileController extends Controller
             $employee_id_random_digit = 50 + count($total_registered_this_day);
 
             $last_registered_employee = EmployeeProfile::orderBy('biometric_id', 'desc')->first();
-            $last_password = DefaultPassword::orderBy('effective_at', 'desc')->first();
+            $default_password = Helpers::generatePassword();
 
-            $hashPassword = Hash::make($last_password->password .Cache::get('salt_value'));
+            $hashPassword = Hash::make($default_password.Cache::get('salt_value'));
             $encryptedPassword = Crypt::encryptString($hashPassword);
             $now = Carbon::now();
 
@@ -2277,10 +2277,6 @@ class EmployeeProfileController extends Controller
 
             $new_biometric_id = $last_registered_employee->biometric_id + 1;
             $new_employee_id = $date_hired_string . $employee_id_random_digit;
-
-            /** Create Authorization Pin */
-            $personal_information = PersonalInformation::find(strip_tags($request->personal_information_id));
-
 
             $cleanData['employee_id'] = $new_employee_id;
             $cleanData['biometric_id'] = $new_biometric_id;
@@ -2296,8 +2292,8 @@ class EmployeeProfileController extends Controller
                     $in_valid_file = true;
                     $cleanData['profile_url'] = null;
                 }
-            } catch (\Throwable $th) {
-            }
+            } catch (\Throwable $th) {}
+
             $cleanData['allow_time_adjustment'] = strip_tags($request->allow_time_adjustment) === 1 ? true : false;
             $cleanData['password_encrypted'] = $encryptedPassword;
             $cleanData['password_created_at'] = now();
@@ -2308,35 +2304,12 @@ class EmployeeProfileController extends Controller
             $cleanData['effective_at'] = $request->date_hired;
 
             $plantilla_number_id = $request->plantilla_number_id === "null"  || $request->plantilla_number_id === null ? null : $request->plantilla_number_id;
-            $sector_key = '';
+            $sector = strip_tags($request->sector);
 
-            switch (strip_tags($request->sector)) {
-                case "division":
-                    $sector_key = 'division_id';
-                    break;
-                case "department":
-                    $sector_key = 'department_id';
-                    break;
-                case "section":
-                    $sector_key = 'section_id';
-                    break;
-                case "unit":
-                    $sector_key = 'unit_id';
-                    break;
-                default:
-                    $sector_key = null;
-            }
-
-            if ($sector_key === null) {
-                return response()->json(['message' => 'Invalid sector area.'], Response::HTTP_BAD_REQUEST);
-            }
-
-            $cleanData[$sector_key] = strip_tags($request->sector_id);
+            $cleanData[Str::lower($sector).'_id'] = strip_tags($request->sector_id);
 
             if ($plantilla_number_id !== null) {
                 $plantilla_number = PlantillaNumber::find($plantilla_number_id);
-
-
 
                 if (!$plantilla_number) {
                     return response()->json(['message' => 'No record found for plantilla number ' . $plantilla_number_id], Response::HTTP_NOT_FOUND);
@@ -2349,7 +2322,6 @@ class EmployeeProfileController extends Controller
                 $plantilla->update(['total_used_plantilla_no' => $plantilla->total_used_plantilla_no + 1]);
             }
 
-
             $employee_profile = EmployeeProfile::create($cleanData);
 
             $cleanData['employee_profile_id'] = $employee_profile->id;
@@ -2359,7 +2331,6 @@ class EmployeeProfileController extends Controller
                 $plantilla_number = PlantillaNumber::find($plantilla_number_id);
                 $plantilla_number->update(['employee_profile_id' => $employee_profile->id, 'is_vacant' => false, 'assigned_at' => now()]);
             }
-
 
             if ($plantilla_number_id !== null) {
                 $leave_types = LeaveType::where('is_special', 0)->get();
@@ -2383,7 +2354,6 @@ class EmployeeProfileController extends Controller
             }
 
             Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . '.');
-
 
             if ($in_valid_file) {
                 return response()->json(

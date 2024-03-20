@@ -6,6 +6,7 @@ use App\Models\Biometrics;
 use Illuminate\Http\Request;
 use App\Models\DailyTimeRecords;
 use App\Methods\Helpers;
+use App\Helpers\Helpers as Helpersv2;
 use App\Methods\BioControl;
 use App\Models\DtrAnomalies;
 use Illuminate\Support\Facades\DB;
@@ -36,6 +37,8 @@ class DTRcontroller extends Controller
 
     protected $DTR;
 
+    private $CONTROLLER_NAME = "DTRcontroller";
+
     public function __construct()
     {
         $this->helper = new Helpers();
@@ -46,6 +49,7 @@ class DTRcontroller extends Controller
             $content = $this->bioms->operatingDevice()->getContent();
             $this->devices = $content !== null ? json_decode($content, true)['data'] : [];
         } catch (\Throwable $th) {
+            Helpersv2::errorLog($this->CONTROLLER_NAME, '__construct', $th->getMessage());
             Log::channel("custom-dtr-log-error")->error($th->getMessage());
         }
     }
@@ -88,6 +92,7 @@ class DTRcontroller extends Controller
                 ];
             }
         } catch (\Throwable $th) {
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'pullDTRuser', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], 401);
         }
     }
@@ -111,13 +116,13 @@ class DTRcontroller extends Controller
             }
             return $result;
         } catch (\Throwable $th) {
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'monthDayRecordsSelf', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], 401);
         }
     }
 
     public function fetchDTRFromDevice()
     {
-
         try {
 
             foreach ($this->devices as $device) {
@@ -218,6 +223,7 @@ class DTRcontroller extends Controller
                 } // End Checking if Connected to Device
             }
         } catch (\Throwable $th) {
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'fetchDTRFromDevice', $th->getMessage());
             return $th;
             // Log::channel("custom-dtr-log-error")->error($th->getMessage());
             // return response()->json(['message' => 'Unable to connect to device', 'Throw error' => $th->getMessage()]);
@@ -356,6 +362,7 @@ class DTRcontroller extends Controller
 
             return response()->json(['data' => $udata]);
         } catch (\Throwable $th) {
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'fetchUserDTR', $th->getMessage());
             return response()->json(['message' =>  $th->getMessage()]);
         }
     }
@@ -530,7 +537,7 @@ class DTRcontroller extends Controller
 
             return $this->PrintDtr($month_of, $year_of, $biometric_id, $emp_Details, $view, $FrontDisplay);
         } catch (\Throwable $th) {
-            return $th;
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'generateDTR', $th->getMessage());
             return response()->json(['message' =>  $th->getMessage()]);
         }
     }
@@ -543,9 +550,6 @@ class DTRcontroller extends Controller
 
     public function printDtr($month_of, $year_of, $biometric_id, $emp_Details, $view, $FrontDisplay)
     {
-
-
-
         try {
             $dtr = DB::table('daily_time_records')
                 ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
@@ -795,11 +799,10 @@ class DTRcontroller extends Controller
                 $dompdf->stream($filename);
             }
         } catch (\Throwable $th) {
-            return $th;
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'printDtr', $th->getMessage());
             return response()->json(['message' =>  $th->getMessage()]);
         }
     }
-
 
     public function GenerateMultiple($id, $month_of, $year_of, $view)
     {
@@ -1109,6 +1112,7 @@ class DTRcontroller extends Controller
         try {
             return response()->json(['data' => Holidaylist::all()]);
         } catch (\Throwable $th) {
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'getHolidays', $th->getMessage());
             return response()->json(['message' =>  $th->getMessage()]);
         }
     }
@@ -1130,6 +1134,7 @@ class DTRcontroller extends Controller
             ]);
             return response()->json(['message' =>  "Holiday Set Successfully!"]);
         } catch (\Throwable $th) {
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'setHolidays', $th->getMessage());
             return response()->json(['message' =>  $th->getMessage()]);
         }
     }
@@ -1153,6 +1158,7 @@ class DTRcontroller extends Controller
 
             return response()->json(['message' =>  "Item Updated Successfully!"]);
         } catch (\Throwable $th) {
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'modifyHolidays', $th->getMessage());
             return response()->json(['message' =>  $th->getMessage()]);
         }
     }
@@ -1634,7 +1640,7 @@ class DTRcontroller extends Controller
 
             return $dtr;
         } catch (\Throwable $th) {
-            return $th;
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'dtrUTOTReport', $th->getMessage());
             return response()->json(['message' => $th->getMessage()]);
         }
     }
@@ -1834,6 +1840,7 @@ class DTRcontroller extends Controller
             }
             return $data;
         } catch (\Throwable $th) {
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'getUsersLogs', $th->getMessage());
             //throw $th;
         }
     }
