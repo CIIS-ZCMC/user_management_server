@@ -725,13 +725,17 @@ AND id IN (
             $new_Time_stamp = $time_stamp - ($alloted_hours * 3600);
             $Calculated_allotedHours = date('Y-m-d H:i:s', $new_Time_stamp);
 
-            if ($Calculated_allotedHours <= $dtrentry['date_time']) { //within alloted hours to timein
-                DailyTimeRecords::create([
-                    'biometric_id' => $biometric_id,
-                    'dtr_date' => $dtr_date,
-                    'first_in' => $dtrentry['date_time'],
-                    'is_biometric' => 1,
-                ]);
+            if ($scheduleEntry['is_on_call']) {
+                //// Logic for ONCALL
+            } else {
+                if ($Calculated_allotedHours <= $dtrentry['date_time']) { //within alloted hours to timein
+                    DailyTimeRecords::create([
+                        'biometric_id' => $biometric_id,
+                        'dtr_date' => $dtr_date,
+                        'first_in' => $dtrentry['date_time'],
+                        'is_biometric' => 1,
+                    ]);
+                }
             }
         } else {
             /* No schedule Entry */
@@ -758,13 +762,19 @@ AND id IN (
             $new_Time_stamp = $time_stamp - ($alloted_hours * 3600);
             $Calculated_allotedHours = date('Y-m-d H:i:s', $new_Time_stamp);
 
-            if ($Calculated_allotedHours <= $dtrentry['date_time']) { //within alloted hours to timein
-                DailyTimeRecords::create([
-                    'biometric_id' => $biometric_id,
-                    'dtr_date' => $dtr_date,
-                    'second_in' => $dtrentry['date_time'],
-                    'is_biometric' => 1,
-                ]);
+
+
+            if ($scheduleEntry['is_on_call']) {
+                ///// //// Logic for ONCALL
+            } else {
+                if ($Calculated_allotedHours <= $dtrentry['date_time']) { //within alloted hours to timein
+                    DailyTimeRecords::create([
+                        'biometric_id' => $biometric_id,
+                        'dtr_date' => $dtr_date,
+                        'second_in' => $dtrentry['date_time'],
+                        'is_biometric' => 1,
+                    ]);
+                }
             }
         } else {
             /* No schedule Entry */
