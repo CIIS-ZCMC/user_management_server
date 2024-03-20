@@ -727,6 +727,15 @@ AND id IN (
 
             if ($scheduleEntry['is_on_call']) {
                 //// Logic for ONCALL
+                $schedEntry = $time_stamp + 1800; // 30 mins
+                $calIn = date("Y-m-d H:i:s", $schedEntry);
+                if ($calIn >= $dtrentry['date_time']) {
+                    //within 30 mins.
+                    // then accept as 8am straight
+                } else {
+                    //not in range 30 mins. calculate the time minus 30 mins. and thats its entry
+
+                }
             } else {
                 if ($Calculated_allotedHours <= $dtrentry['date_time']) { //within alloted hours to timein
                     DailyTimeRecords::create([
