@@ -78,4 +78,9 @@ class Schedule extends Model
         // Total duration should be 24 hours (1440 minutes) or more
         return ($duration1 + $duration2) >= 1440;
     }
+
+    public function countWeekEnd()
+    {
+        
+    }
 }
