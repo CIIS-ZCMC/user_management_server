@@ -9,6 +9,7 @@ use App\Models\EmployeeProfile;
 use App\Models\EmployeeSchedule;
 use App\Models\EmployeeScheduleLog;
 use App\Models\ExchangeDutyLog;
+use App\Models\Notifications;
 use App\Models\PullOutLog;
 use App\Models\OfficialTimeLog;
 use App\Models\Schedule;
@@ -615,6 +616,24 @@ class Helpers
         if (!$query) {
             return $hexColor;
         }
+    }
+
+    public static function pendingLeaveNotfication($id, $type)
+    {
+        Notifications::create([
+            "description" => "New ".$type." request.",
+            "module_path" => null,
+            "employee_profile_id" => $id
+        ]);
+    }
+
+    public static function notifications($id, $message, $type)
+    {
+        Notifications::create([
+            "description" => $message,
+            "module_path" => null,
+            "employee_profile_id" => $id
+        ]);
     }
 }
 
