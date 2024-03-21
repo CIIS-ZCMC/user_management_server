@@ -73,7 +73,8 @@ class TimeShift extends Model
         
         
         if ($SecondIn !== null) {
-            return $firstIn . '-' . $firstOut . '<br>' . $SecondIn . '-' . $SecondOut;
+            // return $firstIn . '-' . $firstOut . '<br>' . $SecondIn . '-' . $SecondOut;
+            return $firstIn . '<br>' . $firstOut;
         }
         
         return $firstIn . '<br>' . $firstOut;
