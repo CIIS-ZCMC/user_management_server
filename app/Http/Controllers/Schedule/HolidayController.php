@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Schedule;
 
 use App\Helpers\Helpers;
 use App\Http\Requests\HolidayRequest;
+use App\Http\Resources\HolidayCalendarResource;
 use App\Http\Resources\HolidayResource;
 use App\Models\Holiday;
 use App\Http\Controllers\Controller;
@@ -139,6 +140,19 @@ class HolidayController extends Controller
         } catch (\Throwable $th) {
 
             $this->requestLogger->errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Display a listing of the resource to calendar
+     */
+    public function calendar(Request $request)
+    {
+        try {
+            return response()->json(['data' => HolidayCalendarResource::collection(Holiday::all())], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

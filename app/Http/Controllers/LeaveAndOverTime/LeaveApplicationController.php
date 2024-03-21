@@ -650,8 +650,10 @@ class LeaveApplicationController extends Controller
                             ]);
    
                             if(LeaveType::find($request->leave_type_id)->code === 'FL' ){
+                                $vlLeaveTypeId = LeaveType::where('code', 'VL')->first()->id;
+
                                 $employee_credit_vl = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)
-                                    ->where('leave_type_id', LeaveType::where('code','VL')->id)->first();
+                                    ->where('leave_type_id', $vlLeaveTypeId)->first();
                                 
                                 $previous_credit_vl = $employee_credit_vl->total_leave_credits;
                                 

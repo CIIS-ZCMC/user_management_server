@@ -2020,5 +2020,7 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-HOL delete'])->group(function () {
             Route::delete('holiday/{id}', 'HolidayController@destroy');
         });
+
+        Route::get('holidays', 'HolidayController@calendar');
     });
 });
