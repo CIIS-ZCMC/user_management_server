@@ -33,7 +33,6 @@ class ScheduleResource extends JsonResource
             'name' => $this->name(),
             'employee_id' => $this->employee_id,
             'biometric_id' => $this->biometric->biometric_id ?? null,
-            'holiday' => $this->holiday,
             'schedule' => $schedules
         ];
     }
