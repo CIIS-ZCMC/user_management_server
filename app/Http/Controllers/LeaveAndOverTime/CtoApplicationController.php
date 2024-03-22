@@ -70,17 +70,19 @@ class CtoApplicationController extends Controller
                         ->where('cto_applications.approving_officer', $employeeId);
                 })
                 ->groupBy(
-                    'cto_applications.id',
-                    'cto_applications.date',
-                    'cto_applications.applied_credits',
-                    'cto_applications.status',
-                    'cto_applications.purpose',
-                    'cto_applications.recommending_officer',
-                    'cto_applications.approving_officer',
-                    'cto_applications.remarks',
-                    'cto_applications.employee_profile_id',
-                    'user_management_db.cto_applications.created_at',
-                    'user_management_db.cto_applications.updated_at',
+                    'id',
+                    'date',
+                    'applied_credits',
+                    'is_am',
+                    'is_pm',
+                    'status',
+                    'purpose',
+                    'recommending_officer',
+                    'approving_officer',
+                    'remarks',
+                    'employee_profile_id',
+                    'created_at',
+                    'updated_at',
                 )
                 ->orderBy('created_at', 'desc')
                 ->get();
@@ -244,6 +246,8 @@ class CtoApplicationController extends Controller
                     $cleanData['employee_profile_id'] = $employee_profile->id;
                     $cleanData['date'] = $value->date;
                     $cleanData['applied_credits'] = $value->applied_credits;
+                    $cleanData['is_am'] = $value->is_am;
+                    $cleanData['is_pm'] = $value->is_pm;
                     $cleanData['purpose'] = $value->purpose;
                     $cleanData['remarks'] = $value->remarks;
                     $cleanData['status'] = 'for recommending approval';
