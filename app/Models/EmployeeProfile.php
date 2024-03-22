@@ -359,6 +359,37 @@ class EmployeeProfile extends Authenticatable
         return $this->personalInformation;
     }
 
+    public function employeeAreaList($assigned_area)
+    {
+        $key = null;
+
+        if(Division::where('id', $assigned_area['details']->id)->first()){
+            $key = 'division_id';
+        }
+        
+        if(Department::where('id', $assigned_area['details']->id)->first()){
+            $key = 'department_id';
+        } 
+        
+        if(Section::where('id', $assigned_area['details']->id)->first()){
+            $key = 'section_id';
+        } 
+        
+        if(Unit::where('id', $assigned_area['details']->id)->first()){
+            $key = 'unit_id';
+        } 
+
+        if($key === null) return null;
+
+        $assigned_areas = AssignArea::where($key, $assigned_area['details']->id)->get();
+     
+        $employees = [];
+        foreach ($assigned_areas as $assigned_area) {
+            $employees[] = $assigned_area->employeeProfile;
+        }   
+
+        return $employees;
+    }
     
     public function areaEmployee($assigned_area) 
     {  

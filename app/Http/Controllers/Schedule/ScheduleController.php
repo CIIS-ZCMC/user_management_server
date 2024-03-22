@@ -94,6 +94,7 @@ class ScheduleController extends Controller
                     'start' => $value->schedule->date,
                     'title' => $value->schedule->timeShift->timeShiftDetails(),
                     'color' => $value->schedule->timeShift->color,
+                    'status'=> $value->schedule->status,
                 ];
             }
             
@@ -413,16 +414,15 @@ class ScheduleController extends Controller
     }
 
     public function employee(Request $request)
-    {
+    {   
         try {
             $employees      = [];
             $user           = $request->user;
             $assigned_area  = $user->assignedArea->findDetails();
-            
-            //Array
-            $myEmployees = $user->areaEmployee($assigned_area);
-            $supervisors = $user->sectorHeads();
 
+            //Array
+            $myEmployees = $user->employeeAreaList($assigned_area);
+            $supervisors = $user->sectorHeads();
             $employees = [ ...$myEmployees,...$supervisors];
 
             $data = [];
