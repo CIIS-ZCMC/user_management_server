@@ -6,7 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class BirthdayCelebrantResource extends JsonResource
+class MyApprovedLeaveApplicationResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -17,10 +17,9 @@ class BirthdayCelebrantResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'profile_url' => env('SERVER_DOMAIN').$this->employeeProfile->profile_url,
-            'employee_id' => $this->employeeProfile->employee_id,
-            'name' => $this->name(),
-            'age' => Carbon::now()->diffInYears($this->date_of_birth),
+            'from' => Carbon::parse($this->date_from)->format('Y-m-d'),
+            'to' => Carbon::parse($this->date_to)->addDay()->format('Y-m-d'),
+            'leave_type' => $this->leaveType->name
         ];
     }
 }
