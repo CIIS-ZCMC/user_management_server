@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Schedule;
 
+use App\Http\Resources\TimeShiftResource;
 use App\Models\EmployeeSchedule;
 use App\Models\ExchangeDuty;
 use App\Models\Schedule;
@@ -11,6 +12,7 @@ use App\Http\Resources\ExchangeDutyResource;
 use App\Http\Requests\ExchangeDutyRequest;
 use App\Helpers\Helpers;
 
+use App\Models\TimeShift;
 use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Crypt;
@@ -39,7 +41,10 @@ class ExchangeDutyController extends Controller
                                 ->where('deleted_at', null)
                                 ->get();
 
-            return response()->json(['data' => ExchangeDutyResource::collection($model)], Response::HTTP_OK);
+            return response()->json([
+                'data' => ExchangeDutyResource::collection($model),
+                'time_shift' => TimeShiftResource::collection(TimeShift::all())
+            ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 

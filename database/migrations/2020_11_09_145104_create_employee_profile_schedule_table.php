@@ -17,7 +17,6 @@ return new class extends Migration
             $table->integer('schedule_id')->unasigned();
             $table->boolean('is_on_call')->default(false);
             $table->timestamp('updated_at');
-            $table->softDeletes();
         });
     }
 

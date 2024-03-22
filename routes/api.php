@@ -1899,11 +1899,9 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         /**
-         * Employee Schedule Module
+         * Employee List Module
          */
-        Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function () {
-            Route::get('employee-schedule', 'EmployeeScheduleController@create');
-        });
+        Route::get('employees', 'ScheduleController@employee'); //employee list
 
         // Route::middleware(['auth.permission:UMIS-ScM write'])->group(function () {
             // Route::post('employee-schedule', 'EmployeeScheduleController@store');
@@ -1911,13 +1909,15 @@ Route::middleware('auth.cookie')->group(function () {
 
         /**
          * Exchange Schedule Module
-         */
+         */ 
         Route::middleware(['auth.permission:UMIS-ES view-all'])->group(function () {
             Route::get('exchange-duties', 'ExchangeDutyController@index');
         });
 
         Route::middleware(['auth.permission:UMIS-ES view'])->group(function () {
             Route::get('exchange-duty', 'ExchangeDutyController@create');
+            Route::get('exchange-duty-employee', 'ScheduleController@index');
+            Route::get('exchange-duty-time-shift', 'TimeShiftController@index');
         });
 
         Route::middleware(['auth.permission:UMIS-ES write'])->group(function () {

@@ -44,6 +44,8 @@ class ScheduleController extends Controller
             $assigned_area  = $user->assignedArea->findDetails();
             $dates_with_day = Helpers::getDatesInMonth($year, $month, "Days of Week");
 
+            $this->updateAutomaticScheduleStatus();
+            
             //Array
             $myEmployees = $user->areaEmployee($assigned_area);
             $supervisors = $user->sectorHeads();
@@ -55,8 +57,7 @@ class ScheduleController extends Controller
                                             'schedule' => function ($query) use ($year, $month) {
                                                 $query->with(['timeShift', 'holiday'])
                                                     ->whereYear('date', '=', $year)
-                                                    ->whereMonth('date', '=', $month)
-                                                    ->where('employee_profile_schedule.deleted_at', '=', null );
+                                                    ->whereMonth('date', '=', $month);
                                             }])->whereIn('id', $employee_ids)
                                             ->where(function ($query) use ($user, $assigned_area) {
                                                 return $assigned_area['details']['code'] === "HRMO" ?
@@ -84,7 +85,7 @@ class ScheduleController extends Controller
         try {
             $user = $request->user;
             // API For Personal Calendar
-            $model = EmployeeSchedule::where('employee_profile_id', $user->id)->where('deleted_at', null)->get();
+            $model = EmployeeSchedule::where('employee_profile_id', $user->id)->get();
                         
             $schedule = [];
             foreach ($model as $value) {
@@ -153,7 +154,6 @@ class ScheduleController extends Controller
 
                     foreach ($existing_employee_ids as $employee_id) {
                         $employee_schedules = EmployeeSchedule::where('employee_profile_id', $employee_id)
-                                                                    ->where('deleted_at', null)
                                                                     // ->whereHas('schedule', function ($query) use ($employee_id) {
                                                                     //     $query->whereYear('date', '=', $year)
                                                                     //         ->whereMonth('date', '=', $month);
@@ -227,7 +227,7 @@ class ScheduleController extends Controller
             // $year = $request->year;
             // $month = $request->month;
             
-            $model = EmployeeSchedule::where('employee_profile_id', $id)->where('deleted_at', null)->get();
+            $model = EmployeeSchedule::where('employee_profile_id', $id)->get();
             
             $schedule = [];
             foreach ($model as $value) {
@@ -375,7 +375,7 @@ class ScheduleController extends Controller
             
             $sql = EmployeeProfile::where(function ($query) use ($assigned_area) {
                 $query->whereHas('schedule', function ($innerQuery) use ($assigned_area) {
-                    $innerQuery->with(['timeShift', 'holiday'])->where('employee_profile_schedule.deleted_at', '=', null );
+                    $innerQuery->with(['timeShift', 'holiday']);
                 });
             })->whereIn('id', $employee_ids)
             ->where(function ($query) use ($user, $assigned_area) {
@@ -411,11 +411,38 @@ class ScheduleController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    public function employee(Request $request)
+    {
+        try {
+            $employees      = [];
+            $user           = $request->user;
+            $assigned_area  = $user->assignedArea->findDetails();
+            
+            //Array
+            $myEmployees = $user->areaEmployee($assigned_area);
+            $supervisors = $user->sectorHeads();
+
+            $employees = [ ...$myEmployees,...$supervisors];
+
+            $data = [];
+            foreach ($employees as $employee) {
+                $data[] = [
+                    'id' => $employee->id,
+                    'name' => $employee->name(),
+                ];
+            }
+            return response()->json(['data' => $data], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
     
     private function hasOverlappingSchedule($timeShiftId, $date, $employees)
     {
         foreach ($employees as $employee) {
-            $existingSchedules = EmployeeProfile::find($employee)->schedule()->where('date', $date)->where('employee_profile_schedule.deleted_at', null)->get();
+            $existingSchedules = EmployeeProfile::find($employee)->schedule()->where('date', $date)->get();
 
             foreach ($existingSchedules as $existingSchedule) {
                 if ($this->checkOverlap($timeShiftId, $existingSchedule->timeShift)) {
@@ -440,5 +467,18 @@ class ScheduleController extends Controller
     
         // Check for overlap
         return !($newStart >= $existingEnd || $newEnd <= $existingStart);
+    }
+
+    private function updateAutomaticScheduleStatus()
+    {
+        $date_now = Carbon::now();
+        $data = Schedule::whereDate('date', '<', $date_now->format('Y-m-d'))->get();
+        
+        if (!$data->isEmpty()) { // Check if the collection is not empty
+            foreach ($data as $schedule) {
+                $schedule->status = false;
+                $schedule->save(); // or $schedule->update(['status' => false]);
+            }
+        }
     }
 }
