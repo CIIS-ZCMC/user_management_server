@@ -237,6 +237,7 @@ class ScheduleController extends Controller
                     'start' => $value->schedule->date,
                     'title' => $value->schedule->timeShift->timeShiftDetails(),
                     'color' => $value->schedule->timeShift->color,
+                    'status'=> $value->schedule->status,
                 ];
             }
             
