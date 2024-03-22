@@ -118,6 +118,7 @@ class DTRcontroller extends Controller
     public function fetchDTRFromDevice()
     {
 
+
         try {
 
             foreach ($this->devices as $device) {
@@ -134,6 +135,8 @@ class DTRcontroller extends Controller
                     );
 
 
+
+
                     $date_and_timeD = simplexml_load_string($tad->get_date());
                     if ($this->helper->validatedDeviceDT($date_and_timeD)) { //Validating Time of server and time of device
                         $date_now = date('Y-m-d');
@@ -142,6 +145,9 @@ class DTRcontroller extends Controller
                             return date('Y-m-d', strtotime($attd['date_time'])) == $date_now;
                         });
 
+
+
+
                         if (count($check_Records) >= 1) {
                             foreach ($check_Records as $bioEntry) {
                                 $biometric_id = $bioEntry['biometric_id'];
@@ -149,6 +155,8 @@ class DTRcontroller extends Controller
                                 $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
                                 $DaySchedule = $Schedule['daySchedule'];
                                 $BreakTime = $Schedule['break_Time_Req'];
+
+
 
 
                                 if (count($DaySchedule) >= 1) {
@@ -708,6 +716,56 @@ class DTRcontroller extends Controller
                 })
                 ->get();
 
+            $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
+
+            //Leave Applications
+            $leaveapp  = $employee->leaveApplications->filter(function ($row) {
+                return $row['status'] == "approved";
+            });
+
+            $leavedata = [];
+            foreach ($leaveapp as $rows) {
+                $leavedata[] = [
+                    'country' => $rows['country'],
+                    'city' => $rows['city'],
+                    'from' => $rows['date_from'],
+                    'to' => $rows['date_to'],
+                    'without_pay' => $rows['without_pay'],
+                    'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to'])
+                ];
+            }
+
+            //Official business
+            $officialBusiness = array_values($employee->officialBusinessApplications->filter(function ($row) {
+                return $row['status'] == "approved";
+            })->toarray());
+            $obData = [];
+            foreach ($officialBusiness as $rows) {
+                $obData[] = [
+                    'purpose' => $rows['purpose'],
+                    'time_from' => $rows['time_from'],
+                    'time_to' => $rows['time_to'],
+                    'date_from' => $rows['date_from'],
+                    'date_to' => $rows['date_to'],
+                    'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to']),
+                ];
+            }
+
+            //Official Time
+            $officialTime = $employee->officialTimeApplications->filter(function ($row) {
+                return $row['status'] == "approved";
+            });
+            $otData = [];
+            foreach ($officialTime as $rows) {
+                $otData[] = [
+                    'date_from' => $rows['date_from'],
+                    'date_to' => $rows['date_to'],
+                    'purpose' => $rows['purpose'],
+                    'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to'])
+                ];
+            }
+
+
 
             $schedules = $this->helper->getSchedule($biometric_id, "all-{$year_of}-{$month_of}");
 
@@ -729,7 +787,10 @@ class DTRcontroller extends Controller
                     'print_view' => true,
                     'halfsched' => $is_Half_Schedule,
                     'biometric_ID' => $biometric_id,
-                    'schedule' => $employeeSched
+                    'schedule' => $employeeSched,
+                    'leaveapp' => $leavedata,
+                    'obApp' => $obData,
+                    'otApp' => $otData
 
                 ]);
             }
@@ -756,7 +817,10 @@ class DTRcontroller extends Controller
                     'halfsched' => $is_Half_Schedule,
                     'biometric_ID' => $biometric_id,
                     'schedule' => $employeeSched,
-                    'Incharge' => $approver
+                    'Incharge' => $approver,
+                    'leaveapp' => $leavedata,
+                    'obApp' => $obData,
+                    'otApp' => $otData
                 ]);
             } else {
                 $options = new Options();
@@ -783,7 +847,10 @@ class DTRcontroller extends Controller
                     'halfsched' => $is_Half_Schedule,
                     'biometric_ID' => $biometric_id,
                     'schedule' => $employeeSched,
-                    'Incharge' => $approver
+                    'Incharge' => $approver,
+                    'leaveapp' => $leavedata,
+                    'obApp' => $obData,
+                    'otApp' => $otData
                 ]));
 
                 $dompdf->setPaper('Letter', 'portrait');
@@ -1852,82 +1919,82 @@ class DTRcontroller extends Controller
         **
         * test on how to access request function on another controller for instance
         */
-        $dtrentry = "2024-03-20 8:41:00";
-        $schedule = "2024-03-20 8:00:00";
-        $isoncall = 1;
-        $alloted_mins_Oncall = 0.5; // 30 minutes
+        // $dtrentry = "2024-03-20 8:41:00";
+        // $schedule = "2024-03-20 8:00:00";
+        // $isoncall = 1;
+        // $alloted_mins_Oncall = 0.5; // 30 minutes
 
-        $dtr_date = date('Y-m-d', strtotime($dtrentry));
-        $max_allowed_entry_for_oncall = env('MAX_ALLOWED_ENTRY_ONCALL');
+        // $dtr_date = date('Y-m-d', strtotime($dtrentry));
+        // $max_allowed_entry_for_oncall = env('MAX_ALLOWED_ENTRY_ONCALL');
 
-        /* With Schedule Entry */
-        $in_Entry = $schedule;
+        // /* With Schedule Entry */
+        // $in_Entry = $schedule;
 
-        $time_stamp = strtotime($in_Entry);
+        // $time_stamp = strtotime($in_Entry);
 
 
-        $new_Time_stamp = $time_stamp - (12 * 3600);
-        $Calculated_allotedHours = date('Y-m-d H:i:s', $new_Time_stamp);
+        // $new_Time_stamp = $time_stamp - (12 * 3600);
+        // $Calculated_allotedHours = date('Y-m-d H:i:s', $new_Time_stamp);
 
-        $newEntry = $schedule;
-        if ($isoncall) {
-            //// Logic for ONCALL
+        // $newEntry = $schedule;
+        // if ($isoncall) {
+        //     //// Logic for ONCALL
 
-            $schedEntry = $time_stamp + ($alloted_mins_Oncall * 1800); // 30 mins
+        //     $schedEntry = $time_stamp + ($alloted_mins_Oncall * 1800); // 30 mins
 
-            $calIn = date("Y-m-d H:i:s", $schedEntry);
-            $dtrentry = date("Y-m-d H:i:s", strtotime($dtrentry));
-            if ($calIn <= $dtrentry) {
+        //     $calIn = date("Y-m-d H:i:s", $schedEntry);
+        //     $dtrentry = date("Y-m-d H:i:s", strtotime($dtrentry));
+        //     if ($calIn <= $dtrentry) {
 
-                //within 30 mins.
-                // then accept as 8am straight
-                $newEntry = date("Y-m-d H:i:s", strtotime($dtrentry . "-30 minutes"));
-            }
-
-            return $newEntry;
-        } else {
-            // if ($Calculated_allotedHours <= $dtrentry['date_time']) { //within alloted hours to timein
-            //     DailyTimeRecords::create([
-            //         'biometric_id' => $biometric_id,
-            //         'dtr_date' => $dtr_date,
-            //         'first_in' => $dtrentry['date_time'],
-            //         'is_biometric' => 1,
-            //     ]);
-            // }
-        }
-
-        // for ($i = 1; $i <= 30; $i++) {
-
-        //     $date = date('Y-m-d', strtotime('2024-01-' . $i));
-
-        //     if (date('D', strtotime($date)) != 'Sun') {
-        //         $firstin = date('H:i:s', strtotime('today') + rand(25200, 30600));
-        //         $firstout =  date('H:i:s', strtotime('today') + rand(42600, 47400));
-        //         $secondin =  date('H:i:s', strtotime('today') + rand(45000, 49800));
-        //         $secondout = date('H:i:s', strtotime('today') + rand(59400, 77400));
-
-        //         DailyTimeRecords::create([
-        //             'biometric_id' => 1,
-        //             'dtr_date' => $date,
-        //             'first_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin)),
-        //             'first_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstout)),
-        //             'second_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $secondin)),
-        //             'second_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $secondout)),
-        //             'interval_req' => null,
-        //             'required_working_hours' => null,
-        //             'required_working_minutes' => null,
-        //             'total_working_hours' => null,
-        //             'total_working_minutes' => null,
-        //             'overtime' => null,
-        //             'overtime_minutes' => null,
-        //             'undertime' => null,
-        //             'undertime_minutes' => null,
-        //             'overall_minutes_rendered' => null,
-        //             'total_minutes_reg' => null,
-        //             'is_biometric' => 1,
-        //             'created_at' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin))
-        //         ]);
+        //         //within 30 mins.
+        //         // then accept as 8am straight
+        //         $newEntry = date("Y-m-d H:i:s", strtotime($dtrentry . "-30 minutes"));
         //     }
+
+        //     return $newEntry;
+        // } else {
+        //     // if ($Calculated_allotedHours <= $dtrentry['date_time']) { //within alloted hours to timein
+        //     //     DailyTimeRecords::create([
+        //     //         'biometric_id' => $biometric_id,
+        //     //         'dtr_date' => $dtr_date,
+        //     //         'first_in' => $dtrentry['date_time'],
+        //     //         'is_biometric' => 1,
+        //     //     ]);
+        //     // }
         // }
+
+        for ($i = 1; $i <= 30; $i++) {
+
+            $date = date('Y-m-d', strtotime('2024-02-' . $i));
+
+            if (date('D', strtotime($date)) != 'Sun') {
+                $firstin = date('H:i:s', strtotime('today') + rand(25200, 30600));
+                $firstout =  date('H:i:s', strtotime('today') + rand(42600, 47400));
+                $secondin =  date('H:i:s', strtotime('today') + rand(45000, 49800));
+                $secondout = date('H:i:s', strtotime('today') + rand(59400, 77400));
+
+                DailyTimeRecords::create([
+                    'biometric_id' => 1,
+                    'dtr_date' => $date,
+                    'first_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin)),
+                    'first_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstout)),
+                    'second_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $secondin)),
+                    'second_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $secondout)),
+                    'interval_req' => null,
+                    'required_working_hours' => null,
+                    'required_working_minutes' => null,
+                    'total_working_hours' => null,
+                    'total_working_minutes' => null,
+                    'overtime' => null,
+                    'overtime_minutes' => null,
+                    'undertime' => null,
+                    'undertime_minutes' => null,
+                    'overall_minutes_rendered' => null,
+                    'total_minutes_reg' => null,
+                    'is_biometric' => 1,
+                    'created_at' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin))
+                ]);
+            }
+        }
     }
 }
