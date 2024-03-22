@@ -21,22 +21,13 @@ class MonetizationApplicationController extends Controller
         try{ 
             $mone_applications=[];
             
-            $mone_applications =MonetizationApplication::with(['logs'])->get();
+            $mone_applications = MonetizationApplication::with(['logs'])->get();
           
-           
-             return response()->json(['data' => $mone_applications], Response::HTTP_OK);
+            return response()->json(['data' => $mone_applications], Response::HTTP_OK);
         }catch(\Throwable $th){
         
             return response()->json(['message' => $th->getMessage()], 500);
         }
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
     }
 
     public function getMoneApplications(Request $request)

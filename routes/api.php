@@ -391,6 +391,33 @@ Route::middleware('auth.cookie')->group(function () {
      */
     Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
         /**
+         * Educational Background Module
+         */
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('monitization-posts', 'MonitizationPostingController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('monitization-posts/{id}/candidates', 'MonitizationPostingController@showCandidates');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function () {
+            Route::get('monitization-posts/{id}/check-for-sl-monitization', 'MonitizationPostingController@checkForSLMonitization');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {
+            Route::post('monitization-post', 'MonitizationPostingController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::put('monitization-posts/{id}', 'MonitizationPostingController@update');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
+            Route::delete('monitization-posts/{id}', 'MonitizationPostingController@destroy');
+        });
+
+        /**
          * Address Module
          */
         // Route::get('employees-dtr-list', 'EmployeeProfileController@employeesDTRList');
