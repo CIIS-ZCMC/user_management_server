@@ -5,6 +5,7 @@ namespace App\Http\Controllers\LeaveAndOverTime;
 use App\Http\Controllers\UmisAndEmployeeManagement\EmployeeProfileController;
 use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Resources\LeaveTypeResource;
+use App\Http\Resources\MyApprovedLeaveApplicationResource;
 use App\Models\Division;
 use App\Models\EmployeeCreditLog;
 use App\Models\EmployeeOvertimeCredit;
@@ -185,6 +186,20 @@ class LeaveApplicationController extends Controller
                 'message' => 'Retrieve all leave application records.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function myApprovedLeaveApplication(Request $request)
+    {
+        try{
+            $leave_applications = LeaveApplication::where('status', 'approved')->get();
+
+            return response()->json([
+                'data' => MyApprovedLeaveApplicationResource::collection($leave_applications),
+                'message' => 'Retrieve list.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
