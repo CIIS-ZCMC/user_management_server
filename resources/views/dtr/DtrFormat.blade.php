@@ -121,6 +121,59 @@
                             'first_out' => $res['first_out'],
                         ];
                     }, $checkIn);
+
+                    //Check LeaveApplication
+                    $filteredleaveDates = [];
+                    foreach ($leaveapp as $row) {
+                        foreach ($row['dates_covered'] as $date) {
+                            $filteredleaveDates[] = strtotime($date);
+                        }
+                    }
+                    $leaveApplication = array_filter($filteredleaveDates, function ($timestamp) use (
+                        $year,
+                        $month,
+                        $i,
+                    ) {
+                        $dateToCompare = date('Y-m-d', $timestamp);
+                        $dateToMatch = date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
+                        return $dateToCompare === $dateToMatch;
+                    });
+                    $leave_Count = count($leaveApplication);
+
+                    //Check obD ates
+                    $filteredOBDates = [];
+                    foreach ($obApp as $row) {
+                        foreach ($row['dates_covered'] as $date) {
+                            $filteredOBDates[] = strtotime($date);
+                        }
+                    }
+                    $obApplication = array_filter($filteredOBDates, function ($timestamp) use ($year, $month, $i) {
+                        $dateToCompare = date('Y-m-d', $timestamp);
+                        $dateToMatch = date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
+                        return $dateToCompare === $dateToMatch;
+                    });
+                    $ob_Count = count($obApplication);
+
+                    //Check otDates
+                    $filteredOTDates = [];
+                    foreach ($otApp as $row) {
+                        foreach ($row['dates_covered'] as $date) {
+                            $filteredOTDates[] = strtotime($date);
+                        }
+                    }
+                    $otApplication = array_filter($filteredOTDates, function ($timestamp) use ($year, $month, $i) {
+                        $dateToCompare = date('Y-m-d', $timestamp);
+                        $dateToMatch = date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
+                        return $dateToCompare === $dateToMatch;
+                    });
+                    $ot_Count = count($otApplication);
+
+                    $leavemessage = 'On leave';
+                    $officialTime = 'Official Time';
+                    $officialBusinessMessage = 'Official Business';
+                    $absentMessage = 'Absent';
+                    $dayoffmessage = 'Day-Off';
+                    $holidayMessage = 'HOLIDAY';
                 @endphp
 
                 <tr>

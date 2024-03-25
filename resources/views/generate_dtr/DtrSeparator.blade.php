@@ -38,11 +38,13 @@
                         @if (count($empSched) >= 1)
                             {{-- checktime if its pm --}}
                             @if (date('A', strtotime($f1['first_in'])) == 'AM')
-                                @if ($leave_Count || $ot_Count)
+                                @if ($leave_Count || $ot_Count || $ob_Count)
                                     @if ($leave_Count)
                                         <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
                                     @elseif ($ot_Count)
                                         <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
+                                    @elseif ($ob_Count)
+                                        <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
                                     @endif
                                 @else
                                     <span class="fentry">
@@ -51,11 +53,13 @@
                                 @endif
                             @endif
                         @else
-                            @if ($leave_Count || $ot_Count)
+                            @if ($leave_Count || $ot_Count || $ob_Count)
                                 @if ($leave_Count)
                                     <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
                                 @elseif ($ot_Count)
                                     <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
+                                @elseif ($ob_Count)
+                                    <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
                                 @endif
                             @else
                                 <span class="fentry">
@@ -88,15 +92,24 @@
         @if (date('D', strtotime(date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)))) == 'Sun')
             @if (!$isHoliday)
                 @if ($countin == 0)
-                    @if ($leave_Count)
-                        <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
-                    @else
-                        @if (count($checkSched) >= 1)
-                            <span style="font-size:8px;font-weight:bold">{{ $absentMessage }}</span>
+
+                    @if (count($checkSched) >= 1)
+
+                        @if ($leave_Count || $ot_Count || $ob_Count)
+                            @if ($leave_Count)
+                                <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
+                            @elseif ($ot_Count)
+                                <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
+                            @elseif ($ob_Count)
+                                <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
+                            @endif
                         @else
-                            <span style="font-size:8px;font-weight:bold">{{ $dayoffmessage }}</span>
+                            <span style="font-size:8px;font-weight:bold">{{ $absentMessage }}</span>
                         @endif
+                    @else
+                        <span style="font-size:8px;font-weight:bold">{{ $dayoffmessage }}</span>
                     @endif
+
 
                 @endif
 
@@ -120,29 +133,34 @@
                     @endif
                 @endforeach
 
-                @if ($leave_Count || $ot_Count)
-                    @if ($leave_Count)
-                        <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
-                    @elseif ($ot_Count)
-                        <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
-                    @endif
-                @else
-                    @if ($count2 >= 1)
-                        @php
-                            $checkSched = $schedule->filter(function ($row) use ($year, $month, $i) {
-                                return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) &&
-                                    $row->attendance_status == 0;
-                            });
 
-                        @endphp
-                        @if (count($checkSched) >= 1)
-                            <span style=";font-size:8px;font-weight:bold">{{ $absentMessage }}</span>
+                @if ($count2 >= 1)
+                    @php
+                        $checkSched = $schedule->filter(function ($row) use ($year, $month, $i) {
+                            return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) &&
+                                $row->attendance_status == 0;
+                        });
+
+                    @endphp
+                    @if (count($checkSched) >= 1)
+
+
+                        @if ($leave_Count || $ot_Count || $ob_Count)
+                            @if ($leave_Count)
+                                <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
+                            @elseif ($ot_Count)
+                                <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
+                            @elseif ($ob_Count)
+                                <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
+                            @endif
                         @else
-                            <span style="font-size:8px;font-weight:bold">{{ $dayoffmessage }}</span>
+                            <span style=";font-size:8px;font-weight:bold">{{ $absentMessage }}</span>
                         @endif
                     @else
                         <span style="font-size:8px;font-weight:bold">{{ $dayoffmessage }}</span>
                     @endif
+                @else
+                    <span style="font-size:8px;font-weight:bold">{{ $dayoffmessage }}</span>
                 @endif
             @else
             @endif
@@ -167,11 +185,13 @@
 
 
                         @if (count($checkSched) >= 1)
-                            @if ($leave_Count || $ot_Count)
+                            @if ($leave_Count || $ot_Count || $ob_Count)
                                 @if ($leave_Count)
                                     <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
                                 @elseif ($ot_Count)
                                     <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
+                                @elseif ($ob_Count)
+                                    <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
                                 @endif
                             @else
                                 <span style="font-size:8px;font-weight:bold">{{ $absentMessage }} </span>
@@ -228,7 +248,7 @@
 
                 @if ($biometric_ID == $f2['biometric_ID'])
                     @if ($f2['first_out'])
-                        @if (!$leave_Count && !$ot_Count)
+                        @if (!$leave_Count && !$ot_Count && !$ob_Count)
                             @if (count($empSched) >= 1)
                                 @if (date('d', strtotime($f2['first_out'])) == $fo)
                                     @if (date('A', strtotime($f2['first_out'])) == 'AM')
@@ -281,7 +301,7 @@
 
                 @if ($biometric_ID == $f3['biometric_ID'])
                     @if (date('d', strtotime($f3['dtr_date'])) == $i)
-                        @if (!$leave_Count && !$ot_Count)
+                        @if (!$leave_Count && !$ot_Count && !$ob_Count)
                             @if (count($empSched) >= 1)
                                 @php
                                     $firsti = array_filter($firstin, function ($res) use ($i) {
@@ -351,7 +371,7 @@
 
 
                 @if ($biometric_ID === $f4['biometric_ID'])
-                    @if (!$leave_Count && !$ot_Count)
+                    @if (!$leave_Count && !$ot_Count && !$ob_Count)
                         @if (count($empSched) >= 1)
                             @php
                                 $firsto = array_filter($firstout, function ($res) use ($i, $biometric_ID) {
@@ -390,7 +410,7 @@
     @break
 
     @case('undertime_hours')
-        @if (!$leave_Count && !$ot_Count)
+        @if (!$leave_Count && !$ot_Count && !$ob_Count)
             <table style="border:none">
                 <tr style="border:none">
                     @php
@@ -433,7 +453,7 @@
     @break
 
     @case('undertime_minutes')
-        @if (!$leave_Count && !$ot_Count)
+        @if (!$leave_Count && !$ot_Count && !$ob_Count)
             @php
                 $hours = '';
                 $minutes = 0;
