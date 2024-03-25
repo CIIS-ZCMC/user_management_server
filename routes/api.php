@@ -20,40 +20,42 @@ Route::get('/initialize-storage', function () {
     Artisan::call('storage:link');
 });
 
-Route::namespace('App\Http\Controllers')->group(function () {
-    Route::get('announcements', 'AnnouncementsController@index');
-    Route::get('announcements-search', 'AnnouncementsController@searchAnnouncement');
-    Route::get('announcements/{id}', 'AnnouncementsController@show');
+Route::
+        namespace('App\Http\Controllers')->group(function () {
+            Route::get('announcements', 'AnnouncementsController@index');
+            Route::get('announcements-search', 'AnnouncementsController@searchAnnouncement');
+            Route::get('announcements/{id}', 'AnnouncementsController@show');
 
-    Route::get('events', 'EventsController@index');
-    Route::get('events-search', 'EventsController@searchEvents');
-    Route::get('events/{id}', 'EventsController@show');
+            Route::get('events', 'EventsController@index');
+            Route::get('events-search', 'EventsController@searchEvents');
+            Route::get('events/{id}', 'EventsController@show');
 
-    Route::get('memorandums', 'MemorandumsController@index');
-    Route::get('memorandums-search', 'MemorandumsController@searchMemorandum');
-    Route::get('memorandums/{id}', 'MemorandumsController@show');
+            Route::get('memorandums', 'MemorandumsController@index');
+            Route::get('memorandums-search', 'MemorandumsController@searchMemorandum');
+            Route::get('memorandums/{id}', 'MemorandumsController@show');
 
-    Route::get('news', 'NewsController@index');
-    Route::get('news-search', 'NewsController@searchNews');
-    Route::get('news/{id}', 'NewsController@show');
-});
+            Route::get('news', 'NewsController@index');
+            Route::get('news-search', 'NewsController@searchNews');
+            Route::get('news/{id}', 'NewsController@show');
+        });
 
 
-Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
-    Route::post('sign-in', 'EmployeeProfileController@signIn');
-    Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
-    Route::post('skip-for-now', 'EmployeeProfileController@updatePasswordExpiration');
-    Route::post('verify-email-and-send-otp', 'EmployeeProfileController@verifyEmailAndSendOTP');
-    Route::post('verify-otp', 'EmployeeProfileController@verifyOTP');
-    Route::post('new-password', 'EmployeeProfileController@newPassword');
-    Route::get('retrieve-token', 'CsrfTokenController@generateCsrfToken');
-    Route::get('validate-token', 'CsrfTokenController@validateToken');
-    Route::post('employee-profile/signout-from-other-device', 'EmployeeProfileController@signOutFromOtherDevice');
-});
+Route::
+        namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
+            Route::post('sign-in', 'EmployeeProfileController@signIn');
+            Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
+            Route::post('skip-for-now', 'EmployeeProfileController@updatePasswordExpiration');
+            Route::post('verify-email-and-send-otp', 'EmployeeProfileController@verifyEmailAndSendOTP');
+            Route::post('verify-otp', 'EmployeeProfileController@verifyOTP');
+            Route::post('new-password', 'EmployeeProfileController@newPassword');
+            Route::get('retrieve-token', 'CsrfTokenController@generateCsrfToken');
+            Route::get('validate-token', 'CsrfTokenController@validateToken');
+            Route::post('employee-profile/signout-from-other-device', 'EmployeeProfileController@signOutFromOtherDevice');
+        });
 
 Route::middleware('auth.cookie')->group(function () {
 
-    Route::namespace('App\Http\Controllers')->group(function () {
+    Route::namespace ('App\Http\Controllers')->group(function () {
         Route::middleware('auth.permission:UMIS-SM write')->group(function () {
             Route::post('announcements', 'AnnouncementsController@store');
         });
@@ -117,7 +119,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
     });
 
-    Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
+    Route::namespace ('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
         Route::post('re-authenticate', 'EmployeeProfileController@revalidateAccessToken');
         Route::delete('signout', 'EmployeeProfileController@signOut');
 
@@ -140,7 +142,7 @@ Route::middleware('auth.cookie')->group(function () {
     /**
      * User Management Information System
      */
-    Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
+    Route::namespace ('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
 
         /**
          * Default Password Module
@@ -389,7 +391,7 @@ Route::middleware('auth.cookie')->group(function () {
     /**
      * Employee Management
      */
-    Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
+    Route::namespace ('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
         /**
          * Address Module
          */
@@ -793,16 +795,16 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::put('employee-profile-update-password', 'EmployeeProfileController@updatePassword');
-        }); 
-        
-        
+        });
+
+
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::put('employee-profile-twofa-status', 'EmployeeProfileController@update2fa');
-        }); 
+        });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('my-all-employees', 'EmployeeProfileController@myAllEmployees');
-        }); 
+        });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('my-employees', 'EmployeeProfileController@myEmployees');
@@ -1553,7 +1555,7 @@ Route::middleware('auth.cookie')->group(function () {
     /**
      * Daily Time Record Management
      */
-    Route::namespace('App\Http\Controllers\DTR')->group(function () {
+    Route::namespace ('App\Http\Controllers\DTR')->group(function () {
         /** APPLY CODE HERE */
         Route::middleware(['auth.permission:UMIS-DTRM view-all'])->group(function () {
             Route::get('dtr-device-devices', 'BioMSController@index');
@@ -1569,7 +1571,7 @@ Route::middleware('auth.cookie')->group(function () {
 
         // });
 
-        
+
         Route::middleware(['auth.permission:UMIS-PAM view'])->group(function () {
             Route::get('dtr-self', 'DTRcontroller@pullDTRuser');
         });
@@ -1610,7 +1612,7 @@ Route::middleware('auth.cookie')->group(function () {
     /**
      * Leave and Overtime Management
      */
-    Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
+    Route::namespace ('App\Http\Controllers\LeaveAndOverTime')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
             Route::get('requirement-all', 'RequirementController@index');
@@ -1847,7 +1849,7 @@ Route::middleware('auth.cookie')->group(function () {
     /**
      * Schedule Management
      */
-    Route::namespace('App\Http\Controllers\Schedule')->group(function () {
+    Route::namespace ('App\Http\Controllers\Schedule')->group(function () {
         /**
          * Time Shift Module
          */
@@ -1905,14 +1907,16 @@ Route::middleware('auth.cookie')->group(function () {
 
         /**
          * Exchange Schedule Module
-         */ 
+         */
         Route::middleware(['auth.permission:UMIS-ES view-all'])->group(function () {
             Route::get('exchange-duties', 'ExchangeDutyController@index');
         });
 
         Route::middleware(['auth.permission:UMIS-ES view'])->group(function () {
             Route::get('exchange-duty', 'ExchangeDutyController@create');
+
             Route::get('exchange-duty-employee', 'ScheduleController@employee');
+            Route::get('exchange-duty-schedule', 'ScheduleController@findSchedule');
             Route::get('exchange-duty-time-shift', 'TimeShiftController@index');
         });
 
