@@ -9,7 +9,6 @@ use App\Http\Resources\MyApprovedLeaveApplicationResource;
 use App\Models\Division;
 use App\Models\EmployeeCreditLog;
 use App\Models\EmployeeOvertimeCredit;
-use App\Models\EmployeeSchedule;
 use App\Models\LeaveType;
 use App\Models\Section;
 use Carbon\Carbon;
@@ -264,60 +263,16 @@ class LeaveApplicationController extends Controller
         }
     }
 
-    public function getLeaveTypes(Request $request)
+    public function getLeaveTypes()
     {
-        try{
-            $leave_types = LeaveType::where('is_special','0')->get();
-            $leave_types_collection = LeaveTypeResource::collection($leave_types);
-            $employee_profile = $request->user;
-
-            $response = [];
-
-            foreach($leave_types_collection as $leave_type){
-                $leave_type_data = [];
-
-                foreach($leave_type as $key => $value){
-                    $leave_type_data[$key] = $value; 
-                }
-
-                $new = [...$leave_type_data]; 
-                
-                $new['is_shifting'] = $employee_profile->shifting;
-                $final_date = null;
-                $tomorrow = Carbon::tomorrow();
-                
-                if($leave_type->after === null){
-                    $schedules = EmployeeSchedule::select("s.date")->join('schedules as s', 's.id', 'employee_profile_schedule.schedule_id')
-                        ->whereDate('s.date', '>=', $tomorrow)
-                        ->where('employee_profile_schedule.employee_profile_id', $employee_profile->id)
-                        ->limit($leave_type->before)->get();
-                        
-                    if(count($schedules) > 0){
-                        $last_schedule = $schedules->last();
-                        $final_date = $last_schedule ? $last_schedule->date->format('Y-m-d') : null;
-                    }
-                }
-
-                if($leave_type->after !== null){
-                    $schedules = EmployeeSchedule::select("s.date")->join('schedules as s', 's.id', 'employee_profile_schedule.schedule_id')
-                        ->where('employee_profile_schedule.employee_profile_id', $employee_profile->id)
-                        ->whereDate('s.date', '<=', Carbon::now())
-                        ->orderByDesc('s.date')->limit($leave_type->after)->get();
-
-                    if(count($schedules) > 0){
-                        $last_schedule = $schedules->last();
-                        $final_date = $last_schedule ? $last_schedule->date->format('Y-m-d') : null;
-                    }
-                }
- 
-                $new['allowed_date'] = $final_date;
-                $response[] = $new;
-            }
+        try {
+            $LeaveTypes = LeaveType::where('is_special','0')->get();
             
             return response()->json([
-                'data' => $response,
+                'data' => LeaveTypeResource::collection($LeaveTypes),
                 'message' => 'list of special leave type retrieved.'
             ], Response::HTTP_OK);
+
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
