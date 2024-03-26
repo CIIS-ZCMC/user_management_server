@@ -3,6 +3,7 @@
 namespace App\Helpers;
 
 use App\Models\AssignArea;
+use App\Models\CtoApplication;
 use App\Models\Department;
 use App\Models\Division;
 use App\Models\EmployeeProfile;
@@ -10,6 +11,8 @@ use App\Models\EmployeeSchedule;
 use App\Models\EmployeeScheduleLog;
 use App\Models\ExchangeDutyLog;
 use App\Models\Notifications;
+use App\Models\LeaveApplication;
+use App\Models\OfficialBusiness;
 use App\Models\PullOutLog;
 use App\Models\OfficialTimeLog;
 use App\Models\Schedule;
@@ -18,7 +21,7 @@ use App\Models\SystemLogs;
 use App\Models\TimeAdjustmentLog;
 use App\Models\TimeShift;
 use App\Models\OfficialBusinessLog;
-
+use App\Models\OfficialTime;
 use App\Models\Unit;
 use Carbon\Carbon;
 use DateTime;
@@ -553,7 +556,7 @@ class Helpers
                 return null;
         }
     }
-    
+
     public static function registerEmployeeScheduleLogs($data_id, $user_id, $action)
     {
         EmployeeScheduleLog::create([
@@ -663,5 +666,84 @@ class Helpers
             "employee_profile_id" => $id
         ]);
     }
-}
 
+    public static function hasOverlappingRecords($start, $end, $employeeId)
+    {
+
+        // Check for overlapping dates in LeaveApplication
+        $overlappingLeave = LeaveApplication::where(function ($query) use ($start, $end, $employeeId) {
+            $query->where('employee_profile_id', $employeeId)
+                ->where(function ($query) use ($start, $end) {
+                    $query->whereBetween('date_from', [$start, $end])
+                        ->orWhereBetween('date_to', [$start, $end])
+                        ->orWhere(function ($query) use ($start, $end) {
+                            $query->where('date_from', '<=', $start)
+                                ->where('date_to', '>=', $end);
+                        });
+                });
+        })->exists();
+
+        // Check for overlapping dates in OfficialBusiness
+        $overlappingOb = OfficialBusiness::where(function ($query) use ($start, $end, $employeeId) {
+            $query->where('employee_profile_id', $employeeId)
+                ->where(function ($query) use ($start, $end) {
+                    $query->whereBetween('date_from', [$start, $end])
+                        ->orWhereBetween('date_to', [$start, $end])
+                        ->orWhere(function ($query) use ($start, $end) {
+                            $query->where('date_from', '<=', $start)
+                                ->where('date_to', '>=', $end);
+                        });
+                });
+        })->exists();
+
+        $overlappingOT = OfficialTime::where(function ($query) use ($start, $end, $employeeId) {
+            $query->where('employee_profile_id', $employeeId)
+                ->where(function ($query) use ($start, $end) {
+                    $query->whereBetween('date_from', [$start, $end])
+                        ->orWhereBetween('date_to', [$start, $end])
+                        ->orWhere(function ($query) use ($start, $end) {
+                            $query->where('date_from', '<=', $start)
+                                ->where('date_to', '>=', $end);
+                        });
+                });
+        })->exists();
+
+        // Return true if any overlap is found, otherwise false
+        return $overlappingLeave || $overlappingOb || $overlappingOT;
+    }
+
+    public static function hasOverlappingCTO($date, $employeeId)
+    {
+        $overlappingLeave = LeaveApplication::where(function ($query) use ($date, $employeeId) {
+            $query->where('employee_profile_id', $employeeId)
+                ->where(function ($query) use ($date) {
+                    $query->where('date_from', '<=', $date)
+                          ->where('date_to', '>=', $date);
+                });
+        })->exists();
+
+        $overlappingOb = OfficialBusiness::where(function ($query) use ($date, $employeeId) {
+            $query->where('employee_profile_id', $employeeId)
+                ->where(function ($query) use ($date) {
+                    $query->where('date_from', '<=', $date)
+                          ->where('date_to', '>=', $date);
+                });
+        })->exists();
+
+        $overlappingOT = OfficialTime::where(function ($query) use ($date, $employeeId) {
+            $query->where('employee_profile_id', $employeeId)
+                ->where(function ($query) use ($date) {
+                    $query->where('date_from', '<=', $date)
+                          ->where('date_to', '>=', $date);
+                });
+        })->exists();
+
+        $overlappingCTO =CtoApplication::where('employee_profile_id', $employeeId)
+                ->whereDate('date', $date)
+                ->exists();
+                
+        return $overlappingLeave || $overlappingOb || $overlappingOT || $overlappingCTO;
+    }
+
+
+}
