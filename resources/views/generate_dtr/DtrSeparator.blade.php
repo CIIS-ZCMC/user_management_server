@@ -177,9 +177,12 @@
                                     $("#entry{{ $i }}4").addClass("Absent");
                                 })
                             </script>
-                            <span class="timefirstarrival" style="color:gray;font-style:italic;color:#FF6969;">ABSENT</span>
+                            <span class="timefirstarrival"
+                                style="color:gray;font-style:italic;color:#FF6969;">{{ $absentMessage }}</span>
                         @else
-                            <span style="font-size:8px;font-weight:bold" style="color:gray">Day-off</span>
+                            @if (!$isHoliday)
+                                <span style="font-size:8px;font-weight:bold" style="color:gray">{{ $dayoffmessage }}</span>
+                            @endif
                         @endif
                     @endif
 

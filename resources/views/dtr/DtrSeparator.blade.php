@@ -100,7 +100,7 @@
                     @else
                         @if (count($checkSched) >= 1)
                             <span class="fentry">
-                                <span class="timefirstarrival" style="color:#FF6969;">ABSENT</span>
+                                <span class="timefirstarrival" style="color:#FF6969;">{{ $absentMessage }}</span>
 
                                 <script>
                                     $(document).ready(function() {
@@ -113,7 +113,7 @@
                                 </script>
                             </span>
                         @else
-                            <span class="timefirstarrival" style="color:gray">Day-off </span>
+                            <span class="timefirstarrival" style="color:gray">{{ $dayoffmessage }}</span>
                         @endif
                     @endif
 
@@ -164,9 +164,10 @@
                                         $("#entry{{ $i }}4").addClass("Absent");
                                     })
                                 </script>
-                                <span class="timefirstarrival" style="color:gray;font-style:italic;color:#FF6969;">ABSENT</span>
+                                <span class="timefirstarrival"
+                                    style="color:gray;font-style:italic;color:#FF6969;">{{ $absentMessage }}</span>
                             @else
-                                <span class="timefirstarrival" style="color:gray">Day-off </span>
+                                <span class="timefirstarrival" style="color:gray">{{ $dayoffmessage }}</span>
                             @endif
                         @endif
                     @else
@@ -189,9 +190,12 @@
                                         $("#entry{{ $i }}4").addClass("Absent");
                                     })
                                 </script>
-                                <span class="timefirstarrival" style="color:gray;font-style:italic;color:#FF6969;">ABSENT</span>
+                                <span class="timefirstarrival"
+                                    style="color:gray;font-style:italic;color:#FF6969;">{{ $absentMessage }}</span>
                             @else
-                                <span class="timefirstarrival" style="color:gray">Day-off</span>
+                                @if (!$isHoliday)
+                                    <span class="timefirstarrival" style="color:gray">{{ $dayoffmessage }}</span>
+                                @endif
                             @endif
                         @endif
 
@@ -228,7 +232,7 @@
                                     @endif
                                 @else
                                     <span class="timefirstarrival"
-                                        style="color:gray;font-style:italic;color:#FF6969">ABSENT</span>
+                                        style="color:gray;font-style:italic;color:#FF6969">{{ $absentMessage }}</span>
 
                                     <script>
                                         $(document).ready(function() {
@@ -242,7 +246,7 @@
                                 @endif
                             @else
                                 @if (count($presentSched) == 0)
-                                    <span class="timefirstarrival" style="color:gray;">Day-off</span>
+                                    <span class="timefirstarrival" style="color:gray;">{{ $dayoffmessage }}</span>
                                 @else
                                     <script>
                                         $(document).ready(function() {
