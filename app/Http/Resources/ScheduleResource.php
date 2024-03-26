@@ -13,20 +13,28 @@ class ScheduleResource extends JsonResource
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array
-    {
+    {   
+        $schedules = [];
+        foreach ($this->schedule as $schedule) {
+            $schedules[] = [
+                'id' => $schedule->pivot->id,
+                'date' => $schedule->date,
+                'time_shift' => [
+                    'id' => $schedule->timeShift->id,
+                    'label' => $schedule->timeShift->timeShiftDetails(),
+                    'total_hour' => $schedule->timeShift->total_hours,
+                    'color' => $schedule->timeShift->color,
+                ],
+            ];
+        }
+
         return [
             'id' => $this->id,
-            'date' => $this->date,
-            'is_weekend' => $this->remarks,
-            'is_on_call' => $this->is_on_call,
-            'status' => $this->status,
-            'remarks' => $this->remarks,
-            'time_shift' => $this->timeShift ? new TimeShiftResource($this->timeShift) : null,
-            'holiday' => $this->holiday ? new HolidayResource($this->holiday) : null,
-            'employee_profile' => $this->employee ? EmployeeProfileResource::collection($this->employee) : [],
-            'deleted_at' => (string) $this->deleted_at,
-            'created_at' => (string) $this->created_at,
-            'updated_at' => (string) $this->updated_at,
+            'name' => $this->name(),
+            'employee_id' => $this->employee_id,
+            'biometric_id' => $this->biometric->biometric_id ?? null,
+            'holiday' => $this->holiday,
+            'schedule' => $schedules
         ];
     }
 }

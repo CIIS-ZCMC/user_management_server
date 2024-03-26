@@ -28,6 +28,8 @@ use Illuminate\Support\Facades\Hash;
 class OfficialTimeApplicationController extends Controller
 {
     protected $file_service;
+    private $CONTROLLER_NAME = "OfficialTimeApplicationController";
+
     public function __construct(FileService $file_service)
     {
         $this->file_service = $file_service;
@@ -216,9 +218,9 @@ class OfficialTimeApplicationController extends Controller
             {
                 return response()->json(['data'=> $official_time_applications,'message' => 'No records available'], Response::HTTP_OK);
             }
-        }catch(\Throwable $th){
-
-                return response()->json(['message' => $th->getMessage()], 500);
+        } catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
     }
@@ -799,9 +801,9 @@ class OfficialTimeApplicationController extends Controller
                 }
             }
 
-        }catch(\Throwable $th){
-
-            return response()->json(['message' => $th->getMessage()], 500);
+        } catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, 'getOtApplications', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     public function getUserOtApplication(Request $request)
@@ -987,8 +989,9 @@ class OfficialTimeApplicationController extends Controller
             {
                 return response()->json(['data'=> $ot_applications,'message' => 'No records available'], Response::HTTP_OK);
             }
-        }catch(\Throwable $th){
-            return response()->json(['message' => $th->getMessage()], 500);
+        } catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, 'getUserOtApplication', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     public function store(Request $request)
@@ -1250,7 +1253,8 @@ class OfficialTimeApplicationController extends Controller
             return response()->json(['message' => 'Official Time Application has been sucessfully saved','data' => $singleArray ], Response::HTTP_OK);
         }catch(\Throwable $th){
             DB::rollBack();
-            return response()->json(['message' => $th->getMessage()], 500);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     public function declineOtApplication($id,Request $request)
@@ -1263,7 +1267,7 @@ class OfficialTimeApplicationController extends Controller
                 {
                     $password_decrypted = Crypt::decryptString($user['password_encrypted']);
                     $password = strip_tags($request->password);
-                        if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                        if (!Hash::check($password.Cache::get('salt_value'), $password_decrypted)) {
                             return response()->json(['message' => "Password incorrect."], Response::HTTP_FORBIDDEN);
                         }
                         else
@@ -1458,9 +1462,10 @@ class OfficialTimeApplicationController extends Controller
                         }
 
                 }
-            } catch (\Exception $e) {
-                DB::rollBack();
-                return response()->json(['message' => $e->getMessage(),  'error'=>true]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Helpers::errorLog($this->CONTROLLER_NAME, 'declineOtApplicationtore', $e->getMessage());
+            return response()->json(['message' => $e->getMessage(),  'error'=>true], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     public function cancelOtApplication($id,Request $request)
@@ -1615,9 +1620,10 @@ class OfficialTimeApplicationController extends Controller
                         //     }
                         //  }
                 }
-            } catch (\Exception $e) {
+        } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => $e->getMessage(),  'error'=>true]);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'cancelOtApplication', $e->getMessage());
+            return response()->json(['message' => $e->getMessage(),  'error'=>true], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     public function updateStatus ($id,$status,Request $request)
@@ -1626,7 +1632,7 @@ class OfficialTimeApplicationController extends Controller
                 $user = $request->user;
                 $password_decrypted = Crypt::decryptString($user['password_encrypted']);
                 $password = strip_tags($request->password);
-                if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                if (!Hash::check($password.Cache::get('salt_value'), $password_decrypted)) {
                     return response()->json(['message' => "Password incorrect."], Response::HTTP_FORBIDDEN);
                 }
                 else
@@ -1846,11 +1852,9 @@ class OfficialTimeApplicationController extends Controller
                                 }
                 }
 
-            }
-
-
-         catch (\Exception $e) {
+        } catch (\Exception $e) {
             DB::rollBack();
+            Helpers::errorLog($this->CONTROLLER_NAME, 'updateStatus', $e->getMessage());
             return response()->json(['message' => $e->getMessage(),'error'=>true]);
         }
     }
@@ -1994,8 +1998,8 @@ class OfficialTimeApplicationController extends Controller
                 }
             }
         }catch(\Throwable $th){
-
-            return response()->json(['message' => $th->getMessage()], 500);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'getDivisionOtApplications', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     public function getDepartmentOtApplications(Request $request)
@@ -2138,8 +2142,8 @@ class OfficialTimeApplicationController extends Controller
                 }
             }
         }catch(\Throwable $th){
-
-            return response()->json(['message' => $th->getMessage()], 500);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'getDepartmentOtApplications', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     public function getSectionOtApplications(Request $request)
@@ -2280,8 +2284,8 @@ class OfficialTimeApplicationController extends Controller
                     }
                 }
         }catch(\Throwable $th){
-
-            return response()->json(['message' => $th->getMessage()], 500);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'getSectionOtApplications', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     public function getDeclinedOtApplications(Request $request)
@@ -2417,7 +2421,8 @@ class OfficialTimeApplicationController extends Controller
                 return response()->json(['message' => 'No records available'], Response::HTTP_OK);
             }
         }catch(\Throwable $th){
-            return response()->json(['message' => $th->getMessage()], 500);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'getDeclinedOtApplications', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     public function updateOtApplication(Request $request)
@@ -2467,8 +2472,8 @@ class OfficialTimeApplicationController extends Controller
             $official_time_logs = $this->storeOfficialTimeApplicationLog($official_time_application_id,$process_name,$columnsString,1);
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-
-            return response()->json(['message' => $th->getMessage()], 500);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'updateOtApplication', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
     }
@@ -2481,13 +2486,13 @@ class OfficialTimeApplicationController extends Controller
 
             return $official_time_application_requirement;
         } catch(\Exception $e) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'storeOfficialTimeApplicationRequirement', $e->getMessage());
             return response()->json(['message' => $e->getMessage(),'error'=>true]);
         }
     }
     public function storeOfficialTimeApplicationLog($ot_id,$process_name,$changedFields,$user_id)
     {
         try {
-
             $data = [
                 'official_time_application_id' => $ot_id,
                 'action_by_id' => $user_id,
@@ -2501,8 +2506,8 @@ class OfficialTimeApplicationController extends Controller
 
             return $ot_log;
         } catch(\Exception $e) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'storeOfficialTimeApplicationLog', $e->getMessage());
             return response()->json(['message' => $e->getMessage(),'error'=>true]);
         }
     }
-
 }

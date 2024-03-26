@@ -15,7 +15,8 @@ class DashboardController extends Controller
     public function listOfBirthdayCelebrant(Request $request)
     {
         try{
-            $personal_informations = PersonalInformation::whereDate('date_of_birth', now()->format('Y-m-d'))->get();
+            $personal_informations = PersonalInformation::whereMonth('date_of_birth', now()->format('m'))
+                ->whereDay('date_of_birth', now()->format('d'))->get();
             
             return response()->json([
                 'data' => BirthdayCelebrantResource::collection($personal_informations),

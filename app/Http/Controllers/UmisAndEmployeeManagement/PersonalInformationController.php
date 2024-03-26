@@ -70,8 +70,8 @@ class PersonalInformationController extends Controller
 
             $residential_address = [
                 'address' => strip_tags($request->r_address),
-                'telephone' => strip_tags($request->r_telephone),
                 'zip_code' => strip_tags($request->r_zip_code),
+                'telephone_no' => strip_tags($request->r_telephone),
                 'is_res_per' => $request->is_res_per,
                 'is_residential' => 1,
                 // 'type' => 'residential',
@@ -92,7 +92,7 @@ class PersonalInformationController extends Controller
 
             $permanent_address =  [
                 'address' => strip_tags($request->p_address),
-                'telephone' => strip_tags($request->p_telephone),
+                'telephone_no' => strip_tags($request->p_telephone),
                 'zip_code' => strip_tags($request->p_zip_code),
                 'is_res_per' => 0,
                 'is_residential' => 0,
@@ -143,6 +143,10 @@ class PersonalInformationController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
+                if($key === 'height' || $key === 'weight'){
+                    $cleanData[$key] = $value === '' || $value==='null' || $value===null? null:$value;
+                    continue;
+                }
                 $cleanData[$key] = strip_tags($value);
             }
 

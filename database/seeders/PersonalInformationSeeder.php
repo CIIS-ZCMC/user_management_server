@@ -191,7 +191,7 @@ class PersonalInformationSeeder extends Seeder
         ]);
 
         $password = 'Zcmc_Umis2023@';
-        $hashPassword = Hash::make($password . env('SALT_VALUE'));
+        $hashPassword = Hash::make($password . Cache::get('salt_value'));
         $encryptedPassword = Crypt::encryptString($hashPassword);
 
         $now = Carbon::now();
@@ -250,11 +250,10 @@ class PersonalInformationSeeder extends Seeder
         foreach ($designations as $designation) {
             Cache::forget($designation['name']);
         }
-        // }
     }
 
     protected function encryptData($dataToEncrypt)
     {
-        return openssl_encrypt($dataToEncrypt, env("ENCRYPT_DECRYPT_ALGORITHM"), env("DATA_KEY_ENCRYPTION"), 0, substr(md5(env("DATA_KEY_ENCRYPTION")), 0, 16));
+        return Crypt::encrypt($dataToEncrypt);
     }
 }

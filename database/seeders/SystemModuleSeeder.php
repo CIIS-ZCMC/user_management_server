@@ -85,16 +85,6 @@ class SystemModuleSeeder extends Seeder
             'system_id' => 1
         ]);
 
-
-
-
-
-
-
-
-
-
-
         SystemModule::create([
             'name' => 'Time Shift',
             'code' => 'UMIS-TS',
@@ -116,12 +106,17 @@ class SystemModuleSeeder extends Seeder
             'system_id' => 1
         ]);
 
-
-
         SystemModule::create([
             'name' => 'On Call Management',
             'code' => 'UMIS-OCM',
             'description' => 'Creating On Call',
+            'system_id' => 1
+        ]);
+
+        SystemModule::create([
+            'name' => 'Holiday Management',
+            'code' => 'UMIS-HOL',
+            'description' => 'Creating Holiday',
             'system_id' => 1
         ]);
     }

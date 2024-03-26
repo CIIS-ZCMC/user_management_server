@@ -25,6 +25,8 @@ class LeaveType extends Model
         'republic_act',
         'code',
         'description',
+        'before',
+        'after',
         'period',
         'file_date',
         'month_value',

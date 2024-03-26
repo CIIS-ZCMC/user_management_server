@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\DTR;
 
+use App\Helpers\Helpers;
 use Illuminate\Http\Request;
 use  App\Models\Biometrics;
 use App\Methods\BioControl;
@@ -26,6 +27,9 @@ class BioController extends Controller
     protected $bioms;
 
     protected $mailer;
+
+    private $CONTROLLER_NAME = "BioController";
+
     public function __construct()
     {
         $this->device = new BioControl();
@@ -40,60 +44,64 @@ class BioController extends Controller
     /* ----------------------------- THIS IS FOR REGISTRATION OF BIOMETRICS----------------------------------- */
     public function registerBio(Request $request)
     {
+        try{
 
-        $user = $request->user;
-
-        $password_decrypted = Crypt::decryptString($user['password_encrypted']);
-        $password = strip_tags($request->password);
-        if (!Hash::check($password . env("SALT_VALUE"), $password_decrypted)) {
-            return response()->json(['message' => "Password incorrect."], Response::HTTP_FORBIDDEN);
-        }
-
-
-        $biometric_id = $request->biometric_id;
-        $name = $request->name;
-        $privilege = $request->privilege;
-        /* The IP of this option must be the registration device. */
-        $ipreg = [];
-
-        if (isset($this->ip_registration[0])) {
-            $ipreg = $this->ip_registration[0];
-        }
-
-        $bio = Biometrics::where('biometric_id', $biometric_id);
-
-        if (count($bio->get()) == 0) {
-            $save = $bio->create([
-                'biometric_id' => $biometric_id,
-                'name' => $name,
-                'privilege' => 0,
-                'biometric' => "NOT_YET_REGISTERED"
-            ]);
-
-            if ($save) {
-                $defpassword = DefaultPassword::first()->password;
-                $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
-
-                $credential = new Request([
-                    'EmployeeID' => $employee->employee_id,
-                    'Email' => $employee->personalInformation->contact->email_address,
-                    'Receiver' => $employee->name(),
-                    'Password' => $defpassword
-                ]);
-
-                $this->mailer->sendCredentials($credential);
-                $this->device->fetchdatatoDeviceforNewFPRegistration(
-                    $ipreg,
-                    $biometric_id,
-                    $name
-
-                );
+            $user = $request->user;
+    
+            $cleanData['pin'] = strip_tags($request->pin);
+    
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
-
-            return response()->json(['message' =>
-            'User has been registered successfully, Please proceed to Device to register the Fingerprint']);
+    
+    
+            $biometric_id = $request->biometric_id;
+            $name = $request->name;
+            $privilege = $request->privilege;
+            /* The IP of this option must be the registration device. */
+            $ipreg = [];
+    
+            if (isset($this->ip_registration[0])) {
+                $ipreg = $this->ip_registration[0];
+            }
+    
+            $bio = Biometrics::where('biometric_id', $biometric_id);
+    
+            if (count($bio->get()) == 0) {
+                $save = $bio->create([
+                    'biometric_id' => $biometric_id,
+                    'name' => $name,
+                    'privilege' => 0,
+                    'biometric' => "NOT_YET_REGISTERED"
+                ]);
+    
+                if ($save) {
+                    $defpassword = DefaultPassword::first()->password;
+                    $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
+    
+                    $credential = new Request([
+                        'EmployeeID' => $employee->employee_id,
+                        'Email' => $employee->personalInformation->contact->email_address,
+                        'Receiver' => $employee->name(),
+                        'Password' => $defpassword
+                    ]);
+    
+                    $this->mailer->sendCredentials($credential);
+                    $this->device->fetchdatatoDeviceforNewFPRegistration(
+                        $ipreg,
+                        $biometric_id,
+                        $name
+    
+                    );
+                }
+    
+                return response()->json(['message' =>
+                'User has been registered successfully, Please proceed to Device to register the Fingerprint']);
+            }
+            return response()->json(['message' => 'User has already been registered!']);
+        } catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, 'registerBio', $th->getMessage());
         }
-        return response()->json(['message' => 'User has already been registered!']);
     }
 
     public function fetchUserFromDevice(Request $request)
@@ -121,16 +129,14 @@ class BioController extends Controller
 
             return response()->json(['message' => 'User Data from Device has been pulled successfully!']);
         } catch (\Throwable $th) {
-
-            return response()->json(['message' =>  $th->getMessage()]);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'fetchUserFromDevice', $th->getMessage());
+            return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
     public function fetchUserToDevice(Request $request)
     {
         try {
-
-
             $biometric_id = $request->biometricIDs;
 
             $dvc = [];
@@ -148,7 +154,8 @@ class BioController extends Controller
 
             return response()->json(['message' => 'User Data fetched to device successfully!']);
         } catch (\Throwable $th) {
-            return response()->json(['message' =>  $th->getMessage()]);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'fetchUserToDevice', $th->getMessage());
+            return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -163,7 +170,6 @@ class BioController extends Controller
     public function fetchBIOToDevice()
     {
         try {
-
             $devices = Devices::where('is_registration', 0)->get();
 
             foreach ($devices as $dv) {
@@ -172,6 +178,7 @@ class BioController extends Controller
             }
             return response()->json(['message' => 'User Data has been fetched to device successfully']);
         } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'fetchBIOToDevice', $th->getMessage());
             return response()->json(['message' =>  $th->getMessage()]);
         }
     }
@@ -186,13 +193,13 @@ class BioController extends Controller
                 $this->device->fetchSpecificDataToDevice($dv, $biometricIDs);
             }
         } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'fetchUserToOPDevice', $th->getMessage());
             return $th;
         }
     }
 
     public function setUserSuperAdmin(Request $request)
     {
-
         try {
             $biometric_id = $request->biometricIDs;
             $unset = $request->unset;
@@ -205,8 +212,8 @@ class BioController extends Controller
             // return response()->json(['message' => 'Settings saved successfully!']);
             // return response()->json(['message' => 'No device found']);
         } catch (\Throwable $th) {
-            return $th;
-            return response()->json(['message' =>  $th->getMessage()]);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'setUserSuperAdmin', $th->getMessage());
+            return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -225,8 +232,8 @@ class BioController extends Controller
             return response()->json(['message' => 'User data from this device has been deleted successfully']);
             // return response()->json(['message' => 'No device found']);
         } catch (\Throwable $th) {
-
-            return response()->json(['message' =>  $th->getMessage()]);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'deleteSpecificBIOFromDevice', $th->getMessage());
+            return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -244,7 +251,8 @@ class BioController extends Controller
             }
             return response()->json(['message' => 'No device found']);
         } catch (\Throwable $th) {
-            return response()->json(['message' =>  $th->getMessage()]);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'deleteAllBIOFromDevice', $th->getMessage());
+            return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -260,7 +268,8 @@ class BioController extends Controller
             }
             return response()->json(['message' => 'Date and Time Synced Successfully!']);
         } catch (\Throwable $th) {
-            return response()->json(['message' =>  $th->getMessage()]);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'syncTime', $th->getMessage());
+            return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -275,7 +284,8 @@ class BioController extends Controller
             }
             return response()->json(['message' => 'Settings Set Successfully']);
         } catch (\Throwable $th) {
-            return response()->json(['message' =>  $th->getMessage()]);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'enableORDisable', $th->getMessage());
+            return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -283,10 +293,10 @@ class BioController extends Controller
     {
         try {
             $user = $request->user;
-            $password_decrypted = Crypt::decryptString($user['password_encrypted']);
-            $password = strip_tags($request->password);
-            if (!Hash::check($password . env("SALT_VALUE"), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_FORBIDDEN);
+            $cleanData['pin'] = strip_tags($request->pin);
+
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $this->device_ids = $request->deviceID;
@@ -298,7 +308,8 @@ class BioController extends Controller
 
             return response()->json(['message' => 'Device exiting...']);
         } catch (\Throwable $th) {
-            return response()->json(['message' =>  $th->getMessage()]);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'restartORShutdown', $th->getMessage());
+            return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -313,7 +324,8 @@ class BioController extends Controller
             }
             return response()->json(['message' => 'Date and Time Synced Successfully!']);
         } catch (\Throwable $th) {
-            return response()->json(['message' =>  $th->getMessage()]);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'setTime', $th->getMessage());
+            return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 }

@@ -2,10 +2,11 @@
 
 namespace App\Http\Resources;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class EmployeeScheduleResource extends JsonResource
+class MyApprovedLeaveApplicationResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -15,8 +16,10 @@ class EmployeeScheduleResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'employee_id'   => $this->resource['employee_id'],
-            'schedule'      => $this->resource['schedule'],
+            'id' => $this->id,
+            'from' => Carbon::parse($this->date_from)->format('Y-m-d'),
+            'to' => Carbon::parse($this->date_to)->addDay()->format('Y-m-d'),
+            'leave_type' => $this->leaveType->name
         ];
     }
 }

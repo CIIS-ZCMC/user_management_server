@@ -34,6 +34,8 @@ class ObApplicationController extends Controller
      * Display a listing of the resource.
      */
     protected $file_service;
+    private $CONTROLLER_NAME = "ObApplicationController";
+
     public function __construct(
         FileService $file_service
     ) {
@@ -218,7 +220,8 @@ class ObApplicationController extends Controller
                     return response()->json(['data'=> $official_business_applications,'message' => 'No records available'], Response::HTTP_OK);
                 }
             }catch(\Throwable $th){
-                return response()->json(['message' => $th->getMessage()], 500);
+                Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+                return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
             }
 
 
@@ -407,12 +410,12 @@ class ObApplicationController extends Controller
                 return response()->json(['data'=> $ob_applications,'message' => 'No records available'], Response::HTTP_OK);
             }
         }catch(\Throwable $th){
-            return response()->json(['data'=> $ob_applications,'message' => $th->getMessage()], 500);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'getUserObApplication', $th->getMessage());
+            return response()->json(['data'=> $ob_applications,'message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     public function getObApplications(Request $request)
     {
-
         try{
             $user=$request->user;
             $official_business_applications = [];
@@ -988,8 +991,8 @@ class ObApplicationController extends Controller
                 }
                 
         }catch(\Throwable $th){
-
-            return response()->json(['message' => $th->getMessage()], 500);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'getObApplications', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     public function getDivisionObApplications(Request $request)
@@ -1131,8 +1134,8 @@ class ObApplicationController extends Controller
                         }
                     }
         }catch(\Throwable $th){
-
-            return response()->json(['message' => $th->getMessage()], 500);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'getDivisionObApplications', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     public function getDepartmentObApplications(Request $request)
@@ -1278,8 +1281,8 @@ class ObApplicationController extends Controller
 
             }
         }catch(\Throwable $th){
-
-            return response()->json(['message' => $th->getMessage()], 500);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'getDepartmentObApplications', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     public function getSectionObApplications(Request $request)
@@ -1422,8 +1425,8 @@ class ObApplicationController extends Controller
                 }
             }
         }catch(\Throwable $th){
-
-            return response()->json(['message' => $th->getMessage()], 500);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'getSectionObApplications', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     public function getDeclinedObApplications(Request $request)
@@ -1554,9 +1557,9 @@ class ObApplicationController extends Controller
                 });
                 return response()->json(['data' => $official_business_applications_result]);
             }
-        }catch(\Throwable $th){
-
-            return response()->json(['message' => $th->getMessage()], 500);
+        } catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, 'getDeclinedObApplications', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     public function updateObApplicationStatus ($id,$status,Request $request)
@@ -1565,7 +1568,7 @@ class ObApplicationController extends Controller
                 $user=$request->user;
                 $password_decrypted = Crypt::decryptString($user['password_encrypted']);
                 $password = strip_tags($request->password);
-                if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                if (!Hash::check($password.Cache::get('salt_value'), $password_decrypted)) {
                         return response()->json(['message' => "Password incorrect."], Response::HTTP_FORBIDDEN);
                 }
                 else
@@ -1784,12 +1787,10 @@ class ObApplicationController extends Controller
                             }
                 }
 
-            }
-
-
-         catch (\Exception $e) {
+        } catch (\Exception $e) {
              DB::rollBack();
-            return response()->json(['message' => $e->getMessage(),'error'=>true]);
+             Helpers::errorLog($this->CONTROLLER_NAME, 'getDeclinedObApplications', $e->getMessage());
+            return response()->json(['message' => $e->getMessage(),'error'=>true], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
     }
@@ -1834,7 +1835,8 @@ class ObApplicationController extends Controller
             $this->storeOfficialBusinessApplicationLog($ob_id,$process_name,$columnsString,1);
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-            return response()->json(['message' => $th->getMessage()], 500);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
     }
@@ -2116,7 +2118,8 @@ class ObApplicationController extends Controller
             return response()->json(['message' => 'Official Business Application has been sucessfully saved','data' => $singleArray ], Response::HTTP_OK);
         }catch(\Throwable $th){
             DB::rollBack();
-            return response()->json(['message' => $th->getMessage()], 500);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -2131,7 +2134,7 @@ class ObApplicationController extends Controller
                         $user=$request->user;
                         $password_decrypted = Crypt::decryptString($user['password_encrypted']);
                         $password = strip_tags($request->password);
-                        if (!Hash::check($password.env("SALT_VALUE"), $password_decrypted)) {
+                        if (!Hash::check($password.Cache::get('salt_value'), $password_decrypted)) {
                                 return response()->json(['message' => "Password incorrect."], Response::HTTP_FORBIDDEN);
                         }
                         else{
@@ -2329,7 +2332,8 @@ class ObApplicationController extends Controller
                 }
             } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => $e->getMessage(),  'error'=>true]);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'declineObApplication', $e->getMessage());
+            return response()->json(['message' => $e->getMessage(),  'error'=>true], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -2342,7 +2346,8 @@ class ObApplicationController extends Controller
 
             return $official_business_application_requirement;
         } catch(\Exception $e) {
-            return response()->json(['message' => $e->getMessage(),'error'=>true]);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'storeOfficialBusinessApplicationRequirement', $e->getMessage());
+            return response()->json(['message' => $e->getMessage(),'error'=>true], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -2362,7 +2367,8 @@ class ObApplicationController extends Controller
 
             return $ob_business_log;
         } catch(\Exception $e) {
-            return response()->json(['message' => $e->getMessage(),'error'=>true]);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'storeOfficialBusinessApplicationLog', $e->getMessage());
+            return response()->json(['message' => $e->getMessage(),'error'=>true], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -2516,10 +2522,10 @@ class ObApplicationController extends Controller
                         }
 
                 }
-            } catch (\Exception $e) {
-                DB::rollBack();
-            return response()->json(['message' => $e->getMessage(),  'error'=>true]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Helpers::errorLog($this->CONTROLLER_NAME, 'cancelObApplication', $e->getMessage());
+            return response()->json(['message' => $e->getMessage(),  'error'=>true], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
 }

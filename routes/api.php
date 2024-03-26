@@ -391,6 +391,33 @@ Route::middleware('auth.cookie')->group(function () {
      */
     Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
         /**
+         * Educational Background Module
+         */
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('monitization-posts', 'MonitizationPostingController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('monitization-posts/{id}/candidates', 'MonitizationPostingController@showCandidates');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function () {
+            Route::get('monitization-posts/{id}/check-for-sl-monitization', 'MonitizationPostingController@checkForSLMonitization');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {
+            Route::post('monitization-post', 'MonitizationPostingController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::put('monitization-posts/{id}', 'MonitizationPostingController@update');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
+            Route::delete('monitization-posts/{id}', 'MonitizationPostingController@destroy');
+        });
+
+        /**
          * Address Module
          */
         // Route::get('employees-dtr-list', 'EmployeeProfileController@employeesDTRList');
@@ -809,7 +836,11 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::get('area-employees/{id}', 'EmployeeProfileController@areasEmployees');
+            Route::get('my-areas', 'EmployeeProfileController@myAreas');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('area-employees/{id}/sector/{sector}', 'EmployeeProfileController@areasEmployees');
         });
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
@@ -1657,6 +1688,10 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
+            Route::get('my-leave-application-approved', 'LeaveApplicationController@myApprovedLeaveApplication');
+        });
+
+        Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
             Route::get('user-leave-application', 'LeaveApplicationController@userLeaveApplication');
         });
 
@@ -1997,5 +2032,26 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-OCM delete'])->group(function () {
             Route::delete('on-call/{id}', 'OnCallController@destroy');
         });
+
+        /**
+         * Holiday Module
+         */
+        Route::middleware(['auth.permission:UMIS-HOL view-all'])->group(function () {
+            Route::get('holiday', 'HolidayController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-HOL write'])->group(function () {
+            Route::post('holiday', 'HolidayController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-HOL update'])->group(function () {
+            Route::put('holiday/{id}', 'HolidayController@update');
+        });
+
+        Route::middleware(['auth.permission:UMIS-HOL delete'])->group(function () {
+            Route::delete('holiday/{id}', 'HolidayController@destroy');
+        });
+
+        Route::get('holidays', 'HolidayController@calendar');
     });
 });

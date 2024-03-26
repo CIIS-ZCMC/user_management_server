@@ -33,6 +33,34 @@ use Illuminate\Support\Facades\Log;
 
 class Helpers
 {
+    public static function generatePassword()
+    {
+        $uppercase = self::randomCharacter('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
+        $lowercase = self::randomCharacter('abcdefghijklmnopqrstuvwxyz');
+        $number = self::randomCharacter('0123456789');
+        $special = self::randomCharacter('!@#$%^&*()_+{}[]|');
+        $otherChars = self::randomCharacter('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+{}[]|');
+
+        $password = $uppercase . $lowercase . $number . $special . $otherChars;
+        $password = str_shuffle($password);
+
+        if (strlen($password) < 8) {
+            $password .= self::randomCharacter('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+{}[]|');
+        }
+
+        return $password;
+    } 
+    
+    /**
+    * Generate a random character from the given string.
+    *
+    * @param string $characters
+    * @return string
+    */
+   private static  function randomCharacter($characters)
+   {
+       return mb_substr($characters, mt_rand(0, mb_strlen($characters) - 1), 1);
+   }
 
     public static function getHrmoOfficer()
     {

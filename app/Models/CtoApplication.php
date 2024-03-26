@@ -11,10 +11,19 @@ class CtoApplication extends Model
 
     protected $table = 'cto_applications';
 
+    protected $casts = [
+      
+        'is_am' => 'boolean',
+        'is_pm' => 'boolean',
+        // 'is_commutation' => 'boolean', 
+    ];
+
     public $fillable = [
         'employee_profile_id',
         'date',
         'applied_credits',
+        'is_am',
+        'is_pm',
         'purpose',
         'remarks',
         'status',

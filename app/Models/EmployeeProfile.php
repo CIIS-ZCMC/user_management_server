@@ -33,6 +33,7 @@ class EmployeeProfile extends Authenticatable
         'deactivated_at',
         'agency_employee_no',
         'allow_time_adjustment',
+        'shifting',
         'is_2fa',
         'employee_type_id',
         'employment_type_id'
@@ -346,6 +347,11 @@ class EmployeeProfile extends Authenticatable
     public function schedule()
     {
         return $this->belongsToMany(Schedule::class, 'employee_profile_schedule')->withPivot('id', 'employee_profile_id');
+    }
+
+    public function biometric()
+    {
+        return $this->belongsTo(Biometrics::class);
     }
 
     public function GetPersonalInfo()

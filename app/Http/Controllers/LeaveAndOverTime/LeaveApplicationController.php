@@ -5,6 +5,7 @@ namespace App\Http\Controllers\LeaveAndOverTime;
 use App\Http\Controllers\UmisAndEmployeeManagement\EmployeeProfileController;
 use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Resources\LeaveTypeResource;
+use App\Http\Resources\MyApprovedLeaveApplicationResource;
 use App\Models\Division;
 use App\Models\EmployeeCreditLog;
 use App\Models\EmployeeOvertimeCredit;
@@ -187,6 +188,20 @@ class LeaveApplicationController extends Controller
                 'message' => 'Retrieve all leave application records.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function myApprovedLeaveApplication(Request $request)
+    {
+        try{
+            $leave_applications = LeaveApplication::where('status', 'approved')->get();
+
+            return response()->json([
+                'data' => MyApprovedLeaveApplicationResource::collection($leave_applications),
+                'message' => 'Retrieve list.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -645,6 +660,28 @@ class LeaveApplicationController extends Controller
                                 'used_leave_credits' => $employee_credit->used_leave_credits + $daysDiff
                             ]);
 
+
+                            if(LeaveType::find($request->leave_type_id)->code === 'FL' ){
+                                $vlLeaveTypeId = LeaveType::where('code', 'VL')->first()->id;
+
+                                $employee_credit_vl = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)
+                                    ->where('leave_type_id', $vlLeaveTypeId)->first();
+
+                                $previous_credit_vl = $employee_credit_vl->total_leave_credits;
+
+                                $employee_credit_vl->update([
+                                    'total_leave_credits' => $employee_credit_vl->total_leave_credits - $daysDiff,
+                                    'used_leave_credits' => $employee_credit_vl->used_leave_credits + $daysDiff
+                                ]);
+
+                                EmployeeLeaveCreditLogs::create([
+                                    'employee_leave_credit_id' => $employee_credit->id,
+                                    'previous_credit' => $previous_credit_vl,
+                                    'leave_credits' => $daysDiff,
+                                    'reason'=>'apply'
+                                ]);
+                            }
+
                             EmployeeLeaveCreditLogs::create([
                                 'employee_leave_credit_id' => $employee_credit->id,
                                 'previous_credit' => $previous_credit,
@@ -787,6 +824,9 @@ class LeaveApplicationController extends Controller
     {
         try {
             $data = LeaveApplication::with(['employeeProfile', 'leaveType', 'recommendingOfficer', 'approvingOfficer'])->where('id', $id)->first();
+            $vl_employee_credit = EmployeeLeaveCredit::where('leave_type_id', LeaveType::where('code', 'VL')->first()->id)->first();
+            $sl_employee_credit = EmployeeLeaveCredit::where('leave_type_id', LeaveType::where('code', 'SL')->first()->id)->first();
+
             // return $data;
             $leave_type = LeaveTypeResource::collection(LeaveType::all());
             $my_leave_type = new LeaveTypeResource(LeaveType::find($data->leave_type_id));
@@ -813,7 +853,7 @@ class LeaveApplicationController extends Controller
             $options->set('isRemoteEnabled', true);
             $dompdf = new Dompdf($options);
             $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
-            $html = view('leave_from.leave_application_form', compact('data', 'leave_type', 'hrmo_officer', 'my_leave_type'))->render();
+            $html = view('leave_from.leave_application_form', compact('data', 'leave_type', 'hrmo_officer', 'my_leave_type', 'vl_employee_credit', 'sl_employee_credit'))->render();
             $dompdf->loadHtml($html);
 
             $dompdf->setPaper('Legal', 'portrait');
@@ -821,7 +861,7 @@ class LeaveApplicationController extends Controller
             $filename = 'LEAVE REPORT - (' . $data->employeeProfile->personalInformation->name() . ').pdf';
 
             // Use 'I' instead of 'D' to open in the browser
-            $dompdf->stream($filename, array('Attachment' => false));
+                $dompdf->stream($filename, array('Attachment' => false));
             // $dompdf->stream($filename);
 
 

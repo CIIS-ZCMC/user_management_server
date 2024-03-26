@@ -2,62 +2,63 @@
 
 namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
-use App\Http\Controllers\Controller;
+use Carbon\Carbon;
 
-use App\Http\Requests\AuthPinApprovalRequest;
-use App\Models\PersonalInformation;
-use Illuminate\Support\Str;
-use App\Http\Controllers\DTR\TwoFactorAuthController;
-use App\Http\Resources\ChildResource;
-use App\Http\Resources\CivilServiceEligibilityResource;
-use App\Http\Resources\ContactResource;
-use App\Http\Resources\EducationalBackgroundResource;
-use App\Http\Resources\FamilyBackGroundResource;
-use App\Http\Resources\IdentificationNumberResource;
-use App\Http\Resources\OtherInformationResource;
-use App\Http\Resources\TrainingResource;
-use App\Http\Resources\VoluntaryWorkResource;
-use App\Http\Resources\WorkExperienceResource;
+use App\Models\Role;
+use App\Models\Unit;
+use App\Models\Contact;
+use App\Models\Section;
+use App\Helpers\Helpers;
+use App\Models\Division;
+use App\Models\LeaveType;
+use App\Models\AssignArea;
+use App\Models\Department;
+use App\Models\LoginTrail;
+use App\Models\SystemRole;
 use App\Methods\MailConfig;
 use App\Models\AccessToken;
-use App\Models\AssignAreaTrail;
-use App\Models\Contact;
-use App\Models\Department;
 use App\Models\Designation;
-use App\Models\Division;
-use App\Models\EmployeeLeaveCredit;
-use App\Models\EmployeeOvertimeCredit;
-use App\Models\InActiveEmployee;
-use App\Models\LeaveType;
-use App\Models\PasswordTrail;
-use App\Models\PlantillaNumber;
-use App\Models\Role;
-use App\Models\Section;
-use App\Models\SystemRole;
-use App\Models\Unit;
-use App\Rules\StrongPassword;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Jenssegers\Agent\Agent;
 use Illuminate\Http\Request;
+use App\Models\PasswordTrail;
+use App\Rules\StrongPassword;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\Hash;
-use App\Helpers\Helpers;
-use App\Http\Requests\SignInRequest;
-use App\Http\Requests\EmployeeProfileRequest;
-use App\Http\Resources\EmployeeProfileResource;
-use App\Http\Resources\EmployeesByAreaAssignedResource;
-use App\Http\Resources\EmployeeDTRList;
-use App\Models\AssignArea;
+use App\Models\AssignAreaTrail;
 use App\Models\DefaultPassword;
 use App\Models\EmployeeProfile;
-use App\Models\LoginTrail;
-use App\Models\PositionSystemRole;
+use App\Models\PlantillaNumber;
+use App\Models\InActiveEmployee;
 use App\Models\SpecialAccessRole;
-use App\Http\Requests\PromotionRequest;
+use App\Models\PositionSystemRole;
 use Illuminate\Support\Facades\DB;
+use App\Models\EmployeeLeaveCredit;
+use App\Models\PersonalInformation;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\SignInRequest;
+use Illuminate\Support\Facades\Hash;
+use App\Http\Resources\ChildResource;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
+use App\Models\EmployeeOvertimeCredit;
+use App\Http\Requests\PromotionRequest;
+use App\Http\Resources\AddressResource;
+use App\Http\Resources\ContactResource;
+use App\Http\Resources\EmployeeDTRList;
+use App\Http\Resources\TrainingResource;
+use Illuminate\Support\Facades\Validator;
+use App\Http\Requests\AuthPinApprovalRequest;
+use App\Http\Requests\EmployeeProfileRequest;
+use App\Http\Resources\VoluntaryWorkResource;
+use App\Http\Resources\WorkExperienceResource;
+use App\Http\Resources\EmployeeProfileResource;
+use App\Http\Resources\FamilyBackGroundResource;
+use App\Http\Resources\OtherInformationResource;
+use App\Http\Resources\IdentificationNumberResource;
+use App\Http\Controllers\DTR\TwoFactorAuthController;
+use App\Http\Resources\EducationalBackgroundResource;
+use App\Http\Resources\CivilServiceEligibilityResource;
+use App\Http\Resources\EmployeesByAreaAssignedResource;
 
 class EmployeeProfileController extends Controller
 {
@@ -85,7 +86,7 @@ class EmployeeProfileController extends Controller
      *
      */
     public function signIn(SignInRequest $request)
-    {
+    {   
         try {
 
             /**
@@ -119,10 +120,11 @@ class EmployeeProfileController extends Controller
             if (!$employee_profile->isDeactivated()) {
                 return response()->json(['message' => "Account is deactivated."], Response::HTTP_FORBIDDEN);
             }
+            
 
             $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
 
-            if (!Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedPassword)) {
+            if (!Hash::check($cleanData['password'] . Cache::get('salt_value'), $decryptedPassword)) {
                 return response()->json(['message' => "Employee id or password incorrect."], Response::HTTP_FORBIDDEN);
             }
 
@@ -140,7 +142,7 @@ class EmployeeProfileController extends Controller
              */
             if ($employee_profile->authorization_pin === null) {
                 return response()->json(['message' => 'New account'], Response::HTTP_TEMPORARY_REDIRECT)
-                    ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', env('SESSION_DOMAIN'), false); //status 307
+                    ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', Cache::get('session_domain'), false); //status 307
             }
 
             /**
@@ -150,12 +152,12 @@ class EmployeeProfileController extends Controller
                 // Mandatory change password for annual.
                 if (Carbon::now()->year > Carbon::parse($employee_profile->password_expiration_at)->year) {
                     return response()->json(['message' => 'expired-required'], Response::HTTP_TEMPORARY_REDIRECT)
-                        ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', env('SESSION_DOMAIN'), false); //status 307
+                        ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', Cache::get('session_domain'), false); //status 307
                 }
 
                 //Optional change password
                 return response()->json(['message' => 'expired-optional'], Response::HTTP_TEMPORARY_REDIRECT)
-                    ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', env('SESSION_DOMAIN'), false); //status 307
+                    ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', Cache::get('session_domain'), false); //status 307
             }
 
             /**
@@ -181,7 +183,7 @@ class EmployeeProfileController extends Controller
 
             //             if ($this->mail->send($data)) {
             //                 return response()->json(['message' => "You are currently logged on to other device. An OTP has been sent to your registered email. If you want to signout from that device, submit the OTP."], Response::HTTP_FOUND)
-            //                     ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', env('SESSION_DOMAIN'), false);
+            //                     ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', Cache::get('session_domain'), false);
             //             }
 
             //             return response()->json(['message' => "Your account is currently logged on to other device, sending otp to your email has failed please try again later."], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -201,8 +203,8 @@ class EmployeeProfileController extends Controller
                 $data = Helpers::generateMyOTP($employee_profile);
 
                 if ($this->mail->send($data)) {
-                    return response()->json(['message' => "OTP has sent to your email, submit the OTP to verify that this is your account."], Response::HTTP_OK)
-                        ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', env('SESSION_DOMAIN'), false);
+                    return response()->json(['message' => "OTP has sent to your email, submit the OTP to verify that this is your account."], Response::HTTP_FOUND)
+                        ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', Cache::get('session_domain'), false);
                 }
 
                 return response()->json([
@@ -262,7 +264,7 @@ class EmployeeProfileController extends Controller
 
             return response()
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
-                ->cookie(Helpers::Cookie_Name(), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), false);
+                ->cookie(Helpers::Cookie_Name(), json_encode(['token' => $token]), 60, '/', Cache::get('session_domain'), false);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'signIn', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -686,7 +688,7 @@ class EmployeeProfileController extends Controller
         $special_access_role = SpecialAccessRole::where('employee_profile_id', $employee_profile->id)->where('system_role_id', 1)->first();
 
         $employee = [
-            'profile_url' => env('SERVER_DOMAIN') . "/photo/profiles/" . $employee_profile->profile_url,
+            'profile_url' =>  Cache::get('server_domain') . "/photo/profiles/" . $employee_profile->profile_url,
             'employee_id' => $employee_profile->employee_id,
             'position' => $position,
             'is_2fa' => $employee_profile->is_2fa,
@@ -762,6 +764,7 @@ class EmployeeProfileController extends Controller
             'is_2fa' => $employee_profile->is_2fa,
             'password_expiration_at' => $employee_profile->password_expiration_at,
             'password_updated_at' => $employee_profile->password_created_at,
+            'pin_created_at' => $employee_profile->pin_created_at,
             'designation' => $designation['name'],
             'plantilla_number_id' => $assigned_area['plantilla_number_id'],
             'plantilla_number' => $assigned_area['plantilla_number_id'] === NULL ? NULL : $assigned_area->plantillaNumber['number'],
@@ -885,7 +888,7 @@ class EmployeeProfileController extends Controller
 
             return response()
                 ->json(['data' => $data, 'message' => "Success signout to other device you are now login."], Response::HTTP_OK)
-                ->cookie(Helpers::Cookie_Name(), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), false);
+                ->cookie(Helpers::Cookie_Name(), json_encode(['token' => $token]), 60, '/', Cache::get('session_domain'), false);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'signOutFromOtherDevice', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -997,7 +1000,7 @@ class EmployeeProfileController extends Controller
 
             if ($this->mail->send($data)) {
                 return response()->json(['message' => 'Please check your email address for OTP.'], Response::HTTP_OK)
-                    ->cookie('employee_details', json_encode(['email' => $email, 'employee_id' => $employee->employee_id]), 60, '/', env('SESSION_DOMAIN'), false);
+                    ->cookie('employee_details', json_encode(['email' => $email, 'employee_id' => $employee->employee_id]), 60, '/', Cache::get('session_domain'), false);
             }
 
             return response()->json([
@@ -1090,7 +1093,7 @@ class EmployeeProfileController extends Controller
 
             return response()
                 ->json(['data' => $data, 'message' => "Success signin with two factor authentication."], Response::HTTP_OK)
-                ->cookie(Helpers::Cookie_Name(), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), false);
+                ->cookie(Helpers::Cookie_Name(), json_encode(['token' => $token]), 60, '/', Cache::get('session_domain'), false);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'signOut', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -1162,11 +1165,11 @@ class EmployeeProfileController extends Controller
 
             $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
 
-            if (!Hash::check($password . env("SALT_VALUE"), $decryptedPassword)) {
+            if (!Hash::check($password .Cache::get('salt_value'), $decryptedPassword)) {
                 return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
             }
 
-            $hashPassword = Hash::make($new_password . env('SALT_VALUE'));
+            $hashPassword = Hash::make($new_password . Cache::get('salt_value'));
             $encryptedPassword = Crypt::encryptString($hashPassword);
 
             $threeMonths = Carbon::now()->addMonths(3);
@@ -1204,7 +1207,7 @@ class EmployeeProfileController extends Controller
 
             $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
 
-            if (!Hash::check($password . env("SALT_VALUE"), $decryptedPassword)) {
+            if (!Hash::check($password . Cache::get('salt_value'), $decryptedPassword)) {
                 return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
             }
 
@@ -1242,7 +1245,7 @@ class EmployeeProfileController extends Controller
                 return response()->json(['message' => "Please consider changing your password, as it appears you have reused an old password."], Response::HTTP_BAD_REQUEST);
             }
 
-            $hashPassword = Hash::make($new_password . env('SALT_VALUE'));
+            $hashPassword = Hash::make($new_password . Cache::get('salt_value'));
             $encryptedPassword = Crypt::encryptString($hashPassword);
 
             $threeMonths = Carbon::now()->addMonths(3);
@@ -1328,7 +1331,7 @@ class EmployeeProfileController extends Controller
 
             return response()
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
-                ->cookie(Helpers::Cookie_Name(), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), false);
+                ->cookie(Helpers::Cookie_Name(), json_encode(['token' => $token]), 60, '/', Cache::get('session_domain'), false);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'newPassword', $th->getMessage());
         }
@@ -1341,57 +1344,12 @@ class EmployeeProfileController extends Controller
 
         foreach ($my_old_password_collection as $my_old_password) {
             $decryptedLastPassword = Crypt::decryptString($my_old_password->old_password);
-            if (Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedLastPassword)) {
+            if (Hash::check($cleanData['password'] . Cache::get('salt_value'), $decryptedLastPassword)) {
                 return true;
             }
         }
 
         return false;
-
-        /** [SIMPLIFY PROBLEM] */
-        // foreach ($getPasswordTrails as $key => $groupofPass) {
-        //     $count = count($getPasswordTrails);
-        //     $lastData = $getPasswordTrails[$count - 1];
-
-        //     $decryptedLastPassword = Crypt::decryptString($lastData->old_password);
-        //     if (Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedLastPassword)) {
-        //         return true;
-        //     }
-        //     if ($count <= $minimumReq) {
-        //         $disallow1 = false;
-        //         $limit = $count - 1;
-        //         $otherpass = DB::select("SELECT * FROM `password_trails` where employee_profile_id ={$employee_profile->id} limit {$limit} OFFSET 0 ");
-        //         if (count($otherpass) >= 1) {
-        //             $disallow1 = false;
-        //             foreach ($otherpass as $check) {
-        //                 $level1Pass = Crypt::decryptString($check->old_password);
-        //                 if (Hash::check($cleanData['password'] . env("SALT_VALUE"), $level1Pass)) {
-        //                     $disallow1 = true;
-        //                     break;
-        //                 }
-        //             }
-        //             if ($disallow1) {
-        //                 return true;
-        //             }
-        //         }
-        //     }
-        //     $limit = $minimumReq - 1;
-        //     $offset = floor($count - ($limit + 1));
-        //     $setofpassminReq = DB::select("SELECT * FROM `password_trails` where employee_profile_id ={$employee_profile->id} limit {$limit} OFFSET {$offset} ");
-        //     if (count($setofpassminReq) >= 1) {
-        //         $disallow2 = false;
-        //         foreach ($setofpassminReq as $check) {
-        //             $level2Pass = Crypt::decryptString($check->old_password);
-        //             if (Hash::check($cleanData['password'] . env("SALT_VALUE"), $level2Pass)) {
-        //                 $disallow2 = true;
-        //                 break;
-        //             }
-        //         }
-        //         if ($disallow2) {
-        //             return true;
-        //         }
-        //     }
-        // }
     }
 
     public function resetPassword($id, Request $request)
@@ -1402,7 +1360,7 @@ class EmployeeProfileController extends Controller
 
             $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
 
-            if (!Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedPassword)) {
+            if (!Hash::check($cleanData['password'] . Cache::get('salt_value'), $decryptedPassword)) {
                 return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
             }
 
@@ -1416,7 +1374,7 @@ class EmployeeProfileController extends Controller
 
             $last_password = DefaultPassword::orderBy('effective_at', 'desc')->first();
 
-            $hashPassword = Hash::make($last_password->password . env('SALT_VALUE'));
+            $hashPassword = Hash::make($last_password->password . Cache::get('salt_value'));
             $encryptedPassword = Crypt::encryptString($hashPassword);
 
             $employee_profile->update([
@@ -1578,7 +1536,7 @@ class EmployeeProfileController extends Controller
 
                     if ($this->mail->send($data)) {
                         return response()->json(['message' => "You are currently logged on to other device. An OTP has been sent to your registered email. If you want to signout from that device, submit the OTP."], Response::HTTP_FOUND)
-                            ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', env('SESSION_DOMAIN'), false);
+                            ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', Cache::get('session_domain'), false);
                     }
 
                     return response()->json(['message' => "Your account is currently logged on to other device, sending otp to your email has failed please try again later."], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -1597,8 +1555,8 @@ class EmployeeProfileController extends Controller
                 $data = Helpers::generateMyOTP($employee_profile);
 
                 if ($this->mail->send($data)) {
-                    return response()->json(['message' => "OTP has sent to your email, submit the OTP to verify that this is your account."], Response::HTTP_OK)
-                        ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', env('SESSION_DOMAIN'), false);
+                    return response()->json(['message' => "OTP has sent to your email, submit the OTP to verify that this is your account."], Response::HTTP_FOUND)
+                        ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', Cache::get('session_domain'), false);
                 }
 
                 return response()->json([
@@ -1657,7 +1615,7 @@ class EmployeeProfileController extends Controller
 
             return response()
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
-                ->cookie(Helpers::Cookie_Name(), json_encode(['token' => $token]), 60, '/', env('SESSION_DOMAIN'), false);
+                ->cookie(Helpers::Cookie_Name(), json_encode(['token' => $token]), 60, '/', Cache::get('session_domain'), false);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'updatePasswordExpiration', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -1691,30 +1649,30 @@ class EmployeeProfileController extends Controller
 
             $my_assigned_area = $employee_profile->assignedArea->findDetails();
 
-            $employees = $this->retrieveEmployees($employees, Str::lower($my_assigned_area['sector']) . "_id", $my_assigned_area['details']->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+            $employees = $this->retrieveEmployees($employees, Str::lower($my_assigned_area['sector']) . "_id", $my_assigned_area['details']->id, [$employee_profile->id, 1]);
 
             /** Retrieve entire employees of Division to Unit if it has  unit */
             if ($my_assigned_area['sector'] === 'Division') {
                 $departments = Department::where('division_id', $my_assigned_area['details']->id)->get();
 
                 foreach ($departments as $department) {
-                    $employees = $this->retrieveEmployees($employees, 'department_id', $department->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+                    $employees = $this->retrieveEmployees($employees, 'department_id', $department->id, [$employee_profile->id, 1]);
                     $sections = Section::where('department_id', $department->id)->get();
                     foreach ($sections as $section) {
-                        $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+                        $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$employee_profile->id, 1]);
                         $units = Unit::where('section_id', $section->id)->get();
                         foreach ($units as $unit) {
-                            $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+                            $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$employee_profile->id, 1]);
                         }
                     }
                 }
 
                 $sections = Section::where('division_id', $my_assigned_area['details']->id)->get();
                 foreach ($sections as $section) {
-                    $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+                    $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$employee_profile->id, 1]);
                     $units = Unit::where('section_id', $section->id)->get();
                     foreach ($units as $unit) {
-                        $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+                        $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$employee_profile->id, 1]);
                     }
                 }
             }
@@ -1723,10 +1681,10 @@ class EmployeeProfileController extends Controller
             if ($my_assigned_area['sector'] === 'Department') {
                 $sections = Section::where('department_id', $my_assigned_area['details']->id)->get();
                 foreach ($sections as $section) {
-                    $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+                    $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$employee_profile->id, 1]);
                     $units = Unit::where('section_id', $section->id)->get();
                     foreach ($units as $unit) {
-                        $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+                        $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$employee_profile->id, 1]);
                     }
                 }
             }
@@ -1735,7 +1693,7 @@ class EmployeeProfileController extends Controller
             if ($my_assigned_area['sector'] === 'Section') {
                 $units = Unit::where('section_id', $my_assigned_area['details']->id)->get();
                 foreach ($units as $unit) {
-                    $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$employee_profile->id, 1, 2, 3, 4, 5]);
+                    $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$employee_profile->id, 1]);
                 }
             }
 
@@ -1860,7 +1818,7 @@ class EmployeeProfileController extends Controller
                 ], Response::HTTP_OK);
             }
 
-            $employee_profiles = EmployeeProfile::whereNotIn('id', [1, 2, 3, 4, 5])->get();
+            $employee_profiles = EmployeeProfile::whereNotIn('id', [1])->get();
             Helpers::registerSystemLogs($request, null, true, 'Success in fetching a ' . $this->PLURAL_MODULE_NAME . '.');
 
             return response()->json([
@@ -1899,7 +1857,7 @@ class EmployeeProfileController extends Controller
             $last_registered_employee = EmployeeProfile::orderBy('biometric_id', 'desc')->first();
             $last_password = DefaultPassword::orderBy('effective_at', 'desc')->first();
 
-            $hashPassword = Hash::make($last_password->password . env('SALT_VALUE'));
+            $hashPassword = Hash::make($last_password->password . Cache::get('salt_value'));
             $encryptedPassword = Crypt::encryptString($hashPassword);
             $now = Carbon::now();
             $fortyDaysFromNow = $now->addDays(40);
@@ -2034,10 +1992,11 @@ class EmployeeProfileController extends Controller
     public function index(Request $request)
     {
         try {
+            $user = $request->user;
             $cacheExpiration = Carbon::now()->addDay();
 
-            $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () {
-                return EmployeeProfile::whereNotIn('id', [1, 2, 3, 4, 5])->get();
+            $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () use ($user) {
+                return EmployeeProfile::whereNotIn('id', [1, $user->id])->get();
             });
 
             return EmployeeProfileResource::collection($employee_profiles);
@@ -2078,30 +2037,30 @@ class EmployeeProfileController extends Controller
 
             $my_assigned_area = $user->assignedArea->findDetails();
 
-            $employees = $this->retrieveEmployees($employees, Str::lower($my_assigned_area['sector']) . "_id", $my_assigned_area['details']->id, [$user->id, 1, 2, 3, 4, 5]);
+            $employees = $this->retrieveEmployees($employees, Str::lower($my_assigned_area['sector']) . "_id", $my_assigned_area['details']->id, [$user->id, 1]);
 
             /** Retrieve entire employees of Division to Unit if it has  unit */
             if ($my_assigned_area['sector'] === 'Division') {
                 $departments = Department::where('division_id', $my_assigned_area['details']->id)->get();
 
                 foreach ($departments as $department) {
-                    $employees = $this->retrieveEmployees($employees, 'department_id', $department->id, [$user->id, 1, 2, 3, 4, 5]);
+                    $employees = $this->retrieveEmployees($employees, 'department_id', $department->id, [$user->id, 1]);
                     $sections = Section::where('department_id', $department->id)->get();
                     foreach ($sections as $section) {
-                        $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1, 2, 3, 4, 5]);
+                        $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1]);
                         $units = Unit::where('section_id', $section->id)->get();
                         foreach ($units as $unit) {
-                            $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1, 2, 3, 4, 5]);
+                            $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1]);
                         }
                     }
                 }
 
                 $sections = Section::where('division_id', $my_assigned_area['details']->id)->get();
                 foreach ($sections as $section) {
-                    $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1, 2, 3, 4, 5]);
+                    $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1]);
                     $units = Unit::where('section_id', $section->id)->get();
                     foreach ($units as $unit) {
-                        $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1, 2, 3, 4, 5]);
+                        $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1]);
                     }
                 }
             }
@@ -2110,10 +2069,10 @@ class EmployeeProfileController extends Controller
             if ($my_assigned_area['sector'] === 'Department') {
                 $sections = Section::where('department_id', $my_assigned_area['details']->id)->get();
                 foreach ($sections as $section) {
-                    $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1, 2, 3, 4, 5]);
+                    $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1]);
                     $units = Unit::where('section_id', $section->id)->get();
                     foreach ($units as $unit) {
-                        $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1, 2, 3, 4, 5]);
+                        $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1]);
                     }
                 }
             }
@@ -2122,7 +2081,7 @@ class EmployeeProfileController extends Controller
             if ($my_assigned_area['sector'] === 'Section') {
                 $units = Unit::where('section_id', $my_assigned_area['details']->id)->get();
                 foreach ($units as $unit) {
-                    $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1, 2, 3, 4, 5]);
+                    $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1]);
                 }
             }
 
@@ -2131,7 +2090,7 @@ class EmployeeProfileController extends Controller
                 'message' => 'list of employees retrieved.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'myEmployees', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'myAllEmployees', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -2166,12 +2125,12 @@ class EmployeeProfileController extends Controller
         }
     }
 
-    public function areasEmployees($id, Request $request)
+    public function areasEmployees($id, $sector,Request $request)
     {
         try {
             $user = $request->user;
             $position = $user->position();
-            $sector = strip_tags($request->sector);
+            $sector = strip_tags($sector);
             $key = Str::lower($sector) . "_id";
 
             if (!$position) {
@@ -2194,13 +2153,82 @@ class EmployeeProfileController extends Controller
         }
     }
 
+    public function myAreas(Request $request)
+    {
+        try {
+            $user = $request->user;
+            $position = $user->position();
+
+            if (!$position) {
+                return response()->json(['message' => "You don't have authorization as a supervisor of area."], Response::HTTP_FORBIDDEN);
+            }
+
+            $my_area = $user->assignedArea->findDetails();
+            $areas = [];
+
+            switch($my_area['sector']){
+                case "Division":
+                    $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'sector' => $my_area['sector']];
+                    $deparmtents = Department::where('division_id', $my_area['details']->id)->get();
+                    
+                    foreach($deparmtents as $department)
+                    {
+                        $areas[] = ['id' => $department->id, 'name' => $department->name, 'sector' => 'Department'];
+
+                        $sections = Section::where('department_id', $department->id)->get();
+                        foreach($sections as $section){
+                            $areas[] = ['id' => $section->id, 'name' => $section->name, 'sector' => 'Section'];
+
+                            $units = Unit::where('section_id', $section->id)->get();
+                            foreach($units as $unit){
+                                $areas[] = ['id' => $unit->id, 'name' => $unit->name, 'sector' => 'Unit'];
+                            }
+                        }
+                    }
+                    break;
+                case "Department":
+                    $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'sector' => $my_area['sector']];
+                    $sections = Section::where('department_id', $my_area['details']->id)->get();
+
+                    foreach($sections as $section){
+                        $areas[] = ['id' => $section->id, 'name' => $section->name, 'sector' => 'Section'];
+
+                        $units = Unit::where('section_id', $section->id)->get();
+                        foreach($units as $unit){
+                            $areas[] = ['id' => $unit->id, 'name' => $unit->name, 'sector' => 'Unit'];
+                        }
+                    }
+                    break;
+                case "Section":
+                    $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'sector' => $my_area['sector']];
+
+                    $units = Unit::where('section_id', $my_area['details']->id)->get();
+                    foreach($units as $unit){
+                        $areas[] = ['id' => $unit->id, 'name' => $unit->name, 'sector' => 'Unit'];
+                    }
+                    break;
+                case "Unit":
+                    $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'sector' => $my_area['sector']];
+                    break;
+            }
+
+            return response()->json([
+                'data' => $areas,
+                'message' => 'Successfully retrieved all my areas.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'myAreas', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public function getEmployeeListByEmployementTypes(Request $request)
     {
         try {
             $cacheExpiration = Carbon::now()->addDay();
 
             $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () {
-                return EmployeeProfile::whereNotIn('id', [1, 2, 3, 4, 5])->get();
+                return EmployeeProfile::whereNotIn('id', [1])->get();
             });
 
             $temp_perm = EmployeeProfileResource::collection($employee_profiles->filter(function ($profile) {
@@ -2239,9 +2267,9 @@ class EmployeeProfileController extends Controller
             $employee_id_random_digit = 50 + count($total_registered_this_day);
 
             $last_registered_employee = EmployeeProfile::orderBy('biometric_id', 'desc')->first();
-            $last_password = DefaultPassword::orderBy('effective_at', 'desc')->first();
+            $default_password = Helpers::generatePassword();
 
-            $hashPassword = Hash::make($last_password->password . env('SALT_VALUE'));
+            $hashPassword = Hash::make($default_password.Cache::get('salt_value'));
             $encryptedPassword = Crypt::encryptString($hashPassword);
             $now = Carbon::now();
 
@@ -2249,10 +2277,6 @@ class EmployeeProfileController extends Controller
 
             $new_biometric_id = $last_registered_employee->biometric_id + 1;
             $new_employee_id = $date_hired_string . $employee_id_random_digit;
-
-            /** Create Authorization Pin */
-            $personal_information = PersonalInformation::find(strip_tags($request->personal_information_id));
-
 
             $cleanData['employee_id'] = $new_employee_id;
             $cleanData['biometric_id'] = $new_biometric_id;
@@ -2268,8 +2292,8 @@ class EmployeeProfileController extends Controller
                     $in_valid_file = true;
                     $cleanData['profile_url'] = null;
                 }
-            } catch (\Throwable $th) {
-            }
+            } catch (\Throwable $th) {}
+
             $cleanData['allow_time_adjustment'] = strip_tags($request->allow_time_adjustment) === 1 ? true : false;
             $cleanData['password_encrypted'] = $encryptedPassword;
             $cleanData['password_created_at'] = now();
@@ -2280,35 +2304,12 @@ class EmployeeProfileController extends Controller
             $cleanData['effective_at'] = $request->date_hired;
 
             $plantilla_number_id = $request->plantilla_number_id === "null"  || $request->plantilla_number_id === null ? null : $request->plantilla_number_id;
-            $sector_key = '';
+            $sector = strip_tags($request->sector);
 
-            switch (strip_tags($request->sector)) {
-                case "division":
-                    $sector_key = 'division_id';
-                    break;
-                case "department":
-                    $sector_key = 'department_id';
-                    break;
-                case "section":
-                    $sector_key = 'section_id';
-                    break;
-                case "unit":
-                    $sector_key = 'unit_id';
-                    break;
-                default:
-                    $sector_key = null;
-            }
-
-            if ($sector_key === null) {
-                return response()->json(['message' => 'Invalid sector area.'], Response::HTTP_BAD_REQUEST);
-            }
-
-            $cleanData[$sector_key] = strip_tags($request->sector_id);
+            $cleanData[Str::lower($sector).'_id'] = strip_tags($request->sector_id);
 
             if ($plantilla_number_id !== null) {
                 $plantilla_number = PlantillaNumber::find($plantilla_number_id);
-
-
 
                 if (!$plantilla_number) {
                     return response()->json(['message' => 'No record found for plantilla number ' . $plantilla_number_id], Response::HTTP_NOT_FOUND);
@@ -2321,7 +2322,6 @@ class EmployeeProfileController extends Controller
                 $plantilla->update(['total_used_plantilla_no' => $plantilla->total_used_plantilla_no + 1]);
             }
 
-
             $employee_profile = EmployeeProfile::create($cleanData);
 
             $cleanData['employee_profile_id'] = $employee_profile->id;
@@ -2331,7 +2331,6 @@ class EmployeeProfileController extends Controller
                 $plantilla_number = PlantillaNumber::find($plantilla_number_id);
                 $plantilla_number->update(['employee_profile_id' => $employee_profile->id, 'is_vacant' => false, 'assigned_at' => now()]);
             }
-
 
             if ($plantilla_number_id !== null) {
                 $leave_types = LeaveType::where('is_special', 0)->get();
@@ -2355,7 +2354,6 @@ class EmployeeProfileController extends Controller
             }
 
             Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . '.');
-
 
             if ($in_valid_file) {
                 return response()->json(
@@ -2426,6 +2424,7 @@ class EmployeeProfileController extends Controller
             /**
              * Convert date hired to a string format to use in Employee ID
              */
+            
             $carbonDate = Carbon::createFromFormat('Y-m-d', $dateFromRequest);
             $date_hired_in_string = $carbonDate->format('Ymd');
 
@@ -2449,7 +2448,7 @@ class EmployeeProfileController extends Controller
                 ->whereDate('status', 1)
                 ->get();
 
-            $hashPassword = Hash::make($default_password['password'] . env('SALT_VALUE'));
+            $hashPassword = Hash::make($default_password['password'] .Cache::get('salt_value'));
             $password_encrypted = Crypt::encryptString($hashPassword);
 
             $password_created_at = Carbon::now();
@@ -2487,7 +2486,7 @@ class EmployeeProfileController extends Controller
 
             $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
 
-            if (!Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedPassword)) {
+            if (!Hash::check($cleanData['password'] . Cache::get('salt_value'), $decryptedPassword)) {
                 return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
             }
 
@@ -2628,21 +2627,21 @@ class EmployeeProfileController extends Controller
                 if ($value->is_residential_and_permanent) {
                     $address['residential_address'] = $value->address;
                     $address['residential_zip_code'] = $value->zip_code;
-                    $address['residential_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
+                    $address['residential_telephone_no'] = $value->telephone_no;
                     $address['permanent_address'] = $value->address;
                     $address['permanent_zip_code'] = $value->zip_code;
-                    $address['permanent_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
+                    $address['permanent_telephone_no'] = $value->telephone_no;
                     break;
                 }
 
                 if ($value->is_residential) {
                     $address['residential_address'] = $value->address;
                     $address['residential_zip_code'] = $value->zip_code;
-                    $address['residential_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
+                    $address['residential_telephone_no'] = $value->telephone_no;
                 } else {
                     $address['permanent_address'] = $value->address;
                     $address['permanent_zip_code'] = $value->zip_code;
-                    $address['permanent_telephone_no'] = $value->telephone_no === null ? null : $value->telephone_no;
+                    $address['permanent_telephone_no'] = $value->telephone_no;
                 }
             }
 
@@ -2659,6 +2658,7 @@ class EmployeeProfileController extends Controller
                     'personal_information' => $personal_information_data,
                     'contact' =>  new ContactResource($personal_information->contact),
                     'address' => $address,
+                    'address_update' => AddressResource::collection($personal_information->addresses),
                     'family_background' => new FamilyBackGroundResource($personal_information->familyBackground),
                     'children' => ChildResource::collection($personal_information->children),
                     'education' => EducationalBackgroundResource::collection($personal_information->educationalBackground),
@@ -2714,7 +2714,7 @@ class EmployeeProfileController extends Controller
 
             $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
 
-            if (!Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedPassword)) {
+            if (!Hash::check($cleanData['password'] .Cache::get('salt_value'), $decryptedPassword)) {
                 return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
             }
 
@@ -2756,7 +2756,7 @@ class EmployeeProfileController extends Controller
 
             $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
 
-            if (!Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedPassword)) {
+            if (!Hash::check($cleanData['password'] . Cache::get('salt_value'), $decryptedPassword)) {
                 return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
             }
 
@@ -2791,7 +2791,7 @@ class EmployeeProfileController extends Controller
             // $user = $request->user;
             // $cleanData['password'] = strip_tags($request->input('password'));
             // $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
-            // if (!Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedPassword)) {
+            // if (!Hash::check($cleanData['password'] . Cache::get('salt_value'), $decryptedPassword)) {
             //     return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
             // }
 
@@ -2915,7 +2915,7 @@ class EmployeeProfileController extends Controller
 
             $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
 
-            if (!Hash::check($cleanData['password'] . env("SALT_VALUE"), $decryptedPassword)) {
+            if (!Hash::check($cleanData['password'] . Cache::get('salt_value'), $decryptedPassword)) {
                 return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
             }
 

@@ -20,7 +20,7 @@ return new class extends Migration
             $table->text('password_encrypted')->nullable();
             $table->datetime('password_created_at');
             $table->datetime('password_expiration_at');
-            $table->integer('authorization_pin')->nullable();
+            $table->string('authorization_pin')->nullable();
             $table->datetime('pin_created_at')->nullable();
             $table->integer('biometric_id')->nullable();
             $table->integer('otp')->nullable();
@@ -28,6 +28,7 @@ return new class extends Migration
             $table->datetime('deactivated_at')->nullable();
             $table->string('agency_employee_no')->nullable();
             $table->boolean('allow_time_adjustment')->default(FALSE);
+            $table->boolean('shifting')->default(FALSE);
             $table->boolean('is_2fa')->default(FALSE);
             $table->unsignedBigInteger('employment_type_id');
             $table->foreign('employment_type_id')->references('id')->on('employment_types');

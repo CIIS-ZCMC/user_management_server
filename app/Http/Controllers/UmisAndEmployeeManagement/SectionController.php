@@ -140,7 +140,7 @@ class SectionController extends Controller
 
             $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
 
-            if (!Hash::check($cleanData['password'].env("SALT_VALUE"), $decryptedPassword)) {
+            if (!Hash::check($cleanData['password'].Cache::get('salt_value'), $decryptedPassword)) {
                 return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
             }
 
