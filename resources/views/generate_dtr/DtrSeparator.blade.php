@@ -181,7 +181,7 @@
                                 style="color:gray;font-style:italic;color:#FF6969;">{{ $absentMessage }}</span>
                         @else
                             @if (!$isHoliday)
-                                <span style="font-size:8px;font-weight:bold" style="color:gray">{{ $dayoffmessage }}</span>
+                                <span style="font-size:8px;font-weight:bold">{{ $dayoffmessage }}</span>
                             @endif
                         @endif
                     @endif

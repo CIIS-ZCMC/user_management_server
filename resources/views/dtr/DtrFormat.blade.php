@@ -59,8 +59,8 @@
     <table id="tabledate">
 
         <tr>
-            <th colspan="2" style="background-color: whitesmoke">
-
+            <th colspan="2" style="background-color: whitesmoke;border-bottom: 1px solid rgb(197, 196, 196);">
+                {{ date('F', strtotime($year . '-' . $month . '-1')) }}
             </th>
 
             <th colspan="2" style="border-bottom: 1px solid rgb(197, 196, 196);font-size:15px">AM</th>
