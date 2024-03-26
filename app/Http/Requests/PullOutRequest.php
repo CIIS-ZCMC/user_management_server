@@ -24,7 +24,6 @@ class PullOutRequest extends FormRequest
         return [
             'pull_out_date'             => 'required|date',
             'employee.*.employee_id'    => 'required|integer',
-            'reason'                    => 'required|string',
         ];
     }
 }

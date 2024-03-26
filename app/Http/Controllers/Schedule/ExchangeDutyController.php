@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Schedule;
 
+use App\Http\Resources\TimeShiftResource;
 use App\Models\EmployeeSchedule;
 use App\Models\ExchangeDuty;
 use App\Models\Schedule;
@@ -11,6 +12,7 @@ use App\Http\Resources\ExchangeDutyResource;
 use App\Http\Requests\ExchangeDutyRequest;
 use App\Helpers\Helpers;
 
+use App\Models\TimeShift;
 use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Crypt;
@@ -35,11 +37,14 @@ class ExchangeDutyController extends Controller
             $user = $request->user;
 
             $model = ExchangeDuty::where('requested_employee_id', $user->id)
-                                ->Orwhere('approve_by', $user->id)
-                                ->where('deleted_at', null)
-                                ->get();
+                ->Orwhere('approve_by', $user->id)
+                ->where('deleted_at', null)
+                ->get();
 
-            return response()->json(['data' => ExchangeDutyResource::collection($model)], Response::HTTP_OK);
+            return response()->json([
+                'data' => ExchangeDutyResource::collection($model),
+                'time_shift' => TimeShiftResource::collection(TimeShift::all())
+            ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
@@ -74,14 +79,8 @@ class ExchangeDutyController extends Controller
             $assigned_area = $user->assignedArea->findDetails();
 
             $cleanData = [];
-
             foreach ($request->all() as $key => $value) {
-                if (empty($value)) {
-                    $cleanData[$key] = $value;
-                    continue;
-                }
-
-                if (is_array($value)) {
+                if (empty ($value)) {
                     $cleanData[$key] = $value;
                     continue;
                 }
@@ -95,59 +94,47 @@ class ExchangeDutyController extends Controller
             }
 
             $data = null;
-            $schedule = null;
-            $reliever = null;
-            $date_from = Carbon::parse($cleanData['date_from']);
-            $date_to = Carbon::parse($cleanData['date_to']);
 
-            $find_reliever = EmployeeProfile::where('id', $cleanData['reliever_employee_id'])->first();
+            $employee = EmployeeProfile::where('id', $cleanData['reliever_employee_id'])->first();
+            if ($employee) {
+                $schedule = Schedule::where('time_shift_id', $cleanData['time_shift_id'])
+                    ->where('date', $cleanData['date'])
+                    ->first();
 
-            // Get all date selected
-            $current_date = $date_from->copy();
-            $selected_dates = [];
-            while ($current_date->lte($date_to)) {
-                $selected_dates[] = $current_date->toDateString();
-                $current_date->addDay();
-            }
+                if (!$schedule) {
+                    $isWeekend = (Carbon::parse($cleanData['date']))->isWeekend();
 
-            foreach ($selected_dates as $key => $date) {
-                $find_schedule = Schedule::where('date', $date)->first();
-
-                if (!$find_schedule) {
-                    return response()->json(['message' => 'Schedule[' . $date . '] is not yet registered.'], Response::HTTP_NOT_FOUND);
+                    $schedule = new Schedule;
+                    $schedule->time_shift_id = $cleanData['time_shift_id'];
+                    $schedule->date = $cleanData['date'];
+                    $schedule->is_weekend = $isWeekend ? 1 : 0;
+                    $schedule->save();
                 }
 
-                $reliever_schedule = EmployeeSchedule::where([
-                    ['employee_profile_id', '=', $find_reliever->id],
-                    ['schedule_id', '=', $find_schedule->id]
-                ])->first();
+                $employee_schedule = EmployeeSchedule::where('employee_profile_id', $employee->id)
+                    ->where('schedule_id', $schedule->id)
+                    ->first();
 
-                if ($reliever_schedule) {
-                    $reliever = $reliever_schedule->employee_profile_id;
-                    $schedule = $reliever_schedule->schedule_id;
-                } else {
-                    $reliever = $find_reliever->id;
-                    $schedule = $find_schedule->id;
+                if (!$employee_schedule) {
+                    return response()->json(['message' => 'Employee reliever has no schedule on ' . $cleanData['date'] . '.'], Response::HTTP_NOT_FOUND);
                 }
 
                 $approve_by = Helpers::ExchangeDutyApproval($assigned_area, $user->id);
 
                 $data = new ExchangeDuty;
-                $data->schedule_id = $schedule;
+                $data->schedule_id = $schedule->id;
                 $data->requested_employee_id = $user->id;
-                $data->reliever_employee_id = $reliever;
+                $data->reliever_employee_id = $employee->id;
                 $data->approve_by = $approve_by['approve_by'];
                 $data->reason = $cleanData['reason'];
                 $data->save();
-
-                Helpers::registerExchangeDutyLogs($data->id, $user->id, 'Applied');
             }
 
             Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating.' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json([
                 'data' => new ExchangeDutyResource($data),
-                'logs' => Helpers::registerExchangeDutyLogs($data->id, $user->id, 'Store'),
-                'msg' => 'Exchange Duty requested.'
+                'logs' => Helpers::registerExchangeDutyLogs($data->id, $user->id, 'Applied'),
+                'message' => 'Exchange Duty requested.'
             ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
@@ -188,15 +175,15 @@ class ExchangeDutyController extends Controller
                         EmployeeSchedule::where([
                             ['employee_profile_id', '=', $data->requested_employee_id],
                             ['schedule_id', '=', $data->schedule_id]
-                            ])->update(['employee_profile_id' => $data->reliever_employee_id]);
-                    break;
+                        ])->update(['employee_profile_id' => $data->reliever_employee_id]);
+                        break;
 
                     case 'declined':
                         $status = 'declined';
-                    break;
+                        break;
 
                     default:
-                       return null;
+                        return null;
                 }
             } else if ($request->approval_status === 'declined') {
                 $status = 'declined';

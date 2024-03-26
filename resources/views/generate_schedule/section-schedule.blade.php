@@ -243,37 +243,35 @@
                             @endphp
 
                             @foreach($dates as $date)
-                            <td>
-                                <div class="schedule-container">
-                                    @if ($holiday->where('month_day', date('m-d', strtotime($date)))->count() > 0)
-                                        <span class="schedule-cell">H</span>
-                                    @else
-                                        @if ($data->schedule->where('date', $date)->count() > 0)
-
-                                @php
-                                            $shift = $data->schedule->first()->timeShift;
-                                            $firstIn = strtotime($shift->first_in ?? '');
-                                            $secondOut = strtotime($shift->second_out ?? '');
-                                            $firstOut = strtotime($shift->first_out ?? '');
-            
-                                            $totalHours += ($secondOut != null) ? ($secondOut - $firstIn) / 3600 : ($firstOut - $firstIn) / 3600;
-                                        @endphp      
-
-                                            <span class="schedule-cell">
-                                                {{ date('h', $firstIn) }} <br>
-
-                                                @if ($secondOut != null)
-                                                    {{ date('h', $secondOut) }} <br>
-                                                @else
-                                                    {{ date('h', $firstOut) }} <br>
-                                                @endif
-                                            </span>
+                                <td>
+                                    <div class="schedule-container">
+                                        @if ($holiday->where('month_day', date('m-d', strtotime($date)))->count() > 0)
+                                            <span class="schedule-cell">H</span>
                                         @else
-                                            <span class="schedule-cell"> x </span>
+                                            @php
+                                                $foundShift = false;
+                                            @endphp
+                    
+                                            {{-- Assuming $data->schedule is an array --}}
+                                            @foreach ($data->schedule as $shift)
+                                                @if ($shift['date'] === $date)
+                                                    <span class="schedule-cell">{!! $shift->timeShift->calendarTimeShiftDetails() !!}</span>
+                                                    @php
+                                                        // Calculate total hours
+                                                        $totalHours += $shift->timeShift->total_hours;
+                                                        $foundShift = true;
+                                                    @endphp
+                                                    @break
+                                                @endif
+                                            @endforeach
+                    
+                                            {{-- If no shift found for the date --}}
+                                            @if (!$foundShift)
+                                                <span class="schedule-cell">x</span>
+                                            @endif
                                         @endif
-                                    @endif
-                                </div>
-                            </td>
+                                    </div>
+                                </td>
                             @endforeach
 
                             <td> {{ $totalHours  }} </td>

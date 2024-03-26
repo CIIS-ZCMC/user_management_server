@@ -10,6 +10,7 @@ use App\Models\EmployeeProfile;
 use App\Models\EmployeeSchedule;
 use App\Models\EmployeeScheduleLog;
 use App\Models\ExchangeDutyLog;
+use App\Models\Notifications;
 use App\Models\LeaveApplication;
 use App\Models\OfficialBusiness;
 use App\Models\PullOutLog;
@@ -646,6 +647,24 @@ class Helpers
         if (!$query) {
             return $hexColor;
         }
+    }
+
+    public static function pendingLeaveNotfication($id, $type)
+    {
+        Notifications::create([
+            "description" => "New ".$type." request.",
+            "module_path" => null,
+            "employee_profile_id" => $id
+        ]);
+    }
+
+    public static function notifications($id, $message, $type)
+    {
+        Notifications::create([
+            "description" => $message,
+            "module_path" => null,
+            "employee_profile_id" => $id
+        ]);
     }
 
     public static function hasOverlappingRecords($start, $end, $employeeId)

@@ -435,6 +435,11 @@ class LeaveApplicationController extends Controller
                     $status = 'for recommending approval';
                     $log_status = 'Approved by HRMO';
                     $leave_application->update(['status' => $status]);
+                    Helpers::pendingLeaveNotfication($leave_application->recommending_officer, $leave_application->leaveType->name);
+                    Helpers::notifications(
+                        $leave_application->employee_profile_id, 
+                        "HR has approved your ".$leave_application->leaveType->name." request.", 
+                        $leave_application->leaveType->name);
                     break;
                 case 'for recommending approval':
 
@@ -444,6 +449,11 @@ class LeaveApplicationController extends Controller
                     $status = 'for approving approval';
                     $log_status = 'Approved by Recommending Officer';
                     $leave_application->update(['status' => $status]);
+                    Helpers::pendingLeaveNotfication($leave_application->approving_officer, $leave_application->leaveType->name);
+                    Helpers::notifications(
+                        $leave_application->employee_profile_id, 
+                        $leave_application->recommendingOfficer()->personalInformation->name()." has approved your ".$leave_application->leaveType->name." request.", 
+                        $leave_application->leaveType->name);
                     break;
                 case 'for approving approval':
                     $approving =  Helpers::getRecommendingAndApprovingOfficer($employee_profile->assignedArea->findDetails(), $leave_application->employee_profile_id)['approving_officer'];
@@ -453,6 +463,10 @@ class LeaveApplicationController extends Controller
                     $status = 'approved';
                     $log_status = 'Approved by Approving Officer';
                     $leave_application->update(['status' => $status]);
+                    $from = Carbon::parse($leave_application->date_from)->format('F d, Y');
+                    $to = Carbon::parse($leave_application->date_to)->format('F d, Y');
+                    $message = "Your ".$leave_application->leave_type->name." request with date from ".$from." to ".$to." has been approved.";
+                    Helpers::notifications($leave_application->employee_profile_id, $message, $leave_application->leaveType->name);
                     break;
             }
 
@@ -569,7 +583,8 @@ class LeaveApplicationController extends Controller
                     }
 
                     $leave_application = LeaveApplication::create($cleanData);
-
+                    Helpers::pendingLeaveNotfication($cleanData['hrmo_officer'], $leave_type->name);
+                   
                     if ($request->requirements) {
                         $index = 0;
                         $requirements_name = $request->requirements_name;
@@ -640,7 +655,9 @@ class LeaveApplicationController extends Controller
                         }
 
                         $leave_application = LeaveApplication::create($cleanData);
-
+                        
+                        Helpers::pendingLeaveNotfication($cleanData['hrmo_officer'], $leave_type->name);
+    
                         if ($request->without_pay == 0) {
                             $previous_credit = $employee_credit->total_leave_credits;
 
@@ -755,6 +772,7 @@ class LeaveApplicationController extends Controller
         try {
             $user = $request->user;
             $employee_profile = $user;
+            $declined_by = null;
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
@@ -768,17 +786,29 @@ class LeaveApplicationController extends Controller
             $leave_application_approving = $leave_application->approving_officer;
 
             if ($employee_profile->id === $leave_application_hrmo) {
-                $status = 'declined by hrmo officer';
-            } else if ($employee_profile->id === $leave_application_recommending) {
-                $status = 'declined by recommending officer';
-            } else if ($employee_profile->id === $leave_application_approving) {
-                $status = 'declined by approving officer';
+                $status='declined by hrmo officer';
+                $declined_by = "HR";
+            }
+            else if($employee_profile->id === $leave_application_recommending)
+            {
+                $status='declined by recommending officer';
+                $declined_by = "Recommending officer";
+            }
+            else if($employee_profile->id === $leave_application_approving)
+            {
+                $status='declined by approving officer';
+                $declined_by = "Approving officer";
             }
 
             $leave_application->update([
                 'status' => $status,
                 'remarks' => strip_tags($request->remarks),
             ]);
+            
+            $from = Carbon::parse($leave_application->date_from)->format('F d, Y');
+            $to = Carbon::parse($leave_application->date_to)->format('F d, Y');
+            $message = "Your ".$leave_application->leave_type->name." request with date from ".$from." to ".$to." has been declined by ".$declined_by." .";
+            Helpers::notifications($leave_application->employee_profile_id, $message, $leave_application->leaveType->name);
 
             if (!$leave_type->is_special) {
                 $employee_credit = EmployeeLeaveCredit::where('employee_profile_id', $leave_application->employee_profile_id)

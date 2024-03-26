@@ -2,6 +2,7 @@
     @case('firstin')
         @php
             $isHoliday = false;
+
         @endphp
 
         @foreach ($holidays as $item)
@@ -37,14 +38,34 @@
                         @if (count($empSched) >= 1)
                             {{-- checktime if its pm --}}
                             @if (date('A', strtotime($f1['first_in'])) == 'AM')
+                                @if ($leave_Count || $ot_Count || $ob_Count)
+                                    @if ($leave_Count)
+                                        <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
+                                    @elseif ($ot_Count)
+                                        <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
+                                    @elseif ($ob_Count)
+                                        <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
+                                    @endif
+                                @else
+                                    <span class="fentry">
+                                        {{ date('h:i a', strtotime($f1['first_in'])) }}
+                                    </span>
+                                @endif
+                            @endif
+                        @else
+                            @if ($leave_Count || $ot_Count || $ob_Count)
+                                @if ($leave_Count)
+                                    <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
+                                @elseif ($ot_Count)
+                                    <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
+                                @elseif ($ob_Count)
+                                    <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
+                                @endif
+                            @else
                                 <span class="fentry">
                                     {{ date('h:i a', strtotime($f1['first_in'])) }}
                                 </span>
                             @endif
-                        @else
-                            <span class="fentry">
-                                {{ date('h:i a', strtotime($f1['first_in'])) }}
-                            </span>
                         @endif
 
 
@@ -71,11 +92,26 @@
         @if (date('D', strtotime(date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)))) == 'Sun')
             @if (!$isHoliday)
                 @if ($countin == 0)
-                    @if (count($checkSched) >= 1)
-                        <span style="font-size:8px;font-weight:bold">ABSENT</span>
+
+                    @if ($leave_Count || $ot_Count || $ob_Count)
+                        @if ($leave_Count)
+                            <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
+                        @elseif ($ot_Count)
+                            <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
+                        @elseif ($ob_Count)
+                            <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
+                        @endif
                     @else
-                        <span style="font-size:8px;font-weight:bold">Day-off</span>
+                        @if (count($checkSched) >= 1)
+                            <span style="font-size:8px;font-weight:bold">{{ $absentMessage }}</span>
+                        @else
+                            <span style="font-size:8px;font-weight:bold">{{ $dayoffmessage }}</span>
+                        @endif
                     @endif
+
+
+
+
                 @endif
 
             @endif
@@ -97,23 +133,59 @@
                         @endif
                     @endif
                 @endforeach
+                @php
+                    $checkSched = $schedule->filter(function ($row) use ($year, $month, $i) {
+                        return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) &&
+                            $row->attendance_status == 0;
+                    });
 
+                @endphp
 
                 @if ($count2 >= 1)
-                    @php
-                        $checkSched = $schedule->filter(function ($row) use ($year, $month, $i) {
-                            return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) &&
-                                $row->attendance_status == 0;
-                        });
-
-                    @endphp
-                    @if (count($checkSched) >= 1)
-                        <span style=";font-size:8px;font-weight:bold">ABSENT</span>
+                    @if ($leave_Count || $ot_Count || $ob_Count)
+                        @if ($leave_Count)
+                            <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
+                        @elseif ($ot_Count)
+                            <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
+                        @elseif ($ob_Count)
+                            <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
+                        @endif
                     @else
-                        <span style="font-size:8px;font-weight:bold">Day-off</span>
+                        @if (count($checkSched) >= 1)
+                            <span style=";font-size:8px;font-weight:bold">{{ $absentMessage }}</span>
+                        @else
+                            <span style="font-size:8px;font-weight:bold">{{ $dayoffmessage }}</span>
+                        @endif
                     @endif
                 @else
-                    <span style="font-size:8px;font-weight:bold">Day-off</span>
+                    @if ($leave_Count || $ot_Count || $ob_Count)
+                        @if ($leave_Count)
+                            <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
+                        @elseif ($ot_Count)
+                            <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
+                        @elseif ($ob_Count)
+                            <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
+                        @endif
+                    @else
+                        @if (count($checkSched) >= 1)
+                            <script>
+                                $(document).ready(function() {
+
+                                    $("#entry{{ $i }}1").addClass("Absent");
+                                    $("#entry{{ $i }}2").addClass("Absent");
+                                    $("#entry{{ $i }}3").addClass("Absent");
+                                    $("#entry{{ $i }}4").addClass("Absent");
+                                })
+                            </script>
+                            <span class="timefirstarrival"
+                                style="color:gray;font-style:italic;color:#FF6969;">{{ $absentMessage }}</span>
+                        @else
+                            @if (!$isHoliday)
+                                <span style="font-size:8px;font-weight:bold" style="color:gray">{{ $dayoffmessage }}</span>
+                            @endif
+                        @endif
+                    @endif
+
                 @endif
             @else
             @endif
@@ -135,13 +207,29 @@
                             });
 
                         @endphp
-                        @if (count($checkSched) >= 1)
-                            <span style="font-size:8px;font-weight:bold">ABSENT</span>
-                        @else
-                            @if (count($presentSched) == 0)
-                                <span style="font-size:8px;font-weight:bold">Day-off</span>
+
+                        @if ($leave_Count || $ot_Count || $ob_Count)
+                            @if ($leave_Count)
+                                <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
+                            @elseif ($ot_Count)
+                                <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
+                            @elseif ($ob_Count)
+                                <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
                             @endif
+                        @else
+                            @if (count($checkSched) >= 1)
+                                <span style="font-size:8px;font-weight:bold">{{ $absentMessage }} </span>
+                            @else
+                                @if (count($presentSched) == 0)
+                                    <span style="font-size:8px;font-weight:bold">{{ $dayoffmessage }}</span>
+                                @endif
+                            @endif
+
                         @endif
+
+
+
+
                     @endif
 
                 @endif
@@ -151,7 +239,7 @@
         @endif
         @if ($isHoliday)
             @if (!$countin)
-                <span style="font-size:8px;font-weight:bold">HOLIDAY</span>
+                <span style="font-size:8px;font-weight:bold">{{ $holidayMessage }}</span>
             @endif
         @endif
     @break
@@ -186,18 +274,20 @@
 
                 @if ($biometric_ID == $f2['biometric_ID'])
                     @if ($f2['first_out'])
-                        @if (count($empSched) >= 1)
-                            @if (date('d', strtotime($f2['first_out'])) == $fo)
-                                @if (date('A', strtotime($f2['first_out'])) == 'AM')
-                                    {{ date('h:i a', strtotime($f2['first_out'])) }}
+                        @if (!$leave_Count && !$ot_Count && !$ob_Count)
+                            @if (count($empSched) >= 1)
+                                @if (date('d', strtotime($f2['first_out'])) == $fo)
+                                    @if (date('A', strtotime($f2['first_out'])) == 'AM')
+                                        {{ date('h:i a', strtotime($f2['first_out'])) }}
+                                    @endif
                                 @endif
-                            @endif
-                        @else
-                            @if (date('d', strtotime($f2['dtr_date'])) == $fo)
-                                @if (date('A', strtotime($f2['first_out'])) == 'PM')
-                                    {{ date('h:i a', strtotime($f2['first_out'])) }}
-                                @else
-                                    {{ date('h:i a', strtotime($f2['first_out'])) }}
+                            @else
+                                @if (date('d', strtotime($f2['dtr_date'])) == $fo)
+                                    @if (date('A', strtotime($f2['first_out'])) == 'PM')
+                                        {{ date('h:i a', strtotime($f2['first_out'])) }}
+                                    @else
+                                        {{ date('h:i a', strtotime($f2['first_out'])) }}
+                                    @endif
                                 @endif
                             @endif
                         @endif
@@ -237,32 +327,33 @@
 
                 @if ($biometric_ID == $f3['biometric_ID'])
                     @if (date('d', strtotime($f3['dtr_date'])) == $i)
-                        @if (count($empSched) >= 1)
-                            @php
-                                $firsti = array_filter($firstin, function ($res) use ($i) {
-                                    return date('d', strtotime($res['dtr_date'])) == $i &&
-                                        date('A', strtotime($res['first_in'])) == 'PM';
-                                });
+                        @if (!$leave_Count && !$ot_Count && !$ob_Count)
+                            @if (count($empSched) >= 1)
+                                @php
+                                    $firsti = array_filter($firstin, function ($res) use ($i) {
+                                        return date('d', strtotime($res['dtr_date'])) == $i &&
+                                            date('A', strtotime($res['first_in'])) == 'PM';
+                                    });
 
-                            @endphp
+                                @endphp
 
 
-                            @if (count($firsti) >= 1)
-                                {{ date('h:i a', strtotime(array_values($firsti)[count($firsti) - 1]['first_in'])) }}
-                            @else
-                                @foreach ($firstin as $key => $f1)
-                                    @if (date('d', strtotime($f1['dtr_date'])) == $i)
-                                        @if (date('A', strtotime($f1['first_in'])) == 'PM')
-                                            {{ date('h:i a', strtotime($f1['first_in'])) }}
+                                @if (count($firsti) >= 1)
+                                    {{ date('h:i a', strtotime(array_values($firsti)[count($firsti) - 1]['first_in'])) }}
+                                @else
+                                    @foreach ($firstin as $key => $f1)
+                                        @if (date('d', strtotime($f1['dtr_date'])) == $i)
+                                            @if (date('A', strtotime($f1['first_in'])) == 'PM')
+                                                {{ date('h:i a', strtotime($f1['first_in'])) }}
+                                            @endif
                                         @endif
-                                    @endif
-                                @endforeach
-                            @endif
-                        @else
-                            @if ($f3['second_in'])
-                                {{ date('h:i a', strtotime($f3['second_in'])) }}
+                                    @endforeach
+                                @endif
                             @else
-                                {{-- @foreach ($firstin as $f1)
+                                @if ($f3['second_in'])
+                                    {{ date('h:i a', strtotime($f3['second_in'])) }}
+                                @else
+                                    {{-- @foreach ($firstin as $f1)
                                     @if (date('A', strtotime($f1['first_in'])) == 'PM')
                                         @if ($biometric_ID == $f1['biometric_ID'])
                                             @if (date('d', strtotime($f1['dtr_date'])) == $i)
@@ -271,6 +362,7 @@
                                         @endif
                                     @endif
                                 @endforeach --}}
+                                @endif
                             @endif
                         @endif
                     @endif
@@ -305,34 +397,36 @@
 
 
                 @if ($biometric_ID === $f4['biometric_ID'])
-                    @if (count($empSched) >= 1)
-                        @php
-                            $firsto = array_filter($firstout, function ($res) use ($i, $biometric_ID) {
-                                return date('d', strtotime($res['first_out'])) == $i &&
-                                    date('A', strtotime($res['first_out'])) === 'PM' &&
-                                    $res['biometric_ID'] == $biometric_ID;
-                            });
+                    @if (!$leave_Count && !$ot_Count && !$ob_Count)
+                        @if (count($empSched) >= 1)
+                            @php
+                                $firsto = array_filter($firstout, function ($res) use ($i, $biometric_ID) {
+                                    return date('d', strtotime($res['first_out'])) == $i &&
+                                        date('A', strtotime($res['first_out'])) === 'PM' &&
+                                        $res['biometric_ID'] == $biometric_ID;
+                                });
 
-                        @endphp
+                            @endphp
 
 
-                        @if (count($firsto) >= 1)
-                            {{ date('h:i a', strtotime(array_values($firsto)[count($firsto) - 1]['first_out'])) }}
-                        @else
-                            @foreach ($firstout as $f2)
-                                @if (date('d', strtotime($f2['first_out'])) == $i)
-                                    @if ($biometric_ID === $f2['biometric_ID'])
-                                        @if (date('A', strtotime($f2['first_out'])) === 'PM')
-                                            {{ date('h:i a', strtotime($f2['first_out'])) }}
+                            @if (count($firsto) >= 1)
+                                {{ date('h:i a', strtotime(array_values($firsto)[count($firsto) - 1]['first_out'])) }}
+                            @else
+                                @foreach ($firstout as $f2)
+                                    @if (date('d', strtotime($f2['first_out'])) == $i)
+                                        @if ($biometric_ID === $f2['biometric_ID'])
+                                            @if (date('A', strtotime($f2['first_out'])) === 'PM')
+                                                {{ date('h:i a', strtotime($f2['first_out'])) }}
+                                            @endif
                                         @endif
                                     @endif
+                                @endforeach
+                            @endif
+                        @else
+                            @if ($f4['second_out'])
+                                @if (date('d', strtotime($f4['dtr_date'])) == $i)
+                                    {{ date('h:i a', strtotime($f4['second_out'])) }}
                                 @endif
-                            @endforeach
-                        @endif
-                    @else
-                        @if ($f4['second_out'])
-                            @if (date('d', strtotime($f4['dtr_date'])) == $i)
-                                {{ date('h:i a', strtotime($f4['second_out'])) }}
                             @endif
                         @endif
                     @endif
@@ -342,82 +436,86 @@
     @break
 
     @case('undertime_hours')
-        <table style="border:none">
-            <tr style="border:none">
-                @php
-                    $hours = 0;
-                    $minutes = '';
-                    $hrs = 0;
-                @endphp
-                @foreach ($undertime as $ut)
-                    @if ($biometric_ID == $ut['biometric_ID'])
-                        @if (date('d', strtotime($ut['created'])) == $i)
-                            @php
-                                $uttime = $ut['undertime'];
-                                $hours = floor($uttime / 60);
-                                $minutes = $uttime % 60;
+        @if (!$leave_Count && !$ot_Count && !$ob_Count)
+            <table style="border:none">
+                <tr style="border:none">
+                    @php
+                        $hours = 0;
+                        $minutes = '';
+                        $hrs = 0;
+                    @endphp
+                    @foreach ($undertime as $ut)
+                        @if ($biometric_ID == $ut['biometric_ID'])
+                            @if (date('d', strtotime($ut['created'])) == $i)
+                                @php
+                                    $uttime = $ut['undertime'];
+                                    $hours = floor($uttime / 60);
+                                    $minutes = $uttime % 60;
 
-                                if ($hours >= 1) {
-                                    $hours = $hours;
-                                } else {
-                                    $hours = 0;
-                                }
+                                    if ($hours >= 1) {
+                                        $hours = $hours;
+                                    } else {
+                                        $hours = 0;
+                                    }
 
-                                if ($minutes >= 1) {
-                                    $minutes = $minutes;
-                                } else {
-                                    $minutes = '';
-                                }
-                                $hrs += $hours;
-                            @endphp
+                                    if ($minutes >= 1) {
+                                        $minutes = $minutes;
+                                    } else {
+                                        $minutes = '';
+                                    }
+                                    $hrs += $hours;
+                                @endphp
+                            @endif
                         @endif
+                    @endforeach
+                    @if ($hrs >= 1)
+                        <span style="color: black">
+                            {{ $hrs }}
+                        </span>
                     @endif
-                @endforeach
-                @if ($hrs >= 1)
-                    <span style="color: black">
-                        {{ $hrs }}
-                    </span>
-                @endif
-            </tr>
-        </table>
+                </tr>
+            </table>
+        @endif
     @break
 
     @case('undertime_minutes')
-        @php
-            $hours = '';
-            $minutes = 0;
+        @if (!$leave_Count && !$ot_Count && !$ob_Count)
+            @php
+                $hours = '';
+                $minutes = 0;
 
-            $min = 0;
-        @endphp
-        @foreach ($undertime as $ut)
-            @if ($biometric_ID == $ut['biometric_ID'])
-                @if (date('d', strtotime($ut['created'])) == $i)
-                    @php
-                        $uttime = $ut['undertime'];
-                        $hours = floor($uttime / 60);
-                        $minutes = $uttime % 60;
+                $min = 0;
+            @endphp
+            @foreach ($undertime as $ut)
+                @if ($biometric_ID == $ut['biometric_ID'])
+                    @if (date('d', strtotime($ut['created'])) == $i)
+                        @php
+                            $uttime = $ut['undertime'];
+                            $hours = floor($uttime / 60);
+                            $minutes = $uttime % 60;
 
-                        if ($hours >= 1) {
-                            $hours = $hours;
-                        } else {
-                            $hours = '';
-                        }
+                            if ($hours >= 1) {
+                                $hours = $hours;
+                            } else {
+                                $hours = '';
+                            }
 
-                        if ($minutes >= 1) {
-                            $minutes = $minutes;
-                        } else {
-                            $minutes = 0;
-                        }
-                        $min += $minutes;
+                            if ($minutes >= 1) {
+                                $minutes = $minutes;
+                            } else {
+                                $minutes = 0;
+                            }
+                            $min += $minutes;
 
-                    @endphp
+                        @endphp
+                    @endif
                 @endif
+            @endforeach
+            @if ($min >= 1)
+                <span style="color: black !important;font-weight:bold">
+                    {{ $min }}
+                </span>
             @endif
-        @endforeach
-        @if ($min >= 1)
-            <span style="color: black !important;font-weight:bold">
-                {{ $min }}
-            </span>
         @endif
     @break
 
