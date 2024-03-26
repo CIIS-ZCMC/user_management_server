@@ -16,10 +16,27 @@ class MonetizationApplication extends Model
         'attachment',
         'credit_value',
         'date',
-        
+        'recommending_officer',
+        'approving_officer'
     ];
+
     public function logs()
     {
-        return $this->hasMany(MonetizationApplicationLog::class);
+        return $this->hasMany(MoneApplicationLog::class);
+    }
+
+    public function owner()
+    {
+        return $this->belongsTo(EmployeeProfile::class);
+    }
+
+    public function recommending()
+    {
+        return $this->belongsTo(EmployeeProfile::class);
+    }
+
+    public function approving()
+    {
+        return $this->belongsTo(EmployeeProfile::class);
     }
 }

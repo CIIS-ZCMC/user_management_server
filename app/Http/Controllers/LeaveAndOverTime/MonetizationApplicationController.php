@@ -3,11 +3,17 @@
 namespace App\Http\Controllers\LeaveAndOverTime;
 
 use App\Helpers\Helpers;
+use App\Http\Requests\AuthPinApprovalRequest;
+use App\Http\Resources\MonetizationApplicationResource;
+use App\Models\Division;
+use App\Models\EmployeeLeaveCredit;
+use App\Models\LeaveType;
 use App\Models\MonetizationApplication;
 use App\Http\Controllers\Controller;
 use App\Models\EmployeeProfile;
 use App\Models\LeaveType as ModelsLeaveType;
 use App\Models\MoneApplicationLog;
+use App\Models\Section;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -20,12 +26,13 @@ class MonetizationApplicationController extends Controller
      */
     public function index()
     {
-        try{ 
-            $mone_applications=[];
-            
-            $mone_applications = MonetizationApplication::with(['logs'])->get();
+        try{
+            $mone_applications = MonetizationApplication::all();
           
-            return response()->json(['data' => $mone_applications], Response::HTTP_OK);
+            return response()->json([
+                'data' => MonetizationApplicationResource::collection($mone_applications),
+                'message' => "Monetization Application list."
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -125,70 +132,120 @@ class MonetizationApplicationController extends Controller
         }
       
     }
+
+    public function approvedApplication($id, Request $request)
+    {
+        try{
+            $monetization_application = MonetizationApplication::find($id);
+
+            if(!$monetization_application){
+                return response()->json(['message' => "NO application found record."], Response::HTTP_NOT_FOUND);
+            }
+
+            if($monetization_application->status === 'Applied'){
+                $employee_profile = $request->user;
+
+                if($employee_profile->id !== $monetization_application->recommending->id){
+                    return response()->json(['message' => "Must be approved by the recommending officer."], Response::HTTP_FORBIDDEN);
+                }
+
+                $process_name = "Approved by recommending officer";
+                $monetization_application->update(['status' => 'for approving officer']);
+                $this->storeMonetizationLog($monetization_application->id,$process_name,$employee_profile->id);
+            }
+
+            if($monetization_application->status === 'Approved by recommending officer'){
+                $employee_profile = $request->user;
+
+                if($employee_profile->id !== $monetization_application->approving->id){
+                    return response()->json(['message' => "Must be approved by the recommending officer."], Response::HTTP_FORBIDDEN);
+                }
+
+                $process_name = "Approved by approving officer";
+                $monetization_application->update(['status' => 'approved']);
+                $this->storeMonetizationLog($monetization_application->id,$process_name,$employee_profile->id);
+            }
+            
+            return response()->json([
+                'data' => new MonetizationApplicationResource($monetization_application),
+                'message' => "You're request has been filed."
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, 'approvedApplication', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
     {
         try{
-            $leave_type=ModelsLeaveType::where('name','Vacation Leave')->first();
-            $user_id = Auth::user()->id;
-            $user = EmployeeProfile::where('id','=',$user_id)->first();
-            $mone_application = new MonetizationApplication();
-            $mone_application->employee_profile_id = $user->id;
-            $mone_application->leave_type_id = $leave_type->id;
-            $mone_application->credit_value = $request->credit_value;
-            $mone_application->status = "for-approval-supervisor";
-            $mone_application->reason = "for-approval-supervisor";
-            $mone_application->date = date('Y-m-d');
-            $mone_application->time =  date('H:i:s');
-            if ($request->hasFile('attachment')) {
-                $imagePath = $request->file('attachment')->store('images', 'public');
-                $mone_application->attachment = $imagePath;
-            }
+            $employee_profile = $request->user;
+            $leave_type_code = strip_tags($request->code);
             
-        
-            $mone_application->save();
+            $leave_type = LeaveType::where('code', $leave_type_code)->first();
+            $credit = EmployeeLeaveCredit::where('leave_type_id', $leave_type->id)->first();
+
+            if($credit->total_leave_credits < 15){
+                return response()->json(['message' => "Insufficient vacation leave credit to file a monitization."], Response::HTTP_BAD_REQUEST);
+            }
+
+            $recommending_officer = Section::where('code', 'HOPPS')->first();
+            $approvince_officer = Division::where('code', 'OMCC')->first();
+
+            $cleanData = [];
+            $cleanData['employee_profile_id'] = $employee_profile->id;
+            $cleanData['leave_type_id'] = $leave_type->id;
+            $cleanData['reason'] = strip_tags($request->reason);
+            $cleanData['credit_value'] = strip_tags($request->credit_value);
+            $cleanData['date'] = date('Y-m-d');
+            $cleanData['time'] = date('H:i:s');
+            $cleanData['recommending_officer'] = $recommending_officer->chief_employee_profile_id;
+            $cleanData['approving_officer'] = $approvince_officer->chief_employee_profile_id;
+            
+            try {
+                $fileName = Helpers::checkSaveFile($request->attachment, 'monetization/files');
+                if (is_string($fileName)) {
+                    $cleanData['attachment'] = $request->attachment === null  || $request->attachment === 'null' ? null : $fileName;
+                }
+
+                if (is_array($fileName)) {
+                    $in_valid_file = true;
+                    $cleanData['attachment'] = null;
+                }
+            } catch (\Throwable $th) {}
+
+            $new_monitization = MonetizationApplication::create($cleanData);
            
             $process_name="Applied";
-            $mone_logs = $this->storeMonetizationLog($mone_application->id,$process_name,$user->id);
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            $this->storeMonetizationLog($new_monitization->id,$process_name,$employee_profile->id);
+
+            return response()->json([
+                'data' => new MonetizationApplicationResource($new_monitization),
+                'message' => "You're request has been filed."
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
-    public function declineMoneApplication(Request $request)
+    public function declineMoneApplication($id, Request $request)
     {
         try {
-                    $mone_application_id = $request->monetization_application_id;
-                    $mone_applications = MonetizationApplication::where('id','=', $mone_application_id)
-                                                            ->first();
-                if($mone_applications)
-                {
-                        $user_id = Auth::user()->id;     
-                        $user = EmployeeProfile::where('id','=',$user_id)->first();
-                        $user_password=$user->password;
-                        $password=$request->password;
-                        if($user_password==$password)
-                        {
-                            if($user_id){
-                                $mone_application_log = new MoneApplicationLog();
-                                $mone_application_log->action = 'declined';
-                                $mone_application_log->mone_application_id = $mone_application_id;
-                                $mone_application_log->date = date('Y-m-d');
-                                $mone_application_log->action_by = $user_id;
-                                $mone_application_log->save();
+            $employee_profile = $request->user;
+            $mone_application = MonetizationApplication::find($id);
 
-                                $mone_application = MonetizationApplication::findOrFail($mone_application_id);
-                                $mone_application->status = 'declined';
-                                $mone_application->update();
-                                return response(['message' => 'Application has been sucessfully declined', 'data' => $mone_application], Response::HTTP_CREATED);  
-            
-                            }
-                         }
-                }
+            if(!$mone_application){
+                return response()->json(['message' => "No monetization application found."], Response::HTTP_NOT_FOUND);
+            }
+
+            $mone_application->update(['status' => 'declined']);
+            $this->storeMonetizationLog($id, 'declined', $employee_profile->id);
+
+            return response(['message' => 'Application has been sucessfully declined', 'data' => $mone_application], Response::HTTP_CREATED);  
         } catch (\Exception $e) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'declineMoneApplication', $e->getMessage());
             return response()->json(['message' => $e->getMessage(),  'error'=>true], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -239,36 +296,51 @@ class MonetizationApplicationController extends Controller
         }
     }
 
-    public function cancelmoneApplication(Request $request)
+    public function cancelmoneApplication($id, AuthPinApprovalRequest $request)
     {
         try {
-                    $mone_application_id = $request->mone_application_id;
-                    $mone_applications = MonetizationApplication::where('id','=', $mone_application_id)
-                                                            ->first();
-                if($mone_applications)
-                {
-                        $user_id = Auth::user()->id;     
-                        $user = EmployeeProfile::where('id','=',$user_id)->first();
-                        $user_password=$user->password;
-                        $password=$request->password;
-                        if($user_password==$password)
-                        {
-                            if($user_id){
-                                $mone_application_log = new MoneApplicationLog();
-                                $mone_application_log->action = 'cancelled';
-                                $mone_application_log->mone_application_id = $mone_application_id;
-                                $mone_application_log->date = date('Y-m-d');
-                                $mone_application_log->action_by = $user_id;
-                                $mone_application_log->save();
+            $employee_profile = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
 
-                                $mone_application = MonetizationApplication::findOrFail($mone_application_id);
-                                $mone_application->status = 'cancelled';
-                                $mone_application->update();
-                                return response(['message' => 'Application has been sucessfully cancelled', 'data' => $mone_application], Response::HTTP_CREATED);  
+            if ($employee_profile['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+            }
+
+            $mone_application = MonetizationApplication::find($id);
+
+            $mone_application->update(['status' => 'cancelled']);
+
+            $this->storeMonetizationLog($id, 'cancelled', $employee_profile->id);
+
             
-                            }
-                         }
-                }
+            return response([
+                'data' => $mone_application,
+                'message' => 'Application has been sucessfully cancelled'
+            ], Response::HTTP_CREATED);  
+        } catch (\Exception $e) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'cancelmoneApplication', $e->getMessage());
+            return response()->json(['message' => $e->getMessage(),  'error'=>true], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function destroy($id, AuthPinApprovalRequest $request)
+    {
+        try {
+            $employee_profile = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
+
+            if ($employee_profile['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+            }
+
+            $mone_application = MonetizationApplication::find($id);
+            MoneApplicationLog::where(['monetization_application_id', $mone_application->id])->delete();
+            $mone_application->delete();
+
+            
+            return response([
+                'message' => 'Application has been sucessfully deleted.'
+            ], Response::HTTP_CREATED);  
         } catch (\Exception $e) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'cancelmoneApplication', $e->getMessage());
             return response()->json(['message' => $e->getMessage(),  'error'=>true], Response::HTTP_INTERNAL_SERVER_ERROR);
