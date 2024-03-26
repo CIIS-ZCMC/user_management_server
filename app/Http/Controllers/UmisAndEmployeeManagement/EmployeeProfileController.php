@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
+use App\Models\OfficerInChargeTrail;
 use Carbon\Carbon;
 
 use App\Models\Role;
@@ -2874,7 +2875,118 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+    
+    public function revokeOIC(AuthPinApprovalRequest $request)
+    {
+        try {
+            $employee_profile = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
 
+            if ($employee_profile['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+            }
+
+            $position = $employee_profile->position();
+
+            switch($position['position']){
+                case "Medical Center Chief":
+                    $division = Division::where('code', 'OMCC')
+                        ->where('chief_employee_profile_id', $employee_profile->id)
+                        ->first();
+
+                    if(!$division) return response()->json(['message' => "Invalid request."], Response::HTTP_FORBIDDEN);
+                    $oic = $division->oic_employee_profile_id;
+
+                    $this->trailOICandResetAreaOICRecord($oic, $division);
+                    $system_role = SystemRole::where('code', 'OMCC-01')->first();
+                    $this->revokeOICRights($oic, $system_role->id);
+                    break;
+                case "Chief Nurse" || "Division Head":
+                    $division = Division::where('chief_employee_profile_id', $employee_profile->id)->first();
+
+                    if(!$division) return response()->json(['message' => "Invalid request."], Response::HTTP_FORBIDDEN);
+                    $oic = $division->oic_employee_profile_id;
+
+                    $this->trailOICandResetAreaOICRecord($oic, $division);
+                    $system_role = SystemRole::where('code', 'DIV-HEAD-03')->first();
+                    $this->revokeOICRights($oic, $system_role->id);
+                    break;
+                case "Nurse Manager" || "Department Head":
+                    $department = Department::where('head_employee_profile_id', $employee_profile->id)->first();
+
+                    if(!$department) return response()->json(['message' => "Invalid request."], Response::HTTP_FORBIDDEN);
+                    $oic = $department->oic_employee_profile_id;
+
+                    $this->trailOICandResetAreaOICRecord($oic, $department);
+                    $system_role = SystemRole::where('code', 'DEPT-HEAD-04')->first();
+                    $this->revokeOICRights($oic, $system_role->id);
+                    break;
+                case "Supervisor":
+                    $supervisor = Section::where('supervisor_employee_profile_id', $employee_profile->id)->first();
+
+                    if(!$supervisor) return response()->json(['message' => "Invalid request."], Response::HTTP_FORBIDDEN);
+                    $oic = $supervisor->oic_employee_profile_id;
+
+                    $this->trailOICandResetAreaOICRecord($oic, $supervisor);
+                    $system_role = SystemRole::where('code', 'SECTION-HEAD-05')->first();
+                    $this->revokeOICRights($oic, $system_role->id);
+                    break;
+                case "Unit Head":
+                    $unit = Unit::where('head_employee_profile_id', $employee_profile->id)->first();
+
+                    if(!$unit) return response()->json(['message' => "Invalid request."], Response::HTTP_FORBIDDEN);
+                    $oic = $unit->oic_employee_profile_id;
+
+                    $this->trailOICandResetAreaOICRecord($oic, $unit);
+                    $system_role = SystemRole::where('code', 'UNIT-HEAD-06')->first();
+                    $this->revokeOICRights($oic, $system_role->id);
+                    break;
+                default:
+                    return response()->json(['message' => "Invalid."], Response::HTTP_FORBIDDEN);
+            }
+
+            Helpers::registerSystemLogs($request, null, true, 'Success in deleting a ' . $this->SINGULAR_MODULE_NAME . '.');
+
+            return response()->json(['message' => "OIC rights successfully revoke."], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'revokeOIC', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private function trailOICandResetAreaOICRecord($oic, $area)
+    {
+        /**
+         * Transfer OIC to trail
+         */
+        OfficerInChargeTrail::create([
+            'employee_profile_id' => $oic,
+            'division_id' => $area->id,
+            'attachment_url' => $area->oic_attachment_url,
+            'started_at' => $area->oic_effective_at,
+            'ended_at' => $area->oic_end_at
+        ]);
+
+        /**
+         * Reset OIC record.
+         */
+        $area->update([
+            'oic_employee_profile_id' => null,
+            'oic_attachment_url' => null,
+            'oic_effective_at' => null,
+            'oic_end_at' => null
+        ]);
+    }
+
+    /**
+     * Revoke OIC Special access rights for chief.
+     */
+    private function revokeOICRights($oic, $system_role_id)
+    {
+        $special_right = SpecialAccessRole::where('employee_profile_id', $oic)->where('system_role_id', $system_role_id)->first();
+        $special_right->delete();
+    }
+    
     public function revokeRights($id, $access_right_id, AuthPinApprovalRequest $request)
     {
         try {
