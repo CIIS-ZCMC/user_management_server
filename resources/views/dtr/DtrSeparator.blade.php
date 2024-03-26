@@ -136,15 +136,15 @@
                     @endif
                 @endforeach
                 <span class="fentry">
+                    @php
+                        $checkSched = $schedule->filter(function ($row) use ($year, $month, $i) {
+                            return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) &&
+                                $row->attendance_status == 0;
+                        });
 
+                    @endphp
                     @if ($count2 >= 1)
-                        @php
-                            $checkSched = $schedule->filter(function ($row) use ($year, $month, $i) {
-                                return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) &&
-                                    $row->attendance_status == 0;
-                            });
 
-                        @endphp
                         @if (count($checkSched) >= 1)
 
                             @if ($leave_Count || $ot_Count || $ob_Count)
@@ -171,7 +171,31 @@
                             <span class="timefirstarrival" style="color:gray">Day-off </span>
                         @endif
                     @else
-                        <span class="timefirstarrival" style="color:gray">Day-off</span>
+                        @if ($leave_Count || $ot_Count || $ob_Count)
+                            @if ($leave_Count)
+                                <span class="timefirstarrival">{{ $leavemessage }}</span>
+                            @elseif ($ot_Count)
+                                <span class="timefirstarrival">{{ $officialTime }}</span>
+                            @elseif ($ob_Count)
+                                <span class="timefirstarrival">{{ $officialBusinessMessage }}</span>
+                            @endif
+                        @else
+                            @if (count($checkSched) >= 1)
+                                <script>
+                                    $(document).ready(function() {
+
+                                        $("#entry{{ $i }}1").addClass("Absent");
+                                        $("#entry{{ $i }}2").addClass("Absent");
+                                        $("#entry{{ $i }}3").addClass("Absent");
+                                        $("#entry{{ $i }}4").addClass("Absent");
+                                    })
+                                </script>
+                                <span class="timefirstarrival" style="color:gray;font-style:italic;color:#FF6969;">ABSENT</span>
+                            @else
+                                <span class="timefirstarrival" style="color:gray">Day-off</span>
+                            @endif
+                        @endif
+
                     @endif
                 </span>
             @endif
@@ -477,8 +501,92 @@
         </table>
     @break
 
+    @case('wsched')
+        @php
+
+            $empSched = $schedule->filter(function ($sched) use ($year, $month, $i) {
+                return date('Y-m-d', strtotime($sched->schedule)) ==
+                    date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
+            });
+        @endphp
+        @if (count($empSched) >= 1)
+            <span style="font-size: 11px;color:gray">
+                @if (!$empSched->first()->second_in && !$empSched->first()->second_out)
+                    {{ date('G', strtotime($empSched->first()->first_in)) }} -
+                    {{ date('G', strtotime($empSched->first()->first_out)) }}
+                @else
+                    {{ date('G', strtotime($empSched->first()->first_in)) }} -
+                    {{ date('G', strtotime($empSched->first()->first_out)) }} |
+                    {{ date('G', strtotime($empSched->first()->second_in)) }} -
+                    {{ date('G', strtotime($empSched->first()->second_out)) }}
+                @endif
+
+            </span>
+            <script>
+                $("#wsched{{ $i }}").addClass("wsched");
+            </script>
+        @else
+        @endif
+    @break
+
     @case('remarks')
         <span style="font-size:13px;color:gray">
+
+            @php
+
+                $empSched = $schedule->filter(function ($sched) use ($year, $month, $i) {
+                    return date('Y-m-d', strtotime($sched->schedule)) ==
+                        date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
+                });
+                /**
+                 * Display only if theres schedule
+                 *
+                 */
+
+                if ($leave_Count) {
+                    $leave = array_values(
+                        array_filter($leaveapp, function ($res) use ($year, $month, $i) {
+                            return array_filter($res['dates_covered'], function ($row) use ($year, $month, $i) {
+                                $dateToCompare = date('Y-m-d', strtotime($row));
+                                $dateToMatch = date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
+                                return $dateToCompare === $dateToMatch;
+                            });
+                        }),
+                    );
+
+                    echo "{$leave[0]['city']}, {$leave[0]['country']} ";
+                }
+                if (count($empSched) >= 1) {
+                    if ($ot_Count) {
+                        $officialtime = array_values(
+                            array_filter($otApp, function ($res) use ($year, $month, $i) {
+                                return array_filter($res['dates_covered'], function ($row) use ($year, $month, $i) {
+                                    $dateToCompare = date('Y-m-d', strtotime($row));
+                                    $dateToMatch = date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
+                                    return $dateToCompare === $dateToMatch;
+                                });
+                            }),
+                        );
+                        echo "{$officialtime[0]['purpose']} ";
+                    }
+
+                    if ($ob_Count) {
+                        $officialbusiness = array_values(
+                            array_filter($obApp, function ($res) use ($year, $month, $i) {
+                                return array_filter($res['dates_covered'], function ($row) use ($year, $month, $i) {
+                                    $dateToCompare = date('Y-m-d', strtotime($row));
+                                    $dateToMatch = date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
+                                    return $dateToCompare === $dateToMatch;
+                                });
+                            }),
+                        );
+                        echo "{$officialbusiness[0]['purpose']} ";
+                    }
+                }
+
+            @endphp
+
+
             @foreach ($holidays as $item)
                 @if ($item->month_day === sprintf('%02d-%02d', $month, $i))
                     @php

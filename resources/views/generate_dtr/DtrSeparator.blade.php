@@ -132,16 +132,16 @@
                         @endif
                     @endif
                 @endforeach
+                @php
+                    $checkSched = $schedule->filter(function ($row) use ($year, $month, $i) {
+                        return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) &&
+                            $row->attendance_status == 0;
+                    });
 
+                @endphp
 
                 @if ($count2 >= 1)
-                    @php
-                        $checkSched = $schedule->filter(function ($row) use ($year, $month, $i) {
-                            return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) &&
-                                $row->attendance_status == 0;
-                        });
 
-                    @endphp
                     @if (count($checkSched) >= 1)
 
 
@@ -160,7 +160,31 @@
                         <span style="font-size:8px;font-weight:bold">{{ $dayoffmessage }}</span>
                     @endif
                 @else
-                    <span style="font-size:8px;font-weight:bold">{{ $dayoffmessage }}</span>
+                    @if ($leave_Count || $ot_Count || $ob_Count)
+                        @if ($leave_Count)
+                            <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
+                        @elseif ($ot_Count)
+                            <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
+                        @elseif ($ob_Count)
+                            <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
+                        @endif
+                    @else
+                        @if (count($checkSched) >= 1)
+                            <script>
+                                $(document).ready(function() {
+
+                                    $("#entry{{ $i }}1").addClass("Absent");
+                                    $("#entry{{ $i }}2").addClass("Absent");
+                                    $("#entry{{ $i }}3").addClass("Absent");
+                                    $("#entry{{ $i }}4").addClass("Absent");
+                                })
+                            </script>
+                            <span class="timefirstarrival" style="color:gray;font-style:italic;color:#FF6969;">ABSENT</span>
+                        @else
+                            <span style="font-size:8px;font-weight:bold" style="color:gray">Day-off</span>
+                        @endif
+                    @endif
+
                 @endif
             @else
             @endif

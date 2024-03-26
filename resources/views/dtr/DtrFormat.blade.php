@@ -98,6 +98,10 @@
                     </tr>
                 </table>
             </th>
+            <th
+                style="background-color: whitesmoke; border-right: 1px solid rgb(184, 184, 184);border-left: 1px solid rgb(184, 184, 184)">
+                Schedule
+            </th>
             <th style="background-color: whitesmoke">
                 Remarks
             </th>
@@ -124,6 +128,7 @@
 
                     //Check LeaveApplication
                     $filteredleaveDates = [];
+
                     foreach ($leaveapp as $row) {
                         foreach ($row['dates_covered'] as $date) {
                             $filteredleaveDates[] = strtotime($date);
