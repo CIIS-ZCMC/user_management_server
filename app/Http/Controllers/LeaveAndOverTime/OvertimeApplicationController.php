@@ -27,6 +27,7 @@ use Illuminate\Support\Facades\Hash;
 
 class OvertimeApplicationController extends Controller
 {
+    private $CONTROLLER_NAME = 'OvertimeApplicationController';
 
     public function index()
     {
@@ -246,7 +247,8 @@ class OvertimeApplicationController extends Controller
                 return response()->json(['data' => $overtime_applications, 'message' => 'No records available'], Response::HTTP_OK);
             }
         } catch (\Throwable $th) {
-            return response()->json(['message' => $th->getMessage()], 500);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -469,8 +471,8 @@ class OvertimeApplicationController extends Controller
                 return response()->json(['data' => $overtime_applications, 'message' => 'No records available'], Response::HTTP_OK);
             }
         } catch (\Throwable $th) {
-
-            return response()->json(['message' => $th->getMessage()], 500);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'getUserOvertimeApplication', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -1381,8 +1383,8 @@ class OvertimeApplicationController extends Controller
             //     }
             // }
         } catch (\Throwable $th) {
-
-            return response()->json(['message' => $th->getMessage()], 500);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'getOvertimeApplications', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -1558,8 +1560,8 @@ class OvertimeApplicationController extends Controller
                 }
             }
         } catch (\Throwable $th) {
-
-            return response()->json(['message' => $th->getMessage()], 500);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'getDivisionOvertimeApplications', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -1733,7 +1735,8 @@ class OvertimeApplicationController extends Controller
                 }
             }
         } catch (\Throwable $th) {
-            return response()->json(['message' => $th->getMessage()], 500);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'getDepartmentOvertimeApplications', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -1906,8 +1909,8 @@ class OvertimeApplicationController extends Controller
                 }
             }
         } catch (\Throwable $th) {
-
-            return response()->json(['message' => $th->getMessage()], 500);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'getSectionOvertimeApplications', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -2077,57 +2080,67 @@ class OvertimeApplicationController extends Controller
                 return response()->json(['message' => 'No records available'], Response::HTTP_OK);
             }
         } catch (\Throwable $th) {
-
-            return response()->json(['message' => $th->getMessage()], 500);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'getDeclinedOvertimeApplications', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
     public function getEmployeeOvertimeTotal()
     {
-        $employeeProfiles = EmployeeProfile::with(['overtimeCredits', 'personalInformation'])
-            ->get();
-        $employeeOvertimeTotals = $employeeProfiles->map(function ($employeeProfile) {
-            $totalAddCredits = $employeeProfile->overtimeCredits->where('operation', 'add')->sum('overtime_hours');
-            $totalDeductCredits = $employeeProfile->overtimeCredits->where('operation', 'deduct')->sum('overtime_hours');
-            $totalOvertimeCredits = $totalAddCredits - $totalDeductCredits;
-            return [
-                'employee_id' => $employeeProfile->id,
-                'employee_name' => $employeeProfile->personalInformation->first_name,
-                'total_overtime_credits' => $totalOvertimeCredits,
-            ];
-        });
-
-        return response()->json(['data' => $employeeOvertimeTotals], Response::HTTP_OK);
-    }
-
-    public function getEmployees()
-    {
-        $currentMonth = date('m');
-        $currentYear = date('Y');
-        $filteredEmployees = EmployeeProfile::with(['overtimeCredits', 'personalInformation']) // Eager load the 'overtimeCredits' and 'profileInformation' relationships
-            ->get()
-            ->filter(function ($employeeProfile) use ($currentMonth, $currentYear) {
-                $totalAddCredits = $employeeProfile->overtimeCredits->where('operation', 'add')->sum('credit_value');
-                $totalDeductCredits = $employeeProfile->overtimeCredits->where('operation', 'deduct')->sum('credit_value');
-
-                $totalOvertimeCredits = $totalAddCredits - $totalDeductCredits;
-
-                return $totalOvertimeCredits < 40 && $totalOvertimeCredits < 120;
-            })
-            ->map(function ($employeeProfile) {
+        try{
+            $employeeProfiles = EmployeeProfile::with(['overtimeCredits', 'personalInformation'])
+                ->get();
+            $employeeOvertimeTotals = $employeeProfiles->map(function ($employeeProfile) {
                 $totalAddCredits = $employeeProfile->overtimeCredits->where('operation', 'add')->sum('overtime_hours');
                 $totalDeductCredits = $employeeProfile->overtimeCredits->where('operation', 'deduct')->sum('overtime_hours');
-
                 $totalOvertimeCredits = $totalAddCredits - $totalDeductCredits;
-
                 return [
                     'employee_id' => $employeeProfile->id,
-                    'employee_name' => $employeeProfile->personalInformation->first_name, // Assuming 'name' is the field in the ProfileInformation model representing the employee name
+                    'employee_name' => $employeeProfile->personalInformation->first_name,
                     'total_overtime_credits' => $totalOvertimeCredits,
                 ];
             });
 
-        return response()->json(['data' => $filteredEmployees], Response::HTTP_OK);
+            return response()->json(['data' => $employeeOvertimeTotals], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, 'getEmployeeOvertimeTotal', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function getEmployees()
+    {
+        try{
+            $currentMonth = date('m');
+            $currentYear = date('Y');
+            $filteredEmployees = EmployeeProfile::with(['overtimeCredits', 'personalInformation']) // Eager load the 'overtimeCredits' and 'profileInformation' relationships
+                ->get()
+                ->filter(function ($employeeProfile) use ($currentMonth, $currentYear) {
+                    $totalAddCredits = $employeeProfile->overtimeCredits->where('operation', 'add')->sum('credit_value');
+                    $totalDeductCredits = $employeeProfile->overtimeCredits->where('operation', 'deduct')->sum('credit_value');
+    
+                    $totalOvertimeCredits = $totalAddCredits - $totalDeductCredits;
+    
+                    return $totalOvertimeCredits < 40 && $totalOvertimeCredits < 120;
+                })
+                ->map(function ($employeeProfile) {
+                    $totalAddCredits = $employeeProfile->overtimeCredits->where('operation', 'add')->sum('overtime_hours');
+                    $totalDeductCredits = $employeeProfile->overtimeCredits->where('operation', 'deduct')->sum('overtime_hours');
+    
+                    $totalOvertimeCredits = $totalAddCredits - $totalDeductCredits;
+    
+                    return [
+                        'employee_id' => $employeeProfile->id,
+                        'employee_name' => $employeeProfile->personalInformation->first_name, // Assuming 'name' is the field in the ProfileInformation model representing the employee name
+                        'total_overtime_credits' => $totalOvertimeCredits,
+                    ];
+                });
+    
+            return response()->json(['data' => $filteredEmployees], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, 'getEmployees', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     public function computeEmployees()
@@ -2490,7 +2503,8 @@ class OvertimeApplicationController extends Controller
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             DB::rollBack();
-            return response()->json(['message' => $th->getMessage()], 500);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -2775,7 +2789,8 @@ class OvertimeApplicationController extends Controller
             return response()->json(['message' => 'Overtime Application has been sucessfully saved', 'data' => $overtime_applications_result], Response::HTTP_OK);
         } catch (\Throwable $th) {
             DB::rollBack();
-            return response()->json(['message' => $th->getMessage()], 500);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'storePast', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -2794,8 +2809,9 @@ class OvertimeApplicationController extends Controller
             $overtime_application_log = OvtApplicationLog::create($data);
 
             return $overtime_application_log;
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage(), 'error' => true]);
+        } catch (\Exception $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'storeOvertimeApplicationLog', $th->getMessage());
+            return response()->json(['message' => $th->getMessage(), 'error' => true], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -3037,9 +3053,10 @@ class OvertimeApplicationController extends Controller
                     return response(['message' => 'Application has been sucessfully declined', 'data' => $overtime_applications_result], Response::HTTP_OK);
                 }
             }
-        } catch (\Exception $e) {
+        } catch (\Exception $th) {
             DB::rollBack();
-            return response()->json(['message' => $e->getMessage(),  'error' => true]);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'declineOtApplication', $th->getMessage());
+            return response()->json(['message' => $th->getMessage(), 'error' => true], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -3226,9 +3243,10 @@ class OvertimeApplicationController extends Controller
                 //     }
                 //  }
             }
-        } catch (\Exception $e) {
+        } catch (\Exception $th) {
             DB::rollBack();
-            return response()->json(['message' => $e->getMessage(),  'error' => true]);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'cancelOtApplication', $th->getMessage());
+            return response()->json(['message' => $th->getMessage(), 'error' => true], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -3483,34 +3501,41 @@ class OvertimeApplicationController extends Controller
                     return response(['message' => 'Application has been sucessfully ' . $message_action, 'data' => $overtime_applications_result], Response::HTTP_CREATED);
                 }
             }
-        } catch (\Exception $e) {
+        } catch (\Exception $th) {
             DB::rollBack();
-            return response()->json(['message' => $e->getMessage(), 'error' => true]);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'updateOvertimeApplicationStatus', $th->getMessage());
+            return response()->json(['message' => $th->getMessage(), 'error' => true], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
     public function resetYearlyOvertimeCredit(Request $request)
     {
-        $employees = EmployeeProfile::get();
-        if ($employees) {
-            foreach ($employees as $employee) {
-                $employee_overtime_credits = EmployeeOvertimeCredit::where('employee_profile_id', '=', $employee->id)->get();
-                $totalLeaveCredits = $employee_overtime_credits->mapToGroups(function ($credit) {
-                    return [$credit->operation => $credit->credit_value];
-                })->map(function ($operationCredits, $operation) {
-                    return $operation === 'add' ? $operationCredits->sum() : -$operationCredits->sum();
-                })->sum();
-
-                $employeeCredit = new EmployeeOvertimeCredit();
-                $employeeCredit->employee_profile_id = $employee->id;
-                $employeeCredit->operation = "deduct";
-                $employeeCredit->reason = "Yearly Leave Credits";
-                $employeeCredit->credit_value = $totalLeaveCredits;
-                $employeeCredit->date = date('Y-m-d');
-                $employeeCredit->save();
+        try{
+            $employees = EmployeeProfile::get();
+            if ($employees) {
+                foreach ($employees as $employee) {
+                    $employee_overtime_credits = EmployeeOvertimeCredit::where('employee_profile_id', '=', $employee->id)->get();
+                    $totalLeaveCredits = $employee_overtime_credits->mapToGroups(function ($credit) {
+                        return [$credit->operation => $credit->credit_value];
+                    })->map(function ($operationCredits, $operation) {
+                        return $operation === 'add' ? $operationCredits->sum() : -$operationCredits->sum();
+                    })->sum();
+    
+                    $employeeCredit = new EmployeeOvertimeCredit();
+                    $employeeCredit->employee_profile_id = $employee->id;
+                    $employeeCredit->operation = "deduct";
+                    $employeeCredit->reason = "Yearly Leave Credits";
+                    $employeeCredit->credit_value = $totalLeaveCredits;
+                    $employeeCredit->date = date('Y-m-d');
+                    $employeeCredit->save();
+                }
             }
+            return response()->json(['data' => $employeeCredit], Response::HTTP_OK);
+        } catch (\Exception $th) {
+            DB::rollBack();
+            Helpers::errorLog($this->CONTROLLER_NAME, 'resetYearlyOvertimeCredit', $th->getMessage());
+            return response()->json(['message' => $th->getMessage(), 'error' => true], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-        return response()->json(['data' => $employeeCredit], Response::HTTP_OK);
     }
 
     public function printOvertimeForm($id)
@@ -3675,8 +3700,10 @@ class OvertimeApplicationController extends Controller
                 $singleArray = array_merge(...$overtime_applications_result);
                 return view('leave_from.leave_application_form', $singleArray);
             }
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage(),  'error' => true]);
+        } catch (\Exception $th) {
+            DB::rollBack();
+            Helpers::errorLog($this->CONTROLLER_NAME, 'printOvertimeForm', $th->getMessage());
+            return response()->json(['message' => $th->getMessage(), 'error' => true], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 }

@@ -6,6 +6,7 @@ use App\Models\Biometrics;
 use Illuminate\Http\Request;
 use App\Models\DailyTimeRecords;
 use App\Methods\Helpers;
+use App\Helpers\Helpers as Helpersv2;
 use App\Methods\BioControl;
 use App\Models\DtrAnomalies;
 use Illuminate\Support\Facades\DB;
@@ -36,6 +37,8 @@ class DTRcontroller extends Controller
 
     protected $DTR;
 
+    private $CONTROLLER_NAME = "DTRcontroller";
+
     public function __construct()
     {
         $this->helper = new Helpers();
@@ -46,6 +49,7 @@ class DTRcontroller extends Controller
             $content = $this->bioms->operatingDevice()->getContent();
             $this->devices = $content !== null ? json_decode($content, true)['data'] : [];
         } catch (\Throwable $th) {
+            Helpersv2::errorLog($this->CONTROLLER_NAME, '__construct', $th->getMessage());
             Log::channel("custom-dtr-log-error")->error($th->getMessage());
         }
     }
@@ -88,6 +92,7 @@ class DTRcontroller extends Controller
                 ];
             }
         } catch (\Throwable $th) {
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'pullDTRuser', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], 401);
         }
     }
@@ -111,13 +116,13 @@ class DTRcontroller extends Controller
             }
             return $result;
         } catch (\Throwable $th) {
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'monthDayRecordsSelf', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], 401);
         }
     }
 
     public function fetchDTRFromDevice()
     {
-
         try {
 
             foreach ($this->devices as $device) {
@@ -218,6 +223,7 @@ class DTRcontroller extends Controller
                 } // End Checking if Connected to Device
             }
         } catch (\Throwable $th) {
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'fetchDTRFromDevice', $th->getMessage());
             return $th;
             // Log::channel("custom-dtr-log-error")->error($th->getMessage());
             // return response()->json(['message' => 'Unable to connect to device', 'Throw error' => $th->getMessage()]);
@@ -356,6 +362,7 @@ class DTRcontroller extends Controller
 
             return response()->json(['data' => $udata]);
         } catch (\Throwable $th) {
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'fetchUserDTR', $th->getMessage());
             return response()->json(['message' =>  $th->getMessage()]);
         }
     }
@@ -530,7 +537,7 @@ class DTRcontroller extends Controller
 
             return $this->PrintDtr($month_of, $year_of, $biometric_id, $emp_Details, $view, $FrontDisplay);
         } catch (\Throwable $th) {
-            return $th;
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'generateDTR', $th->getMessage());
             return response()->json(['message' =>  $th->getMessage()]);
         }
     }
@@ -543,9 +550,6 @@ class DTRcontroller extends Controller
 
     public function printDtr($month_of, $year_of, $biometric_id, $emp_Details, $view, $FrontDisplay)
     {
-
-
-
         try {
             $dtr = DB::table('daily_time_records')
                 ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
@@ -795,11 +799,10 @@ class DTRcontroller extends Controller
                 $dompdf->stream($filename);
             }
         } catch (\Throwable $th) {
-            return $th;
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'printDtr', $th->getMessage());
             return response()->json(['message' =>  $th->getMessage()]);
         }
     }
-
 
     public function GenerateMultiple($id, $month_of, $year_of, $view)
     {
@@ -1109,6 +1112,7 @@ class DTRcontroller extends Controller
         try {
             return response()->json(['data' => Holidaylist::all()]);
         } catch (\Throwable $th) {
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'getHolidays', $th->getMessage());
             return response()->json(['message' =>  $th->getMessage()]);
         }
     }
@@ -1130,6 +1134,7 @@ class DTRcontroller extends Controller
             ]);
             return response()->json(['message' =>  "Holiday Set Successfully!"]);
         } catch (\Throwable $th) {
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'setHolidays', $th->getMessage());
             return response()->json(['message' =>  $th->getMessage()]);
         }
     }
@@ -1153,6 +1158,7 @@ class DTRcontroller extends Controller
 
             return response()->json(['message' =>  "Item Updated Successfully!"]);
         } catch (\Throwable $th) {
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'modifyHolidays', $th->getMessage());
             return response()->json(['message' =>  $th->getMessage()]);
         }
     }
@@ -1634,7 +1640,7 @@ class DTRcontroller extends Controller
 
             return $dtr;
         } catch (\Throwable $th) {
-            return $th;
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'dtrUTOTReport', $th->getMessage());
             return response()->json(['message' => $th->getMessage()]);
         }
     }
@@ -1834,6 +1840,7 @@ class DTRcontroller extends Controller
             }
             return $data;
         } catch (\Throwable $th) {
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'getUsersLogs', $th->getMessage());
             //throw $th;
         }
     }
@@ -1852,40 +1859,82 @@ class DTRcontroller extends Controller
         **
         * test on how to access request function on another controller for instance
         */
+        $dtrentry = "2024-03-20 8:41:00";
+        $schedule = "2024-03-20 8:00:00";
+        $isoncall = 1;
+        $alloted_mins_Oncall = 0.5; // 30 minutes
+
+        $dtr_date = date('Y-m-d', strtotime($dtrentry));
+        $max_allowed_entry_for_oncall = env('MAX_ALLOWED_ENTRY_ONCALL');
+
+        /* With Schedule Entry */
+        $in_Entry = $schedule;
+
+        $time_stamp = strtotime($in_Entry);
 
 
-        for ($i = 1; $i <= 30; $i++) {
+        $new_Time_stamp = $time_stamp - (12 * 3600);
+        $Calculated_allotedHours = date('Y-m-d H:i:s', $new_Time_stamp);
 
-            $date = date('Y-m-d', strtotime('2024-01-' . $i));
+        $newEntry = $schedule;
+        if ($isoncall) {
+            //// Logic for ONCALL
 
-            if (date('D', strtotime($date)) != 'Sun') {
-                $firstin = date('H:i:s', strtotime('today') + rand(25200, 30600));
-                $firstout =  date('H:i:s', strtotime('today') + rand(42600, 47400));
-                $secondin =  date('H:i:s', strtotime('today') + rand(45000, 49800));
-                $secondout = date('H:i:s', strtotime('today') + rand(59400, 77400));
+            $schedEntry = $time_stamp + ($alloted_mins_Oncall * 1800); // 30 mins
 
-                DailyTimeRecords::create([
-                    'biometric_id' => 1,
-                    'dtr_date' => $date,
-                    'first_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin)),
-                    'first_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstout)),
-                    'second_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $secondin)),
-                    'second_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $secondout)),
-                    'interval_req' => null,
-                    'required_working_hours' => null,
-                    'required_working_minutes' => null,
-                    'total_working_hours' => null,
-                    'total_working_minutes' => null,
-                    'overtime' => null,
-                    'overtime_minutes' => null,
-                    'undertime' => null,
-                    'undertime_minutes' => null,
-                    'overall_minutes_rendered' => null,
-                    'total_minutes_reg' => null,
-                    'is_biometric' => 1,
-                    'created_at' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin))
-                ]);
+            $calIn = date("Y-m-d H:i:s", $schedEntry);
+            $dtrentry = date("Y-m-d H:i:s", strtotime($dtrentry));
+            if ($calIn <= $dtrentry) {
+
+                //within 30 mins.
+                // then accept as 8am straight
+                $newEntry = date("Y-m-d H:i:s", strtotime($dtrentry . "-30 minutes"));
             }
+
+            return $newEntry;
+        } else {
+            // if ($Calculated_allotedHours <= $dtrentry['date_time']) { //within alloted hours to timein
+            //     DailyTimeRecords::create([
+            //         'biometric_id' => $biometric_id,
+            //         'dtr_date' => $dtr_date,
+            //         'first_in' => $dtrentry['date_time'],
+            //         'is_biometric' => 1,
+            //     ]);
+            // }
         }
+
+        // for ($i = 1; $i <= 30; $i++) {
+
+        //     $date = date('Y-m-d', strtotime('2024-01-' . $i));
+
+        //     if (date('D', strtotime($date)) != 'Sun') {
+        //         $firstin = date('H:i:s', strtotime('today') + rand(25200, 30600));
+        //         $firstout =  date('H:i:s', strtotime('today') + rand(42600, 47400));
+        //         $secondin =  date('H:i:s', strtotime('today') + rand(45000, 49800));
+        //         $secondout = date('H:i:s', strtotime('today') + rand(59400, 77400));
+
+        //         DailyTimeRecords::create([
+        //             'biometric_id' => 1,
+        //             'dtr_date' => $date,
+        //             'first_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin)),
+        //             'first_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstout)),
+        //             'second_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $secondin)),
+        //             'second_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $secondout)),
+        //             'interval_req' => null,
+        //             'required_working_hours' => null,
+        //             'required_working_minutes' => null,
+        //             'total_working_hours' => null,
+        //             'total_working_minutes' => null,
+        //             'overtime' => null,
+        //             'overtime_minutes' => null,
+        //             'undertime' => null,
+        //             'undertime_minutes' => null,
+        //             'overall_minutes_rendered' => null,
+        //             'total_minutes_reg' => null,
+        //             'is_biometric' => 1,
+        //             'created_at' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin))
+        //         ]);
+        //     }
+        // }
     }
 }

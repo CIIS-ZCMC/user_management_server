@@ -17,6 +17,8 @@ return new class extends Migration
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->datetime('date');
             $table->integer('applied_credits');
+            $table->boolean('is_am');
+            $table->boolean('is_pm');
             $table->string('purpose')->nullable();
             $table->text('remarks')->nullable();
             $table->string('status')->nullable();

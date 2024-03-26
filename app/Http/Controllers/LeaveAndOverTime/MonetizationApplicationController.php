@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\LeaveAndOverTime;
 
+use App\Helpers\Helpers;
 use App\Models\MonetizationApplication;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\LeaveType;
 use App\Models\EmployeeProfile;
 use App\Models\LeaveType as ModelsLeaveType;
 use App\Models\MoneApplicationLog;
@@ -13,6 +13,8 @@ use Illuminate\Http\Response;
 
 class MonetizationApplicationController extends Controller
 {
+    private $CONTROLLER_NAME = "MonetizationApplicationController";
+
     /**
      * Display a listing of the resource.
      */
@@ -21,58 +23,54 @@ class MonetizationApplicationController extends Controller
         try{ 
             $mone_applications=[];
             
-            $mone_applications =MonetizationApplication::with(['logs'])->get();
+            $mone_applications = MonetizationApplication::with(['logs'])->get();
           
-           
-             return response()->json(['data' => $mone_applications], Response::HTTP_OK);
+            return response()->json(['data' => $mone_applications], Response::HTTP_OK);
         }catch(\Throwable $th){
-        
-            return response()->json(['message' => $th->getMessage()], 500);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
     }
 
     public function getMoneApplications(Request $request)
     {
-        $status = $request->status;  
-        $mone_applications = [];
-
-       if($status == 'for-approval-supervisor'){
-            $mone_applications = MonetizationApplication::where('status', '=', 'for-approval-supervisor');
+        try{
+            $status = $request->status;  
+            $mone_applications = [];
+    
+           if($status == 'for-approval-supervisor'){
+                $mone_applications = MonetizationApplication::where('status', '=', 'for-approval-supervisor');
+                
+            }
+            else if($status == 'for-approval-head'){
+                $mone_applications = MonetizationApplication::where('status', '=', 'for-approval-head');
+    
+            }
+            else if($status == 'declined'){
+                $mone_applications = MonetizationApplication::where('status', '=', 'declined');
+                                                       
+            }
+            else if($status == 'approved'){
+                $mone_applications = MonetizationApplication::where('status', '=', 'approved');
             
+            }
+            else{
+                $mone_applications = MonetizationApplication::where('status', '=', $status );
+            }
+    
+    
+            if (isset($request->search)) {
+                $search = $request->search; 
+                $mone_applications = $mone_applications->where('reference_number','like', '%' .$search . '%');
+                                                     
+                $mone_applications = isset($search) && $search; 
+            }
+    
+            return response()->json(['data' => $mone_applications], Response::HTTP_OK);
+        } catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, 'getMoneApplications', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-        else if($status == 'for-approval-head'){
-            $mone_applications = MonetizationApplication::where('status', '=', 'for-approval-head');
-
-        }
-        else if($status == 'declined'){
-            $mone_applications = MonetizationApplication::where('status', '=', 'declined');
-                                                   
-        }
-        else if($status == 'approved'){
-            $mone_applications = MonetizationApplication::where('status', '=', 'approved');
-        
-        }
-        else{
-            $mone_applications = MonetizationApplication::where('status', '=', $status );
-        }
-
-
-        if (isset($request->search)) {
-            $search = $request->search; 
-            $mone_applications = $mone_applications->where('reference_number','like', '%' .$search . '%');
-                                                 
-            $mone_applications = isset($search) && $search; 
-        }
-
-        return response()->json(['data' => $mone_applications], Response::HTTP_OK);
     }
 
     public function updateStatus (Request $request)
@@ -121,11 +119,9 @@ class MonetizationApplicationController extends Controller
                                 return response(['message' => 'Application has been sucessfully '.$message_action, 'data' => $mone_application], Response::HTTP_CREATED); 
                                 }
                 }           
-            }
-
-
-         catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage(),'error'=>true]);
+        } catch (\Exception $e) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'updateStatus', $e->getMessage());
+            return response()->json(['message' => $e->getMessage(),'error'=>true], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
       
     }
@@ -158,8 +154,8 @@ class MonetizationApplicationController extends Controller
             $mone_logs = $this->storeMonetizationLog($mone_application->id,$process_name,$user->id);
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-         
-            return response()->json(['message' => $th->getMessage()], 500);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -193,8 +189,9 @@ class MonetizationApplicationController extends Controller
                             }
                          }
                 }
-            } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage(),  'error'=>true]);
+        } catch (\Exception $e) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'declineMoneApplication', $e->getMessage());
+            return response()->json(['message' => $e->getMessage(),  'error'=>true], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     public function updateMoneApplication(Request $request)
@@ -216,8 +213,8 @@ class MonetizationApplicationController extends Controller
             $mone_logs = $this->storeMonetizationLog($mone_application->id,$process_name,$user->id);
             return response()->json(['data' => 'Success'], Response::HTTP_OK);
         }catch(\Throwable $th){
-         
-            return response()->json(['message' => $th->getMessage()], 500);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'updateMoneApplication', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -237,7 +234,8 @@ class MonetizationApplicationController extends Controller
 
             return $mone_application_log;
         } catch(\Exception $e) {
-            return response()->json(['message' => $e->getMessage(),'error'=>true]);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'storeMonetizationLog', $e->getMessage());
+            return response()->json(['message' => $e->getMessage(),'error'=>true], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -271,39 +269,9 @@ class MonetizationApplicationController extends Controller
                             }
                          }
                 }
-            } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage(),  'error'=>true]);
+        } catch (\Exception $e) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'cancelmoneApplication', $e->getMessage());
+            return response()->json(['message' => $e->getMessage(),  'error'=>true], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-    }
-    /**
-     * Display the specified resource.
-     */
-    public function show(MonetizationApplication $monetizationApplication)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(MonetizationApplication $monetizationApplication)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, MonetizationApplication $monetizationApplication)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(MonetizationApplication $monetizationApplication)
-    {
-        //
     }
 }
