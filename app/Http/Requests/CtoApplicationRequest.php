@@ -24,6 +24,8 @@ class CtoApplicationRequest extends FormRequest
         $rules = [
             'cto_applications.*.date' => 'required|date_format:Y-m-d',
             'cto_applications.*.applied_credits' => 'required|integer',
+            'cto_applications.*.is_am' => 'required|boolean',
+            'cto_applications.*.is_pm' => 'required|boolean',
             'cto_applications.*.purpose' => 'required|string|max:512',
             'cto_applications.*.remarks' => 'required|string|max:255'
         ];

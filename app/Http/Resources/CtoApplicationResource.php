@@ -22,6 +22,8 @@ class CtoApplicationResource extends JsonResource
             "employee_profile" => $employeeProfile,
             'date' => $this->date,
             'applied_credits' => $this->applied_credits,
+            'is_am' => $this->is_am,
+            'is_pm' => $this->is_pm,
             'remarks' => $this->remarks,
             'status' => $this->status,
             'purpose' => $this->purpose,

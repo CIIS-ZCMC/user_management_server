@@ -35,7 +35,7 @@ class TimeShiftController extends Controller
         try {
             return response()->json(['data' => TimeShiftResource::collection(TimeShift::all())], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -101,7 +101,7 @@ class TimeShiftController extends Controller
             ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -158,8 +158,7 @@ class TimeShiftController extends Controller
             ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -185,8 +184,7 @@ class TimeShiftController extends Controller
             ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\LeaveAndOverTime;
 
+use App\Helpers\Helpers;
 use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Resources\LeaveTypeRequirementLogsResource;
 use App\Models\LeaveTypeRequirementLog;
@@ -18,6 +19,9 @@ use Illuminate\Support\Facades\Hash;
 
 class RequirementController extends Controller
 {
+
+    private $CONTROLLER_NAME = "RequirementController";
+
     public function index(Request $request)
     {
         try{
@@ -28,7 +32,8 @@ class RequirementController extends Controller
                 'message' => 'Retrieve leave requirement records.'
             ],Response::HTTP_OK);
         }catch(\Throwable $th){
-            return response()->json(['message' => $th->getMessage()], 500);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -66,8 +71,8 @@ class RequirementController extends Controller
                 'message' => 'Requirement has been sucessfully saved'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-
-            return response()->json(['message' => $th->getMessage()], 500);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -84,7 +89,8 @@ class RequirementController extends Controller
                 'message' => 'Retrieve leave requirement records.'
             ],Response::HTTP_OK);
         }catch(\Throwable $th){
-            return response()->json(['message' => $th->getMessage()], 500);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'show', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -125,8 +131,8 @@ class RequirementController extends Controller
                 'message' => 'Requirement has been sucessfully saved'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
-
-            return response() -> json(['message' => $th -> getMessage()], 500);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
+            return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -156,7 +162,8 @@ class RequirementController extends Controller
                 'message' => 'Retrieve leave requirement records.'
             ],Response::HTTP_OK);
         }catch(\Throwable $th){
-            return response()->json(['message' => $th->getMessage()], 500);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 }
