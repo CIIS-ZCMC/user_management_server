@@ -55,20 +55,21 @@
                                     <span class="fentry">
                                         {{ date('h:i a', strtotime($f1['first_in'])) }}
                                     </span>
+                                    <script>
+                                        $(document).ready(function() {
+                                            $("#entry{{ $i }}1").addClass("Present");
+                                            $("#entry{{ $i }}2").addClass("Present");
+                                            $("#entry{{ $i }}3").addClass("Present");
+                                            $("#entry{{ $i }}4").addClass("Present");
+
+                                        })
+                                    </script>
                                 @endif
                             @endif
 
 
                         </span>
-                        <script>
-                            $(document).ready(function() {
-                                $("#entry{{ $i }}1").addClass("Present");
-                                $("#entry{{ $i }}2").addClass("Present");
-                                $("#entry{{ $i }}3").addClass("Present");
-                                $("#entry{{ $i }}4").addClass("Present");
 
-                            })
-                        </script>
 
                         @php
                             $countin++;
@@ -88,17 +89,16 @@
                         });
 
                     @endphp
-                    @if (count($checkSched) >= 1)
-
-                        @if ($leave_Count || $ot_Count || $ob_Count)
-                            @if ($leave_Count)
-                                <span class="timefirstarrival">{{ $leavemessage }}</span>
-                            @elseif ($ot_Count)
-                                <span class="timefirstarrival">{{ $officialTime }}</span>
-                            @elseif ($ob_Count)
-                                <span class="timefirstarrival">{{ $officialBusinessMessage }}</span>
-                            @endif
-                        @else
+                    @if ($leave_Count || $ot_Count || $ob_Count)
+                        @if ($leave_Count)
+                            <span class="timefirstarrival">{{ $leavemessage }}</span>
+                        @elseif ($ot_Count)
+                            <span class="timefirstarrival">{{ $officialTime }}</span>
+                        @elseif ($ob_Count)
+                            <span class="timefirstarrival">{{ $officialBusinessMessage }}</span>
+                        @endif
+                    @else
+                        @if (count($checkSched) >= 1)
                             <span class="fentry">
                                 <span class="timefirstarrival" style="color:#FF6969;">ABSENT</span>
 
@@ -112,10 +112,11 @@
                                     })
                                 </script>
                             </span>
+                        @else
+                            <span class="timefirstarrival" style="color:gray">Day-off </span>
                         @endif
-                    @else
-                        <span class="timefirstarrival" style="color:gray">Day-off </span>
                     @endif
+
                 @endif
 
             @endif
@@ -144,18 +145,16 @@
 
                     @endphp
                     @if ($count2 >= 1)
-
-                        @if (count($checkSched) >= 1)
-
-                            @if ($leave_Count || $ot_Count || $ob_Count)
-                                @if ($leave_Count)
-                                    <span class="timefirstarrival">{{ $leavemessage }}</span>
-                                @elseif ($ot_Count)
-                                    <span class="timefirstarrival">{{ $officialTime }}</span>
-                                @elseif ($ob_Count)
-                                    <span class="timefirstarrival">{{ $officialBusinessMessage }}</span>
-                                @endif
-                            @else
+                        @if ($leave_Count || $ot_Count || $ob_Count)
+                            @if ($leave_Count)
+                                <span class="timefirstarrival">{{ $leavemessage }}</span>
+                            @elseif ($ot_Count)
+                                <span class="timefirstarrival">{{ $officialTime }}</span>
+                            @elseif ($ob_Count)
+                                <span class="timefirstarrival">{{ $officialBusinessMessage }}</span>
+                            @endif
+                        @else
+                            @if (count($checkSched) >= 1)
                                 <script>
                                     $(document).ready(function() {
 
@@ -166,9 +165,9 @@
                                     })
                                 </script>
                                 <span class="timefirstarrival" style="color:gray;font-style:italic;color:#FF6969;">ABSENT</span>
+                            @else
+                                <span class="timefirstarrival" style="color:gray">Day-off </span>
                             @endif
-                        @else
-                            <span class="timefirstarrival" style="color:gray">Day-off </span>
                         @endif
                     @else
                         @if ($leave_Count || $ot_Count || $ob_Count)

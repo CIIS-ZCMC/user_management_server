@@ -93,22 +93,23 @@
             @if (!$isHoliday)
                 @if ($countin == 0)
 
-                    @if (count($checkSched) >= 1)
-
-                        @if ($leave_Count || $ot_Count || $ob_Count)
-                            @if ($leave_Count)
-                                <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
-                            @elseif ($ot_Count)
-                                <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
-                            @elseif ($ob_Count)
-                                <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
-                            @endif
-                        @else
-                            <span style="font-size:8px;font-weight:bold">{{ $absentMessage }}</span>
+                    @if ($leave_Count || $ot_Count || $ob_Count)
+                        @if ($leave_Count)
+                            <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
+                        @elseif ($ot_Count)
+                            <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
+                        @elseif ($ob_Count)
+                            <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
                         @endif
                     @else
-                        <span style="font-size:8px;font-weight:bold">{{ $dayoffmessage }}</span>
+                        @if (count($checkSched) >= 1)
+                            <span style="font-size:8px;font-weight:bold">{{ $absentMessage }}</span>
+                        @else
+                            <span style="font-size:8px;font-weight:bold">{{ $dayoffmessage }}</span>
+                        @endif
                     @endif
+
+
 
 
                 @endif
@@ -141,23 +142,20 @@
                 @endphp
 
                 @if ($count2 >= 1)
-
-                    @if (count($checkSched) >= 1)
-
-
-                        @if ($leave_Count || $ot_Count || $ob_Count)
-                            @if ($leave_Count)
-                                <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
-                            @elseif ($ot_Count)
-                                <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
-                            @elseif ($ob_Count)
-                                <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
-                            @endif
-                        @else
-                            <span style=";font-size:8px;font-weight:bold">{{ $absentMessage }}</span>
+                    @if ($leave_Count || $ot_Count || $ob_Count)
+                        @if ($leave_Count)
+                            <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
+                        @elseif ($ot_Count)
+                            <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
+                        @elseif ($ob_Count)
+                            <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
                         @endif
                     @else
-                        <span style="font-size:8px;font-weight:bold">{{ $dayoffmessage }}</span>
+                        @if (count($checkSched) >= 1)
+                            <span style=";font-size:8px;font-weight:bold">{{ $absentMessage }}</span>
+                        @else
+                            <span style="font-size:8px;font-weight:bold">{{ $dayoffmessage }}</span>
+                        @endif
                     @endif
                 @else
                     @if ($leave_Count || $ot_Count || $ob_Count)
@@ -207,24 +205,25 @@
 
                         @endphp
 
-
-                        @if (count($checkSched) >= 1)
-                            @if ($leave_Count || $ot_Count || $ob_Count)
-                                @if ($leave_Count)
-                                    <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
-                                @elseif ($ot_Count)
-                                    <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
-                                @elseif ($ob_Count)
-                                    <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
-                                @endif
-                            @else
-                                <span style="font-size:8px;font-weight:bold">{{ $absentMessage }} </span>
+                        @if ($leave_Count || $ot_Count || $ob_Count)
+                            @if ($leave_Count)
+                                <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
+                            @elseif ($ot_Count)
+                                <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
+                            @elseif ($ob_Count)
+                                <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
                             @endif
                         @else
-                            @if (count($presentSched) == 0)
-                                <span style="font-size:8px;font-weight:bold">{{ $dayoffmessage }}</span>
+                            @if (count($checkSched) >= 1)
+                                <span style="font-size:8px;font-weight:bold">{{ $absentMessage }} </span>
+                            @else
+                                @if (count($presentSched) == 0)
+                                    <span style="font-size:8px;font-weight:bold">{{ $dayoffmessage }}</span>
+                                @endif
                             @endif
+
                         @endif
+
 
 
 
