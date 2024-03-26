@@ -72,27 +72,27 @@ class LeaveTypeController extends Controller
                 $final_date = null;
                 $tomorrow = Carbon::tomorrow();
                 
-                if($leave_type->after === null){
+                if($leave_type->file_after === null){
                     $schedules = EmployeeSchedule::select("s.date")->join('schedules as s', 's.id', 'employee_profile_schedule.schedule_id')
                         ->whereDate('s.date', '>=', $tomorrow)
                         ->where('employee_profile_schedule.employee_profile_id', $employee_profile->id)
-                        ->limit($leave_type->before)->get();
+                        ->limit($leave_type->file_before)->get();
                         
                     if(count($schedules) > 0){
                         $last_schedule = $schedules->last();
-                        $final_date = $last_schedule ? $last_schedule->date->format('Y-m-d') : null;
+                        $final_date = $last_schedule ? Carbon::parse($last_schedule->date)->format('Y-m-d') : null;
                     }
                 }
 
-                if($leave_type->after !== null){
+                if($leave_type->file_after !== null){
                     $schedules = EmployeeSchedule::select("s.date")->join('schedules as s', 's.id', 'employee_profile_schedule.schedule_id')
                         ->where('employee_profile_schedule.employee_profile_id', $employee_profile->id)
                         ->whereDate('s.date', '<=', Carbon::now())
-                        ->orderByDesc('s.date')->limit($leave_type->after)->get();
+                        ->orderByDesc('s.date')->limit($leave_type->file_after)->get();
 
                     if(count($schedules) > 0){
                         $last_schedule = $schedules->last();
-                        $final_date = $last_schedule ? $last_schedule->date->format('Y-m-d') : null;
+                        $final_date = $last_schedule ? Carbon::parse($last_schedule->date)->format('Y-m-d') : null;
                     }
                 }
                 

@@ -171,17 +171,6 @@ class OfficialTimeController extends Controller
             $end = Carbon::parse($request->date_to);
             $employeeId = $user->id;
 
-            $overlappingOt = OfficialTime::where(function ($query) use ($start, $end, $employeeId) {
-                $query->where('employee_profile_id', $employeeId)
-                    ->where(function ($query) use ($start, $end) {
-                        $query->whereBetween('date_from', [$start, $end])
-                            ->orWhereBetween('date_to', [$start, $end])
-                            ->orWhere(function ($query) use ($start, $end) {
-                                $query->where('date_from', '<=', $start)
-                                    ->where('date_to', '>=', $end);
-                            });
-                    });
-            })->exists();
             $overlapExists = Helpers::hasOverlappingRecords($start, $end, $employeeId);
             if ($overlapExists) {
                 return response()->json(['message' => 'You already have an application for the same dates.'], Response::HTTP_FORBIDDEN);

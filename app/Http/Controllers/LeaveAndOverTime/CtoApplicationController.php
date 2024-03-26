@@ -236,6 +236,7 @@ class CtoApplicationController extends Controller
                 $employeeId= $employee_profile->id;
 
                 $overlapExists = Helpers::hasOverlappingCTO($date, $employeeId);
+                
                 if ($overlapExists) {
                     return response()->json(['message' => 'You already have an application for the same dates.'], Response::HTTP_FORBIDDEN);
                 } else {

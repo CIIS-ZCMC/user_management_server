@@ -29,6 +29,8 @@ class LeaveType extends Model
         'after',
         'period',
         'file_date',
+        'file_after',
+        'file_before',
         'month_value',
         'annual_credit',
         'is_special',
