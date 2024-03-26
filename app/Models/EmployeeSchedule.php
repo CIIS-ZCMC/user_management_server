@@ -4,12 +4,11 @@ namespace App\Models;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
 
 class EmployeeSchedule extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     protected $table = 'employee_profile_schedule';
 
@@ -20,8 +19,7 @@ class EmployeeSchedule extends Model
         'schedule_id',
         'is_on_call',
     ];
-    public $softDelete = true;
-    
+        
     public $timestamps = true;
 
     public function employee()
