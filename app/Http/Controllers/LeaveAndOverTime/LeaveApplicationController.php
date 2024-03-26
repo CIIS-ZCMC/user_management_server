@@ -26,6 +26,8 @@ use App\Models\EmployeeLeaveCreditLogs;
 use App\Models\EmployeeProfile;
 use App\Models\LeaveApplicationLog;
 use App\Models\LeaveApplicationRequirement;
+use App\Models\OfficialBusiness;
+use App\Models\OfficialTime;
 
 class LeaveApplicationController extends Controller
 {
@@ -40,47 +42,47 @@ class LeaveApplicationController extends Controller
              * Only newly applied leave application
              */
 
-             if (Helpers::getHrmoOfficer() === $employee_profile->id) {
+            if (Helpers::getHrmoOfficer() === $employee_profile->id) {
                 $employeeId = $employee_profile->id;
-                $hrmo = ["applied","for recommending approval", "approved", "declined by hrmo officer"];
-                $recommending = ["for recommending approval", "for approving approval","approved", "declined by recommending officer"];
-        
+                $hrmo = ["applied", "for recommending approval", "approved", "declined by hrmo officer"];
+                $recommending = ["for recommending approval", "for approving approval", "approved", "declined by recommending officer"];
+
                 $leave_applications = LeaveApplication::select('leave_applications.*')
-                ->where(function ($query) use ($hrmo, $employeeId) {
-                    $query->whereIn('leave_applications.status', $hrmo)
-                        ->where('leave_applications.hrmo_officer', $employeeId);
-                })
-                ->orWhere(function ($query) use ($recommending, $employeeId) {
-                    $query->whereIn('leave_applications.status', $recommending)
-                        ->where('leave_applications.recommending_officer', $employeeId);
-                })
-                ->groupBy(
-                    'id',
-                    'employee_profile_id',
-                    'leave_type_id',
-                    'date_from',
-                    'date_to',
-                    'country',
-                    'city',
-                    'is_outpatient',
-                    'illness',
-                    'is_masters',
-                    'is_board',
-                    'is_commutation',
-                    'applied_credits',
-                    'status',
-                    'remarks',
-                    'without_pay',
-                    'reason',
-                    'hrmo_officer',
-                    'recommending_officer',
-                    'approving_officer',
-                    'employee_oic_id',
-                    'created_at',
-                    'updated_at'
-                )
-                ->orderBy('created_at', 'desc')
-                ->get();
+                    ->where(function ($query) use ($hrmo, $employeeId) {
+                        $query->whereIn('leave_applications.status', $hrmo)
+                            ->where('leave_applications.hrmo_officer', $employeeId);
+                    })
+                    ->orWhere(function ($query) use ($recommending, $employeeId) {
+                        $query->whereIn('leave_applications.status', $recommending)
+                            ->where('leave_applications.recommending_officer', $employeeId);
+                    })
+                    ->groupBy(
+                        'id',
+                        'employee_profile_id',
+                        'leave_type_id',
+                        'date_from',
+                        'date_to',
+                        'country',
+                        'city',
+                        'is_outpatient',
+                        'illness',
+                        'is_masters',
+                        'is_board',
+                        'is_commutation',
+                        'applied_credits',
+                        'status',
+                        'remarks',
+                        'without_pay',
+                        'reason',
+                        'hrmo_officer',
+                        'recommending_officer',
+                        'approving_officer',
+                        'employee_oic_id',
+                        'created_at',
+                        'updated_at'
+                    )
+                    ->orderBy('created_at', 'desc')
+                    ->get();
 
                 $leave_applications = collect($leave_applications)->filter(function ($leave_application) use ($employeeId) {
                     // Keep the leave application if the status is "applied" or if the employee profile ID is not equal to $employeeId
@@ -192,11 +194,10 @@ class LeaveApplicationController extends Controller
     public function getEmployees()
     {
         try {
-          
+
             $leaveCredits = EmployeeLeaveCredit::with(['employeeProfile.personalInformation', 'leaveType'])->get()->groupBy('employee_profile_id');
             $response = [];
-            foreach ($leaveCredits as $employeeProfileId => $leaveCreditGroup)
-             {
+            foreach ($leaveCredits as $employeeProfileId => $leaveCreditGroup) {
                 $employeeDetails = $leaveCreditGroup->first()->employeeProfile->personalInformation->name();
                 $leaveCreditData = [];
                 foreach ($leaveCreditGroup as $leaveCredit) {
@@ -220,7 +221,6 @@ class LeaveApplicationController extends Controller
             }
 
             return ['data' => $response];
-
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -237,12 +237,11 @@ class LeaveApplicationController extends Controller
                     'name' => $employee->name(),
                 ];
             }
-    
+
             return response()->json([
                 'data' => $data,
                 'message' => 'List of employees retrieved.'
             ], Response::HTTP_OK);
-
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -251,13 +250,12 @@ class LeaveApplicationController extends Controller
     public function getLeaveTypes()
     {
         try {
-            $LeaveTypes = LeaveType::where('is_special','0')->get();
-            
+            $LeaveTypes = LeaveType::where('is_special', '0')->get();
+
             return response()->json([
                 'data' => LeaveTypeResource::collection($LeaveTypes),
                 'message' => 'list of special leave type retrieved.'
             ], Response::HTTP_OK);
-
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -282,52 +280,51 @@ class LeaveApplicationController extends Controller
                     ->where('leave_type_id', $leaveTypeId)
                     ->firstOrFail();
 
-                    $leaveCredit->total_leave_credits = $credit['credit_value'];
-                    $leaveCredit->save();
-           
+                $leaveCredit->total_leave_credits = $credit['credit_value'];
+                $leaveCredit->save();
             }
-        
+
             $overtimeCredit = EmployeeOvertimeCredit::where('employee_profile_id', $request->employee_id)->first();
-            $overtimeCredit->earned_credit_by_hour=$request->cto;
+            $overtimeCredit->earned_credit_by_hour = $request->cto;
             $overtimeCredit->save();
 
             EmployeeCreditLog::create([
-                'employee_profile_id'=> $employeeId,
+                'employee_profile_id' => $employeeId,
                 'action_by' => $employee_profile->id,
                 'action' => 'add'
             ]);
 
             $updatedLeaveCredits = EmployeeLeaveCredit::with(['employeeProfile.personalInformation', 'leaveType'])
-            ->where('employee_profile_id', $request->employee_id)
-            ->get()
-            ->groupBy('employee_profile_id');
+                ->where('employee_profile_id', $request->employee_id)
+                ->get()
+                ->groupBy('employee_profile_id');
 
-          
 
-        $response = [];
 
-        foreach ($updatedLeaveCredits as $employeeProfileId => $leaveCreditGroup) {
-            $employeeDetails = $leaveCreditGroup->first()->employeeProfile->personalInformation->name();
-            $leaveCreditData = [];
-            
-            foreach ($leaveCreditGroup as $leaveCredit) {
-                $leaveCreditData[$leaveCredit->leaveType->name] = $leaveCredit->total_leave_credits;
+            $response = [];
+
+            foreach ($updatedLeaveCredits as $employeeProfileId => $leaveCreditGroup) {
+                $employeeDetails = $leaveCreditGroup->first()->employeeProfile->personalInformation->name();
+                $leaveCreditData = [];
+
+                foreach ($leaveCreditGroup as $leaveCredit) {
+                    $leaveCreditData[$leaveCredit->leaveType->name] = $leaveCredit->total_leave_credits;
+                }
+                // Fetch 'CTO' credit from EmployeeOvertimeCredit
+                $ctoCredit = EmployeeOvertimeCredit::where('employee_profile_id', $employeeProfileId)->value('earned_credit_by_hour');
+
+                // Add 'CTO' credit to the leaveCreditData
+                $leaveCreditData['CTO'] = $ctoCredit;
+                $employeeResponse = [
+                    'id' => $employeeProfileId,
+                    'name' => $employeeDetails,
+                ];
+
+                $employeeResponse = array_merge($employeeResponse, $leaveCreditData);
+                $response[] = $employeeResponse;
             }
-            // Fetch 'CTO' credit from EmployeeOvertimeCredit
-            $ctoCredit = EmployeeOvertimeCredit::where('employee_profile_id', $employeeProfileId)->value('earned_credit_by_hour');
 
-            // Add 'CTO' credit to the leaveCreditData
-            $leaveCreditData['CTO'] = $ctoCredit;
-            $employeeResponse = [
-                'id' => $employeeProfileId,
-                'name' => $employeeDetails,
-            ];
-
-            $employeeResponse = array_merge($employeeResponse, $leaveCreditData);
-            $response[] = $employeeResponse;
-        }
-
-            return response()->json(['message' => 'Leave credits updated successfully','data' => $response,], 200);
+            return response()->json(['message' => 'Leave credits updated successfully', 'data' => $response,], 200);
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -351,9 +348,9 @@ class LeaveApplicationController extends Controller
                     // 'created_at' => now(), // Adjust as needed
                     // 'updated_at' => now(), // Adjust as needed
                 ]);
-        
+
                 $newLeaveCredit->save();
-        
+
                 // // Assuming you have a 'logs' attribute in your request
                 // EmployeeLeaveCreditLogs::create([
                 //     'employee_leave_credit_id' => $newLeaveCredit->id,
@@ -363,31 +360,31 @@ class LeaveApplicationController extends Controller
             }
             /// Fetch updated leave credits only for the specific employee
             $updatedLeaveCredits = EmployeeLeaveCredit::with(['employeeProfile.personalInformation', 'leaveType'])
-            ->where('employee_profile_id', $request->employee_id)
-            ->get()
-            ->groupBy('employee_profile_id');
+                ->where('employee_profile_id', $request->employee_id)
+                ->get()
+                ->groupBy('employee_profile_id');
 
-        $response = [];
+            $response = [];
 
-        foreach ($updatedLeaveCredits as $employeeProfileId => $leaveCreditGroup) {
-            $employeeDetails = $leaveCreditGroup->first()->employeeProfile->personalInformation->name();
-            $leaveCreditData = [];
-            
-            foreach ($leaveCreditGroup as $leaveCredit) {
-                $leaveCreditData[$leaveCredit->leaveType->name] = $leaveCredit->total_leave_credits;
+            foreach ($updatedLeaveCredits as $employeeProfileId => $leaveCreditGroup) {
+                $employeeDetails = $leaveCreditGroup->first()->employeeProfile->personalInformation->name();
+                $leaveCreditData = [];
+
+                foreach ($leaveCreditGroup as $leaveCredit) {
+                    $leaveCreditData[$leaveCredit->leaveType->name] = $leaveCredit->total_leave_credits;
+                }
+
+                $employeeResponse = [
+                    'id' => $employeeProfileId,
+                    'name' => $employeeDetails,
+                ];
+
+                $employeeResponse = array_merge($employeeResponse, $leaveCreditData);
+                $response[] = $employeeResponse;
             }
 
-            $employeeResponse = [
-                'id' => $employeeProfileId,
-                'name' => $employeeDetails,
-            ];
 
-            $employeeResponse = array_merge($employeeResponse, $leaveCreditData);
-            $response[] = $employeeResponse;
-        }
-        
-
-            return response()->json(['message' => 'Leave credits added successfully','data' => $response,], 200);
+            return response()->json(['message' => 'Leave credits added successfully', 'data' => $response,], 200);
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -434,7 +431,7 @@ class LeaveApplicationController extends Controller
                     $leave_application->update(['status' => $status]);
                     break;
                 case 'for approving approval':
-                    $approving =  Helpers::getRecommendingAndApprovingOfficer($employee_profile->assignedArea->findDetails(),$leave_application->employee_profile_id )['approving_officer'];
+                    $approving =  Helpers::getRecommendingAndApprovingOfficer($employee_profile->assignedArea->findDetails(), $leave_application->employee_profile_id)['approving_officer'];
                     if ($approving !== $employee_profile->id) {
                         return response()->json(['message' => 'Forbidden'], Response::HTTP_FORBIDDEN);
                     }
@@ -451,7 +448,7 @@ class LeaveApplicationController extends Controller
                 'leave_application_id' => $leave_application->id,
                 'action' => $log_status
             ]);
-           
+
             return response()->json([
                 'data' =>  new LeaveApplicationResource($leave_application),
                 'message' => 'Successfully approved application.'
@@ -484,7 +481,7 @@ class LeaveApplicationController extends Controller
 
             return response()->json([
                 'data' => LeaveApplicationResource::collection($leave_applications),
-                'credits'=>$result,
+                'credits' => $result,
                 'message' => 'Retrieve all leave application records.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -508,8 +505,8 @@ class LeaveApplicationController extends Controller
             $daysDiff = $start->diffInDays($end) + 1;
 
             $leave_type = LeaveType::find($request->leave_type_id);
-          
-            $employeeId= $employee_profile->id;
+
+            $employeeId = $employee_profile->id;
 
             $overlappingLeave = LeaveApplication::where(function ($query) use ($start, $end, $employeeId) {
                 $query->where('employee_profile_id', $employeeId)
@@ -522,15 +519,16 @@ class LeaveApplicationController extends Controller
                             });
                     });
             })->exists();
+            $overlapExists = Helpers::hasOverlappingRecords($start, $end, $employeeId);
 
-            if ($overlappingLeave) {
+            if ($overlapExists) {
                 return response()->json(['message' => 'You already have an application for the same dates.'], 403);
             } else {
                 if ($leave_type->is_special) {
                     if ($leave_type->period < $daysDiff) {
                         return response()->json(['message' => 'Exceeds days entitled for ' . $leave_type->name], Response::HTTP_FORBIDDEN);
                     }
-    
+
                     $cleanData['applied_credits'] = $daysDiff;
                     $cleanData['employee_profile_id'] = $employee_profile->id;
                     $cleanData['hrmo_officer'] = $hrmo_officer;
@@ -541,15 +539,15 @@ class LeaveApplicationController extends Controller
 
                     $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $employee_profile->id)->first();
 
-                    if(!$isMCC){
+                    if (!$isMCC) {
                         $cleanData['recommending_officer'] = $recommending_and_approving['recommending_officer'];
-                        $cleanData['approving_officer'] = $recommending_and_approving['approving_officer']; 
+                        $cleanData['approving_officer'] = $recommending_and_approving['approving_officer'];
                     }
 
                     $cleanData['status'] = 'applied';
-    
+
                     foreach ($request->all() as $key => $leave) {
-                    
+
                         if (is_bool($leave)) {
                             $cleanData[$key] = $leave === 0 ? false : true;
                         }
@@ -565,18 +563,18 @@ class LeaveApplicationController extends Controller
                         }
                         $cleanData[$key] = strip_tags($leave);
                     }
-    
+
                     $leave_application = LeaveApplication::create($cleanData);
-                   
+
                     if ($request->requirements) {
                         $index = 0;
                         $requirements_name = $request->requirements_name;
-    
+
                         foreach ($request->file('requirements') as $key => $file) {
                             $fileName = $file->getClientOriginalName();
                             $size = filesize($file);
                             $file_name_encrypted = Helpers::checkSaveFile($file, '/requirements');
-    
+
                             LeaveApplicationRequirement::create([
                                 'leave_application_id' => $leave_application->id,
                                 'file_name' => $fileName,
@@ -587,19 +585,17 @@ class LeaveApplicationController extends Controller
                             $index++;
                         }
                     }
-                   
+
                     LeaveApplicationLog::create([
                         'action_by' => $employee_profile->id,
                         'leave_application_id' => $leave_application->id,
                         'action' => 'Applied'
                     ]);
-                } 
-                else 
-                { 
+                } else {
                     $employee_credit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)
                         ->where('leave_type_id', $request->leave_type_id)->first();
-    
-    
+
+
                     //  return response()->json(['message' => $request->without_pay == 0 && $employee_credit->total_leave_credits < $daysDiff], 401);
                     if ($request->without_pay == 0 && $employee_credit->total_leave_credits < $daysDiff) {
                         return response()->json(['message' => 'Insufficient leave credits.'], Response::HTTP_BAD_REQUEST);
@@ -608,20 +604,20 @@ class LeaveApplicationController extends Controller
                         $cleanData['applied_credits'] = $daysDiff;
                         $cleanData['employee_profile_id'] = $employee_profile->id;
                         $cleanData['hrmo_officer'] = $hrmo_officer;
-    
+
                         // if($request->employee_oic_id !== "null" && $request->employee_oic_id !== null ){
                         //     $cleanData['employee_oic_id'] = (int) strip_tags($request->employee_oic_id);
                         // }
-                        
+
                         $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $employee_profile->id)->first();
 
-                        if(!$isMCC){
+                        if (!$isMCC) {
                             $cleanData['recommending_officer'] = $recommending_and_approving['recommending_officer'];
                             $cleanData['approving_officer'] = $recommending_and_approving['approving_officer'];
                         }
-                    
+
                         $cleanData['status'] = 'applied';
-    
+
                         foreach ($request->all() as $key => $leave) {
                             if (is_bool($leave)) {
                                 $cleanData[$key] = $leave === 0 ? false : true;
@@ -638,34 +634,34 @@ class LeaveApplicationController extends Controller
                             }
                             $cleanData[$key] = strip_tags($leave);
                         }
-    
+
                         $leave_application = LeaveApplication::create($cleanData);
-    
+
                         if ($request->without_pay == 0) {
                             $previous_credit = $employee_credit->total_leave_credits;
-    
+
                             $employee_credit->update([
                                 'total_leave_credits' => $employee_credit->total_leave_credits - $daysDiff,
                                 'used_leave_credits' => $employee_credit->used_leave_credits + $daysDiff
                             ]);
-    
+
                             EmployeeLeaveCreditLogs::create([
                                 'employee_leave_credit_id' => $employee_credit->id,
                                 'previous_credit' => $previous_credit,
                                 'leave_credits' => $daysDiff,
-                                'reason'=>'apply'
+                                'reason' => 'apply'
                             ]);
                         }
-    
+
                         if ($request->requirements) {
                             $index = 0;
                             $requirements_name = $request->requirements_name;
-    
+
                             foreach ($request->file('requirements') as $key => $file) {
                                 $fileName = $file->getClientOriginalName();
                                 $size = filesize($file);
                                 $file_name_encrypted = Helpers::checkSaveFile($file, '/requirements');
-    
+
                                 LeaveApplicationRequirement::create([
                                     'leave_application_id' => $leave_application->id,
                                     'file_name' => $fileName,
@@ -676,36 +672,35 @@ class LeaveApplicationController extends Controller
                                 $index++;
                             }
                         }
-    
+
                         LeaveApplicationLog::create([
                             'action_by' => $employee_profile->id,
                             'leave_application_id' => $leave_application->id,
                             'action' => 'Applied'
                         ]);
-                    }  
+                    }
                 }
 
                 $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->get();
-               
+
                 foreach ($employeeCredit as $leaveCredit) {
                     $leaveType = $leaveCredit->leaveType->name;
                     $totalCredits = $leaveCredit->total_leave_credits;
                     $usedCredits = $leaveCredit->used_leave_credits;
-    
+
                     $result[] = [
                         'leave_type_name' => $leaveType,
                         'total_leave_credits' => $totalCredits,
                         'used_leave_credits' => $usedCredits
                     ];
                 }
-               
+
                 return response()->json([
                     'data' =>  new LeaveApplicationResource($leave_application),
                     'credits' => $result ? $result : [],
                     'message' => 'Successfully applied for ' . $leave_type->name
                 ], Response::HTTP_OK);
             }
-           
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -716,7 +711,7 @@ class LeaveApplicationController extends Controller
         try {
             $leave_application = LeaveApplication::find($id);
 
-            if(!$leave_application){
+            if (!$leave_application) {
                 return response()->json(['message' => "No leave application record."], Response::HTTP_NOT_FOUND);
             }
 
@@ -742,20 +737,16 @@ class LeaveApplicationController extends Controller
 
             $leave_application = LeaveApplication::find($id);
             $leave_type = $leave_application->leaveType;
-            $leave_application_hrmo=$leave_application->hrmo_officer;
-            $leave_application_recommending=$leave_application->recommending_officer  ;
-            $leave_application_approving=$leave_application->approving_officer  ;
+            $leave_application_hrmo = $leave_application->hrmo_officer;
+            $leave_application_recommending = $leave_application->recommending_officer;
+            $leave_application_approving = $leave_application->approving_officer;
 
             if ($employee_profile->id === $leave_application_hrmo) {
-                $status='declined by hrmo officer';
-            }
-            else if($employee_profile->id === $leave_application_recommending)
-            {
-                $status='declined by recommending officer';
-            }
-            else if($employee_profile->id === $leave_application_approving)
-            {
-                $status='declined by approving officer';
+                $status = 'declined by hrmo officer';
+            } else if ($employee_profile->id === $leave_application_recommending) {
+                $status = 'declined by recommending officer';
+            } else if ($employee_profile->id === $leave_application_approving) {
+                $status = 'declined by approving officer';
             }
 
             $leave_application->update([
@@ -802,11 +793,11 @@ class LeaveApplicationController extends Controller
             $hrmo_officer = Section::with(['supervisor'])->where('code', 'HRMO')->first();
 
             $employeeLeaveCredit = EmployeeLeaveCredit::with('employeeLeaveCreditLogs')
-            ->where('employee_profile_id', $data->employee_profile_id)
-            ->where('leave_type_id', $data->leave_type_id)
-            ->first();
+                ->where('employee_profile_id', $data->employee_profile_id)
+                ->where('leave_type_id', $data->leave_type_id)
+                ->first();
 
-            if($employeeLeaveCredit) {
+            if ($employeeLeaveCredit) {
                 $creditLogs = $employeeLeaveCredit->employeeLeaveCreditLogs;
                 // Now you can work with $creditLogs
             } else {
@@ -827,18 +818,18 @@ class LeaveApplicationController extends Controller
 
             $dompdf->setPaper('Legal', 'portrait');
             $dompdf->render();
-            $filename = 'LEAVE REPORT - ('. $data->employeeProfile->personalInformation->name() .').pdf';
+            $filename = 'LEAVE REPORT - (' . $data->employeeProfile->personalInformation->name() . ').pdf';
 
             // Use 'I' instead of 'D' to open in the browser
-                $dompdf->stream($filename, array('Attachment' => false));
+            $dompdf->stream($filename, array('Attachment' => false));
             // $dompdf->stream($filename);
 
 
             // if ($dompdf->loadHtml($html)) {
-                // $dompdf->setPaper('Legal', 'portrait');
-                // $dompdf->render();
-                // $filename = 'Leave Application('. $data->employeeProfile->personalInformation->name() .').pdf';
-                // $dompdf->stream($filename);
+            // $dompdf->setPaper('Legal', 'portrait');
+            // $dompdf->render();
+            // $filename = 'Leave Application('. $data->employeeProfile->personalInformation->name() .').pdf';
+            // $dompdf->stream($filename);
             // } else {
             //     return response()->json(['message' => 'Error loading HTML content', 'error' => true]);
             // }
@@ -846,5 +837,49 @@ class LeaveApplicationController extends Controller
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage(), 'error' => true]);
         }
+    }
+
+    public static function checkOverlap($start, $end, $employeeId)
+    {
+        // Check for overlapping dates in LeaveApplication
+        $overlappingLeave = LeaveApplication::where(function ($query) use ($start, $end, $employeeId) {
+            $query->where('employee_profile_id', $employeeId)
+                ->where(function ($query) use ($start, $end) {
+                    $query->whereBetween('date_from', [$start, $end])
+                        ->orWhereBetween('date_to', [$start, $end])
+                        ->orWhere(function ($query) use ($start, $end) {
+                            $query->where('date_from', '<=', $start)
+                                ->where('date_to', '>=', $end);
+                        });
+                });
+        })->exists();
+
+        // Check for overlapping dates in OfficialBusiness
+        $overlappingOb = OfficialBusiness::where(function ($query) use ($start, $end, $employeeId) {
+            $query->where('employee_profile_id', $employeeId)
+                ->where(function ($query) use ($start, $end) {
+                    $query->whereBetween('date_from', [$start, $end])
+                        ->orWhereBetween('date_to', [$start, $end])
+                        ->orWhere(function ($query) use ($start, $end) {
+                            $query->where('date_from', '<=', $start)
+                                ->where('date_to', '>=', $end);
+                        });
+                });
+        })->exists();
+
+        $overlappingOT = OfficialTime::where(function ($query) use ($start, $end, $employeeId) {
+            $query->where('employee_profile_id', $employeeId)
+                ->where(function ($query) use ($start, $end) {
+                    $query->whereBetween('date_from', [$start, $end])
+                        ->orWhereBetween('date_to', [$start, $end])
+                        ->orWhere(function ($query) use ($start, $end) {
+                            $query->where('date_from', '<=', $start)
+                                ->where('date_to', '>=', $end);
+                        });
+                });
+        })->exists();
+
+        // Return true if any overlap is found, otherwise false
+        return $overlappingLeave || $overlappingOb || $overlappingOT;
     }
 }
