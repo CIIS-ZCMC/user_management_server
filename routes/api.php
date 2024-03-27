@@ -396,9 +396,9 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('monitization-posts', 'MonitizationPostingController@index');
         });
-
+        
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::get('monitization-posts/{id}/candidates', 'MonitizationPostingController@showCandidates');
+            Route::get('monitization-posts-candidates', 'MonitizationPostingController@candidates');
         });
 
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function () {
