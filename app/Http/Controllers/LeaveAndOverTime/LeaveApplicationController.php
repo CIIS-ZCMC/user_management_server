@@ -6,11 +6,13 @@ use App\Http\Controllers\UmisAndEmployeeManagement\EmployeeProfileController;
 use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Resources\LeaveTypeResource;
 use App\Http\Resources\MyApprovedLeaveApplicationResource;
+use App\Models\Department;
 use App\Models\Division;
 use App\Models\EmployeeCreditLog;
 use App\Models\EmployeeOvertimeCredit;
 use App\Models\LeaveType;
 use App\Models\Section;
+use App\Models\Unit;
 use Carbon\Carbon;
 use App\Helpers\Helpers;
 use Dompdf\Dompdf;
@@ -199,18 +201,47 @@ class LeaveApplicationController extends Controller
             $employee_profile = $request->user;
             $position = $employee_profile->position();
 
-            if($position === null){
-                return response()->json(['message' => "You dont have rights to access this."], Response::HTTP_FORBIDDEN);
+            if($position['position'] === 'Medical Center Chief'){
+                $omcc = Division::where('code', 'OMCC')->first();
+
+                $leave_applications = LeaveApplication::select('leave_applications.*')
+                    ->join('employee_profiles', 'employee_profiles.id', 'leave_applications.employee_profile_id')
+                    ->join('assigned_areas', 'assigned_areas.employee_profile_id', 'employee_profiles.id')
+                    ->where('assigned_areas.division_id', $omcc->id)
+                    ->where('leave_applications.status', 'approved')->get();
+                
+                return response()->json([
+                    'data' => LeaveApplicationResource::collection($leave_applications),
+                    'message' => 'Retrieve list.'
+                ], Response::HTTP_OK);
             }
 
             $assigned_area = $employee_profile->assignedArea->findDetails();
+            $division_id = null;
 
-            $leave_applications = LeaveApplication::select('leave_applications.*')
-                ->join('employee_profiles', 'employee_profiles.id', 'leave_applications.employee_profile_id')
-                ->join('assigned_areas', 'assigned_areas.employee_profile_id', 'employee_profiles.id')
-                ->where('assigned_areas.'.Str::lower($assigned_area['sector']."_id"), $assigned_area['details']->id)
-                ->where('leave_applications.status', 'approved')
-                ->get();
+            switch($assigned_area['sector'])
+            {
+                case "Division":
+                    $division_id = $assigned_area['details']->id;
+                    break;
+                case "Department":
+                    $division_id = Department::find($assigned_area['details']->id)->division_id;
+                    break;
+                case "Section":
+                    $department = Section::find($assigned_area['details']->id)->department;
+                    $division_id = $department->division_id;
+                    break;
+                case "Unit":
+                    $section = Unit::find($assigned_area['details']->id)->section;
+                    $division_id = $section->department->division_id;
+                    break;
+            }
+
+            // Retrieve all leave applications under the division
+            $leave_applications = LeaveApplication::whereHas('employee.employeeProfile.assignedArea.section.department.division', function ($query) use ($division_id) {
+                $query->where('divisions.id', $division_id);
+            })
+            ->get();
             
             return response()->json([
                 'data' => LeaveApplicationResource::collection($leave_applications),
