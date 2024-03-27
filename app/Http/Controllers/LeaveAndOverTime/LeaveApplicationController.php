@@ -525,6 +525,10 @@ class LeaveApplicationController extends Controller
             $recommending_and_approving = Helpers::getRecommendingAndApprovingOfficer($employee_profile->assignedArea->findDetails(), $employee_profile->id);
             $hrmo_officer = Helpers::getHrmoOfficer();
 
+            if($hrmo_officer === null || $recommending_and_approving === null || $recommending_and_approving['recommending_officer'] === null || $recommending_and_approving['approving_officer'] === null){
+                return response()->json(['message' => 'No recommending officer and/or supervising officer assigned.'], Response::HTTP_FORBIDDEN);
+            }
+
             $cleanData = [];
             $result = [];
 
@@ -540,7 +544,7 @@ class LeaveApplicationController extends Controller
             $overlapExists = Helpers::hasOverlappingRecords($start, $end, $employeeId);
 
             if ($overlapExists) {
-                return response()->json(['message' => 'You already have an application for the same dates.'], 403);
+                return response()->json(['message' => 'You already have an application for the same dates.'], Response::HTTP_FORBIDDEN);
             } else {
                 if ($leave_type->is_special) {
                     if ($leave_type->period < $daysDiff) {
