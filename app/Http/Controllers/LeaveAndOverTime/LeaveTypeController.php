@@ -67,12 +67,11 @@ class LeaveTypeController extends Controller
                 $leave_type['total_credits'] = ModelsEmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)
                 ->where('leave_type_id', $leave_type->id)
                 ->first();
-            
                 
                 $final_date = null;
                 $tomorrow = Carbon::tomorrow();
                 
-                if($leave_type->file_after === null){
+                if($leave_type->file_after === null && $leave_types->file_before !== null){
                     $schedules = EmployeeSchedule::select("s.date")->join('schedules as s', 's.id', 'employee_profile_schedule.schedule_id')
                         ->whereDate('s.date', '>=', $tomorrow)
                         ->where('employee_profile_schedule.employee_profile_id', $employee_profile->id)
@@ -84,7 +83,7 @@ class LeaveTypeController extends Controller
                     }
                 }
 
-                if($leave_type->file_after !== null){
+                if($leave_type->file_after !== null && $leave_type->code !== 'SL'){
                     $schedules = EmployeeSchedule::select("s.date")->join('schedules as s', 's.id', 'employee_profile_schedule.schedule_id')
                         ->where('employee_profile_schedule.employee_profile_id', $employee_profile->id)
                         ->whereDate('s.date', '<=', Carbon::now())
