@@ -32,7 +32,7 @@ class AuthenticateWithCookie
             }
 
             if (!$cookieValue) {
-                return response()->json(["data" => "/", 'message' => 'un-authorized'], Response::HTTP_UNAUTHORIZED);
+                return response()->json(["data" => "/", 'message' => 'un-authorized'], Response::HTTP_UNAUTHORIZED)->cookie(Cache::get('cookie_name'), '', -1);
             }
 
             $encryptedToken = json_decode($cookieValue);
