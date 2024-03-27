@@ -29,7 +29,10 @@ class MonetizationApplicationController extends Controller
         try {
             $employee_profile = $request->user;
             $mone_applications = MonetizationApplication::all();
-            $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->where('leave_type_id ', '1')->orWhere('leave_type_id ', '2')->get();
+            $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)
+                ->whereIn('leave_type_id', [1, 2])
+                ->get();
+
             $result = [];
 
             foreach ($employeeCredit as $leaveCredit) {
