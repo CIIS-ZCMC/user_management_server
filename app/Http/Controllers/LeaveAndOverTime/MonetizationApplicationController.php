@@ -175,7 +175,7 @@ class MonetizationApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function store(Request $request)
     {
         try{
@@ -248,24 +248,49 @@ class MonetizationApplicationController extends Controller
             return response()->json(['message' => $e->getMessage(),  'error'=>true], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    public function updateMoneApplication(Request $request)
+    public function updateMoneApplication($id, Request $request)
     {
         try{
-            $mone_application_id=$request->monetization_application_id;
-            $user_id = Auth::user()->id;
-            $user = EmployeeProfile::where('id','=',$user_id)->first();
-            $mone_application = MonetizationApplication::findOrFail($mone_application_id);
-            $mone_application->credit_value = $request->credit_value;
-            if ($request->hasFile('attachment')) {
-                $imagePath = $request->file('attachment')->store('images', 'public');
-                $mone_application->attachment = $imagePath;
+            
+            $employee_profile = $request->user;
+            $leave_type_code = strip_tags($request->code);
+            
+            $leave_type = LeaveType::where('code', $leave_type_code)->first();
+            $credit = EmployeeLeaveCredit::where('leave_type_id', $leave_type->id)->first();
+
+            if($credit->total_leave_credits < 15){
+                return response()->json(['message' => "Insufficient vacation leave credit to file a monitization."], Response::HTTP_BAD_REQUEST);
             }
             
-            $mone_application->update();
+            $monitization = MonetizationApplication::find($id);
+
+            $cleanData = [];
+            $cleanData['employee_profile_id'] = $employee_profile->id;
+            $cleanData['leave_type_id'] = $leave_type->id;
+            $cleanData['reason'] = strip_tags($request->reason);
+            $cleanData['credit_value'] = strip_tags($request->credit_value);
+            
+            try {
+                $fileName = Helpers::checkSaveFile($request->attachment, 'monetization/files');
+                if (is_string($fileName)) {
+                    $cleanData['attachment'] = $request->attachment === null  || $request->attachment === 'null' ? null : $fileName;
+                }
+
+                if (is_array($fileName)) {
+                    $in_valid_file = true;
+                    $cleanData['attachment'] = null;
+                }
+            } catch (\Throwable $th) {}
+
+            $monitization->update($cleanData);
            
-            $process_name="Update";
-            $mone_logs = $this->storeMonetizationLog($mone_application->id,$process_name,$user->id);
-            return response()->json(['data' => 'Success'], Response::HTTP_OK);
+            $process_name="Applied";
+            $this->storeMonetizationLog($monitization->id,$process_name,$employee_profile->id);
+
+            return response()->json([
+                'data' => new MonetizationApplicationResource($monitization),
+                'message' => "Monetization application updated."
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME, 'updateMoneApplication', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
