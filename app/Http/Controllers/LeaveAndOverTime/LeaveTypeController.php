@@ -4,6 +4,7 @@ namespace App\Http\Controllers\LeaveAndOverTime;
 
 use App\Helpers\Helpers;
 use App\Http\Requests\AuthPinApprovalRequest;
+use App\Models\EmployeeSchedule;
 use App\Models\LeaveType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LeaveTypeRequest;
@@ -15,6 +16,7 @@ use App\Models\LeaveAttachment;
 use App\Models\LeaveTypeLog;
 use App\Models\LeaveTypeRequirement;
 use App\Models\Requirement;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
@@ -50,7 +52,6 @@ class LeaveTypeController extends Controller
             {
                 return response()->json(['message' => 'Unauthorized.'], Response::HTTP_NOT_FOUND);
             }
-            // return response()->json(['message' => $employee_profile], 401);
 
             $leave_types = LeaveType::all();
 
@@ -61,22 +62,40 @@ class LeaveTypeController extends Controller
 
                 if($leave_type->is_special === 1){
                     $leave_type['total_credits'] = null;
-                    // $result_data[] = $leave_type;
                     continue;
                 }
                 $leave_type['total_credits'] = ModelsEmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)
                 ->where('leave_type_id', $leave_type->id)
                 ->first();
-
-            
-            // // Fetch requirements (assuming leaveType relationship is defined)
-            // $leave_type['requirements'] = $leave_type['total_credits'] 
-            //     ? $leave_type['total_credits']->leaveType->requirements 
-            //     : [];
                 
+                $final_date = null;
+                $tomorrow = Carbon::tomorrow();
+                
+                if($leave_type->file_after === null && $leave_type->file_before !== null){
+                    $schedules = EmployeeSchedule::select("s.date")->join('schedules as s', 's.id', 'employee_profile_schedule.schedule_id')
+                        ->whereDate('s.date', '>=', $tomorrow)
+                        ->where('employee_profile_schedule.employee_profile_id', $employee_profile->id)
+                        ->limit($leave_type->file_before)->get();
+                        
+                    if(count($schedules) > 0){
+                        $last_schedule = $schedules->last();
+                        $final_date = $last_schedule ? Carbon::parse($last_schedule->date)->format('Y-m-d') : null;
+                    }
+                }
+
+                if($leave_type->file_after !== null && $leave_type->code !== 'SL'){
+                    $schedules = EmployeeSchedule::select("s.date")->join('schedules as s', 's.id', 'employee_profile_schedule.schedule_id')
+                        ->where('employee_profile_schedule.employee_profile_id', $employee_profile->id)
+                        ->whereDate('s.date', '<=', Carbon::now())
+                        ->orderByDesc('s.date')->limit($leave_type->file_after)->get();
+
+                    if(count($schedules) > 0){
+                        $last_schedule = $schedules->last();
+                        $final_date = $last_schedule ? Carbon::parse($last_schedule->date)->format('Y-m-d') : null;
+                    }
+                }
                 
                 $result_data[] = [
-                    // 'all' => $leave_type,
                     'value' => $leave_type->id,
                     'label'=> $leave_type->name,
                     'description'=> $leave_type->description,
@@ -92,6 +111,7 @@ class LeaveTypeController extends Controller
                     'is_days_recommended'=> $leave_type->is_days_recommended,
                     'created_at'=> $leave_type->created_at,
                     'updated_at'=> $leave_type->updated_at,
+                    'allowed_date' => $final_date,
                     'total_credits'=> $leave_type->total_credits ? [
                         'id'=> $leave_type->total_credits->id,
                         'employee_profile_id'=> $leave_type->total_credits->employee_profile_id,

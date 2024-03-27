@@ -20,38 +20,36 @@ Route::get('/initialize-storage', function () {
     Artisan::call('storage:link');
 });
 
-Route::
-        namespace('App\Http\Controllers')->group(function () {
-            Route::get('announcements', 'AnnouncementsController@index');
-            Route::get('announcements-search', 'AnnouncementsController@searchAnnouncement');
-            Route::get('announcements/{id}', 'AnnouncementsController@show');
+Route::namespace('App\Http\Controllers')->group(function () {
+    Route::get('announcements', 'AnnouncementsController@index');
+    Route::get('announcements-search', 'AnnouncementsController@searchAnnouncement');
+    Route::get('announcements/{id}', 'AnnouncementsController@show');
 
-            Route::get('events', 'EventsController@index');
-            Route::get('events-search', 'EventsController@searchEvents');
-            Route::get('events/{id}', 'EventsController@show');
+    Route::get('events', 'EventsController@index');
+    Route::get('events-search', 'EventsController@searchEvents');
+    Route::get('events/{id}', 'EventsController@show');
 
-            Route::get('memorandums', 'MemorandumsController@index');
-            Route::get('memorandums-search', 'MemorandumsController@searchMemorandum');
-            Route::get('memorandums/{id}', 'MemorandumsController@show');
+    Route::get('memorandums', 'MemorandumsController@index');
+    Route::get('memorandums-search', 'MemorandumsController@searchMemorandum');
+    Route::get('memorandums/{id}', 'MemorandumsController@show');
 
-            Route::get('news', 'NewsController@index');
-            Route::get('news-search', 'NewsController@searchNews');
-            Route::get('news/{id}', 'NewsController@show');
-        });
+    Route::get('news', 'NewsController@index');
+    Route::get('news-search', 'NewsController@searchNews');
+    Route::get('news/{id}', 'NewsController@show');
+});
 
 
-Route::
-        namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
-            Route::post('sign-in', 'EmployeeProfileController@signIn');
-            Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
-            Route::post('skip-for-now', 'EmployeeProfileController@updatePasswordExpiration');
-            Route::post('verify-email-and-send-otp', 'EmployeeProfileController@verifyEmailAndSendOTP');
-            Route::post('verify-otp', 'EmployeeProfileController@verifyOTP');
-            Route::post('new-password', 'EmployeeProfileController@newPassword');
-            Route::get('retrieve-token', 'CsrfTokenController@generateCsrfToken');
-            Route::get('validate-token', 'CsrfTokenController@validateToken');
-            Route::post('employee-profile/signout-from-other-device', 'EmployeeProfileController@signOutFromOtherDevice');
-        });
+Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
+    Route::post('sign-in', 'EmployeeProfileController@signIn');
+    Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
+    Route::post('skip-for-now', 'EmployeeProfileController@updatePasswordExpiration');
+    Route::post('verify-email-and-send-otp', 'EmployeeProfileController@verifyEmailAndSendOTP');
+    Route::post('verify-otp', 'EmployeeProfileController@verifyOTP');
+    Route::post('new-password', 'EmployeeProfileController@newPassword');
+    Route::get('retrieve-token', 'CsrfTokenController@generateCsrfToken');
+    Route::get('validate-token', 'CsrfTokenController@validateToken');
+    Route::post('employee-profile/signout-from-other-device', 'EmployeeProfileController@signOutFromOtherDevice');
+});
 
 Route::middleware('auth.cookie')->group(function () {
 
@@ -392,6 +390,64 @@ Route::middleware('auth.cookie')->group(function () {
      * Employee Management
      */
     Route::namespace ('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
+        /**
+         * Monitization Posting Module
+         */
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('monitization-posts', 'MonitizationPostingController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('monitization-posts/{id}/candidates', 'MonitizationPostingController@showCandidates');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function () {
+            Route::get('monitization-posts/{id}/check-for-sl-monitization', 'MonitizationPostingController@checkForSLMonitization');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {
+            Route::post('monitization-post', 'MonitizationPostingController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::put('monitization-posts/{id}', 'MonitizationPostingController@update');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
+            Route::delete('monitization-posts/{id}', 'MonitizationPostingController@destroy');
+        });
+
+        /**
+         * Monitization Posting Module
+         */
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('monetization', 'MonetizationApplicationController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM approve'])->group(function () {
+            Route::put('monetization-approve/{id}', 'MonetizationApplicationController@approvedApplication');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM approve'])->group(function () {
+            Route::put('monetization-decline/{id}', 'MonetizationApplicationController@declineMoneApplication');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM approve'])->group(function () {
+            Route::put('monetization-cancel/{id}', 'MonetizationApplicationController@cancelmoneApplication');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {
+            Route::post('monetization', 'MonetizationApplicationController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::put('monetization/{id}', 'MonetizationApplicationController@updateMoneApplication');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
+            Route::delete('monetization/{id}', 'MonetizationApplicationController@destroy');
+        });
+
         /**
          * Address Module
          */
@@ -1660,6 +1716,10 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
             Route::get('leave-application-all', 'LeaveApplicationController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
+            Route::get('my-leave-application-approved', 'LeaveApplicationController@myApprovedLeaveApplication');
         });
 
         Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {

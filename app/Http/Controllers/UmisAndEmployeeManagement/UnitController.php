@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 
 use App\Http\Requests\AuthPinApprovalRequest;
 use App\Models\Section;
+use App\Models\SpecialAccessRole;
+use App\Models\SystemRole;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -62,6 +64,8 @@ class UnitController extends Controller
     {
         try{
             $user = $request->user;
+            $previous_head = null;
+            $system_role = null;
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
@@ -82,12 +86,31 @@ class UnitController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             } 
 
+            if($unit->head_employee_profile_id !== null){
+                $previous_head = $unit->head_employee_profile_id;
+            }
+
             $cleanData = [];
             $cleanData['head_employee_profile_id'] = $employee_profile->id;
             $cleanData['head_attachment_url'] = $request->attachment===null?'NONE': $this->file_validation_and_upload->check_save_file($request, "unit/files");
             $cleanData['head_effective_at'] = Carbon::now();
 
             $unit->update($cleanData);
+            
+            $system_role = SystemRole::where('code', 'UNIT-HEAD-06')->first();
+
+            SpecialAccessRole::create([
+                'system_role_id' => $system_role->id,
+                'employee_profile_id' => $employee_profile->id
+            ]);
+
+            /**
+             * Revoke Previous Head rights as Division Head
+             */
+            if($previous_head !== null){
+                $access_right = SpecialAccessRole::where('employee_profile_id', $previous_head)->where('system_role_id', $system_role->id)->first();
+                $access_right->delete();
+            }
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in assigning head '.$this->PLURAL_MODULE_NAME.'.');
 

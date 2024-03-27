@@ -5,6 +5,8 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 use App\Http\Controllers\Controller;
 
 use App\Http\Requests\AuthPinApprovalRequest;
+use App\Models\SpecialAccessRole;
+use App\Models\SystemRole;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -13,7 +15,6 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use App\Helpers\Helpers;
 use App\Services\FileValidationAndUpload;
-use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\DivisionRequest;
 use App\Http\Requests\DivisionAssignChiefRequest;
 use App\Http\Requests\DivisionAssignOICRequest;
@@ -62,6 +63,8 @@ class DivisionController extends Controller
     {
         try{
             $user = $request->user;
+            $previous_head = null;
+            $system_role = null;
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
@@ -82,12 +85,40 @@ class DivisionController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
+            if($division->chief_employee_profile_id !== null){
+                $previous_head = $division->chief_employee_profile_id;
+            }
+
             $cleanData = [];
             $cleanData['chief_employee_profile_id'] = $employee_profile->id;
             $cleanData['chief_attachment_url'] = $request->input('attachment')===null?'NONE': $this->file_validation_and_upload->check_save_file($request, 'division/files');
             $cleanData['chief_effective_at'] = Carbon::now();
 
             $division->update($cleanData);
+
+            if($division->code === 'OMCC'){
+                $system_role = SystemRole::where('code', 'OMCC-01')->first();
+
+                SpecialAccessRole::create([
+                    'system_role_id' => $system_role->id,
+                    'employee_profile_id' => $employee_profile->id
+                ]);
+            }else{
+                $system_role = SystemRole::where('code', 'DIV-HEAD-03')->first();
+
+                SpecialAccessRole::create([
+                    'system_role_id' => $system_role->id,
+                    'employee_profile_id' => $employee_profile->id
+                ]);
+            }
+
+            /**
+             * Revoke Previous Head rights as Division Head
+             */
+            if($previous_head !== null){
+                $access_right = SpecialAccessRole::where('employee_profile_id', $previous_head)->where('system_role_id', $system_role->id)->first();
+                $access_right->delete();
+            }
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in assigning division chief '.$this->PLURAL_MODULE_NAME.'.');
 

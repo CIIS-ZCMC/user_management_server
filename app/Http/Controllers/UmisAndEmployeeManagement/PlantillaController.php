@@ -572,7 +572,7 @@ class PlantillaController extends Controller
             foreach ($plantilla_numbers as $plantilla_number) {
                 $cleanData['plantilla_number_id'] = $plantilla_number->id;
                 $plantilla_assign_area = PlantillaAssignedArea::create($cleanData);
-                $plantilla_number->update(['assigned_at' => now(), 'is_vacant' => 0]);
+                $plantilla_number->update(['assigned_at' => now(), 'is_vacant' => 1]);
                 $plantilla_number['plantilla_assign_area'] = $plantilla_assign_area;
                 $plantilla_result[] = $plantilla_number;
             }

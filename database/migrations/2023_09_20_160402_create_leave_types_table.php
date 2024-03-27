@@ -18,7 +18,11 @@ return new class extends Migration
             $table->string('code');
             $table->text('description')->nullable();
             $table->double('period')->nullable();
+            $table->integer('before')->nullable();
+            $table->integer('after')->nullable();
             $table->text('file_date');
+            $table->integer('file_after')->nullable();
+            $table->integer('file_before')->nullable();
             $table->float('month_value');
             $table->float('annual_credit');
             $table->boolean('is_active')->default(true);

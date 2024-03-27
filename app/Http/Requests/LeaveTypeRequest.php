@@ -27,6 +27,8 @@ class LeaveTypeRequest extends FormRequest
             'republic_act' => 'required|string',
             'description' => 'required|string',
             'file_date' => 'required|string',
+            'file_after' => 'nullable|numeric',
+            'file_before' => 'nullable|numeric',
             'is_country' => 'required|boolean',
             'is_illness' => 'required|boolean',
             'is_study' => 'required|boolean',
