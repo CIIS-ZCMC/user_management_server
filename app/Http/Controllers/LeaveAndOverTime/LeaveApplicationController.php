@@ -237,11 +237,14 @@ class LeaveApplicationController extends Controller
                     break;
             }
 
-            // Retrieve all leave applications under the division
-            $leave_applications = LeaveApplication::whereHas('employee.employeeProfile.assignedArea.section.department.division', function ($query) use ($division_id) {
-                $query->where('divisions.id', $division_id);
-            })
-            ->get();
+            $leave_applications = LeaveApplication::join('employee_profiles as ep', 'leave_applications.employee_profile_id', 'ep.id')
+                ->join('assigned_areas as aa', 'ep.id', 'aa.employee_profile_id')
+                ->join('sections as s', 'aa.section_id', 's.id')
+                ->join('departments as d', 's.department_id', 'd.id')
+                ->join('divisions as dv', 'd.division_id', 'dv.id')
+                ->select('leave_applications.*')
+                ->where('dv.id', $division_id)
+                ->get();
             
             return response()->json([
                 'data' => LeaveApplicationResource::collection($leave_applications),
