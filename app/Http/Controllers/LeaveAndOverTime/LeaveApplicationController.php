@@ -192,6 +192,21 @@ class LeaveApplicationController extends Controller
         }
     }
 
+    public function approvedLeaveRequest(Request $request)
+    {
+        try{
+            $leave_applications = [];
+
+            
+            return response()->json([
+                'data' => MyApprovedLeaveApplicationResource::collection($leave_applications),
+                'message' => 'Retrieve list.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public function myApprovedLeaveApplication(Request $request)
     {
         try{
@@ -433,7 +448,7 @@ class LeaveApplicationController extends Controller
                         return response()->json(['message' => 'Forbidden.'], Response::HTTP_FORBIDDEN);
                     }
                     $status = 'for recommending approval';
-                    $log_status = 'Approved by HRMO';
+                    $log_status = 'Approved by HRMO'; 
                     $leave_application->update(['status' => $status]);
                     Helpers::pendingLeaveNotfication($leave_application->recommending_officer, $leave_application->leaveType->name);
                     Helpers::notifications(
@@ -442,7 +457,6 @@ class LeaveApplicationController extends Controller
                         $leave_application->leaveType->name);
                     break;
                 case 'for recommending approval':
-
                     if ($position === null || str_contains($position['position'], 'Unit')) {
                         return response()->json(['message' => 'Forbidden'], Response::HTTP_FORBIDDEN);
                     }
@@ -452,7 +466,7 @@ class LeaveApplicationController extends Controller
                     Helpers::pendingLeaveNotfication($leave_application->approving_officer, $leave_application->leaveType->name);
                     Helpers::notifications(
                         $leave_application->employee_profile_id, 
-                        $leave_application->recommendingOfficer()->personalInformation->name()." has approved your ".$leave_application->leaveType->name." request.", 
+                        $leave_application->recommendingOfficer->personalInformation->name()." has approved your ".$leave_application->leaveType->name." request.", 
                         $leave_application->leaveType->name);
                     break;
                 case 'for approving approval':
