@@ -29,6 +29,7 @@ use App\Models\LeaveApplicationLog;
 use App\Models\LeaveApplicationRequirement;
 use App\Models\OfficialBusiness;
 use App\Models\OfficialTime;
+use Illuminate\Support\Str;
 
 class LeaveApplicationController extends Controller
 {
@@ -195,11 +196,24 @@ class LeaveApplicationController extends Controller
     public function approvedLeaveRequest(Request $request)
     {
         try{
-            $leave_applications = [];
+            $employee_profile = $request->user;
+            $position = $employee_profile->position();
 
+            if($position === null){
+                return response()->json(['message' => "You dont have rights to access this."], Response::HTTP_FORBIDDEN);
+            }
+
+            $assigned_area = $employee_profile->assignedArea->findDetails();
+
+            $leave_applications = LeaveApplication::select('leave_applications.*')
+                ->join('employee_profiles', 'employee_profiles.id', 'leave_applications.employee_profile_id')
+                ->join('assigned_areas', 'assigned_areas.employee_profile_id', 'employee_profiles.id')
+                ->where('assigned_areas.'.Str::lower($assigned_area['sector']."_id"), $assigned_area['details']->id)
+                ->where('leave_applications.status', 'approved')
+                ->get();
             
             return response()->json([
-                'data' => MyApprovedLeaveApplicationResource::collection($leave_applications),
+                'data' => LeaveApplicationResource::collection($leave_applications),
                 'message' => 'Retrieve list.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
