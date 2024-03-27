@@ -463,11 +463,10 @@ class ScheduleController extends Controller
     public function findSchedule(Request $request)
     {
         try {
-
-            $user = $request->user->id;
+            $user = $request->employee_id;
             $sql = EmployeeSchedule::where('employee_profile_id', $user)
                 ->whereHas('schedule', function ($query) use ($request) {
-                    $query->where('date', $request->date);
+                    $query->where('date', $request->date_selected);
                 })->get();
 
             $schedule = [];

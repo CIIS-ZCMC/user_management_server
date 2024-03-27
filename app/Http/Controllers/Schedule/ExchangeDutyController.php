@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Schedule;
 
+use App\Http\Resources\EmployeeScheduleResource;
 use App\Http\Resources\TimeShiftResource;
 use App\Models\EmployeeSchedule;
 use App\Models\ExchangeDuty;
@@ -74,7 +75,6 @@ class ExchangeDutyController extends Controller
     public function store(ExchangeDutyRequest $request)
     {
         try {
-
             $user = $request->user;
             $assigned_area = $user->assignedArea->findDetails();
 
@@ -93,53 +93,68 @@ class ExchangeDutyController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
+
             $data = null;
+            $requester = $cleanData['requested_employee_id'];    // requester id on payload
+            $reliever = $cleanData['reliever_employee_id'];      // reliever id on payload
+            $date_swap = $cleanData['requested_date_to_swap'];       // date schedule of requester want to swap
+            $date_duty = $cleanData['requested_date_to_duty'];       // date of requester want to duty
 
-            $employee = EmployeeProfile::where('id', $cleanData['reliever_employee_id'])->first();
-            if ($employee) {
-                $schedule = Schedule::where('time_shift_id', $cleanData['time_shift_id'])
-                    ->where('date', $cleanData['date'])
-                    ->first();
+            $requester_schedule = EmployeeSchedule::where('employee_profile_id', $requester)
+                ->whereHas('schedule', function ($query) use ($date_swap) {
+                    $query->where('date', $date_swap);
+                })->first();
 
-                if (!$schedule) {
-                    $isWeekend = (Carbon::parse($cleanData['date']))->isWeekend();
-
-                    $schedule = new Schedule;
-                    $schedule->time_shift_id = $cleanData['time_shift_id'];
-                    $schedule->date = $cleanData['date'];
-                    $schedule->is_weekend = $isWeekend ? 1 : 0;
-                    $schedule->save();
-                }
-
-                $employee_schedule = EmployeeSchedule::where('employee_profile_id', $employee->id)
-                    ->where('schedule_id', $schedule->id)
-                    ->first();
-
-                if (!$employee_schedule) {
-                    return response()->json(['message' => 'Employee reliever has no schedule on ' . $cleanData['date'] . '.'], Response::HTTP_NOT_FOUND);
-                }
-
-                $approve_by = Helpers::ExchangeDutyApproval($assigned_area, $user->id);
-
-                $data = new ExchangeDuty;
-                $data->schedule_id = $schedule->id;
-                $data->requested_employee_id = $user->id;
-                $data->reliever_employee_id = $employee->id;
-                $data->approve_by = $approve_by['approve_by'];
-                $data->reason = $cleanData['reason'];
-                $data->save();
+            if (!$requester_schedule) {
+                return response()->json(['message' => 'Employee requester has no schedule on ' . $date_swap . '.'], Response::HTTP_NOT_FOUND);
             }
+
+            $reliever_schedule = EmployeeSchedule::where('employee_profile_id', $reliever)
+                ->whereHas('schedule', function ($query) use ($date_duty) {
+                    $query->where('date', $date_duty);
+                })->first();
+
+            if (!$reliever_schedule) {
+                return response()->json(['message' => 'Employee reliever has no schedule on ' . $date_duty . '.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $approve_by = Helpers::ExchangeDutyApproval($assigned_area, $user->id);
+
+            $cleanData['approve_by'] = $approve_by['approve_by'];
+            $cleanData['schedule_id'] = $requester_schedule->schedule->id;
+
+            $data = ExchangeDuty::create($cleanData);
 
             Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating.' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json([
                 'data' => new ExchangeDutyResource($data),
                 'logs' => Helpers::registerExchangeDutyLogs($data->id, $user->id, 'Applied'),
-                'message' => 'Exchange Duty requested.'
+                'message' => 'Requested Swap Schedule.'
             ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function edit(Request $request)
+    {
+        try {
+            $user = $request->user;
+
+            $model = ExchangeDuty::where('reliever_employee_id', $user->id)
+                ->where('deleted_at', null)
+                ->get();
+
+            return response()->json([
+                'data' => ExchangeDutyResource::collection($model),
+            ], Response::HTTP_OK);
+
+        } catch (\Throwable $th) {
+
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

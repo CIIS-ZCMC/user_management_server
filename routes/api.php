@@ -1914,7 +1914,7 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-ES view'])->group(function () {
             Route::get('exchange-duty', 'ExchangeDutyController@create');
-
+            Route::get('exchange-duty-aprroval', 'ExchangeDutyController@edit');
             Route::get('exchange-duty-employee', 'ScheduleController@employee');
             Route::get('exchange-duty-schedule', 'ScheduleController@findSchedule');
             Route::get('exchange-duty-time-shift', 'TimeShiftController@index');
