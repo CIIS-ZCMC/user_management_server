@@ -8,7 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class MonetizationApplication extends Model
 {
     use HasFactory;
+    
     protected $table = 'monetization_applications';
+
     public $fillable = [
         'employee_profile_id',
         'leave_type_id',
