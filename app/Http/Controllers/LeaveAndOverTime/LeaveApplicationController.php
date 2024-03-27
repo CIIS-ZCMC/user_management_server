@@ -29,6 +29,7 @@ use App\Models\LeaveApplicationLog;
 use App\Models\LeaveApplicationRequirement;
 use App\Models\OfficialBusiness;
 use App\Models\OfficialTime;
+use Illuminate\Support\Str;
 
 class LeaveApplicationController extends Controller
 {
@@ -188,6 +189,34 @@ class LeaveApplicationController extends Controller
                 'message' => 'Retrieve all leave application records.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function approvedLeaveRequest(Request $request)
+    {
+        try{
+            $employee_profile = $request->user;
+            $position = $employee_profile->position();
+
+            if($position === null){
+                return response()->json(['message' => "You dont have rights to access this."], Response::HTTP_FORBIDDEN);
+            }
+
+            $assigned_area = $employee_profile->assignedArea->findDetails();
+
+            $leave_applications = LeaveApplication::select('leave_applications.*')
+                ->join('employee_profiles', 'employee_profiles.id', 'leave_applications.employee_profile_id')
+                ->join('assigned_areas', 'assigned_areas.employee_profile_id', 'employee_profiles.id')
+                ->where('assigned_areas.'.Str::lower($assigned_area['sector']."_id"), $assigned_area['details']->id)
+                ->where('leave_applications.status', 'approved')
+                ->get();
+            
+            return response()->json([
+                'data' => LeaveApplicationResource::collection($leave_applications),
+                'message' => 'Retrieve list.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -433,7 +462,7 @@ class LeaveApplicationController extends Controller
                         return response()->json(['message' => 'Forbidden.'], Response::HTTP_FORBIDDEN);
                     }
                     $status = 'for recommending approval';
-                    $log_status = 'Approved by HRMO';
+                    $log_status = 'Approved by HRMO'; 
                     $leave_application->update(['status' => $status]);
                     Helpers::pendingLeaveNotfication($leave_application->recommending_officer, $leave_application->leaveType->name);
                     Helpers::notifications(
@@ -442,7 +471,6 @@ class LeaveApplicationController extends Controller
                         $leave_application->leaveType->name);
                     break;
                 case 'for recommending approval':
-
                     if ($position === null || str_contains($position['position'], 'Unit')) {
                         return response()->json(['message' => 'Forbidden'], Response::HTTP_FORBIDDEN);
                     }
@@ -452,7 +480,7 @@ class LeaveApplicationController extends Controller
                     Helpers::pendingLeaveNotfication($leave_application->approving_officer, $leave_application->leaveType->name);
                     Helpers::notifications(
                         $leave_application->employee_profile_id, 
-                        $leave_application->recommendingOfficer()->personalInformation->name()." has approved your ".$leave_application->leaveType->name." request.", 
+                        $leave_application->recommendingOfficer->personalInformation->name()." has approved your ".$leave_application->leaveType->name." request.", 
                         $leave_application->leaveType->name);
                     break;
                 case 'for approving approval':
