@@ -535,6 +535,13 @@ class LeaveApplicationController extends Controller
             $start = Carbon::parse($request->date_from);
             $end = Carbon::parse($request->date_to);
 
+            $currentDate = Carbon::now();
+            $twoMonthsAhead = $currentDate->copy()->addMonths(2);
+            
+            if ($start->greaterThan($twoMonthsAhead)) {
+                return response()->json(['message' => "Filling 2 months ahead is not allowed."], Response::HTTP_FORBIDDEN);
+            }
+
             $daysDiff = $start->diffInDays($end) + 1;
 
             $leave_type = LeaveType::find($request->leave_type_id);
