@@ -465,7 +465,7 @@ class LeaveApplicationController extends Controller
                     $leave_application->update(['status' => $status]);
                     $from = Carbon::parse($leave_application->date_from)->format('F d, Y');
                     $to = Carbon::parse($leave_application->date_to)->format('F d, Y');
-                    $message = "Your ".$leave_application->leave_type->name." request with date from ".$from." to ".$to." has been approved.";
+                    $message = "Your ".$leave_application->leaveType->name." request with date from ".$from." to ".$to." has been approved.";
                     Helpers::notifications($leave_application->employee_profile_id, $message, $leave_application->leaveType->name);
                     break;
             }
