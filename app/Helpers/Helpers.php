@@ -658,7 +658,7 @@ class Helpers
         ]);
     }
 
-    public static function notifications($id, $message, $type)
+    public static function notifications($id, $message)
     {
         Notifications::create([
             "description" => $message,
