@@ -212,7 +212,7 @@ class LeaveApplicationController extends Controller
                     break;
                 case "Section":
                     $section = Section::find($assigned_area['details']->id);
-                    
+
                     if($section->department_id === null){
                         $division_id = $section->division_id;
                         break;
@@ -242,6 +242,7 @@ class LeaveApplicationController extends Controller
                 ->join('divisions as dv', 'd.division_id', 'dv.id')
                 ->select('leave_applications.*')
                 ->where('dv.id', $division_id)
+                ->where('leave_applications.status', 'approved')
                 ->get();
 
             $sections_leave_applications = LeaveApplication::select("leave_applications.*")
@@ -252,6 +253,7 @@ class LeaveApplicationController extends Controller
                 ->join('divisions as dv', 'd.division_id', 'dv.id')
                 ->select('leave_applications.*')
                 ->where('dv.id', $division_id)
+                ->where('leave_applications.status', 'approved')
                 ->get();
 
             $departments_leave_applications = LeaveApplication::select("leave_applications.*")
@@ -261,6 +263,7 @@ class LeaveApplicationController extends Controller
                 ->join('divisions as dv', 'd.division_id', 'dv.id')
                 ->select('leave_applications.*')
                 ->where('dv.id', $division_id)
+                ->where('leave_applications.status', 'approved')
                 ->get();
 
             $divisions_leave_applications = LeaveApplication::select("leave_applications.*")
@@ -269,6 +272,7 @@ class LeaveApplicationController extends Controller
                 ->join('divisions as dv', 'aa.division_id', 'dv.id')
                 ->select('leave_applications.*')
                 ->where('dv.id', $division_id)
+                ->where('leave_applications.status', 'approved')
                 ->get();
 
             $leave_applications = [
@@ -277,7 +281,7 @@ class LeaveApplicationController extends Controller
                 ...$departments_leave_applications,
                 ...$divisions_leave_applications
             ];
-            
+
             return response()->json([
                 'data' => LeaveApplicationResource::collection($leave_applications),
                 'message' => 'Retrieve list.'
@@ -288,10 +292,22 @@ class LeaveApplicationController extends Controller
     }
 
 
-    public function myApprovedLeaveApplication(Request $request)
+    public function myApprovedLeaveApplication($id, Request $request)
     {
         try{
-            $leave_applications = LeaveApplication::where('status', 'approved')->get();
+            if($id === null){
+                $employee_profile = $request->user;
+                $leave_applications = LeaveApplication::where('status', 'approved')
+                    ->where('employee_profile_id', $employee_profile->id)->get();
+    
+                return response()->json([
+                    'data' => MyApprovedLeaveApplicationResource::collection($leave_applications),
+                    'message' => 'Retrieve list.'
+                ], Response::HTTP_OK);
+            }
+            
+            $leave_applications = LeaveApplication::where('status', 'approved')
+                ->where('employee_profile_id', $id)->get();
 
             return response()->json([
                 'data' => MyApprovedLeaveApplicationResource::collection($leave_applications),
