@@ -24,9 +24,4 @@ class MonitizationPosting extends Model
     {
         return $this->belongsTo(EmployeeProfile::class, 'created_by');
     }
-
-    public function candidates()
-    {
-        return $this->hasMany(MonitizationCandidate::class);
-    }
 }
