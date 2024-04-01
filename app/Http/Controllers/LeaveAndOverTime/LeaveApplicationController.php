@@ -212,7 +212,7 @@ class LeaveApplicationController extends Controller
                     break;
                 case "Section":
                     $section = Section::find($assigned_area['details']->id);
-                    
+
                     if($section->department_id === null){
                         $division_id = $section->division_id;
                         break;
@@ -277,7 +277,7 @@ class LeaveApplicationController extends Controller
                 ...$departments_leave_applications,
                 ...$divisions_leave_applications
             ];
-            
+
             return response()->json([
                 'data' => LeaveApplicationResource::collection($leave_applications),
                 'message' => 'Retrieve list.'
@@ -291,7 +291,9 @@ class LeaveApplicationController extends Controller
     public function myApprovedLeaveApplication(Request $request)
     {
         try{
-            $leave_applications = LeaveApplication::where('status', 'approved')->get();
+            $employee_profile = $request->user;
+            $leave_applications = LeaveApplication::where('status', 'approved')
+                ->where('employee_profile_id', $employee_profile->id)->get();
 
             return response()->json([
                 'data' => MyApprovedLeaveApplicationResource::collection($leave_applications),
