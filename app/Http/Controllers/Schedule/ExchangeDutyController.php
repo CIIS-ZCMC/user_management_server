@@ -80,7 +80,7 @@ class ExchangeDutyController extends Controller
 
             $cleanData = [];
             foreach ($request->all() as $key => $value) {
-                if (empty ($value)) {
+                if (empty($value)) {
                     $cleanData[$key] = $value;
                     continue;
                 }
