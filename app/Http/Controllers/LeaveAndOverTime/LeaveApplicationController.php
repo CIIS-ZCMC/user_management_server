@@ -287,6 +287,7 @@ class LeaveApplicationController extends Controller
         }
     }
 
+
     public function myApprovedLeaveApplication(Request $request)
     {
         try{

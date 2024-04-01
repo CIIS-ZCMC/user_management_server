@@ -1142,6 +1142,67 @@ class DTRcontroller extends Controller
                     })
                     ->get();
 
+                $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
+
+                //Leave Applications
+                $leaveapp  = $employee->leaveApplications->filter(function ($row) {
+                    return $row['status'] == "approved";
+                });
+
+                $leavedata = [];
+                foreach ($leaveapp as $rows) {
+                    $leavedata[] = [
+                        'country' => $rows['country'],
+                        'city' => $rows['city'],
+                        'from' => $rows['date_from'],
+                        'to' => $rows['date_to'],
+                        'without_pay' => $rows['without_pay'],
+                        'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to'])
+                    ];
+                }
+
+                //Official business
+                $officialBusiness = array_values($employee->officialBusinessApplications->filter(function ($row) {
+                    return $row['status'] == "approved";
+                })->toarray());
+                $obData = [];
+                foreach ($officialBusiness as $rows) {
+                    $obData[] = [
+                        'purpose' => $rows['purpose'],
+                        'time_from' => $rows['time_from'],
+                        'time_to' => $rows['time_to'],
+                        'date_from' => $rows['date_from'],
+                        'date_to' => $rows['date_to'],
+                        'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to']),
+                    ];
+                }
+
+                //Official Time
+                $officialTime = $employee->officialTimeApplications->filter(function ($row) {
+                    return $row['status'] == "approved";
+                });
+                $otData = [];
+                foreach ($officialTime as $rows) {
+                    $otData[] = [
+                        'date_from' => $rows['date_from'],
+                        'date_to' => $rows['date_to'],
+                        'purpose' => $rows['purpose'],
+                        'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to'])
+                    ];
+                }
+
+                $CTO =  $employee->CTOApplication->filter(function ($row) {
+                    return $row['status'] == "approved";
+                });
+                $ctoData = [];
+                foreach ($CTO as $rows) {
+                    $ctoData[] = [
+                        'date' => date('Y-m-d', strtotime($rows['date'])),
+                        'purpose' => $rows['purpose'],
+                        'remarks' => $rows['remarks'],
+                    ];
+                }
+
 
 
                 $schedules = $this->helper->getSchedule($biometric_id, "all-{$year_of}-{$month_of}");
@@ -1166,11 +1227,15 @@ class DTRcontroller extends Controller
                     'biometric_ID' => $biometric_id,
                     'schedule' => $employeeSched,
                     'Incharge' => $approver,
-                    'emp_Details' => $emp_Details
-
+                    'emp_Details' => $emp_Details,
+                    'leaveapp' => $leavedata,
+                    'obApp' => $obData,
+                    'otApp' => $otData,
+                    'ctoApp' => $ctoData
                 ];
             }
         }
+
 
 
 

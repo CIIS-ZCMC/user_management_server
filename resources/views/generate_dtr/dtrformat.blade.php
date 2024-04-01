@@ -406,11 +406,13 @@
 
                     //Check LeaveApplication
                     $filteredleaveDates = [];
+
                     foreach ($leaveapp as $row) {
                         foreach ($row['dates_covered'] as $date) {
                             $filteredleaveDates[] = strtotime($date);
                         }
                     }
+
                     $leaveApplication = array_filter($filteredleaveDates, function ($timestamp) use (
                         $year,
                         $month,

@@ -113,7 +113,10 @@
                         : '';
                     $employeeSched = $item['schedule'];
                     $incharge = $item['Incharge'];
-
+                    $leaveapp = $item['leaveapp'];
+                    $obApp = $item['obApp'];
+                    $otApp = $item['otApp'];
+                    $ctoApp = $item['ctoApp'];
                 @endphp
                 <tr>
 
