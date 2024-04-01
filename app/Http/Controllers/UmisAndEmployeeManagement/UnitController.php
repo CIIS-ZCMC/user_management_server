@@ -112,6 +112,7 @@ class UnitController extends Controller
                 $access_right->delete();
             }
 
+            Helpers::notifications($employee_profile->id, "You been assigned as unit head of ".$unit->name." unit.");
             Helpers::registerSystemLogs($request, $id, true, 'Success in assigning head '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
@@ -161,6 +162,7 @@ class UnitController extends Controller
 
             $unit->update($cleanData);
 
+            Helpers::notifications($employee_profile->id, "You been assigned as officer in charge of ".$unit->name." unit.");
             Helpers::registerSystemLogs($request, $id, true, 'Success in assigning officer in charge '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
