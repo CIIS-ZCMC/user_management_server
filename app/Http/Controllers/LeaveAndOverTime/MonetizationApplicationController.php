@@ -7,6 +7,7 @@ use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Resources\MonetizationApplicationResource;
 use App\Models\Division;
 use App\Models\EmployeeLeaveCredit;
+use App\Models\EmployeeLeaveCreditLogs;
 use App\Models\LeaveType;
 use App\Models\MonetizationApplication;
 use App\Http\Controllers\Controller;
@@ -219,25 +220,39 @@ class MonetizationApplicationController extends Controller
             $leave_type_code = strip_tags($request->code);
 
             $leave_type = LeaveType::where('code', $leave_type_code)->first();
-            $credit = EmployeeLeaveCredit::where('leave_type_id', $leave_type->id)->first();
+            $credit = EmployeeLeaveCredit::where('leave_type_id', $leave_type->id)
+                   ->where('employee_profile_id', $employee_profile->id)
+                   ->first();
 
+      
             if ($credit->total_leave_credits < 15) {
-                return response()->json(['message' => "Insufficient vacation leave credit to file a monetization."], Response::HTTP_BAD_REQUEST);
+                return response()->json(['message' => "Insufficient leave credit to file a monetization."], Response::HTTP_BAD_REQUEST);
             }
+            
+            $hrmo_officer = Helpers::getHrmoOfficer();
+            $recommending_officer = Division::where('code', 'HOPPS')->first();
+            $approving_officer = Division::where('code', 'OMCC')->first();
+           
 
-            $recommending_officer = Section::where('code', 'HOPPS')->first();
-            $approvince_officer = Division::where('code', 'OMCC')->first();
-
+            if($recommending_officer === null || $approving_officer === null || $hrmo_officer === null){
+                return response()->json(['message' => "No recommending officer and/or supervising officer assigned."], Response::HTTP_BAD_REQUEST);
+            }
             $cleanData = [];
             $cleanData['employee_profile_id'] = $employee_profile->id;
             $cleanData['leave_type_id'] = $leave_type->id;
             $cleanData['reason'] = strip_tags($request->reason);
             $cleanData['credit_value'] = strip_tags($request->credit_value);
-            $cleanData['date'] = date('Y-m-d');
-            $cleanData['time'] = date('H:i:s');
+            $cleanData['status'] = 'applied';
+            $cleanData['hrmo_officer'] = $hrmo_officer;
             $cleanData['recommending_officer'] = $recommending_officer->chief_employee_profile_id;
-            $cleanData['approving_officer'] = $approvince_officer->chief_employee_profile_id;
+            $cleanData['approving_officer'] = $approving_officer->chief_employee_profile_id;
 
+            $previous_credit = $credit->total_leave_credits;
+
+            $credit->update([
+                'total_leave_credits' => $credit->total_leave_credits - $request->credit_value,
+                'used_leave_credits' => $credit->used_leave_credits + $request->credit_value
+            ]);
             try {
                 $fileName = Helpers::checkSaveFile($request->attachment, 'monetization/files');
                 if (is_string($fileName)) {
@@ -253,10 +268,19 @@ class MonetizationApplicationController extends Controller
 
             $new_monetization = MonetizationApplication::create($cleanData);
 
-            $process_name = "applied";
+            $process_name = "Applied";
             $this->storeMonetizationLog($new_monetization->id, $process_name, $employee_profile->id);
 
-            $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->where('name', 'Vacation Leave')->orWhere('name', 'Sick Leave')->get();
+            EmployeeLeaveCreditLogs::create([
+                'employee_leave_credit_id' => $credit->id,
+                'previous_credit' => $previous_credit,
+                'leave_credits' => $request->credit_value,
+                'reason' => 'apply'
+            ]);
+
+            $employeeCredit =  EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)
+                                ->whereIn('leave_type_id', [1, 2])
+                                ->get();
             $result = [];
 
             foreach ($employeeCredit as $leaveCredit) {
@@ -275,6 +299,7 @@ class MonetizationApplicationController extends Controller
                 'credits' => $result,
                 'message' => "You're request has been filed."
             ], Response::HTTP_OK);
+
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -359,9 +384,6 @@ class MonetizationApplicationController extends Controller
             $mone_application_log->mone_application_id = $mone_application_id;
             $mone_application_log->action_by = $user_id;
             $mone_application_log->action = $process_name;
-            $mone_application_log->status = "applied";
-            $mone_application_log->date = date('Y-m-d');
-            $mone_application_log->time =  date('H:i:s');
             $mone_application_log->save();
 
             return $mone_application_log;

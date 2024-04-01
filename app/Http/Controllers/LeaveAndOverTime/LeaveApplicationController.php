@@ -242,6 +242,7 @@ class LeaveApplicationController extends Controller
                 ->join('divisions as dv', 'd.division_id', 'dv.id')
                 ->select('leave_applications.*')
                 ->where('dv.id', $division_id)
+                ->where('leave_applications.status', 'approved')
                 ->get();
 
             $sections_leave_applications = LeaveApplication::select("leave_applications.*")
@@ -252,6 +253,7 @@ class LeaveApplicationController extends Controller
                 ->join('divisions as dv', 'd.division_id', 'dv.id')
                 ->select('leave_applications.*')
                 ->where('dv.id', $division_id)
+                ->where('leave_applications.status', 'approved')
                 ->get();
 
             $departments_leave_applications = LeaveApplication::select("leave_applications.*")
@@ -261,6 +263,7 @@ class LeaveApplicationController extends Controller
                 ->join('divisions as dv', 'd.division_id', 'dv.id')
                 ->select('leave_applications.*')
                 ->where('dv.id', $division_id)
+                ->where('leave_applications.status', 'approved')
                 ->get();
 
             $divisions_leave_applications = LeaveApplication::select("leave_applications.*")
@@ -269,6 +272,7 @@ class LeaveApplicationController extends Controller
                 ->join('divisions as dv', 'aa.division_id', 'dv.id')
                 ->select('leave_applications.*')
                 ->where('dv.id', $division_id)
+                ->where('leave_applications.status', 'approved')
                 ->get();
 
             $leave_applications = [
