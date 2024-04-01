@@ -137,7 +137,14 @@ class EmployeeProfileNewResource extends FormRequest
             'issuance_information.govt_issued_id' => 'required|string',
             'issuance_information.ctc_issued_date' => 'required|date:Y-m-d',
             'issuance_information.ctc_issued_at' => 'required|string|max:255',
-            'issuance_information.person_administrative_oath' => 'required|string|max:255'
+            'issuance_information.person_administrative_oath' => 'required|string|max:255',
+            //Employee Profile
+            'date_hired' => "required|date:Y-m-d",
+            'employment_type_id' => 'required|integer|size:36',
+            'designation_id' => 'required|integer|size:36',
+            'plantilla_number_id' => 'nullable|integer|size:36',
+            'allow_time_adjustment' => 'required|integer',
+            'attachment' => 'nullable|file|mimes:jpeg,png,pdf,doc,docx'
         ];
     }
 }

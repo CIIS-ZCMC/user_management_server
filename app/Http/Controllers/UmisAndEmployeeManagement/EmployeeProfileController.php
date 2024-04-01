@@ -2321,7 +2321,7 @@ class EmployeeProfileController extends Controller
             $cleanData['employee_id'] = $new_employee_id;
             $cleanData['biometric_id'] = $new_biometric_id;
             $cleanData['employment_type_id'] = strip_tags($request->employment_type_id);
-            $cleanData['personal_information_id'] = strip_tags($request->personal_information_id);
+            $cleanData['personal_information_id'] = strip_tags($personal_information->id);
             try {
                 $fileName = Helpers::checkSaveFile($request->attachment, 'photo/profiles');
                 if (is_string($fileName)) {
