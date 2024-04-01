@@ -27,6 +27,11 @@
     class="time">
     @include('dtr.DtrSeparator', ['entry' => 'undertime'])
 </td>
+<td style="background-color: whitesmoke;width: 80px !important;border-right: 1px solid rgb(184, 184, 184)"
+    id="wsched{{ $i }}">
+    @include('dtr.DtrSeparator', ['entry' => 'wsched'])
+
+</td>
 
 <td style="background-color: whitesmoke;width: 200px !important;">
     @include('dtr.DtrSeparator', ['entry' => 'remarks'])

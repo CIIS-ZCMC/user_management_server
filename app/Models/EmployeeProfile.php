@@ -33,6 +33,7 @@ class EmployeeProfile extends Authenticatable
         'deactivated_at',
         'agency_employee_no',
         'allow_time_adjustment',
+        'shifting',
         'is_2fa',
         'employee_type_id',
         'employment_type_id'
@@ -175,6 +176,23 @@ class EmployeeProfile extends Authenticatable
         return $this->hasMany(ObApplicationLog::class);
     }
 
+    public function CTOApplication()
+    {
+        return $this->hasMany(CtoApplication::class);
+    }
+
+
+    public function officialBusinessApplications()
+    {
+        return $this->hasMany(OfficialBusiness::class);
+    }
+
+    public function officialTimeApplications()
+    {
+        return $this->hasMany(OfficialTime::class);
+    }
+
+
     public function otApplications()
     {
         return $this->hasMany(OfficialTimeApplication::class);
@@ -267,7 +285,7 @@ class EmployeeProfile extends Authenticatable
         }
 
         if ($head) {
-            if($head->department_id === $nurse_service->id){
+            if ($head->department_id === $nurse_service->id) {
                 return [
                     'position' => 'Nurse Manager',
                     'area' => $head
@@ -358,31 +376,31 @@ class EmployeeProfile extends Authenticatable
         return $this->personalInformation;
     }
 
-    
-    public function areaEmployee($assigned_area) 
-    {  
+    public function areaEmployee($assigned_area)
+    {
         $key = null;
 
-        if(Division::where('chief_employee_profile_id', $this->id)->first()){
+        if (Division::where('chief_employee_profile_id', $this->id)->first()) {
             $key = 'division_id';
         }
-        
-        if(Department::where('head_employee_profile_id', $this->id)->first()){
-            $key = 'department_id';
-        } 
-        
-        if(Section::where('supervisor_employee_profile_id', $this->id)->first()){
-            $key = 'section_id';
-        } 
-        
-        if(Unit::where('head_employee_profile_id', $this->id)->first()){
-            $key = 'unit_id';
-        } 
 
-        if($key === null) return null;
+        if (Department::where('head_employee_profile_id', $this->id)->first()) {
+            $key = 'department_id';
+        }
+
+        if (Section::where('supervisor_employee_profile_id', $this->id)->first()) {
+            $key = 'section_id';
+        }
+
+        if (Unit::where('head_employee_profile_id', $this->id)->first()) {
+            $key = 'unit_id';
+        }
+
+        if ($key === null)
+            return null;
 
         $assigned_areas = AssignArea::where($key, $assigned_area['details']->id)->get();
-     
+
         $employees = [];
         foreach ($assigned_areas as $assigned_area) {
             $employees[] = $assigned_area->employeeProfile;
@@ -391,13 +409,13 @@ class EmployeeProfile extends Authenticatable
         return $employees;
     }
 
-    public function sectorHeads() 
+    public function sectorHeads()
     {
-        
-       /** Division Chief */
-       $chief = Division::where('chief_employee_profile_id', $this->id)->first();
 
-       if ($chief) {
+        /** Division Chief */
+        $chief = Division::where('chief_employee_profile_id', $this->id)->first();
+
+        if ($chief) {
             $departments = Department::where('division_id', $chief->id)->get();
             $employees = [];
             foreach ($departments as $department) {
@@ -405,13 +423,13 @@ class EmployeeProfile extends Authenticatable
             }
 
             return $employees;
-       }
+        }
 
         /** Department Chief */
         $head = Department::where('head_employee_profile_id', $this->id)->first();
         if ($head) {
             $sections = Section::where('department_id', $head->id)->get();
-    
+
             $employees = [];
             foreach ($sections as $key => $section) {
                 $employees[$key] = $section->supervisor;
@@ -420,11 +438,11 @@ class EmployeeProfile extends Authenticatable
             return $employees;
         }
 
-        /** Department Chief */
+        /** Section Chief */
         $supervisor = Section::where('supervisor_employee_profile_id', $this->id)->first();
         if ($supervisor) {
             $units = Unit::where('section_id', $supervisor->id)->get();
-    
+
             $employees = [];
             foreach ($units as $unit) {
                 $employees[] = $unit->head;
@@ -434,5 +452,36 @@ class EmployeeProfile extends Authenticatable
         }
 
         return [];
+    }
+
+    public function employeeHead($assigned_area)
+    {
+        $model = "App\\Models\\$assigned_area[sector]";
+        $sector_head = $model::where('id', $assigned_area['details']->id)->first();
+
+        switch ($assigned_area['sector']) {
+            case 'Division':
+                return $sector_head->chief_employee_profile_id;
+            case 'Department':
+                return $sector_head->head_employee_profile_id;
+            case 'Section':
+                return $sector_head->supervisor_employee_profile_id;
+            case 'Unit':
+                return $sector_head->head_employee_profile_id;
+            default:
+                return null;
+        }
+    }
+
+    public function employeeAreaList($assigned_area)
+    {
+        $assigned_areas = AssignArea::where(Str::lower($assigned_area['sector'] . "_id"), $assigned_area['details']->id)->get();
+
+        $employees = [];
+        foreach ($assigned_areas as $area) {
+            $employees[] = $area->employeeProfile; //fetch all excepy employeeHead
+        }
+
+        return $employees;
     }
 }

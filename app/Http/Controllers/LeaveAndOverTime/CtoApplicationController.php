@@ -33,20 +33,20 @@ class CtoApplicationController extends Controller
              * Division Head [approving, recommending] - applications of assigned area
              *  - recommending => [for recommending approval, for approving approval, approved, declined]
              *  - approving => [ for approving approval, approved, declined]
-             * 
+             *
              * Department Head [recommending] - applications of assigned area
              *  - recommending => [for recommending approval, for approving approval, approved, declined]
-             * 
+             *
              * Section Supervisor [recommending] - applications of assigned area
              *  - recommending => [for recommending approval, for approving approval, approved, declined]
-             * 
+             *
              */
-            
-           
+
+
              /** FOR NORMAL EMPLOYEE */
             if($employee_profile->position() === null){
                 $cto_application = CtoApplication::where('employee_profile_id', $employee_profile->id)->get();
-                 
+
                 return response()->json([
                     'data' => CtoApplicationResource::collection($cto_application),
                     'message' => 'Retrieved all CTO application'
@@ -70,17 +70,19 @@ class CtoApplicationController extends Controller
                         ->where('cto_applications.approving_officer', $employeeId);
                 })
                 ->groupBy(
-                    'cto_applications.id',
-                    'cto_applications.date',
-                    'cto_applications.applied_credits',
-                    'cto_applications.status',
-                    'cto_applications.purpose',
-                    'cto_applications.recommending_officer',
-                    'cto_applications.approving_officer',
-                    'cto_applications.remarks',
-                    'cto_applications.employee_profile_id',
-                    'user_management_db.cto_applications.created_at',
-                    'user_management_db.cto_applications.updated_at',
+                    'id',
+                    'date',
+                    'applied_credits',
+                    'is_am',
+                    'is_pm',
+                    'status',
+                    'purpose',
+                    'recommending_officer',
+                    'approving_officer',
+                    'remarks',
+                    'employee_profile_id',
+                    'created_at',
+                    'updated_at',
                 )
                 ->orderBy('created_at', 'desc')
                 ->get();
@@ -89,7 +91,7 @@ class CtoApplicationController extends Controller
                 'data' => CtoApplicationResource::collection($cto_application),
                 'message' => 'Retrieved all official business application'
             ], Response::HTTP_OK);
-            
+
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -106,7 +108,7 @@ class CtoApplicationController extends Controller
                                     'employee_credit' => EmployeeOvertimeCreditResource::collection($employeeCredit)], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-            
+
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -142,7 +144,7 @@ class CtoApplicationController extends Controller
                         $status = 'approved';
                         $log_action = 'Approved by Approving Officer';
                     break;
-                    
+
                     // default:
                     //     $status = 'declined';
                     //     $log_action = 'Request Declined';
@@ -151,8 +153,8 @@ class CtoApplicationController extends Controller
             } else if ($request->status === 'declined') {
                 $cto_application_recommending=$data->recommending_officer  ;
                 $cto_application_approving=$data->approving_officer  ;
-                
-              
+
+
                 if($employee_profile->id === $cto_application_recommending)
                 {
                     $status='declined by recommending officer';
@@ -162,7 +164,7 @@ class CtoApplicationController extends Controller
                     $status='declined by approving officer';
                 }
                 $log_action = 'Request Declined';
-            }            
+            }
                 CtoApplicationLog::create([
                     'action_by' => $employee_profile->id,
                     'cto_application_id' => $data->id,
@@ -175,7 +177,7 @@ class CtoApplicationController extends Controller
                                     'message' => $log_action, ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-            
+
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -200,7 +202,7 @@ class CtoApplicationController extends Controller
             }
 
             $cleanData = [];
-          
+
             foreach ($request->all() as $key => $value) {
                 if (empty($value)) {
                     $cleanData[$key] = $value;
@@ -220,7 +222,7 @@ class CtoApplicationController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            
+
             foreach (json_decode($request->cto_applications) as $key=>$value) {
 
                 $employee_credit = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)->first();
@@ -230,20 +232,20 @@ class CtoApplicationController extends Controller
                     $reason[] = 'Insufficient overtime credit.';
                     continue;
                 }
-                $start = Carbon::parse($value->date);
+                $date = Carbon::parse($value->date);
                 $employeeId= $employee_profile->id;
-              
-                $matchingRecords = CtoApplication::where('employee_profile_id', $employeeId)
-                ->whereDate('date', $start)
-                ->get();
 
-                if ($matchingRecords->isNotEmpty()) {
+                $overlapExists = Helpers::hasOverlappingCTO($date, $employeeId);
+                
+                if ($overlapExists) {
                     return response()->json(['message' => 'You already have an application for the same dates.'], Response::HTTP_FORBIDDEN);
                 } else {
-                    
+
                     $cleanData['employee_profile_id'] = $employee_profile->id;
                     $cleanData['date'] = $value->date;
                     $cleanData['applied_credits'] = $value->applied_credits;
+                    $cleanData['is_am'] = $value->is_am;
+                    $cleanData['is_pm'] = $value->is_pm;
                     $cleanData['purpose'] = $value->purpose;
                     $cleanData['remarks'] = $value->remarks;
                     $cleanData['status'] = 'for recommending approval';
@@ -252,7 +254,7 @@ class CtoApplicationController extends Controller
 
                     $credits = $value->applied_credits;
                     $cto_application = CtoApplication::create($cleanData);
-                    
+
                     $current_overtime_credit = $employee_credit->earned_credit_by_hour;
                     $earned_credit = $employee_credit->earned_credit_by_hour;
                     $used_credit = $employee_credit->used_credit_by_hour;

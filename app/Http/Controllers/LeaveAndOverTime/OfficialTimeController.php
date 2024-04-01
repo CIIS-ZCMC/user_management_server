@@ -39,26 +39,26 @@ class OfficialTimeController extends Controller
              * Division Head [approving, recommending] - applications of assigned area
              *  - recommending => [for recommending approval, for approving approval, approved, declined]
              *  - approving => [ for approving approval, approved, declined]
-             * 
+             *
              * Department Head [recommending] - applications of assigned area
              *  - recommending => [for recommending approval, for approving approval, approved, declined]
-             * 
+             *
              * Section Supervisor [recommending] - applications of assigned area
              *  - recommending => [for recommending approval, for approving approval, approved, declined]
-             * 
+             *
              */
-            
+
              /** FOR NORMAL EMPLOYEE */
              if($employee_profile->position() === null){
                 $official_time_application = OfficialTime::where('employee_profile_id', $employee_profile->id)->get();
-                 
+
                 return response()->json([
                     'data' => OfficialTimeResource::collection($official_time_application),
                     'message' => 'Retrieved all offical time application'
                 ], Response::HTTP_OK);
             }
 
-          
+
             if ($employee_profile->id===Helpers::getHrmoOfficer()) {
                 return response()->json([
                     'data' => OfficialTimeResource::collection(OfficialTime::where('status', 'approved')->get()),
@@ -126,7 +126,7 @@ class OfficialTimeController extends Controller
             return response()->json(['data' => OfficialTimeResource::collection($sql)], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-            
+
             Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -155,7 +155,7 @@ class OfficialTimeController extends Controller
                 }
 
                 if ($request->hasFile($key)) {
-                    $file = $request->file($key);   
+                    $file = $request->file($key);
                     $cleanData[$key] = $file;
                     continue;
                 }
@@ -166,24 +166,13 @@ class OfficialTimeController extends Controller
 
             $recommending_officer   = $officers['recommending_officer'];
             $approving_officer      = $officers['approving_officer'];
-            
+
             $start = Carbon::parse($request->date_from);
             $end = Carbon::parse($request->date_to);
             $employeeId = $user->id;
 
-            $overlappingOt = OfficialTime::where(function ($query) use ($start, $end, $employeeId) {
-                $query->where('employee_profile_id', $employeeId)
-                    ->where(function ($query) use ($start, $end) {
-                        $query->whereBetween('date_from', [$start, $end])
-                            ->orWhereBetween('date_to', [$start, $end])
-                            ->orWhere(function ($query) use ($start, $end) {
-                                $query->where('date_from', '<=', $start)
-                                    ->where('date_to', '>=', $end);
-                            });
-                    });
-            })->exists();
-
-            if ($overlappingOt) {
+            $overlapExists = Helpers::hasOverlappingRecords($start, $end, $employeeId);
+            if ($overlapExists) {
                 return response()->json(['message' => 'You already have an application for the same dates.'], Response::HTTP_FORBIDDEN);
             } else {
                     $data = new OfficialTime;
@@ -206,7 +195,7 @@ class OfficialTimeController extends Controller
 
                     return response()->json([
                         'data' => OfficialTimeResource::collection(OfficialTime::where('id', $data->id)->get()),
-                        'logs' =>  Helpers::registerOfficialTimeLogs($data->id, $user['id'], 'Applied'), 
+                        'logs' =>  Helpers::registerOfficialTimeLogs($data->id, $user['id'], 'Applied'),
                         'msg' => 'Request Complete.'], Response::HTTP_OK);
             }
         } catch (\Throwable $th) {
@@ -237,8 +226,8 @@ class OfficialTimeController extends Controller
      */
     public function update($id, AuthPinApprovalRequest $request)
     {
-     
-        try {        
+
+        try {
             $data = OfficialTime::findOrFail($id);
 
             if(!$data) {
@@ -250,7 +239,7 @@ class OfficialTimeController extends Controller
             $employee_profile = $request->user;
 
             $cleanData['pin'] = strip_tags($request->password);
-           
+
 
             if ($employee_profile['authorization_pin'] !==  $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
@@ -267,7 +256,7 @@ class OfficialTimeController extends Controller
                         $status = 'approved';
                         $log_action = 'Approved by Approving Officer';
                     break;
-                    
+
                     // default:
                     //     $status = 'declined';
                     //     $log_action = 'Request Declined';
@@ -276,8 +265,8 @@ class OfficialTimeController extends Controller
             } else if ($request->status === 'declined') {
                 $ot_application_recommending=$data->recommending_officer  ;
                 $ot_application_approving=$data->approving_officer  ;
-                
-              
+
+
                 if($employee_profile->id === $ot_application_recommending)
                 {
                     $status='declined by recommending officer';
@@ -288,7 +277,7 @@ class OfficialTimeController extends Controller
                 }
                 $log_action = 'Request Declined';
             }
-            
+
 
             $data->update(['status' => $status, 'remarks' => $request->remarks==='null' || !$request->remarks ? null : $request->remarks]);
 

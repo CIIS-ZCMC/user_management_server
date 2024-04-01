@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('employee_profile_id');
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles');
             $table->date('date');
-            $table->string('remarks');
+            $table->string('remarks')->nullable();
             $table->softDeletes();
             $table->timestamps();
         });

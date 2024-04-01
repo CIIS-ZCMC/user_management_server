@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
+use App\Http\Requests\EmployeeProfileNewResource;
+use App\Models\OfficerInChargeTrail;
 use Carbon\Carbon;
 
 use App\Models\Role;
@@ -31,9 +33,7 @@ use App\Models\PlantillaNumber;
 use App\Models\InActiveEmployee;
 use App\Models\SpecialAccessRole;
 use App\Models\PositionSystemRole;
-use Illuminate\Support\Facades\DB;
 use App\Models\EmployeeLeaveCredit;
-use App\Models\PersonalInformation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SignInRequest;
 use Illuminate\Support\Facades\Hash;
@@ -86,7 +86,7 @@ class EmployeeProfileController extends Controller
      *
      */
     public function signIn(SignInRequest $request)
-    {
+    {   
         try {
 
             /**
@@ -192,7 +192,7 @@ class EmployeeProfileController extends Controller
             // }
 
             // if ($access_token !== null) {
-            AccessToken::where('employee_profile_id', $employee_profile->id)->delete();
+                AccessToken::where('employee_profile_id', $employee_profile->id)->delete();
             // }
 
             /**
@@ -264,7 +264,7 @@ class EmployeeProfileController extends Controller
 
             return response()
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
-                ->cookie(Helpers::Cookie_Name(), json_encode(['token' => $token]), 60, '/', Cache::get('session_domain'), false);
+                ->cookie(Cache::get('cookie_name'), json_encode(['token' => $token]), 60, '/', Cache::get('session_domain'), false);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'signIn', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -977,7 +977,7 @@ class EmployeeProfileController extends Controller
                 $token->delete();
             }
 
-            return response()->json(['message' => 'User signout.'], Response::HTTP_OK)->cookie(Helpers::Cookie_Name(), '', -1);
+            return response()->json(['message' => 'User signout.'], Response::HTTP_OK)->cookie(Cache::get('cookie_name'), '', -1);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'signOut', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -2267,9 +2267,9 @@ class EmployeeProfileController extends Controller
             $employee_id_random_digit = 50 + count($total_registered_this_day);
 
             $last_registered_employee = EmployeeProfile::orderBy('biometric_id', 'desc')->first();
-            $last_password = DefaultPassword::orderBy('effective_at', 'desc')->first();
+            $default_password = Helpers::generatePassword();
 
-            $hashPassword = Hash::make($last_password->password .Cache::get('salt_value'));
+            $hashPassword = Hash::make($default_password.Cache::get('salt_value'));
             $encryptedPassword = Crypt::encryptString($hashPassword);
             $now = Carbon::now();
 
@@ -2277,10 +2277,6 @@ class EmployeeProfileController extends Controller
 
             $new_biometric_id = $last_registered_employee->biometric_id + 1;
             $new_employee_id = $date_hired_string . $employee_id_random_digit;
-
-            /** Create Authorization Pin */
-            $personal_information = PersonalInformation::find(strip_tags($request->personal_information_id));
-
 
             $cleanData['employee_id'] = $new_employee_id;
             $cleanData['biometric_id'] = $new_biometric_id;
@@ -2296,8 +2292,8 @@ class EmployeeProfileController extends Controller
                     $in_valid_file = true;
                     $cleanData['profile_url'] = null;
                 }
-            } catch (\Throwable $th) {
-            }
+            } catch (\Throwable $th) {}
+
             $cleanData['allow_time_adjustment'] = strip_tags($request->allow_time_adjustment) === 1 ? true : false;
             $cleanData['password_encrypted'] = $encryptedPassword;
             $cleanData['password_created_at'] = now();
@@ -2308,35 +2304,12 @@ class EmployeeProfileController extends Controller
             $cleanData['effective_at'] = $request->date_hired;
 
             $plantilla_number_id = $request->plantilla_number_id === "null"  || $request->plantilla_number_id === null ? null : $request->plantilla_number_id;
-            $sector_key = '';
+            $sector = strip_tags($request->sector);
 
-            switch (strip_tags($request->sector)) {
-                case "division":
-                    $sector_key = 'division_id';
-                    break;
-                case "department":
-                    $sector_key = 'department_id';
-                    break;
-                case "section":
-                    $sector_key = 'section_id';
-                    break;
-                case "unit":
-                    $sector_key = 'unit_id';
-                    break;
-                default:
-                    $sector_key = null;
-            }
-
-            if ($sector_key === null) {
-                return response()->json(['message' => 'Invalid sector area.'], Response::HTTP_BAD_REQUEST);
-            }
-
-            $cleanData[$sector_key] = strip_tags($request->sector_id);
+            $cleanData[Str::lower($sector).'_id'] = strip_tags($request->sector_id);
 
             if ($plantilla_number_id !== null) {
                 $plantilla_number = PlantillaNumber::find($plantilla_number_id);
-
-
 
                 if (!$plantilla_number) {
                     return response()->json(['message' => 'No record found for plantilla number ' . $plantilla_number_id], Response::HTTP_NOT_FOUND);
@@ -2349,7 +2322,6 @@ class EmployeeProfileController extends Controller
                 $plantilla->update(['total_used_plantilla_no' => $plantilla->total_used_plantilla_no + 1]);
             }
 
-
             $employee_profile = EmployeeProfile::create($cleanData);
 
             $cleanData['employee_profile_id'] = $employee_profile->id;
@@ -2359,7 +2331,6 @@ class EmployeeProfileController extends Controller
                 $plantilla_number = PlantillaNumber::find($plantilla_number_id);
                 $plantilla_number->update(['employee_profile_id' => $employee_profile->id, 'is_vacant' => false, 'assigned_at' => now()]);
             }
-
 
             if ($plantilla_number_id !== null) {
                 $leave_types = LeaveType::where('is_special', 0)->get();
@@ -2383,7 +2354,6 @@ class EmployeeProfileController extends Controller
             }
 
             Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . '.');
-
 
             if ($in_valid_file) {
                 return response()->json(
@@ -2904,7 +2874,118 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+    
+    public function revokeOIC(AuthPinApprovalRequest $request)
+    {
+        try {
+            $employee_profile = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
 
+            if ($employee_profile['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+            }
+
+            $position = $employee_profile->position();
+
+            switch($position['position']){
+                case "Medical Center Chief":
+                    $division = Division::where('code', 'OMCC')
+                        ->where('chief_employee_profile_id', $employee_profile->id)
+                        ->first();
+
+                    if(!$division) return response()->json(['message' => "Invalid request."], Response::HTTP_FORBIDDEN);
+                    $oic = $division->oic_employee_profile_id;
+
+                    $this->trailOICandResetAreaOICRecord($oic, $division);
+                    $system_role = SystemRole::where('code', 'OMCC-01')->first();
+                    $this->revokeOICRights($oic, $system_role->id);
+                    break;
+                case "Chief Nurse" || "Division Head":
+                    $division = Division::where('chief_employee_profile_id', $employee_profile->id)->first();
+
+                    if(!$division) return response()->json(['message' => "Invalid request."], Response::HTTP_FORBIDDEN);
+                    $oic = $division->oic_employee_profile_id;
+
+                    $this->trailOICandResetAreaOICRecord($oic, $division);
+                    $system_role = SystemRole::where('code', 'DIV-HEAD-03')->first();
+                    $this->revokeOICRights($oic, $system_role->id);
+                    break;
+                case "Nurse Manager" || "Department Head":
+                    $department = Department::where('head_employee_profile_id', $employee_profile->id)->first();
+
+                    if(!$department) return response()->json(['message' => "Invalid request."], Response::HTTP_FORBIDDEN);
+                    $oic = $department->oic_employee_profile_id;
+
+                    $this->trailOICandResetAreaOICRecord($oic, $department);
+                    $system_role = SystemRole::where('code', 'DEPT-HEAD-04')->first();
+                    $this->revokeOICRights($oic, $system_role->id);
+                    break;
+                case "Supervisor":
+                    $supervisor = Section::where('supervisor_employee_profile_id', $employee_profile->id)->first();
+
+                    if(!$supervisor) return response()->json(['message' => "Invalid request."], Response::HTTP_FORBIDDEN);
+                    $oic = $supervisor->oic_employee_profile_id;
+
+                    $this->trailOICandResetAreaOICRecord($oic, $supervisor);
+                    $system_role = SystemRole::where('code', 'SECTION-HEAD-05')->first();
+                    $this->revokeOICRights($oic, $system_role->id);
+                    break;
+                case "Unit Head":
+                    $unit = Unit::where('head_employee_profile_id', $employee_profile->id)->first();
+
+                    if(!$unit) return response()->json(['message' => "Invalid request."], Response::HTTP_FORBIDDEN);
+                    $oic = $unit->oic_employee_profile_id;
+
+                    $this->trailOICandResetAreaOICRecord($oic, $unit);
+                    $system_role = SystemRole::where('code', 'UNIT-HEAD-06')->first();
+                    $this->revokeOICRights($oic, $system_role->id);
+                    break;
+                default:
+                    return response()->json(['message' => "Invalid."], Response::HTTP_FORBIDDEN);
+            }
+
+            Helpers::registerSystemLogs($request, null, true, 'Success in deleting a ' . $this->SINGULAR_MODULE_NAME . '.');
+
+            return response()->json(['message' => "OIC rights successfully revoke."], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'revokeOIC', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private function trailOICandResetAreaOICRecord($oic, $area)
+    {
+        /**
+         * Transfer OIC to trail
+         */
+        OfficerInChargeTrail::create([
+            'employee_profile_id' => $oic,
+            'division_id' => $area->id,
+            'attachment_url' => $area->oic_attachment_url,
+            'started_at' => $area->oic_effective_at,
+            'ended_at' => $area->oic_end_at
+        ]);
+
+        /**
+         * Reset OIC record.
+         */
+        $area->update([
+            'oic_employee_profile_id' => null,
+            'oic_attachment_url' => null,
+            'oic_effective_at' => null,
+            'oic_end_at' => null
+        ]);
+    }
+
+    /**
+     * Revoke OIC Special access rights for chief.
+     */
+    private function revokeOICRights($oic, $system_role_id)
+    {
+        $special_right = SpecialAccessRole::where('employee_profile_id', $oic)->where('system_role_id', $system_role_id)->first();
+        $special_right->delete();
+    }
+    
     public function revokeRights($id, $access_right_id, AuthPinApprovalRequest $request)
     {
         try {

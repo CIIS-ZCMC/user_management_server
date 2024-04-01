@@ -23,9 +23,9 @@ return new class extends Migration
             $table->string('telephone_no')->nullable();
             $table->string('tin_no')->nullable();
             $table->string('rdo_no')->nullable();
-            $table->string('father_first_name');
+            $table->string('father_first_name')->nullable();
             $table->string('father_middle_name')->nullable();
-            $table->string('father_last_name');
+            $table->string('father_last_name')->nullable();
             $table->string('father_ext_name')->nullable();
             $table->string('mother_first_name');
             $table->string('mother_middle_name')->nullable();

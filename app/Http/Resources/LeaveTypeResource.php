@@ -57,6 +57,8 @@ class LeaveTypeResource extends JsonResource
             'description' => $this->description,
             'period' => (double)$this->period,
             'file_date' => $this->file_date,
+            'file_after' => $this->file_after,
+            'file_before' => $this->file_before,
             'month_value' => $this->month_value,
             'annual_credit' => (double)$this->annual_credit,
             'is_active' => $this->is_active,

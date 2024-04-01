@@ -13,7 +13,8 @@ class ScheduleResource extends JsonResource
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array
-    {
+    {   
+        $schedules = [];
         foreach ($this->schedule as $schedule) {
             $schedules[] = [
                 'id' => $schedule->pivot->id,
@@ -32,7 +33,6 @@ class ScheduleResource extends JsonResource
             'name' => $this->name(),
             'employee_id' => $this->employee_id,
             'biometric_id' => $this->biometric->biometric_id ?? null,
-            'holiday' => $this->holiday,
             'schedule' => $schedules
         ];
     }

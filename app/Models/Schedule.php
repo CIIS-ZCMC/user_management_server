@@ -78,4 +78,21 @@ class Schedule extends Model
         // Total duration should be 24 hours (1440 minutes) or more
         return ($duration1 + $duration2) >= 1440;
     }
+
+    public function countWeekEnd($year, $month)
+    {
+        $startOfMonth = Carbon::createFromDate($year, $month, 1)->startOfMonth();
+        $endOfMonth = $startOfMonth->copy()->endOfMonth();
+        $weekendCount = 0;
+
+        // Loop through each day of the month and count weekends
+        while ($startOfMonth <= $endOfMonth) {
+            if ($startOfMonth->isWeekend()) {
+                $weekendCount++;
+            }
+            $startOfMonth->addDay(); // Move to the next day
+        }   
+
+        return $weekendCount;
+    }
 }

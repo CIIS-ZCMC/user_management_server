@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\DTR;
 
+use App\Helpers\Helpers;
 use Illuminate\Http\Request;
 use App\Models\Devices;
 use App\Methods\BioControl;
@@ -14,6 +15,8 @@ use App\Models\Biometrics;
 class BioMSController extends Controller
 {
     protected $device;
+
+    private $CONTROLLER_NAME = "BioMSController";
 
     public function __construct()
     {
@@ -60,13 +63,13 @@ class BioMSController extends Controller
                 'data' => $data
             ]);
         } catch (\Throwable $th) {
-            return response()->json(['message' =>  $th->getMessage()]);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
     public function operatingDevice()
     {
-
         try {
             $data = Devices::where('is_registration', 0)->get();
 
@@ -74,13 +77,13 @@ class BioMSController extends Controller
                 'data' => $data ?? []
             ]);
         } catch (\Throwable $th) {
-            return response()->json(['message' =>  $th->getMessage()]);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'operatingDevice', $th->getMessage());
+            return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
     public function registrationDevice()
     {
-
         try {
             $data = Devices::where('is_registration', 1)->get();
 
@@ -88,7 +91,8 @@ class BioMSController extends Controller
                 'data' => $data
             ]);
         } catch (\Throwable $th) {
-            return response()->json(['message' =>  $th->getMessage()]);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'registrationDevice', $th->getMessage());
+            return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -141,7 +145,8 @@ class BioMSController extends Controller
             }
             return response()->json(['message' => 'Device Already Exist']);
         } catch (\Throwable $th) {
-            return response()->json(['message' =>  $th->getMessage()]);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'addDevice', $th->getMessage());
+            return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -156,14 +161,14 @@ class BioMSController extends Controller
             }
             return response()->json(['message' => 'Connection Failed']);
         } catch (\Throwable $th) {
-            return response()->json(['message' =>  $th->getMessage()]);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'testDeviceConnection', $th->getMessage());
+            return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
     public function updateDevice(Request $request)
     {
         try {
-
             $user = $request->user;
             $password_decrypted = Crypt::decryptString($user['password_encrypted']);
             $password = strip_tags($request->password);
@@ -219,7 +224,8 @@ class BioMSController extends Controller
                 ]);
             return response()->json(['message' => 'Device Updated Successfully!']);
         } catch (\Throwable $th) {
-            return response()->json(['message' => $th->getMessage()]);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'updateDevice', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -238,7 +244,8 @@ class BioMSController extends Controller
             Devices::findorFail($device_id)->delete();
             return response()->json(['message' => 'Device Deleted Successfully!']);
         } catch (\Throwable $th) {
-            return response()->json(['message' =>  $th->getMessage()]);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'deleteDevice', $th->getMessage());
+            return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -248,7 +255,8 @@ class BioMSController extends Controller
             $data = Biometrics::all();
             return $data;
         } catch (\Throwable $th) {
-            return response()->json(['message' =>  $th->getMessage()]);
+            Helpers::errorLog($this->CONTROLLER_NAME, 'fetchBiometrics', $th->getMessage());
+            return response()->json(['message' =>  $th->getMessage()],Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 }

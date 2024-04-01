@@ -6,11 +6,8 @@ use App\Http\Controllers\Controller;
 
 use App\Http\Requests\AddressManyRequest;
 use App\Http\Requests\AuthPinApprovalRequest;
-use App\Http\Requests\PasswordApprovalRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\Hash;
 use App\Helpers\Helpers;
 use App\Http\Requests\AddressRequest;
 use App\Http\Resources\AddressResource;

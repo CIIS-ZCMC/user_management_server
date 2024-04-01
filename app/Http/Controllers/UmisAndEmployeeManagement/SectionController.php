@@ -8,6 +8,8 @@ use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Requests\PasswordApprovalRequest;
 use App\Models\Department;
 use App\Models\Division;
+use App\Models\SpecialAccessRole;
+use App\Models\SystemRole;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -63,6 +65,8 @@ class SectionController extends Controller
     {
         try{
             $user = $request->user;
+            $previous_head = null;
+            $system_role = null;
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
@@ -83,13 +87,42 @@ class SectionController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             } 
 
+            if($section->supervisor_employee_profile_id !== null){
+                $previous_head = $section->supervisor_employee_profile_id;
+            }
+
             $cleanData = [];
             $cleanData['supervisor_employee_profile_id'] = $employee_profile->id;
             $cleanData['supervisor_attachment_url'] = $request->attachment===null?'NONE': $this->file_validation_and_upload->check_save_file($request,'section/files');
             $cleanData['supervisor_effective_at'] = Carbon::now();
 
             $section->update($cleanData);
+            
+            if($section->code === 'HRMO'){
+                $system_role = SystemRole::where('code', 'HRMO-HEAD-02')->first();
 
+                SpecialAccessRole::create([
+                    'system_role_id' => $system_role->id,
+                    'employee_profile_id' => $employee_profile->id
+                ]);
+            }else{
+                $system_role = SystemRole::where('code', 'SECTION-HEAD-05')->first();
+
+                SpecialAccessRole::create([
+                    'system_role' => $system_role->id,
+                    'employee_profile_id' => $employee_profile->id
+                ]);
+            }
+
+            /**
+             * Revoke Previous Head rights as Division Head
+             */
+            if($previous_head !== null){
+                $access_right = SpecialAccessRole::where('employee_profile_id', $previous_head)->where('system_role_id', $system_role->id)->first();
+                $access_right->delete();
+            }
+
+            Helpers::notifications($employee_profile->id, "You been assigned as section head of ".$section->name." section.");
             Helpers::registerSystemLogs($request, $id, true, 'Success in assigning supervisor '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
@@ -152,6 +185,7 @@ class SectionController extends Controller
 
             $section->update($cleanData);
 
+            Helpers::notifications($employee_profile->id, "You been assigned as officer in charge of ".$section->name." division.");
             Helpers::registerSystemLogs($request, $id, true, 'Success in assigning officer in charge '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([

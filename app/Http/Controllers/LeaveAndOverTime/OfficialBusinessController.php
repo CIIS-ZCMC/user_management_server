@@ -24,7 +24,7 @@ class OfficialBusinessController extends Controller
     private $SINGULAR_MODULE_NAME = 'official business';
 
     /**
-     * Display a listing of the resource.   
+     * Display a listing of the resource.
      */
     public function index(Request $request)
     {
@@ -35,26 +35,26 @@ class OfficialBusinessController extends Controller
             $approving = ["for approving approval", "approved", "declined by approving officer"];
             $position = $employee_profile->position();
             $employeeId = $employee_profile->id;
-        
+
 
             /**
              * Division Head [approving, recommending] - applications of assigned area
              *  - recommending => [for recommending approval, for approving approval, approved, declined]
              *  - approving => [ for approving approval, approved, declined]
-             * 
+             *
              * Department Head [recommending] - applications of assigned area
              *  - recommending => [for recommending approval, for approving approval, approved, declined]
-             * 
+             *
              * Section Supervisor [recommending] - applications of assigned area
              *  - recommending => [for recommending approval, for approving approval, approved, declined]
-             * 
+             *
              */
-            
-           
+
+
              /** FOR NORMAL EMPLOYEE */
             if($employee_profile->position() === null){
                 $official_business_application = OfficialBusiness::where('employee_profile_id', $employee_profile->id)->get();
-                 
+
                 return response()->json([
                     'data' => OfficialBusinessResource::collection($official_business_application),
                     'message' => 'Retrieved all offical business application'
@@ -123,7 +123,7 @@ class OfficialBusinessController extends Controller
             return response()->json(['data' => OfficialBusinessResource::collection($sql)], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-            
+
             Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -152,7 +152,7 @@ class OfficialBusinessController extends Controller
                 }
 
                 if ($request->hasFile($key)) {
-                    $file = $request->file($key);   
+                    $file = $request->file($key);
                     $cleanData[$key] = $file;
                     continue;
                 }
@@ -168,19 +168,8 @@ class OfficialBusinessController extends Controller
             $end = Carbon::parse($request->date_to);
             $employeeId = $user->id;
 
-            $overlappingOb = OfficialBusiness::where(function ($query) use ($start, $end, $employeeId) {
-                $query->where('employee_profile_id', $employeeId)
-                    ->where(function ($query) use ($start, $end) {
-                        $query->whereBetween('date_from', [$start, $end])
-                            ->orWhereBetween('date_to', [$start, $end])
-                            ->orWhere(function ($query) use ($start, $end) {
-                                $query->where('date_from', '<=', $start)
-                                    ->where('date_to', '>=', $end);
-                            });
-                    });
-            })->exists();
-
-            if ($overlappingOb) {
+            $overlapExists = Helpers::hasOverlappingRecords($start, $end, $employeeId);
+            if ($overlapExists) {
                 return response()->json(['message' => 'You already have an application for the same dates.'], Response::HTTP_FORBIDDEN);
             } else {
 
@@ -206,7 +195,7 @@ class OfficialBusinessController extends Controller
 
                 return response()->json([
                     'data' => OfficialBusinessResource::collection(OfficialBusiness::where('id', $data->id)->get()),
-                    'logs' =>  Helpers::registerOfficialBusinessLogs($data->id, $user['id'], 'Applied'), 
+                    'logs' =>  Helpers::registerOfficialBusinessLogs($data->id, $user['id'], 'Applied'),
                     'msg' => 'Request Complete.'], Response::HTTP_OK);
             }
         } catch (\Throwable $th) {
@@ -237,7 +226,7 @@ class OfficialBusinessController extends Controller
      */
     public function update($id, AuthPinApprovalRequest $request)
     {
-        try {        
+        try {
             $data = OfficialBusiness::findOrFail($id);
 
             if(!$data) {
@@ -249,12 +238,12 @@ class OfficialBusinessController extends Controller
             $employee_profile = $request->user;
 
             $cleanData['pin'] = strip_tags($request->password);
-           
+
 
             if ($employee_profile['authorization_pin'] !==  $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
-      
+
             if ($request->status === 'approved') {
                 switch ($data->status) {
                     case 'for recommending approval':
@@ -266,19 +255,19 @@ class OfficialBusinessController extends Controller
                         $status = 'approved';
                         $log_action = 'Approved by Approving Officer';
                     break;
-                    
+
                     // default:
                     //     $status = 'declined';
                     //     $log_action = 'Request Declined';
                     // break;
                 }
             } else if ($request->status === 'declined') {
-             
-              
+
+
                 $ob_application_recommending=$data->recommending_officer  ;
                 $ob_application_approving=$data->approving_officer  ;
-                
-              
+
+
                 if($employee_profile->id === $ob_application_recommending)
                 {
                     $status='declined by recommending officer';
@@ -289,7 +278,7 @@ class OfficialBusinessController extends Controller
                 }
                 $log_action = 'Request Declined';
             }
-            
+
 
             $data->update(['status' => $status, 'remarks' => $request->remarks==='null' || !$request->remarks ? null : $request->remarks]);
 

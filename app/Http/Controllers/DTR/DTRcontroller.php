@@ -6,6 +6,7 @@ use App\Models\Biometrics;
 use Illuminate\Http\Request;
 use App\Models\DailyTimeRecords;
 use App\Methods\Helpers;
+use App\Helpers\Helpers as Helpersv2;
 use App\Methods\BioControl;
 use App\Models\DtrAnomalies;
 use Illuminate\Support\Facades\DB;
@@ -36,6 +37,8 @@ class DTRcontroller extends Controller
 
     protected $DTR;
 
+    private $CONTROLLER_NAME = "DTRcontroller";
+
     public function __construct()
     {
         $this->helper = new Helpers();
@@ -46,6 +49,7 @@ class DTRcontroller extends Controller
             $content = $this->bioms->operatingDevice()->getContent();
             $this->devices = $content !== null ? json_decode($content, true)['data'] : [];
         } catch (\Throwable $th) {
+            Helpersv2::errorLog($this->CONTROLLER_NAME, '__construct', $th->getMessage());
             Log::channel("custom-dtr-log-error")->error($th->getMessage());
         }
     }
@@ -88,6 +92,7 @@ class DTRcontroller extends Controller
                 ];
             }
         } catch (\Throwable $th) {
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'pullDTRuser', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], 401);
         }
     }
@@ -111,6 +116,7 @@ class DTRcontroller extends Controller
             }
             return $result;
         } catch (\Throwable $th) {
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'monthDayRecordsSelf', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], 401);
         }
     }
@@ -134,6 +140,8 @@ class DTRcontroller extends Controller
                     );
 
 
+
+
                     $date_and_timeD = simplexml_load_string($tad->get_date());
                     if ($this->helper->validatedDeviceDT($date_and_timeD)) { //Validating Time of server and time of device
                         $date_now = date('Y-m-d');
@@ -142,6 +150,9 @@ class DTRcontroller extends Controller
                             return date('Y-m-d', strtotime($attd['date_time'])) == $date_now;
                         });
 
+
+
+
                         if (count($check_Records) >= 1) {
                             foreach ($check_Records as $bioEntry) {
                                 $biometric_id = $bioEntry['biometric_id'];
@@ -149,6 +160,8 @@ class DTRcontroller extends Controller
                                 $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
                                 $DaySchedule = $Schedule['daySchedule'];
                                 $BreakTime = $Schedule['break_Time_Req'];
+
+
 
 
                                 if (count($DaySchedule) >= 1) {
@@ -187,9 +200,6 @@ class DTRcontroller extends Controller
                                 return date('Y-m-d', strtotime($attd['date_time'])) < $datenow;
                             });
 
-
-
-                            return;
                             // $this->helper->saveDTRRecords($late_Records, true);
                             // /* Save DTR Logs */
                             $this->helper->saveDTRLogs($late_Records, 1, $device, 1);
@@ -218,6 +228,7 @@ class DTRcontroller extends Controller
                 } // End Checking if Connected to Device
             }
         } catch (\Throwable $th) {
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'fetchDTRFromDevice', $th->getMessage());
             return $th;
             // Log::channel("custom-dtr-log-error")->error($th->getMessage());
             // return response()->json(['message' => 'Unable to connect to device', 'Throw error' => $th->getMessage()]);
@@ -356,6 +367,7 @@ class DTRcontroller extends Controller
 
             return response()->json(['data' => $udata]);
         } catch (\Throwable $th) {
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'fetchUserDTR', $th->getMessage());
             return response()->json(['message' =>  $th->getMessage()]);
         }
     }
@@ -530,7 +542,7 @@ class DTRcontroller extends Controller
 
             return $this->PrintDtr($month_of, $year_of, $biometric_id, $emp_Details, $view, $FrontDisplay);
         } catch (\Throwable $th) {
-            return $th;
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'generateDTR', $th->getMessage());
             return response()->json(['message' =>  $th->getMessage()]);
         }
     }
@@ -543,9 +555,6 @@ class DTRcontroller extends Controller
 
     public function printDtr($month_of, $year_of, $biometric_id, $emp_Details, $view, $FrontDisplay)
     {
-
-
-
         try {
             $dtr = DB::table('daily_time_records')
                 ->select('*', DB::raw('DAY(STR_TO_DATE(first_in, "%Y-%m-%d %H:%i:%s")) AS day'))
@@ -708,6 +717,67 @@ class DTRcontroller extends Controller
                 })
                 ->get();
 
+            $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
+
+            //Leave Applications
+            $leaveapp  = $employee->leaveApplications->filter(function ($row) {
+                return $row['status'] == "approved";
+            });
+
+            $leavedata = [];
+            foreach ($leaveapp as $rows) {
+                $leavedata[] = [
+                    'country' => $rows['country'],
+                    'city' => $rows['city'],
+                    'from' => $rows['date_from'],
+                    'to' => $rows['date_to'],
+                    'without_pay' => $rows['without_pay'],
+                    'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to'])
+                ];
+            }
+
+            //Official business
+            $officialBusiness = array_values($employee->officialBusinessApplications->filter(function ($row) {
+                return $row['status'] == "approved";
+            })->toarray());
+            $obData = [];
+            foreach ($officialBusiness as $rows) {
+                $obData[] = [
+                    'purpose' => $rows['purpose'],
+                    'time_from' => $rows['time_from'],
+                    'time_to' => $rows['time_to'],
+                    'date_from' => $rows['date_from'],
+                    'date_to' => $rows['date_to'],
+                    'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to']),
+                ];
+            }
+
+            //Official Time
+            $officialTime = $employee->officialTimeApplications->filter(function ($row) {
+                return $row['status'] == "approved";
+            });
+            $otData = [];
+            foreach ($officialTime as $rows) {
+                $otData[] = [
+                    'date_from' => $rows['date_from'],
+                    'date_to' => $rows['date_to'],
+                    'purpose' => $rows['purpose'],
+                    'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to'])
+                ];
+            }
+
+            $CTO =  $employee->CTOApplication->filter(function ($row) {
+                return $row['status'] == "approved";
+            });
+            $ctoData = [];
+            foreach ($CTO as $rows) {
+                $ctoData[] = [
+                    'date' => date('Y-m-d', strtotime($rows['date'])),
+                    'purpose' => $rows['purpose'],
+                    'remarks' => $rows['remarks'],
+                ];
+            }
+
 
             $schedules = $this->helper->getSchedule($biometric_id, "all-{$year_of}-{$month_of}");
 
@@ -729,7 +799,11 @@ class DTRcontroller extends Controller
                     'print_view' => true,
                     'halfsched' => $is_Half_Schedule,
                     'biometric_ID' => $biometric_id,
-                    'schedule' => $employeeSched
+                    'schedule' => $employeeSched,
+                    'leaveapp' => $leavedata,
+                    'obApp' => $obData,
+                    'otApp' => $otData,
+                    'ctoApp' => $ctoData
 
                 ]);
             }
@@ -756,7 +830,11 @@ class DTRcontroller extends Controller
                     'halfsched' => $is_Half_Schedule,
                     'biometric_ID' => $biometric_id,
                     'schedule' => $employeeSched,
-                    'Incharge' => $approver
+                    'Incharge' => $approver,
+                    'leaveapp' => $leavedata,
+                    'obApp' => $obData,
+                    'otApp' => $otData,
+                    'ctoApp' => $ctoData
                 ]);
             } else {
                 $options = new Options();
@@ -783,7 +861,11 @@ class DTRcontroller extends Controller
                     'halfsched' => $is_Half_Schedule,
                     'biometric_ID' => $biometric_id,
                     'schedule' => $employeeSched,
-                    'Incharge' => $approver
+                    'Incharge' => $approver,
+                    'leaveapp' => $leavedata,
+                    'obApp' => $obData,
+                    'otApp' => $otData,
+                    'ctoApp' => $ctoData
                 ]));
 
                 $dompdf->setPaper('Letter', 'portrait');
@@ -795,11 +877,10 @@ class DTRcontroller extends Controller
                 $dompdf->stream($filename);
             }
         } catch (\Throwable $th) {
-            return $th;
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'printDtr', $th->getMessage());
             return response()->json(['message' =>  $th->getMessage()]);
         }
     }
-
 
     public function GenerateMultiple($id, $month_of, $year_of, $view)
     {
@@ -1061,6 +1142,67 @@ class DTRcontroller extends Controller
                     })
                     ->get();
 
+                $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
+
+                //Leave Applications
+                $leaveapp  = $employee->leaveApplications->filter(function ($row) {
+                    return $row['status'] == "approved";
+                });
+
+                $leavedata = [];
+                foreach ($leaveapp as $rows) {
+                    $leavedata[] = [
+                        'country' => $rows['country'],
+                        'city' => $rows['city'],
+                        'from' => $rows['date_from'],
+                        'to' => $rows['date_to'],
+                        'without_pay' => $rows['without_pay'],
+                        'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to'])
+                    ];
+                }
+
+                //Official business
+                $officialBusiness = array_values($employee->officialBusinessApplications->filter(function ($row) {
+                    return $row['status'] == "approved";
+                })->toarray());
+                $obData = [];
+                foreach ($officialBusiness as $rows) {
+                    $obData[] = [
+                        'purpose' => $rows['purpose'],
+                        'time_from' => $rows['time_from'],
+                        'time_to' => $rows['time_to'],
+                        'date_from' => $rows['date_from'],
+                        'date_to' => $rows['date_to'],
+                        'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to']),
+                    ];
+                }
+
+                //Official Time
+                $officialTime = $employee->officialTimeApplications->filter(function ($row) {
+                    return $row['status'] == "approved";
+                });
+                $otData = [];
+                foreach ($officialTime as $rows) {
+                    $otData[] = [
+                        'date_from' => $rows['date_from'],
+                        'date_to' => $rows['date_to'],
+                        'purpose' => $rows['purpose'],
+                        'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to'])
+                    ];
+                }
+
+                $CTO =  $employee->CTOApplication->filter(function ($row) {
+                    return $row['status'] == "approved";
+                });
+                $ctoData = [];
+                foreach ($CTO as $rows) {
+                    $ctoData[] = [
+                        'date' => date('Y-m-d', strtotime($rows['date'])),
+                        'purpose' => $rows['purpose'],
+                        'remarks' => $rows['remarks'],
+                    ];
+                }
+
 
 
                 $schedules = $this->helper->getSchedule($biometric_id, "all-{$year_of}-{$month_of}");
@@ -1085,11 +1227,15 @@ class DTRcontroller extends Controller
                     'biometric_ID' => $biometric_id,
                     'schedule' => $employeeSched,
                     'Incharge' => $approver,
-                    'emp_Details' => $emp_Details
-
+                    'emp_Details' => $emp_Details,
+                    'leaveapp' => $leavedata,
+                    'obApp' => $obData,
+                    'otApp' => $otData,
+                    'ctoApp' => $ctoData
                 ];
             }
         }
+
 
 
 
@@ -1109,6 +1255,7 @@ class DTRcontroller extends Controller
         try {
             return response()->json(['data' => Holidaylist::all()]);
         } catch (\Throwable $th) {
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'getHolidays', $th->getMessage());
             return response()->json(['message' =>  $th->getMessage()]);
         }
     }
@@ -1130,6 +1277,7 @@ class DTRcontroller extends Controller
             ]);
             return response()->json(['message' =>  "Holiday Set Successfully!"]);
         } catch (\Throwable $th) {
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'setHolidays', $th->getMessage());
             return response()->json(['message' =>  $th->getMessage()]);
         }
     }
@@ -1153,6 +1301,7 @@ class DTRcontroller extends Controller
 
             return response()->json(['message' =>  "Item Updated Successfully!"]);
         } catch (\Throwable $th) {
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'modifyHolidays', $th->getMessage());
             return response()->json(['message' =>  $th->getMessage()]);
         }
     }
@@ -1634,7 +1783,7 @@ class DTRcontroller extends Controller
 
             return $dtr;
         } catch (\Throwable $th) {
-            return $th;
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'dtrUTOTReport', $th->getMessage());
             return response()->json(['message' => $th->getMessage()]);
         }
     }
@@ -1834,6 +1983,7 @@ class DTRcontroller extends Controller
             }
             return $data;
         } catch (\Throwable $th) {
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'getUsersLogs', $th->getMessage());
             //throw $th;
         }
     }
@@ -1852,11 +2002,53 @@ class DTRcontroller extends Controller
         **
         * test on how to access request function on another controller for instance
         */
+        // $dtrentry = "2024-03-20 8:41:00";
+        // $schedule = "2024-03-20 8:00:00";
+        // $isoncall = 1;
+        // $alloted_mins_Oncall = 0.5; // 30 minutes
 
+        // $dtr_date = date('Y-m-d', strtotime($dtrentry));
+        // $max_allowed_entry_for_oncall = env('MAX_ALLOWED_ENTRY_ONCALL');
+
+        // /* With Schedule Entry */
+        // $in_Entry = $schedule;
+
+        // $time_stamp = strtotime($in_Entry);
+
+
+        // $new_Time_stamp = $time_stamp - (12 * 3600);
+        // $Calculated_allotedHours = date('Y-m-d H:i:s', $new_Time_stamp);
+
+        // $newEntry = $schedule;
+        // if ($isoncall) {
+        //     //// Logic for ONCALL
+
+        //     $schedEntry = $time_stamp + ($alloted_mins_Oncall * 1800); // 30 mins
+
+        //     $calIn = date("Y-m-d H:i:s", $schedEntry);
+        //     $dtrentry = date("Y-m-d H:i:s", strtotime($dtrentry));
+        //     if ($calIn <= $dtrentry) {
+
+        //         //within 30 mins.
+        //         // then accept as 8am straight
+        //         $newEntry = date("Y-m-d H:i:s", strtotime($dtrentry . "-30 minutes"));
+        //     }
+
+        //     return $newEntry;
+        // } else {
+        //     // if ($Calculated_allotedHours <= $dtrentry['date_time']) { //within alloted hours to timein
+        //     //     DailyTimeRecords::create([
+        //     //         'biometric_id' => $biometric_id,
+        //     //         'dtr_date' => $dtr_date,
+        //     //         'first_in' => $dtrentry['date_time'],
+        //     //         'is_biometric' => 1,
+        //     //     ]);
+        //     // }
+        // }
 
         for ($i = 1; $i <= 30; $i++) {
 
-            $date = date('Y-m-d', strtotime('2024-01-' . $i));
+            $date = date('Y-m-d', strtotime('2024-02-' . $i));
 
             if (date('D', strtotime($date)) != 'Sun') {
                 $firstin = date('H:i:s', strtotime('today') + rand(25200, 30600));

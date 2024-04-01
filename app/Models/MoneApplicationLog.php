@@ -13,8 +13,6 @@ class MoneApplicationLog extends Model
         'monetization_application_id',
         'action_by_id',
         'action',
-        'status',
-        'date',
         
        
     ];

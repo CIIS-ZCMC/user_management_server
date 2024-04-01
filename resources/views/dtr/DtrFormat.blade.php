@@ -59,8 +59,8 @@
     <table id="tabledate">
 
         <tr>
-            <th colspan="2" style="background-color: whitesmoke">
-
+            <th colspan="2" style="background-color: whitesmoke;border-bottom: 1px solid rgb(197, 196, 196);">
+                {{ date('F', strtotime($year . '-' . $month . '-1')) }}
             </th>
 
             <th colspan="2" style="border-bottom: 1px solid rgb(197, 196, 196);font-size:15px">AM</th>
@@ -98,6 +98,10 @@
                     </tr>
                 </table>
             </th>
+            <th
+                style="background-color: whitesmoke; border-right: 1px solid rgb(184, 184, 184);border-left: 1px solid rgb(184, 184, 184)">
+                Schedule
+            </th>
             <th style="background-color: whitesmoke">
                 Remarks
             </th>
@@ -121,6 +125,68 @@
                             'first_out' => $res['first_out'],
                         ];
                     }, $checkIn);
+
+                    //Check LeaveApplication
+                    $filteredleaveDates = [];
+
+                    foreach ($leaveapp as $row) {
+                        foreach ($row['dates_covered'] as $date) {
+                            $filteredleaveDates[] = strtotime($date);
+                        }
+                    }
+                    $leaveApplication = array_filter($filteredleaveDates, function ($timestamp) use (
+                        $year,
+                        $month,
+                        $i,
+                    ) {
+                        $dateToCompare = date('Y-m-d', $timestamp);
+                        $dateToMatch = date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
+                        return $dateToCompare === $dateToMatch;
+                    });
+                    $leave_Count = count($leaveApplication);
+
+                    //Check obD ates
+                    $filteredOBDates = [];
+                    foreach ($obApp as $row) {
+                        foreach ($row['dates_covered'] as $date) {
+                            $filteredOBDates[] = strtotime($date);
+                        }
+                    }
+                    $obApplication = array_filter($filteredOBDates, function ($timestamp) use ($year, $month, $i) {
+                        $dateToCompare = date('Y-m-d', $timestamp);
+                        $dateToMatch = date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
+                        return $dateToCompare === $dateToMatch;
+                    });
+                    $ob_Count = count($obApplication);
+
+                    //Check otDates
+                    $filteredOTDates = [];
+                    foreach ($otApp as $row) {
+                        foreach ($row['dates_covered'] as $date) {
+                            $filteredOTDates[] = strtotime($date);
+                        }
+                    }
+                    $otApplication = array_filter($filteredOTDates, function ($timestamp) use ($year, $month, $i) {
+                        $dateToCompare = date('Y-m-d', $timestamp);
+                        $dateToMatch = date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
+                        return $dateToCompare === $dateToMatch;
+                    });
+                    $ot_Count = count($otApplication);
+
+                    $ctoApplication = array_filter($ctoApp, function ($row) use ($year, $month, $i) {
+                        $dateToCompare = date('Y-m-d', strtotime($row['date']));
+                        $dateToMatch = date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
+                        return $dateToCompare === $dateToMatch;
+                    });
+                    $cto_Count = count($ctoApplication);
+
+                    $leavemessage = 'On leave';
+                    $officialTime = 'Official Time';
+                    $officialBusinessMessage = 'Official Business';
+                    $absentMessage = 'Absent';
+                    $dayoffmessage = 'Day-Off';
+                    $holidayMessage = 'HOLIDAY';
+                    $ctoMessage = 'CTO';
                 @endphp
 
                 <tr>

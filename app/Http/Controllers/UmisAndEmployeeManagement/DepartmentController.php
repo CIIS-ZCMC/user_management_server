@@ -5,15 +5,14 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 use App\Http\Controllers\Controller;
 
 use App\Http\Requests\AuthPinApprovalRequest;
+use App\Models\SpecialAccessRole;
+use App\Models\SystemRole;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Hash;
 use App\Helpers\Helpers;
 use App\Services\FileValidationAndUpload;
-use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\DepartmentRequest;
 use App\Http\Requests\DepartmentAssignHeadRequest;
 use App\Http\Requests\DepartmentAssignTrainingOfficerRequest;
@@ -62,6 +61,8 @@ class DepartmentController extends Controller
     {
         try{
             $user = $request->user;
+            $previous_head = null;
+            $system_role = null;
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
@@ -82,13 +83,33 @@ class DepartmentController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             } 
 
+            if($department->head_employee_profile_id !== null){
+                $previous_head = $department->head_employee_profile_id;
+            }
+
             $cleanData = [];
             $cleanData['head_employee_profile_id'] = $employee_profile->id;
-            $cleanData['head_attachment_url'] = $request->input('attachment')===null?'NONE': $this->file_validation_and_upload->check_save_file($request, 'department/files');
+            $cleanData['head_attachment_url'] = $request->input('attachment')===null?'NONE': Helpers::checkSaveFile($request->attachment, 'department/files');
             $cleanData['head_effective_at'] = Carbon::now();
 
             $department->update($cleanData);
 
+            $system_role = SystemRole::where('code', 'DEPT-HEAD-04')->first();
+
+            SpecialAccessRole::create([
+                'system_role_id' => $system_role->id,
+                'employee_profile_id' => $employee_profile->id
+            ]);
+
+            /**
+             * Revoke Previous Head rights as Division Head
+             */
+            if($previous_head !== null){
+                $access_right = SpecialAccessRole::where('employee_profile_id', $previous_head)->where('system_role_id', $system_role->id)->first();
+                $access_right->delete();
+            }
+
+            Helpers::notifications($employee_profile->id, "You been assigned as department head of ".$department->name." department.");
             Helpers::registerSystemLogs($request, $id, true, 'Success in assigning head'.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
@@ -137,6 +158,7 @@ class DepartmentController extends Controller
 
             $department->update($cleanData);
 
+            Helpers::notifications($employee_profile->id, "You been assigned as training officer of ".$department->name." department.");
             Helpers::registerSystemLogs($request, $id, true, 'Success in assigning head'.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
@@ -190,6 +212,7 @@ class DepartmentController extends Controller
 
             $department->update($cleanData);
 
+            Helpers::notifications($employee_profile->id, "You been assigned as officer in charge of ".$department->name." department.");
             Helpers::registerSystemLogs($request, $id, true, 'Success in assigning officer in charge '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
