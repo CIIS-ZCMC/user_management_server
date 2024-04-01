@@ -199,22 +199,22 @@ class LeaveApplicationController extends Controller
     {
         try{
             $employee_profile = $request->user;
-            $position = $employee_profile->position();
+            // $position = $employee_profile->position();
 
-            if($position['position'] === 'Medical Center Chief'){
-                $omcc = Division::where('code', 'OMCC')->first();
+            // if($position['position'] === 'Medical Center Chief'){
+            //     $omcc = Division::where('code', 'OMCC')->first();
 
-                $leave_applications = LeaveApplication::select('leave_applications.*')
-                    ->join('employee_profiles', 'employee_profiles.id', 'leave_applications.employee_profile_id')
-                    ->join('assigned_areas', 'assigned_areas.employee_profile_id', 'employee_profiles.id')
-                    ->where('assigned_areas.division_id', $omcc->id)
-                    ->where('leave_applications.status', 'approved')->get();
+            //     $leave_applications = LeaveApplication::select('leave_applications.*')
+            //         ->join('employee_profiles', 'employee_profiles.id', 'leave_applications.employee_profile_id')
+            //         ->join('assigned_areas', 'assigned_areas.employee_profile_id', 'employee_profiles.id')
+            //         ->where('assigned_areas.division_id', $omcc->id)
+            //         ->where('leave_applications.status', 'approved')->get();
                 
-                return response()->json([
-                    'data' => LeaveApplicationResource::collection($leave_applications),
-                    'message' => 'Retrieve list.'
-                ], Response::HTTP_OK);
-            }
+            //     return response()->json([
+            //         'data' => LeaveApplicationResource::collection($leave_applications),
+            //         'message' => 'Retrieve list.'
+            //     ], Response::HTTP_OK);
+            // }
 
             $assigned_area = $employee_profile->assignedArea->findDetails();
             $division_id = null;
@@ -246,6 +246,7 @@ class LeaveApplicationController extends Controller
                 ->where('dv.id', $division_id)
                 ->get();
             
+           
             return response()->json([
                 'data' => LeaveApplicationResource::collection($leave_applications),
                 'message' => 'Retrieve list.'
@@ -254,6 +255,7 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
 
     public function myApprovedLeaveApplication(Request $request)
     {
