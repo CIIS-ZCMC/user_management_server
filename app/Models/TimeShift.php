@@ -41,7 +41,7 @@ class TimeShift extends Model
         $firstOut = isset($this->first_out) ? Carbon::parse($this->first_out)->format('H:i A') : null;
         $SecondIn = isset($this->second_in) ? Carbon::parse($this->second_in)->format('H:i A') : null;
         $SecondOut = isset($this->second_out) ? Carbon::parse($this->second_out)->format('H:i A') : null;
-        
+
         if ($SecondIn !== null) {
             return $firstIn . '-' . $firstOut . '|' . $SecondIn . '-' . $SecondOut;
         }
@@ -55,12 +55,12 @@ class TimeShift extends Model
         $firstOut = isset($this->first_out) ? Carbon::parse($this->first_out)->format('h:i A') : null;
         $SecondIn = isset($this->second_in) ? Carbon::parse($this->second_in)->format('h:i A') : null;
         $SecondOut = isset($this->second_out) ? Carbon::parse($this->second_out)->format('h:i A') : null;
-        
-        
+
+
         if ($SecondIn !== null) {
             return $firstIn . ' - ' . $firstOut . ' | ' . $SecondIn . ' - ' . $SecondOut;
         }
-        
+
         return $firstIn . ' - ' . $firstOut;
     }
 
@@ -70,13 +70,13 @@ class TimeShift extends Model
         $firstOut = isset($this->first_out) ? Carbon::parse($this->first_out)->format('h') : null;
         $SecondIn = isset($this->second_in) ? Carbon::parse($this->second_in)->format('h') : null;
         $SecondOut = isset($this->second_out) ? Carbon::parse($this->second_out)->format('h') : null;
-        
-        
+
+
         if ($SecondIn !== null) {
             // return $firstIn . '-' . $firstOut . '<br>' . $SecondIn . '-' . $SecondOut;
             return $firstIn . '<br>' . $firstOut;
         }
-        
+
         return $firstIn . '<br>' . $firstOut;
     }
 }
