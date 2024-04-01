@@ -82,7 +82,36 @@ class MonetizationApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+    public function userMoneApplication(Request $request)
+    {
+        try {
+            $employee_profile = $request->user;
 
+            $mone_applications = MonetizationApplication::where('employee_profile_id', $employee_profile->id)->get();
+            $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->get();
+            $result = [];
+
+            foreach ($employeeCredit as $leaveCredit) {
+                $leaveType = $leaveCredit->leaveType->name;
+                $totalCredits = $leaveCredit->total_leave_credits;
+                $usedCredits = $leaveCredit->used_leave_credits;
+
+                $result[] = [
+                    'leave_type_name' => $leaveType,
+                    'total_leave_credits' => $totalCredits,
+                    'used_leave_credits' => $usedCredits
+                ];
+            }
+
+            return response()->json([
+                'data' => MonetizationApplicationResource::collection($mone_applications),
+                'credits' => $result,
+                'message' => 'Retrieve all leave application records.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 
     public function getMoneApplications(Request $request)
     {
