@@ -2088,7 +2088,7 @@ class OvertimeApplicationController extends Controller
 
     public function getEmployeeOvertimeTotal()
     {
-        try{
+        try {
             $employeeProfiles = EmployeeProfile::with(['overtimeCredits', 'personalInformation'])
                 ->get();
             $employeeOvertimeTotals = $employeeProfiles->map(function ($employeeProfile) {
@@ -2103,7 +2103,7 @@ class OvertimeApplicationController extends Controller
             });
 
             return response()->json(['data' => $employeeOvertimeTotals], Response::HTTP_OK);
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'getEmployeeOvertimeTotal', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -2111,7 +2111,7 @@ class OvertimeApplicationController extends Controller
 
     public function getEmployees()
     {
-        try{
+        try {
             $currentMonth = date('m');
             $currentYear = date('Y');
             $filteredEmployees = EmployeeProfile::with(['overtimeCredits', 'personalInformation']) // Eager load the 'overtimeCredits' and 'profileInformation' relationships
@@ -2119,26 +2119,26 @@ class OvertimeApplicationController extends Controller
                 ->filter(function ($employeeProfile) use ($currentMonth, $currentYear) {
                     $totalAddCredits = $employeeProfile->overtimeCredits->where('operation', 'add')->sum('credit_value');
                     $totalDeductCredits = $employeeProfile->overtimeCredits->where('operation', 'deduct')->sum('credit_value');
-    
+
                     $totalOvertimeCredits = $totalAddCredits - $totalDeductCredits;
-    
+
                     return $totalOvertimeCredits < 40 && $totalOvertimeCredits < 120;
                 })
                 ->map(function ($employeeProfile) {
                     $totalAddCredits = $employeeProfile->overtimeCredits->where('operation', 'add')->sum('overtime_hours');
                     $totalDeductCredits = $employeeProfile->overtimeCredits->where('operation', 'deduct')->sum('overtime_hours');
-    
+
                     $totalOvertimeCredits = $totalAddCredits - $totalDeductCredits;
-    
+
                     return [
                         'employee_id' => $employeeProfile->id,
                         'employee_name' => $employeeProfile->personalInformation->first_name, // Assuming 'name' is the field in the ProfileInformation model representing the employee name
                         'total_overtime_credits' => $totalOvertimeCredits,
                     ];
                 });
-    
+
             return response()->json(['data' => $filteredEmployees], Response::HTTP_OK);
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'getEmployees', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -2226,7 +2226,7 @@ class OvertimeApplicationController extends Controller
                         }
                     },
                 ],
-                'letter_of_request' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
+                //'letter_of_request' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
                 'purpose.*' => 'required',
                 'remarks.*' => 'required',
                 'quantities.*' => 'required',
@@ -2237,7 +2237,9 @@ class OvertimeApplicationController extends Controller
             $divisions = Division::where('id', $area)->first();
             DB::beginTransaction();
             $path = "";
-
+            $fileName = "";
+            $file_name_encrypted = "";
+            $size = "";
             if ($request->hasFile('letter_of_request')) {
                 $fileName = pathinfo($request->file('letter_of_request')->getClientOriginalName(), PATHINFO_FILENAME);
                 $size = filesize($request->file('letter_of_request'));
@@ -3511,7 +3513,7 @@ class OvertimeApplicationController extends Controller
 
     public function resetYearlyOvertimeCredit(Request $request)
     {
-        try{
+        try {
             $employees = EmployeeProfile::get();
             if ($employees) {
                 foreach ($employees as $employee) {
@@ -3521,7 +3523,7 @@ class OvertimeApplicationController extends Controller
                     })->map(function ($operationCredits, $operation) {
                         return $operation === 'add' ? $operationCredits->sum() : -$operationCredits->sum();
                     })->sum();
-    
+
                     $employeeCredit = new EmployeeOvertimeCredit();
                     $employeeCredit->employee_profile_id = $employee->id;
                     $employeeCredit->operation = "deduct";
