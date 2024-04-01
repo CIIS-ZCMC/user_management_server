@@ -86,7 +86,7 @@ class EmployeeProfileController extends Controller
      *
      */
     public function signIn(SignInRequest $request)
-    {   
+    {
         try {
 
             /**
@@ -120,7 +120,7 @@ class EmployeeProfileController extends Controller
             if (!$employee_profile->isDeactivated()) {
                 return response()->json(['message' => "Account is deactivated."], Response::HTTP_FORBIDDEN);
             }
-            
+
 
             $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
 
@@ -238,7 +238,8 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                };
+                }
+                ;
 
                 $trials--;
             } while ($trials !== 0);
@@ -549,7 +550,7 @@ class EmployeeProfileController extends Controller
                     }
                 }
 
-                if (count($side_bar_details['system'])  === 0) {
+                if (count($side_bar_details['system']) === 0) {
                     $side_bar_details['system'][] = $this->buildSystemDetails($reg_system_role);
                 }
             }
@@ -611,7 +612,7 @@ class EmployeeProfileController extends Controller
                     }
                 }
 
-                if (count($side_bar_details['system'])  === 0) {
+                if (count($side_bar_details['system']) === 0) {
                     $side_bar_details['system'][] = $this->buildSystemDetails($jo_system_role);
                 }
             }
@@ -688,7 +689,7 @@ class EmployeeProfileController extends Controller
         $special_access_role = SpecialAccessRole::where('employee_profile_id', $employee_profile->id)->where('system_role_id', 1)->first();
 
         $employee = [
-            'profile_url' =>  Cache::get('server_domain') . "/photo/profiles/" . $employee_profile->profile_url,
+            'profile_url' => Cache::get('server_domain') . "/photo/profiles/" . $employee_profile->profile_url,
             'employee_id' => $employee_profile->employee_id,
             'position' => $position,
             'is_2fa' => $employee_profile->is_2fa,
@@ -790,7 +791,7 @@ class EmployeeProfileController extends Controller
             ],
             'area_assigned' => $area_assigned['details']->name,
             'area_sector' => $area_assigned['sector'],
-            'area_id' =>  $area_assigned['details']->id,
+            'area_id' => $area_assigned['details']->id,
             'side_bar_details' => $side_bar_details
         ];
     }
@@ -816,7 +817,7 @@ class EmployeeProfileController extends Controller
                 return response()->json(['message' => 'OTP has expired.'], Response::HTTP_BAD_REQUEST);
             }
 
-            if ((int)$otp !== $employee_profile->otp) {
+            if ((int) $otp !== $employee_profile->otp) {
                 return response()->json(['message' => 'Invalid OTP.'], Response::HTTP_BAD_REQUEST);
             }
 
@@ -862,7 +863,8 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                };
+                }
+                ;
 
                 $trials--;
             } while ($trials !== 0);
@@ -934,7 +936,8 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                };
+                }
+                ;
 
                 $trials--;
             } while ($trials !== 0);
@@ -1067,7 +1070,8 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                };
+                }
+                ;
 
                 $trials--;
             } while ($trials !== 0);
@@ -1165,7 +1169,7 @@ class EmployeeProfileController extends Controller
 
             $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
 
-            if (!Hash::check($password .Cache::get('salt_value'), $decryptedPassword)) {
+            if (!Hash::check($password . Cache::get('salt_value'), $decryptedPassword)) {
                 return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
             }
 
@@ -1305,7 +1309,8 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                };
+                }
+                ;
 
                 $trials--;
             } while ($trials !== 0);
@@ -1485,7 +1490,8 @@ class EmployeeProfileController extends Controller
             $new_trail = [];
 
             foreach ($employee_previous_assign_area as $key => $value) {
-                if ($key === 'created_at' || $key === 'updated_at') continue;
+                if ($key === 'created_at' || $key === 'updated_at')
+                    continue;
                 $new_trail[$key] = $value;
             }
 
@@ -1589,7 +1595,8 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                };
+                }
+                ;
 
                 $trials--;
             } while ($trials !== 0);
@@ -1742,7 +1749,8 @@ class EmployeeProfileController extends Controller
                     return response()->json(['message' => "Invalid sector."], Response::HTTP_BAD_REQUEST);
             }
 
-            if (!$area) return response()->json(['message' => "forbidden"], Response::HTTP_FORBIDDEN);
+            if (!$area)
+                return response()->json(['message' => "forbidden"], Response::HTTP_FORBIDDEN);
 
             $area->update(['oic_employee_profile_id' => strip_tags($request->OIC)]);
 
@@ -1874,7 +1882,7 @@ class EmployeeProfileController extends Controller
             try {
                 $fileName = Helpers::checkSaveFile($request->attachment, 'photo/profiles');
                 if (is_string($fileName)) {
-                    $employee_data['profile_url'] = $request->attachment === null  || $request->attachment === 'null' ? null : $fileName;
+                    $employee_data['profile_url'] = $request->attachment === null || $request->attachment === 'null' ? null : $fileName;
                 }
 
                 if (is_array($fileName)) {
@@ -1894,7 +1902,7 @@ class EmployeeProfileController extends Controller
             $employee_data['effective_at'] = $request->date_hired;
 
 
-            $plantilla_number_id = $request->plantilla_number_id === "null"  || $request->plantilla_number_id === null ? null : $request->plantilla_number_id;
+            $plantilla_number_id = $request->plantilla_number_id === "null" || $request->plantilla_number_id === null ? null : $request->plantilla_number_id;
             $sector_key = '';
 
             switch (strip_tags($request->sector)) {
@@ -2109,7 +2117,7 @@ class EmployeeProfileController extends Controller
             $key = Str::lower($my_assigned_area['sector']) . "_id";
 
             $assign_areas = AssignArea::where($key, $my_assigned_area['details']->id)
-                ->where('employee_profile_id', "<>",  $user->id)->get();
+                ->where('employee_profile_id', "<>", $user->id)->get();
 
             $employees = $assign_areas->map(function ($assign_area) {
                 return $assign_area->employeeProfile;
@@ -2125,7 +2133,7 @@ class EmployeeProfileController extends Controller
         }
     }
 
-    public function areasEmployees($id, $sector,Request $request)
+    public function areasEmployees($id, $sector, Request $request)
     {
         try {
             $user = $request->user;
@@ -2166,21 +2174,20 @@ class EmployeeProfileController extends Controller
             $my_area = $user->assignedArea->findDetails();
             $areas = [];
 
-            switch($my_area['sector']){
+            switch ($my_area['sector']) {
                 case "Division":
                     $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'sector' => $my_area['sector']];
                     $deparmtents = Department::where('division_id', $my_area['details']->id)->get();
-                    
-                    foreach($deparmtents as $department)
-                    {
+
+                    foreach ($deparmtents as $department) {
                         $areas[] = ['id' => $department->id, 'name' => $department->name, 'sector' => 'Department'];
 
                         $sections = Section::where('department_id', $department->id)->get();
-                        foreach($sections as $section){
+                        foreach ($sections as $section) {
                             $areas[] = ['id' => $section->id, 'name' => $section->name, 'sector' => 'Section'];
 
                             $units = Unit::where('section_id', $section->id)->get();
-                            foreach($units as $unit){
+                            foreach ($units as $unit) {
                                 $areas[] = ['id' => $unit->id, 'name' => $unit->name, 'sector' => 'Unit'];
                             }
                         }
@@ -2190,11 +2197,11 @@ class EmployeeProfileController extends Controller
                     $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'sector' => $my_area['sector']];
                     $sections = Section::where('department_id', $my_area['details']->id)->get();
 
-                    foreach($sections as $section){
+                    foreach ($sections as $section) {
                         $areas[] = ['id' => $section->id, 'name' => $section->name, 'sector' => 'Section'];
 
                         $units = Unit::where('section_id', $section->id)->get();
-                        foreach($units as $unit){
+                        foreach ($units as $unit) {
                             $areas[] = ['id' => $unit->id, 'name' => $unit->name, 'sector' => 'Unit'];
                         }
                     }
@@ -2203,7 +2210,7 @@ class EmployeeProfileController extends Controller
                     $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'sector' => $my_area['sector']];
 
                     $units = Unit::where('section_id', $my_area['details']->id)->get();
-                    foreach($units as $unit){
+                    foreach ($units as $unit) {
                         $areas[] = ['id' => $unit->id, 'name' => $unit->name, 'sector' => 'Unit'];
                     }
                     break;
@@ -2232,11 +2239,11 @@ class EmployeeProfileController extends Controller
             });
 
             $temp_perm = EmployeeProfileResource::collection($employee_profiles->filter(function ($profile) {
-                return $profile->employment_type_id  == 1 || $profile->employment_type_id == 2;
+                return $profile->employment_type_id == 1 || $profile->employment_type_id == 2;
             }) ?? []);
 
             $joborder = EmployeeProfileResource::collection($employee_profiles->filter(function ($profile) {
-                return $profile->employment_type_id  == 3;
+                return $profile->employment_type_id == 3;
             }) ?? []);
 
 
@@ -2269,7 +2276,7 @@ class EmployeeProfileController extends Controller
             $last_registered_employee = EmployeeProfile::orderBy('biometric_id', 'desc')->first();
             $default_password = Helpers::generatePassword();
 
-            $hashPassword = Hash::make($default_password.Cache::get('salt_value'));
+            $hashPassword = Hash::make($default_password . Cache::get('salt_value'));
             $encryptedPassword = Crypt::encryptString($hashPassword);
             $now = Carbon::now();
 
@@ -2285,14 +2292,15 @@ class EmployeeProfileController extends Controller
             try {
                 $fileName = Helpers::checkSaveFile($request->attachment, 'photo/profiles');
                 if (is_string($fileName)) {
-                    $cleanData['profile_url'] = $request->attachment === null  || $request->attachment === 'null' ? null : $fileName;
+                    $cleanData['profile_url'] = $request->attachment === null || $request->attachment === 'null' ? null : $fileName;
                 }
 
                 if (is_array($fileName)) {
                     $in_valid_file = true;
                     $cleanData['profile_url'] = null;
                 }
-            } catch (\Throwable $th) {}
+            } catch (\Throwable $th) {
+            }
 
             $cleanData['allow_time_adjustment'] = strip_tags($request->allow_time_adjustment) === 1 ? true : false;
             $cleanData['password_encrypted'] = $encryptedPassword;
@@ -2303,10 +2311,10 @@ class EmployeeProfileController extends Controller
             $cleanData['designation_id'] = $request->designation_id;
             $cleanData['effective_at'] = $request->date_hired;
 
-            $plantilla_number_id = $request->plantilla_number_id === "null"  || $request->plantilla_number_id === null ? null : $request->plantilla_number_id;
+            $plantilla_number_id = $request->plantilla_number_id === "null" || $request->plantilla_number_id === null ? null : $request->plantilla_number_id;
             $sector = strip_tags($request->sector);
 
-            $cleanData[Str::lower($sector).'_id'] = strip_tags($request->sector_id);
+            $cleanData[Str::lower($sector) . '_id'] = strip_tags($request->sector_id);
 
             if ($plantilla_number_id !== null) {
                 $plantilla_number = PlantillaNumber::find($plantilla_number_id);
@@ -2393,7 +2401,7 @@ class EmployeeProfileController extends Controller
 
             $fileName = Helpers::checkSaveFile($request->attachment, 'photo/profiles');
             if (is_string($fileName)) {
-                $profile_path = $request->attachment === null  || $request->attachment === 'null' ? null : $fileName;
+                $profile_path = $request->attachment === null || $request->attachment === 'null' ? null : $fileName;
             }
 
             $employee_profile->update(['profile_url' => $profile_path]);
@@ -2424,7 +2432,7 @@ class EmployeeProfileController extends Controller
             /**
              * Convert date hired to a string format to use in Employee ID
              */
-            
+
             $carbonDate = Carbon::createFromFormat('Y-m-d', $dateFromRequest);
             $date_hired_in_string = $carbonDate->format('Ymd');
 
@@ -2434,7 +2442,7 @@ class EmployeeProfileController extends Controller
              * get the excess data it has, example if employee ID is 2023061152 the excess data is 52
              * then increment it with 1 to use to new employee as part of employee ID
              */
-            $last_employee_id_registered_by_date = (int)substr($list_of_employee_by_date_hired, 8);
+            $last_employee_id_registered_by_date = (int) substr($list_of_employee_by_date_hired, 8);
             $employee_id = $date_hired_in_string . $last_employee_id_registered_by_date++;
 
             /**
@@ -2448,7 +2456,7 @@ class EmployeeProfileController extends Controller
                 ->whereDate('status', 1)
                 ->get();
 
-            $hashPassword = Hash::make($default_password['password'] .Cache::get('salt_value'));
+            $hashPassword = Hash::make($default_password['password'] . Cache::get('salt_value'));
             $password_encrypted = Crypt::encryptString($hashPassword);
 
             $password_created_at = Carbon::now();
@@ -2656,7 +2664,7 @@ class EmployeeProfileController extends Controller
                 'employee_details' => [
                     'employee' => $employee,
                     'personal_information' => $personal_information_data,
-                    'contact' =>  new ContactResource($personal_information->contact),
+                    'contact' => new ContactResource($personal_information->contact),
                     'address' => $address,
                     'address_update' => AddressResource::collection($personal_information->addresses),
                     'family_background' => new FamilyBackGroundResource($personal_information->familyBackground),
@@ -2714,7 +2722,7 @@ class EmployeeProfileController extends Controller
 
             $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
 
-            if (!Hash::check($cleanData['password'] .Cache::get('salt_value'), $decryptedPassword)) {
+            if (!Hash::check($cleanData['password'] . Cache::get('salt_value'), $decryptedPassword)) {
                 return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
             }
 
@@ -2852,7 +2860,7 @@ class EmployeeProfileController extends Controller
             $user = $request->user;
             $cleanData['pin'] = strip_tags($request->password);
 
-            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+            if ($user['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
@@ -2874,26 +2882,27 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function revokeOIC(AuthPinApprovalRequest $request)
     {
         try {
             $employee_profile = $request->user;
             $cleanData['pin'] = strip_tags($request->password);
 
-            if ($employee_profile['authorization_pin'] !==  $cleanData['pin']) {
+            if ($employee_profile['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $position = $employee_profile->position();
 
-            switch($position['position']){
+            switch ($position['position']) {
                 case "Medical Center Chief":
                     $division = Division::where('code', 'OMCC')
                         ->where('chief_employee_profile_id', $employee_profile->id)
                         ->first();
 
-                    if(!$division) return response()->json(['message' => "Invalid request."], Response::HTTP_FORBIDDEN);
+                    if (!$division)
+                        return response()->json(['message' => "Invalid request."], Response::HTTP_FORBIDDEN);
                     $oic = $division->oic_employee_profile_id;
 
                     $this->trailOICandResetAreaOICRecord($oic, $division);
@@ -2903,7 +2912,8 @@ class EmployeeProfileController extends Controller
                 case "Chief Nurse" || "Division Head":
                     $division = Division::where('chief_employee_profile_id', $employee_profile->id)->first();
 
-                    if(!$division) return response()->json(['message' => "Invalid request."], Response::HTTP_FORBIDDEN);
+                    if (!$division)
+                        return response()->json(['message' => "Invalid request."], Response::HTTP_FORBIDDEN);
                     $oic = $division->oic_employee_profile_id;
 
                     $this->trailOICandResetAreaOICRecord($oic, $division);
@@ -2913,7 +2923,8 @@ class EmployeeProfileController extends Controller
                 case "Nurse Manager" || "Department Head":
                     $department = Department::where('head_employee_profile_id', $employee_profile->id)->first();
 
-                    if(!$department) return response()->json(['message' => "Invalid request."], Response::HTTP_FORBIDDEN);
+                    if (!$department)
+                        return response()->json(['message' => "Invalid request."], Response::HTTP_FORBIDDEN);
                     $oic = $department->oic_employee_profile_id;
 
                     $this->trailOICandResetAreaOICRecord($oic, $department);
@@ -2923,7 +2934,8 @@ class EmployeeProfileController extends Controller
                 case "Supervisor":
                     $supervisor = Section::where('supervisor_employee_profile_id', $employee_profile->id)->first();
 
-                    if(!$supervisor) return response()->json(['message' => "Invalid request."], Response::HTTP_FORBIDDEN);
+                    if (!$supervisor)
+                        return response()->json(['message' => "Invalid request."], Response::HTTP_FORBIDDEN);
                     $oic = $supervisor->oic_employee_profile_id;
 
                     $this->trailOICandResetAreaOICRecord($oic, $supervisor);
@@ -2933,7 +2945,8 @@ class EmployeeProfileController extends Controller
                 case "Unit Head":
                     $unit = Unit::where('head_employee_profile_id', $employee_profile->id)->first();
 
-                    if(!$unit) return response()->json(['message' => "Invalid request."], Response::HTTP_FORBIDDEN);
+                    if (!$unit)
+                        return response()->json(['message' => "Invalid request."], Response::HTTP_FORBIDDEN);
                     $oic = $unit->oic_employee_profile_id;
 
                     $this->trailOICandResetAreaOICRecord($oic, $unit);
@@ -2985,14 +2998,14 @@ class EmployeeProfileController extends Controller
         $special_right = SpecialAccessRole::where('employee_profile_id', $oic)->where('system_role_id', $system_role_id)->first();
         $special_right->delete();
     }
-    
+
     public function revokeRights($id, $access_right_id, AuthPinApprovalRequest $request)
     {
         try {
             $user = $request->user;
             $cleanData['pin'] = strip_tags($request->password);
 
-            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+            if ($user['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 

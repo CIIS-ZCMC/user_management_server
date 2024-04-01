@@ -17,19 +17,22 @@ class ExchangeDuty extends Model
     protected $primaryKey = 'id';
 
     protected $fillable = [
-        'reason',
-        'status',
-        'schedule_id',
+        'requested_date_to_swap',
+        'requested_date_to_duty',
         'requested_employee_id',
         'reliever_employee_id',
+        'schedule_id',
         'approve_by',
+        'reason',
+        'status',
     ];
-    
+
     public $softDelete = true;
 
     public $timestamps = true;
 
-    public function exchangeDuty() {
+    public function exchangeDuty()
+    {
         return $this->hasOne(ExchangeDuty::class, 'approve_by');
     }
 
@@ -47,7 +50,7 @@ class ExchangeDuty extends Model
     {
         return $this->belongsTo(EmployeeProfile::class, 'reliever_employee_id');
     }
-    
+
     public function approvingEmployee()
     {
         return $this->belongsTo(EmployeeProfile::class, 'approve_by');
