@@ -20,36 +20,38 @@ Route::get('/initialize-storage', function () {
     Artisan::call('storage:link');
 });
 
-Route::namespace('App\Http\Controllers')->group(function () {
-    Route::get('announcements', 'AnnouncementsController@index');
-    Route::get('announcements-search', 'AnnouncementsController@searchAnnouncement');
-    Route::get('announcements/{id}', 'AnnouncementsController@show');
+Route::
+        namespace('App\Http\Controllers')->group(function () {
+            Route::get('announcements', 'AnnouncementsController@index');
+            Route::get('announcements-search', 'AnnouncementsController@searchAnnouncement');
+            Route::get('announcements/{id}', 'AnnouncementsController@show');
 
-    Route::get('events', 'EventsController@index');
-    Route::get('events-search', 'EventsController@searchEvents');
-    Route::get('events/{id}', 'EventsController@show');
+            Route::get('events', 'EventsController@index');
+            Route::get('events-search', 'EventsController@searchEvents');
+            Route::get('events/{id}', 'EventsController@show');
 
-    Route::get('memorandums', 'MemorandumsController@index');
-    Route::get('memorandums-search', 'MemorandumsController@searchMemorandum');
-    Route::get('memorandums/{id}', 'MemorandumsController@show');
+            Route::get('memorandums', 'MemorandumsController@index');
+            Route::get('memorandums-search', 'MemorandumsController@searchMemorandum');
+            Route::get('memorandums/{id}', 'MemorandumsController@show');
 
-    Route::get('news', 'NewsController@index');
-    Route::get('news-search', 'NewsController@searchNews');
-    Route::get('news/{id}', 'NewsController@show');
-});
+            Route::get('news', 'NewsController@index');
+            Route::get('news-search', 'NewsController@searchNews');
+            Route::get('news/{id}', 'NewsController@show');
+        });
 
 
-Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
-    Route::post('sign-in', 'EmployeeProfileController@signIn');
-    Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
-    Route::post('skip-for-now', 'EmployeeProfileController@updatePasswordExpiration');
-    Route::post('verify-email-and-send-otp', 'EmployeeProfileController@verifyEmailAndSendOTP');
-    Route::post('verify-otp', 'EmployeeProfileController@verifyOTP');
-    Route::post('new-password', 'EmployeeProfileController@newPassword');
-    Route::get('retrieve-token', 'CsrfTokenController@generateCsrfToken');
-    Route::get('validate-token', 'CsrfTokenController@validateToken');
-    Route::post('employee-profile/signout-from-other-device', 'EmployeeProfileController@signOutFromOtherDevice');
-});
+Route::
+        namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
+            Route::post('sign-in', 'EmployeeProfileController@signIn');
+            Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
+            Route::post('skip-for-now', 'EmployeeProfileController@updatePasswordExpiration');
+            Route::post('verify-email-and-send-otp', 'EmployeeProfileController@verifyEmailAndSendOTP');
+            Route::post('verify-otp', 'EmployeeProfileController@verifyOTP');
+            Route::post('new-password', 'EmployeeProfileController@newPassword');
+            Route::get('retrieve-token', 'CsrfTokenController@generateCsrfToken');
+            Route::get('validate-token', 'CsrfTokenController@validateToken');
+            Route::post('employee-profile/signout-from-other-device', 'EmployeeProfileController@signOutFromOtherDevice');
+        });
 
 Route::middleware('auth.cookie')->group(function () {
 
@@ -1957,7 +1959,7 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-ES view'])->group(function () {
             Route::get('exchange-duty', 'ExchangeDutyController@create');
-
+            Route::get('exchange-duty-aprroval', 'ExchangeDutyController@edit');
             Route::get('exchange-duty-employee', 'ScheduleController@employee');
             Route::get('exchange-duty-schedule', 'ScheduleController@findSchedule');
             Route::get('exchange-duty-time-shift', 'TimeShiftController@index');

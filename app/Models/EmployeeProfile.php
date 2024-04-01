@@ -376,34 +376,68 @@ class EmployeeProfile extends Authenticatable
         return $this->personalInformation;
     }
 
-    public function areaEmployee($assigned_area)
+    public function retrieveEmployees($employees, $key, $id, $myId)
     {
-        $key = null;
 
-        if (Division::where('chief_employee_profile_id', $this->id)->first()) {
-            $key = 'division_id';
-        }
+        $assign_areas = AssignArea::where($key, $id)
+            ->whereNotIn('employee_profile_id', $myId)->get();
 
-        if (Department::where('head_employee_profile_id', $this->id)->first()) {
-            $key = 'department_id';
-        }
+        $new_employee_list = $assign_areas->map(function ($assign_area) {
+            return $assign_area->employeeProfile;
+        })->flatten()->all();
 
-        if (Section::where('supervisor_employee_profile_id', $this->id)->first()) {
-            $key = 'section_id';
-        }
+        return [...$employees, ...$new_employee_list];
+    }
 
-        if (Unit::where('head_employee_profile_id', $this->id)->first()) {
-            $key = 'unit_id';
-        }
-
-        if ($key === null)
-            return null;
-
-        $assigned_areas = AssignArea::where($key, $assigned_area['details']->id)->get();
-
+    public function myEmployees($assign_area, $user)
+    {
         $employees = [];
-        foreach ($assigned_areas as $assigned_area) {
-            $employees[] = $assigned_area->employeeProfile;
+
+        $employees = $this->retrieveEmployees($employees, Str::lower($assign_area['sector']) . "_id", $assign_area['details']->id, [$user->id, 1]);
+
+        switch ($assign_area['sector']) {
+            case 'Division':
+                $departments = Department::where('division_id', $assign_area['details']->id)->get();
+
+                foreach ($departments as $department) {
+                    $employees = $this->retrieveEmployees($employees, 'department_id', $department->id, [$user->id, 1]);
+                    $sections = Section::where('department_id', $department->id)->get();
+                    foreach ($sections as $section) {
+                        $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1]);
+                        $units = Unit::where('section_id', $section->id)->get();
+                        foreach ($units as $unit) {
+                            $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1]);
+                        }
+                    }
+                }
+
+                $sections = Section::where('division_id', $assign_area['details']->id)->get();
+                foreach ($sections as $section) {
+                    $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1]);
+                    $units = Unit::where('section_id', $section->id)->get();
+                    foreach ($units as $unit) {
+                        $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1]);
+                    }
+                }
+                break;
+
+            case 'Department':
+                $sections = Section::where('department_id', $assign_area['details']->id)->get();
+                foreach ($sections as $section) {
+                    $employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1]);
+                    $units = Unit::where('section_id', $section->id)->get();
+                    foreach ($units as $unit) {
+                        $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1]);
+                    }
+                }
+                break;
+
+            case 'Section':
+                $units = Unit::where('section_id', $assign_area['details']->id)->get();
+                foreach ($units as $unit) {
+                    $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1]);
+                }
+                break;
         }
 
         return $employees;
@@ -452,6 +486,17 @@ class EmployeeProfile extends Authenticatable
         }
 
         return [];
+    }
+
+    public function myColleague($assign_area, $myId)
+    {
+        $employees = [];
+        $assign_areas = AssignArea::where(strtolower($assign_area['sector'] . "_id"), $assign_area['details']->id)->whereNotIn('employee_profile_id', $myId)->get();
+        foreach ($assign_areas as $area) {
+            $employees = $area->employeeProfile;
+        }
+
+        return $employees;
     }
 
     public function employeeHead($assigned_area)
