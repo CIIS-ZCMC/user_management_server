@@ -141,30 +141,6 @@ Route::middleware('auth.cookie')->group(function () {
      * User Management Information System
      */
     Route::namespace ('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
-
-        /**
-         * Default Password Module
-         */
-        Route::middleware(['auth.permission:UMIS-SM view-all'])->group(function () {
-            Route::get('default-password-all', 'DefaultPasswordController@index');
-        });
-
-        Route::middleware(['auth.permission:UMIS-SM write'])->group(function () {
-            Route::post('default-password', 'DefaultPasswordController@store');
-        });
-
-        Route::middleware(['auth.permission:UMIS-SM view'])->group(function () {
-            Route::get('default-password/{id}', 'DefaultPasswordController@show');
-        });
-
-        Route::middleware(['auth.permission:UMIS-SM update'])->group(function () {
-            Route::put('default-password/{id}', 'DefaultPasswordController@update');
-        });
-
-        Route::middleware(['auth.permission:UMIS-SM delete'])->group(function () {
-            Route::delete('default-password/{id}', 'DefaultPasswordController@destroy');
-        });
-
         /**
          * System Module
          */

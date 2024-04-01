@@ -199,23 +199,6 @@ class LeaveApplicationController extends Controller
     {
         try{
             $employee_profile = $request->user;
-            // $position = $employee_profile->position();
-
-            // if($position['position'] === 'Medical Center Chief'){
-            //     $omcc = Division::where('code', 'OMCC')->first();
-
-            //     $leave_applications = LeaveApplication::select('leave_applications.*')
-            //         ->join('employee_profiles', 'employee_profiles.id', 'leave_applications.employee_profile_id')
-            //         ->join('assigned_areas', 'assigned_areas.employee_profile_id', 'employee_profiles.id')
-            //         ->where('assigned_areas.division_id', $omcc->id)
-            //         ->where('leave_applications.status', 'approved')->get();
-                
-            //     return response()->json([
-            //         'data' => LeaveApplicationResource::collection($leave_applications),
-            //         'message' => 'Retrieve list.'
-            //     ], Response::HTTP_OK);
-            // }
-
             $assigned_area = $employee_profile->assignedArea->findDetails();
             $division_id = null;
 
@@ -228,8 +211,14 @@ class LeaveApplicationController extends Controller
                     $division_id = Department::find($assigned_area['details']->id)->division_id;
                     break;
                 case "Section":
-                    $department = Section::find($assigned_area['details']->id)->department;
-                    $division_id = $department->division_id;
+                    $section = Section::find($assigned_area['details']->id);
+                    
+                    if($section->department_id === null){
+                        $division_id = $section->division_id;
+                        break;
+                    }
+
+                    $division_id = $section->department->division_id;
                     break;
                 case "Unit":
                     $section = Unit::find($assigned_area['details']->id)->section;
@@ -237,7 +226,26 @@ class LeaveApplicationController extends Controller
                     break;
             }
 
-            $leave_applications = LeaveApplication::join('employee_profiles as ep', 'leave_applications.employee_profile_id', 'ep.id')
+            if($division_id === null)
+            {
+                return response()->json(['message' => "GG"], Response::HTTP_OK);
+            }
+
+            $leave_applications = [];
+
+            $units_leave_applications = LeaveApplication::select("leave_applications.*")
+                ->join('employee_profiles as ep', 'leave_applications.employee_profile_id', 'ep.id')
+                ->join('assigned_areas as aa', 'ep.id', 'aa.employee_profile_id')
+                ->join('units as u', 'aa.unit_id', 'u.id')
+                ->join('sections as s', 'u.section_id', 's.id')
+                ->join('departments as d', 's.department_id', 'd.id')
+                ->join('divisions as dv', 'd.division_id', 'dv.id')
+                ->select('leave_applications.*')
+                ->where('dv.id', $division_id)
+                ->get();
+
+            $sections_leave_applications = LeaveApplication::select("leave_applications.*")
+                ->join('employee_profiles as ep', 'leave_applications.employee_profile_id', 'ep.id')
                 ->join('assigned_areas as aa', 'ep.id', 'aa.employee_profile_id')
                 ->join('sections as s', 'aa.section_id', 's.id')
                 ->join('departments as d', 's.department_id', 'd.id')
@@ -245,8 +253,31 @@ class LeaveApplicationController extends Controller
                 ->select('leave_applications.*')
                 ->where('dv.id', $division_id)
                 ->get();
+
+            $departments_leave_applications = LeaveApplication::select("leave_applications.*")
+                ->join('employee_profiles as ep', 'leave_applications.employee_profile_id', 'ep.id')
+                ->join('assigned_areas as aa', 'ep.id', 'aa.employee_profile_id')
+                ->join('departments as d', 'aa.department_id', 'd.id')
+                ->join('divisions as dv', 'd.division_id', 'dv.id')
+                ->select('leave_applications.*')
+                ->where('dv.id', $division_id)
+                ->get();
+
+            $divisions_leave_applications = LeaveApplication::select("leave_applications.*")
+                ->join('employee_profiles as ep', 'leave_applications.employee_profile_id', 'ep.id')
+                ->join('assigned_areas as aa', 'ep.id', 'aa.employee_profile_id')
+                ->join('divisions as dv', 'aa.division_id', 'dv.id')
+                ->select('leave_applications.*')
+                ->where('dv.id', $division_id)
+                ->get();
+
+            $leave_applications = [
+                ...$units_leave_applications,
+                ...$sections_leave_applications,
+                ...$departments_leave_applications,
+                ...$divisions_leave_applications
+            ];
             
-           
             return response()->json([
                 'data' => LeaveApplicationResource::collection($leave_applications),
                 'message' => 'Retrieve list.'

@@ -200,9 +200,6 @@ class DTRcontroller extends Controller
                                 return date('Y-m-d', strtotime($attd['date_time'])) < $datenow;
                             });
 
-
-
-                            return;
                             // $this->helper->saveDTRRecords($late_Records, true);
                             // /* Save DTR Logs */
                             $this->helper->saveDTRLogs($late_Records, 1, $device, 1);
@@ -769,7 +766,17 @@ class DTRcontroller extends Controller
                 ];
             }
 
-
+            $CTO =  $employee->CTOApplication->filter(function ($row) {
+                return $row['status'] == "approved";
+            });
+            $ctoData = [];
+            foreach ($CTO as $rows) {
+                $ctoData[] = [
+                    'date' => date('Y-m-d', strtotime($rows['date'])),
+                    'purpose' => $rows['purpose'],
+                    'remarks' => $rows['remarks'],
+                ];
+            }
 
 
             $schedules = $this->helper->getSchedule($biometric_id, "all-{$year_of}-{$month_of}");
@@ -795,7 +802,8 @@ class DTRcontroller extends Controller
                     'schedule' => $employeeSched,
                     'leaveapp' => $leavedata,
                     'obApp' => $obData,
-                    'otApp' => $otData
+                    'otApp' => $otData,
+                    'ctoApp' => $ctoData
 
                 ]);
             }
@@ -825,7 +833,8 @@ class DTRcontroller extends Controller
                     'Incharge' => $approver,
                     'leaveapp' => $leavedata,
                     'obApp' => $obData,
-                    'otApp' => $otData
+                    'otApp' => $otData,
+                    'ctoApp' => $ctoData
                 ]);
             } else {
                 $options = new Options();
@@ -855,7 +864,8 @@ class DTRcontroller extends Controller
                     'Incharge' => $approver,
                     'leaveapp' => $leavedata,
                     'obApp' => $obData,
-                    'otApp' => $otData
+                    'otApp' => $otData,
+                    'ctoApp' => $ctoData
                 ]));
 
                 $dompdf->setPaper('Letter', 'portrait');
