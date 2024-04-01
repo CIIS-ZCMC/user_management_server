@@ -24,13 +24,6 @@ class PersonalInformationController extends Controller
     private $PLURAL_MODULE_NAME = 'personal informations';
     private $SINGULAR_MODULE_NAME = 'personal information';
 
-    protected $fileValidateAndUpload;
-
-    public function __construct(FileValidationAndUpload $fileValidateAndUpload)
-    {
-        $this->fileValidateAndUpload = $fileValidateAndUpload;
-    }
-
     public function index(Request $request)
     {
         try{
@@ -48,33 +41,28 @@ class PersonalInformationController extends Controller
      * This must have registration of employee information such as name, height, weight, etc
      * contacts and addresses
      */
-    public function store(PersonalInformationRequest $request)
+    public function store($new_personal_data)
     {
         try{
-            $is_res_per = $request->is_res_per === 1 ? true:false;
+            $is_res_per = $new_personal_data->is_res_per === 1 ? true:false;
             $cleanData = [];
 
-            foreach ($request->all() as $key => $value) {
+            foreach ($new_personal_data as $key => $value) {
                 if($value === null){
                     $cleanData[$key] = $value;
                     continue;
                 }
-                // if($key === 'attachment'){
-                //     $cleanData[$key] = $this->fileValidateAndUpload->check_save_file($request, 'employee/profiles');
-                //     continue;
-                // }
                 $cleanData[$key] = strip_tags($value);
             }
 
             $personal_information = PersonalInformation::create($cleanData);
 
             $residential_address = [
-                'address' => strip_tags($request->r_address),
-                'zip_code' => strip_tags($request->r_zip_code),
-                'telephone_no' => strip_tags($request->r_telephone),
-                'is_res_per' => $request->is_res_per,
+                'address' => strip_tags($new_personal_data->r_address),
+                'zip_code' => strip_tags($new_personal_data->r_zip_code),
+                'telephone_no' => strip_tags($new_personal_data->r_telephone),
+                'is_res_per' => $new_personal_data->is_res_per,
                 'is_residential' => 1,
-                // 'type' => 'residential',
                 'personal_information_id' => $personal_information->id
             ];
 
@@ -91,12 +79,11 @@ class PersonalInformationController extends Controller
             }
 
             $permanent_address =  [
-                'address' => strip_tags($request->p_address),
-                'telephone_no' => strip_tags($request->p_telephone),
-                'zip_code' => strip_tags($request->p_zip_code),
+                'address' => strip_tags($new_personal_data->p_address),
+                'telephone_no' => strip_tags($new_personal_data->p_telephone),
+                'zip_code' => strip_tags($new_personal_data->p_zip_code),
                 'is_res_per' => 0,
                 'is_residential' => 0,
-                // 'type' => 'permanent',
                 'personal_information_id' => $personal_information->id
             ];
 
@@ -109,12 +96,9 @@ class PersonalInformationController extends Controller
                 'permanent' => $permanent
             ];
             
-            Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response()->json($data, Response::HTTP_OK);
+            return $personal_information;
         }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            throw new \Exception("Failed to register personal information.", 400);
         }
     }
     

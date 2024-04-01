@@ -24,6 +24,7 @@ return new class extends Migration
             $table->integer('eight')->nullable();
             $table->string('tranch');
             $table->datetime('effective_at');
+            $table->boolean('is_active')->default(False);
             $table->timestamps();
         });
     }

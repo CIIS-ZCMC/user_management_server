@@ -1317,11 +1317,19 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::put('salary-grade-set-new', 'SalaryGradeController@updateSalaryGradeForJobPosition');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::put('salary-grade/{id}', 'SalaryGradeController@update');
         });
 
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
             Route::delete('salary-grade/{id}', 'SalaryGradeController@destroy');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
+            Route::delete('salary-grade/by-effective-date', 'SalaryGradeController@destroyOnEffectiveDate');
         });
 
         /**

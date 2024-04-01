@@ -21,13 +21,13 @@ class IssuanceInformationController extends Controller
     private $PLURAL_MODULE_NAME = 'issuance informations';
     private $SINGULAR_MODULE_NAME = 'issuance information';
 
-    public function store(IssuanceInformationRequest $request)
+    public function store($employee_profile_id, $issuance)
     {
     
         try{
             $cleanData = [];
             
-            foreach ($request->all() as $key => $value) {
+            foreach ($issuance as $key => $value) {
                 if($value === null)
                 {
                     $cleanData[$key] = $value;
@@ -35,19 +35,12 @@ class IssuanceInformationController extends Controller
                 }
                 $cleanData[$key] = strip_tags($value);
             }
-         
         
             $issuance_information = IssuanceInformation::create($cleanData);
 
-            Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
-           
-            return response()->json([
-                'data' => new IssuanceInformationResource($issuance_information) ,
-                'message' => 'Newly added employee issuance information.'
-            ], Response::HTTP_OK);
+            return $issuance_information;
         }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            throw new \Exception("Failed to register employee civil service issuance information record.", 400);
         }
     }
     

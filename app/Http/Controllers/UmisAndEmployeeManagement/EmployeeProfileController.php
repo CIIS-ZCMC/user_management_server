@@ -20,6 +20,7 @@ use App\Models\SystemRole;
 use App\Methods\MailConfig;
 use App\Models\AccessToken;
 use App\Models\Designation;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Jenssegers\Agent\Agent;
 use Illuminate\Http\Request;
@@ -2253,9 +2254,48 @@ class EmployeeProfileController extends Controller
         }
     }
 
-    public function store(Request $request)
+    public function store(EmployeeProfileNewResource $request)
     {
         try {
+            
+            DB::beginTransaction();
+
+            $personal_information_controller = new PersonalInformationController();
+            $personal_information = $personal_information_controller->store($request->personal_information);
+
+            $contact_controller = new ContactController();
+            $contact_controller->store($personal_information->id, $request->contact);
+
+            $family_background_controller = new FamilyBackgroundController();
+            $family_background_controller->store($personal_information->id, $request->family_background, $request->$request->children);
+            
+            $education_controller = new EducationalBackgroundController();
+            $education_controller->storeMany($personal_information->id, $request->educations);
+
+            $identification_controller = new IdentificationNumberController();
+            $identification_controller->store($personal_information->id, $request->identification);
+
+            $work_experience_controller = new WorkExperienceController();
+            $work_experience_controller->storeMany($personal_information->id, $request->work_experience);
+
+            $voluntary_work_controller = new VoluntaryWorkController();
+            $voluntary_work_controller->storeMany($personal_information->id, $request->voluntary_work);
+
+            $other_controller = new OtherInformationController();
+            $other_controller->storeMany($personal_information->id, $request->others);
+
+            $legal_information_controller = new LegalInformationController();
+            $legal_information_controller->storeMany($personal_information->id, $request->legal_information);
+
+            $training_controller = new TrainingController();
+            $training_controller->storeMany($personal_information->id, $request->trainings);
+
+            $referrence_controller = new ReferencesController();
+            $referrence_controller->storeMany($personal_information->id, $request->reference);
+
+            $eligibilities_controller = new CivilServiceEligibilityController();
+            $eligibilities_controller->storeMany($personal_information->id, $request->eligibilities);
+
             $in_valid_file = false;
 
             $cleanData = [];
@@ -2353,6 +2393,11 @@ class EmployeeProfileController extends Controller
                 ]);
             }
 
+            $issuance_controller = new IssuanceInformationController();
+            $issuance_controller->store($employee_profile->id, $request->issuance_information);
+
+            DB::commit();
+
             Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . '.');
 
             if ($in_valid_file) {
@@ -2374,8 +2419,9 @@ class EmployeeProfileController extends Controller
                 Response::HTTP_OK
             );
         } catch (\Throwable $th) {
+            DB::rollBack();
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return response()->json(['message' => "Failed to register new employee."], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 

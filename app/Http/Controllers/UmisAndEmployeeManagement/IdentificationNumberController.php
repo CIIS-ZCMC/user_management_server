@@ -55,12 +55,12 @@ class IdentificationNumberController extends Controller
         }
     }
 
-    public function store(IdentificationNumberRequest $request)
+    public function store($personal_information_id, $identification)
     {
         try {
             $cleanData = [];
 
-            foreach ($request->all() as $key => $value) {
+            foreach ($identification as $key => $value) {
                 if ($value === 'null' || $value === null || $key === 'personal_information_id') {
                     $cleanData[$key] = $value;
                     continue;
@@ -71,18 +71,13 @@ class IdentificationNumberController extends Controller
                     $cleanData[$key] = $value;
                 }
             }
+            $cleanData['personal_information_id'] = $personal_information_id;
 
             $identification = IdentificationNumber::create($cleanData);
 
-            Helpers::registerSystemLogs($request, null, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
-
-            return response()->json([
-                'data' => new IdentificationNumberResource($identification),
-                "message" => 'New employee identification number registred.'
-            ], Response::HTTP_OK);
+            return $identification;
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            throw new \Exception("Failed to register employee identifications number.", 400);
         }
     }
 

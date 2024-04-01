@@ -44,16 +44,6 @@ class EmployeeProfileNewResource extends FormRequest
             'personal_information.p_address' => 'nullable|string|max:255',
             'personal_information.p_telephone' => 'nullable|string|max:255',
             'personal_information.p_zip_code' => 'nullable|string|max:255',
-            //Contact
-            'contact.phone_number' => 'required|string|max:255',  
-            'contact.email_address' => 'nullable|email|max:255',
-            'contact.personal_information_id' => 'required|integer',
-            //Children
-            'children.*.first_name' => 'required|string|max:255',
-            'children.*.middle_name' => 'nullable|string|max:255',
-            'children.*.last_name' => 'required|string|max:255',
-            'children.*.gender' => 'required|string|max:255',
-            'children.*.birthdate' => 'required|date:Y-m-d',
             //Family Background
             'family_background.spouse' => 'nullable|string|max:255',
             'family_background.address' => 'nullable|string|max:255',
@@ -73,6 +63,15 @@ class EmployeeProfileNewResource extends FormRequest
             'family_background.mother_middle_name' => 'nullable|string|max:255',
             'family_background.mother_last_name' => 'required|string|max:255',
             'family_background.mother_ext_name' => 'nullable|string|max:255',
+            //Children
+            'children.*.first_name' => 'required|string|max:255',
+            'children.*.middle_name' => 'nullable|string|max:255',
+            'children.*.last_name' => 'required|string|max:255',
+            'children.*.gender' => 'required|string|max:255',
+            'children.*.birthdate' => 'required|date:Y-m-d',
+            //Contact
+            'contact.phone_number' => 'required|string|max:255',  
+            'contact.email_address' => 'nullable|email|max:255',
             //Educations
             'educations.*.level' => 'required|string|max:255',
             'educations.*.name' => 'required|string|max:255',
