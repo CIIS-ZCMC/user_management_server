@@ -6,11 +6,13 @@ use App\Http\Controllers\UmisAndEmployeeManagement\EmployeeProfileController;
 use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Resources\LeaveTypeResource;
 use App\Http\Resources\MyApprovedLeaveApplicationResource;
+use App\Models\Department;
 use App\Models\Division;
 use App\Models\EmployeeCreditLog;
 use App\Models\EmployeeOvertimeCredit;
 use App\Models\LeaveType;
 use App\Models\Section;
+use App\Models\Unit;
 use Carbon\Carbon;
 use App\Helpers\Helpers;
 use Dompdf\Dompdf;
@@ -29,6 +31,7 @@ use App\Models\LeaveApplicationLog;
 use App\Models\LeaveApplicationRequirement;
 use App\Models\OfficialBusiness;
 use App\Models\OfficialTime;
+use Illuminate\Support\Str;
 
 class LeaveApplicationController extends Controller
 {
@@ -192,10 +195,105 @@ class LeaveApplicationController extends Controller
         }
     }
 
+    public function approvedLeaveRequest(Request $request)
+    {
+        try{
+            $employee_profile = $request->user;
+            $assigned_area = $employee_profile->assignedArea->findDetails();
+            $division_id = null;
+
+            switch($assigned_area['sector'])
+            {
+                case "Division":
+                    $division_id = $assigned_area['details']->id;
+                    break;
+                case "Department":
+                    $division_id = Department::find($assigned_area['details']->id)->division_id;
+                    break;
+                case "Section":
+                    $section = Section::find($assigned_area['details']->id);
+
+                    if($section->department_id === null){
+                        $division_id = $section->division_id;
+                        break;
+                    }
+
+                    $division_id = $section->department->division_id;
+                    break;
+                case "Unit":
+                    $section = Unit::find($assigned_area['details']->id)->section;
+                    $division_id = $section->department->division_id;
+                    break;
+            }
+
+            if($division_id === null)
+            {
+                return response()->json(['message' => "GG"], Response::HTTP_OK);
+            }
+
+            $leave_applications = [];
+
+            $units_leave_applications = LeaveApplication::select("leave_applications.*")
+                ->join('employee_profiles as ep', 'leave_applications.employee_profile_id', 'ep.id')
+                ->join('assigned_areas as aa', 'ep.id', 'aa.employee_profile_id')
+                ->join('units as u', 'aa.unit_id', 'u.id')
+                ->join('sections as s', 'u.section_id', 's.id')
+                ->join('departments as d', 's.department_id', 'd.id')
+                ->join('divisions as dv', 'd.division_id', 'dv.id')
+                ->select('leave_applications.*')
+                ->where('dv.id', $division_id)
+                ->get();
+
+            $sections_leave_applications = LeaveApplication::select("leave_applications.*")
+                ->join('employee_profiles as ep', 'leave_applications.employee_profile_id', 'ep.id')
+                ->join('assigned_areas as aa', 'ep.id', 'aa.employee_profile_id')
+                ->join('sections as s', 'aa.section_id', 's.id')
+                ->join('departments as d', 's.department_id', 'd.id')
+                ->join('divisions as dv', 'd.division_id', 'dv.id')
+                ->select('leave_applications.*')
+                ->where('dv.id', $division_id)
+                ->get();
+
+            $departments_leave_applications = LeaveApplication::select("leave_applications.*")
+                ->join('employee_profiles as ep', 'leave_applications.employee_profile_id', 'ep.id')
+                ->join('assigned_areas as aa', 'ep.id', 'aa.employee_profile_id')
+                ->join('departments as d', 'aa.department_id', 'd.id')
+                ->join('divisions as dv', 'd.division_id', 'dv.id')
+                ->select('leave_applications.*')
+                ->where('dv.id', $division_id)
+                ->get();
+
+            $divisions_leave_applications = LeaveApplication::select("leave_applications.*")
+                ->join('employee_profiles as ep', 'leave_applications.employee_profile_id', 'ep.id')
+                ->join('assigned_areas as aa', 'ep.id', 'aa.employee_profile_id')
+                ->join('divisions as dv', 'aa.division_id', 'dv.id')
+                ->select('leave_applications.*')
+                ->where('dv.id', $division_id)
+                ->get();
+
+            $leave_applications = [
+                ...$units_leave_applications,
+                ...$sections_leave_applications,
+                ...$departments_leave_applications,
+                ...$divisions_leave_applications
+            ];
+
+            return response()->json([
+                'data' => LeaveApplicationResource::collection($leave_applications),
+                'message' => 'Retrieve list.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
     public function myApprovedLeaveApplication(Request $request)
     {
         try{
-            $leave_applications = LeaveApplication::where('status', 'approved')->get();
+            $employee_profile = $request->user;
+            $leave_applications = LeaveApplication::where('status', 'approved')
+                ->where('employee_profile_id', $employee_profile->id)->get();
 
             return response()->json([
                 'data' => MyApprovedLeaveApplicationResource::collection($leave_applications),
@@ -433,7 +531,7 @@ class LeaveApplicationController extends Controller
                         return response()->json(['message' => 'Forbidden.'], Response::HTTP_FORBIDDEN);
                     }
                     $status = 'for recommending approval';
-                    $log_status = 'Approved by HRMO';
+                    $log_status = 'Approved by HRMO'; 
                     $leave_application->update(['status' => $status]);
                     Helpers::pendingLeaveNotfication($leave_application->recommending_officer, $leave_application->leaveType->name);
                     Helpers::notifications(
@@ -442,7 +540,6 @@ class LeaveApplicationController extends Controller
                         $leave_application->leaveType->name);
                     break;
                 case 'for recommending approval':
-
                     if ($position === null || str_contains($position['position'], 'Unit')) {
                         return response()->json(['message' => 'Forbidden'], Response::HTTP_FORBIDDEN);
                     }
@@ -452,7 +549,7 @@ class LeaveApplicationController extends Controller
                     Helpers::pendingLeaveNotfication($leave_application->approving_officer, $leave_application->leaveType->name);
                     Helpers::notifications(
                         $leave_application->employee_profile_id, 
-                        $leave_application->recommendingOfficer()->personalInformation->name()." has approved your ".$leave_application->leaveType->name." request.", 
+                        $leave_application->recommendingOfficer->personalInformation->name()." has approved your ".$leave_application->leaveType->name." request.", 
                         $leave_application->leaveType->name);
                     break;
                 case 'for approving approval':
@@ -465,7 +562,7 @@ class LeaveApplicationController extends Controller
                     $leave_application->update(['status' => $status]);
                     $from = Carbon::parse($leave_application->date_from)->format('F d, Y');
                     $to = Carbon::parse($leave_application->date_to)->format('F d, Y');
-                    $message = "Your ".$leave_application->leave_type->name." request with date from ".$from." to ".$to." has been approved.";
+                    $message = "Your ".$leave_application->leaveType->name." request with date from ".$from." to ".$to." has been approved.";
                     Helpers::notifications($leave_application->employee_profile_id, $message, $leave_application->leaveType->name);
                     break;
             }
@@ -539,7 +636,7 @@ class LeaveApplicationController extends Controller
             $twoMonthsAhead = $currentDate->copy()->addMonths(2);
             
             if ($start->greaterThan($twoMonthsAhead)) {
-                return response()->json(['message' => "Filling 2 months ahead is not allowed."], Response::HTTP_FORBIDDEN);
+                return response()->json(['message' => "Filing 2 months ahead is not allowed."], Response::HTTP_FORBIDDEN);
             }
 
             $daysDiff = $start->diffInDays($end) + 1;

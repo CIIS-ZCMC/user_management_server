@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
+use App\Http\Requests\EmployeeProfileNewResource;
 use App\Models\OfficerInChargeTrail;
 use Carbon\Carbon;
 
@@ -32,9 +33,7 @@ use App\Models\PlantillaNumber;
 use App\Models\InActiveEmployee;
 use App\Models\SpecialAccessRole;
 use App\Models\PositionSystemRole;
-use Illuminate\Support\Facades\DB;
 use App\Models\EmployeeLeaveCredit;
-use App\Models\PersonalInformation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SignInRequest;
 use Illuminate\Support\Facades\Hash;
@@ -193,7 +192,7 @@ class EmployeeProfileController extends Controller
             // }
 
             // if ($access_token !== null) {
-            AccessToken::where('employee_profile_id', $employee_profile->id)->delete();
+                AccessToken::where('employee_profile_id', $employee_profile->id)->delete();
             // }
 
             /**
@@ -265,7 +264,7 @@ class EmployeeProfileController extends Controller
 
             return response()
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
-                ->cookie(Helpers::Cookie_Name(), json_encode(['token' => $token]), 60, '/', Cache::get('session_domain'), false);
+                ->cookie(Cache::get('cookie_name'), json_encode(['token' => $token]), 60, '/', Cache::get('session_domain'), false);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'signIn', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -978,7 +977,7 @@ class EmployeeProfileController extends Controller
                 $token->delete();
             }
 
-            return response()->json(['message' => 'User signout.'], Response::HTTP_OK)->cookie(Helpers::Cookie_Name(), '', -1);
+            return response()->json(['message' => 'User signout.'], Response::HTTP_OK)->cookie(Cache::get('cookie_name'), '', -1);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'signOut', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

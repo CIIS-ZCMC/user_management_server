@@ -29,7 +29,10 @@ class MonetizationApplicationController extends Controller
         try {
             $employee_profile = $request->user;
             $mone_applications = MonetizationApplication::all();
-            $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->where('leave_type_id ', '1')->orWhere('leave_type_id ', '2')->get();
+            $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)
+                ->whereIn('leave_type_id', [1, 2])
+                ->get();
+
             $result = [];
 
             foreach ($employeeCredit as $leaveCredit) {
@@ -248,7 +251,7 @@ class MonetizationApplicationController extends Controller
             $credit = EmployeeLeaveCredit::where('leave_type_id', $leave_type->id)->first();
 
             if ($credit->total_leave_credits < 15) {
-                return response()->json(['message' => "Insufficient vacation leave credit to file a monitization."], Response::HTTP_BAD_REQUEST);
+                return response()->json(['message' => "Insufficient vacation leave credit to file a monetization."], Response::HTTP_BAD_REQUEST);
             }
 
             $recommending_officer = Section::where('code', 'HOPPS')->first();
@@ -277,13 +280,28 @@ class MonetizationApplicationController extends Controller
             } catch (\Throwable $th) {
             }
 
-            $new_monitization = MonetizationApplication::create($cleanData);
+            $new_monetization = MonetizationApplication::create($cleanData);
 
-            $process_name = "Applied";
-            $this->storeMonetizationLog($new_monitization->id, $process_name, $employee_profile->id);
+            $process_name = "applied";
+            $this->storeMonetizationLog($new_monetization->id, $process_name, $employee_profile->id);
 
+            $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->where('name', 'Vacation Leave')->orWhere('name', 'Sick Leave')->get();
+            $result = [];
+
+            foreach ($employeeCredit as $leaveCredit) {
+                $leaveType = $leaveCredit->leaveType->name;
+                $totalCredits = $leaveCredit->total_leave_credits;
+                $usedCredits = $leaveCredit->used_leave_credits;
+
+                $result[] = [
+                    'leave_type_name' => $leaveType,
+                    'total_leave_credits' => $totalCredits,
+                    'used_leave_credits' => $usedCredits
+                ];
+            }
             return response()->json([
-                'data' => new MonetizationApplicationResource($new_monitization),
+                'data' => new MonetizationApplicationResource($new_monetization),
+                'credits' => $result,
                 'message' => "You're request has been filed."
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
