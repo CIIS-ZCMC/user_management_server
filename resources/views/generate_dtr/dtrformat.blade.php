@@ -450,12 +450,20 @@
                     });
                     $ot_Count = count($otApplication);
 
+                    $ctoApplication = array_filter($ctoApp, function ($row) use ($year, $month, $i) {
+                        $dateToCompare = date('Y-m-d', strtotime($row['date']));
+                        $dateToMatch = date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
+                        return $dateToCompare === $dateToMatch;
+                    });
+                    $cto_Count = count($ctoApplication);
+
                     $leavemessage = 'On leave';
                     $officialTime = 'Official Time';
                     $officialBusinessMessage = 'OFf|Business';
                     $absentMessage = 'Absent';
                     $dayoffmessage = 'Day-Off';
                     $holidayMessage = 'HOLIDAY';
+                    $ctoMessage = 'CTO';
 
                 @endphp
 
