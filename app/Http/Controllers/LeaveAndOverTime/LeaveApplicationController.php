@@ -311,8 +311,7 @@ class LeaveApplicationController extends Controller
     public function employeeApprovedLeaveApplication($id, Request $request)
     {
         try{
-            $leave_applications = LeaveApplication::where('status', 'approved')
-                ->where('employee_profile_id', $id)->get();
+            $leave_applications = LeaveApplication::where('employee_profile_id', $id)->get();
 
             return response()->json([
                 'data' => MyApprovedLeaveApplicationResource::collection($leave_applications),
