@@ -38,13 +38,15 @@
                         @if (count($empSched) >= 1)
                             {{-- checktime if its pm --}}
                             @if (date('A', strtotime($f1['first_in'])) == 'AM')
-                                @if ($leave_Count || $ot_Count || $ob_Count)
+                                @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
                                     @if ($leave_Count)
                                         <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
                                     @elseif ($ot_Count)
                                         <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
                                     @elseif ($ob_Count)
                                         <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
+                                    @elseif ($cto_Count)
+                                        <span style="font-size:8px;font-weight:bold">{{ $ctoMessage }}</span>
                                     @endif
                                 @else
                                     <span class="fentry">
@@ -53,13 +55,15 @@
                                 @endif
                             @endif
                         @else
-                            @if ($leave_Count || $ot_Count || $ob_Count)
+                            @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
                                 @if ($leave_Count)
                                     <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
                                 @elseif ($ot_Count)
                                     <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
                                 @elseif ($ob_Count)
                                     <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
+                                @elseif ($cto_Count)
+                                    <span style="font-size:8px;font-weight:bold">{{ $ctoMessage }}</span>
                                 @endif
                             @else
                                 <span class="fentry">
@@ -93,13 +97,15 @@
             @if (!$isHoliday)
                 @if ($countin == 0)
 
-                    @if ($leave_Count || $ot_Count || $ob_Count)
+                    @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
                         @if ($leave_Count)
                             <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
                         @elseif ($ot_Count)
                             <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
                         @elseif ($ob_Count)
                             <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
+                        @elseif ($cto_Count)
+                            <span style="font-size:8px;font-weight:bold">{{ $ctoMessage }}</span>
                         @endif
                     @else
                         @if (count($checkSched) >= 1)
@@ -142,13 +148,15 @@
                 @endphp
 
                 @if ($count2 >= 1)
-                    @if ($leave_Count || $ot_Count || $ob_Count)
+                    @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
                         @if ($leave_Count)
                             <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
                         @elseif ($ot_Count)
                             <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
                         @elseif ($ob_Count)
                             <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
+                        @elseif ($cto_Count)
+                            <span style="font-size:8px;font-weight:bold">{{ $ctoMessage }}</span>
                         @endif
                     @else
                         @if (count($checkSched) >= 1)
@@ -158,13 +166,15 @@
                         @endif
                     @endif
                 @else
-                    @if ($leave_Count || $ot_Count || $ob_Count)
+                    @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
                         @if ($leave_Count)
                             <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
                         @elseif ($ot_Count)
                             <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
                         @elseif ($ob_Count)
                             <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
+                        @elseif ($cto_Count)
+                            <span style="font-size:8px;font-weight:bold">{{ $ctoMessage }}</span>
                         @endif
                     @else
                         @if (count($checkSched) >= 1)
@@ -208,13 +218,15 @@
 
                         @endphp
 
-                        @if ($leave_Count || $ot_Count || $ob_Count)
+                        @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
                             @if ($leave_Count)
                                 <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
                             @elseif ($ot_Count)
                                 <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
                             @elseif ($ob_Count)
                                 <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
+                            @elseif ($cto_Count)
+                                <span style="font-size:8px;font-weight:bold">{{ $ctoMessage }}</span>
                             @endif
                         @else
                             @if (count($checkSched) >= 1)
@@ -274,7 +286,7 @@
 
                 @if ($biometric_ID == $f2['biometric_ID'])
                     @if ($f2['first_out'])
-                        @if (!$leave_Count && !$ot_Count && !$ob_Count)
+                        @if (!$leave_Count && !$ot_Count && !$ob_Count && !$cto_Count)
                             @if (count($empSched) >= 1)
                                 @if (date('d', strtotime($f2['first_out'])) == $fo)
                                     @if (date('A', strtotime($f2['first_out'])) == 'AM')
@@ -327,7 +339,7 @@
 
                 @if ($biometric_ID == $f3['biometric_ID'])
                     @if (date('d', strtotime($f3['dtr_date'])) == $i)
-                        @if (!$leave_Count && !$ot_Count && !$ob_Count)
+                        @if (!$leave_Count && !$ot_Count && !$ob_Count && !$cto_Count)
                             @if (count($empSched) >= 1)
                                 @php
                                     $firsti = array_filter($firstin, function ($res) use ($i) {
@@ -397,7 +409,7 @@
 
 
                 @if ($biometric_ID === $f4['biometric_ID'])
-                    @if (!$leave_Count && !$ot_Count && !$ob_Count)
+                    @if (!$leave_Count && !$ot_Count && !$ob_Count && !$cto_Count)
                         @if (count($empSched) >= 1)
                             @php
                                 $firsto = array_filter($firstout, function ($res) use ($i, $biometric_ID) {
@@ -436,7 +448,7 @@
     @break
 
     @case('undertime_hours')
-        @if (!$leave_Count && !$ot_Count && !$ob_Count)
+        @if (!$leave_Count && !$ot_Count && !$ob_Count && !$cto_Count)
             <table style="border:none">
                 <tr style="border:none">
                     @php
@@ -479,7 +491,7 @@
     @break
 
     @case('undertime_minutes')
-        @if (!$leave_Count && !$ot_Count && !$ob_Count)
+        @if (!$leave_Count && !$ot_Count && !$ob_Count && !$cto_Count)
             @php
                 $hours = '';
                 $minutes = 0;

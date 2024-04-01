@@ -176,6 +176,11 @@ class EmployeeProfile extends Authenticatable
         return $this->hasMany(ObApplicationLog::class);
     }
 
+    public function CTOApplication()
+    {
+        return $this->hasMany(CtoApplication::class);
+    }
+
 
     public function officialBusinessApplications()
     {
