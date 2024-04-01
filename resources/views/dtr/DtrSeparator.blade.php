@@ -43,13 +43,15 @@
                     @if (date('d', strtotime($f1['dtr_date'])) == $i)
                         <span class="fentry">
                             @if (date('A', strtotime($f1['first_in'])) == 'AM')
-                                @if ($leave_Count || $ot_Count || $ob_Count)
+                                @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
                                     @if ($leave_Count)
                                         <span class="timefirstarrival">{{ $leavemessage }}</span>
                                     @elseif ($ot_Count)
                                         <span class="timefirstarrival">{{ $officialTime }}</span>
                                     @elseif ($ob_Count)
                                         <span class="timefirstarrival">{{ $officialBusinessMessage }}</span>
+                                    @elseif ($cto_Count)
+                                        <span class="timefirstarrival">{{ $ctoMessage }}</span>
                                     @endif
                                 @else
                                     <span class="fentry">
@@ -89,13 +91,15 @@
                         });
 
                     @endphp
-                    @if ($leave_Count || $ot_Count || $ob_Count)
+                    @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
                         @if ($leave_Count)
                             <span class="timefirstarrival">{{ $leavemessage }}</span>
                         @elseif ($ot_Count)
                             <span class="timefirstarrival">{{ $officialTime }}</span>
                         @elseif ($ob_Count)
                             <span class="timefirstarrival">{{ $officialBusinessMessage }}</span>
+                        @elseif ($cto_Count)
+                            <span class="timefirstarrival">{{ $ctoMessage }}</span>
                         @endif
                     @else
                         @if (count($checkSched) >= 1)
@@ -145,13 +149,15 @@
 
                     @endphp
                     @if ($count2 >= 1)
-                        @if ($leave_Count || $ot_Count || $ob_Count)
+                        @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
                             @if ($leave_Count)
                                 <span class="timefirstarrival">{{ $leavemessage }}</span>
                             @elseif ($ot_Count)
                                 <span class="timefirstarrival">{{ $officialTime }}</span>
                             @elseif ($ob_Count)
                                 <span class="timefirstarrival">{{ $officialBusinessMessage }}</span>
+                            @elseif ($cto_Count)
+                                <span class="timefirstarrival">{{ $ctoMessage }}</span>
                             @endif
                         @else
                             @if (count($checkSched) >= 1)
@@ -171,13 +177,15 @@
                             @endif
                         @endif
                     @else
-                        @if ($leave_Count || $ot_Count || $ob_Count)
+                        @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
                             @if ($leave_Count)
                                 <span class="timefirstarrival">{{ $leavemessage }}</span>
                             @elseif ($ot_Count)
                                 <span class="timefirstarrival">{{ $officialTime }}</span>
                             @elseif ($ob_Count)
                                 <span class="timefirstarrival">{{ $officialBusinessMessage }}</span>
+                            @elseif ($cto_Count)
+                                <span class="timefirstarrival">{{ $ctoMessage }}</span>
                             @endif
                         @else
                             @if (count($checkSched) >= 1)
@@ -222,13 +230,15 @@
                         @endphp
                         <span class="fentry">
                             @if (count($checkSched) >= 1)
-                                @if ($leave_Count || $ot_Count || $ob_Count)
+                                @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
                                     @if ($leave_Count)
                                         <span class="timefirstarrival">{{ $leavemessage }}</span>
                                     @elseif ($ot_Count)
                                         <span class="timefirstarrival">{{ $officialTime }}</span>
                                     @elseif ($ob_Count)
                                         <span class="timefirstarrival">{{ $officialBusinessMessage }}</span>
+                                    @elseif ($cto_Count)
+                                        <span class="timefirstarrival">{{ $ctoMessage }}</span>
                                     @endif
                                 @else
                                     <span class="timefirstarrival"
@@ -316,7 +326,7 @@
 
                 @if ($biometric_ID == $f2['biometric_ID'])
                     @if ($f2['first_out'])
-                        @if (!$leave_Count && !$ot_Count && !$ob_Count)
+                        @if (!$leave_Count && !$ot_Count && !$ob_Count && !$cto_Count)
                             @if (count($empSched) >= 1)
                                 @if (date('d', strtotime($f2['first_out'])) == $fo)
                                     @if (date('A', strtotime($f2['first_out'])) == 'AM')
@@ -359,7 +369,7 @@
 
                 @if ($biometric_ID == $f3['biometric_ID'])
                     @if (date('d', strtotime($f3['second_in'])) == $i)
-                        @if (!$leave_Count && !$ot_Count && !$ob_Count)
+                        @if (!$leave_Count && !$ot_Count && !$ob_Count && !$cto_Count)
                             @if (date('A', strtotime($f3['second_in'])) === 'PM')
                                 @if ($f3['second_in'])
                                     {{ date('h:i a', strtotime($f3['second_in'])) }}
@@ -374,7 +384,7 @@
             @foreach ($firstin as $key => $f1)
                 @if ($biometric_ID == $f1['biometric_ID'])
                     @if (date('d', strtotime($f1['first_in'])) == $i)
-                        @if (!$leave_Count && !$ot_Count && !$ob_Count)
+                        @if (!$leave_Count && !$ot_Count && !$ob_Count && !$cto_Count)
                             @if (date('A', strtotime($f1['first_in'])) === 'PM')
                                 @if ($f1['first_in'])
                                     {{ date('h:i a', strtotime($f1['first_in'])) }}
@@ -430,7 +440,7 @@
                         @else
                             @foreach ($firstout as $f2)
                                 @if (date('d', strtotime($f2['first_out'])) == $i)
-                                    @if (!$leave_Count && !$ot_Count && !$ob_Count)
+                                    @if (!$leave_Count && !$ot_Count && !$ob_Count && !$cto_Count)
                                         @if ($biometric_ID === $f2['biometric_ID'])
                                             @if (date('A', strtotime($f2['first_out'])) === 'PM')
                                                 {{ date('h:i a', strtotime($f2['first_out'])) }}
@@ -443,7 +453,7 @@
                     @else
                         @if ($f4['second_out'])
                             @if (date('d', strtotime($f4['dtr_date'])) == $i)
-                                @if (!$leave_Count && !$ot_Count && !$ob_Count)
+                                @if (!$leave_Count && !$ot_Count && !$ob_Count && !$cto_Count)
                                     {{ date('h:i a', strtotime($f4['second_out'])) }}
                                 @endif
                             @endif
@@ -486,14 +496,14 @@
                 @endforeach
                 <td class=""
                     style="border:none;width: 50px;border-right:1px solid rgb(177, 181, 185);font-weight:bold;color:#FF6969;font-size:12px">
-                    @if (!$leave_Count && !$ot_Count && !$ob_Count)
+                    @if (!$leave_Count && !$ot_Count && !$ob_Count && !$cto_Count)
                         {{ $hours }}
                     @else
                         -
                     @endif
                 </td>
                 <td class="" style=" width: 50px;color:#FF6969;border:none;font-size:12px">
-                    @if (!$leave_Count && !$ot_Count && !$ob_Count)
+                    @if (!$leave_Count && !$ot_Count && !$ob_Count && !$cto_Count)
                         {{ $minutes }}
                     @else
                         -
