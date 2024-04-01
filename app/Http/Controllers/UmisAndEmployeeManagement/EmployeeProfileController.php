@@ -169,30 +169,30 @@ class EmployeeProfileController extends Controller
              * Reuse the created token of first instance of signin to have single access token.
              */
 
-            $access_token = AccessToken::where('employee_profile_id', $employee_profile->id)->orderBy('token_exp')->first();
+            // $access_token = AccessToken::where('employee_profile_id', $employee_profile->id)->orderBy('token_exp')->first();
 
-            if ($access_token !== null && Carbon::parse(Carbon::now())->startOfDay()->lte($access_token->token_exp)) {
-                $ip = $request->ip();
+            // if ($access_token !== null && Carbon::parse(Carbon::now())->startOfDay()->lte($access_token->token_exp)) {
+            //     $ip = $request->ip();
 
-                $login_trail = LoginTrail::where('employee_profile_id', $employee_profile->id)->first();
+            //     $login_trail = LoginTrail::where('employee_profile_id', $employee_profile->id)->first();
 
-                if ($login_trail !== null) {
-                    if ($login_trail->ip_address !== $ip) {
-                        $data = Helpers::generateMyOTP($employee_profile);
+            //     if ($login_trail !== null) {
+            //         if ($login_trail->ip_address !== $ip) {
+            //             $data = Helpers::generateMyOTP($employee_profile);
 
-                        if ($this->mail->send($data)) {
-                            return response()->json(['message' => "You are currently logged on to other device. An OTP has been sent to your registered email. If you want to signout from that device, submit the OTP."], Response::HTTP_FOUND)
-                                ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', Cache::get('session_domain'), false);
-                        }
+            //             if ($this->mail->send($data)) {
+            //                 return response()->json(['message' => "You are currently logged on to other device. An OTP has been sent to your registered email. If you want to signout from that device, submit the OTP."], Response::HTTP_FOUND)
+            //                     ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', Cache::get('session_domain'), false);
+            //             }
 
-                        return response()->json(['message' => "Your account is currently logged on to other device, sending otp to your email has failed please try again later."], Response::HTTP_INTERNAL_SERVER_ERROR);
-                    }
-                }
-            }
+            //             return response()->json(['message' => "Your account is currently logged on to other device, sending otp to your email has failed please try again later."], Response::HTTP_INTERNAL_SERVER_ERROR);
+            //         }
+            //     }
+            // }
 
-            if ($access_token !== null) {
+            // if ($access_token !== null) {
                 AccessToken::where('employee_profile_id', $employee_profile->id)->delete();
-            }
+            // }
 
             /**
              * Validate for 2FA
