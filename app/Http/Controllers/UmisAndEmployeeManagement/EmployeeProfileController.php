@@ -78,10 +78,10 @@ class EmployeeProfileController extends Controller
     public function employeesCards(Request $request)
     {
         try{
-            $active_users = EmployeeProfile::whereNot('authorization_pin', NULL)->count();
-            $pending_users = EmployeeProfile::where('authorization_pin', NULL)->count();
-            $regular_employees = EmployeeProfile::where('employment_type_id', EmploymentType::where('name', 'Permanent')->first()->id)->orWhere('employment_type_id', EmploymentType::where('name', 'Temporary')->first()->id)->count();
-            $job_orders = EmployeeProfile::where('employment_type_id', EmploymentType::where('name', 'Job order')->first()->id)->count();
+            $active_users = EmployeeProfile::whereNot('id', 1)->whereNot('authorization_pin', NULL)->count();
+            $pending_users = EmployeeProfile::whereNot('id', 1)->where('authorization_pin', NULL)->count();
+            $regular_employees = EmployeeProfile::whereNot('id', 1)->where('employment_type_id', EmploymentType::where('name', 'Permanent')->first()->id)->orWhere('employment_type_id', EmploymentType::where('name', 'Temporary')->first()->id)->count();
+            $job_orders = EmployeeProfile::whereNot('id', 1)->where('employment_type_id', EmploymentType::where('name', 'Job order')->first()->id)->count();
 
             return response()->json([
                 'data' => [
