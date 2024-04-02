@@ -20,9 +20,9 @@ return new class extends Migration
             $table->text('reason')->nullable();
             $table->string('credit_value');
             $table->string('status')->nullable();
-            $table->string('date')->nullable();
-            $table->string('time')->nullable();
             $table->string('attachment')->nullable();
+            $table->unsignedBigInteger('hrmo_officer')->unsigned()->nullable();
+            $table->foreign('hrmo_officer')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->unsignedBigInteger('recommending_officer')->unsigned()->nullable();
             $table->foreign('recommending_officer')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->unsignedBigInteger('approving_officer')->unsigned()->nullable();

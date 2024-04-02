@@ -1595,27 +1595,27 @@ Route::middleware('auth.cookie')->group(function () {
          * Monitization Posting Module
          */
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
-            Route::get('monitization-posts', 'MonitizationPostingController@index');
+            Route::get('monetization-posts', 'MonitizationPostingController@index');
         });
         
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
-            Route::get('monitization-posts-candidates', 'MonitizationPostingController@candidates');
+            Route::get('monetization-posts-candidates', 'MonitizationPostingController@candidates');
         });
 
         Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
-            Route::get('monitization-posts/{id}/check-for-sl-monitization', 'MonitizationPostingController@checkForSLMonitization');
+            Route::get('monetization-posts/{id}/check-for-sl-monitization', 'MonitizationPostingController@checkForSLMonitization');
         });
 
         Route::middleware(['auth.permission:UMIS-LM write'])->group(function () {
-            Route::post('monitization-post', 'MonitizationPostingController@store');
+            Route::post('monetization-post', 'MonitizationPostingController@store');
         });
 
         Route::middleware(['auth.permission:UMIS-LM update'])->group(function () {
-            Route::put('monitization-posts/{id}', 'MonitizationPostingController@update');
+            Route::put('monetization-posts/{id}', 'MonitizationPostingController@update');
         });
 
         Route::middleware(['auth.permission:UMIS-LM delete'])->group(function () {
-            Route::delete('monitization-posts/{id}', 'MonitizationPostingController@destroy');
+            Route::delete('monetization-posts/{id}', 'MonitizationPostingController@destroy');
         });
 
         /**
@@ -1623,6 +1623,10 @@ Route::middleware('auth.cookie')->group(function () {
          */
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
             Route::get('monetization', 'MonetizationApplicationController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
+            Route::get('user-monetization', 'MonetizationApplicationController@userMoneApplication');
         });
 
         Route::middleware(['auth.permission:UMIS-LM approve'])->group(function () {

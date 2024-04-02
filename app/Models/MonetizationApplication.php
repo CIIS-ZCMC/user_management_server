@@ -32,6 +32,12 @@ class MonetizationApplication extends Model
     {
         return $this->belongsTo(EmployeeProfile::class);
     }
+
+    public function leaveType()
+    {
+        return $this->belongsTo(LeaveType::class);
+    }
+    
     public function hrmoOfficer()
     {
         return $this->belongsTo(EmployeeProfile::class, 'hrmo_officer');
