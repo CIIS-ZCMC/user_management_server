@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('monitization_postings', function (Blueprint $table) {
+        Schema::create('monetization_postings', function (Blueprint $table) {
             $table->id();
             $table->datetime('effective_filing_date');
             $table->datetime('end_filing_date');

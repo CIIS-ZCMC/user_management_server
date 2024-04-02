@@ -530,4 +530,10 @@ class EmployeeProfile extends Authenticatable
 
         return $employees;
     }
+
+    public function salaryGrade()
+    {
+        return $this->belongsTo(SalaryGrade::class);
+    }
+
 }

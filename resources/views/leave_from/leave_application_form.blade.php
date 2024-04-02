@@ -366,7 +366,7 @@
                             <label class="rigthside-font" style="margin-top:5px">Other Purpose:</label>
                             
                             <div>
-                                <span class="small-underline"></span>
+                                <span class="small-underline">{{$is_monetization === true}}</span>
                                 <span style="padding-right: 2px; font-size: 12px; font-weight:lighter">Monetization of Leave Credits</span>
                             </div>
 
@@ -494,9 +494,14 @@
         
                                     <div class="text-center" style="padding-top: 20px;">
                                         <span style="font-size: 13px; border-bottom: 1px solid #000; display: inline-block; width: 300px; text-transform:uppercase">
-                                            {{ $hrmo_officer->supervisor->personalInformation->first_name }}
+                                            @if ($data->hrmoOfficer)
+                                            {{ $data->hrmoOfficer->personalInformation->first_name }}
+                                            {{ substr($data->hrmoOfficer->personalInformation->middle_name, 0, 1) }}
+                                            {{ $data->hrmoOfficer->personalInformation->last_name }} 
+                                        @endif
+                                            {{-- {{ $hrmo_officer->supervisor->personalInformation->first_name }}
                                             {{ substr($hrmo_officer->supervisor->personalInformation->middle_name, 0, 1) }}
-                                            {{ $hrmo_officer->supervisor->personalInformation->last_name }} 
+                                            {{ $hrmo_officer->supervisor->personalInformation->last_name }}  --}}
                                         </span>
                                         <br> 
                                         <label style="font-weight:lighter; font-size:12px; text-align: center; display: block;">

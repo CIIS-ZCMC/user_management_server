@@ -57,12 +57,13 @@ class SystemController extends Controller
             }
 
             $system = System::create($cleanData);
-
-            Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
+            $log = Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+
             return response() -> json([
                 'data' => new SystemResource($system),
-                'message' => 'System created successfully.'
+                'message' => 'System created successfully.',
+                'logs' => $log
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());

@@ -40,8 +40,7 @@ Route::
         });
 
 
-Route::
-        namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
+Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
             Route::post('sign-in', 'EmployeeProfileController@signIn');
             Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
             Route::post('skip-for-now', 'EmployeeProfileController@updatePasswordExpiration');
@@ -58,7 +57,7 @@ Route::middleware('auth.cookie')->group(function () {
     Route::namespace ('App\Http\Controllers')->group(function () {
         Route::middleware('auth.permission:UMIS-SM write')->group(function () {
             Route::post('announcements', 'AnnouncementsController@store');
-        });
+        })->middleware('request.timing');
 
         Route::middleware('auth.permission:UMIS-SM update')->group(function () {
             Route::put('announcements/{id}', 'AnnouncementsController@update');
@@ -150,7 +149,11 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('system-all', 'SystemController@index');
         });
 
-        Route::middleware(['auth.permission:UMIS-SM write'])->group(function () {
+        // Route::middleware(['auth.permission:UMIS-SM write'])->group(function () {
+        //     Route::post('system', 'SystemController@store');
+        // });
+
+        Route::middleware(['auth.permission:UMIS-SM write', 'request.timing'])->group(function () {
             Route::post('system', 'SystemController@store');
         });
 
@@ -798,6 +801,11 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::post('employee-reassign-area/{id}', 'EmployeeProfileController@reAssignArea');
         });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::get('employee-profile-cards', 'EmployeeProfileController@employeesCards');
+        });
+
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::post('employee-profile-picture/{id}', 'EmployeeProfileController@updateEmployeeProfilePicture');
@@ -1630,15 +1638,15 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-LM approve'])->group(function () {
-            Route::put('monetization-approve/{id}', 'MonetizationApplicationController@approvedApplication');
+            Route::post('monetization-approve/{id}', 'MonetizationApplicationController@approvedApplication');
         });
 
         Route::middleware(['auth.permission:UMIS-LM approve'])->group(function () {
-            Route::put('monetization-decline/{id}', 'MonetizationApplicationController@declineMoneApplication');
+            Route::post('monetization-decline/{id}', 'MonetizationApplicationController@declineMoneApplication');
         });
 
         Route::middleware(['auth.permission:UMIS-LM approve'])->group(function () {
-            Route::put('monetization-cancel/{id}', 'MonetizationApplicationController@cancelmoneApplication');
+            Route::post('monetization-cancel/{id}', 'MonetizationApplicationController@cancelmoneApplication');
         });
 
         Route::middleware(['auth.permission:UMIS-LM write'])->group(function () {

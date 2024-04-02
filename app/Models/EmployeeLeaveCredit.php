@@ -33,4 +33,10 @@ class EmployeeLeaveCredit extends Model
     {
         return $this->hasMany(EmployeeLeaveCreditLogs::class);
     }
+
+    public function salaryGrade()
+    {
+        return $this->belongsTo(SalaryGrade::class);
+    }
+
 }
