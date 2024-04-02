@@ -2328,7 +2328,7 @@ class EmployeeProfileController extends Controller
              * Education module
              */
             $education_request = new EducationalBackgroundRequest();
-            $education_json = json_decode($request->education);
+            $education_json = json_decode($request->educations);
             $education_data = [];
 
             foreach($education_json as $key => $value){
@@ -2358,7 +2358,7 @@ class EmployeeProfileController extends Controller
              * Work experience module
              */
             $work_experience_request = new WorkExperienceRequest();
-            $work_experience_json = json_decode($request->identification);
+            $work_experience_json = json_decode($request->work_experiences);
             $work_experience_data = [];
 
             foreach($work_experience_json as $key => $value){
@@ -2455,7 +2455,7 @@ class EmployeeProfileController extends Controller
                 $eligibilities_data[$key] = $value;
             }
 
-            $eligibilities_request->merge(['reference' => $eligibilities_data]);
+            $eligibilities_request->merge(['eligibilities' => $eligibilities_data]);
             $eligibilities_controller = new CivilServiceEligibilityController();
             $eligibilities_controller->storeMany($personal_information->id, $eligibilities_request);
 
@@ -2555,7 +2555,6 @@ class EmployeeProfileController extends Controller
                     'max_credit_annual' => 120
                 ]);
             }
-
             /**
              * Issuance module
              */
@@ -2596,7 +2595,7 @@ class EmployeeProfileController extends Controller
         } catch (\Throwable $th) {
             DB::rollBack();
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
-            return response()->json(['message' => "Failed to register new employee."], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 

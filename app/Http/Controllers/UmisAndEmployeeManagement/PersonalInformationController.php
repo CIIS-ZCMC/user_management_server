@@ -47,7 +47,7 @@ class PersonalInformationController extends Controller
             $is_res_per = $request->is_res_per === 1 ? true:false;
             $cleanData = [];
 
-            foreach ($request as $key => $value) {
+            foreach ($request->all() as $key => $value) {
                 if($value === null){
                     $cleanData[$key] = $value;
                     continue;

@@ -91,12 +91,12 @@ class CivilServiceEligibilityController extends Controller
         }
     }
     
-    public function storeMany($personal_information_id, $eligibilities)
+    public function storeMany($personal_information_id, CivilServiceEligibilityManyRequest $request)
     {
         try{
             $success = [];
 
-            foreach($eligibilities as $civil_service_eligibility){
+            foreach($request->eligibilities as $civil_service_eligibility){
                 $cleanData = [];
                 $cleanData['personal_information_id'] = $personal_information_id;
                 foreach ($civil_service_eligibility as $key => $value) {

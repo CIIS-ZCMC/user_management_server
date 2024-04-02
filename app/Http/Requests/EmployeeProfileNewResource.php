@@ -52,11 +52,11 @@ class EmployeeProfileNewResource extends FormRequest
             'issuance_information' => 'required|string',
             //Employee Profile
             'date_hired' => "required|date:Y-m-d",
-            'employment_type_id' => 'required|integer|size:36',
-            'designation_id' => 'required|integer|size:36',
-            'plantilla_number_id' => 'nullable|integer|size:36',
+            'employment_type_id' => 'required|integer',
+            'designation_id' => 'required|integer',
+            // 'plantilla_number_id' => 'nullable|integer',
             'allow_time_adjustment' => 'required|integer',
-            'attachment' => 'nullable|file|mimes:jpeg,png,pdf,doc,docx'
+            // 'attachment' => 'nullable|file|mimes:jpeg,png,pdf,doc,docx'
         ];
     }
 }
