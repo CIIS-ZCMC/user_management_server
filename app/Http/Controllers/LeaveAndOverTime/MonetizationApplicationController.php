@@ -283,7 +283,16 @@ class MonetizationApplicationController extends Controller
             $new_monetization = MonetizationApplication::create($cleanData);
 
             $process_name = "applied";
-            $this->storeMonetizationLog($new_monetization->id, $process_name, $employee_profile->id);
+            // $this->storeMonetizationLog($new_monetization->id, $process_name, $employee_profile->id);
+
+            $mone_application_log = new MoneApplicationLog();
+            $mone_application_log->mone_application_id = $new_monetization->id;
+            $mone_application_log->action_by =$employee_profile->id;
+            $mone_application_log->action = $process_name;
+            $mone_application_log->status = "applied";
+            $mone_application_log->date = date('Y-m-d');
+            $mone_application_log->time =  date('H:i:s');
+            $mone_application_log->save();
 
             $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->where('name', 'Vacation Leave')->orWhere('name', 'Sick Leave')->get();
             $result = [];
