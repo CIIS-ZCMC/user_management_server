@@ -99,14 +99,14 @@ class SectionController extends Controller
             $section->update($cleanData);
             
             if($section->code === 'HRMO'){
-                $system_role = SystemRole::where('code', 'HRMO-HEAD-02')->first();
+                $system_role = SystemRole::where('code', 'HRMO-HEAD-01')->first();
 
                 SpecialAccessRole::create([
                     'system_role_id' => $system_role->id,
                     'employee_profile_id' => $employee_profile->id
                 ]);
             }else{
-                $system_role = SystemRole::where('code', 'SECTION-HEAD-05')->first();
+                $system_role = SystemRole::where('code', 'SECTION-HEAD-01')->first();
 
                 SpecialAccessRole::create([
                     'system_role' => $system_role->id,

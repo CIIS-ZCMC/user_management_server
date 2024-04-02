@@ -97,7 +97,7 @@ class UnitController extends Controller
 
             $unit->update($cleanData);
             
-            $system_role = SystemRole::where('code', 'UNIT-HEAD-06')->first();
+            $system_role = SystemRole::where('code', 'UNIT-HEAD-01')->first();
 
             SpecialAccessRole::create([
                 'system_role_id' => $system_role->id,

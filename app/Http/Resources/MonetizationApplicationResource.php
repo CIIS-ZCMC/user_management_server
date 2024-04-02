@@ -27,6 +27,7 @@ class MonetizationApplicationResource extends JsonResource
                 'area_sector' => $area['sector'],
                 'profile_url'=>env('SERVER_DOMAIN') . "/photo/profiles/" . $this->employeeProfile->profile_url,
             ],
+            "leave_type" => $this->leaveType,
             'reason' => $this->reason,
             'attachment' => env('SERVER_DOMAIN').$this->attachment,
             'credit_value' => $this->credit_value,
