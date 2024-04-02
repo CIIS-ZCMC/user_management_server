@@ -415,7 +415,7 @@ class ScheduleController extends Controller
         }
     }
 
-    public function employee(Request $request)
+    public function employeeList(Request $request)
     {
         try {
             $employees = [];
