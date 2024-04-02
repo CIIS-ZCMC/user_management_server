@@ -32,23 +32,23 @@ class OnCallController extends Controller
             $assigned_area = $user->assignedArea->findDetails();
 
             //Array
-            $employees  = [];
-            $myEmployees = $user->areaEmployee($assigned_area);
-            $supervisors = $user->sectorHeads();
+            $employees = [];
+            $myEmployees = $user->myEmployees($assigned_area, $user);
+            $employee_ids = collect($myEmployees)->pluck('id')->toArray();
 
-            $employees = [ ...$myEmployees,...$supervisors];
-            $employee_ids = collect($employees)->pluck('id')->toArray();
 
-            $model = OnCall::with(['employee' => function ($query) use ($employee_ids) {
-                $query->with('personalInformation')->whereIn('id', $employee_ids);
-            }])
-            ->whereYear('date', '=', $request->year)
-            ->whereMonth('date', '=', $request->month)
-            ->get();
+            $model = OnCall::with([
+                'employee' => function ($query) use ($employee_ids) {
+                    $query->with('personalInformation')->whereIn('id', $employee_ids);
+                }
+            ])
+                ->whereYear('date', '=', $request->year)
+                ->whereMonth('date', '=', $request->month)
+                ->get();
 
             return response()->json([
                 'data' => OnCallResource::collection($model),
-                'employee' => EmployeeProfileResource::collection($employees),
+                'employee' => EmployeeProfileResource::collection($myEmployees),
             ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
@@ -105,18 +105,18 @@ class OnCallController extends Controller
             }
 
             $employee_on_calls = OnCall::where('employee_profile_id', $cleanData['employee_profile_id'])
-                            ->where('date', $cleanData['date'])
-                            ->first();
+                ->where('date', $cleanData['date'])
+                ->first();
 
             if ($employee_on_calls) {
                 return response()->json(['message' => "On Call Schedule already exist"], Response::HTTP_FOUND);
-            } 
+            }
 
             $data = OnCall::create($cleanData);
 
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json([
-                'data' =>  new OnCallResource($data),
+                'data' => new OnCallResource($data),
                 // 'logs' => Helpers::registerEmployeeScheduleLogs($data->id, $request->user->id, 'Store'),
                 'message' => 'New On Call Schedule has been added.',
             ], Response::HTTP_OK);
@@ -162,19 +162,19 @@ class OnCallController extends Controller
             }
 
             $employee_on_calls = OnCall::where('employee_profile_id', $cleanData['employee_profile_id'])
-                                        ->where('date', $cleanData['date'])
-                                        ->first();
+                ->where('date', $cleanData['date'])
+                ->first();
 
             if ($employee_on_calls) {
                 return response()->json(['message' => "On Call Schedule already exist"], Response::HTTP_FOUND);
-            } 
+            }
 
             $data->employee_profile_id = $cleanData['employee_profile_id'];
             $data->update();
 
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in updating ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json([
-                'data' =>  new OnCallResource($data),
+                'data' => new OnCallResource($data),
                 // 'logs' => Helpers::registerEmployeeScheduleLogs($data->id, $request->user->id, 'Store'),
                 'message' => 'On Call Schedule is up to date.',
             ], Response::HTTP_OK);

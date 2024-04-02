@@ -120,6 +120,7 @@ class DivisionController extends Controller
                 $access_right->delete();
             }
 
+            Helpers::notifications($employee_profile->id, "You been assigned as division head of ".$division->name." division.");
             Helpers::registerSystemLogs($request, $id, true, 'Success in assigning division chief '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
@@ -182,6 +183,7 @@ class DivisionController extends Controller
 
             $division->update($cleanData);
 
+            Helpers::notifications($employee_profile->id, "You been assigned as officer in charge of ".$division->name." division.");
             Helpers::registerSystemLogs($request, $id, true, 'Success in assigning chief '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
