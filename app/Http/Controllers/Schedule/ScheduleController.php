@@ -415,7 +415,7 @@ class ScheduleController extends Controller
         }
     }
 
-    public function employee(Request $request)
+    public function employeeList(Request $request)
     {
         try {
             $employees = [];
@@ -473,7 +473,7 @@ class ScheduleController extends Controller
             $schedule = [];
             foreach ($sql as $value) {
                 $schedule[] = [
-                    'id' => $value->schedule->timeShift->id,
+                    'id' => $value->schedule->id,
                     'start' => $value->schedule->date,
                     'title' => $value->schedule->timeShift->timeShiftDetails(),
                     'color' => $value->schedule->timeShift->color,

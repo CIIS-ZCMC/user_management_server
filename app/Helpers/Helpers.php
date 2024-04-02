@@ -50,18 +50,18 @@ class Helpers
         }
 
         return $password;
-    } 
-    
+    }
+
     /**
-    * Generate a random character from the given string.
-    *
-    * @param string $characters
-    * @return string
-    */
-   private static  function randomCharacter($characters)
-   {
-       return mb_substr($characters, mt_rand(0, mb_strlen($characters) - 1), 1);
-   }
+     * Generate a random character from the given string.
+     *
+     * @param string $characters
+     * @return string
+     */
+    private static function randomCharacter($characters)
+    {
+        return mb_substr($characters, mt_rand(0, mb_strlen($characters) - 1), 1);
+    }
 
     public static function getHrmoOfficer()
     {
@@ -127,7 +127,7 @@ class Helpers
             return "Please click resend OTP.";
         }
 
-        if ((int)$otp !== $employee_otp) {
+        if ((int) $otp !== $employee_otp) {
             return 'OTP provided is invalid';
         }
 
@@ -311,7 +311,7 @@ class Helpers
         $permission = $request->permission;
         list($module, $action) = explode(' ', $permission);
 
-        SystemLogs::create([
+        return [
             'employee_profile_id' => $user->id,
             'module_id' => $moduleID,
             'action' => $action,
@@ -319,7 +319,7 @@ class Helpers
             'status' => $status,
             'remarks' => $remarks,
             'ip_address' => $ip
-        ]);
+        ];
     }
 
     public static function registerExchangeDutyLogs($data_id, $user_id, $action)
@@ -471,7 +471,7 @@ class Helpers
                 }
 
                 if ($division->oic_employee_profile_id !== null) {
-                    return ["approving_officer" =>  $division->oic_employee_profile_id];
+                    return ["approving_officer" => $division->oic_employee_profile_id];
                 }
             }
 
@@ -479,11 +479,11 @@ class Helpers
                 $department = Department::where('id', $user->assignedArea->department->id)->first();
 
                 if ($department->head_employee_profile_id !== null) {
-                    return ["approving_officer" =>  $department->head_employee_profile_id];
+                    return ["approving_officer" => $department->head_employee_profile_id];
                 }
 
-                if ($department->oic_employee_profile_id  !== null) {
-                    return ["approving_officer" =>  $department->oic_employee_profile_id];
+                if ($department->oic_employee_profile_id !== null) {
+                    return ["approving_officer" => $department->oic_employee_profile_id];
                 }
             }
 
@@ -491,15 +491,15 @@ class Helpers
                 $section = Section::where('id', $user->assignedArea->section->id)->first();
                 if ($section) {
                     if ($section->department_id !== null) {
-                        return ["approving_officer" =>  Department::where('id', $section->department_id)->first()->head_employee_profile_id];
+                        return ["approving_officer" => Department::where('id', $section->department_id)->first()->head_employee_profile_id];
                     }
 
                     if ($section->supervisor_employee_profile_id !== null) {
-                        return ["approving_officer" =>  $section->supervisor_employee_profile_id];
+                        return ["approving_officer" => $section->supervisor_employee_profile_id];
                     }
 
-                    if ($section->oic_employee_profile_id  !== null) {
-                        return ["approving_officer" =>  $section->oic_employee_profile_id];
+                    if ($section->oic_employee_profile_id !== null) {
+                        return ["approving_officer" => $section->oic_employee_profile_id];
                     }
                 }
             }
@@ -507,16 +507,16 @@ class Helpers
             if ($area['sector'] === 'Unit') {
                 $unit = Unit::where('id', $user->assignedArea->unit->id)->first();
                 if ($unit) {
-                    if ($unit->section_id  !== null) {
-                        return ["approving_officer" =>  Section::where('id', $unit->section_id)->first()->supervisor_employee_profile_id];
+                    if ($unit->section_id !== null) {
+                        return ["approving_officer" => Section::where('id', $unit->section_id)->first()->supervisor_employee_profile_id];
                     }
 
                     if ($unit->head_employee_profile_id !== null) {
-                        return ["approving_officer" =>  $unit->head_employee_profile_id];
+                        return ["approving_officer" => $unit->head_employee_profile_id];
                     }
 
                     if ($unit->oic_employee_profile_id !== null) {
-                        return ["approving_officer" =>  $unit->oic_employee_profile_id];
+                        return ["approving_officer" => $unit->oic_employee_profile_id];
                     }
                 }
             }
@@ -652,7 +652,7 @@ class Helpers
     public static function pendingLeaveNotfication($id, $type)
     {
         Notifications::create([
-            "description" => "New ".$type." request.",
+            "description" => "New " . $type . " request.",
             "module_path" => null,
             "employee_profile_id" => $id
         ]);
@@ -718,7 +718,7 @@ class Helpers
             $query->where('employee_profile_id', $employeeId)
                 ->where(function ($query) use ($date) {
                     $query->where('date_from', '<=', $date)
-                          ->where('date_to', '>=', $date);
+                        ->where('date_to', '>=', $date);
                 });
         })->exists();
 
@@ -726,7 +726,7 @@ class Helpers
             $query->where('employee_profile_id', $employeeId)
                 ->where(function ($query) use ($date) {
                     $query->where('date_from', '<=', $date)
-                          ->where('date_to', '>=', $date);
+                        ->where('date_to', '>=', $date);
                 });
         })->exists();
 
@@ -734,14 +734,14 @@ class Helpers
             $query->where('employee_profile_id', $employeeId)
                 ->where(function ($query) use ($date) {
                     $query->where('date_from', '<=', $date)
-                          ->where('date_to', '>=', $date);
+                        ->where('date_to', '>=', $date);
                 });
         })->exists();
 
-        $overlappingCTO =CtoApplication::where('employee_profile_id', $employeeId)
-                ->whereDate('date', $date)
-                ->exists();
-                
+        $overlappingCTO = CtoApplication::where('employee_profile_id', $employeeId)
+            ->whereDate('date', $date)
+            ->exists();
+
         return $overlappingLeave || $overlappingOb || $overlappingOT || $overlappingCTO;
     }
 

@@ -15,9 +15,9 @@ class MonetizationApplication extends Model
         'employee_profile_id',
         'leave_type_id',
         'reason',
-        'attachment',
         'credit_value',
-        'date',
+        'status',
+        'attachment',
         'hrmo_officer',
         'recommending_officer',
         'approving_officer'

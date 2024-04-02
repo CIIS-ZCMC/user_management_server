@@ -290,7 +290,7 @@ class LeaveApplicationController extends Controller
     }
 
 
-    public function myApprovedLeaveApplication( Request $request)
+    public function myApprovedLeaveApplication(Request $request)
     {
         try {
             $employee_profile = $request->user;
@@ -322,14 +322,14 @@ class LeaveApplicationController extends Controller
 
     public function employeeApprovedLeaveApplication($id, Request $request)
     {
-        try{
+        try {
             $leave_applications = LeaveApplication::where('employee_profile_id', $id)->get();
 
             return response()->json([
                 'data' => MyApprovedLeaveApplicationResource::collection($leave_applications),
                 'message' => 'Retrieve list.'
             ], Response::HTTP_OK);
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -986,7 +986,7 @@ class LeaveApplicationController extends Controller
     public function printLeaveForm($id)
     {
         try {
-            $data = LeaveApplication::with(['employeeProfile', 'leaveType', 'recommendingOfficer', 'approvingOfficer'])->where('id', $id)->first();
+            $data = LeaveApplication::with(['employeeProfile', 'leaveType', 'hrmoOfficer','recommendingOfficer', 'approvingOfficer'])->where('id', $id)->first();
             $vl_employee_credit = EmployeeLeaveCredit::where('leave_type_id', LeaveType::where('code', 'VL')->first()->id)->first();
             $sl_employee_credit = EmployeeLeaveCredit::where('leave_type_id', LeaveType::where('code', 'SL')->first()->id)->first();
 
@@ -1010,13 +1010,14 @@ class LeaveApplicationController extends Controller
 
             // return view('leave_from.leave_application_form', compact('data', 'leave_type', 'hrmo_officer'));
 
+            $is_monetization=false;
             $options = new Options();
             $options->set('isPhpEnabled', true);
             $options->set('isHtml5ParserEnabled', true);
             $options->set('isRemoteEnabled', true);
             $dompdf = new Dompdf($options);
             $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
-            $html = view('leave_from.leave_application_form', compact('data', 'leave_type', 'hrmo_officer', 'my_leave_type', 'vl_employee_credit', 'sl_employee_credit'))->render();
+            $html = view('leave_from.leave_application_form', compact('data', 'leave_type', 'hrmo_officer', 'my_leave_type', 'vl_employee_credit', 'sl_employee_credit', 'is_monetization'))->render();
             $dompdf->loadHtml($html);
 
             $dompdf->setPaper('Legal', 'portrait');

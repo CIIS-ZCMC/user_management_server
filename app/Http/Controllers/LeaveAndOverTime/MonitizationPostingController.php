@@ -17,14 +17,14 @@ class MonitizationPostingController extends Controller
 {
     public function index(Request $request)
     {
-        try{ 
-            $mone_applications=[];
-            
-            $mone_applications = MonitizationPosting::all();
-          
-           
+        try{
+            $latest_posting=[];
+
+            $latest_posting = MonitizationPosting::latest('created_at')->first();
+
+
              return response()->json([
-                'data' => $mone_applications,
+                'data' => $latest_posting,
                 'message' => 'Retrieve posting records.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -34,12 +34,12 @@ class MonitizationPostingController extends Controller
 
     public function checkForSLMonitization($id, Request $request)
     {
-        try{ 
+        try{
             $employee_profile = $request->user;
 
             $employee_leave_credits = EmployeeLeaveCredit::where('leave_type_id', LeaveType::where('code', 'SL')->first()->id)
                     ->where('employee_profile_id', $employee_profile->id)->first();
-           
+
             return response()->json([
                 'data' => [
                     'employee_leave_credits' => $employee_leave_credits,
@@ -55,19 +55,77 @@ class MonitizationPostingController extends Controller
     public function candidates(Request $request)
     {
         try{
-            $employee_leave_credits = EmployeeLeaveCredit::select('ep.id')->join('employee_profiles as ep', 'ep.id', 'employee_leave_credits.employee_profile_id')
-                ->where('employee_leave_credits.leave_type_id', LeaveType::where('code', 'VL')->first()->id)
-                ->where('employee_leave_credits.total_leave_credits', '>=', 15)->get();
-      
-            $candidates = [];
+            $employee_leave_credits = EmployeeLeaveCredit::select('employee_leave_credits.*')
+            ->join('employee_profiles as ep', 'ep.id', '=', 'employee_leave_credits.employee_profile_id')
+            ->join('assigned_areas', 'assigned_areas.employee_profile_id', '=', 'ep.id')
+            ->join('designations', 'designations.id', '=', 'assigned_areas.designation_id')
+            ->join('salary_grades as sg', 'sg.id', '=', 'designations.salary_grade_id')
+            ->where('sg.salary_grade_number', '<=', 19)
+            ->where(function ($query) {
+                $query->where(function ($query) {
+                    $query->where('employee_leave_credits.leave_type_id', LeaveType::where('code', 'VL')->first()->id)
+                        ->where('employee_leave_credits.total_leave_credits', '>=', 15);
+                })
+                ->orWhere(function ($query) {
+                    $query->where('employee_leave_credits.leave_type_id', LeaveType::where('code', 'SL')->first()->id)
+                        ->where('employee_leave_credits.total_leave_credits', '>=', 15);
+                });
+            })
+            ->get();
 
-            foreach($employee_leave_credits as $employee_leave_credit){
-                $candidates[] = $employee_leave_credit->employeeProfile;
+        $candidates = [];
+
+        foreach ($employee_leave_credits as $employee_leave_credit) {
+            $employeeProfile = $employee_leave_credit->employeeProfile;
+            $personalInformation = $employeeProfile->personalInformation;
+            $area = $employeeProfile->assignedArea->findDetails();
+
+            $employee_id = $employeeProfile->id;
+
+            // Get additional required information
+            $employee_name = $personalInformation->first_name . ' ' . $personalInformation->last_name;
+            $employeeNo = $employeeProfile->employee_id;
+            $designation = $employeeProfile->assignedArea->designation->name;
+            $area = $area['details']->name;
+            $vacation_leave_balance = 0;
+            $sick_leave_balance = 0;
+
+            // Check if VL balance should be added
+            if ($employee_leave_credit->leave_type_id === LeaveType::where('code', 'VL')->first()->id) {
+                $vacation_leave_balance = $employee_leave_credit->total_leave_credits;
             }
 
+            // Check if SL balance should be added
+            if ($employee_leave_credit->leave_type_id === LeaveType::where('code', 'SL')->first()->id) {
+                $sick_leave_balance = $employee_leave_credit->total_leave_credits;
+            }
+
+            // Add data to candidates array
+            if (!isset($candidates[$employee_id])) {
+                $candidates[$employee_id] = [
+                    'id' => $employee_id,
+                    'employee_name' => $employee_name,
+                    'employee_no' => $employeeNo,
+                    'profile_url' =>  env('SERVER_DOMAIN') . "/photo/profiles/" . $employeeProfile->profile_url,
+                    'designation' => $designation,
+                    'area' => $area,
+                    'vacation_leave_balance' => $vacation_leave_balance,
+                    'sick_leave_balance' => $sick_leave_balance
+                ];
+            } else {
+                // If employee already exists in array, update the leave balances
+                $candidates[$employee_id]['vacation_leave_balance'] += $vacation_leave_balance;
+                $candidates[$employee_id]['sick_leave_balance'] += $sick_leave_balance;
+            }
+        }
+
+        // Convert associative array to simple array
+        $candidates = array_values($candidates);
+
+            
             return response()->json([
                 'data' => $candidates,
-                'message' => "Employees for monitization."
+                'message' => "Employees for monetization."
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -78,6 +136,12 @@ class MonitizationPostingController extends Controller
     {
         try{
             $cleanData = [];
+            $employee_profile = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
+
+            if ($employee_profile['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+            }
 
             foreach($request->all() as $key => $value)
             {
@@ -88,7 +152,7 @@ class MonitizationPostingController extends Controller
                 }
                 $cleanData[$key] = strip_tags($value);
             }
-
+            $cleanData['created_by'] = $employee_profile->id;
             $monitization =  MonitizationPosting::create($cleanData);
 
             return response()->json([
@@ -99,7 +163,7 @@ class MonitizationPostingController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function update($id, Request $request)
     {
         try{
@@ -130,10 +194,10 @@ class MonitizationPostingController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function destroy($id, PasswordApprovalRequest $request)
     {
-        try{ 
+        try{
             $employee_profile = $request->user;
 
             $pin = strip_tags($request->password);
@@ -150,7 +214,7 @@ class MonitizationPostingController extends Controller
             }
 
             $monitization->delete();
-           
+
             return response()->json([
                 'message' => 'Monitization has successfully deleted.'
             ], Response::HTTP_OK);

@@ -21,8 +21,9 @@ class ExchangeDuty extends Model
         'requested_date_to_duty',
         'requested_employee_id',
         'reliever_employee_id',
-        'schedule_id',
-        'approve_by',
+        'requested_schedule_id',
+        'reliever_schedule_id',
+        'approving_officer',
         'reason',
         'status',
     ];
@@ -36,11 +37,6 @@ class ExchangeDuty extends Model
         return $this->hasOne(ExchangeDuty::class, 'approve_by');
     }
 
-    public function schedule()
-    {
-        return $this->belongsTo(Schedule::class);
-    }
-
     public function requestedEmployee()
     {
         return $this->belongsTo(EmployeeProfile::class, 'requested_employee_id');
@@ -51,8 +47,34 @@ class ExchangeDuty extends Model
         return $this->belongsTo(EmployeeProfile::class, 'reliever_employee_id');
     }
 
-    public function approvingEmployee()
+    public function requestedSchedule()
     {
-        return $this->belongsTo(EmployeeProfile::class, 'approve_by');
+        return $this->belongsTo(Schedule::class, 'requested_schedule_id');
+    }
+
+    public function relieverSchedule()
+    {
+        return $this->belongsTo(Schedule::class, 'reliever_schedule_id');
+    }
+
+    public function approvingOfficer()
+    {
+        return $this->belongsTo(EmployeeProfile::class, 'approving_officer');
+    }
+
+    public function findScheduleDetails($schedule_id)
+    {
+        $employee_schedule = Schedule::where('id', $schedule_id)->first();
+
+        return [
+            'id' => $employee_schedule->id,
+            'date' => $employee_schedule->date,
+            'time_shift' => $employee_schedule->timeShift->timeShiftDetails(),
+        ];
+    }
+
+    public function logs()
+    {
+        return $this->hasMany(ExchangeDutyLog::class);
     }
 }
