@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Requests\EmployeeProfileNewResource;
+use App\Models\EmploymentType;
 use App\Models\OfficerInChargeTrail;
 use Carbon\Carbon;
 
@@ -73,6 +74,29 @@ class EmployeeProfileController extends Controller
     {
         $this->mail = new MailConfig();
         $this->two_auth = new TwoFactorAuthController();
+    }
+
+    public function employeesCards(Request $request)
+    {
+        try{
+            $active_users = EmployeeProfile::whereNot('authorization_pin', NULL)->count();
+            $pending_users = EmployeeProfile::where('authorization_pin', NULL)->count();
+            $regular_employees = EmployeeProfile::where('employment_type_id', EmploymentType::where('name', 'Permanent')->first()->id)->orWhere('employment_type_id', EmploymentType::where('name', 'Temporary')->first()->id)->count();
+            $job_orders = EmployeeProfile::where('employment_type_id', EmploymentType::where('name', 'Job order')->first()->id)->count();
+
+            return response()->json([
+                'data' => [
+                    'active_users' => $active_users,
+                    'pending_users' => $pending_users,
+                    'regular_employees' => $regular_employees,
+                    'job_orders' => $job_orders
+                ],
+                'message' => "Retrieve cards data."
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, "employeesCards", $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**

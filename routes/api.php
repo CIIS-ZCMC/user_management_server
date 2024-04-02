@@ -800,6 +800,11 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::get('employee-profile-cards', 'EmployeeProfileController@employeesCards');
+        });
+
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::post('employee-profile-picture/{id}', 'EmployeeProfileController@updateEmployeeProfilePicture');
         });
 
