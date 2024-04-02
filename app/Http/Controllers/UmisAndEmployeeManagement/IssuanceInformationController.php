@@ -35,7 +35,8 @@ class IssuanceInformationController extends Controller
                 }
                 $cleanData[$key] = strip_tags($value);
             }
-        
+            
+            $cleanData['employee_profile_id'] = $employee_profile_id;
             $issuance_information = IssuanceInformation::create($cleanData);
 
             return $issuance_information;
