@@ -19,6 +19,7 @@ use App\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Models\EmployeeLeaveCreditLogs;
+use App\Models\MonitizationPosting;
 
 class MonetizationApplicationController extends Controller
 {
@@ -98,7 +99,7 @@ class MonetizationApplicationController extends Controller
                                 ->whereIn('leave_type_id', [1, 2])
                                 ->get();
             $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->get();
-            $monePosting = MonePos::where('employee_profile_id', $employee_profile->id)->get();
+            $monePosting = MonitizationPosting::where('created_by', $employee_profile->id)->get();
             $result = [];
 
             foreach ($employeeCredit as $leaveCredit) {
@@ -115,7 +116,7 @@ class MonetizationApplicationController extends Controller
 
             return response()->json([
                 'data' => MonetizationApplicationResource::collection($mone_applications),
-
+                'posting' =>$monePosting,
                 'credits' => $result,
                 'message' => 'Retrieve all leave application records.'
             ], Response::HTTP_OK);
