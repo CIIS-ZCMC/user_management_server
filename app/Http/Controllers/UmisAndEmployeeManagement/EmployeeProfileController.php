@@ -2386,6 +2386,26 @@ class EmployeeProfileController extends Controller
 
             Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . '.');
 
+            $send_attempt = 3;
+
+            for ($i=0; $i < $send_attempt; $i++) { 
+                $body = view('mail.credentials', [
+                    'authorization_pin' => $employee_profile->authorization_pin, 
+                    'employeeID' => $employee_profile->employee_id, 
+                    'Password' => $default_password]);
+
+                $data = [
+                    'Subject' => 'Your Zcmc Portal Account.',
+                    'To_receiver' => $employee_profile->personalinformation->contact->email_address,
+                    'Receiver_Name' => $employee_profile->personalInformation->name(),
+                    'Body' => $body
+                ];
+
+                if($this->mail->send($data)){
+                    break;
+                }
+            }
+
             if ($in_valid_file) {
                 return response()->json(
                     [
