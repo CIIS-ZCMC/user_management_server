@@ -9,7 +9,7 @@ class MonitizationPosting extends Model
 {
     use HasFactory;
 
-    protected $table = 'monitization_postings';
+    protected $table = 'monetization_postings';
 
     public $fillable = [
         'effective_filing_date',

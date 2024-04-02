@@ -1630,15 +1630,15 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-LM approve'])->group(function () {
-            Route::put('monetization-approve/{id}', 'MonetizationApplicationController@approvedApplication');
+            Route::post('monetization-approve/{id}', 'MonetizationApplicationController@approvedApplication');
         });
 
         Route::middleware(['auth.permission:UMIS-LM approve'])->group(function () {
-            Route::put('monetization-decline/{id}', 'MonetizationApplicationController@declineMoneApplication');
+            Route::post('monetization-decline/{id}', 'MonetizationApplicationController@declineMoneApplication');
         });
 
         Route::middleware(['auth.permission:UMIS-LM approve'])->group(function () {
-            Route::put('monetization-cancel/{id}', 'MonetizationApplicationController@cancelmoneApplication');
+            Route::post('monetization-cancel/{id}', 'MonetizationApplicationController@cancelmoneApplication');
         });
 
         Route::middleware(['auth.permission:UMIS-LM write'])->group(function () {

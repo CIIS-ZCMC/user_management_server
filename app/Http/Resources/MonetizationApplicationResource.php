@@ -53,8 +53,9 @@ class MonetizationApplicationResource extends JsonResource
                 "designation_code" => $this->approving->assignedArea->designation->code,
                 "profile_url" => env('SERVER_DOMAIN') . "/photo/profiles/" . $this->approving->profile_url,
             ],
+            'logs' => $this->logs ? LeaveApplicationLog::collection($this->logs):[],
             'created_at' => $this->created_at,
-            'logs' => $this->logs
+            
         ];
     }
 }

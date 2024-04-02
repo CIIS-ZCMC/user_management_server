@@ -16,8 +16,13 @@ class MoneApplicationLog extends Model
 
 
     ];
-    public function montization_application(){
-        return $this->belongsTo(MonetizationApplication::class);
+    public function leaveApplications()
+    {
+        return $this->belongsTo(LeaveApplication::class, 'leave_application_id');
+    }
 
+    public function employeeProfile()
+    {
+        return $this->belongsTo(EmployeeProfile::class, 'action_by_id');
     }
 }
