@@ -40,7 +40,7 @@ class MonetizationApplicationController extends Controller
 
             if (Helpers::getHrmoOfficer() === $employee_profile->id) {
                 $employeeId = $employee_profile->id;
-                $hrmo = ["applied", "for recommending approval", "approved", "declined by hrmo officer"];
+                $hrmo = ["applied", "for recommending approval", "for approving approval", "approved", "declined by hrmo officer"];
 
                 $mone_applications = MonetizationApplication::select('monetization_applications.*')
                     ->where(function ($query) use ($hrmo, $employeeId) {
