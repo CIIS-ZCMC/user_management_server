@@ -717,6 +717,7 @@ class EmployeeProfileController extends Controller
             'position' => $position,
             'is_2fa' => $employee_profile->is_2fa,
             'job_position' => $designation->name,
+            'salary_grade' =>  $employee_profile->assignedArea->designation->salaryGrade->salary_grade_number,
             'date_hired' => $employee_profile->date_hired,
             'job_type' => $employee_profile->employmentType->name,
             'years_of_service' => $employee_profile->personalInformation->years_of_service,
