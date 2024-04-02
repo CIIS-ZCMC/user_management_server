@@ -55,12 +55,12 @@ class IdentificationNumberController extends Controller
         }
     }
 
-    public function store($personal_information_id, $identification)
+    public function store($personal_information_id, IdentificationNumberRequest $request)
     {
         try {
             $cleanData = [];
 
-            foreach ($identification as $key => $value) {
+            foreach ($request->all() as $key => $value) {
                 if ($value === 'null' || $value === null || $key === 'personal_information_id') {
                     $cleanData[$key] = $value;
                     continue;

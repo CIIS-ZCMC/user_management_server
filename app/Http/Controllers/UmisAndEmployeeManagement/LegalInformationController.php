@@ -5,6 +5,7 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 use App\Http\Controllers\Controller;
 
 use App\Http\Requests\AuthPinApprovalRequest;
+use App\Http\Requests\LegalInformationManyRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
@@ -62,12 +63,12 @@ class LegalInformationController extends Controller
         }
     }
     
-    public function storeMany($personal_information_id, $legal_information)
+    public function storeMany($personal_information_id, LegalInformationManyRequest $request)
     {
         try{
             $success = [];
 
-            foreach($legal_information as $legal_info){
+            foreach($request->legal_information as $legal_info){
                 $cleanData = [];
                 $cleanData['personal_information_id'] = $personal_information_id;
                 foreach ($legal_info as $key => $value) {

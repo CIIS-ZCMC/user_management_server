@@ -21,13 +21,13 @@ class IssuanceInformationController extends Controller
     private $PLURAL_MODULE_NAME = 'issuance informations';
     private $SINGULAR_MODULE_NAME = 'issuance information';
 
-    public function store($employee_profile_id, $issuance)
+    public function store($employee_profile_id, IssuanceInformationRequest $request)
     {
     
         try{
             $cleanData = [];
             
-            foreach ($issuance as $key => $value) {
+            foreach ($request->all() as $key => $value) {
                 if($value === null)
                 {
                     $cleanData[$key] = $value;

@@ -86,12 +86,12 @@ class OtherInformationController extends Controller
         }
     }
     
-    public function storeMany($personal_information_id, $others)
+    public function storeMany($personal_information_id, OtherInformationManyRequest $request)
     {
         try{
             $success = [];
 
-            foreach($others as $other){
+            foreach($request->others as $other){
                 $cleanData = [];
                 $cleanData['personal_information_id'] = $personal_information_id;
                 foreach ($other as $key => $value) {

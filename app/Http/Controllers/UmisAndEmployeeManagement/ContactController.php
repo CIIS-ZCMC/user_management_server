@@ -63,12 +63,16 @@ class ContactController extends Controller
         }
     }
     
-    public function store($personal_information_id, $contact)
+    public function store($personal_information_id, ContactRequest $request)
     {
         try{ 
             $cleanData = [];
 
-            foreach ($contact as $key => $value) {
+            foreach ($request->all() as $key => $value) {
+                if($value === null){
+                    $cleanData[$key] = $value;
+                    continue;
+                }
                 $cleanData[$key] = strip_tags($value);
             }
 

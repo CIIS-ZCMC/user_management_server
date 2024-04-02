@@ -93,12 +93,12 @@ class TrainingController extends Controller
         }
     }
     
-    public function storeMany($personal_information_id, $trainings)
+    public function storeMany($personal_information_id, TrainingManyRequest $request)
     {
         try{
             $success = [];
 
-            foreach($trainings as $training){
+            foreach($request->trainings as $training){
                 $cleanData = [];
                 $cleanData['personal_information_id'] = $personal_information_id;
                 foreach ($training as $key => $value) {

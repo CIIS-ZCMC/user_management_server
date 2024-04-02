@@ -94,12 +94,12 @@ class WorkExperienceController extends Controller
         }
     }
     
-    public function storeMany($personal_information_id, $work_experience)
+    public function storeMany($personal_information_id, WorkExperienceRequest $request)
     {
         try{
             $success = [];
 
-            foreach($work_experience as $work_experience){
+            foreach($request->work_experiences as $work_experience){
                 $cleanData = [];
                 foreach ($work_experience as $key => $value) {
                     if($value===null){

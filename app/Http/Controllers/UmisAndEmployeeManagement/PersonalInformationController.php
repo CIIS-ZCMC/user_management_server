@@ -41,13 +41,13 @@ class PersonalInformationController extends Controller
      * This must have registration of employee information such as name, height, weight, etc
      * contacts and addresses
      */
-    public function store($new_personal_data)
+    public function store(PersonalInformationRequest $request)
     {
         try{
-            $is_res_per = $new_personal_data->is_res_per === 1 ? true:false;
+            $is_res_per = $request->is_res_per === 1 ? true:false;
             $cleanData = [];
 
-            foreach ($new_personal_data as $key => $value) {
+            foreach ($request as $key => $value) {
                 if($value === null){
                     $cleanData[$key] = $value;
                     continue;
@@ -58,10 +58,10 @@ class PersonalInformationController extends Controller
             $personal_information = PersonalInformation::create($cleanData);
 
             $residential_address = [
-                'address' => strip_tags($new_personal_data->r_address),
-                'zip_code' => strip_tags($new_personal_data->r_zip_code),
-                'telephone_no' => strip_tags($new_personal_data->r_telephone),
-                'is_res_per' => $new_personal_data->is_res_per,
+                'address' => strip_tags($request->r_address),
+                'zip_code' => strip_tags($request->r_zip_code),
+                'telephone_no' => strip_tags($request->r_telephone),
+                'is_res_per' => $request->is_res_per,
                 'is_residential' => 1,
                 'personal_information_id' => $personal_information->id
             ];
@@ -79,9 +79,9 @@ class PersonalInformationController extends Controller
             }
 
             $permanent_address =  [
-                'address' => strip_tags($new_personal_data->p_address),
-                'telephone_no' => strip_tags($new_personal_data->p_telephone),
-                'zip_code' => strip_tags($new_personal_data->p_zip_code),
+                'address' => strip_tags($request->p_address),
+                'telephone_no' => strip_tags($request->p_telephone),
+                'zip_code' => strip_tags($request->p_zip_code),
                 'is_res_per' => 0,
                 'is_residential' => 0,
                 'personal_information_id' => $personal_information->id

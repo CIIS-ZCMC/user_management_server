@@ -94,12 +94,12 @@ class EducationalBackgroundController extends Controller
         }
     }
     
-    public function storeMany($personal_information_id, $educations)
+    public function storeMany($personal_information_id, EducationalBackgroundRequest $request)
     {
         try{
             $success = [];
 
-            foreach($educations as $education){
+            foreach($request->educations as $education){
                 $cleanData = [];
                 foreach ($education as $key => $value) {
                     if ($value === null) {

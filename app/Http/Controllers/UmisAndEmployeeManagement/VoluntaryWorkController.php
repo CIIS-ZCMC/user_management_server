@@ -93,12 +93,12 @@ class VoluntaryWorkController extends Controller
         }
     }
     
-    public function storeMany($personal_information_id, $voluntary_works)
+    public function storeMany($personal_information_id, VoluntaryWorkRequest $request)
     {
         try{
             $success = [];
 
-            foreach($voluntary_works as $voluntary_work){
+            foreach($request->voluntary_work as $voluntary_work){
                 $cleanData = [];
                 $cleanData['personal_information_id'] = $personal_information_id;
                 foreach ($voluntary_work as $key => $value) {

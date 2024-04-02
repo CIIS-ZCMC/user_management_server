@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 
 use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Requests\PasswordApprovalRequest;
+use App\Http\Requests\ReferenceManyRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
@@ -86,12 +87,12 @@ class ReferencesController extends Controller
         }
     }
     
-    public function storeMany($personal_information_id, $references)
+    public function storeMany($personal_information_id, ReferenceManyRequest $request)
     {
         try{
             $success = [];
 
-            foreach($references as $reference){
+            foreach($request->reference as $reference){
                 $cleanData = [];
                 $cleanData['personal_information_id'] = $personal_information_id;
                 foreach ($reference as $key => $value) {

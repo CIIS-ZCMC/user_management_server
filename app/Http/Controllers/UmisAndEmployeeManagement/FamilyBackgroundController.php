@@ -5,6 +5,7 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 use App\Http\Controllers\Controller;
 
 use App\Http\Requests\AuthPinApprovalRequest;
+use App\Http\Requests\ChildRequest;
 use App\Http\Resources\ChildResource;
 use App\Models\Child;
 use Illuminate\Http\Request;
@@ -69,13 +70,13 @@ class FamilyBackgroundController extends Controller
     /**
      * Family background registration and Children registration
      */
-    public function store($personal_information_id, $family_background, $children)
+    public function store($personal_information_id, FamilyBackgroundRequest $request)
     {
         try {
             $success = [];
             $cleanData = [];
 
-            foreach ($family_background as $key => $value) {
+            foreach ($request->all() as $key => $value) {
                 if ($key === 'user' || $key === 'children') continue;
                 if ($value === null) {
                     $cleanData[$key] = $value;
@@ -91,7 +92,7 @@ class FamilyBackgroundController extends Controller
             $cleanData['$personal_information_id'] = $personal_information_id;
             $family_background = FamilyBackground::create($cleanData);
 
-            foreach ($children as $child) {
+            foreach (json_decode($request->children) as $child) {
                 $child_data = [];
                 $child_data['personal_information_id'] = $personal_information_id;
                 foreach ($child as $key => $value) {

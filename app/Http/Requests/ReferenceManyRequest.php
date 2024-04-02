@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class OtherInformationManyRequest extends FormRequest
+class ReferenceManyRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,11 +22,9 @@ class OtherInformationManyRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'others.*.title' => 'required|string|max:255',
-            'others.*.skills_hobbies' => 'nullable|boolean',
-            'others.*.recognition' => 'nullable|boolean',
-            'others.*.organization' => 'nullable|boolean',
-            'others.*.personal_information_id' => 'required|integer'
+            'reference.*.name' => 'required|string|max:255',
+            'reference.*.address' => 'required|string|max:255',
+            'reference.*.contact_no' => 'required|string|max:255',
         ];
     }
 }
