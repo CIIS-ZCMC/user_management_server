@@ -371,7 +371,7 @@ Route::middleware('auth.cookie')->group(function () {
      * Employee Management
      */
     Route::namespace ('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
-      
+
         /**
          * Address Module
          */
@@ -1599,13 +1599,13 @@ Route::middleware('auth.cookie')->group(function () {
      */
     Route::namespace ('App\Http\Controllers\LeaveAndOverTime')->group(function () {
 
-          /**
+        /**
          * Monitization Posting Module
          */
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
             Route::get('monetization-posts', 'MonitizationPostingController@index');
         });
-        
+
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
             Route::get('monetization-posts-candidates', 'MonitizationPostingController@candidates');
         });
@@ -1638,15 +1638,15 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-LM approve'])->group(function () {
-            Route::put('monetization-approve/{id}', 'MonetizationApplicationController@approvedApplication');
+            Route::post('monetization-approve/{id}', 'MonetizationApplicationController@approvedApplication');
         });
 
         Route::middleware(['auth.permission:UMIS-LM approve'])->group(function () {
-            Route::put('monetization-decline/{id}', 'MonetizationApplicationController@declineMoneApplication');
+            Route::post('monetization-decline/{id}', 'MonetizationApplicationController@declineMoneApplication');
         });
 
         Route::middleware(['auth.permission:UMIS-LM approve'])->group(function () {
-            Route::put('monetization-cancel/{id}', 'MonetizationApplicationController@cancelmoneApplication');
+            Route::post('monetization-cancel/{id}', 'MonetizationApplicationController@cancelmoneApplication');
         });
 
         Route::middleware(['auth.permission:UMIS-LM write'])->group(function () {
@@ -1976,9 +1976,8 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-ES view'])->group(function () {
             Route::get('exchange-duty', 'ExchangeDutyController@create');
             Route::get('exchange-duty-aprroval', 'ExchangeDutyController@edit');
-            Route::get('exchange-duty-employee', 'ScheduleController@employee');
+            Route::get('exchange-duty-employee', 'ScheduleController@employeeList');
             Route::get('exchange-duty-schedule', 'ScheduleController@findSchedule');
-            Route::get('exchange-duty-time-shift', 'TimeShiftController@index');
         });
 
         Route::middleware(['auth.permission:UMIS-ES write'])->group(function () {

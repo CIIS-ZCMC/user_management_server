@@ -176,7 +176,7 @@ class ScheduleController extends Controller
 
                     foreach ($selectedDate['date'] as $date) {
 
-                        $existingSchedule = EmployeeSchedule::whereHas('schedule', function ($query) use ($timeShiftId, $date) {
+                        $existingSchedule = EmployeeSchedule::where('employee_profile_id', $employee)->whereHas('schedule', function ($query) use ($timeShiftId, $date) {
                             $query->where('time_shift_id', $timeShiftId)
                                 ->where('date', $date);
                         })->exists();
@@ -185,7 +185,7 @@ class ScheduleController extends Controller
                             return response()->json(['message' => 'Duplicates of schedules are not allowed. Please check the date: ' . $date], Response::HTTP_FOUND);
                         }
 
-                        $moreThanOneSchedule = EmployeeSchedule::whereHas('schedule', function ($query) use ($date) {
+                        $moreThanOneSchedule = EmployeeSchedule::where('employee_profile_id', $employee)->whereHas('schedule', function ($query) use ($date) {
                             $query->where('date', $date);
                         })->exists();
 
@@ -415,7 +415,7 @@ class ScheduleController extends Controller
         }
     }
 
-    public function employee(Request $request)
+    public function employeeList(Request $request)
     {
         try {
             $employees = [];
@@ -473,7 +473,7 @@ class ScheduleController extends Controller
             $schedule = [];
             foreach ($sql as $value) {
                 $schedule[] = [
-                    'id' => $value->schedule->timeShift->id,
+                    'id' => $value->schedule->id,
                     'start' => $value->schedule->date,
                     'title' => $value->schedule->timeShift->timeShiftDetails(),
                     'color' => $value->schedule->timeShift->color,

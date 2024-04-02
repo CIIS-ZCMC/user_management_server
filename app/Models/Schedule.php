@@ -95,18 +95,4 @@ class Schedule extends Model
 
         return $weekendCount;
     }
-
-    public function findScheduleDetails($employee_id, $date)
-    {
-        $employee_schedule = EmployeeSchedule::where('employee_profile_id', $employee_id)
-            ->whereHas('schedule', function ($query) use ($date) {
-                $query->where('date', $date);
-            })->first();
-
-        return [
-            'id' => $employee_schedule->id,
-            'date' => $employee_schedule->schedule->date,
-            'time_shift' => $employee_schedule->schedule->timeShift->timeShiftDetails(),
-        ];
-    }
 }
