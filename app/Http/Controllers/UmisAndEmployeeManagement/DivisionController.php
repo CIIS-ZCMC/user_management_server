@@ -104,7 +104,7 @@ class DivisionController extends Controller
                     'employee_profile_id' => $employee_profile->id
                 ]);
             }else{
-                $system_role = SystemRole::where('code', 'DIV-HEAD-03')->first();
+                $system_role = SystemRole::where('code', 'DIV-HEAD-01')->first();
 
                 SpecialAccessRole::create([
                     'system_role_id' => $system_role->id,
@@ -120,6 +120,7 @@ class DivisionController extends Controller
                 $access_right->delete();
             }
 
+            Helpers::notifications($employee_profile->id, "You been assigned as division head of ".$division->name." division.");
             Helpers::registerSystemLogs($request, $id, true, 'Success in assigning division chief '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
@@ -182,6 +183,7 @@ class DivisionController extends Controller
 
             $division->update($cleanData);
 
+            Helpers::notifications($employee_profile->id, "You been assigned as officer in charge of ".$division->name." division.");
             Helpers::registerSystemLogs($request, $id, true, 'Success in assigning chief '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([

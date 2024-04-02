@@ -99,14 +99,14 @@ class SectionController extends Controller
             $section->update($cleanData);
             
             if($section->code === 'HRMO'){
-                $system_role = SystemRole::where('code', 'HRMO-HEAD-02')->first();
+                $system_role = SystemRole::where('code', 'HRMO-HEAD-01')->first();
 
                 SpecialAccessRole::create([
                     'system_role_id' => $system_role->id,
                     'employee_profile_id' => $employee_profile->id
                 ]);
             }else{
-                $system_role = SystemRole::where('code', 'SECTION-HEAD-05')->first();
+                $system_role = SystemRole::where('code', 'SECTION-HEAD-01')->first();
 
                 SpecialAccessRole::create([
                     'system_role' => $system_role->id,
@@ -122,6 +122,7 @@ class SectionController extends Controller
                 $access_right->delete();
             }
 
+            Helpers::notifications($employee_profile->id, "You been assigned as section head of ".$section->name." section.");
             Helpers::registerSystemLogs($request, $id, true, 'Success in assigning supervisor '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
@@ -184,6 +185,7 @@ class SectionController extends Controller
 
             $section->update($cleanData);
 
+            Helpers::notifications($employee_profile->id, "You been assigned as officer in charge of ".$section->name." division.");
             Helpers::registerSystemLogs($request, $id, true, 'Success in assigning officer in charge '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([

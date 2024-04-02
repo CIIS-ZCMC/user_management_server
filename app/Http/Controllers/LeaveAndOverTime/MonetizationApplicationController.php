@@ -85,7 +85,36 @@ class MonetizationApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+    public function userMoneApplication(Request $request)
+    {
+        try {
+            $employee_profile = $request->user;
 
+            $mone_applications = MonetizationApplication::where('employee_profile_id', $employee_profile->id)->get();
+            $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->get();
+            $result = [];
+
+            foreach ($employeeCredit as $leaveCredit) {
+                $leaveType = $leaveCredit->leaveType->name;
+                $totalCredits = $leaveCredit->total_leave_credits;
+                $usedCredits = $leaveCredit->used_leave_credits;
+
+                $result[] = [
+                    'leave_type_name' => $leaveType,
+                    'total_leave_credits' => $totalCredits,
+                    'used_leave_credits' => $usedCredits
+                ];
+            }
+
+            return response()->json([
+                'data' => MonetizationApplicationResource::collection($mone_applications),
+                'credits' => $result,
+                'message' => 'Retrieve all leave application records.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 
     public function getMoneApplications(Request $request)
     {
@@ -153,7 +182,6 @@ class MonetizationApplicationController extends Controller
                     $mone_application_log->action = $action;
                     $mone_application_log->mone_application_id = $mone_application_id;
                     $mone_application_log->action_by = $user_id;
-                    $mone_application_log->date = date('Y-m-d');
                     $mone_application_log->save();
 
                     $mone_application = MonetizationApplication::findOrFail($mone_application_id);
@@ -204,7 +232,7 @@ class MonetizationApplicationController extends Controller
 
             return response()->json([
                 'data' => new MonetizationApplicationResource($monetization_application),
-                'message' => "You're request has been filed."
+                'message' => "Your request for monetization has been filed."
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'approvedApplication', $th->getMessage());
@@ -254,7 +282,13 @@ class MonetizationApplicationController extends Controller
             $new_monetization = MonetizationApplication::create($cleanData);
 
             $process_name = "applied";
-            $this->storeMonetizationLog($new_monetization->id, $process_name, $employee_profile->id);
+            // $this->storeMonetizationLog($new_monetization->id, $process_name, $employee_profile->id);
+
+            $mone_application_log = new MoneApplicationLog();
+            $mone_application_log->monetization_application_id = $new_monetization->id;
+            $mone_application_log->action_by_id =$employee_profile->id;
+            $mone_application_log->action = $process_name;
+            $mone_application_log->save();
 
             $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->where('name', 'Vacation Leave')->orWhere('name', 'Sick Leave')->get();
             $result = [];
@@ -356,13 +390,11 @@ class MonetizationApplicationController extends Controller
         try {
 
             $mone_application_log = new MoneApplicationLog();
-            $mone_application_log->mone_application_id = $mone_application_id;
-            $mone_application_log->action_by = $user_id;
+            $mone_application_log->monetization_application_id = $mone_application_id;
+            $mone_application_log->action_by_id =$user_id;
             $mone_application_log->action = $process_name;
-            $mone_application_log->status = "applied";
-            $mone_application_log->date = date('Y-m-d');
-            $mone_application_log->time =  date('H:i:s');
             $mone_application_log->save();
+
 
             return $mone_application_log;
         } catch (\Exception $e) {

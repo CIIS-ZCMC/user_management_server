@@ -89,12 +89,12 @@ class DepartmentController extends Controller
 
             $cleanData = [];
             $cleanData['head_employee_profile_id'] = $employee_profile->id;
-            $cleanData['head_attachment_url'] = $request->input('attachment')===null?'NONE': $this->file_validation_and_upload->check_save_file($request, 'department/files');
+            $cleanData['head_attachment_url'] = $request->input('attachment')===null?'NONE': Helpers::checkSaveFile($request->attachment, 'department/files');
             $cleanData['head_effective_at'] = Carbon::now();
 
             $department->update($cleanData);
 
-            $system_role = SystemRole::where('code', 'DEPT-HEAD-04')->first();
+            $system_role = SystemRole::where('code', 'DEPT-HEAD-01')->first();
 
             SpecialAccessRole::create([
                 'system_role_id' => $system_role->id,
@@ -109,6 +109,7 @@ class DepartmentController extends Controller
                 $access_right->delete();
             }
 
+            Helpers::notifications($employee_profile->id, "You been assigned as department head of ".$department->name." department.");
             Helpers::registerSystemLogs($request, $id, true, 'Success in assigning head'.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
@@ -157,6 +158,7 @@ class DepartmentController extends Controller
 
             $department->update($cleanData);
 
+            Helpers::notifications($employee_profile->id, "You been assigned as training officer of ".$department->name." department.");
             Helpers::registerSystemLogs($request, $id, true, 'Success in assigning head'.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
@@ -210,6 +212,7 @@ class DepartmentController extends Controller
 
             $department->update($cleanData);
 
+            Helpers::notifications($employee_profile->id, "You been assigned as officer in charge of ".$department->name." department.");
             Helpers::registerSystemLogs($request, $id, true, 'Success in assigning officer in charge '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
