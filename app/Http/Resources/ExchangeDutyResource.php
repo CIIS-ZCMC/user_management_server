@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\ExchangeDutyLog;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -49,7 +50,8 @@ class ExchangeDutyResource extends JsonResource
             'approve_by' => $approval,
             'status' => $this->status,
             'reason' => $this->reason,
-            'created_at' => $this->created_at
+            'created_at' => $this->created_at,
+            'logs' => $this->logs ? ExchangeDutyLogResource::collection($this->logs) : [],
         ];
     }
 }

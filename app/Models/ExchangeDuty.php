@@ -72,4 +72,9 @@ class ExchangeDuty extends Model
             'time_shift' => $employee_schedule->timeShift->timeShiftDetails(),
         ];
     }
+
+    public function logs()
+    {
+        return $this->hasMany(ExchangeDutyLog::class);
+    }
 }
