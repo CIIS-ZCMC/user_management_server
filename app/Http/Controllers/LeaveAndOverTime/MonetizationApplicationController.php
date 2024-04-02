@@ -10,13 +10,16 @@ use App\Models\EmployeeLeaveCredit;
 use App\Models\LeaveType;
 use App\Models\MonetizationApplication;
 use App\Http\Controllers\Controller;
+use App\Models\Department;
 use App\Models\EmployeeProfile;
 use App\Models\LeaveType as ModelsLeaveType;
 use App\Models\MoneApplicationLog;
 use App\Models\Section;
+use App\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Models\EmployeeLeaveCreditLogs;
+use App\Models\MonitizationPosting;
 
 class MonetizationApplicationController extends Controller
 {
@@ -95,6 +98,8 @@ class MonetizationApplicationController extends Controller
             $employeeCredit =  EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)
                                 ->whereIn('leave_type_id', [1, 2])
                                 ->get();
+            $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->get();
+            $monePosting = MonitizationPosting::where('created_by', $employee_profile->id)->get();
             $result = [];
 
             foreach ($employeeCredit as $leaveCredit) {
@@ -111,6 +116,7 @@ class MonetizationApplicationController extends Controller
 
             return response()->json([
                 'data' => MonetizationApplicationResource::collection($mone_applications),
+                'posting' =>$monePosting,
                 'credits' => $result,
                 'message' => 'Retrieve all leave application records.'
             ], Response::HTTP_OK);
@@ -225,14 +231,14 @@ class MonetizationApplicationController extends Controller
                     $employee_profile = $request->user;
                     $process_name = "Approved by HRMO";
                     $monetization_application->update(['status' => 'for recommending approval']);
-    
+
                     $mone_application_log = new MoneApplicationLog();
                     $mone_application_log->monetization_application_id = $monetization_application->id;
                     $mone_application_log->action_by_id =$employee_profile->id;
                     $mone_application_log->action = $process_name;
                     $mone_application_log->save();
                     break;
-                
+
                 case 'for recommending approval':
                     $process_name = "Approved by Recommending Officer";
                     $monetization_application->update(['status' => 'for approving approval']);
@@ -255,7 +261,7 @@ class MonetizationApplicationController extends Controller
                     $mone_application_log->save();
                     break;
             }
-            
+
             return response()->json([
                 'data' => new MonetizationApplicationResource($monetization_application),
                 'message' => "Successfully approved request for monetization"
@@ -265,7 +271,6 @@ class MonetizationApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
 
     public function store(Request $request)
     {
@@ -278,7 +283,7 @@ class MonetizationApplicationController extends Controller
                    ->where('employee_profile_id', $employee_profile->id)
                    ->first();
 
-      
+
             if ($credit->total_leave_credits < 15) {
                 return response()->json(['message' => "Insufficient leave credit to file a monetization."], Response::HTTP_BAD_REQUEST);
             }
@@ -286,7 +291,7 @@ class MonetizationApplicationController extends Controller
             $hrmo_officer = Helpers::getHrmoOfficer();
             $recommending_officer = Division::where('code', 'HOPPS')->first();
             $approving_officer = Division::where('code', 'OMCC')->first();
-           
+
 
             if($recommending_officer === null || $approving_officer === null || $hrmo_officer === null){
                 return response()->json(['message' => "No recommending officer and/or supervising officer assigned."], Response::HTTP_BAD_REQUEST);
@@ -328,7 +333,7 @@ class MonetizationApplicationController extends Controller
 
             $mone_application_log = new MoneApplicationLog();
             $mone_application_log->monetization_application_id = $new_monetization->id;
-            $mone_application_log->action_by_id =$employee_profile->id;
+            $mone_application_log->action_by_id = $employee_profile->id;
             $mone_application_log->action = $process_name;
             $mone_application_log->save();
 
@@ -407,7 +412,7 @@ class MonetizationApplicationController extends Controller
                 'status' => $status,
                 'remarks' => strip_tags($request->remarks),
             ]);
-           
+
             $employee_credit = EmployeeLeaveCredit::where('employee_profile_id', $mone_application->employee_profile_id)
             ->where('leave_type_id', $mone_application->leave_type_id)->first();
 
@@ -425,7 +430,7 @@ class MonetizationApplicationController extends Controller
                 'leave_credits' => $mone_application->credit_value,
                 'reason' => "declined"
             ]);
-            
+
             return response()->json([
                 'data' => new MonetizationApplicationResource($mone_application),
                 'message' => 'Declined leave application successfully.'
@@ -492,7 +497,7 @@ class MonetizationApplicationController extends Controller
 
             $mone_application_log = new MoneApplicationLog();
             $mone_application_log->monetization_application_id = $mone_application_id;
-            $mone_application_log->action_by_id =$user_id;
+            $mone_application_log->action_by_id = $user_id;
             $mone_application_log->action = $process_name;
             $mone_application_log->save();
 
