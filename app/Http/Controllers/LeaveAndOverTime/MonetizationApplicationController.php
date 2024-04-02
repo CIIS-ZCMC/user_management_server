@@ -232,7 +232,7 @@ class MonetizationApplicationController extends Controller
 
             return response()->json([
                 'data' => new MonetizationApplicationResource($monetization_application),
-                'message' => "You're request has been filed."
+                'message' => "Your request for monetization has been filed."
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'approvedApplication', $th->getMessage());

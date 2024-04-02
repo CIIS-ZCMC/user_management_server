@@ -18,9 +18,6 @@ return new class extends Migration
             $table->unsignedBigInteger('action_by_id')->unsigned();
             $table->foreign('action_by_id')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->string('action')->nullable();
-            $table->string('status')->nullable();;
-            $table->string('date')->nullable();;
-            $table->string('time')->nullable();
             $table->timestamps();
         });
     }
