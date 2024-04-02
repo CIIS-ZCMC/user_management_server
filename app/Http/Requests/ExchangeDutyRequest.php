@@ -22,10 +22,12 @@ class ExchangeDutyRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // 'reliever_employee_id'  => 'required|integer',
-            // 'date'                  => 'required|date',
-            // 'time_shift_id'         => 'required|integer',
-            // 'reason'                => 'required|string',
+            'requested_date_to_swap' => 'required|date',
+            'requested_date_to_duty' => 'required|date',
+            'requested_employee_id' => 'required|integer',
+            'reliever_employee_id' => 'required|integer',
+            'requested_schedule_id' => 'required|integer',
+            'reliever_schedule_id' => 'required|integer',
         ];
     }
 }
