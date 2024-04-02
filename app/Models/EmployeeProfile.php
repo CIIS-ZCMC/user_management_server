@@ -5,6 +5,7 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -129,7 +130,7 @@ class EmployeeProfile extends Authenticatable
             'token_exp' => $token_exp
         ]);
 
-        $encryptedToken = openssl_encrypt($token, env("ENCRYPT_DECRYPT_ALGORITHM"), env("APP_KEY"), 0, substr(md5(env("APP_KEY")), 0, 16));
+        $encryptedToken = openssl_encrypt($token, Cache::get('encrypt_decrypt_algorithm'), env("APP_KEY"), 0, substr(md5(env("APP_KEY")), 0, 16));
 
         return $encryptedToken;
     }

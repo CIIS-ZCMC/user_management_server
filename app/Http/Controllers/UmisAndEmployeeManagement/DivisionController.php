@@ -104,7 +104,7 @@ class DivisionController extends Controller
                     'employee_profile_id' => $employee_profile->id
                 ]);
             }else{
-                $system_role = SystemRole::where('code', 'DIV-HEAD-03')->first();
+                $system_role = SystemRole::where('code', 'DIV-HEAD-01')->first();
 
                 SpecialAccessRole::create([
                     'system_role_id' => $system_role->id,

@@ -94,7 +94,7 @@ class DepartmentController extends Controller
 
             $department->update($cleanData);
 
-            $system_role = SystemRole::where('code', 'DEPT-HEAD-04')->first();
+            $system_role = SystemRole::where('code', 'DEPT-HEAD-01')->first();
 
             SpecialAccessRole::create([
                 'system_role_id' => $system_role->id,
