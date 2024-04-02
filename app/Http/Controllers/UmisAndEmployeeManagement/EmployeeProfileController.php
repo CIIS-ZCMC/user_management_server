@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
-use App\Http\Requests\EmployeeProfileNewResource;
 use App\Models\EmploymentType;
 use App\Models\OfficerInChargeTrail;
 use Carbon\Carbon;
