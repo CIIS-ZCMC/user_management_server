@@ -309,7 +309,7 @@ class MonetizationApplicationController extends Controller
                    ->where('employee_profile_id', $employee_profile->id)
                    ->first();
 
-      
+
             if ($credit->total_leave_credits < 15) {
                 return response()->json(['message' => "Insufficient leave credit to file a monetization."], Response::HTTP_BAD_REQUEST);
             }
@@ -317,7 +317,7 @@ class MonetizationApplicationController extends Controller
             $hrmo_officer = Helpers::getHrmoOfficer();
             $recommending_officer = Division::where('code', 'HOPPS')->first();
             $approving_officer = Division::where('code', 'OMCC')->first();
-           
+
 
             if($recommending_officer === null || $approving_officer === null || $hrmo_officer === null){
                 return response()->json(['message' => "No recommending officer and/or supervising officer assigned."], Response::HTTP_BAD_REQUEST);
@@ -353,7 +353,7 @@ class MonetizationApplicationController extends Controller
 
             $new_monetization = MonetizationApplication::create($cleanData);
 
-            $process_name = "Applied";
+            $process_name = "applied";
             $this->storeMonetizationLog($new_monetization->id, $process_name, $employee_profile->id);
 
             EmployeeLeaveCreditLogs::create([
