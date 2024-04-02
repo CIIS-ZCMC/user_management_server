@@ -305,6 +305,20 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+    public function myLeaveApplication( Request $request)
+    {
+        try {
+            $employee_profile = $request->user;
+            $leave_applications = LeaveApplication::where('employee_profile_id', $employee_profile->id)->get();
+
+            return response()->json([
+                'data' => MyApprovedLeaveApplicationResource::collection($leave_applications),
+                'message' => 'Retrieve list.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 
     public function employeeApprovedLeaveApplication($id, Request $request)
     {
