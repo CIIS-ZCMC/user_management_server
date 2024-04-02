@@ -78,10 +78,10 @@ class EmployeeProfileController extends Controller
     public function employeesCards(Request $request)
     {
         try{
-            $active_users = EmployeeProfile::whereNot('authorization_pin', NULL)->count();
-            $pending_users = EmployeeProfile::where('authorization_pin', NULL)->count();
-            $regular_employees = EmployeeProfile::where('employment_type_id', EmploymentType::where('name', 'Permanent')->first()->id)->orWhere('employment_type_id', EmploymentType::where('name', 'Temporary')->first()->id)->count();
-            $job_orders = EmployeeProfile::where('employment_type_id', EmploymentType::where('name', 'Job order')->first()->id)->count();
+            $active_users = EmployeeProfile::whereNot('id', 1)->whereNot('authorization_pin', NULL)->count();
+            $pending_users = EmployeeProfile::whereNot('id', 1)->where('authorization_pin', NULL)->count();
+            $regular_employees = EmployeeProfile::whereNot('id', 1)->where('employment_type_id', EmploymentType::where('name', 'Permanent')->first()->id)->orWhere('employment_type_id', EmploymentType::where('name', 'Temporary')->first()->id)->count();
+            $job_orders = EmployeeProfile::whereNot('id', 1)->where('employment_type_id', EmploymentType::where('name', 'Job order')->first()->id)->count();
 
             return response()->json([
                 'data' => [
@@ -261,8 +261,7 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                }
-                ;
+                };
 
                 $trials--;
             } while ($trials !== 0);
@@ -285,6 +284,7 @@ class EmployeeProfileController extends Controller
                 'browser_version' => is_bool($device['version']) ? 'Postman' : $device['version'],
                 'employee_profile_id' => $employee_profile['id']
             ]);
+            
 
             return response()
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
@@ -2386,6 +2386,26 @@ class EmployeeProfileController extends Controller
             }
 
             Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . '.');
+
+            $send_attempt = 3;
+
+            for ($i=0; $i < $send_attempt; $i++) { 
+                $body = view('mail.credentials', [
+                    'authorization_pin' => $employee_profile->authorization_pin, 
+                    'employeeID' => $employee_profile->employee_id, 
+                    'Password' => $default_password]);
+
+                $data = [
+                    'Subject' => 'Your Zcmc Portal Account.',
+                    'To_receiver' => $employee_profile->personalinformation->contact->email_address,
+                    'Receiver_Name' => $employee_profile->personalInformation->name(),
+                    'Body' => $body
+                ];
+
+                if($this->mail->send($data)){
+                    break;
+                }
+            }
 
             if ($in_valid_file) {
                 return response()->json(
