@@ -10,10 +10,12 @@ use App\Models\EmployeeLeaveCredit;
 use App\Models\LeaveType;
 use App\Models\MonetizationApplication;
 use App\Http\Controllers\Controller;
+use App\Models\Department;
 use App\Models\EmployeeProfile;
 use App\Models\LeaveType as ModelsLeaveType;
 use App\Models\MoneApplicationLog;
 use App\Models\Section;
+use App\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -92,6 +94,7 @@ class MonetizationApplicationController extends Controller
 
             $mone_applications = MonetizationApplication::where('employee_profile_id', $employee_profile->id)->get();
             $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->get();
+            $monePosting = MonePos::where('employee_profile_id', $employee_profile->id)->get();
             $result = [];
 
             foreach ($employeeCredit as $leaveCredit) {
@@ -108,6 +111,7 @@ class MonetizationApplicationController extends Controller
 
             return response()->json([
                 'data' => MonetizationApplicationResource::collection($mone_applications),
+
                 'credits' => $result,
                 'message' => 'Retrieve all leave application records.'
             ], Response::HTTP_OK);
@@ -240,6 +244,100 @@ class MonetizationApplicationController extends Controller
         }
     }
 
+    public function approvedMoneRequest(Request $request)
+    {
+        try {
+            $employee_profile = $request->user;
+            $assigned_area = $employee_profile->assignedArea->findDetails();
+            $division_id = null;
+
+            switch ($assigned_area['sector']) {
+                case "Division":
+                    $division_id = $assigned_area['details']->id;
+                    break;
+                case "Department":
+                    $division_id = Department::find($assigned_area['details']->id)->division_id;
+                    break;
+                case "Section":
+                    $section = Section::find($assigned_area['details']->id);
+
+                    if ($section->department_id === null) {
+                        $division_id = $section->division_id;
+                        break;
+                    }
+
+                    $division_id = $section->department->division_id;
+                    break;
+                case "Unit":
+                    $section = Unit::find($assigned_area['details']->id)->section;
+                    $division_id = $section->department->division_id;
+                    break;
+            }
+
+            if ($division_id === null) {
+                return response()->json(['message' => "No division"], Response::HTTP_OK);
+            }
+
+            $mone_applications = [];
+
+            $units_mone_applications = MonetizationApplication::select("monetization_applications.*")
+                ->join('employee_profiles as ep', 'monetization_applications.employee_profile_id', 'ep.id')
+                ->join('assigned_areas as aa', 'ep.id', 'aa.employee_profile_id')
+                ->join('units as u', 'aa.unit_id', 'u.id')
+                ->join('sections as s', 'u.section_id', 's.id')
+                ->join('departments as d', 's.department_id', 'd.id')
+                ->join('divisions as dv', 'd.division_id', 'dv.id')
+                ->select('monetization_applications.*')
+                ->where('dv.id', $division_id)
+                ->where('monetization_applications.status', 'approved')
+                ->get();
+
+            $sections_mone_applications = MonetizationApplication::select("monetization_applications.*")
+                ->join('employee_profiles as ep', 'monetization_applications.employee_profile_id', 'ep.id')
+                ->join('assigned_areas as aa', 'ep.id', 'aa.employee_profile_id')
+                ->join('sections as s', 'aa.section_id', 's.id')
+                ->join('departments as d', 's.department_id', 'd.id')
+                ->join('divisions as dv', 'd.division_id', 'dv.id')
+                ->select('monetization_applications.*')
+                ->where('dv.id', $division_id)
+                ->where('monetization_applications.status', 'approved')
+                ->get();
+
+            $departments_mone_applications = MonetizationApplication::select("monetization_applications.*")
+                ->join('employee_profiles as ep', 'monetization_applications.employee_profile_id', 'ep.id')
+                ->join('assigned_areas as aa', 'ep.id', 'aa.employee_profile_id')
+                ->join('departments as d', 'aa.department_id', 'd.id')
+                ->join('divisions as dv', 'd.division_id', 'dv.id')
+                ->select('monetization_applications.*')
+                ->where('dv.id', $division_id)
+                ->where('monetization_applications.status', 'approved')
+                ->get();
+
+            $divisions_mone_applications = MonetizationApplication::select("monetization_applications.*")
+                ->join('employee_profiles as ep', 'monetization_applications.employee_profile_id', 'ep.id')
+                ->join('assigned_areas as aa', 'ep.id', 'aa.employee_profile_id')
+                ->join('divisions as dv', 'aa.division_id', 'dv.id')
+                ->select('monetization_applications.*')
+                ->where('dv.id', $division_id)
+                ->where('monetization_applications.status', 'approved')
+                ->get();
+
+            $mone_applications = [
+                ...$units_mone_applications,
+                ...$sections_mone_applications,
+                ...$departments_mone_applications,
+                ...$divisions_mone_applications
+            ];
+
+            return response()->json([
+                'data' => MonetizationApplicationResource::collection($mone_applications),
+                'message' => 'Retrieve list.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public function store(Request $request)
     {
         try {
@@ -286,7 +384,7 @@ class MonetizationApplicationController extends Controller
 
             $mone_application_log = new MoneApplicationLog();
             $mone_application_log->monetization_application_id = $new_monetization->id;
-            $mone_application_log->action_by_id =$employee_profile->id;
+            $mone_application_log->action_by_id = $employee_profile->id;
             $mone_application_log->action = $process_name;
             $mone_application_log->save();
 
@@ -391,7 +489,7 @@ class MonetizationApplicationController extends Controller
 
             $mone_application_log = new MoneApplicationLog();
             $mone_application_log->monetization_application_id = $mone_application_id;
-            $mone_application_log->action_by_id =$user_id;
+            $mone_application_log->action_by_id = $user_id;
             $mone_application_log->action = $process_name;
             $mone_application_log->save();
 
