@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('remarks')->nullable();
             $table->unsignedBigInteger('employee_profile_id');
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles');
+            $table->decimal('execution_time', 10, 2);
             $table->timestamps();
         });
     }

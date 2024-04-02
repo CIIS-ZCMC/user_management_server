@@ -261,8 +261,7 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                }
-                ;
+                };
 
                 $trials--;
             } while ($trials !== 0);
@@ -285,6 +284,7 @@ class EmployeeProfileController extends Controller
                 'browser_version' => is_bool($device['version']) ? 'Postman' : $device['version'],
                 'employee_profile_id' => $employee_profile['id']
             ]);
+            
 
             return response()
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)

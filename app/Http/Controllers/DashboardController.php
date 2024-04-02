@@ -40,7 +40,7 @@ class DashboardController extends Controller
                     'total_request_this_month' => $total_request_this_month,
                     '$types_of_request' => $types_of_request
                 ],
-                'message' => 'List of birthday celebrant.'
+                'message' => 'Current month statistic for request monitoring.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME, 'requestMonitoring', $th->getMessage());
@@ -54,38 +54,32 @@ class DashboardController extends Controller
     public function systemRequestMonitoringAnnually(Request $request)
     {
         try{
-            $logs = SystemLogs::selectRaw('MONTH(created_at) as month, COUNT(*) as count')
+            $logs = SystemLogs::selectRaw('MONTH(created_at) as month, action, COUNT(*) as count')
                 ->whereYear('created_at', Carbon::now()->year)
-                ->groupBy('month')
+                ->groupBy('month', 'action')
                 ->orderBy('month')
+                ->orderBy('action')
                 ->get();
 
-            $monthlyCounts = [];
+            $monthlyData = [];
 
-            // Populate the array with counts for each month
             foreach ($logs as $log) {
-                $monthlyCounts[$log->month] = $log->count;
-            }
-            
-            // Fill in months with zero count if they're missing
-            for ($month = 1; $month <= 12; $month++) {
-                if (!isset($monthlyCounts[$month])) {
-                    $monthlyCounts[$month] = 0;
+                $monthName = Carbon::create(null, $log->month, 1)->monthName;
+                
+                if (!isset($monthlyData[$monthName])) {
+                    $monthlyData[$monthName]['total'] = 0;
+                    $monthlyData[$monthName]['action_type'] = [];
                 }
+
+                $monthlyData[$monthName]['total'] += $log->count;
+                $monthlyData[$monthName]['action_type'][$log->action] = $log->count;
             }
-            
-            // Sort the array by month
-            ksort($monthlyCounts);
-            
-            // Output the result
-            foreach ($monthlyCounts as $month => $count) {
-                $monthName = Carbon::create(null, $month, 1)->monthName;
-                echo "$monthName: $count\n";
-            }
+
+            $result = json_encode($monthlyData, JSON_PRETTY_PRINT);
 
             return response()->json([
-                'data' => "",
-                'message' => 'List of birthday celebrant.'
+                'data' => $result,
+                'message' => 'Annual statistic monitoring.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME, 'requestMonitoring', $th->getMessage());
