@@ -368,7 +368,7 @@ Route::middleware('auth.cookie')->group(function () {
      * Employee Management
      */
     Route::namespace ('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
-      
+
         /**
          * Address Module
          */
@@ -1596,13 +1596,13 @@ Route::middleware('auth.cookie')->group(function () {
      */
     Route::namespace ('App\Http\Controllers\LeaveAndOverTime')->group(function () {
 
-          /**
+        /**
          * Monitization Posting Module
          */
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
             Route::get('monetization-posts', 'MonitizationPostingController@index');
         });
-        
+
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
             Route::get('monetization-posts-candidates', 'MonitizationPostingController@candidates');
         });
@@ -1973,9 +1973,8 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-ES view'])->group(function () {
             Route::get('exchange-duty', 'ExchangeDutyController@create');
             Route::get('exchange-duty-aprroval', 'ExchangeDutyController@edit');
-            Route::get('exchange-duty-employee', 'ScheduleController@employee');
+            Route::get('exchange-duty-employee', 'ScheduleController@employeeList');
             Route::get('exchange-duty-schedule', 'ScheduleController@findSchedule');
-            Route::get('exchange-duty-time-shift', 'TimeShiftController@index');
         });
 
         Route::middleware(['auth.permission:UMIS-ES write'])->group(function () {

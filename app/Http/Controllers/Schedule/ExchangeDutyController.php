@@ -2,12 +2,8 @@
 
 namespace App\Http\Controllers\Schedule;
 
-use App\Http\Resources\EmployeeScheduleResource;
-use App\Http\Resources\TimeShiftResource;
 use App\Models\EmployeeSchedule;
 use App\Models\ExchangeDuty;
-use App\Models\Schedule;
-use App\Models\EmployeeProfile;
 
 use App\Http\Resources\ExchangeDutyResource;
 use App\Http\Requests\ExchangeDutyRequest;
@@ -16,11 +12,9 @@ use App\Helpers\Helpers;
 use App\Models\TimeShift;
 use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Crypt;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 
 
 class ExchangeDutyController extends Controller
@@ -38,13 +32,13 @@ class ExchangeDutyController extends Controller
             $user = $request->user;
 
             $model = ExchangeDuty::where('requested_employee_id', $user->id)
-                ->Orwhere('approve_by', $user->id)
+                ->Orwhere('approving_officer', $user->id)
                 ->where('deleted_at', null)
                 ->get();
 
             return response()->json([
                 'data' => ExchangeDutyResource::collection($model),
-                'time_shift' => TimeShiftResource::collection(TimeShift::all())
+                // 'time_shift' => TimeShiftResource::collection(TimeShift::all())
             ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
@@ -93,7 +87,6 @@ class ExchangeDutyController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-
             $data = null;
             $requester = $cleanData['requested_employee_id'];    // requester id on payload
             $reliever = $cleanData['reliever_employee_id'];      // reliever id on payload
@@ -120,8 +113,7 @@ class ExchangeDutyController extends Controller
 
             $approve_by = Helpers::ExchangeDutyApproval($assigned_area, $user->id);
 
-            $cleanData['approve_by'] = $approve_by['approve_by'];
-            $cleanData['schedule_id'] = $requester_schedule->schedule->id;
+            $cleanData['approving_officer'] = $approve_by['approve_by'];
 
             $data = ExchangeDuty::create($cleanData);
 
@@ -165,52 +157,53 @@ class ExchangeDutyController extends Controller
     public function update($id, Request $request)
     {
         try {
+            $user = $request->user;
+
             $data = ExchangeDuty::findOrFail($id);
 
             if (!$data) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $password = strip_tags($request->password);
+            $cleanData['pin'] = strip_tags($request->password);
 
-            $employee_profile = $request->user;
-
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
-
-            if (!Hash::check($password . Cache::get('salt_value'), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_FORBIDDEN);
+            if ($user['authorization_pin'] !== $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
-            $status = null;
-            if ($request->approval_status === 'approved') {
-                switch ($data->status) {
-                    case 'applied':
-                        $status = 'approved';
+            switch ($data->status) {
+                case 'applied':
+                    $data->update(['status' => $request->approval_status]);
+                    break;
 
-                        EmployeeSchedule::where([
-                            ['employee_profile_id', '=', $data->requested_employee_id],
-                            ['schedule_id', '=', $data->schedule_id]
-                        ])->update(['employee_profile_id' => $data->reliever_employee_id]);
-                        break;
+                case 'for head approval':
+                    // Find the schedule of the requester
+                    $requester = EmployeeSchedule::where('employee_profile_id', $data->requested_employee_id)
+                        ->whereHas('schedule', function ($query) use ($data) {
+                            $query->where('date', $data->requested_date_to_swap);
+                        })->first();
 
-                    case 'declined':
-                        $status = 'declined';
-                        break;
+                    // Find the schedule of the reliever
+                    $reliever = EmployeeSchedule::where('employee_profile_id', $data->reliever_employee_id)
+                        ->whereHas('schedule', function ($query) use ($data) {
+                            $query->where('date', $data->requested_date_to_duty);
+                        })->first();
 
-                    default:
-                        return null;
-                }
-            } else if ($request->approval_status === 'declined') {
-                $status = 'declined';
+                    // Update the requester's schedule with the reliever's employee profile ID
+                    $requester->update(['employee_profile_id' => $data->reliever_employee_id]);  // Swap requester schedule to reliever
+
+                    // Update the reliever's schedule with the requester's employee profile ID
+                    $reliever->update(['employee_profile_id' => $data->requested_employee_id]); // swap reliever schedule to requester
+
+                    $data->update(['status' => $request->approval_status, 'remarks' => $request->remarks, 'approval_date' => Carbon::now()]);
+                    break;
             }
-
-            $data->update(['status' => $status, 'remarks' => $request->remarks, 'approval_date' => Carbon::now()]);
 
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in updating.' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json([
                 'data' => new ExchangeDutyResource($data),
-                'logs' => Helpers::registerExchangeDutyLogs($data->id, $employee_profile->id, $status),
-                'msg' => 'Approved Complete.'
+                'logs' => Helpers::registerExchangeDutyLogs($data->id, $user->id, $request->approval_status),
+                'message' => 'Approved Complete.'
             ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
