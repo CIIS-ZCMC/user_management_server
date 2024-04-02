@@ -55,7 +55,7 @@ class MonitizationPostingController extends Controller
     public function candidates(Request $request)
     {
         try{
-            $employee_leave_credits = EmployeeLeaveCredit::select('ep.id')
+            $employee_leave_credits = EmployeeLeaveCredit::select('employee_leave_credits.*')
             ->join('employee_profiles as ep', 'ep.id', 'employee_leave_credits.employee_profile_id')
             ->join('assigned_areas', 'assigned_areas.employee_profile_id', '=', 'ep.id')
             ->join('designations', 'designations.id', '=', 'assigned_areas.designation_id')
@@ -67,7 +67,7 @@ class MonitizationPostingController extends Controller
 
             $candidates = [];
 
-            foreach($employee_leave_credits as $employee_leave_credit){
+            foreach ($employee_leave_credits as $employee_leave_credit) {
                 $candidates[] = $employee_leave_credit->employeeProfile;
             }
 

@@ -19,6 +19,7 @@ class EmployeeLeaveCredit extends Model
         'total_leave_credits',
         'used_leave_credits'
     ];
+    
     public function employeeProfile()
     {
         return $this->belongsTo(EmployeeProfile::class);
