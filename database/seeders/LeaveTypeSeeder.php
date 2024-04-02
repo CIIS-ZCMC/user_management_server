@@ -34,9 +34,8 @@ class LeaveTypeSeeder extends Seeder
             'code' => "VL",
             'description' => 'Depends on the leave credit balances',
             'period' => 0,
-            'before' => 5,
             'file_date' => '5 days in advance prior to the effective date of leave',
-            'month_value' => 15/12,
+            'month_value' => 15 / 12,
             'annual_credit' => 15,
             'is_active' => 1,
             'is_special' => 0,
@@ -56,9 +55,8 @@ class LeaveTypeSeeder extends Seeder
             'code' => "SL",
             'description' => 'On account of SICKNESS of the EMPLOYEE and IMMEDIATE family members',
             'period' => 0,
-            'after' => 3,
             'file_date' => 'Immediately upon the employee return',
-            'month_value' => 15/12,
+            'month_value' => 15 / 12,
             'annual_credit' => 15,
             'is_active' => 1,
             'is_special' => 0,
@@ -106,7 +104,6 @@ class LeaveTypeSeeder extends Seeder
             'description' => 'Maybe granted after the Probationary period (6 months continuous service)
             Granted to mark personal milestones and/or attend to filial and domestic responsibilities',
             'period' => 0,
-            'before' => 1,
             'file_date' => 'Personal milestone – One (1) week before. Other reasons under this leave can be filed 1 day after',
             'month_value' => 0,
             'annual_credit' => 3,
@@ -127,7 +124,6 @@ class LeaveTypeSeeder extends Seeder
             'code' => "FL",
             'description' => 'Balance of 10 days/more VL',
             'period' => 0,
-            'before' => 5,
             'file_date' => '5 days in advance prior to the effective date of leave',
             'month_value' => 0,
             'annual_credit' => 5,
@@ -147,8 +143,6 @@ class LeaveTypeSeeder extends Seeder
             'code' => "SP",
             'description' => 'Any Individual who is left with responsibility of parenthood. Solo parent who has rendered service of at least ONE (1) year. Validated Solo parent ID from DSWDy',
             'period' => 0,
-            'before' => 30,
-            'after' => 30,
             'file_date' => 'May be filed either before or after the leave',
             'month_value' => 0,
             'annual_credit' => 7,
@@ -165,8 +159,8 @@ class LeaveTypeSeeder extends Seeder
         $employees = EmployeeProfile::where("employment_type_id", 1)->get();
         $leave_types = [$vacation_leave->id, $sick_leave->id, $special_privilege_leave->id, $force_leave->id, $soloparent_leave->id];
 
-        foreach($employees as $employee){
-            foreach($leave_types as $leave_type){
+        foreach ($employees as $employee) {
+            foreach ($leave_types as $leave_type) {
                 EmployeeLeaveCredit::create([
                     'employee_profile_id' => $employee->id,
                     'leave_type_id' => $leave_type,
@@ -182,8 +176,6 @@ class LeaveTypeSeeder extends Seeder
             'code' => "ML",
             'description' => 'Granted to a qualified FEMALE public servant in every instance of pregnancy',
             'period' => 105,
-            'before' => 30,
-            'after' => 30,
             'file_date' => '30 days either after or before the delivery, whenever possible',
             'month_value' => 0,
             'annual_credit' => 0,
@@ -207,14 +199,13 @@ class LeaveTypeSeeder extends Seeder
             'leave_requirement_id' => $requiment_three->id
         ]);
 
-        
+
         $allocation_maternity_leave = LeaveType::create([
             'name' => "Allocation of Maternity Leave (Paternity leave)",
             'republic_act' => 'R.A. No. 11210 / IRR issued by CSC, DOLE and SSS',
             'code' => "AML(PL)",
             'description' => 'Granted to Child’s Father, whether or not the same is Married to the female worker',
             'period' => 7,
-            'before' => 1,
             'file_date' => 'Must be availed ONLY within the maternity period of the spouse. May be filed immediately, during or after the childbirth or miscarriage',
             'month_value' => 0,
             'annual_credit' => 0,
@@ -238,8 +229,6 @@ class LeaveTypeSeeder extends Seeder
             'code' => "PL",
             'description' => 'Granted to MARRIED Male Employees',
             'period' => 7,
-            'before' => 1,
-            'after' => 3,
             'file_date' => 'May be filed immediately, during or after the childbirth or miscarriage. Must be availed ONLY within the maternity period of the spouse',
             'month_value' => 0,
             'annual_credit' => 0,
@@ -252,7 +241,7 @@ class LeaveTypeSeeder extends Seeder
             'created_at' => now(),
             'updated_at' => now()
         ]);
-        
+
         $study_leave = LeaveType::create([
             'name' => "Study Leave",
             'republic_act' => 'Sec. 68, Rule XVI, Omnibus Rules Implementing E.O. No. 292',
@@ -286,15 +275,13 @@ class LeaveTypeSeeder extends Seeder
             'leave_type_id' => $study_leave->id,
             'leave_requirement_id' => $requiment_six->id
         ]);
-        
+
         $adoption_leave = LeaveType::create([
             'name' => "Adoption Leave",
             'republic_act' => 'R.A. No. 8552',
             'code' => "AL",
             'description' => 'SIMILAR as of the Maternity and Paternity leave',
             'period' => 60,
-            'before' => 1,
-            'after' => 3,
             'file_date' => 'SAME as of the Maternity and Paternity leave',
             'month_value' => 0,
             'annual_credit' => 0,
@@ -311,7 +298,7 @@ class LeaveTypeSeeder extends Seeder
             'leave_type_id' => $adoption_leave->id,
             'leave_requirement_id' => $requiment_seven->id
         ]);
-       
+
 
         $vawc_leave = LeaveType::create([
             'name' => "10-Day VAWC Leave",
@@ -319,7 +306,6 @@ class LeaveTypeSeeder extends Seeder
             'code' => "VAWCL",
             'description' => 'For WOMEN who have been a victim of violence',
             'period' => 10,
-            'before' => 5,
             'file_date' => 'May be applied for before the actual leave of absence or immediately upon return from such leave.
             May be availed of in a continuous or intermitent manner',
             'month_value' => 0,
@@ -337,14 +323,13 @@ class LeaveTypeSeeder extends Seeder
             'leave_type_id' => $vawc_leave->id,
             'leave_requirement_id' => $requiment_eight->id
         ]);
-       
+
         $rehab_leave = LeaveType::create([
             'name' => "Rehabilitation Leave",
             'republic_act' => 'Sec. 55, Rule XVI, Omnibus Rules Implementing E.O. No. 292',
             'code' => "RL",
             'description' => 'All personnel with permanent, temporary, casual or contractual appointments, including those with fixed terms of office',
             'period' => 182.5,
-            'after' => 5,
             'file_date' => 'Should be made within ONE (1) week from the time of the accident',
             'month_value' => 0,
             'annual_credit' => 0,
@@ -357,7 +342,7 @@ class LeaveTypeSeeder extends Seeder
             'created_at' => now(),
             'updated_at' => now()
         ]);
-        
+
         LeaveTypeRequirement::create([
             'leave_type_id' => $rehab_leave->id,
             'leave_requirement_id' => $requiment_six->id
@@ -398,14 +383,13 @@ class LeaveTypeSeeder extends Seeder
             'leave_requirement_id' => $requiment_nine->id
         ]);
 
-        
+
         $special_calamity = LeaveType::create([
             'name' => "Special Emergency (Calamity) Leave",
             'republic_act' => 'CSC MC No. 2, s. 2012, as amended',
             'code' => "SCL",
             'description' => 'May be availed of by the directly affected government employees',
             'period' => 5,
-            'after' => 30,
             'file_date' => 'Within 30 days from the first day of calamity declaration',
             'month_value' => 0,
             'annual_credit' => 0,
@@ -418,7 +402,7 @@ class LeaveTypeSeeder extends Seeder
             'created_at' => now(),
             'updated_at' => now()
         ]);
-        
+
 
     }
 }

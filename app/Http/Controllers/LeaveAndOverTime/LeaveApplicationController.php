@@ -197,13 +197,12 @@ class LeaveApplicationController extends Controller
 
     public function approvedLeaveRequest(Request $request)
     {
-        try{
+        try {
             $employee_profile = $request->user;
             $assigned_area = $employee_profile->assignedArea->findDetails();
             $division_id = null;
 
-            switch($assigned_area['sector'])
-            {
+            switch ($assigned_area['sector']) {
                 case "Division":
                     $division_id = $assigned_area['details']->id;
                     break;
@@ -213,7 +212,7 @@ class LeaveApplicationController extends Controller
                 case "Section":
                     $section = Section::find($assigned_area['details']->id);
 
-                    if($section->department_id === null){
+                    if ($section->department_id === null) {
                         $division_id = $section->division_id;
                         break;
                     }
@@ -226,8 +225,7 @@ class LeaveApplicationController extends Controller
                     break;
             }
 
-            if($division_id === null)
-            {
+            if ($division_id === null) {
                 return response()->json(['message' => "GG"], Response::HTTP_OK);
             }
 
@@ -282,7 +280,7 @@ class LeaveApplicationController extends Controller
                 'data' => LeaveApplicationResource::collection($leave_applications),
                 'message' => 'Retrieve list.'
             ], Response::HTTP_OK);
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -290,7 +288,7 @@ class LeaveApplicationController extends Controller
 
     public function myApprovedLeaveApplication(Request $request)
     {
-        try{
+        try {
             $employee_profile = $request->user;
             $leave_applications = LeaveApplication::where('status', 'approved')
                 ->where('employee_profile_id', $employee_profile->id)->get();
@@ -299,7 +297,7 @@ class LeaveApplicationController extends Controller
                 'data' => MyApprovedLeaveApplicationResource::collection($leave_applications),
                 'message' => 'Retrieve list.'
             ], Response::HTTP_OK);
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -327,7 +325,7 @@ class LeaveApplicationController extends Controller
                 $employeeResponse = [
                     'id' => $employeeProfileId,
                     'name' => $employeeDetails,
-                    'employee_id' =>  $leaveCreditGroup->first()->employeeProfile->employee_id,
+                    'employee_id' => $leaveCreditGroup->first()->employeeProfile->employee_id,
                 ];
                 $employeeResponse = array_merge($employeeResponse, $leaveCreditData);
                 $response[] = $employeeResponse;
@@ -381,7 +379,7 @@ class LeaveApplicationController extends Controller
             $user = $request->user;
             $cleanData['pin'] = strip_tags($request->password);
 
-            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+            if ($user['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
@@ -449,7 +447,7 @@ class LeaveApplicationController extends Controller
             $user = $request->user;
             $cleanData['pin'] = strip_tags($request->password);
 
-            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+            if ($user['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
@@ -457,7 +455,7 @@ class LeaveApplicationController extends Controller
                 $newLeaveCredit = new EmployeeLeaveCredit([
                     'employee_profile_id' => $request->employee_id,
                     'leave_type_id' => $credit['leave_id'], // Adjust the key if needed
-                    'total_leave_credits' => (float)$credit['credit_value'],
+                    'total_leave_credits' => (float) $credit['credit_value'],
                     // 'created_at' => now(), // Adjust as needed
                     // 'updated_at' => now(), // Adjust as needed
                 ]);
@@ -510,7 +508,7 @@ class LeaveApplicationController extends Controller
             $employee_profile = $user;
             $cleanData['pin'] = strip_tags($request->password);
 
-            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+            if ($user['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
@@ -531,13 +529,14 @@ class LeaveApplicationController extends Controller
                         return response()->json(['message' => 'Forbidden.'], Response::HTTP_FORBIDDEN);
                     }
                     $status = 'for recommending approval';
-                    $log_status = 'Approved by HRMO'; 
+                    $log_status = 'Approved by HRMO';
                     $leave_application->update(['status' => $status]);
                     Helpers::pendingLeaveNotfication($leave_application->recommending_officer, $leave_application->leaveType->name);
                     Helpers::notifications(
-                        $leave_application->employee_profile_id, 
-                        "HR has approved your ".$leave_application->leaveType->name." request.", 
-                        $leave_application->leaveType->name);
+                        $leave_application->employee_profile_id,
+                        "HR has approved your " . $leave_application->leaveType->name . " request.",
+                        $leave_application->leaveType->name
+                    );
                     break;
                 case 'for recommending approval':
                     if ($position === null || str_contains($position['position'], 'Unit')) {
@@ -548,12 +547,13 @@ class LeaveApplicationController extends Controller
                     $leave_application->update(['status' => $status]);
                     Helpers::pendingLeaveNotfication($leave_application->approving_officer, $leave_application->leaveType->name);
                     Helpers::notifications(
-                        $leave_application->employee_profile_id, 
-                        $leave_application->recommendingOfficer->personalInformation->name()." has approved your ".$leave_application->leaveType->name." request.", 
-                        $leave_application->leaveType->name);
+                        $leave_application->employee_profile_id,
+                        $leave_application->recommendingOfficer->personalInformation->name() . " has approved your " . $leave_application->leaveType->name . " request.",
+                        $leave_application->leaveType->name
+                    );
                     break;
                 case 'for approving approval':
-                    $approving =  Helpers::getRecommendingAndApprovingOfficer($employee_profile->assignedArea->findDetails(), $leave_application->employee_profile_id)['approving_officer'];
+                    $approving = Helpers::getRecommendingAndApprovingOfficer($employee_profile->assignedArea->findDetails(), $leave_application->employee_profile_id)['approving_officer'];
                     if ($approving !== $employee_profile->id) {
                         return response()->json(['message' => 'Forbidden'], Response::HTTP_FORBIDDEN);
                     }
@@ -562,7 +562,7 @@ class LeaveApplicationController extends Controller
                     $leave_application->update(['status' => $status]);
                     $from = Carbon::parse($leave_application->date_from)->format('F d, Y');
                     $to = Carbon::parse($leave_application->date_to)->format('F d, Y');
-                    $message = "Your ".$leave_application->leaveType->name." request with date from ".$from." to ".$to." has been approved.";
+                    $message = "Your " . $leave_application->leaveType->name . " request with date from " . $from . " to " . $to . " has been approved.";
                     Helpers::notifications($leave_application->employee_profile_id, $message, $leave_application->leaveType->name);
                     break;
             }
@@ -576,7 +576,7 @@ class LeaveApplicationController extends Controller
             ]);
 
             return response()->json([
-                'data' =>  new LeaveApplicationResource($leave_application),
+                'data' => new LeaveApplicationResource($leave_application),
                 'message' => 'Successfully approved application.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -622,7 +622,7 @@ class LeaveApplicationController extends Controller
             $recommending_and_approving = Helpers::getRecommendingAndApprovingOfficer($employee_profile->assignedArea->findDetails(), $employee_profile->id);
             $hrmo_officer = Helpers::getHrmoOfficer();
 
-            if($hrmo_officer === null || $recommending_and_approving === null || $recommending_and_approving['recommending_officer'] === null || $recommending_and_approving['approving_officer'] === null){
+            if ($hrmo_officer === null || $recommending_and_approving === null || $recommending_and_approving['recommending_officer'] === null || $recommending_and_approving['approving_officer'] === null) {
                 return response()->json(['message' => 'No recommending officer and/or supervising officer assigned.'], Response::HTTP_FORBIDDEN);
             }
 
@@ -634,7 +634,7 @@ class LeaveApplicationController extends Controller
 
             $currentDate = Carbon::now();
             $twoMonthsAhead = $currentDate->copy()->addMonths(2);
-            
+
             if ($start->greaterThan($twoMonthsAhead)) {
                 return response()->json(['message' => "Filing 2 months ahead is not allowed."], Response::HTTP_FORBIDDEN);
             }
@@ -643,11 +643,11 @@ class LeaveApplicationController extends Controller
 
             $leave_type = LeaveType::find($request->leave_type_id);
 
-            if($leave_type->code === 'SL' && $leave_type->file_after !== null){
+            if ($leave_type->code === 'SL' && $leave_type->file_after !== null) {
                 $daysDiff = Carbon::now()->diffInDays($end);
 
                 if ($daysDiff > $leave_type->file_after) {
-                    return response()->json(['message' => "Filing of application must be ".$leave_type->file_after." days after the return of employee."], Response::HTTP_FORBIDDEN);
+                    return response()->json(['message' => "Filing of application must be " . $leave_type->file_after . " days after the return of employee."], Response::HTTP_FORBIDDEN);
                 }
             }
 
@@ -700,7 +700,7 @@ class LeaveApplicationController extends Controller
 
                     $leave_application = LeaveApplication::create($cleanData);
                     Helpers::pendingLeaveNotfication($cleanData['hrmo_officer'], $leave_type->name);
-                   
+
                     if ($request->requirements) {
                         $index = 0;
                         $requirements_name = $request->requirements_name;
@@ -771,9 +771,9 @@ class LeaveApplicationController extends Controller
                         }
 
                         $leave_application = LeaveApplication::create($cleanData);
-                        
+
                         Helpers::pendingLeaveNotfication($cleanData['hrmo_officer'], $leave_type->name);
-    
+
                         if ($request->without_pay == 0) {
                             $previous_credit = $employee_credit->total_leave_credits;
 
@@ -783,7 +783,7 @@ class LeaveApplicationController extends Controller
                             ]);
 
 
-                            if(LeaveType::find($request->leave_type_id)->code === 'FL' ){
+                            if (LeaveType::find($request->leave_type_id)->code === 'FL') {
                                 $vlLeaveTypeId = LeaveType::where('code', 'VL')->first()->id;
 
                                 $employee_credit_vl = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)
@@ -800,7 +800,7 @@ class LeaveApplicationController extends Controller
                                     'employee_leave_credit_id' => $employee_credit->id,
                                     'previous_credit' => $previous_credit_vl,
                                     'leave_credits' => $daysDiff,
-                                    'reason'=>'apply'
+                                    'reason' => 'apply'
                                 ]);
                             }
 
@@ -855,7 +855,7 @@ class LeaveApplicationController extends Controller
                 }
 
                 return response()->json([
-                    'data' =>  new LeaveApplicationResource($leave_application),
+                    'data' => new LeaveApplicationResource($leave_application),
                     'credits' => $result ? $result : [],
                     'message' => 'Successfully applied for ' . $leave_type->name
                 ], Response::HTTP_OK);
@@ -891,7 +891,7 @@ class LeaveApplicationController extends Controller
             $declined_by = null;
             $cleanData['pin'] = strip_tags($request->password);
 
-            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+            if ($user['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
@@ -902,17 +902,13 @@ class LeaveApplicationController extends Controller
             $leave_application_approving = $leave_application->approving_officer;
 
             if ($employee_profile->id === $leave_application_hrmo) {
-                $status='declined by hrmo officer';
+                $status = 'declined by hrmo officer';
                 $declined_by = "HR";
-            }
-            else if($employee_profile->id === $leave_application_recommending)
-            {
-                $status='declined by recommending officer';
+            } else if ($employee_profile->id === $leave_application_recommending) {
+                $status = 'declined by recommending officer';
                 $declined_by = "Recommending officer";
-            }
-            else if($employee_profile->id === $leave_application_approving)
-            {
-                $status='declined by approving officer';
+            } else if ($employee_profile->id === $leave_application_approving) {
+                $status = 'declined by approving officer';
                 $declined_by = "Approving officer";
             }
 
@@ -920,10 +916,10 @@ class LeaveApplicationController extends Controller
                 'status' => $status,
                 'remarks' => strip_tags($request->remarks),
             ]);
-            
+
             $from = Carbon::parse($leave_application->date_from)->format('F d, Y');
             $to = Carbon::parse($leave_application->date_to)->format('F d, Y');
-            $message = "Your ".$leave_application->leave_type->name." request with date from ".$from." to ".$to." has been declined by ".$declined_by." .";
+            $message = "Your " . $leave_application->leave_type->name . " request with date from " . $from . " to " . $to . " has been declined by " . $declined_by . " .";
             Helpers::notifications($leave_application->employee_profile_id, $message, $leave_application->leaveType->name);
 
             if (!$leave_type->is_special) {
@@ -996,7 +992,7 @@ class LeaveApplicationController extends Controller
             $filename = 'LEAVE REPORT - (' . $data->employeeProfile->personalInformation->name() . ').pdf';
 
             // Use 'I' instead of 'D' to open in the browser
-                $dompdf->stream($filename, array('Attachment' => false));
+            $dompdf->stream($filename, array('Attachment' => false));
             // $dompdf->stream($filename);
 
 
