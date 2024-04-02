@@ -62,6 +62,8 @@ class MonitizationPostingController extends Controller
             ->join('salary_grades', 'salary_grades.id', '=', 'designations.salary_grade_id')
             ->where('employee_leave_credits.leave_type_id', LeaveType::where('code', 'VL')->first()->id)
             ->where('employee_leave_credits.total_leave_credits', '>=', 15)
+            ->orWhere('employee_leave_credits.leave_type_id', LeaveType::where('code', 'SL')->first()->id)
+            ->where('employee_leave_credits.total_leave_credits', '>=', 15)
             ->where('salary_grades.salary_grade_number', '<=', 19)
             ->get();
 
@@ -73,7 +75,7 @@ class MonitizationPostingController extends Controller
 
             return response()->json([
                 'data' => $candidates,
-                'message' => "Employees for monitization."
+                'message' => "Employees for monetization."
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
