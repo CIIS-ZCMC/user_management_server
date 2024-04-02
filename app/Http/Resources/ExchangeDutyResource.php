@@ -31,17 +31,19 @@ class ExchangeDutyResource extends JsonResource
         ];
 
         $approval = [
-            'id' => $this->approvingEmployee->id,
-            'name' => $this->approvingEmployee->personalInformation->name(),
-            'profile_url' => env('SERVER_DOMAIN') . "/photo/profiles/" . $this->approvingEmployee->profile_url,
-            'designation' => $this->approvingEmployee->assignedArea->designation->name,
-            'area' => $this->approvingEmployee->assignedArea->findDetails(),
+            'id' => $this->approvingOfficer->id,
+            'name' => $this->approvingOfficer->personalInformation->name(),
+            'profile_url' => env('SERVER_DOMAIN') . "/photo/profiles/" . $this->approvingOfficer->profile_url,
+            'designation' => $this->approvingOfficer->assignedArea->designation->name,
+            'area' => $this->approvingOfficer->assignedArea->findDetails(),
         ];
 
         return [
             'id' => $this->id,
-            'requested_schedule_to_swap' => $this->schedule->findScheduleDetails($this->requestedEmployee->id, $this->requested_date_to_swap),
-            'requested_schedule_to_duty' => $this->schedule->findScheduleDetails($this->relieverEmployee->id, $this->requested_date_to_duty),
+            'requested_schedule_to_swap' => $this->requested_date_to_swap,
+            'requested_schedule_to_duty' => $this->requested_date_to_duty,
+            'requested_schedule' => $this->findScheduleDetails($this->requestedSchedule->id),
+            'reliever_schedule' => $this->findScheduleDetails($this->relieverSchedule->id),
             'requested_employee' => $requester,
             'reliever_employee' => $reliever,
             'approve_by' => $approval,
