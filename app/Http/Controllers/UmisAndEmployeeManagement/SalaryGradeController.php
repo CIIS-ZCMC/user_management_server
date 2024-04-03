@@ -48,7 +48,8 @@ class SalaryGradeController extends Controller
 
             return response()->json([
                 'data' => SalaryGradeResource::collection($salary_grades),
-                'message' => 'Salary grade imported.'
+                'message' => 'Salary grade imported.',
+                'logs' => Helpers::registerSystemLogs($request, null, true, 'Success in importing '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             if ($th->getCode() == 400) {
@@ -135,7 +136,8 @@ class SalaryGradeController extends Controller
             
             return response()->json([
                 'data' => SalaryGradeResource::collection($active_salary_grade),
-                'message' => 'Job position salary grade updated.'
+                'message' => 'Job position salary grade updated.',
+                'logs' => Helpers::registerSystemLogs($request, null, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.' job position.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME, 'updateSalaryGradeForJobPosition', $th->getMessage());
@@ -177,7 +179,8 @@ class SalaryGradeController extends Controller
             
             return response()->json([
                 'data' => new SalaryGradeResource($salary_grade),
-                'message' => 'New Salary grade registered.'
+                'message' => 'New Salary grade registered.',
+                'logs' => Helpers::registerSystemLogs($request, $salary_grade->id, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
@@ -222,12 +225,11 @@ class SalaryGradeController extends Controller
             }
 
             $salary_grade -> update($cleanData);
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => new SalaryGradeResource($salary_grade),
-                'message' => 'Salary grade record updated.'
+                'message' => 'Salary grade record updated.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
@@ -257,10 +259,11 @@ class SalaryGradeController extends Controller
             }
 
             $salary_grade -> delete();
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['message' => 'Salary grade record deleted.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Salary grade record deleted.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -292,10 +295,11 @@ class SalaryGradeController extends Controller
             }
 
             SalaryGrade::where('effective_at', $effective_date)->delete();
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['message' => 'Salary grade record deleted.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Salary grade record deleted.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroyOnEffectiveDate', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

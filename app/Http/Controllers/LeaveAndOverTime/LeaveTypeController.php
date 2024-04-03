@@ -8,7 +8,6 @@ use App\Models\EmployeeSchedule;
 use App\Models\LeaveType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LeaveTypeRequest;
-use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Resources\EmployeeLeaveCredit;
 use App\Http\Resources\LeaveTypeResource;
 use App\Models\EmployeeLeaveCredit as ModelsEmployeeLeaveCredit;
@@ -19,12 +18,10 @@ use App\Models\Requirement;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\Hash;
-use PHPUnit\Metadata\Api\Requirements;
 
 class LeaveTypeController extends Controller
 {
+    private $CONTROLLER_NAME = "RequirementController";
 
     public function index(Request $request)
     {
@@ -36,6 +33,7 @@ class LeaveTypeController extends Controller
                 'message' => 'Retrieve all leave types records.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -133,6 +131,7 @@ class LeaveTypeController extends Controller
                 'message' => 'Retrieve all leave types records.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, 'leaveTypeOptionWithEmployeeCreditsRecord', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -147,6 +146,7 @@ class LeaveTypeController extends Controller
                 'message' => 'Retrieve employee leave credit'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, 'employeeLeaveCredit', $th->getMessage());
             return response()->json(['message' => ''], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -232,6 +232,7 @@ class LeaveTypeController extends Controller
                 'message' => 'Leave type record created successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -246,6 +247,7 @@ class LeaveTypeController extends Controller
                 'message' => 'Retrieve all leave types records.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, 'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -343,6 +345,7 @@ class LeaveTypeController extends Controller
                 'message' => $leave_type->name.' updated.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -365,6 +368,7 @@ class LeaveTypeController extends Controller
                 'message' => 'Leave type record deactivated successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, 'deactivateLeaveTypes', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -387,6 +391,7 @@ class LeaveTypeController extends Controller
                 'message' => 'Leave type record reactivated successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, 'reactivateLeaveTypes', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -417,6 +422,7 @@ class LeaveTypeController extends Controller
                 'message' => 'Leave type record deleted successfully.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

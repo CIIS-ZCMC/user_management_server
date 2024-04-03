@@ -116,7 +116,10 @@ class ProfileUpdateRequestController extends Controller
                 return response()->json(['message' => 'Table name is not found.'], Response::HTTP_BAD_REQUEST);
         }
 
-        return response()->json(['message' => "Request for personal information update successfully created, please wait for approval."], Response::HTTP_CREATED);
+        return response()->json([
+            'message' => "Request for personal information update successfully created, please wait for approval.",
+            'logs' => Helpers::registerSystemLogs($request, null, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+        ], Response::HTTP_CREATED);
     }
     
     public function requestUpdatePersonalInformation(Request $request)
@@ -602,7 +605,10 @@ class ProfileUpdateRequestController extends Controller
 
             $profile_update_request->update(['approved_by' => $user->id]);
 
-            return response()->json(['message' => 'Request approved and changes applied.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Request approved and changes applied.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in approving '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'approveRequest', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -784,9 +790,10 @@ class ProfileUpdateRequestController extends Controller
 
             $profile_update_request->delete();
             
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response()->json(['message' => 'Profile update record deleted.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Profile update record deleted.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

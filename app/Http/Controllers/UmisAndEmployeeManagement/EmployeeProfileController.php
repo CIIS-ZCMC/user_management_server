@@ -1189,7 +1189,8 @@ class EmployeeProfileController extends Controller
 
             return response()->json([
                 'data' => new EmployeeProfileResource($employee_profile),
-                'message' => "Pin updated."
+                'message' => "Pin updated.",
+                'logs' => Helpers::registerSystemLogs($request, null, true, 'Success in updating authorization pin' . $this->SINGULAR_MODULE_NAME . '.')
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'updatePin', $th->getMessage());
@@ -1237,7 +1238,10 @@ class EmployeeProfileController extends Controller
                 'password_expiration_at' => $threeMonths
             ]);
 
-            return response()->json(['message' => 'Password updated.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Password updated.',
+                'logs' => Helpers::registerSystemLogs($request, null, true, 'Success in updating password' . $this->SINGULAR_MODULE_NAME . '.')
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'updatePassword', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -1259,7 +1263,10 @@ class EmployeeProfileController extends Controller
 
             $employee_profile->update(['is_2fa' => $status]);
 
-            return response()->json(['message' => '2fa updated.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => '2fa updated.',
+                'logs' => Helpers::registerSystemLogs($request, null, true, 'Success in updating two factor auth' . $this->SINGULAR_MODULE_NAME . '.')
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'updatePassword', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -1433,7 +1440,8 @@ class EmployeeProfileController extends Controller
 
             return response()->json([
                 'data' => $last_password->password,
-                'message' => "Password has successfully reset."
+                'message' => "Password has successfully reset.",
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success reset password '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'resetPassword', $th->getMessage());
@@ -1545,7 +1553,8 @@ class EmployeeProfileController extends Controller
 
             return response()->json([
                 'data' => new EmployeeProfileResource($employee_profile),
-                'message' => 'Designation records retrieved.'
+                'message' => 'Designation records retrieved.',
+                'logs' => Helpers::registerSystemLogs($request, null, true, 'Success in re assigning area' . $this->SINGULAR_MODULE_NAME . '.')
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'reAssignArea', $th->getMessage());
@@ -2605,8 +2614,6 @@ class EmployeeProfileController extends Controller
 
             DB::commit();
 
-            Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . '.');
-
             $send_attempt = 3;
 
             for ($i=0; $i < $send_attempt; $i++) { 
@@ -2641,7 +2648,8 @@ class EmployeeProfileController extends Controller
             return response()->json(
                 [
                     'data' => new EmployeeProfileResource($employee_profile),
-                    'message' => 'Newly employee registered.'
+                    'message' => 'Newly employee registered.',
+                    'logs' => Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . '.')
                 ],
                 Response::HTTP_OK
             );
@@ -2673,7 +2681,8 @@ class EmployeeProfileController extends Controller
 
             return response()->json([
                 "data" => new EmployeeProfileResource($employee_profile),
-                "message" => "Successfully update employee profile."
+                "message" => "Successfully update employee profile.",
+                'logs' => Helpers::registerSystemLogs($request, null, true, 'Success in re assigning area' . $this->SINGULAR_MODULE_NAME . '.')
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'updateEmployeeProfilePicture', $th->getMessage());
@@ -2742,9 +2751,10 @@ class EmployeeProfileController extends Controller
              * Additional content advice employee to register biometrics in IHOMP
              */
 
-            Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . ' account.');
-
-            return response()->json(['message' => 'Employee account created.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Employee account created.',
+                'logs' => Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . ' account.')
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'createEmployeeAccount', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -3012,9 +3022,11 @@ class EmployeeProfileController extends Controller
 
             $employee_profile->update($cleanData);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating a ' . $this->SINGULAR_MODULE_NAME . '.');
-
-            return response()->json(['data' => new EmployeeProfileResource($employee_profile), 'message' => 'Employee details updated.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new EmployeeProfileResource($employee_profile), 
+                'message' => 'Employee details updated.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in updating a ' . $this->SINGULAR_MODULE_NAME . '.')
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -3043,9 +3055,11 @@ class EmployeeProfileController extends Controller
 
             $employee_profile->update(['profile_url' => $file_value]);
 
-            Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in changing profile picture of an employee profile.');
-
-            return response()->json(['data' => new EmployeeProfileResource($employee_profile), 'message' => 'Employee profile picture updated.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new EmployeeProfileResource($employee_profile), 
+                'message' => 'Employee profile picture updated.',
+                'logs' => Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in changing profile picture of an employee profile.')
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -3112,7 +3126,11 @@ class EmployeeProfileController extends Controller
             ];
             AssignAreaTrail::create($trails);
             AssignArea::where('id', $assigned->id)->update($Promotion);
-            return response()->json(['message' => 'Employee successfully renewed.'], Response::HTTP_OK);
+
+            return response()->json([
+                'message' => 'Employee successfully renewed.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in employee promotion registration ' . $this->SINGULAR_MODULE_NAME . '.')
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'promotion', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -3137,11 +3155,10 @@ class EmployeeProfileController extends Controller
 
             $employee_profile->delete();
 
-
-            Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in deleting a ' . $this->SINGULAR_MODULE_NAME . '.');
-
-
-            return response()->json(['message' => 'Employee profile deleted.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Employee profile deleted.',
+                'logs' => Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in deleting a ' . $this->SINGULAR_MODULE_NAME . '.')
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -3285,11 +3302,13 @@ class EmployeeProfileController extends Controller
             if (!$special_access_role) {
                 return response()->json(['message' => "No special access right found."], Response::HTTP_NOT_FOUND);
             }
+            
             $special_access_role->delete();
 
-            Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in deleting a ' . $this->SINGULAR_MODULE_NAME . '.');
-
-            return response()->json(['message' => 'Special Access right has been revoke.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Special Access right has been revoke.',
+                'logs' => Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in deleting a ' . $this->SINGULAR_MODULE_NAME . '.')
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

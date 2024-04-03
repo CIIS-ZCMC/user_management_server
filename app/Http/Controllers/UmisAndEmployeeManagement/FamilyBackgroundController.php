@@ -158,9 +158,11 @@ class FamilyBackgroundController extends Controller
 
             $family_background->update($cleanData);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating ' . $this->SINGULAR_MODULE_NAME . '.');
-
-            return response()->json(['data' => new FamilyBackgroundResource($family_background), 'message' => 'Employee family background details updated.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new FamilyBackgroundResource($family_background), 
+                'message' => 'Employee family background details updated.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in updating ' . $this->SINGULAR_MODULE_NAME . '.')
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -185,9 +187,10 @@ class FamilyBackgroundController extends Controller
 
             $family_background->delete();
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting ' . $this->SINGULAR_MODULE_NAME . '.');
-
-            return response()->json(['message' => 'Employee family background record deleted.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Employee family background record deleted.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting ' . $this->SINGULAR_MODULE_NAME . '.')
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -212,9 +215,10 @@ class FamilyBackgroundController extends Controller
 
             $family_background->delete();
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting employee ' . $this->SINGULAR_MODULE_NAME . '.');
-
-            return response()->json(['message' => 'Employee family background record deleted.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Employee family background record deleted.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting employee ' . $this->SINGULAR_MODULE_NAME . '.')
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroyPersonalInformation', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -242,9 +246,10 @@ class FamilyBackgroundController extends Controller
             $family_background = $personal_information->familyBackground;
             $family_background->delete();
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting employee ' . $this->SINGULAR_MODULE_NAME . '.');
-
-            return response()->json(['message' => 'Employee family background record deleted.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Employee family background record deleted.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting employee ' . $this->SINGULAR_MODULE_NAME . '.')
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroyEmployee', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

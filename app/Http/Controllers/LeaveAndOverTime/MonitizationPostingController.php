@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\LeaveAndOverTime;
 
+use App\Helpers\Helpers;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Http\Controllers\Controller;
@@ -15,6 +16,8 @@ use App\Models\LeaveType;
 
 class MonitizationPostingController extends Controller
 {
+    private $CONTROLLER_NAME = "RequirementController";
+
     public function index(Request $request)
     {
         try{
@@ -28,6 +31,7 @@ class MonitizationPostingController extends Controller
                 'message' => 'Retrieve posting records.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -48,6 +52,7 @@ class MonitizationPostingController extends Controller
                 'message' => 'Retrieve check for sl monitization.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, 'checkForSLMonitization', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -128,6 +133,7 @@ class MonitizationPostingController extends Controller
                 'message' => "Employees for monetization."
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, 'candidates', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -160,6 +166,7 @@ class MonitizationPostingController extends Controller
                 'message' => "Monitization Post has been created."
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -191,6 +198,7 @@ class MonitizationPostingController extends Controller
                 'message' => "Monitization Post has been updated."
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -219,6 +227,7 @@ class MonitizationPostingController extends Controller
                 'message' => 'Monitization has successfully deleted.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

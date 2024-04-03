@@ -2,24 +2,20 @@
 
 namespace App\Http\Controllers\LeaveAndOverTime;
 
-use App\Models\LeaveCredit;
+use App\Helpers\Helpers;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\DTR\DTRcontroller;
 use App\Http\Resources\EmployeeLeaveCredit;
-use App\Http\Resources\EmployeeProfile;
-use App\Http\Resources\LeaveApplication;
 use App\Http\Resources\LeaveCredit as ResourcesLeaveCredit;
-use App\Models\DailyTimeRecord;
 use App\Models\EmployeeLeaveCredit as ModelsEmployeeLeaveCredit;
 use App\Models\EmployeeProfile as ModelsEmployeeProfile;
-use App\Models\EmploymentType;
-use App\Models\LeaveApplication as ModelsLeaveApplication;
 use App\Models\LeaveType;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Carbon\Carbon;
+
 class LeaveCreditController extends Controller
 {
+    private $CONTROLLER_NAME = "LeaveCreditController";
     /**
      * Display a listing of the resource.
      */
@@ -33,7 +29,7 @@ class LeaveCreditController extends Controller
 
              return response()->json(['data' => $leave_credit_resource], Response::HTTP_OK);
         }catch(\Throwable $th){
-
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], 500);
         }
     }
@@ -381,7 +377,7 @@ class LeaveCreditController extends Controller
 
             return response() -> json(['data' => "Success"], 200);
         }catch(\Throwable $th){
-
+            Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
             return response() -> json(['message' => $th -> getMessage()], 500);
         }
     }

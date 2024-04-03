@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Schedule;
 use App\Http\Requests\OnCallRequest;
 use App\Http\Resources\EmployeeProfileResource;
 use App\Http\Resources\OnCallResource;
-use App\Models\EmployeeProfile;
 use App\Models\OnCall;
 
 use App\Helpers\Helpers;
@@ -71,7 +70,7 @@ class OnCallController extends Controller
 
         } catch (\Throwable $th) {
 
-            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'create', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -180,7 +179,7 @@ class OnCallController extends Controller
             ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -203,7 +202,6 @@ class OnCallController extends Controller
             return response()->json(['data' => $data], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }

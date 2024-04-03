@@ -4,18 +4,16 @@ namespace App\Http\Controllers\LeaveAndOverTime;
 
 use App\Helpers\Helpers;
 use App\Http\Requests\AuthPinApprovalRequest;
+use App\Http\Resources\LeaveTypeResource;
 use App\Http\Resources\MonetizationApplicationResource;
 use App\Models\Division;
 use App\Models\EmployeeLeaveCredit;
 use App\Models\LeaveType;
 use App\Models\MonetizationApplication;
 use App\Http\Controllers\Controller;
-use App\Models\Department;
 use App\Models\EmployeeProfile;
-use App\Models\LeaveType as ModelsLeaveType;
 use App\Models\MoneApplicationLog;
 use App\Models\Section;
-use App\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Models\EmployeeLeaveCreditLogs;
@@ -673,6 +671,7 @@ class MonetizationApplicationController extends Controller
             // }
 
         } catch (\Exception $e) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'printLeaveForm', $e->getMessage());
             return response()->json(['message' => $e->getMessage(), 'error' => true]);
         }
     }

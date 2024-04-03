@@ -4,18 +4,13 @@ namespace App\Http\Controllers\LeaveAndOverTime;
 
 use App\Helpers\Helpers;
 use App\Http\Requests\AuthPinApprovalRequest;
-use App\Http\Resources\LeaveTypeRequirementLogsResource;
-use App\Models\LeaveTypeRequirementLog;
 use App\Models\Requirement;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\RequirementRequest;
 use App\Http\Resources\LeaveRequirementResource;
 use App\Models\RequirementLog;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\Hash;
 
 class RequirementController extends Controller
 {

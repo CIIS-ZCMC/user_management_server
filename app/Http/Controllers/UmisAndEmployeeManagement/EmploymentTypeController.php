@@ -60,12 +60,11 @@ class EmploymentTypeController extends Controller
             $name = strip_tags($request->input('name'));
 
             $employment_type = EmploymentType::create(['name' => $name]);
-
-            Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => new EmploymentTypeResource($employment_type),
-                'message' => 'New employment type registered.'
+                'message' => 'New employment type registered.',
+                'logs' => Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
              Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
@@ -107,12 +106,11 @@ class EmploymentTypeController extends Controller
             $name = strip_tags($request->input('name'));
 
             $employment_type -> update(['name' => $name]);
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => new EmploymentTypeResource($employment_type),
-                'message' => 'Employment type record updated.'
+                'message' => 'Employment type record updated.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
              Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
@@ -141,11 +139,12 @@ class EmploymentTypeController extends Controller
                 return response()->json(['message' => 'Some data is using this employment type record deletion is prohibited.'], Response::HTTP_BAD_REQUEST);
             }
 
-            $employment_type -> delete();
+            $employment_type -> delete(); 
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response()->json(['message' => 'Employment Type record deleted.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Employment Type record deleted.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
              Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

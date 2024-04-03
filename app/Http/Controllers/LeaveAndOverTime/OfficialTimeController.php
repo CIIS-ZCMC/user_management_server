@@ -120,14 +120,13 @@ class OfficialTimeController extends Controller
     public function create(Request $request)
     {
         try {
-
             $user = $request->user;
             $sql = OfficialTime::where('employee_profile_id', $user->id)->get();
             return response()->json(['data' => OfficialTimeResource::collection($sql)], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
-            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME,'create', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -199,26 +198,9 @@ class OfficialTimeController extends Controller
                         'msg' => 'Request Complete.'], Response::HTTP_OK);
             }
         } catch (\Throwable $th) {
-
             Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
     }
 
     /**
@@ -287,17 +269,8 @@ class OfficialTimeController extends Controller
                                     'msg' => $log_action, ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-
             Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
     }
 }

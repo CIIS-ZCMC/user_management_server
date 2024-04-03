@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\LeaveAndOverTime;
 
-use App\Http\Controllers\UmisAndEmployeeManagement\EmployeeProfileController;
 use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Resources\LeaveTypeResource;
 use App\Http\Resources\MyApprovedLeaveApplicationResource;
@@ -22,7 +21,6 @@ use Illuminate\Http\Response;
 use App\Models\LeaveApplication;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LeaveApplicationRequest;
-use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Resources\LeaveApplicationResource;
 use App\Models\EmployeeLeaveCredit;
 use App\Models\EmployeeLeaveCreditLogs;
@@ -31,10 +29,11 @@ use App\Models\LeaveApplicationLog;
 use App\Models\LeaveApplicationRequirement;
 use App\Models\OfficialBusiness;
 use App\Models\OfficialTime;
-use Illuminate\Support\Str;
 
 class LeaveApplicationController extends Controller
 {
+    private $CONTROLLER_NAME = "LeaveApplicationController";
+
     public function index(Request $request)
     {
         try {
@@ -143,54 +142,12 @@ class LeaveApplicationController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->get();
 
-
-            // if (Helpers::getChiefOfficer() === $employee_profile->id) {
-            //     $leave_applications = [];
-            //     $divisions = Division::all();
-
-            //     foreach ($divisions as $division) {
-            //         if ($division->code === 'OMCC') {
-            //             $leave_application_under_omcc = LeaveApplication::join('employee_profile as emp', 'emp.', 'employee_profile_id')
-            //                 ->join('assign_areas as aa', 'aa.employee_profile_id', 'emp.id')->where('aa.division_id', $division->id)
-            //                 ->where('recommending_officer', $division->chief_employee_profile_id)->get();
-
-            //             $leave_applications = [...$leave_applications, ...$leave_application_under_omcc];
-            //             continue;
-            //         }
-            //         $leave_application_per_division_head = LeaveApplication::where('for approving_officer')->where('approving_officer', $division->chief_employee_profile_id)->get();
-            //         $leave_applications = [...$leave_applications, ...$leave_application_per_division_head];
-            //     }
-
-            //     return response()->json([
-            //         'data' => LeaveApplicationResource::collection($leave_applications),
-            //         'message' => 'Retrieve all leave application records.'
-            //     ], Response::HTTP_OK);
-            // }
-
-            // /**
-            //  * For employee that has position
-            //  * Only for approving application status
-            //  */
-
-            // $position = $employee_profile->position();
-            // if ($position !== null && $position['position'] !== 'Unit Head' && !str_contains($position['position'], 'OIC')) {
-            //     $leave_applications = LeaveApplication::where('recommending_officer', $employee_profile->id)->get();
-            //     $approving_applications = LeaveApplication::where('approving_officer', $employee_profile->id)->get();
-            //     $leave_applications = [...$leave_applications, ...$approving_applications];
-
-            //     return response()->json([
-            //         'data' => LeaveApplicationResource::collection($leave_applications),
-            //         'message' => 'Retrieve all leave application records.'
-            //     ], Response::HTTP_OK);
-            // }
-
-            // $leave_applications = LeaveApplication::where('employee_profile_id', $employee_profile->id)->get();
-
             return response()->json([
                 'data' => LeaveApplicationResource::collection($leave_applications),
                 'message' => 'Retrieve all leave application records.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -285,6 +242,7 @@ class LeaveApplicationController extends Controller
                 'message' => 'Retrieve list.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'approvedLeaveRequest', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -302,6 +260,7 @@ class LeaveApplicationController extends Controller
                 'message' => 'Retrieve list.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'myApprovedLeaveApplication', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -316,6 +275,7 @@ class LeaveApplicationController extends Controller
                 'message' => 'Retrieve list.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, 'employeeApprovedLeaveApplication', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -351,6 +311,7 @@ class LeaveApplicationController extends Controller
 
             return ['data' => $response];
         } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'getEmployees', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -372,6 +333,7 @@ class LeaveApplicationController extends Controller
                 'message' => 'List of employees retrieved.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'getAllEmployees', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -386,6 +348,7 @@ class LeaveApplicationController extends Controller
                 'message' => 'list of special leave type retrieved.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'getLeaveTypes', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -455,6 +418,7 @@ class LeaveApplicationController extends Controller
 
             return response()->json(['message' => 'Leave credits updated successfully', 'data' => $response,], 200);
         } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'updateCredit', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -515,6 +479,7 @@ class LeaveApplicationController extends Controller
 
             return response()->json(['message' => 'Leave credits added successfully', 'data' => $response,], 200);
         } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'addCredit', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -598,6 +563,7 @@ class LeaveApplicationController extends Controller
                 'message' => 'Successfully approved application.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'approved', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -629,6 +595,7 @@ class LeaveApplicationController extends Controller
                 'message' => 'Retrieve all leave application records.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'userLeaveApplication', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -879,6 +846,7 @@ class LeaveApplicationController extends Controller
                 ], Response::HTTP_OK);
             }
         } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -897,6 +865,7 @@ class LeaveApplicationController extends Controller
                 'message' => 'Retrieve leave application record.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -965,6 +934,7 @@ class LeaveApplicationController extends Controller
                 'message' => 'Declined leave application successfully.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'declined', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -1012,19 +982,8 @@ class LeaveApplicationController extends Controller
 
             // Use 'I' instead of 'D' to open in the browser
             $dompdf->stream($filename, array('Attachment' => false));
-            // $dompdf->stream($filename);
-
-
-            // if ($dompdf->loadHtml($html)) {
-            // $dompdf->setPaper('Legal', 'portrait');
-            // $dompdf->render();
-            // $filename = 'Leave Application('. $data->employeeProfile->personalInformation->name() .').pdf';
-            // $dompdf->stream($filename);
-            // } else {
-            //     return response()->json(['message' => 'Error loading HTML content', 'error' => true]);
-            // }
-
         } catch (\Exception $e) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'printLeaveForm', $e->getMessage());
             return response()->json(['message' => $e->getMessage(), 'error' => true]);
         }
     }

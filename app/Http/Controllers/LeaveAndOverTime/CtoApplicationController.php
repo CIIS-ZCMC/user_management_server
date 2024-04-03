@@ -18,6 +18,7 @@ use Carbon\Carbon;
 
 class CtoApplicationController extends Controller
 {
+    private $CONTROLLER_NAME = "CtoApplicationController";
 
     public function index(Request $request)
     {
@@ -93,6 +94,7 @@ class CtoApplicationController extends Controller
             ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -108,7 +110,7 @@ class CtoApplicationController extends Controller
                                     'employee_credit' => EmployeeOvertimeCreditResource::collection($employeeCredit)], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-
+            Helpers::errorLog($this->CONTROLLER_NAME, 'create', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -177,7 +179,7 @@ class CtoApplicationController extends Controller
                                     'message' => $log_action, ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-
+            Helpers::errorLog($this->CONTROLLER_NAME, 'approved', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -301,6 +303,7 @@ class CtoApplicationController extends Controller
                         'message' => 'Request submitted sucessfully.'
                     ], Response::HTTP_OK);
         } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -315,6 +318,7 @@ class CtoApplicationController extends Controller
                 'message' => 'Retrieve compensatory application record.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'show', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -365,6 +369,7 @@ class CtoApplicationController extends Controller
                 'message' => 'Retrieve compensatory time off application record.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'declined', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

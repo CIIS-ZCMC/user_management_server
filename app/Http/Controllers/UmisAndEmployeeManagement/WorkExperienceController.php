@@ -81,12 +81,11 @@ class WorkExperienceController extends Controller
             }
 
             $work_experience = WorkExperience::create($cleanData);
-
-            Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => new WorkExperienceResource($work_experience),
-                'message' => 'New work experience added.'
+                'message' => 'New work experience added.',
+                'logs' => Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
@@ -165,12 +164,11 @@ class WorkExperienceController extends Controller
             }
 
             $work_experience -> update($cleanData);
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => new WorkExperienceResource($work_experience),
-                'message' => 'Work experience record updated.'
+                'message' => 'Work experience record updated.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
@@ -210,8 +208,6 @@ class WorkExperienceController extends Controller
                 $success[] = $work_experience_new;
             }
 
-            Helpers::registerSystemLogs($request, null, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
-
             if(count($cleanData) === count($failed)){
                 return response()->json([
                     'message' => "Request to update work experience records has failed.",
@@ -229,7 +225,8 @@ class WorkExperienceController extends Controller
 
             return response()->json([
                 'data' => WorkExperienceResource::collection($success),
-                'message' => 'Employee work experience data is updated.'
+                'message' => 'Employee work experience data is updated.',
+                'logs' => Helpers::registerSystemLogs($request, null, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'updateMany', $th->getMessage());
@@ -256,9 +253,10 @@ class WorkExperienceController extends Controller
 
             $work_experience -> delete();
             
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response()->json(['message' => 'Work experience record deleted.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Work experience record deleted.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['meTruessage' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -286,9 +284,10 @@ class WorkExperienceController extends Controller
                 $value->delete();
             }
             
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response()->json(['message' => 'Employee work experience record deleted.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Employee work experience record deleted.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'destroyByPersonalInformationID', $th->getMessage());
             return response()->json(['meTruessage' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -319,9 +318,10 @@ class WorkExperienceController extends Controller
                 $value->delete();
             }
             
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response()->json(['message' => 'Employee work experience record deleted.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Employee work experience record deleted.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'destroyByPersonalInformationID', $th->getMessage());
             return response()->json(['meTruessage' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

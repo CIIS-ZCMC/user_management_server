@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Schedule;
 
 use App\Http\Resources\EmployeeScheduleResource;
 use App\Http\Resources\HolidayResource;
-use App\Http\Resources\TimeShiftResource;
 use App\Models\AssignArea;
 use App\Models\EmployeeSchedule;
 use App\Models\Holiday;
@@ -20,7 +19,6 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Str;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -106,7 +104,7 @@ class ScheduleController extends Controller
                 'holiday' => HolidayResource::collection(Holiday::all())
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'create', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -220,7 +218,6 @@ class ScheduleController extends Controller
                 'message' => 'New employee schedule registered.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
-
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -255,7 +252,7 @@ class ScheduleController extends Controller
                 // 'week_end' => $schedule->countWeekEnd($year, $month)
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'edit', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -410,7 +407,7 @@ class ScheduleController extends Controller
             /* Downloads as PDF */
             $dompdf->stream($filename, array("Attachment" => false));
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'generate', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -456,7 +453,7 @@ class ScheduleController extends Controller
 
             return response()->json(['data' => $data], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'employeeList', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -488,7 +485,7 @@ class ScheduleController extends Controller
 
             return response()->json(['data' => new EmployeeScheduleResource($data)], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'findSchedule', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

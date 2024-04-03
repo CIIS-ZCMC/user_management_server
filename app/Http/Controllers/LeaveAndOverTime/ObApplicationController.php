@@ -5,15 +5,9 @@ namespace App\Http\Controllers\LeaveAndOverTime;
 use App\Helpers\Helpers;
 use App\Models\ObApplication;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\ObApplication as ResourcesObApplication;
-use App\Http\Resources\ObApplicationLog as ResourcesObApplicationLog;
-use App\Http\Resources\ObApplicationResource;
-use App\Http\Resources\OfficialBusinessApplication;
 use App\Models\AssignArea;
 use App\Models\Department;
 use App\Models\Division;
-use App\Models\EmployeeProfile;
-use App\Models\LeaveType;
 use App\Models\ObApplicationLog;
 use App\Models\ObApplicationRequirement;
 use App\Models\Section;
@@ -21,9 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
 use App\Services\FileService;
-use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
-use Hamcrest\Core\IsNot;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
@@ -2126,7 +2118,6 @@ class ObApplicationController extends Controller
     public function declineObApplication($id,Request $request)
     {
         try {
-
                 $ob_applications = ObApplication::where('id','=', $id)
                                                             ->first();
                 if($ob_applications)

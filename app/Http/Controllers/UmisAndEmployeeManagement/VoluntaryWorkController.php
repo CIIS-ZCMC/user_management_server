@@ -81,11 +81,10 @@ class VoluntaryWorkController extends Controller
 
             $voluntary_work = VoluntaryWork::create($cleanData);
 
-            Helpers::registerSystemLogs($request, $voluntary_work['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => new VoluntaryWorkResource($voluntary_work),
-                'message' => 'New employee voluntary work registered.'
+                'message' => 'New employee voluntary work registered.',
+                'logs' => Helpers::registerSystemLogs($request, $voluntary_work['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
@@ -165,11 +164,10 @@ class VoluntaryWorkController extends Controller
 
             $voluntary_work->update($cleanData);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => new VoluntaryWorkResource($voluntary_work), 
-                'message' => 'Employee voluntary work data is updated.'
+                'message' => 'Employee voluntary work data is updated.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
@@ -209,8 +207,6 @@ class VoluntaryWorkController extends Controller
                 $success[] = $voluntary_work_experience_new;
             }
 
-            Helpers::registerSystemLogs($request, null, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
-
             if(count($cleanData) === count($failed)){
                 return response()->json([
                     'message' => "Request to update voluntary work experience records has failed.",
@@ -228,7 +224,8 @@ class VoluntaryWorkController extends Controller
 
             return response()->json([
                 'data' => VoluntaryWorkResource::collection($success),
-                'message' => 'Employee voluntary work experience data is updated.'
+                'message' => 'Employee voluntary work experience data is updated.',
+                'logs' => Helpers::registerSystemLogs($request, null, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'updateMany', $th->getMessage());
@@ -250,9 +247,10 @@ class VoluntaryWorkController extends Controller
 
             $voluntary_work->delete();
             
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response()->json(['message' => 'Employee voluntary work record deleted.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Employee voluntary work record deleted.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -280,9 +278,10 @@ class VoluntaryWorkController extends Controller
                 $voluntary_work->delete();
             }
             
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response()->json(['message' => 'Employee voluntary works record deleted.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Employee voluntary works record deleted.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -313,9 +312,10 @@ class VoluntaryWorkController extends Controller
                 $voluntary_work->delete();
             }
             
-            Helpers::registerSystemLogs($request, null, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response()->json(['message' => 'Employee voluntary works record deleted'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Employee voluntary works record deleted',
+                'logs' => Helpers::registerSystemLogs($request, null, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

@@ -57,11 +57,10 @@ class LegalInformationQuestionController extends Controller
 
             $legal_information_question = LegalInformationQuestion::create($cleanData);
 
-            Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => new LegalInformationQuestionResource($legal_information_question),
-                'message' => 'New legal information question registered.'
+                'message' => 'New legal information question registered.',
+                'logs' => Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
@@ -111,11 +110,10 @@ class LegalInformationQuestionController extends Controller
 
             $legal_information_question -> update($cleanData);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => new LegalInformationQuestionResource($legal_information_question),
-                'message' => 'Legal information question record updated.'
+                'message' => 'Legal information question record updated.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
@@ -141,10 +139,11 @@ class LegalInformationQuestionController extends Controller
             }
 
             $legal_information_question -> delete();
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json(['message' => 'Legal information question record deleted.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Legal information question record deleted.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

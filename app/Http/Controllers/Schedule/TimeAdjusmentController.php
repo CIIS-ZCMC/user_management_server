@@ -39,7 +39,6 @@ class TimeAdjusmentController extends Controller
             return response()->json(['data' => TimeAdjustmentResource::collection(TimeAdjusment::all())], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -57,7 +56,6 @@ class TimeAdjusmentController extends Controller
             return response()->json(['data' => TimeAdjustmentResource::collection($data)], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }

@@ -13,6 +13,7 @@ use App\Http\Requests\PullOutRequest;
 use App\Helpers\Helpers;
 
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 
 use Carbon\Carbon;
@@ -36,7 +37,6 @@ class PullOutController extends Controller
             return response()->json(['data' => PullOutResource::collection(PullOut::all())], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         } //
@@ -54,8 +54,7 @@ class PullOutController extends Controller
             return response()->json(['data' => PullOutResource::collection($data)], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-
-            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'create', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -158,7 +157,6 @@ class PullOutController extends Controller
                                     'msg' => 'Pull out requested'], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -214,7 +212,6 @@ class PullOutController extends Controller
                                     'msg' => 'Pull out is '.$status], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -240,7 +237,6 @@ class PullOutController extends Controller
                                     'msg' => 'Request successfully deleted.', Response::HTTP_OK]);
 
         } catch (\Throwable $th) {
-
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
 

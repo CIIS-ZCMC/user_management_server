@@ -68,12 +68,11 @@ class SpecialAccessRoleController extends Controller
             }
 
             $special_access_role = SpecialAccessRole::create($cleanData);
-            
-            Helpers::registerSystemLogs($request, $special_access_role['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response() -> json([
                 'data' => new SpecialAccessRoleResource($special_access_role),
-                'message' => 'New special role added.'
+                'message' => 'New special role added.',
+                'logs' => Helpers::registerSystemLogs($request, $special_access_role['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
@@ -120,9 +119,10 @@ class SpecialAccessRoleController extends Controller
 
             $special_access_role -> delete();
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-
-            return response() -> json(['message' => 'Special access role record deleted.'], Response::HTTP_OK);
+            return response() -> json([
+                'message' => 'Special access role record deleted.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

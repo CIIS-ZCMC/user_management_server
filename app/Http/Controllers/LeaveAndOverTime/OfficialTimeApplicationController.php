@@ -41,7 +41,6 @@ class OfficialTimeApplicationController extends Controller
     public function index()
     {
         try{
-
             $official_time_applications = OfficialTimeApplication::with(['employeeProfile.personalInformation','logs'])->get();
             if($official_time_applications->isNotEmpty())
             {

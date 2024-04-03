@@ -80,12 +80,11 @@ class TrainingController extends Controller
             }
 
             $training = Training::create($cleanData);
-
-            Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => new TrainingResource($training),
-                'message' => 'New Learning and Development (L&D) record added.'
+                'message' => 'New Learning and Development (L&D) record added.',
+                'logs' => Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
@@ -161,12 +160,11 @@ class TrainingController extends Controller
             }
 
             $training -> update($cleanData);
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response()->json([
                 'data' => new TrainingResource($training),
-                'message' => 'Training record updated.'
+                'message' => 'Training record updated.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
@@ -206,8 +204,6 @@ class TrainingController extends Controller
                 $success[] = $training_new;
             }
 
-            Helpers::registerSystemLogs($request, null, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
-
             if(count($cleanData) === count($failed)){
                 return response()->json([
                     'message' => "Request to update training records has failed.",
@@ -225,7 +221,8 @@ class TrainingController extends Controller
 
             return response()->json([
                 'data' => TrainingResource::collection($success),
-                'message' => 'Employee training data is updated.'
+                'message' => 'Employee training data is updated.',
+                'logs' => Helpers::registerSystemLogs($request, null, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'updateMany', $th->getMessage());
@@ -252,76 +249,12 @@ class TrainingController extends Controller
 
             $training -> delete();
             
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response()->json(['message' => 'Learning and Development (L&D) record deleted'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Learning and Development (L&D) record deleted',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-    
-    public function destroyByPersonalInformationID($id, AuthPinApprovalRequest $request)
-    {
-        try{
-            $user = $request->user;
-            $cleanData['pin'] = strip_tags($request->password);
-
-            if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
-            }
-
-            $training = Training::where('personal_information_id', $id)->get();
-
-            if(!$training || count($training))
-            {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }
-
-            foreach($training as $key => $value)
-            {
-                $value -> delete();
-            }
-            
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response()->json(['message' => 'Success'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'destroyByPersonalInformationID', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-    
-    public function destroyByEmployeeID($id, AuthPinApprovalRequest $request)
-    {
-        try{
-            $user = $request->user;
-            $cleanData['pin'] = strip_tags($request->password);
-
-            if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
-            }
-
-            $employee_profile = EmployeeProfile::find($id);
-
-            if(!$employee_profile)
-            {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }
-
-            $personal_information = $employee_profile->personalInformation;
-            $training = $personal_information->training;
-
-            foreach($training as $key => $value)
-            {
-                $value -> delete();
-            }
-            
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response()->json(['message' => 'Success'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'destroyByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

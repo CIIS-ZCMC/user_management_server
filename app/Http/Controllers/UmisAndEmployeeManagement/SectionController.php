@@ -123,11 +123,11 @@ class SectionController extends Controller
             }
 
             Helpers::notifications($employee_profile->id, "You been assigned as section head of ".$section->name." section.");
-            Helpers::registerSystemLogs($request, $id, true, 'Success in assigning supervisor '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => new SectionResource($section),
-                'message' => 'Section supervisor registered.'
+                'message' => 'Section supervisor registered.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in assigning supervisor '.$this->PLURAL_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'assignSupervisorByEmployeeID', $th->getMessage());
@@ -186,11 +186,11 @@ class SectionController extends Controller
             $section->update($cleanData);
 
             Helpers::notifications($employee_profile->id, "You been assigned as officer in charge of ".$section->name." division.");
-            Helpers::registerSystemLogs($request, $id, true, 'Success in assigning officer in charge '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => new SectionResource($section),
-                'message' => 'Section officer incharge registered.'
+                'message' => 'Section officer incharge registered.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in assigning officer in charge '.$this->PLURAL_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'assignOICByEmployeeID', $th->getMessage());
@@ -260,11 +260,10 @@ class SectionController extends Controller
 
             $section = Section::create($cleanData);
 
-            Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' =>  new SectionResource($section),
-                'message' => 'Section created successfully.'
+                'message' => 'Section created successfully.',
+                'logs' => Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
              Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
@@ -362,11 +361,10 @@ class SectionController extends Controller
 
             $section -> update($cleanData);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' =>  new SectionResource($section),
-                'message' => 'Section updated successfully.'
+                'message' => 'Section updated successfully.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
              Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
@@ -393,9 +391,10 @@ class SectionController extends Controller
 
             $section -> delete();
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-
-            return response()->json(['message' => 'Section deleted successfully.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Section deleted successfully.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
              Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

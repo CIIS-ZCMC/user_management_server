@@ -152,7 +152,7 @@ class HolidayController extends Controller
         try {
             return response()->json(['data' => HolidayCalendarResource::collection(Holiday::all())], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            $this->requestLogger->errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME, 'calendar', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
