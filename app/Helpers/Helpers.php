@@ -29,6 +29,7 @@ use DateInterval;
 use DatePeriod;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 
@@ -615,7 +616,7 @@ class Helpers
 
     public static function hashKey($encryptedToken)
     {
-        return openssl_decrypt($encryptedToken->token, "AES-256-CBC", "base64:fR8Lx8gzXJ57GafI840mU2jfx36HpIchVqnR8JbPUAg=", 0, substr(md5("base64:fR8Lx8gzXJ57GafI840mU2jfx36HpIchVqnR8JbPUAg="), 0, 16));
+        return openssl_decrypt($encryptedToken->token, Cache::get('encrypt_decrypt_algorithm'), Cache::get('app_key'), 0, substr(md5(Cache::get('app_key')), 0, 16));
     }
 
     public static function Cookie_Name()

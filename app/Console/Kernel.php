@@ -13,10 +13,10 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        //$schedule->command('app:pull-d-t-r')->everyMinute();
+        // $schedule->command('app:pull-d-t-r')->everyTenSeconds();
         $schedule->command('app:pull-d-t-r')->everyThreeMinutes();
         $schedule->command('app:backup-d-t-r')->everyThirtyMinutes();
-        
+
         $schedule->command('app:c-t-o-expiration')->when(function () {
             return now()->month == 12 && now()->day == 25;
         })->daily();
