@@ -21,4 +21,14 @@ class ExchangeDutyLog extends Model
 
     public $timestamps = true;
 
+    public function exchangeDuty()
+    {
+        return $this->belongsTo(ExchangeDuty::class, 'exchange_duty_id');
+    }
+
+    public function employeeProfile()
+    {
+        return $this->belongsTo(EmployeeProfile::class, 'action_by');
+    }
+
 }
