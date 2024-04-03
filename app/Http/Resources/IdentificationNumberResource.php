@@ -14,6 +14,7 @@ class IdentificationNumberResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        //Update here to handle null value
         $gsis = $this->gsis_id_no === null? "NONE":$this->decryptData("gsis_id_no");
         $pag_ibig = $this->pag_ibig_id_no === null? "NONE":$this->decryptData("pag_ibig_id_no");
         $philhealth = $this->philhealth_id_no === null? "NONE":$this->decryptData("philhealth_id_no");
