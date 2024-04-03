@@ -110,11 +110,11 @@ class DepartmentController extends Controller
             }
 
             Helpers::notifications($employee_profile->id, "You been assigned as department head of ".$department->name." department.");
-            Helpers::registerSystemLogs($request, $id, true, 'Success in assigning head'.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => new DepartmentResource($department), 
-                'message' => 'New department head assigned.'
+                'message' => 'New department head assigned.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in assigning head'.$this->PLURAL_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'assignHeadByEmployeeID', $th->getMessage());
@@ -159,11 +159,11 @@ class DepartmentController extends Controller
             $department->update($cleanData);
 
             Helpers::notifications($employee_profile->id, "You been assigned as training officer of ".$department->name." department.");
-            Helpers::registerSystemLogs($request, $id, true, 'Success in assigning head'.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => new DepartmentResource($department), 
-                'message' => 'New training officer assigned.'
+                'message' => 'New training officer assigned.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in assigning head'.$this->PLURAL_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'assignHeadByEmployeeID', $th->getMessage());
@@ -213,11 +213,12 @@ class DepartmentController extends Controller
             $department->update($cleanData);
 
             Helpers::notifications($employee_profile->id, "You been assigned as officer in charge of ".$department->name." department.");
-            Helpers::registerSystemLogs($request, $id, true, 'Success in assigning officer in charge '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => new DepartmentResource($department), 
-                'message' => 'New officer incharge assigned.'], Response::HTTP_OK);
+                'message' => 'New officer incharge assigned.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in assigning officer in charge '.$this->PLURAL_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'assignOICByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -260,11 +261,10 @@ class DepartmentController extends Controller
 
             $department = Department::create($cleanData);
 
-            Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' =>  new DepartmentResource($department),
-                'message' => 'Department created successfully.'
+                'message' => 'Department created successfully.',
+                'logs' => Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
              Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
@@ -334,11 +334,10 @@ class DepartmentController extends Controller
 
             $department -> update($cleanData);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' =>  new DepartmentResource($department),
-                'message' => 'Department updated successfully.'
+                'message' => 'Department updated successfully.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
              Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
@@ -365,9 +364,10 @@ class DepartmentController extends Controller
 
             $department -> delete();
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-
-            return response()->json(['message' => 'Department deleted successfully.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Department deleted successfully.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

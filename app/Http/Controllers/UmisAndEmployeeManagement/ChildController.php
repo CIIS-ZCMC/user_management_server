@@ -90,64 +90,10 @@ class ChildController extends Controller
 
             $child = Child::create($cleanData);
 
-            Helpers::registerSystemLogs($request, $child['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => new ChildResource($child),
-                'message' => 'New employee child record added.'
-            ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-    
-    
-    public function storeMany(Request $request)
-    {
-        try{
-            $success = [];
-            $failed = [];
-
-            $personal_information = PersonalInformation::find($request->input('personal_information_id'));
-
-            if(!$personal_information)
-            {
-                return response()->json(['message'=> 'No record found.'], Response::HTTP_NOT_FOUND);
-            }
-
-            foreach($request->children as $child){
-                $cleanData = [];
-                foreach ($child as $key => $value) {
-                    if ($value === null) {
-                        $cleanData[$key] = $value;
-                        continue;
-                    }
-                    $cleanData[$key] = strip_tags($value);
-                }
-                $child = Child::create($cleanData);
-
-                if(!$child){
-                    $failed[] = $cleanData;
-                    continue;
-                }
-
-                $success = $child;
-            }
-
-            Helpers::registerSystemLogs($request, $child['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
-
-            if(count($failed) > 0){
-                return response()->json([
-                    'data' => ChildResource::collection($success),
-                    'failed' => $failed,
-                    'message' => 'Some data failed to registere.'
-                ], Response::HTTP_OK);
-            }
-
-            return response()->json([
-                'data' => ChildResource::collection($success),
-                'message' => 'New employee child record added.'
+                'message' => 'New employee child record added.',
+                'logs' => Helpers::registerSystemLogs($request, $child['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
@@ -197,11 +143,10 @@ class ChildController extends Controller
 
             $child->update($cleanData);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => new ChildResource($child), 
-                'message' => 'Employee child data is updated.'
+                'message' => 'Employee child data is updated.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
@@ -241,8 +186,6 @@ class ChildController extends Controller
                 $success[] = $child_new;
             }
 
-            Helpers::registerSystemLogs($request, null, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
-
             if(count($cleanData) === count($failed)){
                 return response()->json([
                     'message' => "Request to update children records has failed.",
@@ -260,7 +203,8 @@ class ChildController extends Controller
 
             return response()->json([
                 'data' => ChildResource::collection($success),
-                'message' => 'Employee children data is updated.'
+                'message' => 'Employee children data is updated.',
+                'logs' => Helpers::registerSystemLogs($request, null, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'updateMany', $th->getMessage());
@@ -290,9 +234,10 @@ class ChildController extends Controller
 
             $child->delete();
             
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response()->json(['message' => 'Employee child record deleted.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Employee child record deleted.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -320,9 +265,10 @@ class ChildController extends Controller
                 $child->delete();
             }
             
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response()->json(['message' => 'Employee children record deleted.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Employee children record deleted.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -358,9 +304,10 @@ class ChildController extends Controller
                 $child->delete();
             }
             
-            Helpers::registerSystemLogs($request, null, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response()->json(['message' => 'Employee children record deleted'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Employee children record deleted',
+                'logs' => Helpers::registerSystemLogs($request, null, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

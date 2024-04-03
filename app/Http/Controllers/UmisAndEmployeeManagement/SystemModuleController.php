@@ -78,12 +78,10 @@ class SystemModuleController extends Controller
                 return response()->json(['message' => 'System already exist.'], Response::HTTP_FORBIDDEN);
             }
             $system_module = SystemModule::create($cleanData);
-
-            Helpers::registerSystemLogs($request, $system_module['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => new SystemModuleResource($system_module),
-                'message' => 'System module created successfully.'
+                'message' => 'System module created successfully.',
+                'logs' => Helpers::registerSystemLogs($request, $system_module['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
@@ -180,12 +178,10 @@ class SystemModuleController extends Controller
                 return response()->json(['data' => ModulePermissionResource::collection($new_module_permission) , 'failed'  => $failed, 'message' => "Some permission did not register."], Response::HTTP_OK);
             }
 
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in creating module permission '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => ModulePermissionResource::collection($new_module_permission),
-                'message' => 'New permission added to system module.'
+                'message' => 'New permission added to system module.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in creating module permission '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'addPermission', $th->getMessage());
@@ -238,11 +234,10 @@ class SystemModuleController extends Controller
 
             $system_module->update($cleanData);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => new SystemModuleResource($system_module),
-                'message' => 'System Module updated successfully'
+                'message' => 'System Module updated successfully',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
@@ -276,9 +271,10 @@ class SystemModuleController extends Controller
 
             $system_module->delete();
             
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response()->json(['message' => 'System module deleted successfully.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'System module deleted successfully.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -310,9 +306,10 @@ class SystemModuleController extends Controller
 
             $system_module->delete();
             
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response()->json(['message' => 'System module and its permission deleted successfully.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'System module and its permission deleted successfully.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

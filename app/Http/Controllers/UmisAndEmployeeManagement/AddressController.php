@@ -83,11 +83,10 @@ class AddressController extends Controller
 
             $address = Address::create($cleanData);
 
-            Helpers::registerSystemLogs($request, $address['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => new AddressResource($address),
-                'message' => 'New employee address added.'
+                'message' => 'New employee address added.',
+                'logs' => Helpers::registerSystemLogs($request, $address['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
@@ -137,11 +136,10 @@ class AddressController extends Controller
 
             $address->update($cleanData);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => new AddressResource($address),
-                'message' => 'Employee address detail updated.'
+                'message' => 'Employee address detail updated.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
@@ -253,11 +251,10 @@ class AddressController extends Controller
 
             $new_address = Address::create($cleanData['new_address'][1]);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => AddressResource::collection([$existing_address, $new_address]),
-                'message' => 'Employee address detail updated.'
+                'message' => 'Employee address detail updated.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
@@ -277,70 +274,10 @@ class AddressController extends Controller
 
             $address->delete();
             
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response()->json(['message' => 'Employee address deleted.'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-    
-    public function destroyByPersonalInformationID($id, Request $request)
-    {
-        try{
-            $addresses = Address::where('personal_information_id', $id)->get();
-
-            if(count($addresses) === 0)
-            {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }
-
-            foreach($addresses as $key => $address){
-                $address->delete();
-            }
-            
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response()->json(['message' => 'Employee address records deleted.'], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-    
-    public function destroyByEmployeeID($id, AuthPinApprovalRequest $request)
-    {
-        try{
-            $user = $request->user;
-            $cleanData['pin'] = strip_tags($request->password);
-
-            if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "show rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
-            }
-
-            $employee_profile = EmployeeProfile::find($id);
-
-            if(!$employee_profile)
-            {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }
-
-            $personal_information = $employee_profile->personalInformation;
-            $addresses = $personal_information->addresses;
-
-            if(count($addresses) === 0)
-            {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }
-
-            foreach($addresses as $key => $address){
-                $address->delete();
-            }
-            
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response()->json(['message' => 'Employee address records deleted.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Employee address deleted.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

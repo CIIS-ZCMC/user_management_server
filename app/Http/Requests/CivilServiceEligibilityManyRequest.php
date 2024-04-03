@@ -22,13 +22,12 @@ class CivilServiceEligibilityManyRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'eligibilities.career_service' => 'required|string|max:255',
-            'eligibilities.rating' => 'nullable|numeric',
-            'eligibilities.date_of_examination' => 'required|date:Y-m-d',
-            'eligibilities.place_of_examination' => 'required|string|max:255',
-            'eligibilities.license_number' => 'nullable|string|max:255',
-            'eligibilities.license_release_at' => 'nullable|date:Y-m-d',
-            'eligibilities.personal_information_id' => 'required|integer'
+            'eligibilities.*.career_service' => 'required|string|max:255',
+            'eligibilities.*.rating' => 'nullable|numeric',
+            'eligibilities.*.date_of_examination' => 'required|date:Y-m-d',
+            'eligibilities.*.place_of_examination' => 'required|string|max:255',
+            'eligibilities.*.license_number' => 'nullable|string|max:255',
+            'eligibilities.*.license_release_at' => 'nullable|date:Y-m-d',
         ];
     }
 }

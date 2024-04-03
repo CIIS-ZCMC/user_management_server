@@ -81,12 +81,11 @@ class EducationalBackgroundController extends Controller
             }
 
             $educational_background = EducationalBackground::create($cleanData);
-
-            Helpers::registerSystemLogs($request, $educational_background['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
-           
+            
             return response()->json([
                 'data' => new EducationalBackgroundResource($educational_background),
-                'message' => 'New employee education background registered.'
+                'message' => 'New employee education background registered.',
+                'logs' => Helpers::registerSystemLogs($request, $educational_background['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
@@ -94,13 +93,12 @@ class EducationalBackgroundController extends Controller
         }
     }
     
-    public function storeMany(Request $request)
+    public function storeMany($personal_information_id, EducationalBackgroundRequest $request)
     {
         try{
             $success = [];
-            $failed = [];
 
-            foreach(json_decode($request->educations) as $education){
+            foreach($request->educations as $education){
                 $cleanData = [];
                 foreach ($education as $key => $value) {
                     if ($value === null) {
@@ -109,34 +107,19 @@ class EducationalBackgroundController extends Controller
                     }
                     $cleanData[$key] = strip_tags($value);
                 }
+                $cleanData['$personal_information_id'] = $personal_information_id;
                 $educational_background = EducationalBackground::create($cleanData);
                 
                 if(!$educational_background){
-                    $failed[] = $cleanData;
                     continue;
                 }
 
                 $success[] = $educational_background;
             }
 
-
-            Helpers::registerSystemLogs($request, $educational_background['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
-           
-            if(count($failed) > 0){
-                return response()->json([
-                    'data' => EducationalBackgroundResource::collection($success),
-                    'failed' => $failed,
-                    'message' => 'Some data failed to registere.'
-                ], Response::HTTP_OK);
-            }
-            
-            return response()->json([
-                'data' =>  EducationalBackgroundResource::collection($success),
-                'message' => 'New employee education background registered.'
-            ], Response::HTTP_OK);
+            return $success;
         }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            throw new \Exception("Failed to register employee education record.", 400);
         }
     }
     
@@ -179,9 +162,11 @@ class EducationalBackgroundController extends Controller
 
             $educational_background->update($cleanData);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
-
-            return response()->json(['data' => new EducationalBackgroundResource($educational_background), 'message' => 'Employee educational background data has been updated.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new EducationalBackgroundResource($educational_background), 
+                'message' => 'Employee educational background data has been updated.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -221,8 +206,6 @@ class EducationalBackgroundController extends Controller
                 $success[] = $educational_background;
             }
 
-            Helpers::registerSystemLogs($request, null, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
-
             if(count($cleanData) === count($failed)){
                 return response()->json([
                     'message' => "Request to update educations has failed.",
@@ -240,7 +223,8 @@ class EducationalBackgroundController extends Controller
 
             return response()->json([
                 'data' => EducationalBackgroundResource::collection($success),
-                'message' => 'Employee educational_background data is updated.'
+                'message' => 'Employee educational_background data is updated.',
+                'logs' => Helpers::registerSystemLogs($request, null, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'updateMany', $th->getMessage());
@@ -267,9 +251,10 @@ class EducationalBackgroundController extends Controller
 
             $educational_background->delete();
             
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response()->json(['message' => 'Employee educational_background record deleted.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Employee educational_background record deleted.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -297,9 +282,10 @@ class EducationalBackgroundController extends Controller
                 $educational_background->delete();
             }
             
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response()->json(['message' => 'Employee educational_backgrounds record deleted.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Employee educational_backgrounds record deleted.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -330,9 +316,10 @@ class EducationalBackgroundController extends Controller
                 $educational_background->delete();
             }
             
-            Helpers::registerSystemLogs($request, null, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response()->json(['message' => 'Employee educational_backgrounds record deleted'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Employee educational_backgrounds record deleted',
+                'logs' => Helpers::registerSystemLogs($request, null, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

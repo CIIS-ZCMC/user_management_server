@@ -86,11 +86,10 @@ class MemorandumsController extends Controller
 
             $event = Memorandums::create($cleanData);
 
-            Helpers::registerSystemLogs($request, $event['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => new MemorandumsResource($event),
-                'message' => 'Event created successfully'
+                'message' => 'Event created successfully',
+                'logs' => Helpers::registerSystemLogs($request, $event['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
@@ -153,11 +152,10 @@ class MemorandumsController extends Controller
 
             $event->update($cleanData);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => new MemorandumsResource($event),
-                'message' => 'Memorandums detail updated.'
+                'message' => 'Memorandums detail updated.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
@@ -177,9 +175,10 @@ class MemorandumsController extends Controller
 
             $new->delete();
             
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response()->json(['message' => 'Memorandums deleted created.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Memorandums deleted created.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

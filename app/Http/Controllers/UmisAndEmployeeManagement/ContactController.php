@@ -63,26 +63,25 @@ class ContactController extends Controller
         }
     }
     
-    public function store(ContactRequest $request)
+    public function store($personal_information_id, ContactRequest $request)
     {
         try{ 
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
+                if($value === null){
+                    $cleanData[$key] = $value;
+                    continue;
+                }
                 $cleanData[$key] = strip_tags($value);
             }
 
+            $cleanData['personal_information_id'] = $personal_information_id;
             $contact = Contact::create($cleanData);
 
-            Helpers::registerSystemLogs($request, $contact['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
-
-            return response()->json([
-                'data' => new ContactResource($contact),
-                'message' => 'New Employee contact added.'
-            ], Response::HTTP_OK);
+            return $contact;
         }catch(\Throwable $th){
-           Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            throw new \Exception("Failed to register employee contact.", 400);
         }
     }
     
@@ -121,11 +120,10 @@ class ContactController extends Controller
 
             $contact -> update($cleanData);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => new ContactResource($contact),
-                'message' => 'Employee contact details updated.'
+                'message' => 'Employee contact details updated.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
@@ -152,9 +150,10 @@ class ContactController extends Controller
 
             $contact -> delete();
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-
-            return response()->json(['message' => 'Employee contact record deleted.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Employee contact record deleted.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
            Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -180,9 +179,10 @@ class ContactController extends Controller
 
             $contact -> delete();
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-
-            return response()->json(['message' => 'Employee contact record deleted.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Employee contact record deleted.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
            Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -211,9 +211,10 @@ class ContactController extends Controller
             $contact = $personal_information->contact;
             $contact -> delete();
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-
-            return response()->json(['message' => 'Employee contact record deleted.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Employee contact record deleted.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
            Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

@@ -27,7 +27,6 @@ class IssuanceInformationRequest extends FormRequest
             'ctc_issued_date' => 'required|date:Y-m-d',
             'ctc_issued_at' => 'required|string|max:255',
             'person_administrative_oath' => 'required|string|max:255',
-            'employee_profile_id' => 'required|integer',
         ];
     }
 }

@@ -86,11 +86,10 @@ class AnnouncementsController extends Controller
 
             $event = Announcements::create($cleanData);
 
-            Helpers::registerSystemLogs($request, $event['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => new AnnouncementsResource($event),
-                'message' => 'Event created successfully'
+                'message' => 'Event created successfully',
+                'logs' => Helpers::registerSystemLogs($request, $event['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
@@ -150,14 +149,12 @@ class AnnouncementsController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-
             $event->update($cleanData);
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => new AnnouncementsResource($event),
-                'message' => 'Announcements detail updated.'
+                'message' => 'Announcements detail updated.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
@@ -177,9 +174,10 @@ class AnnouncementsController extends Controller
 
             $new->delete();
             
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response()->json(['message' => 'Announcements deleted created.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Announcements deleted created.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

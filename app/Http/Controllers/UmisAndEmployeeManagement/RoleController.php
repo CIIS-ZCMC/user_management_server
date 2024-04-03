@@ -53,11 +53,10 @@ class RoleController extends Controller
 
             $role = Role::create($cleanData);
 
-            Helpers::registerSystemLogs($request, $role['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => new RoleResource($role),
-                'message' => 'Role created successfully.'
+                'message' => 'Role created successfully.',
+                'logs' => Helpers::registerSystemLogs($request, $role['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
@@ -110,11 +109,10 @@ class RoleController extends Controller
 
             $role->update($cleanData);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => new RoleResource($role),
-                'message' => 'Role updated successfully.'
+                'message' => 'Role updated successfully.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
@@ -141,9 +139,10 @@ class RoleController extends Controller
 
             $role->delete();
             
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response()->json(['message' => 'Role deleted successfully.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Role deleted successfully.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

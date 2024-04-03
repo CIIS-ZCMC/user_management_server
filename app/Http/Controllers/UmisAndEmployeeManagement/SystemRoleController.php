@@ -105,13 +105,15 @@ class SystemRoleController extends Controller
                 return response()->json([
                     "data" => $this->buildRoleDetails($system_roles),
                     "failed" => $failed,
-                    "message" => "System role rights has been successfully updated some had failed."
+                    "message" => "System role rights has been successfully updated some had failed.",
+                    'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.')
                 ],Response::HTTP_OK);
             }
 
             return response()->json([
                 "data" => $this->buildRoleDetails($system_roles),
-                'message' => 'System role rights has been successfully updated'
+                'message' => 'System role rights has been successfully updated',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'systemRoleAccessRightsUpdate', $th->getMessage());
@@ -229,11 +231,10 @@ class SystemRoleController extends Controller
 
             $systemRole = SystemRole::create($cleanData);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
-
             return response()->json([
                 'data' => new SystemRoleResource($systemRole),
-                "message" => 'New system role added'
+                "message" => 'New system role added',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.')
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
@@ -270,15 +271,15 @@ class SystemRoleController extends Controller
             if (count($failed) !== 0) {
                 return response()->json([
                     'data' => SpecialAccessRoleAssignResource::collection($special_access_roles),
-                    'message' => "Some employee failed to assign special access."
+                    'message' => "Some employee failed to assign special access.",
+                    'logs' => Helpers::registerSystemLogs($request, null, true, 'Success in assigning special access role.' . $this->PLURAL_MODULE_NAME . '.')
                 ], Response::HTTP_UNPROCESSABLE_ENTITY);
             }
 
-            Helpers::registerSystemLogs($request, null, true, 'Success in assigning special access role.' . $this->PLURAL_MODULE_NAME . '.');
-
             return response()->json([
                 'data' => SpecialAccessRoleAssignResource::collection($special_access_roles),
-                'message' => 'Special access role assign successfully.'
+                'message' => 'Special access role assign successfully.',
+                'logs' => Helpers::registerSystemLogs($request, null, true, 'Success in assigning special access role.' . $this->PLURAL_MODULE_NAME . '.')
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'addSpecialAccessRole', $th->getMessage());
@@ -329,11 +330,10 @@ class SystemRoleController extends Controller
                 $success_data[] = $result;
             }
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in creating system role, attaching permissions ' . $this->SINGULAR_MODULE_NAME . '.');
-
             return response()->json([
                 'data' => $success_data,
-                "message" => 'System roles and access rights registered successfully.'
+                "message" => 'System roles and access rights registered successfully.',
+                "logs" => Helpers::registerSystemLogs($request, $id, true, 'Success in creating system role, attaching permissions ' . $this->SINGULAR_MODULE_NAME . '.')
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
@@ -408,9 +408,10 @@ class SystemRoleController extends Controller
                 return response()->json(['data' => $new_record, 'message' => 'Failed to register some permission module.'], Response::HTTP_OK);
             }
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
-
-            return response()->json(["message" => 'New permission added to system role.'], Response::HTTP_OK);
+            return response()->json([
+                "message" => 'New permission added to system role.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.')
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'addModulePermission', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -486,11 +487,10 @@ class SystemRoleController extends Controller
 
             $systemRole->update($cleanData);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating ' . $this->SINGULAR_MODULE_NAME . '.');
-
             return response()->json([
                 'data' => new SystemRoleResource($systemRole),
-                "message" => 'System Role record updated'
+                "message" => 'System Role record updated',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in updating ' . $this->SINGULAR_MODULE_NAME . '.')
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
@@ -522,9 +522,10 @@ class SystemRoleController extends Controller
 
             $systemRole->delete();
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting ' . $this->SINGULAR_MODULE_NAME . '.');
-
-            return response()->json(['message' => 'System role record deleted.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'System role record deleted.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting ' . $this->SINGULAR_MODULE_NAME . '.')
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

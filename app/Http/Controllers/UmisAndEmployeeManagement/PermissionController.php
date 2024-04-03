@@ -54,11 +54,11 @@ class PermissionController extends Controller
 
             $permission = Permission::create($cleanData);
 
-            Helpers::registerSystemLogs($request, $permission['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => new PermissionResource($permission),
-                'message' => 'Permission created successfully.'], Response::HTTP_OK);
+                'message' => 'Permission created successfully.',
+                'logs' => Helpers::registerSystemLogs($request, $permission['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -110,11 +110,10 @@ class PermissionController extends Controller
 
             $permission->update($cleanData);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => new PermissionResource($permission),
-                'message' => 'Permission updated successfully.'
+                'message' => 'Permission updated successfully.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
@@ -141,11 +140,10 @@ class PermissionController extends Controller
 
             $permission->update(['active' => true]);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in activate permission '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => new PermissionResource($permission),
-                'message' => 'Permission actived.'
+                'message' => 'Permission actived.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in activate permission '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
@@ -172,11 +170,10 @@ class PermissionController extends Controller
 
             $permission->update(['active' => false]);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deactivate permission '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => new PermissionResource($permission),
-                'message' => 'Permission deactivated.'
+                'message' => 'Permission deactivated.',
+                'logs' =>  Helpers::registerSystemLogs($request, $id, true, 'Success in deactivate permission '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
@@ -203,9 +200,10 @@ class PermissionController extends Controller
 
             $permission->delete();
             
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response()->json(['message' => 'Permission deleted successfully.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Permission deleted successfully.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

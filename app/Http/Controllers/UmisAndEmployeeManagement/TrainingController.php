@@ -93,14 +93,12 @@ class TrainingController extends Controller
         }
     }
     
-    public function storeMany(Request $request)
+    public function storeMany($personal_information_id, TrainingManyRequest $request)
     {
         try{
             $success = [];
-            $failed = [];
-            $personal_information_id = strip_tags($request->personal_information_id);
 
-            foreach(json_decode($request->trainings) as $training){
+            foreach($request->trainings as $training){
                 $cleanData = [];
                 $cleanData['personal_information_id'] = $personal_information_id;
                 foreach ($training as $key => $value) {
@@ -120,24 +118,10 @@ class TrainingController extends Controller
 
                 $success[] = $training;
             }
-
-            Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
-            if(count($failed) > 0){
-                return response()->json([
-                    'data' => TrainingResource::collection($success),
-                    'failed' => $failed,
-                    'message' => 'Some data failed to registere.'
-                ], Response::HTTP_OK);
-            }
-
-            return response()->json([
-                'data' => TrainingResource::collection($success),
-                'message' => 'New training record retrived.'
-            ], Response::HTTP_OK);
+            return $success;
         }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            throw new \Exception("Failed to register employee training record.", 400);
         }
     }
     

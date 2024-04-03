@@ -61,6 +61,7 @@ class SalaryGradeSeeder extends Seeder
                     'eight' => $row['eight'] ?? null,
                     'tranch' => $row['tranch'] ?? null,
                     'effective_at' => now(),
+                    'is_active' => True
                 ]);
             } catch (\Exception $e) {
                 $this->command->error('Error inserting row: ' . implode(', ', $row));

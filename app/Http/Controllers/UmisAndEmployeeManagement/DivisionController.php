@@ -121,12 +121,12 @@ class DivisionController extends Controller
             }
 
             Helpers::notifications($employee_profile->id, "You been assigned as division head of ".$division->name." division.");
-            Helpers::registerSystemLogs($request, $id, true, 'Success in assigning division chief '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => new DivisionResource($division),
-                'message' => 'New chief assigned in department.'],
-                Response::HTTP_OK);
+                'message' => 'New chief assigned in department.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in assigning division chief '.$this->PLURAL_MODULE_NAME.'.')
+            ],Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'assignChiefByEmployeeID', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -184,11 +184,11 @@ class DivisionController extends Controller
             $division->update($cleanData);
 
             Helpers::notifications($employee_profile->id, "You been assigned as officer in charge of ".$division->name." division.");
-            Helpers::registerSystemLogs($request, $id, true, 'Success in assigning chief '.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
                 'data' => new DivisionResource($division),
-                'message' => 'New officer incharge assign in department.'
+                'message' => 'New officer incharge assign in department.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in assigning chief '.$this->PLURAL_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'assignOICByEmployeeID', $th->getMessage());
@@ -224,11 +224,10 @@ class DivisionController extends Controller
 
             $division = Division::create($cleanData);
 
-            Helpers::registerSystemLogs($request, $division['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => new DivisionResource($division),
-                'message' => 'Division created successfully.'
+                'message' => 'Division created successfully.',
+                'logs' => Helpers::registerSystemLogs($request, $division['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
@@ -291,11 +290,10 @@ class DivisionController extends Controller
             }
             $division -> update($cleanData);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' => new DivisionResource($division),
-                'message' => 'Division updated successfully.'
+                'message' => 'Division updated successfully.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
@@ -327,9 +325,10 @@ class DivisionController extends Controller
 
             $division -> delete();
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-
-            return response()->json(['message' => 'Division deleted successfully.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Division deleted successfully.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

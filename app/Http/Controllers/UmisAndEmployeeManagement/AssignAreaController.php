@@ -108,11 +108,10 @@ class AssignAreaController extends Controller
 
             $assigned_area = AssignArea::create($cleanData);
 
-            Helpers::registerSystemLogs($request, $assigned_area['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' =>  new AssignAreaResource($assigned_area),
-                'message' => 'New employee assign area registered.'
+                'message' => 'New employee assign area registered.',
+                'logs' => Helpers::registerSystemLogs($request, $assigned_area['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
@@ -162,11 +161,10 @@ class AssignAreaController extends Controller
 
             $assigned_area->update($cleanData);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
-
             return response()->json([
                 'data' =>  new AssignAreaResource($assigned_area),
-                'message' => 'New employee assign area registered.'
+                'message' => 'New employee assign area registered.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
@@ -193,9 +191,10 @@ class AssignAreaController extends Controller
 
             $assigned_area->delete();
             
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response()->json(['message' => 'Assigned area record deleted.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Assigned area record deleted.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

@@ -93,12 +93,11 @@ class SystemController extends Controller
             $system -> api_key = $encrypted_api_key;
             $system -> updated_at = now();
             $system -> save();
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in generating API Key '.$this->SINGULAR_MODULE_NAME.'.');
             
             return response() -> json([
                 'data' => new SystemResource($system),
-                'message' => 'System record updated.'
+                'message' => 'System record updated.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in generating API Key '.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'generateKey', $th->getMessage());
@@ -136,12 +135,11 @@ class SystemController extends Controller
             }
 
             $system->update(['status' => $status]);
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in Updating System Status'.$this->SINGULAR_MODULE_NAME.'.');
             
             return response() -> json([
                 'data' => new SystemResource($system),
-                'message' => 'System updated successfully.'
+                'message' => 'System updated successfully.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in Updating System Status'.$this->SINGULAR_MODULE_NAME.'.')
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'activateSystem', $th->getMessage());
@@ -197,11 +195,13 @@ class SystemController extends Controller
 
             $system -> update($cleanData);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            ;
             
             return response() -> json([
                 'data' => new SystemResource($system),
-                "message" => 'System record updated.'], Response::HTTP_OK);
+                "message" => 'System record updated.',
+                "logs" => Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -225,10 +225,11 @@ class SystemController extends Controller
             }
 
             $system -> delete();
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response() -> json(['message' => 'System deleted successfully.'], Response::HTTP_OK);
+            return response() -> json([
+                'message' => 'System deleted successfully.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.')
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
             return response() -> json(['message' => $th -> getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

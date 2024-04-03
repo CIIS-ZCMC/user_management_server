@@ -134,11 +134,10 @@ class DesignationController extends Controller
 
             $designation = Designation::create($cleanData);
 
-            Helpers::registerSystemLogs($request, null, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
-
             return response()->json([
                 'data' => new DesignationResource($designation),
-                'message' => 'New designation added.'
+                'message' => 'New designation added.',
+                'logs' => Helpers::registerSystemLogs($request, null, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.')
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
@@ -196,11 +195,10 @@ class DesignationController extends Controller
                 ], Response::HTTP_OK);
             }
 
-            Helpers::registerSystemLogs($request, null, true, 'Success in assigned system role to designation ' . $this->SINGULAR_MODULE_NAME . '.');
-
             return response()->json([
                 'data' => DesignationWithSystemRoleResource::collection($designations),
-                'message' => 'System role successfully assign to designation.'
+                'message' => 'System role successfully assign to designation.',
+                'logs' => Helpers::registerSystemLogs($request, null, true, 'Success in assigned system role to designation ' . $this->SINGULAR_MODULE_NAME . '.')
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'assignSystemRole', $th->getMessage());
@@ -389,12 +387,11 @@ class DesignationController extends Controller
 
             $designation->update($cleanData);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating ' . $this->SINGULAR_MODULE_NAME . '.');
-
             return response()->json(
                 [
                     'data' => new DesignationResource($designation),
-                    'message' => 'Designation details updated.'
+                    'message' => 'Designation details updated.',
+                    'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in updating ' . $this->SINGULAR_MODULE_NAME . '.')
                 ],
                 Response::HTTP_OK
             );
@@ -426,9 +423,10 @@ class DesignationController extends Controller
 
             $designation->delete();
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in deleting ' . $this->SINGULAR_MODULE_NAME . '.');
-
-            return response()->json(['message' => 'Designation record deleted.'], Response::HTTP_OK);
+            return response()->json([
+                'message' => 'Designation record deleted.',
+                'logs' => Helpers::registerSystemLogs($request, $id, true, 'Success in deleting ' . $this->SINGULAR_MODULE_NAME . '.')
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

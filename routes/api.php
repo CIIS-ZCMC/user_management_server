@@ -55,54 +55,54 @@ Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(functi
 Route::middleware('auth.cookie')->group(function () {
 
     Route::namespace ('App\Http\Controllers')->group(function () {
-        Route::middleware('auth.permission:UMIS-SM write')->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM write', 'request.timing'])->group(function () {
             Route::post('announcements', 'AnnouncementsController@store');
-        })->middleware('request.timing');
+        });
 
-        Route::middleware('auth.permission:UMIS-SM update')->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM update', 'request.timing'])->group(function () {
             Route::put('announcements/{id}', 'AnnouncementsController@update');
         });
 
-        Route::middleware('auth.permission:UMIS-SM delete')->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM delete', 'request.timing'])->group(function () {
             Route::delete('announcements/{id}', 'AnnouncementsController@delete');
         });
 
         /** Events */
-        Route::middleware('auth.permission:UMIS-SM write')->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM write','request.timing'])->group(function () {
             Route::post('events', 'EventsController@store');
         });
 
-        Route::middleware('auth.permission:UMIS-SM update')->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM update','request.timing'])->group(function () {
             Route::put('events/{id}', 'EventsController@update');
         });
 
-        Route::middleware('auth.permission:UMIS-SM delete')->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM delete','request.timing'])->group(function () {
             Route::delete('events/{id}', 'EventsController@delete');
         });
 
         /** Memoranda */
-        Route::middleware('auth.permission:UMIS-SM write')->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM write','request.timing'])->group(function () {
             Route::post('memorandums', 'MemorandumsController@store');
         });
 
-        Route::middleware('auth.permission:UMIS-SM update')->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM update','request.timing'])->group(function () {
             Route::put('memorandums/{id}', 'MemorandumsController@update');
         });
 
-        Route::middleware('auth.permission:UMIS-SM delete')->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM delete', 'request.timing'])->group(function () {
             Route::delete('memorandums/{id}', 'MemorandumsController@delete');
         });
 
         /** News */
-        Route::middleware('auth.permission:UMIS-SM write')->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM write', 'request.timing'])->group(function () {
             Route::post('news', 'NewsController@store');
         });
 
-        Route::middleware('auth.permission:UMIS-SM update')->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM update', 'request.timing'])->group(function () {
             Route::put('news/{id}', 'NewsController@update');
         });
 
-        Route::middleware('auth.permission:UMIS-SM delete')->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM delete', 'request.timing'])->group(function () {
             Route::delete('news/{id}', 'NewsController@delete');
         });
 
@@ -149,19 +149,15 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('system-all', 'SystemController@index');
         });
 
-        // Route::middleware(['auth.permission:UMIS-SM write'])->group(function () {
-        //     Route::post('system', 'SystemController@store');
-        // });
-
         Route::middleware(['auth.permission:UMIS-SM write', 'request.timing'])->group(function () {
             Route::post('system', 'SystemController@store');
         });
 
-        Route::middleware(['auth.permission:UMIS-SM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM update', 'request.timing'])->group(function () {
             Route::put('system-generate-key/{id}', 'SystemController@generateAPIKey');
         });
 
-        Route::middleware(['auth.permission:UMIS-SM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM update', 'request.timing'])->group(function () {
             Route::put('system-update-status/{id}', 'SystemController@updateSystemStatus');
         });
 
@@ -169,11 +165,11 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('system/{id}', 'SystemController@show');
         });
 
-        Route::middleware(['auth.permission:UMIS-SM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM update', 'request.timing'])->group(function () {
             Route::put('system-update/{id}', 'SystemController@update');
         });
 
-        Route::middleware(['auth.permission:UMIS-SM delete'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM delete', 'request.timing'])->group(function () {
             Route::delete('system/{id}', 'SystemController@destroy');
         });
 
@@ -208,11 +204,11 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('system-module/find-by-system/{id}', 'SystemModuleController@systemModulesByID');
         });
 
-        Route::middleware(['auth.permission:UMIS-SM write'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM write', 'request.timing'])->group(function () {
             Route::post('system-module/{id}', 'SystemModuleController@store');
         });
 
-        Route::middleware(['auth.permission:UMIS-SM write'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM write', 'request.timing'])->group(function () {
             Route::post('system-module-add-permission/{id}', 'SystemModuleController@addPermission');
         });
 
@@ -220,15 +216,15 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('system-module/{id}', 'SystemModuleController@show');
         });
 
-        Route::middleware(['auth.permission:UMIS-SM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM update', 'request.timing'])->group(function () {
             Route::put('system-module/{id}', 'SystemModuleController@update');
         });
 
-        Route::middleware(['auth.permission:UMIS-SM delete'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM delete', 'request.timing'])->group(function () {
             Route::delete('system-module/{id}', 'SystemModuleController@destroy');
         });
 
-        Route::middleware(['auth.permission:UMIS-SM delete'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM delete', 'request.timing'])->group(function () {
             Route::delete('system-module/all-permission/{id}', 'SystemModuleController@destroyAllPermission');
         });
 
@@ -243,7 +239,7 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('system-roles-rights/{id}', 'SystemRoleController@systemRoleAccessRights');
         });
 
-        Route::middleware(['auth.permission:UMIS-SM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM update', 'request.timing'])->group(function () {
             Route::post('system-roles-rights/{id}', 'SystemRoleController@systemRoleAccessRightsUpdate');
         });
 
@@ -259,19 +255,19 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('system-role/designation-with-system-roles', 'SystemRoleController@designationsWithSystemRoles');
         });
 
-        Route::middleware(['auth.permission:UMIS-SM write'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM write', 'request.timing'])->group(function () {
             Route::post('system-role/{id}', 'SystemRoleController@store');
         });
 
-        Route::middleware(['auth.permission:UMIS-SM write'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM write', 'request.timing'])->group(function () {
             Route::post('system-role-add-permission/{id}', 'SystemRoleController@addRolePermission');
         });
 
-        Route::middleware(['auth.permission:UMIS-SM write'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM write', 'request.timing'])->group(function () {
             Route::post('system-role/assign-special-access/{id}', 'SystemRoleController@addSpecialAccessRole');
         });
 
-        Route::middleware(['auth.permission:UMIS-SM write'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM write', 'request.timing'])->group(function () {
             Route::post('system-role-new-role-permission/{id}', 'SystemRoleController@registerNewRoleAndItsPermission');
         });
 
@@ -283,11 +279,11 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('system-role/{id}', 'SystemRoleController@show');
         });
 
-        Route::middleware(['auth.permission:UMIS-SM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM update', 'request.timing'])->group(function () {
             Route::put('system-role/{id}', 'SystemRoleController@update');
         });
 
-        Route::middleware(['auth.permission:UMIS-SM delete'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM delete', 'request.timing'])->group(function () {
             Route::delete('system-role/{id}', 'SystemRoleController@destroy');
         });
 
@@ -299,7 +295,7 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('role-all', 'RoleController@index');
         });
 
-        Route::middleware(['auth.permission:UMIS-SM write'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM write', 'request.timing'])->group(function () {
             Route::post('role', 'RoleController@store');
         });
 
@@ -307,11 +303,11 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('role/{id}', 'RoleController@show');
         });
 
-        Route::middleware(['auth.permission:UMIS-SM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM update', 'request.timing'])->group(function () {
             Route::put('role/{id}', 'RoleController@update');
         });
 
-        Route::middleware(['auth.permission:UMIS-SM delete'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM delete', 'request.timing'])->group(function () {
             Route::delete('role/{id}', 'RoleController@destroy');
         });
 
@@ -323,7 +319,7 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('permission-all', 'PermissionController@index');
         });
 
-        Route::middleware(['auth.permission:UMIS-SM write'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM write', 'request.timing'])->group(function () {
             Route::post('permission', 'PermissionController@store');
         });
 
@@ -331,19 +327,19 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('permission/{id}', 'PermissionController@show');
         });
 
-        Route::middleware(['auth.permission:UMIS-SM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM update', 'request.timing'])->group(function () {
             Route::put('permission/{id}', 'PermissionController@update');
         });
 
-        Route::middleware(['auth.permission:UMIS-SM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM update', 'request.timing'])->group(function () {
             Route::put('permission-activate/{id}', 'PermissionController@activate');
         });
 
-        Route::middleware(['auth.permission:UMIS-SM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM update', 'request.timing'])->group(function () {
             Route::put('permission-deactivate/{id}', 'PermissionController@deactivate');
         });
 
-        Route::middleware(['auth.permission:UMIS-SM delete'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM delete', 'request.timing'])->group(function () {
             Route::delete('permission/{id}', 'PermissionController@destroy');
         });
 
@@ -362,7 +358,7 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('module-permission/{id}', 'ModulePermissionController@show');
         });
 
-        Route::middleware(['auth.permission:UMIS-SM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM delete', 'request.timing'])->group(function () {
             Route::delete('module-permission/{id}', 'ModulePermissionController@destroy');
         });
     });
@@ -384,7 +380,7 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('address-all-employee/{id}', 'AddressController@findByEmployeeID');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM write', 'request.timing'])->group(function () {
             Route::post('address-all-employee/{id}', 'AddressController@store');
         });
 
@@ -392,15 +388,15 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('address/{id}', 'AddressController@show');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM update', 'request.timing'])->group(function () {
             Route::put('address/{id}', 'AddressController@update');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM update', 'request.timing'])->group(function () {
             Route::put('address-many/{id}', 'AddressController@updateMany');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM delete', 'request.timing'])->group(function () {
             Route::put('address/{id}', 'AddressController@destroy');
         });
 
@@ -415,7 +411,7 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('assign-area-all-by-employee/{id}', 'AssignAreaController@findByEmployeeID');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM write', 'request.timing'])->group(function () {
             Route::post('assign-area', 'AssignAreaController@store');
         });
 
@@ -423,11 +419,11 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('assign-area/{id}', 'AssignAreaController@show');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM update', 'request.timing'])->group(function () {
             Route::put('assign-area/{id}', 'AssignAreaController@update');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM delete', 'request.timing'])->group(function () {
             Route::delete('assign-area/{id}', 'AssignAreaController@destroy');
         });
 
@@ -442,19 +438,11 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('assign-area-trail-all-by-employee/{id}', 'AssignAreaTrailController@findByEmployeeID');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {
-            Route::post('assign-area-trail', 'AssignAreaTrailController@store');
-        });
-
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function () {
             Route::get('assign-area-trail/{id}', 'AssignAreaTrailController@show');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
-            Route::put('assign-area-trail/{id}', 'AssignAreaTrailController@update');
-        });
-
-        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM delete', 'request.timing'])->group(function () {
             Route::delete('assign-area-trail/{id}', 'AssignAreaTrailController@destroy');
         });
 
@@ -469,7 +457,7 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('child-all-by-employee/{id}', 'ChildController@findByEmployeeID');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM write', 'request.timing'])->group(function () {
             Route::post('child', 'ChildController@store');
         });
 
@@ -477,23 +465,23 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('child/{id}', 'ChildController@show');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM update', 'request.timing'])->group(function () {
             Route::put('child/{id}', 'ChildController@update');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM update', 'request.timing'])->group(function () {
             Route::put('child-many', 'ChildController@updateMany');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM delete', 'request.timing'])->group(function () {
             Route::delete('child/{id}', 'ChildController@destroy');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM delete', 'request.timing'])->group(function () {
             Route::delete('child-by-personal-info{id}', 'ChildController@destroyByPersonalInformationID');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM delete', 'request.timing'])->group(function () {
             Route::delete('child-by-employee{id}', 'ChildController@destroyByEmployeeID');
         });
 
@@ -516,19 +504,19 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('contact/{id}', 'ContactController@show');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM update', 'request.timing'])->group(function () {
             Route::put('contact/{id}', 'ContactController@update');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM delete', 'request.timing'])->group(function () {
             Route::delete('contact/{id}', 'ContactController@destroy');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM delete', 'request.timing'])->group(function () {
             Route::delete('contact-by-personal-info{id}', 'ContactController@destroyByPersonalInformationID');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM delete', 'request.timing'])->group(function () {
             Route::delete('contact-by-employee{id}', 'ContactController@destroyByEmployeeID');
         });
 
@@ -543,7 +531,7 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('civil-service-eligibility-all-by-employee/{id}', 'CivilServiceEligibilityController@findByEmployeeID');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM write', 'request.timing'])->group(function () {
             Route::post('civil-service-eligibility', 'CivilServiceEligibilityController@store');
         });
 
@@ -555,15 +543,15 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('civil-service-eligibility/{id}', 'CivilServiceEligibilityController@show');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM update', 'request.timing'])->group(function () {
             Route::put('civil-service-eligibility/{id}', 'CivilServiceEligibilityController@update');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM update', 'request.timing'])->group(function () {
             Route::put('civil-service-eligibility-many', 'CivilServiceEligibilityController@updateMany');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM delete', 'request.timing'])->group(function () {
             Route::delete('civil-service-eligibility/{id}', 'CivilServiceEligibilityController@destroy');
         });
 
@@ -574,19 +562,19 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('department-all', 'DepartmentController@index');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM update', 'request.timing'])->group(function () {
             Route::post('department-assign-head-employee/{id}', 'DepartmentController@assignHeadByEmployeeID');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM update', 'request.timing'])->group(function () {
             Route::post('department-assign-to-employee/{id}', 'DepartmentController@assignTrainingOfficerByEmployeeID');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM update', 'request.timing'])->group(function () {
             Route::put('department-assign-oic-employee/{id}', 'DepartmentController@assignOICByEmployeeID');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM write', 'request.timing'])->group(function () {
             Route::post('department', 'DepartmentController@store');
         });
 
@@ -594,11 +582,11 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('department/{id}', 'DepartmentController@show');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM update', 'request.timing'])->group(function () {
             Route::post('department-update/{id}', 'DepartmentController@update');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM delete', 'request.timing'])->group(function () {
             Route::delete('department/{id}', 'DepartmentController@destroy');
         });
 
@@ -626,7 +614,7 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('designation/employee-list/{id}', 'DesignationController@employeeListInDesignation');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM write', 'request.timing'])->group(function () {
             Route::post('designation', 'DesignationController@store');
         });
 
@@ -634,16 +622,16 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('designation/{id}', 'DesignationController@show');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM update', 'request.timing'])->group(function () {
             Route::put('designation/{id}', 'DesignationController@update');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM delete', 'request.timing'])->group(function () {
             Route::delete('designation/{id}', 'DesignationController@destroy');
         });
 
         // KRIZ
-        Route::middleware(['auth.permission:UMIS-SM write'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM write', 'request.timing'])->group(function () {
             Route::post('designation-assign-system-role', 'DesignationController@assignSystemRole');
         });
 
@@ -654,15 +642,15 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('division-all', 'DivisionController@index');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM update', 'request.timing'])->group(function () {
             Route::post('division-assign-chief-employee/{id}', 'DivisionController@assignChiefByEmployeeID');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM update', 'request.timing'])->group(function () {
             Route::post('division-assign-oic-employee/{id}', 'DivisionController@assignOICByEmployeeID');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM write', 'request.timing'])->group(function () {
             Route::post('division', 'DivisionController@store');
         });
 
@@ -670,26 +658,26 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('division/{id}', 'DivisionController@show');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM update', 'request.timing'])->group(function () {
             Route::post('division-update/{id}', 'DivisionController@update');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM delete', 'request.timing'])->group(function () {
             Route::delete('division/{id}', 'DivisionController@destroy');
         });
 
         /**
          * Educational Background Module
          */
-        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function () {
             Route::put('educational-background-by-personal-info/{id}', 'EducationalBackgroundController@findByPersonalInformationID');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM view'])->group(function () {
             Route::put('educational-background-by-employee/{id}', 'EducationalBackgroundController@findByEmployeeID');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM write' ,'request.timing'])->group(function () {
             Route::post('educational-background', 'EducationalBackgroundController@store');
         });
 
@@ -703,58 +691,23 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('educational-background/{id}', 'EducationalBackgroundController@show');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM update' ,'request.timing'])->group(function () {
             Route::put('educational-background/{id}', 'EducationalBackgroundController@update');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM update','request.timing'])->group(function () {
             Route::put('educational-background-many', 'EducationalBackgroundController@updateMany');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM delete', 'request.timing'])->group(function () {
             Route::delete('educational-background/{id}', 'EducationalBackgroundController@destroy');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM delete', 'request.timing'])->group(function () {
             Route::delete('educational-background-by-personal-info/{id}', 'EducationalBackgroundController@destroyByPersonalInformationID');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
-            Route::delete('educational-background-by-employee/{id}', 'EducationalBackgroundController@destroyByEmployeeID');
-        });
-
-        /**
-         * Educational Background Module
-         */
-        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
-            Route::put('educational-background-by-personal-info/{id}', 'EducationalBackgroundController@findByPersonalInformationID');
-        });
-
-        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
-            Route::put('educational-background-by-employee/{id}', 'EducationalBackgroundController@findByEmployeeID');
-        });
-
-        Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {
-            Route::post('educational-background', 'EducationalBackgroundController@store');
-        });
-
-        Route::middleware(['auth.permission:UMIS-EM view'])->group(function () {
-            Route::get('educational-background/{id}', 'EducationalBackgroundController@show');
-        });
-
-        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
-            Route::put('educational-background/{id}', 'EducationalBackgroundController@update');
-        });
-
-        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
-            Route::delete('educational-background/{id}', 'EducationalBackgroundController@destroy');
-        });
-
-        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
-            Route::delete('educational-background-by-personal-info/{id}', 'EducationalBackgroundController@destroyByPersonalInformationID');
-        });
-
-        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM delete', 'request.timing'])->group(function () {
             Route::delete('educational-background-by-employee/{id}', 'EducationalBackgroundController@destroyByEmployeeID');
         });
 
@@ -769,7 +722,7 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('employees-for-oic', 'EmployeeProfileController@employeesForOIC');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-EM update', 'request.timing'])->group(function () {
             Route::put('employee-profile-update-pin', 'EmployeeProfileController@updatePin');
         });
 
@@ -1327,11 +1280,19 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::put('salary-grade-set-new', 'SalaryGradeController@updateSalaryGradeForJobPosition');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::put('salary-grade/{id}', 'SalaryGradeController@update');
         });
 
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
             Route::delete('salary-grade/{id}', 'SalaryGradeController@destroy');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
+            Route::delete('salary-grade/by-effective-date', 'SalaryGradeController@destroyOnEffectiveDate');
         });
 
         /**

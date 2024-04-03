@@ -31,6 +31,7 @@ return [
 
     'env' => env('APP_ENV', 'production'),
 
+    'app_key' => env('APP_KEY'),
     'server_domain' => env('SERVER_DOMAIN'),
 
     'cookie_name' => env('COOKIE_NAME'),
