@@ -29,8 +29,8 @@ class OfficialBusinessController extends Controller
     public function index(Request $request)
     {
         try {
-            $employee_profile   = $request->user;
-            $employee_area      = $employee_profile->assignedArea->findDetails();
+            $employee_profile = $request->user;
+            $employee_area = $employee_profile->assignedArea->findDetails();
             $recommending = ["for recommending approval", "for approving approval", "approved", "declined by recommending officer"];
             $approving = ["for approving approval", "approved", "declined by approving officer"];
             $position = $employee_profile->position();
@@ -51,8 +51,8 @@ class OfficialBusinessController extends Controller
              */
 
 
-             /** FOR NORMAL EMPLOYEE */
-            if($employee_profile->position() === null){
+            /** FOR NORMAL EMPLOYEE */
+            if ($employee_profile->position() === null) {
                 $official_business_application = OfficialBusiness::where('employee_profile_id', $employee_profile->id)->get();
 
                 return response()->json([
@@ -61,7 +61,7 @@ class OfficialBusinessController extends Controller
                 ], Response::HTTP_OK);
             }
 
-            if ($employee_profile->id===Helpers::getHrmoOfficer()) {
+            if ($employee_profile->id === Helpers::getHrmoOfficer()) {
                 return response()->json([
                     'data' => OfficialBusinessResource::collection(OfficialBusiness::where('status', 'approved')->get()),
                     'message' => 'Retrieved all offical business application'
@@ -106,7 +106,7 @@ class OfficialBusinessController extends Controller
                 'message' => 'Retrieved all official business application'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -124,7 +124,7 @@ class OfficialBusinessController extends Controller
 
         } catch (\Throwable $th) {
 
-            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -135,8 +135,8 @@ class OfficialBusinessController extends Controller
     public function store(OfficialBusinessRequest $request)
     {
         try {
-            $user           = $request->user;
-            $assigned_area  = $user->assignedArea->findDetails();
+            $user = $request->user;
+            $assigned_area = $user->assignedArea->findDetails();
 
             $cleanData = [];
 
@@ -159,10 +159,10 @@ class OfficialBusinessController extends Controller
 
                 $cleanData[$key] = strip_tags($value);
             }
-            $officers   = Helpers::getRecommendingAndApprovingOfficer($assigned_area, $user->id);
+            $officers = Helpers::getRecommendingAndApprovingOfficer($assigned_area, $user->id);
 
-            $recommending_officer   = $officers['recommending_officer'];
-            $approving_officer      = $officers['approving_officer'];
+            $recommending_officer = $officers['recommending_officer'];
+            $approving_officer = $officers['approving_officer'];
 
             $start = Carbon::parse($request->date_from);
             $end = Carbon::parse($request->date_to);
@@ -175,32 +175,34 @@ class OfficialBusinessController extends Controller
 
                 $data = new OfficialBusiness;
 
-                $data->employee_profile_id              = $user->id;
-                $data->date_from                        = $cleanData['date_from'];
-                $data->date_to                          = $cleanData['date_to'];
-                $data->time_from                        = $cleanData['time_from'];
-                $data->time_to                          = $cleanData['time_to'];
-                $data->purpose                          = $cleanData['purpose'];
-                $data->personal_order_file              = $cleanData['personal_order_file']->getClientOriginalName();;
-                $data->personal_order_size              = $cleanData['personal_order_file']->getSize();
-                $data->personal_order_path              = Helpers::checkSaveFile($cleanData['personal_order_file'], 'official_business');
-                $data->certificate_of_appearance        = $cleanData['certificate_of_appearance']->getClientOriginalName();
-                $data->certificate_of_appearance_size   = $cleanData['certificate_of_appearance']->getSize();
-                $data->certificate_of_appearance_path   = Helpers::checkSaveFile($cleanData['certificate_of_appearance'], 'official_business');
-                $data->approving_officer                = $approving_officer;
-                $data->recommending_officer             = $recommending_officer;
+                $data->employee_profile_id = $user->id;
+                $data->date_from = $cleanData['date_from'];
+                $data->date_to = $cleanData['date_to'];
+                $data->time_from = $cleanData['time_from'];
+                $data->time_to = $cleanData['time_to'];
+                $data->purpose = $cleanData['purpose'];
+                $data->personal_order_file = $cleanData['personal_order_file']->getClientOriginalName();
+                ;
+                $data->personal_order_size = $cleanData['personal_order_file']->getSize();
+                $data->personal_order_path = Helpers::checkSaveFile($cleanData['personal_order_file'], 'official_business');
+                $data->certificate_of_appearance = $cleanData['certificate_of_appearance']->getClientOriginalName();
+                $data->certificate_of_appearance_size = $cleanData['certificate_of_appearance']->getSize();
+                $data->certificate_of_appearance_path = Helpers::checkSaveFile($cleanData['certificate_of_appearance'], 'official_business');
+                $data->approving_officer = $approving_officer;
+                $data->recommending_officer = $recommending_officer;
                 $data->save();
 
-                Helpers::registerSystemLogs($request, $data->id, true, 'Success in storing '.$this->PLURAL_MODULE_NAME.'.'); //System Logs
+                Helpers::registerSystemLogs($request, $data->id, true, 'Success in storing ' . $this->PLURAL_MODULE_NAME . '.'); //System Logs
 
                 return response()->json([
                     'data' => OfficialBusinessResource::collection(OfficialBusiness::where('id', $data->id)->get()),
-                    'logs' =>  Helpers::registerOfficialBusinessLogs($data->id, $user['id'], 'Applied'),
-                    'msg' => 'Request Complete.'], Response::HTTP_OK);
+                    'logs' => Helpers::registerOfficialBusinessLogs($data->id, $user['id'], 'Applied'),
+                    'msg' => 'Request Complete.'
+                ], Response::HTTP_OK);
             }
         } catch (\Throwable $th) {
 
-            Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -229,18 +231,18 @@ class OfficialBusinessController extends Controller
         try {
             $data = OfficialBusiness::findOrFail($id);
 
-            if(!$data) {
+            if (!$data) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $status     = null;
+            $status = null;
             $log_action = null;
             $employee_profile = $request->user;
 
             $cleanData['pin'] = strip_tags($request->password);
 
 
-            if ($employee_profile['authorization_pin'] !==  $cleanData['pin']) {
+            if ($employee_profile['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
@@ -249,12 +251,12 @@ class OfficialBusinessController extends Controller
                     case 'for recommending approval':
                         $status = 'for approving approval';
                         $log_action = 'Approved by Recommending Officer';
-                    break;
+                        break;
 
                     case 'for approving approval':
                         $status = 'approved';
                         $log_action = 'Approved by Approving Officer';
-                    break;
+                        break;
 
                     // default:
                     //     $status = 'declined';
@@ -264,32 +266,31 @@ class OfficialBusinessController extends Controller
             } else if ($request->status === 'declined') {
 
 
-                $ob_application_recommending=$data->recommending_officer  ;
-                $ob_application_approving=$data->approving_officer  ;
+                $ob_application_recommending = $data->recommending_officer;
+                $ob_application_approving = $data->approving_officer;
 
 
-                if($employee_profile->id === $ob_application_recommending)
-                {
-                    $status='declined by recommending officer';
-                }
-                else if($employee_profile->id === $ob_application_approving)
-                {
-                    $status='declined by approving officer';
+                if ($employee_profile->id === $ob_application_recommending) {
+                    $status = 'declined by recommending officer';
+                } else if ($employee_profile->id === $ob_application_approving) {
+                    $status = 'declined by approving officer';
                 }
                 $log_action = 'Request Declined';
             }
 
 
-            $data->update(['status' => $status, 'remarks' => $request->remarks==='null' || !$request->remarks ? null : $request->remarks]);
+            $data->update(['status' => $status, 'remarks' => $request->remarks === 'null' || !$request->remarks ? null : $request->remarks]);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.'); //System Logs
-            return response()->json(['data' => OfficialBusinessResource::collection(OfficialBusiness::where('id', $data->id)->get()),
-                                    'logs' => Helpers::registerOfficialBusinessLogs($data->id, $employee_profile['id'], $log_action),
-                                    'msg' => $log_action, ], Response::HTTP_OK);
+            Helpers::registerSystemLogs($request, $id, true, 'Success in updating ' . $this->SINGULAR_MODULE_NAME . '.'); //System Logs
+            return response()->json([
+                'data' => OfficialBusinessResource::collection(OfficialBusiness::where('id', $data->id)->get()),
+                'logs' => Helpers::registerOfficialBusinessLogs($data->id, $employee_profile['id'], $log_action),
+                'msg' => $log_action,
+            ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
-            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
             return response()->json(['msg' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
