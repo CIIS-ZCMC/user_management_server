@@ -19,6 +19,7 @@ use App\Http\Requests\ReferenceRequest;
 use App\Http\Requests\TrainingManyRequest;
 use App\Http\Requests\VoluntaryWorkRequest;
 use App\Http\Requests\WorkExperienceRequest;
+use App\Models\EmploymentType;
 use App\Models\OfficerInChargeTrail;
 use Carbon\Carbon;
 
