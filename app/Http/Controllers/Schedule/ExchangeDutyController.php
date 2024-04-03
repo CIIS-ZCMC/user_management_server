@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Schedule;
 
+use App\Http\Requests\AuthPinApprovalRequest;
 use App\Models\EmployeeSchedule;
 use App\Models\ExchangeDuty;
 
@@ -154,7 +155,7 @@ class ExchangeDutyController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update($id, Request $request)
+    public function update($id, AuthPinApprovalRequest $request)
     {
         try {
             $user = $request->user;

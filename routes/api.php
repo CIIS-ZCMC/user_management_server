@@ -39,8 +39,8 @@ Route::
             Route::get('news/{id}', 'NewsController@show');
         });
 
-
-Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
+Route::
+        namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
             Route::post('sign-in', 'EmployeeProfileController@signIn');
             Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
             Route::post('skip-for-now', 'EmployeeProfileController@updatePasswordExpiration');
