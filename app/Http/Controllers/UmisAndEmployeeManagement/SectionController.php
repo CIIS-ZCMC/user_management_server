@@ -8,6 +8,7 @@ use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Requests\PasswordApprovalRequest;
 use App\Models\Department;
 use App\Models\Division;
+use App\Models\Role;
 use App\Models\SpecialAccessRole;
 use App\Models\SystemRole;
 use Carbon\Carbon;
@@ -99,14 +100,16 @@ class SectionController extends Controller
             $section->update($cleanData);
             
             if($section->code === 'HRMO'){
-                $system_role = SystemRole::where('code', 'HRMO-HEAD-01')->first();
+                $role = Role::where('code', 'HRMO-HEAD-01')->first();
+                $system_role = SystemRole::where('role_id', $role->id)->first();
 
                 SpecialAccessRole::create([
                     'system_role_id' => $system_role->id,
                     'employee_profile_id' => $employee_profile->id
                 ]);
             }else{
-                $system_role = SystemRole::where('code', 'SECTION-HEAD-01')->first();
+                $role = Role::where('code', 'SECTION-HEAD-01')->first();
+                $system_role = SystemRole::where('role_id', $role->id)->first();
 
                 SpecialAccessRole::create([
                     'system_role' => $system_role->id,
