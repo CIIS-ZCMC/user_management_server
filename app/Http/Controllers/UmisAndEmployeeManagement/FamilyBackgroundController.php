@@ -89,7 +89,7 @@ class FamilyBackgroundController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $cleanData['$personal_information_id'] = $personal_information_id;
+            $cleanData['personal_information_id'] = $personal_information_id;
             $family_background = FamilyBackground::create($cleanData);
 
             foreach (json_decode($request->children) as $child) {
