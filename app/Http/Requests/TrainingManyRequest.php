@@ -22,13 +22,13 @@ class TrainingManyRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'trainings.title' => 'required|string|max:255',
-            'trainings.inclusive_from' => "required|date:Y-m-d",
-            'trainings.inclusive_to' => "required|date:Y-m-d",
-            'trainings.hours' => "nullable|numeric",
-            'trainings.type_of_ld' => "required|string|max:255",
-            'trainings.conducted_by' => "nullable|string|max:255",
-            'trainings.personal_information_id' => "required|integer"
+            'trainings.*.title' => 'required|string|max:255',
+            'trainings.*.inclusive_from' => "required|date:Y-m-d",
+            'trainings.*.inclusive_to' => "required|date:Y-m-d",
+            'trainings.*.hours' => "nullable|numeric",
+            'trainings.*.type_of_ld' => "required|string|max:255",
+            'trainings.*.conducted_by' => "nullable|string|max:255",
+            'trainings.*.personal_information_id' => "required|integer"
         ];
     }
 }

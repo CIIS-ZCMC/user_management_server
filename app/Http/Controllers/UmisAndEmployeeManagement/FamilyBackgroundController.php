@@ -5,6 +5,7 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 use App\Http\Controllers\Controller;
 
 use App\Http\Requests\AuthPinApprovalRequest;
+use App\Http\Requests\ChildRequest;
 use App\Http\Resources\ChildResource;
 use App\Models\Child;
 use Illuminate\Http\Request;
@@ -69,22 +70,11 @@ class FamilyBackgroundController extends Controller
     /**
      * Family background registration and Children registration
      */
-    public function store(FamilyBackgroundRequest $request)
+    public function store($personal_information_id, FamilyBackgroundRequest $request)
     {
-
-
         try {
-            $failed = [];
             $success = [];
             $cleanData = [];
-
-            $personal_information_id = strip_tags($request->input('personal_information_id'));
-
-            $personal_information = PersonalInformation::find($personal_information_id);
-
-            if (!$personal_information) {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }
 
             foreach ($request->all() as $key => $value) {
                 if ($key === 'user' || $key === 'children') continue;
@@ -99,9 +89,8 @@ class FamilyBackgroundController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
+            $cleanData['personal_information_id'] = $personal_information_id;
             $family_background = FamilyBackground::create($cleanData);
-
-
 
             foreach (json_decode($request->children) as $child) {
                 $child_data = [];
@@ -123,27 +112,12 @@ class FamilyBackgroundController extends Controller
                 $success[] = $child_store;
             }
 
-            if (count($failed) > 0) {
-                return response()->json([
-                    'data' => [
-                        'family' => new FamilyBackgroundResource($family_background),
-                        'children' => ChildResource::collection($success)
-                    ]
-                ], Response::HTTP_OK);
-            }
-
-            Helpers::registerSystemLogs($request, $family_background['id'], true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
-
-            return response()->json([
-                'data' => [
-                    'family' => new FamilyBackgroundResource($family_background),
-                    'children' => ChildResource::collection($success)
-                ],
-                'message' => 'New family background registered.'
-            ], Response::HTTP_OK);
+            return [
+                'family_background' => $family_background,
+                'children' => $success
+            ];
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            throw new \Exception("Failed to register employee family background.", 400);
         }
     }
 
