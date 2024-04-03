@@ -21,28 +21,42 @@ class MonitizationPostingController extends Controller
             $latest_posting=[];
 
             $latest_posting = MonitizationPosting::latest('created_at')->first();
-            $end_posting_date = strtotime($latest_posting->end_filing_date);
-            $start_posting_date = strtotime($latest_posting->effective_filing_date);
-            $current_date = strtotime(date('Y-m-d'));
-
-            $start = false;
-            $end = false;
-
-            if ($end_posting_date >= $current_date) {
-                $end = true;
+            if ($latest_posting) {
+                $end_posting_date = strtotime($latest_posting->end_filing_date);
+                $start_posting_date = strtotime($latest_posting->effective_filing_date);
+                $current_date = strtotime(date('Y-m-d'));
+            
+                $start = ($current_date >= $start_posting_date && $current_date <= $end_posting_date);
+                $end = $current_date > $end_posting_date;
+            
+                // Populate the latest posting array with necessary data
+                $latest_posting = [
+                    'id' => $latest_posting->id,
+                    'created_at' => $latest_posting->created_at,
+                    'end_filing_date' => $latest_posting->end_filing_date,
+                    'effective_filing_date' => $latest_posting->effective_filing_date,
+                    'start' => $start,
+                    'end' => $end
+                ];
+            
+                return response()->json([
+                    'data' => $latest_posting,
+                    'message' => 'Retrieve posting records.'
+                ], Response::HTTP_OK);
+            } else {
+                $latest_posting = [
+                    'id' => null,
+                    'created_at' => null,
+                    'end_filing_date' => null,
+                    'effective_filing_date' => null,
+                    'start' => null,
+                    'end' => null
+                ];
+                return response()->json([
+                    'data' => $latest_posting,
+                    'message' => 'No posting records found.'
+                ],  Response::HTTP_OK);
             }
-
-            if ($start_posting_date >= $current_date) {
-                $start = true;
-            }
-
-            // Add start and end statuses to the latest posting array
-            $latest_posting['start'] = $start;
-            $latest_posting['end'] = $end;
-            return response()->json([
-                'data' => $latest_posting,
-                'message' => 'Retrieve posting records.'
-            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -172,7 +186,7 @@ class MonitizationPostingController extends Controller
             $monitization =  MonitizationPosting::create($cleanData);
 
             return response()->json([
-                'data' => $monitization,
+                'data' => $monitization->toArray(),
                 'message' => "Monitization Post has been created."
             ], Response::HTTP_OK);
         }catch(\Throwable $th){

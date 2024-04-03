@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('monetization_postings', function (Blueprint $table) {
             $table->id();
-            $table->datetime('effective_filing_date');
-            $table->datetime('end_filing_date');
+            $table->timestamp('effective_filing_date');
+            $table->timestamp('end_filing_date');
             $table->text('remarks')->nullable();
             $table->unsignedBigInteger('created_by')->unsigned();
             $table->foreign('created_by')->references('id')->on('employee_profiles');
