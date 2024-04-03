@@ -1653,6 +1653,10 @@ Route::middleware('auth.cookie')->group(function () {
             Route::post('monetization', 'MonetizationApplicationController@store');
         });
 
+        Route::middleware(['auth.permission:UMIS-LM download'])->group(function () {
+            Route::get('monetization-print/{id}', 'MonetizationApplicationController@printLeaveForm');
+        });
+
         Route::middleware(['auth.permission:UMIS-LM update'])->group(function () {
             Route::put('monetization/{id}', 'MonetizationApplicationController@updateMoneApplication');
         });
