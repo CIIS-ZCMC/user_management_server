@@ -161,6 +161,10 @@ class OfficialBusinessController extends Controller
             }
             $officers = Helpers::getRecommendingAndApprovingOfficer($assigned_area, $user->id);
 
+            if ($officers === null || $officers['recommending_officer'] === null || $officers['approving_officer'] === null) {
+                return response()->json(['message' => 'No recommending officer and/or supervising officer assigned.'], Response::HTTP_FORBIDDEN);
+            }
+
             $recommending_officer = $officers['recommending_officer'];
             $approving_officer = $officers['approving_officer'];
 
