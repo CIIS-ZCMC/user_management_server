@@ -55,9 +55,9 @@ Route::
 Route::middleware('auth.cookie')->group(function () {
 
     Route::namespace ('App\Http\Controllers')->group(function () {
-        Route::middleware('auth.permission:UMIS-SM write')->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM write','request.timing'])->group(function () {
             Route::post('announcements', 'AnnouncementsController@store');
-        })->middleware('request.timing');
+        });
 
         Route::middleware('auth.permission:UMIS-SM update')->group(function () {
             Route::put('announcements/{id}', 'AnnouncementsController@update');
