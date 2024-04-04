@@ -287,6 +287,10 @@ class SystemRoleSeeder extends Seeder
 
                             $row['code'] === "UMIS-CT view-all" ||
                             $row['code'] === "UMIS-CT approve" ||
+                            
+                            $row['code'] === "UMIS-ES view" ||
+                            $row['code'] === "UMIS-ES view-all" ||
+                            $row['code'] === "UMIS-ES approve" ||
 
                             /* Time adjustment  */
 
@@ -356,6 +360,10 @@ class SystemRoleSeeder extends Seeder
 
                             $row['code'] === "UMIS-TA view-all" ||
                             $row['code'] === "UMIS-TA approve" ||
+                            
+                            $row['code'] === "UMIS-ES view" ||
+                            $row['code'] === "UMIS-ES view-all" ||
+                            $row['code'] === "UMIS-ES approve" ||
 
                             /* Schedule management */
                             $row['code'] === "UMIS-ScM write" ||
@@ -421,6 +429,10 @@ class SystemRoleSeeder extends Seeder
 
                             $row['code'] === "UMIS-TA view-all" ||
                             $row['code'] === "UMIS-TA approve" ||
+                            
+                            $row['code'] === "UMIS-ES view" ||
+                            $row['code'] === "UMIS-ES view-all" ||
+                            $row['code'] === "UMIS-ES approve" ||
 
                             /* Schedule management */
                             $row['code'] === "UMIS-ScM write" ||
@@ -482,6 +494,10 @@ class SystemRoleSeeder extends Seeder
 
                             $row['code'] === "UMIS-CT view-all" ||
                             $row['code'] === "UMIS-CT approve" ||
+                            
+                            $row['code'] === "UMIS-ES view" ||
+                            $row['code'] === "UMIS-ES view-all" ||
+                            $row['code'] === "UMIS-ES approve" ||
 
                             /* Time adjustment  */
 
