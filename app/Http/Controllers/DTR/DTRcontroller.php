@@ -24,6 +24,7 @@ use App\Models\Schedule;
 use App\Helpers\Helpers as Help;
 use App\Methods\DTRPull;
 
+use Illuminate\Support\Facades\Cache;
 
 class DTRcontroller extends Controller
 {
@@ -160,9 +161,8 @@ class DTRcontroller extends Controller
                                 $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
                                 $DaySchedule = $Schedule['daySchedule'];
                                 $BreakTime = $Schedule['break_Time_Req'];
-
-
-
+                                $DaySchedule = [];
+                                $BreakTime = [];
 
                                 if (count($DaySchedule) >= 1) {
                                     if (count($BreakTime) >= 1) {
@@ -170,6 +170,8 @@ class DTRcontroller extends Controller
                                          * With Schedule
                                          * 4 sets of sched
                                          */
+
+
                                         $this->DTR->HasBreaktimePull($DaySchedule, $BreakTime, $bioEntry, $biometric_id);
                                     } else {
                                         /**
@@ -229,7 +231,7 @@ class DTRcontroller extends Controller
             }
         } catch (\Throwable $th) {
             Helpersv2::errorLog($this->CONTROLLER_NAME, 'fetchDTRFromDevice', $th->getMessage());
-            return $th;
+
             // Log::channel("custom-dtr-log-error")->error($th->getMessage());
             // return response()->json(['message' => 'Unable to connect to device', 'Throw error' => $th->getMessage()]);
         }

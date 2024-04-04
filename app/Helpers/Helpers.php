@@ -197,12 +197,12 @@ class Helpers
                     ];
                 }
 
-                $department = $section->department;
+                // $department = $section->department;
 
-                return [
-                    "recommending_officer" => $department->head_employee_profile_id,
-                    "approving_officer" => $department->division->chief_employee_profile_id
-                ];
+                // return [
+                //     "recommending_officer" => $department->head_employee_profile_id,
+                //     "approving_officer" => $department->division->chief_employee_profile_id
+                // ];
 
             case 'Unit':
                 // If employee is Unit head
