@@ -5,6 +5,7 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 use App\Http\Controllers\Controller;
 
 use App\Http\Requests\AuthPinApprovalRequest;
+use App\Models\Role;
 use App\Models\SpecialAccessRole;
 use App\Models\SystemRole;
 use Carbon\Carbon;
@@ -97,14 +98,16 @@ class DivisionController extends Controller
             $division->update($cleanData);
 
             if($division->code === 'OMCC'){
-                $system_role = SystemRole::where('code', 'OMCC-01')->first();
+                $role = Role::where('code', 'OMCC-01')->first();
+                $system_role = SystemRole::where('role_id', $role->id)->first();
 
                 SpecialAccessRole::create([
                     'system_role_id' => $system_role->id,
                     'employee_profile_id' => $employee_profile->id
                 ]);
             }else{
-                $system_role = SystemRole::where('code', 'DIV-HEAD-01')->first();
+                $role = Role::where('code', 'DIV-HEAD-01')->first();
+                $system_role = SystemRole::where('role_id', $role->id)->first();
 
                 SpecialAccessRole::create([
                     'system_role_id' => $system_role->id,

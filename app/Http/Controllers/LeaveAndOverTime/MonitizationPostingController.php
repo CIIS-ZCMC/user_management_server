@@ -21,9 +21,25 @@ class MonitizationPostingController extends Controller
             $latest_posting=[];
 
             $latest_posting = MonitizationPosting::latest('created_at')->first();
+            $end_posting_date = strtotime($latest_posting->end_filing_date);
+            $start_posting_date = strtotime($latest_posting->effective_filing_date);
+            $current_date = strtotime(date('Y-m-d'));
 
+            $start = false;
+            $end = false;
 
-             return response()->json([
+            if ($end_posting_date >= $current_date) {
+                $end = true;
+            }
+
+            if ($start_posting_date >= $current_date) {
+                $start = true;
+            }
+
+            // Add start and end statuses to the latest posting array
+            $latest_posting['start'] = $start;
+            $latest_posting['end'] = $end;
+            return response()->json([
                 'data' => $latest_posting,
                 'message' => 'Retrieve posting records.'
             ], Response::HTTP_OK);

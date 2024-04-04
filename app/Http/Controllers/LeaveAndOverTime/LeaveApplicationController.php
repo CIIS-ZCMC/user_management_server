@@ -309,7 +309,7 @@ class LeaveApplicationController extends Controller
     {
         try {
             $employee_profile = $request->user;
-            $leave_applications = LeaveApplication::where('employee_profile_id', $employee_profile->id)->get();
+            $leave_applications = LeaveApplication::where('status', 'approved')->where('employee_profile_id', $employee_profile->id)->get();
 
             return response()->json([
                 'data' => MyApprovedLeaveApplicationResource::collection($leave_applications),
@@ -323,7 +323,7 @@ class LeaveApplicationController extends Controller
     public function employeeApprovedLeaveApplication($id, Request $request)
     {
         try {
-            $leave_applications = LeaveApplication::where('employee_profile_id', $id)->get();
+            $leave_applications = LeaveApplication::where('status', 'approved')->where('employee_profile_id', $id)->get();
 
             return response()->json([
                 'data' => MyApprovedLeaveApplicationResource::collection($leave_applications),
@@ -987,8 +987,12 @@ class LeaveApplicationController extends Controller
     {
         try {
             $data = LeaveApplication::with(['employeeProfile', 'leaveType', 'hrmoOfficer','recommendingOfficer', 'approvingOfficer'])->where('id', $id)->first();
-            $vl_employee_credit = EmployeeLeaveCredit::where('leave_type_id', LeaveType::where('code', 'VL')->first()->id)->first();
-            $sl_employee_credit = EmployeeLeaveCredit::where('leave_type_id', LeaveType::where('code', 'SL')->first()->id)->first();
+            $vl_employee_credit = EmployeeLeaveCredit::where('leave_type_id', LeaveType::where('code', 'VL')->first()->id)
+                                    ->where('employee_profile_id', $data->employee_profile_id)
+                                    ->first();
+            $sl_employee_credit = EmployeeLeaveCredit::where('leave_type_id', LeaveType::where('code', 'SL')->first()->id)
+                                    ->where('employee_profile_id', $data->employee_profile_id)
+                                    ->first();
 
             // return $data;
             $leave_type = LeaveTypeResource::collection(LeaveType::all());
