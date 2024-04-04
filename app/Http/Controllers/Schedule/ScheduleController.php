@@ -59,14 +59,7 @@ class ScheduleController extends Controller
                         ->whereYear('date', '=', $year)
                         ->whereMonth('date', '=', $month);
                 }
-            ])->whereIn('id', $employee_ids)
-                ->where(function ($query) use ($user, $assigned_area) {
-                    return $assigned_area['details']['code'] === "HRMO" ?
-                        $query->whereNotIn('id', [$user->id, 1, 2, 3, 4, 5]) :
-                        $query->where('id', '!=', $user->id);
-                })
-                ->get();
-
+            ])->whereIn('id', $employee_ids)->get();
 
             return response()->json([
                 'data' => ScheduleResource::collection($array),
@@ -373,13 +366,7 @@ class ScheduleController extends Controller
                 $query->whereHas('schedule', function ($innerQuery) use ($assigned_area) {
                     $innerQuery->with(['timeShift', 'holiday']);
                 });
-            })->whereIn('id', $employee_ids)
-                ->where(function ($query) use ($user, $assigned_area) {
-                    return $assigned_area['details']['code'] === "HRMO" ?
-                        $query->whereNotIn('id', [$user->id, 1, 2, 3, 4, 5]) :
-                        $query->where('id', '!=', $user->id);
-                })
-                ->with(['personalInformation', 'assignedArea', 'schedule.timeShift'])->get();
+            })->whereIn('id', $employee_ids)->with(['personalInformation', 'assignedArea', 'schedule.timeShift'])->get();
 
             $employee = ScheduleResource::collection($sql);
 

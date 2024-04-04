@@ -434,9 +434,13 @@ class EmployeeProfile extends Authenticatable
                 break;
 
             case 'Section':
-                $units = Unit::where('section_id', $assign_area['details']->id)->get();
-                foreach ($units as $unit) {
-                    $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1]);
+                if ($assign_area['details']->code === "HRMO") {
+                    $employees = AssignArea::whereNotIn('employee_profile_id', [$user->id, 1])->get();
+                } else {
+                    $units = Unit::where('section_id', $assign_area['details']->id)->get();
+                    foreach ($units as $unit) {
+                        $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1]);
+                    }
                 }
                 break;
         }
