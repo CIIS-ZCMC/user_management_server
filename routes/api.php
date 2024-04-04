@@ -39,8 +39,8 @@ Route::
             Route::get('news/{id}', 'NewsController@show');
         });
 
-
-Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
+Route::
+        namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
             Route::post('sign-in', 'EmployeeProfileController@signIn');
             Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
             Route::post('skip-for-now', 'EmployeeProfileController@updatePasswordExpiration');
@@ -1327,11 +1327,19 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::put('salary-grade-set-new', 'SalaryGradeController@updateSalaryGradeForJobPosition');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::put('salary-grade/{id}', 'SalaryGradeController@update');
         });
 
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
             Route::delete('salary-grade/{id}', 'SalaryGradeController@destroy');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
+            Route::delete('salary-grade/by-effective-date', 'SalaryGradeController@destroyOnEffectiveDate');
         });
 
         /**
@@ -1651,6 +1659,10 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-LM write'])->group(function () {
             Route::post('monetization', 'MonetizationApplicationController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-LM download'])->group(function () {
+            Route::get('monetization-print/{id}', 'MonetizationApplicationController@printLeaveForm');
         });
 
         Route::middleware(['auth.permission:UMIS-LM update'])->group(function () {

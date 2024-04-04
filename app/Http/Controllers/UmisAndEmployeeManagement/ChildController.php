@@ -103,20 +103,19 @@ class ChildController extends Controller
     }
     
     
-    public function storeMany(Request $request)
+    public function storeMany($personal_information_id, $children)
     {
         try{
             $success = [];
-            $failed = [];
 
-            $personal_information = PersonalInformation::find($request->input('personal_information_id'));
+            $personal_information = PersonalInformation::find($personal_information_id);
 
             if(!$personal_information)
             {
                 return response()->json(['message'=> 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            foreach($request->children as $child){
+            foreach($children as $child){
                 $cleanData = [];
                 foreach ($child as $key => $value) {
                     if ($value === null) {
@@ -128,30 +127,15 @@ class ChildController extends Controller
                 $child = Child::create($cleanData);
 
                 if(!$child){
-                    $failed[] = $cleanData;
                     continue;
                 }
 
                 $success = $child;
             }
 
-            Helpers::registerSystemLogs($request, $child['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
-
-            if(count($failed) > 0){
-                return response()->json([
-                    'data' => ChildResource::collection($success),
-                    'failed' => $failed,
-                    'message' => 'Some data failed to registere.'
-                ], Response::HTTP_OK);
-            }
-
-            return response()->json([
-                'data' => ChildResource::collection($success),
-                'message' => 'New employee child record added.'
-            ], Response::HTTP_OK);
+            return $success;
         }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            throw new \Exception("Failed to register employee children record.", 400);
         }
     }
     

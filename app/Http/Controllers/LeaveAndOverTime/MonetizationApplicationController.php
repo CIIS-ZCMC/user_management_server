@@ -4,6 +4,7 @@ namespace App\Http\Controllers\LeaveAndOverTime;
 
 use App\Helpers\Helpers;
 use App\Http\Requests\AuthPinApprovalRequest;
+use App\Http\Resources\LeaveTypeResource;
 use App\Http\Resources\MonetizationApplicationResource;
 use App\Models\Division;
 use App\Models\EmployeeLeaveCredit;
@@ -16,6 +17,8 @@ use App\Models\LeaveType as ModelsLeaveType;
 use App\Models\MoneApplicationLog;
 use App\Models\Section;
 use App\Models\Unit;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Models\EmployeeLeaveCreditLogs;
@@ -622,8 +625,12 @@ class MonetizationApplicationController extends Controller
     {
         try {
             $data = MonetizationApplication::with(['employeeProfile', 'leaveType', 'hrmoOfficer', 'recommending', 'approving'])->where('id', $id)->first();
-            $vl_employee_credit = EmployeeLeaveCredit::where('leave_type_id', LeaveType::where('code', 'VL')->first()->id)->first();
-            $sl_employee_credit = EmployeeLeaveCredit::where('leave_type_id', LeaveType::where('code', 'SL')->first()->id)->first();
+            $vl_employee_credit = EmployeeLeaveCredit::where('leave_type_id', LeaveType::where('code', 'VL')->first()->id)
+                                    ->where('employee_profile_id', $data->employee_profile_id)
+                                    ->first();
+            $sl_employee_credit = EmployeeLeaveCredit::where('leave_type_id', LeaveType::where('code', 'SL')->first()->id)
+                                    ->where('employee_profile_id', $data->employee_profile_id)
+                                    ->first();
 
             // return $data;
             $leave_type = MonetizationApplicationResource::collection(LeaveType::all());
