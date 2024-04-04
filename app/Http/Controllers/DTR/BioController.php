@@ -44,29 +44,33 @@ class BioController extends Controller
     /* ----------------------------- THIS IS FOR REGISTRATION OF BIOMETRICS----------------------------------- */
     public function registerBio(Request $request)
     {
-        try{
+        try {
 
             $user = $request->user;
-    
+
             $cleanData['pin'] = strip_tags($request->pin);
-    
+
+
+
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
-    
-    
+
+
             $biometric_id = $request->biometric_id;
             $name = $request->name;
             $privilege = $request->privilege;
             /* The IP of this option must be the registration device. */
             $ipreg = [];
-    
+
             if (isset($this->ip_registration[0])) {
                 $ipreg = $this->ip_registration[0];
             }
-    
+
+
             $bio = Biometrics::where('biometric_id', $biometric_id);
-    
+
+
             if (count($bio->get()) == 0) {
                 $save = $bio->create([
                     'biometric_id' => $biometric_id,
@@ -74,32 +78,21 @@ class BioController extends Controller
                     'privilege' => 0,
                     'biometric' => "NOT_YET_REGISTERED"
                 ]);
-    
+
                 if ($save) {
-                    $defpassword = DefaultPassword::first()->password;
-                    $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
-    
-                    $credential = new Request([
-                        'EmployeeID' => $employee->employee_id,
-                        'Email' => $employee->personalInformation->contact->email_address,
-                        'Receiver' => $employee->name(),
-                        'Password' => $defpassword
-                    ]);
-    
-                    $this->mailer->sendCredentials($credential);
                     $this->device->fetchdatatoDeviceforNewFPRegistration(
                         $ipreg,
                         $biometric_id,
                         $name
-    
+
                     );
                 }
-    
+
                 return response()->json(['message' =>
                 'User has been registered successfully, Please proceed to Device to register the Fingerprint']);
             }
             return response()->json(['message' => 'User has already been registered!']);
-        } catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'registerBio', $th->getMessage());
         }
     }
