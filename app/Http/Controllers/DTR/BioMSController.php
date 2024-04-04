@@ -170,11 +170,15 @@ class BioMSController extends Controller
     {
         try {
             $user = $request->user;
-            $password_decrypted = Crypt::decryptString($user['password_encrypted']);
-            $password = strip_tags($request->password);
-            if (!Hash::check($password . Cache::get('salt_value'), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_FORBIDDEN);
+            $cleanData['pin'] = strip_tags($request->password);
+
+
+
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
+
+
 
             $device_id = $request->device_id;
             $device_name = $request->device_name;
@@ -256,7 +260,7 @@ class BioMSController extends Controller
             return $data;
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'fetchBiometrics', $th->getMessage());
-            return response()->json(['message' =>  $th->getMessage()],Response::HTTP_INTERNAL_SERVER_ERROR);
+            return response()->json(['message' =>  $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 }

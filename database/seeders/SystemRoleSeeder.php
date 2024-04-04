@@ -89,6 +89,7 @@ class SystemRoleSeeder extends Seeder
                             /* Compensantory Time */
                             $row['code'] === "UMIS-CT view-all" ||
                             $row['code'] === "UMIS-CT approve" ||
+                            $row['code'] === "UMIS-CT request" ||
 
                             /* Time adjustment  */
                             $row['code'] === "UMIS-TA view-all" ||
@@ -120,7 +121,7 @@ class SystemRoleSeeder extends Seeder
 
                     break;
 
-                case 'HRMO-HEAD-02':
+                case 'HRMO-HEAD-01':
                     $hrmo = SystemRole::create([
                         'role_id' =>  $roles->id,
                         'system_id' => $system->id
@@ -148,6 +149,7 @@ class SystemRoleSeeder extends Seeder
                             $row['code'] === "UMIS-OT write" ||
                             $row['code'] === "UMIS-OT view-all" ||
                             $row['code'] === "UMIS-OT approve" ||
+                            $row['code'] === "UMIS-CT request" ||
 
                             /* Compensantory Time */
                             $row['code'] === "UMIS-CT write" ||
@@ -176,7 +178,11 @@ class SystemRoleSeeder extends Seeder
                             $row['code'] === "UMIS-EM approve" ||
                             $row['code'] === "UMIS-EM request" ||
                             $row['code'] === "UMIS-EM import" ||
-                            $row['code'] === "UMIS-EM download";
+                            $row['code'] === "UMIS-EM download" ||
+
+                            /* Employee management */
+
+                            $row['code'] === "UMIS-SM view-all";
                     });
                     foreach ($module_permitted as $key => $module_permission) {
                         RoleModulePermission::create([
@@ -247,7 +253,7 @@ class SystemRoleSeeder extends Seeder
                     }
                     break;
 
-                case 'DIV-HEAD-03':
+                case 'DIV-HEAD-01':
                     $div_head3 = SystemRole::create([
                         'role_id' =>  $roles->id,
                         'system_id' => $system->id
@@ -275,6 +281,7 @@ class SystemRoleSeeder extends Seeder
 
                             $row['code'] === "UMIS-OT view-all" ||
                             $row['code'] === "UMIS-OT approve" ||
+                            $row['code'] === "UMIS-CT request" ||
 
                             /* Compensantory Time */
 
@@ -292,7 +299,11 @@ class SystemRoleSeeder extends Seeder
                             $row['code'] === "UMIS-ScM update" ||
                             $row['code'] === "UMIS-ScM delete" ||
                             $row['code'] === "UMIS-ScM approve" ||
-                            $row['code'] === "UMIS-ScM download";
+                            $row['code'] === "UMIS-ScM download" ||
+
+                            /* Employee management */
+
+                            $row['code'] === "UMIS-EM view-all";
 
                         /* Employee management */
                     });
@@ -305,7 +316,7 @@ class SystemRoleSeeder extends Seeder
 
                     break;
 
-                case 'DEPT-HEAD-04':
+                case 'DEPT-HEAD-01':
 
                     $dept_head4 = SystemRole::create([
                         'role_id' =>  $roles->id,
@@ -334,6 +345,7 @@ class SystemRoleSeeder extends Seeder
 
                             $row['code'] === "UMIS-OT view-all" ||
                             $row['code'] === "UMIS-OT approve" ||
+                            $row['code'] === "UMIS-CT request" ||
 
                             /* Compensantory Time */
 
@@ -351,7 +363,11 @@ class SystemRoleSeeder extends Seeder
                             $row['code'] === "UMIS-ScM update" ||
                             $row['code'] === "UMIS-ScM delete" ||
                             $row['code'] === "UMIS-ScM approve" ||
-                            $row['code'] === "UMIS-ScM download";
+                            $row['code'] === "UMIS-ScM download" ||
+
+                            /* Employee management */
+
+                            $row['code'] === "UMIS-EM view-all";
 
                         /* Employee management */
                     });
@@ -365,7 +381,7 @@ class SystemRoleSeeder extends Seeder
 
                     break;
 
-                case 'SECTION-HEAD-05':
+                case 'SECTION-HEAD-01':
 
                     $sec_head5 = SystemRole::create([
                         'role_id' =>  $roles->id,
@@ -389,6 +405,7 @@ class SystemRoleSeeder extends Seeder
 
                             $row['code'] === "UMIS-OB view-all" ||
                             $row['code'] === "UMIS-OB approve" ||
+                            $row['code'] === "UMIS-CT request" ||
 
                             /* Official Time */
 
@@ -411,7 +428,11 @@ class SystemRoleSeeder extends Seeder
                             $row['code'] === "UMIS-ScM update" ||
                             $row['code'] === "UMIS-ScM delete" ||
                             $row['code'] === "UMIS-ScM approve" ||
-                            $row['code'] === "UMIS-ScM download";
+                            $row['code'] === "UMIS-ScM download"  ||
+
+                            /* Employee management */
+
+                            $row['code'] === "UMIS-EM view-all";
 
                         /* Employee management */
                     });
@@ -426,7 +447,7 @@ class SystemRoleSeeder extends Seeder
                     break;
 
 
-                case 'UNIT-HEAD-06':
+                case 'UNIT-HEAD-01':
 
                     $unit_head6 = SystemRole::create([
                         'role_id' =>  $roles->id,
@@ -455,6 +476,7 @@ class SystemRoleSeeder extends Seeder
 
                             $row['code'] === "UMIS-OT view-all" ||
                             $row['code'] === "UMIS-OT approve" ||
+                            $row['code'] === "UMIS-CT request" ||
 
                             /* Compensantory Time */
 
@@ -470,7 +492,11 @@ class SystemRoleSeeder extends Seeder
                             $row['code'] === "UMIS-ScM update" ||
                             $row['code'] === "UMIS-ScM delete" ||
                             $row['code'] === "UMIS-ScM approve" ||
-                            $row['code'] === "UMIS-ScM download";
+                            $row['code'] === "UMIS-ScM download" ||
+
+                            /* Employee management */
+
+                            $row['code'] === "UMIS-EM view-all";
 
                         /* Employee management */
                     });
@@ -529,13 +555,7 @@ class SystemRoleSeeder extends Seeder
                             /* Schedule management */
                             $row['code'] === "UMIS-ScM view" ||
                             $row['code'] === "UMIS-ScM request" ||
-                            $row['code'] === "UMIS-ScM download" ||
-
-
-                            /* Employee management */
-
-                            $row['code'] === "UMIS-EM view" ||
-                            $row['code'] === "UMIS-EM request";
+                            $row['code'] === "UMIS-ScM download";
                     });
                     foreach ($module_permitted as $key => $module_permission) {
                         RoleModulePermission::create([
@@ -575,12 +595,7 @@ class SystemRoleSeeder extends Seeder
                             /* Schedule management */
                             $row['code'] === "UMIS-ScM view" ||
                             $row['code'] === "UMIS-ScM request" ||
-                            $row['code'] === "UMIS-ScM download" ||
-
-                            /* Employee management */
-
-                            $row['code'] === "UMIS-EM view" ||
-                            $row['code'] === "UMIS-EM request";
+                            $row['code'] === "UMIS-ScM download";
                     });
                     foreach ($module_permitted as $key => $module_permission) {
                         RoleModulePermission::create([

@@ -192,6 +192,8 @@ class CtoApplicationController extends Controller
 
             $assigned_area = $employee_profile->assignedArea->findDetails();
             $approving_officer = Helpers::getDivHead($assigned_area);
+            $hrmo_officer= Helpers::getHrmoOfficer();
+
 
 
             $reason = [];
@@ -199,6 +201,10 @@ class CtoApplicationController extends Controller
 
             if (!$employee_profile) {
                 return response()->json(['message' => 'Unauthorized.'], Response::HTTP_FORBIDDEN);
+            }
+
+            if ($hrmo_officer === null || $approving_officer === null) {
+                return response()->json(['message' => 'No recommending officer and/or supervising officer assigned.'], Response::HTTP_FORBIDDEN);
             }
 
             $cleanData = [];
@@ -226,7 +232,7 @@ class CtoApplicationController extends Controller
             foreach (json_decode($request->cto_applications) as $key=>$value) {
 
                 $employee_credit = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)->first();
-                $hrmo_officer= Helpers::getHrmoOfficer();
+                
                 if ($employee_credit->earned_credit_by_hour < $value->applied_credits) {
                     $failed[] = $value;
                     $reason[] = 'Insufficient overtime credit.';
