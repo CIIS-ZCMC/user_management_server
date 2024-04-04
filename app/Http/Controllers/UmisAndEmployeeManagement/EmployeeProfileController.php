@@ -2614,7 +2614,9 @@ class EmployeeProfileController extends Controller
                 $body = view('mail.credentials', [
                     'authorization_pin' => $employee_profile->authorization_pin, 
                     'employeeID' => $employee_profile->employee_id, 
-                    'Password' => $default_password]);
+                    'Password' => $default_password,
+                    "Link" => "http://192.168.5.1:8080"
+                ]);
 
                 $data = [
                     'Subject' => 'Your Zcmc Portal Account.',
