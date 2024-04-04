@@ -360,12 +360,14 @@ class ScheduleController extends Controller
             $dates = Helpers::getDatesInMonth($year, Carbon::parse($month)->month, "");
 
             //Array
-            $myEmployees = $user->areaEmployee($assigned_area);
-            $supervisors = $user->sectorHeads();
+            // $myEmployees = $user->areaEmployee($assigned_area);
+            // $supervisors = $user->sectorHeads();
 
-            $employees = [...$myEmployees, ...$supervisors];
-            $employee_ids = collect($employees)->pluck('id')->toArray();
+            // $employees = [...$myEmployees, ...$supervisors];
+            // $employee_ids = collect($employees)->pluck('id')->toArray();
 
+            $myEmployees = $user->myEmployees($assigned_area, $user);
+            $employee_ids = collect($myEmployees)->pluck('id')->toArray();
 
             $sql = EmployeeProfile::where(function ($query) use ($assigned_area) {
                 $query->whereHas('schedule', function ($innerQuery) use ($assigned_area) {
