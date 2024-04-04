@@ -5,6 +5,7 @@ namespace App\Methods;
 use App\Models\DailyTimeRecords;
 use App\Models\DailyTimeRecordlogs;
 use DateTime;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use App\Models\Biometrics;
 use App\Models\EmployeeProfile;
@@ -62,7 +63,7 @@ class Helpers
 
     public function withinInterval($last_entry, $bio_entry)
     {
-        $With_Interval = date('Y-m-d H:i:s', strtotime($last_entry) + floor(env('ALLOTED_DTR_INTERVAL') * 60));
+        $With_Interval = date('Y-m-d H:i:s', strtotime($last_entry) + floor(Cache::get("alloted_dtr_interval") * 60));
 
 
         if ($With_Interval <= $bio_entry[0]['date_time']) {
@@ -85,10 +86,10 @@ class Helpers
 
     public function getSchedule($biometric_id, $date_now)
     {
-        $f1 = env('FIRSTIN');
-        $f2 = env('FIRSTOUT');
-        $f3 = env('SECONDIN');
-        $f4 = env('SECONDOUT');
+        $f1 = Cache::get("firstin");
+        $f2 = Cache::get("firstout");
+        $f3 = Cache::get("secondin");
+        $f4 = Cache::get("secondout");
 
         $parts = explode('-', $date_now);
         // $parts[1] will contain "2024"
@@ -234,7 +235,7 @@ AND id IN (
             'second_entry' => null,
             'third_entry' => null,
             'last_entry' => null,
-            'total_hours' => env('REQUIRED_WORKING_HOURS'),
+            'total_hours' => Cache::get("required_working_hours"),
             'date' => null,
             'date_end' => null,
             'is_on_call' => null,
@@ -714,7 +715,7 @@ AND id IN (
 
     public function SaveFirstEntry($dtrentry, $break_Time_Req, $biometric_id, $delay, $scheduleEntry, $InType)
     {
-        $alloted_hours = env('ALLOTED_VALID_TIME_FOR_FIRSTENTRY');
+        $alloted_hours = Cache::get("alloted_valid_time_for_firstentry");
 
         switch ($InType) {
             case "AM":
@@ -729,7 +730,7 @@ AND id IN (
     public  function inEntryAM($biometric_id, $alloted_hours, $scheduleEntry, $dtrentry)
     {
         $dtr_date = date('Y-m-d', strtotime($dtrentry['date_time']));
-        $max_allowed_entry_for_oncall = env('MAX_ALLOWED_ENTRY_ONCALL');
+        $max_allowed_entry_for_oncall = Cache::get("max_allowed_entry_oncall");
 
         $dtrentry = $dtrentry['date_time'];
         $schedule = $scheduleEntry['first_entry'];
@@ -788,7 +789,7 @@ AND id IN (
     {
 
         $dtr_date = date('Y-m-d', strtotime($dtrentry['date_time']));
-        $max_allowed_entry_for_oncall = env('MAX_ALLOWED_ENTRY_ONCALL');
+        $max_allowed_entry_for_oncall = Cache::get("max_allowed_entry_oncall");
 
         $dtrentry = $dtrentry['date_time'];
         $schedule = $scheduleEntry['first_entry'];
@@ -1164,7 +1165,7 @@ AND id IN (
             $seconds = $interval->s; // Seconds
             $time_interval = '';
             $IntervalStatus = '';
-            if ($minutes < env('ALLOTED_DTR_INTERVAL')) {
+            if ($minutes < Cache::get("alloted_dtr_interval")) {
                 /* Calculate the time interval */
                 $Interval_Status = 'Invalid';
             } else {
@@ -1172,7 +1173,7 @@ AND id IN (
             }
             $time_interval = [
                 'Status' => $Interval_Status,
-                'alloted_dtr_interval' => env('ALLOTED_DTR_INTERVAL'),
+                'alloted_dtr_interval' => Cache::get("alloted_dtr_interval"),
                 'minutes' => $minutes,
                 'seconds' => $seconds,
             ];
