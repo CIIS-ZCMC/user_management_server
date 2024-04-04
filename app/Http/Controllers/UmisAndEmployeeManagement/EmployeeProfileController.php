@@ -19,6 +19,7 @@ use App\Http\Requests\ReferenceRequest;
 use App\Http\Requests\TrainingManyRequest;
 use App\Http\Requests\VoluntaryWorkRequest;
 use App\Http\Requests\WorkExperienceRequest;
+use App\Models\EmploymentType;
 use App\Models\OfficerInChargeTrail;
 use Carbon\Carbon;
 
@@ -125,7 +126,7 @@ class EmployeeProfileController extends Controller
      * Job Details (Plantilla or Not)
      *
      */
-    
+
     public function signIn(SignInRequest $request)
     {
         try {
@@ -279,8 +280,7 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                }
-                ;
+                };
 
                 $trials--;
             } while ($trials !== 0);
@@ -906,8 +906,7 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                }
-                ;
+                };
 
                 $trials--;
             } while ($trials !== 0);
@@ -979,8 +978,7 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                }
-                ;
+                };
 
                 $trials--;
             } while ($trials !== 0);
@@ -1113,8 +1111,7 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                }
-                ;
+                };
 
                 $trials--;
             } while ($trials !== 0);
@@ -1182,7 +1179,7 @@ class EmployeeProfileController extends Controller
 
             $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
 
-            if (!Hash::check($password . env("SALT_VALUE"), $decryptedPassword)) {
+            if (!Hash::check($password . Cache::get("salt_value"), $decryptedPassword)) {
                 return response()->json(['message' => "Employee id or password incorrect."], Response::HTTP_FORBIDDEN);
             }
 
@@ -1352,8 +1349,7 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                }
-                ;
+                };
 
                 $trials--;
             } while ($trials !== 0);
@@ -1638,8 +1634,7 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                }
-                ;
+                };
 
                 $trials--;
             } while ($trials !== 0);
@@ -2306,9 +2301,9 @@ class EmployeeProfileController extends Controller
     public function store(EmployeeProfileNewResource $request)
     {
         try {
-            
+
             DB::beginTransaction();
-            
+
             /**
              * Personal Information module.
              */
@@ -2316,7 +2311,7 @@ class EmployeeProfileController extends Controller
             $personal_information_json = json_decode($request->personal_information);
             $personal_information_data = [];
 
-            foreach($personal_information_json as $key => $value){
+            foreach ($personal_information_json as $key => $value) {
                 $personal_information_data[$key] = $value;
             }
 
@@ -2331,7 +2326,7 @@ class EmployeeProfileController extends Controller
             $contact_json = json_decode($request->contact);
             $contact_data = [];
 
-            foreach($contact_json as $key => $value){
+            foreach ($contact_json as $key => $value) {
                 $contact_data[$key] = $value;
             }
 
@@ -2342,20 +2337,20 @@ class EmployeeProfileController extends Controller
             /**
              * Family background module
              */
-            
+
             $family_background_request = new FamilyBackgroundRequest();
             $family_background_json = json_decode($request->family_background);
             $family_background_data = [];
 
-            foreach($family_background_json as $key => $value){
+            foreach ($family_background_json as $key => $value) {
                 $family_background_data[$key] = $value;
             }
-            
+
             $family_background_request->merge($family_background_data);
             $family_background_request->merge(['children' => $request->children]);
             $family_background_controller = new FamilyBackgroundController();
             $family_background_controller->store($personal_information->id, $family_background_request);
-            
+
             /**
              * Education module
              */
@@ -2363,7 +2358,7 @@ class EmployeeProfileController extends Controller
             $education_json = json_decode($request->educations);
             $education_data = [];
 
-            foreach($education_json as $key => $value){
+            foreach ($education_json as $key => $value) {
                 $education_data[$key] = $value;
             }
 
@@ -2378,7 +2373,7 @@ class EmployeeProfileController extends Controller
             $identification_json = json_decode($request->identification);
             $identification_data = [];
 
-            foreach($identification_json as $key => $value){
+            foreach ($identification_json as $key => $value) {
                 $identification_data[$key] = $value;
             }
 
@@ -2393,7 +2388,7 @@ class EmployeeProfileController extends Controller
             $work_experience_json = json_decode($request->work_experiences);
             $work_experience_data = [];
 
-            foreach($work_experience_json as $key => $value){
+            foreach ($work_experience_json as $key => $value) {
                 $work_experience_data[$key] = $value;
             }
 
@@ -2408,7 +2403,7 @@ class EmployeeProfileController extends Controller
             $voluntary_work_json = json_decode($request->voluntary_work);
             $voluntary_work_data = [];
 
-            foreach($voluntary_work_json as $key => $value){
+            foreach ($voluntary_work_json as $key => $value) {
                 $voluntary_work_data[$key] = $value;
             }
 
@@ -2423,7 +2418,7 @@ class EmployeeProfileController extends Controller
             $other_json = json_decode($request->others);
             $other_data = [];
 
-            foreach($other_json as $key => $value){
+            foreach ($other_json as $key => $value) {
                 $voluntary_work_data[$key] = $value;
             }
 
@@ -2438,10 +2433,10 @@ class EmployeeProfileController extends Controller
             $legal_info_json = json_decode($request->legal_information);
             $legal_info_data = [];
 
-            foreach($legal_info_json as $key => $value){
+            foreach ($legal_info_json as $key => $value) {
                 $legal_info_data[$key] = $value;
             }
-            
+
             $legal_info_request->merge(['legal_information' => $legal_info_data]);
             $legal_information_controller = new LegalInformationController();
             $legal_information_controller->storeMany($personal_information->id, $legal_info_request);
@@ -2453,7 +2448,7 @@ class EmployeeProfileController extends Controller
             $training_json = json_decode($request->trainings);
             $training_data = [];
 
-            foreach($training_json as $key => $value){
+            foreach ($training_json as $key => $value) {
                 $training_data[$key] = $value;
             }
 
@@ -2468,7 +2463,7 @@ class EmployeeProfileController extends Controller
             $referrence_json = json_decode($request->reference);
             $referrence_data = [];
 
-            foreach($referrence_json as $key => $value){
+            foreach ($referrence_json as $key => $value) {
                 $referrence_data[$key] = $value;
             }
 
@@ -2483,7 +2478,7 @@ class EmployeeProfileController extends Controller
             $eligibilities_json = json_decode($request->eligibilities);
             $eligibilities_data = [];
 
-            foreach($eligibilities_json as $key => $value){
+            foreach ($eligibilities_json as $key => $value) {
                 $eligibilities_data[$key] = $value;
             }
 
@@ -2517,7 +2512,7 @@ class EmployeeProfileController extends Controller
             $cleanData['biometric_id'] = $new_biometric_id;
             $cleanData['employment_type_id'] = strip_tags($request->employment_type_id);
             $cleanData['personal_information_id'] = strip_tags($personal_information->id);
-            
+
             try {
                 $fileName = Helpers::checkSaveFile($request->attachment, 'photo/profiles');
                 if (is_string($fileName)) {
@@ -2596,7 +2591,7 @@ class EmployeeProfileController extends Controller
             $issuance_json = json_decode($request->issuance_information);
             $issuance_data = [];
 
-            foreach($issuance_json as $key => $value){
+            foreach ($issuance_json as $key => $value) {
                 $issuance_data[$key] = $value;
             }
 
@@ -2614,7 +2609,8 @@ class EmployeeProfileController extends Controller
                 $body = view('mail.credentials', [
                     'authorization_pin' => $employee_profile->authorization_pin,
                     'employeeID' => $employee_profile->employee_id,
-                    'Password' => $default_password
+                    'Password' => $default_password,
+                    "Link" => "http://192.168.5.1:8080"
                 ]);
 
                 $data = [
@@ -2851,7 +2847,7 @@ class EmployeeProfileController extends Controller
             $last_login = LoginTrail::where('employee_profile_id', $employee_profile->id)->orderByDesc('created_at')->first();
 
             $employee = [
-                'profile_url' => env('SERVER_DOMAIN') . "/photo/profiles/" . $employee_profile->profile_url,
+                'profile_url' => Cache::get('server_domain') . "/photo/profiles/" . $employee_profile->profile_url,
                 'employee_id' => $employee_profile->employee_id,
                 'position' => $position,
                 'job_position' => $designation->name,

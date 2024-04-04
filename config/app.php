@@ -41,6 +41,12 @@ return [
     'database_encryption_key' => env('DATABASE_ENCRYPTION_KEY'),
     'salt_value' => env('SALT_VALUE'),
     'data_key_encryption' => env('DATA_KEY_ENCRYPTION'),
+    
+    'google_api_client_id' => env('GOOGLE_API_CLIENT_ID'),
+    'google_api_client_secret' => env('GOOGLE_API_CLIENT_SECRET'),
+    'system_email_token' => env('SYSTEM_EMAIL_TOKEN'),
+    'system_email' => env('SYSTEM_EMAIL'),
+    'system_name' => env('SYSTEM_NAME'),
 
     /*
     |--------------------------------------------------------------------------

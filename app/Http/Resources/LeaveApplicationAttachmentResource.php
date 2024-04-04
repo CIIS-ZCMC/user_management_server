@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Cache;
 
 class LeaveApplicationAttachmentResource extends JsonResource
 {
@@ -19,7 +20,7 @@ class LeaveApplicationAttachmentResource extends JsonResource
             'name' => $this->name,
             'file_name' => $this->file_name,
             'size' => $this->size,
-            'path' => env('SERVER_DOMAIN').'/requirements/'.$this->path
+            'path' => Cache::get("server_domain").'/requirements/'.$this->path
         ];
     }
 }
