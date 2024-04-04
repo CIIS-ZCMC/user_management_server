@@ -25,7 +25,7 @@ class RoleSeeder extends Seeder
 
         Role::create([
             'name' => 'HR Director',
-            'code' => 'HRMO-HEAD-02'
+            'code' => 'HRMO-HEAD-01'
         ]);
 
         Role::create([
@@ -35,20 +35,20 @@ class RoleSeeder extends Seeder
 
         Role::create([
             'name' => 'Division Head',
-            'code' => 'DIV-HEAD-03'
+            'code' => 'DIV-HEAD-01'
         ]);
 
         Role::create([
             'name' => 'Department Head',
-            'code' => 'DEPT-HEAD-04'
+            'code' => 'DEPT-HEAD-01'
         ]);
         Role::create([
             'name' => 'Section Head',
-            'code' => 'SECTION-HEAD-05'
+            'code' => 'SECTION-HEAD-01'
         ]);
         Role::create([
             'name' => 'Unit Head',
-            'code' => 'UNIT-HEAD-06'
+            'code' => 'UNIT-HEAD-01'
         ]);
         Role::create([
             'name' => 'Common User - Regular',

@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Crypt;
 
@@ -18,7 +19,7 @@ class SystemSeeder extends Seeder
     {
         System::create([
             'name' => 'User Management Information System',
-            'code' => env('SYSTEM_ABBREVIATION'),
+            'code' => Cache::get('system_abbreviation'),
             'domain' => Crypt::encrypt(env('SESSION_DOMAIN')),
             'status' => 1
         ]);

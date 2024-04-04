@@ -2,6 +2,7 @@
 
 namespace App\Methods;
 
+use Illuminate\Support\Facades\Cache;
 use League\OAuth2\Client\Provider\Google;
 use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\OAuth;
@@ -19,11 +20,11 @@ class MailConfig
 
     public function __construct()
     {
-        $this->client_id = env('GOOGLE_API_CLIENT_ID');
-        $this->client_secret = env('GOOGLE_API_CLIENT_SECRET');
-        $this->token = env('SYSTEM_EMAIL_TOKEN');
-        $this->sys_email = env('SYSTEM_EMAIL');
-        $this->from_System = env('SYSTEM_NAME');
+        $this->client_id = Cache::get('google_api_client_id');
+        $this->client_secret = Cache::get('google_api_client_secret');
+        $this->token = Cache::get('system_email_token');
+        $this->sys_email = Cache::get('system_email');
+        $this->from_System = Cache::get('system_name');
         $this->provider = new Google([
             'clientId' => $this->client_id,
             'clientSecret' => $this->client_secret,

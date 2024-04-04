@@ -7,6 +7,7 @@ use App\Models\Division;
 use App\Models\EmployeeLeaveCredit;
 use App\Models\Section;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Cache;
 
 class LeaveApplicationResource extends JsonResource
 {
@@ -65,7 +66,7 @@ class LeaveApplicationResource extends JsonResource
                     'area' => $area['details']->name,
                     'area_code' => $area['details']->code,
                     'area_sector' => $area['sector'],
-                    'profile_url'=>env('SERVER_DOMAIN') . "/photo/profiles/" . $this->employeeProfile->profile_url,
+                    'profile_url'=>Cache::get("server_domain") . "/photo/profiles/" . $this->employeeProfile->profile_url,
                 ],
                 "leave_type" => $this->leaveType,
                 "date_from" => $this->date_from,
@@ -88,7 +89,7 @@ class LeaveApplicationResource extends JsonResource
                     "name" => $this->hrmoOfficer->personalInformation->name(),
                     "designation" => $this->hrmoOfficer->assignedArea->designation->name,
                     "designation_code" => $this->hrmoOfficer->assignedArea->designation->code,
-                    "profile_url" => env('SERVER_DOMAIN') . "/photo/profiles/" . $this->hrmoOfficer->profile_url,
+                    "profile_url" => Cache::get("server_domain") . "/photo/profiles/" . $this->hrmoOfficer->profile_url,
                 ],
                 "oic" => $oic,
                 'attachments' =>$this->leaveApplicationRequirements === null? []: LeaveApplicationAttachmentResource::collection($this->leaveApplicationRequirements),
@@ -109,7 +110,7 @@ class LeaveApplicationResource extends JsonResource
                 'area' => $area['details']->name,
                 'area_code' => $area['details']->code,
                 'area_sector' => $area['sector'],
-                'profile_url'=>env('SERVER_DOMAIN') . "/photo/profiles/" . $this->employeeProfile->profile_url,
+                'profile_url'=>Cache::get("server_domain") . "/photo/profiles/" . $this->employeeProfile->profile_url,
             ],
             "leave_type" => $this->leaveType,
             "date_from" => $this->date_from,
@@ -132,21 +133,21 @@ class LeaveApplicationResource extends JsonResource
                 "name" => $this->hrmoOfficer->personalInformation->name(),
                 "designation" => $this->hrmoOfficer->assignedArea->designation->name,
                 "designation_code" => $this->hrmoOfficer->assignedArea->designation->code,
-                "profile_url" => env('SERVER_DOMAIN') . "/photo/profiles/" . $this->hrmoOfficer->profile_url,
+                "profile_url" => Cache::get("server_domain") . "/photo/profiles/" . $this->hrmoOfficer->profile_url,
             ],
             "recommending_officer" => [
                 "employee_id" => $this->recommendingOfficer->employee_id,
                 "name" => $this->recommendingOfficer->personalInformation->name(),
                 "designation" => $this->recommendingOfficer->assignedArea->designation->name,
                 "designation_code" => $this->recommendingOfficer->assignedArea->designation->code,
-                "profile_url" => env('SERVER_DOMAIN') . "/photo/profiles/" . $this->recommendingOfficer->profile_url,
+                "profile_url" => Cache::get("server_domain") . "/photo/profiles/" . $this->recommendingOfficer->profile_url,
             ],
             "approving_officer" => [
                 "employee_id" => $this->approvingOfficer->employee_id,
                 "name" => $this->approvingOfficer->personalInformation->name(),
                 "designation" => $this->approvingOfficer->assignedArea->designation->name,
                 "designation_code" => $this->approvingOfficer->assignedArea->designation->code,
-                "profile_url" => env('SERVER_DOMAIN') . "/photo/profiles/" . $this->approvingOfficer->profile_url,
+                "profile_url" => Cache::get("server_domain") . "/photo/profiles/" . $this->approvingOfficer->profile_url,
             ],
             "oic" => $oic,
             'attachments' =>$this->leaveApplicationRequirements === null? []: LeaveApplicationAttachmentResource::collection($this->leaveApplicationRequirements),

@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Cache;
 
 class MonetizationApplicationResource extends JsonResource
 {
@@ -25,11 +26,11 @@ class MonetizationApplicationResource extends JsonResource
                 'area' => $area['details']->name,
                 'area_code' => $area['details']->code,
                 'area_sector' => $area['sector'],
-                'profile_url'=>env('SERVER_DOMAIN') . "/photo/profiles/" . $this->employeeProfile->profile_url,
+                'profile_url'=>Cache::get("server_domain") . "/photo/profiles/" . $this->employeeProfile->profile_url,
             ],
             "leave_type" => $this->leaveType,
             'reason' => $this->reason,
-            'attachment' => env('SERVER_DOMAIN').$this->attachment,
+            'attachment' => Cache::get("server_domain").$this->attachment,
             'credit_value' => $this->credit_value,
             'status' => $this->status,
             "hrmo_officer" => [
@@ -37,21 +38,21 @@ class MonetizationApplicationResource extends JsonResource
                 "name" => $this->hrmoOfficer->personalInformation->name(),
                 "designation" => $this->hrmoOfficer->assignedArea->designation->name,
                 "designation_code" => $this->hrmoOfficer->assignedArea->designation->code,
-                "profile_url" => env('SERVER_DOMAIN') . "/photo/profiles/" . $this->hrmoOfficer->profile_url,
+                "profile_url" => Cache::get("server_domain") . "/photo/profiles/" . $this->hrmoOfficer->profile_url,
             ],
             "recommending_officer" => [
                 "employee_id" => $this->recommending->employee_id,
                 "name" => $this->recommending->personalInformation->name(),
                 "designation" => $this->recommending->assignedArea->designation->name,
                 "designation_code" => $this->recommending->assignedArea->designation->code,
-                "profile_url" => env('SERVER_DOMAIN') . "/photo/profiles/" . $this->recommending->profile_url,
+                "profile_url" => Cache::get("server_domain") . "/photo/profiles/" . $this->recommending->profile_url,
             ],
             "approving_officer" => [
                 "employee_id" => $this->approving->employee_id,
                 "name" => $this->approving->personalInformation->name(),
                 "designation" => $this->approving->assignedArea->designation->name,
                 "designation_code" => $this->approving->assignedArea->designation->code,
-                "profile_url" => env('SERVER_DOMAIN') . "/photo/profiles/" . $this->approving->profile_url,
+                "profile_url" => Cache::get("server_domain") . "/photo/profiles/" . $this->approving->profile_url,
             ],
             'logs' => $this->logs ? LeaveApplicationLog::collection($this->logs):[],
             'created_at' => $this->created_at,

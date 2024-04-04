@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Role;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 
@@ -20,7 +21,7 @@ class SystemRoleSeeder extends Seeder
      */
     public function run(): void
     {
-        $system = System::WHERE("code",  env('SYSTEM_ABBREVIATION'))->first();
+        $system = System::WHERE("code",  Cache::get('system_abbreviation'))->first();
 
         // $role = Role::where('code', "SUPER-USER-00")->first();
 

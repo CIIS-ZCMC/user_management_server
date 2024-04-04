@@ -21,7 +21,7 @@ class ScheduleResource extends JsonResource
                 'date' => $schedule->date,
                 'time_shift' => [
                     'id' => $schedule->timeShift->id,
-                    'label' => $schedule->timeShift->timeShiftDetails(),
+                    'label' => $schedule->timeShift->shiftDetails(),
                     'total_hour' => $schedule->timeShift->total_hours,
                     'color' => $schedule->timeShift->color,
                 ],
