@@ -283,7 +283,7 @@ class CtoApplicationController extends Controller
                     $cto_applications[] = $cto_application;
                 }
             }
-
+            
                     if (count($failed) === count(json_decode($request->cto_applications, true))) {
                         return response()->json([
                             'failed' => $failed,
@@ -297,7 +297,7 @@ class CtoApplicationController extends Controller
                             'data' => new CtoApplicationResource($cto_applications),
                             'failed' => $failed,
                             'reason' => $reason,
-                            'message' => count($cto_applications) . ' of ' . count($request->cto_applications) . ' registered and ' . count($failed) . ' failed.'
+                            'message' => count(json_decode($request->cto_applications, true)) . ' of ' . count(json_decode($request->cto_applications, true)) . ' registered and ' . count($failed) . ' failed.'
                         ], Response::HTTP_BAD_REQUEST);
                     }
 
