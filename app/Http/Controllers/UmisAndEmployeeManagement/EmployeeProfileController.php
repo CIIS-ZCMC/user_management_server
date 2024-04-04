@@ -77,14 +77,14 @@ class EmployeeProfileController extends Controller
 
     public function employeesCards(Request $request)
     {
-        try{
+        try {
             $active_users = EmployeeProfile::whereNot('id', 1)->whereNot('authorization_pin', NULL)->count();
             $pending_users = EmployeeProfile::whereNot('id', 1)->where('authorization_pin', NULL)->count();
             $regular_employees = EmployeeProfile::whereNot('id', 1)->where('employment_type_id', EmploymentType::where('name', 'Permanent')->first()->id)->orWhere('employment_type_id', EmploymentType::where('name', 'Temporary')->first()->id)->count();
             $job_orders = EmployeeProfile::whereNot('id', 1)->where('employment_type_id', EmploymentType::where('name', 'Job order')->first()->id)->count();
 
             return response()->json([
-                'data' => [ 
+                'data' => [
                     'active_users' => $active_users,
                     'pending_users' => $pending_users,
                     'regular_employees' => $regular_employees,
@@ -92,7 +92,7 @@ class EmployeeProfileController extends Controller
                 ],
                 'message' => "Retrieve cards data."
             ], Response::HTTP_OK);
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, "employeesCards", $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -215,7 +215,7 @@ class EmployeeProfileController extends Controller
             // }
 
             // if ($access_token !== null) {
-                AccessToken::where('employee_profile_id', $employee_profile->id)->delete();
+            AccessToken::where('employee_profile_id', $employee_profile->id)->delete();
             // }
 
             /**
@@ -261,7 +261,8 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                };
+                }
+                ;
 
                 $trials--;
             } while ($trials !== 0);
@@ -284,7 +285,7 @@ class EmployeeProfileController extends Controller
                 'browser_version' => is_bool($device['version']) ? 'Postman' : $device['version'],
                 'employee_profile_id' => $employee_profile['id']
             ]);
-            
+
 
             return response()
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
@@ -717,7 +718,7 @@ class EmployeeProfileController extends Controller
             'position' => $position,
             'is_2fa' => $employee_profile->is_2fa,
             'job_position' => $designation->name,
-            'salary_grade' =>  $employee_profile->assignedArea->designation->salaryGrade->salary_grade_number,
+            'salary_grade' => $employee_profile->assignedArea->designation->salaryGrade->salary_grade_number,
             'date_hired' => $employee_profile->date_hired,
             'job_type' => $employee_profile->employmentType->name,
             'years_of_service' => $employee_profile->personalInformation->years_of_service,
@@ -2389,11 +2390,12 @@ class EmployeeProfileController extends Controller
 
             $send_attempt = 3;
 
-            for ($i=0; $i < $send_attempt; $i++) { 
+            for ($i = 0; $i < $send_attempt; $i++) {
                 $body = view('mail.credentials', [
-                    'authorization_pin' => $employee_profile->authorization_pin, 
-                    'employeeID' => $employee_profile->employee_id, 
-                    'Password' => $default_password]);
+                    'authorization_pin' => $employee_profile->authorization_pin,
+                    'employeeID' => $employee_profile->employee_id,
+                    'Password' => $default_password
+                ]);
 
                 $data = [
                     'Subject' => 'Your Zcmc Portal Account.',
@@ -2402,7 +2404,7 @@ class EmployeeProfileController extends Controller
                     'Body' => $body
                 ];
 
-                if($this->mail->send($data)){
+                if ($this->mail->send($data)) {
                     break;
                 }
             }

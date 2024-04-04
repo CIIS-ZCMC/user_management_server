@@ -1962,6 +1962,10 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function () {
+            Route::get('schedules-my-areas', 'ScheduleController@myAreas');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function () {
             Route::get('schedules-time-shift', 'TimeShiftController@index');
         });
 
@@ -1979,9 +1983,6 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-ES view'])->group(function () {
             Route::get('exchange-duty', 'ExchangeDutyController@create');
-            Route::get('exchange-duty-aprroval', 'ExchangeDutyController@edit');
-            Route::get('exchange-duty-employee', 'ScheduleController@employeeList');
-            Route::get('exchange-duty-schedule', 'ScheduleController@findSchedule');
         });
 
         Route::middleware(['auth.permission:UMIS-ES write'])->group(function () {
@@ -1994,6 +1995,18 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-ES delete'])->group(function () {
             Route::delete('exchange-duties/{id}', 'ExchangeDutyController@destroy');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ES approve'])->group(function () {
+            Route::get('exchange-duty-aprroval', 'ExchangeDutyController@edit');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ES view'])->group(function () {
+            Route::get('exchange-duty-employee', 'ScheduleController@employeeList');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ES view'])->group(function () {
+            Route::get('exchange-duty-schedule', 'ScheduleController@findSchedule');
         });
 
         /**
