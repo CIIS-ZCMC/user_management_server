@@ -99,5 +99,54 @@ class SystemConfigSeeder extends Seeder
             Cache::forget('system_name');
             if($system_name !== null) Cache::forever('system_name', $system_name);
         }while($system_name === null);
+        
+        //** DTR MODULE */
+        do{
+            $alloted_valid_time_for_firstentry = config('app.alloted_valid_time_for_firstentry');
+            Cache::forget('alloted_valid_time_for_firstentry');
+            if($alloted_valid_time_for_firstentry !== null) Cache::forever('alloted_valid_time_for_firstentry', $alloted_valid_time_for_firstentry);
+        }while($alloted_valid_time_for_firstentry === null);
+        
+        do{
+            $alloted_dtr_interval = config('app.alloted_dtr_interval');
+            Cache::forget('alloted_dtr_interval');
+            if($alloted_dtr_interval !== null) Cache::forever('alloted_dtr_interval', $alloted_dtr_interval);
+        }while($alloted_dtr_interval === null);
+        
+        do{
+            $required_working_hours = config('app.required_working_hours');
+            Cache::forget('required_working_hours');
+            if($required_working_hours !== null) Cache::forever('required_working_hours', $required_working_hours);
+        }while($required_working_hours === null);
+        
+        do{
+            $firstin = config('app.firstin');
+            Cache::forget('firstin');
+            if($firstin !== null) Cache::forever('firstin', $firstin);
+        }while($firstin === null);
+        
+        do{
+            $firstout = config('app.firstout');
+            Cache::forget('firstout');
+            if($firstout !== null) Cache::forever('firstout', $firstout);
+        }while($firstout === null);
+        
+        do{
+            $secondin = config('app.secondin');
+            Cache::forget('secondin');
+            if($secondin !== null) Cache::forever('secondin', $secondin);
+        }while($secondin === null);
+        
+        do{
+            $secondout = config('app.secondout');
+            Cache::forget('secondout');
+            if($secondout !== null) Cache::forever('secondout', $secondout);
+        }while($secondout === null);
+        
+        do{
+            $max_allowed_entry_oncall = config('app.max_allowed_entry_oncall');
+            Cache::forget('max_allowed_entry_oncall');
+            if($max_allowed_entry_oncall !== null) Cache::forever('max_allowed_entry_oncall', $max_allowed_entry_oncall);
+        }while($max_allowed_entry_oncall === null);
     }
 }

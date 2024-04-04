@@ -47,6 +47,15 @@ return [
     'system_email_token' => env('SYSTEM_EMAIL_TOKEN'),
     'system_email' => env('SYSTEM_EMAIL'),
     'system_name' => env('SYSTEM_NAME'),
+    
+    'alloted_valid_time_for_firstentry' => env('ALLOTED_VALID_TIME_FOR_FIRSTENTRY'),
+    'alloted_dtr_interval' => env('ALLOTED_DTR_INTERVAL'),
+    'required_working_hours' => env('REQUIRED_WORKING_HOURS'),
+    'firstin' => env('FIRSTIN'),
+    'firstout' => env('FIRSTOUT'),
+    'secondin' => env('SECONDIN'),
+    'secondout' => env('SECONDOUT'),
+    'max_allowed_entry_oncall' => env('MAX_ALLOWED_ENTRY_ONCALL'),
 
     /*
     |--------------------------------------------------------------------------
