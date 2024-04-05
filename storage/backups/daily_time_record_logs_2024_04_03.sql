@@ -1,3 +1,0 @@
---2024-04-03 10:30:01
--- ZCMC_CIIS@2023 
--- Daily Backup of table 'daily_time_record_logs' 
