@@ -180,45 +180,54 @@ class Helpers
                 ];
             case 'Section':
                 // If employee is Section head
+                
                 $section = Section::find($assigned_area['details']->id);
-
                 if ($section->division !== null) {
                     $division = $section->division;
+                    $department = $section->department;
+                    //section head
                     if ($section->supervisor_employee_profile_id === $employee_profile_id) {
                         return [
                             "recommending_officer" => $division->chief_employee_profile_id,
-                            "approving_officer" => Helpers::getChiefOfficer()
+                            "approving_officer" => Helpers::getChiefOfficer(),
                         ];
                     }
 
                     return [
-                        "recommending_officer" => $section->supervisor_employee_profile_id,
-                        "approving_officer" => $division->chief_employee_profile_id
+                        "recommending_officer" => $division->chief_employee_profile_id,
+                        "approving_officer" => $division->chief_employee_profile_id,
                     ];
                 }
+                $department = $section->department;
+                //regular
+                if ($section->supervisor_employee_profile_id === $employee_profile_id) {
+                    return [
+                        "recommending_officer" => $department->head_employee_profile_id,
+                        "approving_officer" => $department->division->chief_employee_profile_id,
+                    ];
+                }
+               
 
-                // $department = $section->department;
-
-                // return [
-                //     "recommending_officer" => $department->head_employee_profile_id,
-                //     "approving_officer" => $department->division->chief_employee_profile_id
-                // ];
+                return [
+                    "recommending_officer" => $section->supervisor_employee_profile_id,
+                    "approving_officer" => $department->division->chief_employee_profile_id,
+                ];
 
             case 'Unit':
                 // If employee is Unit head
                 $section = Unit::find($assigned_area['details']->id)->section;
-                if ($section->department_id !== null) {
-                    $department = $section->department;
+                // if ($section->department_id !== null) {
+                //     $department = $section->department;
 
-                    return [
-                        "recommending_officer" => $department->head_employee_profile_id,
-                        "approving_officer" => $department->division->chief_employee_profile_id
-                    ];
-                }
+                //     return [
+                //         "recommending_officer" => $department->head_employee_profile_id,
+                //         "approving_officer" => $department->division->chief_employee_profile_id
+                //     ];
+                // }
 
                 return [
                     "recommending_officer" => $section->supervisor_employee_profile_id,
-                    "approving_officer" => $section->division->chief_employee_profile_id
+                    "approving_officer" => $section->department->division->chief_employee_profile_id
                 ];
             default:
                 return null;
