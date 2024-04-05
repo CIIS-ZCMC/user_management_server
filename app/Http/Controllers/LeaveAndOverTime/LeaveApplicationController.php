@@ -654,6 +654,7 @@ class LeaveApplicationController extends Controller
             $recommending_and_approving = Helpers::getRecommendingAndApprovingOfficer($employee_profile->assignedArea->findDetails(), $employee_profile->id);
             $hrmo_officer = Helpers::getHrmoOfficer();
 
+
             if ($hrmo_officer === null || $recommending_and_approving === null || $recommending_and_approving['recommending_officer'] === null || $recommending_and_approving['approving_officer'] === null) {
                 return response()->json(['message' => 'No recommending officer and/or supervising officer assigned.'], Response::HTTP_FORBIDDEN);
             }
