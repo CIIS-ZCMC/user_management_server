@@ -204,7 +204,7 @@ AND id IN (
                 'second_entry' => $row->first_out ?? $f2,
                 'third_entry' => $row->second_in ?? $f3,
                 'last_entry' => $row->second_out ?? $f4,
-                'total_hours' => $row->total_hours ?? 8,
+                'total_hours' => $row->total_hours ?? Cache::get('required_working_hours'),
                 'is_on_call' => $row->is_on_call ?? 0,
                 'arrival_departure' => $dp ?? ""
             ];
@@ -321,12 +321,26 @@ AND id IN (
             $entryTime = date('H:i', strtotime($value['first_in']));
         }
 
+        // $daySchedule = array_values(array_filter($schedule['schedule'], function ($row) use ($entry, $entryTime) {
+        //     return date('Y-m-d', strtotime($row['scheduleDate'])) === $entry &&
+        //         date('Y-m-d H:i', strtotime($entry . ' ' . $entryTime)) <= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['first_entry'] . ' +4 hours')) ||
+        //         date('Y-m-d', strtotime($row['scheduleDate'])) === $entry  &&
+        //         date('Y-m-d H:i', strtotime($entry . ' ' . $entryTime)) <= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['second_entry'] . ' +4 hours'));
+        // }));
+
         $daySchedule = array_values(array_filter($schedule['schedule'], function ($row) use ($entry, $entryTime) {
+            $entryDateTime = strtotime($entry . ' ' . $entryTime);
+
             return date('Y-m-d', strtotime($row['scheduleDate'])) === $entry &&
-                date('Y-m-d H:i', strtotime($entry . ' ' . $entryTime)) <= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['first_entry'] . ' +4 hours')) ||
-                date('Y-m-d', strtotime($row['scheduleDate'])) === $entry  &&
-                date('Y-m-d H:i', strtotime($entry . ' ' . $entryTime)) <= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['second_entry'] . ' +4 hours'));
+                (
+                    (date('Y-m-d H:i', $entryDateTime) <= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['first_entry'] . ' +4 hours')) &&
+                        date('Y-m-d H:i', $entryDateTime) >= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['first_entry'] . ' -4 hours'))) ||
+                    (date('Y-m-d H:i', $entryDateTime) <= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['second_entry'] . ' +4 hours')) &&
+                        date('Y-m-d H:i', $entryDateTime) >= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['second_entry'] . ' -4 hours')))
+                );
         }));
+
+
 
 
         $break_Time_Req = $this->getBreakSchedule($biometric_id, $daySchedule);
@@ -974,7 +988,8 @@ AND id IN (
                     'date_time' => $new['date_time'],
                     'status' => $new['status'],
                     'status_description' => $new['status_description'],
-                    'entry_status' =>  $entry
+                    'entry_status' =>  $entry,
+                    'datepull' => date('Y-m-d H:i:s')
                 ];
                 $new_timing++;
             }
@@ -1022,7 +1037,8 @@ AND id IN (
                         'status_description' => $new['status_description'],
                         'device_id' => $device['id'],
                         'device_name' => $this->getDeviceName($device['id']),
-                        'entry_status' =>  $entry
+                        'entry_status' =>  $entry,
+                        'datepull' => date('Y-m-d H:i:s')
                     ];
                     $newt++;
                 }
@@ -1064,7 +1080,8 @@ AND id IN (
                         'status_description' => $new['status_description'],
                         'device_id' => $device['id'],
                         'device_name' => $this->getDeviceName($device['id']),
-                        'entry_status' =>  $entry
+                        'entry_status' =>  $entry,
+                        'datepull' => date('Y-m-d H:i:s')
                     ];
                     $newt++;
                 }

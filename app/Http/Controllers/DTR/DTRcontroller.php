@@ -66,7 +66,7 @@ class DTRcontroller extends Controller
             $sched = $this->helper->getSchedule($biometric_id, null);
 
             if ($selfRecord) {
-                if ($sched['third_entry'] == NULL && $sched['last_entry']  == NULL) {
+                if ($selfRecord->first_in !== NULL && $selfRecord->first_out !== NULL && $selfRecord->second_in === NULL && $selfRecord->second_out === NULL) {
                     return [
                         'dtr_date' => $selfRecord->dtr_date,
                         'first_in' => $selfRecord->first_in ? date('H:i', strtotime($selfRecord->first_in)) : ' --:--',
