@@ -205,43 +205,37 @@ class SectionController extends Controller
     {
         try{
             $cleanData = [];
+            $division_id = null;
+            $department_id = null;
 
-            /**
-             * Validate if no given diviosn id or department id
-             * as it is important and required by the system.
-             */
-            if($request->division_id === null && $request->department_id === null)
-            {
-                return response() -> json(['message'=> 'Division or Department area is required.'], Response::HTTP_BAD_REQUEST);
+            if(($request->department_id === 'null' || $request->department_id === null) && $request->department_id === 'null' || $request->department_id === null){
+                return response()->json(['message' => "Section must be under a division or department."], Response::HTTP_BAD_REQUEST);
             }
 
-            /**
-             * Validate if has division id
-             * Validate if division id trully exist.
-             */
-            if($request->division_id !== null)
-            {
-                $division = Division::find($request->division_id);
+            if($request->department_id !== 'null' || $request->department_id !== null){
+                if(!is_integer(strip_tags($request->department_id))){
+                    return response()->json(['message' => "Invalid data for department_id"], Response::HTTP_BAD_REQUEST);
+                }
+                $department_id = strip_tags($request->department_id);
+                $department = Department::find($department_id);
 
-                if(!$division)
-                {
-                    return response()->json(['message' => 'No division record found for id '.$request->input('division_id')], Response::HTTP_BAD_REQUEST);
+                if(!$department){
+                    return response()->json(['message' => 'No department record found for id '.$department_id], Response::HTTP_BAD_REQUEST);
+                }
+            }else{
+                if(!is_integer(strip_tags($request->division_id))){
+                    return response()->json(['message' => "Invalid data for division_id"], Response::HTTP_BAD_REQUEST);
+                }
+                $division_id = strip_tags($request->division_id);
+                $division = Division::find($division_id);
+
+                if(!$division){
+                    return response()->json(['message' => 'No division record found for id '.$division_id], Response::HTTP_BAD_REQUEST);
                 }
             }
-
-            /**
-             * Validate if has department id
-             * Validate if department id trully exist.
-             */
-            if($request->department_id !== null)
-            {
-                $division = Department::find($request->department_id);
-
-                if(!$division)
-                {
-                    return response()->json(['message' => 'No department record found for id '.$request->department_id], Response::HTTP_BAD_REQUEST);
-                }
-            }
+            
+            $cleanData['department_id'] = $department_id;
+            $cleanData['division_id'] = $division_id;
             
             foreach ($request->all() as $key => $value) {
                 if($value === null){
@@ -299,7 +293,35 @@ class SectionController extends Controller
     {
         try{
             $user = $request->user;
-            $cleanData['pin'] = strip_tags($request->password);
+            $cleanData['pin'] = strip_tags($request->password); 
+            $division_id = null;
+            $department_id = null;
+
+            if(($request->department_id === 'null' || $request->department_id === null) && $request->department_id === 'null' || $request->department_id === null){
+                return response()->json(['message' => "Section must be under a division or department."], Response::HTTP_BAD_REQUEST);
+            }
+
+            if($request->department_id !== 'null' || $request->department_id !== null){
+                if(!is_integer(strip_tags($request->department_id))){
+                    return response()->json(['message' => "Invalid data for department_id"], Response::HTTP_BAD_REQUEST);
+                }
+                $department_id = strip_tags($request->department_id);
+                $department = Department::find($department_id);
+
+                if(!$department){
+                    return response()->json(['message' => 'No department record found for id '.$department_id], Response::HTTP_BAD_REQUEST);
+                }
+            }else{
+                if(!is_integer(strip_tags($request->division_id))){
+                    return response()->json(['message' => "Invalid data for division_id"], Response::HTTP_BAD_REQUEST);
+                }
+                $division_id = strip_tags($request->division_id);
+                $division = Division::find($division_id);
+
+                if(!$division){
+                    return response()->json(['message' => 'No division record found for id '.$division_id], Response::HTTP_BAD_REQUEST);
+                }
+            }
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
@@ -313,43 +335,8 @@ class SectionController extends Controller
             }
             
             $cleanData = [];
-
-            /**
-             * Validate if no given diviosn id or department id
-             * as it is important and required by the system.
-             */
-            if($request->input('division_id') === null && $request->input('department_id') === null)
-            {
-                return response() -> json(['message'=> 'Division or Department area is required.'], Response::HTTP_BAD_REQUEST);
-            }
-
-            /**
-             * Validate if has division id
-             * Validate if division id trully exist.
-             */
-            if($request->input('division_id') !== null)
-            {
-                $division = Division::find($request->input('division_id'));
-
-                if(!$division)
-                {
-                    return response()->json(['message' => 'No division record found for id '.$request->input('division_id')], Response::HTTP_BAD_REQUEST);
-                }
-            }
-
-            /**
-             * Validate if has department id
-             * Validate if department id trully exist.
-             */
-            if($request->input('department_id') !== null)
-            {
-                $division = Department::find($request->input('department_id'));
-
-                if(!$division)
-                {
-                    return response()->json(['message' => 'No department record found for id '.$request->input('department_id')], Response::HTTP_BAD_REQUEST);
-                }
-            }
+            $cleanData['department_id'] = $department_id;
+            $cleanData['division_id'] = $division_id;
             
             foreach ($request->all() as $key => $value) {
                 if($value === null){
