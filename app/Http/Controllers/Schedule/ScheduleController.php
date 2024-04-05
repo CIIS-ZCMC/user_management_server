@@ -452,7 +452,7 @@ class ScheduleController extends Controller
                     $query->where('date', $request->date_selected);
                 })->first();
 
-            if ($user_schedule) {
+            if ($user_schedule !== null) {
                 return response()->json(['data' => "Your already have schedule on " . $request->date_selected], Response::HTTP_FOUND);
             }
 
