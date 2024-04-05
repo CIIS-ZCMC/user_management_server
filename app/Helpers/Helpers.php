@@ -227,7 +227,7 @@ class Helpers
 
                 return [
                     "recommending_officer" => $section->supervisor_employee_profile_id,
-                    "approving_officer" => $section->department->division->chief_employee_profile_id
+                    "approving_officer" => $section->department->division->chief_employee_profile_id ?? $section->division->chief_employee_profile_id,
                 ];
             default:
                 return null;
