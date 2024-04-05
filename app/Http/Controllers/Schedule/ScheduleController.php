@@ -444,8 +444,19 @@ class ScheduleController extends Controller
     public function findSchedule(Request $request)
     {
         try {
-            $user = $request->employee_id;
-            $sql = EmployeeSchedule::where('employee_profile_id', $user)
+            $user = $request->user->id;
+            $reliever_id = $request->employee_id;
+
+            $user_schedule = EmployeeSchedule::where('employee_profile_id', $user)
+                ->whereHas('schedule', function ($query) use ($request) {
+                    $query->where('date', $request->date_selected);
+                })->first();
+
+            if ($user_schedule) {
+                return response()->json(['data' => "Your already have schedule on " . $request->date_selected], Response::HTTP_FOUND);
+            }
+
+            $sql = EmployeeSchedule::where('employee_profile_id', $reliever_id)
                 ->whereHas('schedule', function ($query) use ($request) {
                     $query->where('date', $request->date_selected);
                 })->get();
