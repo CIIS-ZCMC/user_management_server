@@ -197,12 +197,12 @@ class Helpers
                     ];
                 }
 
-                $department = $section->department;
+                // $department = $section->department;
 
-                return [
-                    "recommending_officer" => $department->head_employee_profile_id,
-                    "approving_officer" => $department->division->chief_employee_profile_id
-                ];
+                // return [
+                //     "recommending_officer" => $department->head_employee_profile_id,
+                //     "approving_officer" => $department->division->chief_employee_profile_id
+                // ];
 
             case 'Unit':
                 // If employee is Unit head
@@ -565,53 +565,6 @@ class Helpers
             'action_by' => $user_id,
             'action' => $action,
         ]);
-    }
-
-    public static function checkIs24PrevNextSchedule($schedule, $employeeId, $date)
-    {
-        foreach ($employeeId as $employee_id) {
-
-            $employeeID = $employee_id['employee_id'];
-
-            // Check if the schedule spans a 24-hour shift for the current date and the adjacent dates
-            $is24Hours = $schedule->timeShift->is24HourDuty();
-            $prevDate = Carbon::parse($date)->copy()->subDay();
-            $nextDate = Carbon::parse($date)->copy()->addDay();
-
-            $isPrev24Hours = Schedule::whereHas('employee', function ($query) use ($employeeID) {
-                $query->where('employee_profile_id', $employeeID);
-            })
-                ->where('date', $prevDate->toDateString())
-                ->first()
-                ?->timeShift->is24HourDuty() ?? false;
-
-            $isNext24Hours = Schedule::whereHas('employee', function ($query) use ($employeeID) {
-                $query->where('employee_profile_id', $employeeID);
-            })
-                ->where('date', $nextDate->toDateString())
-                ->first()
-                ?->timeShift->is24HourDuty() ?? false;
-
-            // Check if the current date itself spans a 24-hour shift
-            $isCurrentDate24Hours = $is24Hours && $isPrev24Hours && $isNext24Hours;
-
-            if ($is24Hours) {
-                // return $employeeSchedules[$date->toDateString()] = '24hrs';
-                return ["result" => "Employee has 24hrs duty"];
-            }
-
-            if ($isPrev24Hours) {
-                // return $employeeSchedules[$date->toDateString()] = 'Employee worked 24hrs yesterday';
-                return ["result" => 'Employee worked 24hrs yesterday'];
-            }
-
-            if ($isNext24Hours) {
-                // return $employeeSchedules[$date->toDateString()] = 'Employee worked 24hrs tomorrow';
-                //validate first end of time shift (remarks: 02-29-2024)
-                return ["result" => "Employee worked 24hrs tomorrow"];
-            }
-        }
-        return ["result" => "No Schedule"];
     }
 
     public static function hashKey($encryptedToken)

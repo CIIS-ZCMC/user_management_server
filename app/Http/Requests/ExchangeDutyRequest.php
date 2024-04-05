@@ -28,6 +28,7 @@ class ExchangeDutyRequest extends FormRequest
             'reliever_employee_id' => 'required|integer',
             'requested_schedule_id' => 'required|integer',
             'reliever_schedule_id' => 'required|integer',
+            'reason' => 'required|integer',
         ];
     }
 }
