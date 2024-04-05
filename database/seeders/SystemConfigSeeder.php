@@ -13,140 +13,162 @@ class SystemConfigSeeder extends Seeder
      * Run the database seeds.
      */
     public function run(): void
-    {   
+    {
         Cache::flush();
 
-        do{
+        do {
             $app_key = config('app.app_key');
             Cache::forget('app_key');
-            if($app_key !== null) Cache::forever('app_key', $app_key);
-        }while($app_key === null);
+            if ($app_key !== null)
+                Cache::forever('app_key', $app_key);
+        } while ($app_key === null);
 
-        do{
+        do {
             $server_domain = config('app.server_domain');
             Cache::forget('server_domain');
-            if($server_domain !== null) Cache::forever('server_domain', $server_domain);
-        }while($server_domain === null);
+            if ($server_domain !== null)
+                Cache::forever('server_domain', $server_domain);
+        } while ($server_domain === null);
 
-        do{
+        do {
             $cookie_name = config('app.cookie_name');
             Cache::forget('cookie_name');
-            if($cookie_name !== null) Cache::forever('cookie_name', $cookie_name);
-        }while($cookie_name === null);
+            if ($cookie_name !== null)
+                Cache::forever('cookie_name', $cookie_name);
+        } while ($cookie_name === null);
 
-        do{
+        do {
             $system_abbreviation = config('app.system_abbreviation');
             Cache::forget('system_abbreviation');
-            if($system_abbreviation !== null) Cache::forever('system_abbreviation', $system_abbreviation);
-        }while($system_abbreviation === null);
+            if ($system_abbreviation !== null)
+                Cache::forever('system_abbreviation', $system_abbreviation);
+        } while ($system_abbreviation === null);
 
-        do{
+        do {
             $data_storing_key = config('app.data_storing_key');
             Cache::forget('data_storing_key');
-            if($data_storing_key !== null) Cache::forever('data_storing_key', $data_storing_key);
-        }while($data_storing_key === null);
+            if ($data_storing_key !== null)
+                Cache::forever('data_storing_key', $data_storing_key);
+        } while ($data_storing_key === null);
 
-        do{
+        do {
             $encrypt_decrypt_algorithm = config('app.encrypt_decrypt_algorithm');
             Cache::forget('encrypt_decrypt_algorithm');
-            if($encrypt_decrypt_algorithm !== null) Cache::forever('encrypt_decrypt_algorithm', $encrypt_decrypt_algorithm);
-        }while($encrypt_decrypt_algorithm === null);
+            if ($encrypt_decrypt_algorithm !== null)
+                Cache::forever('encrypt_decrypt_algorithm', $encrypt_decrypt_algorithm);
+        } while ($encrypt_decrypt_algorithm === null);
 
-        do{
+        do {
             $database_encryption_key = config('app.database_encryption_key');
             Cache::forget('database_encryption_key');
-            if($database_encryption_key !== null) Cache::forever('database_encryption_key', $database_encryption_key);
-        }while($database_encryption_key === null);
+            if ($database_encryption_key !== null)
+                Cache::forever('database_encryption_key', $database_encryption_key);
+        } while ($database_encryption_key === null);
 
-        do{
+        do {
             $salt_value = config('app.salt_value');
             Cache::forget('salt_value');
-            if($salt_value !== null) Cache::forever('salt_value', $salt_value);
-        }while($salt_value === null);
+            if ($salt_value !== null)
+                Cache::forever('salt_value', $salt_value);
+        } while ($salt_value === null);
 
-        do{
+        do {
             $data_key_encryption = config('app.data_key_encryption');
             Cache::forget('data_key_encryption');
-            if($data_key_encryption !== null) Cache::forever('data_key_encryption', $data_key_encryption);
-        }while($data_key_encryption === null);
+            if ($data_key_encryption !== null)
+                Cache::forever('data_key_encryption', $data_key_encryption);
+        } while ($data_key_encryption === null);
 
-        do{
+        do {
             $google_api_client_id = config('app.google_api_client_id');
             Cache::forget('google_api_client_id');
-            if($google_api_client_id !== null) Cache::forever('google_api_client_id', $google_api_client_id);
-        }while($google_api_client_id === null);
+            if ($google_api_client_id !== null)
+                Cache::forever('google_api_client_id', $google_api_client_id);
+        } while ($google_api_client_id === null);
 
-        do{
+        do {
             $google_api_client_secret = config('app.google_api_client_secret');
             Cache::forget('google_api_client_secret');
-            if($google_api_client_secret !== null) Cache::forever('google_api_client_secret', $google_api_client_secret);
-        }while($google_api_client_secret === null);
+            if ($google_api_client_secret !== null)
+                Cache::forever('google_api_client_secret', $google_api_client_secret);
+        } while ($google_api_client_secret === null);
 
-        do{
+        do {
             $system_email_token = config('app.system_email_token');
             Cache::forget('system_email_token');
-            if($system_email_token !== null) Cache::forever('system_email_token', $system_email_token);
-        }while($system_email_token === null);
+            if ($system_email_token !== null)
+                Cache::forever('system_email_token', $system_email_token);
+        } while ($system_email_token === null);
 
-        do{
+        do {
             $system_email = config('app.system_email');
             Cache::forget('system_email');
-            if($system_email !== null) Cache::forever('system_email', $system_email);
-        }while($system_email === null);
+            if ($system_email !== null)
+                Cache::forever('system_email', $system_email);
+        } while ($system_email === null);
 
-        do{
+        do {
             $system_name = config('app.system_name');
             Cache::forget('system_name');
-            if($system_name !== null) Cache::forever('system_name', $system_name);
-        }while($system_name === null);
-        
+            if ($system_name !== null)
+                Cache::forever('system_name', $system_name);
+        } while ($system_name === null);
+
         //** DTR MODULE */
-        do{
+        do {
             $alloted_valid_time_for_firstentry = config('app.alloted_valid_time_for_firstentry');
             Cache::forget('alloted_valid_time_for_firstentry');
-            if($alloted_valid_time_for_firstentry !== null) Cache::forever('alloted_valid_time_for_firstentry', $alloted_valid_time_for_firstentry);
-        }while($alloted_valid_time_for_firstentry === null);
-        
-        do{
+            if ($alloted_valid_time_for_firstentry !== null)
+                Cache::forever('alloted_valid_time_for_firstentry', $alloted_valid_time_for_firstentry);
+        } while ($alloted_valid_time_for_firstentry === null);
+
+        do {
             $alloted_dtr_interval = config('app.alloted_dtr_interval');
             Cache::forget('alloted_dtr_interval');
-            if($alloted_dtr_interval !== null) Cache::forever('alloted_dtr_interval', $alloted_dtr_interval);
-        }while($alloted_dtr_interval === null);
-        
-        do{
+            if ($alloted_dtr_interval !== null)
+                Cache::forever('alloted_dtr_interval', $alloted_dtr_interval);
+        } while ($alloted_dtr_interval === null);
+
+        do {
             $required_working_hours = config('app.required_working_hours');
             Cache::forget('required_working_hours');
-            if($required_working_hours !== null) Cache::forever('required_working_hours', $required_working_hours);
-        }while($required_working_hours === null);
-        
-        do{
+            if ($required_working_hours !== null)
+                Cache::forever('required_working_hours', $required_working_hours);
+        } while ($required_working_hours === null);
+
+        do {
             $firstin = config('app.firstin');
             Cache::forget('firstin');
-            if($firstin !== null) Cache::forever('firstin', $firstin);
-        }while($firstin === null);
-        
-        do{
+            if ($firstin !== null)
+                Cache::forever('firstin', $firstin);
+        } while ($firstin === null);
+
+        do {
             $firstout = config('app.firstout');
             Cache::forget('firstout');
-            if($firstout !== null) Cache::forever('firstout', $firstout);
-        }while($firstout === null);
-        
-        do{
+            if ($firstout !== null)
+                Cache::forever('firstout', $firstout);
+        } while ($firstout === null);
+
+        do {
             $secondin = config('app.secondin');
             Cache::forget('secondin');
-            if($secondin !== null) Cache::forever('secondin', $secondin);
-        }while($secondin === null);
-        
-        do{
+            if ($secondin !== null)
+                Cache::forever('secondin', $secondin);
+        } while ($secondin === null);
+
+        do {
             $secondout = config('app.secondout');
             Cache::forget('secondout');
-            if($secondout !== null) Cache::forever('secondout', $secondout);
-        }while($secondout === null);
-        
-        do{
+            if ($secondout !== null)
+                Cache::forever('secondout', $secondout);
+        } while ($secondout === null);
+
+        do {
             $max_allowed_entry_oncall = config('app.max_allowed_entry_oncall');
             Cache::forget('max_allowed_entry_oncall');
-            if($max_allowed_entry_oncall !== null) Cache::forever('max_allowed_entry_oncall', $max_allowed_entry_oncall);
-        }while($max_allowed_entry_oncall === null);
+            if ($max_allowed_entry_oncall !== null)
+                Cache::forever('max_allowed_entry_oncall', $max_allowed_entry_oncall);
+        } while ($max_allowed_entry_oncall === null);
     }
 }
