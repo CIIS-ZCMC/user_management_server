@@ -125,7 +125,7 @@ class BioMSController extends Controller
             if (count($validation) == 0) {
                 /* **
                 * here we only allow 1 registration device
-                
+
                 */
                 if ($is_registration) {
                     $check_if_registration_exist = Devices::where('is_registration', 1)->get();
@@ -238,12 +238,13 @@ class BioMSController extends Controller
     {
         try {
             $user = $request->user;
-            $password_decrypted = Crypt::decryptString($user['password_encrypted']);
-            $password = strip_tags($request->password);
-            if (!Hash::check($password . Cache::get('salt_value'), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_FORBIDDEN);
-            }
+            $cleanData['pin'] = strip_tags($request->password);
 
+
+
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+            }
             $device_id = $request->device_id;
             Devices::findorFail($device_id)->delete();
             return response()->json(['message' => 'Device Deleted Successfully!']);
