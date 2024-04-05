@@ -197,12 +197,12 @@ class Helpers
                     ];
                 }
 
-                // $department = $section->department;
+            // $department = $section->department;
 
-                // return [
-                //     "recommending_officer" => $department->head_employee_profile_id,
-                //     "approving_officer" => $department->division->chief_employee_profile_id
-                // ];
+            // return [
+            //     "recommending_officer" => $department->head_employee_profile_id,
+            //     "approving_officer" => $department->division->chief_employee_profile_id
+            // ];
 
             case 'Unit':
                 // If employee is Unit head
@@ -545,14 +545,13 @@ class Helpers
                 return ["approve_by" => $department->head_employee_profile_id];
 
             case 'Unit':
-                $section = Unit::find($assigned_area['details']['id'])->section;
-                if ($section->department_id !== null) {
-                    $department = $section->department;
-                    return ["approve_by" => $department->head_employee_profile_id];
+                $unit = Unit::find($assigned_area['details']['id']);
+                if ($unit->section_id !== null) {
+                    return ["approve_by" => $unit->head_employee_profile_id];
                 }
 
+                $section = $unit->section;
                 return ["approve_by" => $section->supervisor_employee_profile_id];
-
             default:
                 return null;
         }
