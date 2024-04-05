@@ -152,7 +152,7 @@ class PlantillaController extends Controller
                     'is_dissolve' => 0,
                 ]);
                 
-                $plantilla = $newPlantilla->plantilla;
+                $plantilla = $newPlantilla;
                 $plantilla->update(['total_used_plantilla_no' => $plantilla->total_used_plantilla_no + 1]);
 
                 return response()->json([
