@@ -294,9 +294,9 @@ class CtoApplicationController extends Controller
                         return response()->json([
                             'data' =>CtoApplicationResource::collection($cto_applications),
                             'failed' => $failed,
-                            'reason' => $reason,
-                            'message' => count(json_decode($request->cto_applications, true)) . ' of ' . count(json_decode($request->cto_applications, true)) . ' registered and ' . count($failed) . ' failed.'
-                        ], Response::HTTP_BAD_REQUEST);
+                            'employee_credit' => EmployeeOvertimeCreditResource::collection($employeeCredit),
+                            'message' => count($failed) . 'application/s failed to register.' 
+                        ], Response::HTTP_OK);
                     }
 
                     return response()->json([
