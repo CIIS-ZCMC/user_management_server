@@ -55,7 +55,7 @@ Route::
 Route::middleware('auth.cookie')->group(function () {
 
     Route::namespace ('App\Http\Controllers')->group(function () {
-        Route::middleware(['auth.permission:UMIS-SM write','request.timing'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-SM write', 'request.timing'])->group(function () {
             Route::post('announcements', 'AnnouncementsController@store');
         });
 
@@ -2011,6 +2011,14 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-ES approve'])->group(function () {
             Route::get('exchange-duty-aprroval', 'ExchangeDutyController@edit');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ES view'])->group(function () {
+            Route::get('exchange-duty-my-schedule', 'ExchangeDutyController@findMySchedule');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ES view'])->group(function () {
+            Route::get('exchange-duty-reliever-schedule', 'ExchangeDutyController@findRelieverSchedule');
         });
 
         Route::middleware(['auth.permission:UMIS-ES view'])->group(function () {
