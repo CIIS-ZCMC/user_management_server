@@ -94,7 +94,7 @@ class SectionController extends Controller
 
             $cleanData = [];
             $cleanData['supervisor_employee_profile_id'] = $employee_profile->id;
-            $cleanData['supervisor_attachment_url'] = $request->attachment===null?'NONE': $this->file_validation_and_upload->check_save_file($request,'section/files');
+            $cleanData['supervisor_attachment_url'] = $request->attachment===null?'NONE': Helpers::checkSaveFile($request->attachment,'section/files');
             $cleanData['supervisor_effective_at'] = Carbon::now();
 
             $section->update($cleanData);
@@ -112,7 +112,7 @@ class SectionController extends Controller
                 $system_role = SystemRole::where('role_id', $role->id)->first();
 
                 SpecialAccessRole::create([
-                    'system_role' => $system_role->id,
+                    'system_role_id' => $system_role->id,
                     'employee_profile_id' => $employee_profile->id
                 ]);
             }
@@ -182,7 +182,7 @@ class SectionController extends Controller
 
             $cleanData = [];
             $cleanData['oic_employee_profile_id'] = $employee_profile->id;
-            $cleanData['oic_attachment_url'] = $request->input('attachment')===null?'NONE': $this->file_validation_and_upload->check_save_file($request,"section/files");
+            $cleanData['oic_attachment_url'] = $request->input('attachment')===null?'NONE': Helpers::checkSaveFile($request->attachment,"section/files");
             $cleanData['oic_effective_at'] = strip_tags($request->effective_at);
             $cleanData['oic_end_at'] = strip_tags($request->end_at);
 
@@ -208,7 +208,7 @@ class SectionController extends Controller
             $division_id = null;
             $department_id = null;
 
-            if(($request->department_id === 'null' || $request->department_id === null) && $request->department_id === 'null' || $request->department_id === null){
+            if(($request->division_id === 'null' || $request->division_id === null) && ($request->department_id === 'null' || $request->department_id === null)){
                 return response()->json(['message' => "Section must be under a division or department."], Response::HTTP_BAD_REQUEST);
             }
 
