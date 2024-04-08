@@ -249,10 +249,40 @@
 
 
         @endif
+
         @if ($isHoliday)
             @if (!$countin)
-                <span style="font-size:8px;font-weight:bold">{{ $holidayMessage }}</span>
+
+                @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
+                    @if ($leave_Count)
+                        <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
+                    @elseif ($ot_Count)
+                        <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
+                    @elseif ($ob_Count)
+                        <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
+                    @elseif ($cto_Count)
+                        <span style="font-size:8px;font-weight:bold">{{ $ctoMessage }}</span>
+                    @endif
+                @else
+                    <span style="font-size:8px;font-weight:bold">{{ $holidayMessage }}</span>
+                @endif
+
             @endif
+        @else
+            @if (!$countin)
+                @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
+                    @if ($leave_Count)
+                        <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
+                        {{-- @elseif ($ot_Count)
+                    <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
+                @elseif ($ob_Count)
+                    <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
+                @elseif ($cto_Count)
+                    <span style="font-size:8px;font-weight:bold">{{ $ctoMessage }}</span> --}}
+                    @endif
+                @endif
+            @endif
+
         @endif
     @break
 
