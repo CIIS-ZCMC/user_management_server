@@ -453,7 +453,10 @@ class ScheduleController extends Controller
                 })->first();
 
             if ($user_schedule !== null) {
-                return response()->json(['data' => "Your already have schedule on " . $request->date_selected], Response::HTTP_FOUND);
+                return response()->json([
+                    'data' => $request->employee_id,
+                    'message' => "Your already have schedule on " . $request->date_selected
+                ], Response::HTTP_FOUND);
             }
 
             $sql = EmployeeSchedule::where('employee_profile_id', $reliever_id)
