@@ -15,7 +15,7 @@ class SectionSeeder extends Seeder
      */
     public function run(): void
     {
-        $division = Division::where('code', 'HOPPS')->first();
+        $division = Division::where('code', 'HOPSS')->first();
 
         Section::create([
             'name' => 'Data Protection Unit',
