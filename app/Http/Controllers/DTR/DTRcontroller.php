@@ -439,6 +439,7 @@ class DTRcontroller extends Controller
             $year_of = $request->yearof;
             $view = $request->view;
             $FrontDisplay = $request->frontview;
+            $ishalf = $request->ishalf;
 
             /*
             Multiple IDS for Multiple PDF generation
@@ -452,7 +453,7 @@ class DTRcontroller extends Controller
             }
 
             if (count($id) >= 2) {
-                return $this->GenerateMultiple($id, $month_of, $year_of, $view);
+                return $this->GenerateMultiple($id, $month_of, $year_of, $view,$ishalf);
             }
 
             $emp_name = '';
@@ -542,7 +543,7 @@ class DTRcontroller extends Controller
                 'biometric_ID' => $biometric_id
             ];
 
-            return $this->PrintDtr($month_of, $year_of, $biometric_id, $emp_Details, $view, $FrontDisplay);
+            return $this->PrintDtr($month_of, $year_of, $biometric_id, $emp_Details, $view, $FrontDisplay,$ishalf);
         } catch (\Throwable $th) {
             Helpersv2::errorLog($this->CONTROLLER_NAME, 'generateDTR', $th->getMessage());
             return response()->json(['message' =>  $th->getMessage()]);
@@ -555,7 +556,7 @@ class DTRcontroller extends Controller
     *
     */
 
-    public function printDtr($month_of, $year_of, $biometric_id, $emp_Details, $view, $FrontDisplay)
+    public function printDtr($month_of, $year_of, $biometric_id, $emp_Details, $view, $FrontDisplay,$ishalf)
     {
         try {
             $dtr = DB::table('daily_time_records')
@@ -652,7 +653,7 @@ class DTRcontroller extends Controller
 
             // return $sctest;
 
-            $days_In_Month = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
+            $days_In_Month = isset($ishalf) && $ishalf ? 15 :cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
             $second_in = [];
             $second_out = [];
             $first_in = array_map(function ($res) {
@@ -888,7 +889,7 @@ class DTRcontroller extends Controller
         }
     }
 
-    public function GenerateMultiple($id, $month_of, $year_of, $view)
+    public function GenerateMultiple($id, $month_of, $year_of, $view,$ishalf)
     {
         $data = [];
         $emp_Details = [];
@@ -976,11 +977,11 @@ class DTRcontroller extends Controller
 
 
 
-        return $this->MultiplePrintOrView($id, $month_of, $year_of, $view, $emp_Details);
+        return $this->MultiplePrintOrView($id, $month_of, $year_of, $view, $emp_Details,$ishalf);
     }
 
 
-    public function MultiplePrintOrView($id, $month_of, $year_of, $view, $emp_Details)
+    public function MultiplePrintOrView($id, $month_of, $year_of, $view, $emp_Details,$ishalf)
     {
 
         $data = [];
@@ -1081,7 +1082,7 @@ class DTRcontroller extends Controller
                     }
                 }
 
-                $days_In_Month = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
+                $days_In_Month = isset($ishalf) && $ishalf ? 15 :cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
 
                 $first_in = array_map(function ($res) {
                     return [
