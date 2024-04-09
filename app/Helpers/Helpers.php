@@ -206,7 +206,10 @@ class Helpers
                         "approving_officer" => $department->division->chief_employee_profile_id,
                     ];
                 }
-
+                return [
+                    "recommending_officer" => $section->supervisor_employee_profile_id ,
+                    "approving_officer" => $department->division->chief_employee_profile_id,
+                ];
 
             case 'Unit':
                 // If employee is Unit head
