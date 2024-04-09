@@ -651,6 +651,13 @@ class LeaveApplicationController extends Controller
     {
         try {
             $employee_profile = $request->user;
+            $employeeId = $employee_profile->id;
+            $cleanData['pin'] = strip_tags($request->pin);
+
+            if ($employee_profile['authorization_pin'] !== $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+            }
+            
             $recommending_and_approving = Helpers::getRecommendingAndApprovingOfficer($employee_profile->assignedArea->findDetails(), $employee_profile->id);
             $hrmo_officer = Helpers::getHrmoOfficer();
 
@@ -677,10 +684,34 @@ class LeaveApplicationController extends Controller
             $leave_type = LeaveType::find($request->leave_type_id);
 
             if ($leave_type->code === 'SL' && $leave_type->file_after !== null) {
-                $daysDiffNow = Carbon::now()->diffInDays($end);
+                $checkSchedule = Helpers::hasSchedule($start, $end, $employeeId);
+                
+                if(!$checkSchedule)
+                {
+                    return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
+                }
 
-                if ($daysDiffNow > $leave_type->file_after) {
-                    return response()->json(['message' => "Filing of application must be " . $leave_type->file_after . " days after the return of employee."], Response::HTTP_FORBIDDEN);
+                // Initialize the variable to store the final date of the consecutive schedule
+                $finalConsecutiveScheduleDate = null;
+                $foundConsecutiveDays = 0;
+
+                // Loop through each day starting from the end date
+                $Date = $end->copy();
+                while ($foundConsecutiveDays < 3) {
+                    if (Helpers::hasSchedule($Date, $Date, $employeeId)) {
+                        // If a schedule is found, increment the counter
+                        $foundConsecutiveDays++;
+
+                        // Store the date of the current consecutive schedule
+                        $finalConsecutiveScheduleDate = $Date->copy();
+                    }
+                    // Move to the next day
+                    $Date->addDay();
+                }
+
+                $finalDate = $finalConsecutiveScheduleDate ? $finalConsecutiveScheduleDate->toDateString() : null;
+                if ($finalDate && $currentDate->gt($finalDate)) {
+                    return response()->json(['message' => "You missed the filing deadline."], Response::HTTP_FORBIDDEN);
                 }
             }
 
