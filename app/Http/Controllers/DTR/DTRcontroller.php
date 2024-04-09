@@ -1163,6 +1163,7 @@ class DTRcontroller extends Controller
                         'from' => $rows['date_from'],
                         'to' => $rows['date_to'],
                         'without_pay' => $rows['without_pay'],
+                        'leavetype' => LeaveType::find($rows['leave_type_id'])->name ?? "",
                         'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to'])
                     ];
                 }
