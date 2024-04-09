@@ -19,19 +19,19 @@ class UnitSeeder extends Seeder
         Unit::create([
             'name' => 'Housekeeping Unit',
             'code' => 'HOUSE',
-            'division_id' => $section->id
+            'section_id' => $section->id
         ]);
 
         Unit::create([
             'name' => 'Biomedical Unit',
             'code' => 'BIOMED',
-            'division_id' => $section->id
+            'section_id' => $section->id
         ]);
 
         Unit::create([
             'name' => 'Linen and Laundry Unit',
             'code' => 'LINEN',
-            'division_id' => $section->id
+            'section_id' => $section->id
         ]);
     }
 }
