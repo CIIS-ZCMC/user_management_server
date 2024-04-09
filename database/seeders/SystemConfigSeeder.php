@@ -14,6 +14,9 @@ class SystemConfigSeeder extends Seeder
      */
     public function run(): void
     {
+        $CONTROLLER = "SystemConfigSeeder";
+        $MODULE = "run";
+        
         Cache::flush();
 
         do {
@@ -23,12 +26,16 @@ class SystemConfigSeeder extends Seeder
                 Cache::forever('app_key', $app_key);
         } while ($app_key === null);
 
+        Helpers::infoLog($CONTROLLER, $MODULE, "App Key DONE");
+
         do {
             $server_domain = config('app.server_domain');
             Cache::forget('server_domain');
             if ($server_domain !== null)
                 Cache::forever('server_domain', $server_domain);
         } while ($server_domain === null);
+
+        Helpers::infoLog($CONTROLLER, $MODULE, "Server Domain DONE");
 
         do {
             $cookie_name = config('app.cookie_name');
@@ -37,12 +44,16 @@ class SystemConfigSeeder extends Seeder
                 Cache::forever('cookie_name', $cookie_name);
         } while ($cookie_name === null);
 
+        Helpers::infoLog($CONTROLLER, $MODULE, "Cookie Name DONE");
+
         do {
             $system_abbreviation = config('app.system_abbreviation');
             Cache::forget('system_abbreviation');
             if ($system_abbreviation !== null)
                 Cache::forever('system_abbreviation', $system_abbreviation);
         } while ($system_abbreviation === null);
+
+        Helpers::infoLog($CONTROLLER, $MODULE, "System Abbreviation DONE");
 
         do {
             $data_storing_key = config('app.data_storing_key');
@@ -51,12 +62,16 @@ class SystemConfigSeeder extends Seeder
                 Cache::forever('data_storing_key', $data_storing_key);
         } while ($data_storing_key === null);
 
+        Helpers::infoLog($CONTROLLER, $MODULE, "Data Storing DONE");
+
         do {
             $encrypt_decrypt_algorithm = config('app.encrypt_decrypt_algorithm');
             Cache::forget('encrypt_decrypt_algorithm');
             if ($encrypt_decrypt_algorithm !== null)
                 Cache::forever('encrypt_decrypt_algorithm', $encrypt_decrypt_algorithm);
         } while ($encrypt_decrypt_algorithm === null);
+
+        Helpers::infoLog($CONTROLLER, $MODULE, "Encrypt Decrypt Algorithm DONE");
 
         do {
             $database_encryption_key = config('app.database_encryption_key');
@@ -65,6 +80,8 @@ class SystemConfigSeeder extends Seeder
                 Cache::forever('database_encryption_key', $database_encryption_key);
         } while ($database_encryption_key === null);
 
+        Helpers::infoLog($CONTROLLER, $MODULE, "Database Encryption Key DONE");
+
         do {
             $salt_value = config('app.salt_value');
             Cache::forget('salt_value');
@@ -72,12 +89,16 @@ class SystemConfigSeeder extends Seeder
                 Cache::forever('salt_value', $salt_value);
         } while ($salt_value === null);
 
+        Helpers::infoLog($CONTROLLER, $MODULE, "Salt Value DONE");
+        
         do {
             $data_key_encryption = config('app.data_key_encryption');
             Cache::forget('data_key_encryption');
             if ($data_key_encryption !== null)
                 Cache::forever('data_key_encryption', $data_key_encryption);
         } while ($data_key_encryption === null);
+
+        Helpers::infoLog($CONTROLLER, $MODULE, "Data Key Encryption DONE");
 
         do {
             $google_api_client_id = config('app.google_api_client_id');
@@ -86,12 +107,16 @@ class SystemConfigSeeder extends Seeder
                 Cache::forever('google_api_client_id', $google_api_client_id);
         } while ($google_api_client_id === null);
 
+        Helpers::infoLog($CONTROLLER, $MODULE, "Google Api Client ID DONE");
+
         do {
             $google_api_client_secret = config('app.google_api_client_secret');
             Cache::forget('google_api_client_secret');
             if ($google_api_client_secret !== null)
                 Cache::forever('google_api_client_secret', $google_api_client_secret);
         } while ($google_api_client_secret === null);
+
+        Helpers::infoLog($CONTROLLER, $MODULE, "Google Api Client Secret DONE");
 
         do {
             $system_email_token = config('app.system_email_token');
@@ -100,6 +125,8 @@ class SystemConfigSeeder extends Seeder
                 Cache::forever('system_email_token', $system_email_token);
         } while ($system_email_token === null);
 
+        Helpers::infoLog($CONTROLLER, $MODULE, "System Email Token DONE");
+
         do {
             $system_email = config('app.system_email');
             Cache::forget('system_email');
@@ -107,12 +134,16 @@ class SystemConfigSeeder extends Seeder
                 Cache::forever('system_email', $system_email);
         } while ($system_email === null);
 
+        Helpers::infoLog($CONTROLLER, $MODULE, "System Email DONE");
+
         do {
             $system_name = config('app.system_name');
             Cache::forget('system_name');
             if ($system_name !== null)
                 Cache::forever('system_name', $system_name);
         } while ($system_name === null);
+
+        Helpers::infoLog($CONTROLLER, $MODULE, "System Name DONE");
 
         //** DTR MODULE */
         do {
@@ -122,12 +153,16 @@ class SystemConfigSeeder extends Seeder
                 Cache::forever('alloted_valid_time_for_firstentry', $alloted_valid_time_for_firstentry);
         } while ($alloted_valid_time_for_firstentry === null);
 
+        Helpers::infoLog($CONTROLLER, $MODULE, "Alloted Valid Time For First Entry DONE");
+
         do {
             $alloted_dtr_interval = config('app.alloted_dtr_interval');
             Cache::forget('alloted_dtr_interval');
             if ($alloted_dtr_interval !== null)
                 Cache::forever('alloted_dtr_interval', $alloted_dtr_interval);
         } while ($alloted_dtr_interval === null);
+
+        Helpers::infoLog($CONTROLLER, $MODULE, "Alloted DTR Interval DONE");
 
         do {
             $required_working_hours = config('app.required_working_hours');
@@ -136,12 +171,16 @@ class SystemConfigSeeder extends Seeder
                 Cache::forever('required_working_hours', $required_working_hours);
         } while ($required_working_hours === null);
 
+        Helpers::infoLog($CONTROLLER, $MODULE, "Required Working Hours DONE");
+
         do {
             $firstin = config('app.firstin');
             Cache::forget('firstin');
             if ($firstin !== null)
                 Cache::forever('firstin', $firstin);
         } while ($firstin === null);
+
+        Helpers::infoLog($CONTROLLER, $MODULE, "First In DONE");
 
         do {
             $firstout = config('app.firstout');
@@ -150,12 +189,16 @@ class SystemConfigSeeder extends Seeder
                 Cache::forever('firstout', $firstout);
         } while ($firstout === null);
 
+        Helpers::infoLog($CONTROLLER, $MODULE, "First Out DONE");
+
         do {
             $secondin = config('app.secondin');
             Cache::forget('secondin');
             if ($secondin !== null)
                 Cache::forever('secondin', $secondin);
         } while ($secondin === null);
+
+        Helpers::infoLog($CONTROLLER, $MODULE, "Second In DONE");
 
         do {
             $secondout = config('app.secondout');
@@ -164,11 +207,15 @@ class SystemConfigSeeder extends Seeder
                 Cache::forever('secondout', $secondout);
         } while ($secondout === null);
 
+        Helpers::infoLog($CONTROLLER, $MODULE, "Second Out DONE");
+
         do {
             $max_allowed_entry_oncall = config('app.max_allowed_entry_oncall');
             Cache::forget('max_allowed_entry_oncall');
             if ($max_allowed_entry_oncall !== null)
                 Cache::forever('max_allowed_entry_oncall', $max_allowed_entry_oncall);
         } while ($max_allowed_entry_oncall === null);
+        
+        Helpers::infoLog($CONTROLLER, $MODULE, "Max Allowed Entry OnCall DONE");
     }
 }
