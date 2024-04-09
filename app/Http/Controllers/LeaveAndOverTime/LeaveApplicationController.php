@@ -677,9 +677,9 @@ class LeaveApplicationController extends Controller
             $leave_type = LeaveType::find($request->leave_type_id);
 
             if ($leave_type->code === 'SL' && $leave_type->file_after !== null) {
-                $daysDiff = Carbon::now()->diffInDays($end);
+                $daysDiffNow = Carbon::now()->diffInDays($end);
 
-                if ($daysDiff > $leave_type->file_after) {
+                if ($daysDiffNow > $leave_type->file_after) {
                     return response()->json(['message' => "Filing of application must be " . $leave_type->file_after . " days after the return of employee."], Response::HTTP_FORBIDDEN);
                 }
             }
