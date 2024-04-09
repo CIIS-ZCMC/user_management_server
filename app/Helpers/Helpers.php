@@ -180,7 +180,7 @@ class Helpers
                 ];
             case 'Section':
                 // If employee is Section head
-                
+
                 $section = Section::find($assigned_area['details']->id);
                 if ($section->division !== null) {
                     $division = $section->division;
@@ -206,12 +206,7 @@ class Helpers
                         "approving_officer" => $department->division->chief_employee_profile_id,
                     ];
                 }
-               
 
-                return [
-                    "recommending_officer" => $section->supervisor_employee_profile_id,
-                    "approving_officer" => $department->division->chief_employee_profile_id,
-                ];
 
             case 'Unit':
                 // If employee is Unit head
@@ -227,7 +222,7 @@ class Helpers
 
                 return [
                     "recommending_officer" => $section->supervisor_employee_profile_id,
-                    "approving_officer" => $section->department->division->chief_employee_profile_id
+                    "approving_officer" => $section->department->division->chief_employee_profile_id ?? $section->division->chief_employee_profile_id,
                 ];
             default:
                 return null;
@@ -554,14 +549,13 @@ class Helpers
                 return ["approve_by" => $department->head_employee_profile_id];
 
             case 'Unit':
-                $section = Unit::find($assigned_area['details']['id'])->section;
-                if ($section->department_id !== null) {
-                    $department = $section->department;
-                    return ["approve_by" => $department->head_employee_profile_id];
+                $unit = Unit::find($assigned_area['details']['id']);
+                if ($unit->section_id !== null) {
+                    return ["approve_by" => $unit->head_employee_profile_id];
                 }
 
+                $section = $unit->section;
                 return ["approve_by" => $section->supervisor_employee_profile_id];
-
             default:
                 return null;
         }
@@ -707,6 +701,4 @@ class Helpers
 
         return $overlappingLeave || $overlappingOb || $overlappingOT || $overlappingCTO;
     }
-
-
 }

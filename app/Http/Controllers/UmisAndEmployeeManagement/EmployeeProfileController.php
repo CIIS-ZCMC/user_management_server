@@ -2045,6 +2045,10 @@ class EmployeeProfileController extends Controller
                 return EmployeeProfile::whereNotIn('id', [1, $user->id])->get();
             });
 
+            //    $employee_profiles = EmployeeProfile::whereNotIn('id', [1, $user->id])->get();
+     
+
+
             return EmployeeProfileResource::collection($employee_profiles);
 
             // return response()->json([
@@ -2920,6 +2924,7 @@ class EmployeeProfileController extends Controller
                 'employee_profile_id' => $employee_profile['id'],
                 'employee_id' => $employee_profile['employee_id'],
                 'name' => $personal_information->employeeName(),
+                'designation_id' => $designation['id'],
                 'designation' => $designation['name'],
                 'designation_code' => $designation['code'],
                 'plantilla_number_id' => $assigned_area['plantilla_number_id'],

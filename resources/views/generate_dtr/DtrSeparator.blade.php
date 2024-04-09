@@ -249,10 +249,40 @@
 
 
         @endif
+
         @if ($isHoliday)
             @if (!$countin)
-                <span style="font-size:8px;font-weight:bold">{{ $holidayMessage }}</span>
+
+                @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
+                    @if ($leave_Count)
+                        <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
+                    @elseif ($ot_Count)
+                        <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
+                    @elseif ($ob_Count)
+                        <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
+                    @elseif ($cto_Count)
+                        <span style="font-size:8px;font-weight:bold">{{ $ctoMessage }}</span>
+                    @endif
+                @else
+                    <span style="font-size:8px;font-weight:bold">{{ $holidayMessage }}</span>
+                @endif
+
             @endif
+        @else
+            @if (!$countin)
+                @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
+                    @if ($leave_Count)
+                        <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
+                        {{-- @elseif ($ot_Count)
+                    <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
+                @elseif ($ob_Count)
+                    <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
+                @elseif ($cto_Count)
+                    <span style="font-size:8px;font-weight:bold">{{ $ctoMessage }}</span> --}}
+                    @endif
+                @endif
+            @endif
+
         @endif
     @break
 
@@ -449,44 +479,42 @@
 
     @case('undertime_hours')
         @if (!$leave_Count && !$ot_Count && !$ob_Count && !$cto_Count)
-            <table style="border:none">
-                <tr style="border:none">
-                    @php
-                        $hours = 0;
-                        $minutes = '';
-                        $hrs = 0;
-                    @endphp
-                    @foreach ($undertime as $ut)
-                        @if ($biometric_ID == $ut['biometric_ID'])
-                            @if (date('d', strtotime($ut['created'])) == $i)
-                                @php
-                                    $uttime = $ut['undertime'];
-                                    $hours = floor($uttime / 60);
-                                    $minutes = $uttime % 60;
+            @php
+                $hours = 0;
+                $minutes = '';
+                $hrs = 0;
+            @endphp
+            @foreach ($undertime as $ut)
+                @if ($biometric_ID == $ut['biometric_ID'])
+                    @if (date('d', strtotime($ut['created'])) == $i)
+                        @php
+                            $uttime = $ut['undertime'];
+                            $hours = floor($uttime / 60);
+                            $minutes = $uttime % 60;
 
-                                    if ($hours >= 1) {
-                                        $hours = $hours;
-                                    } else {
-                                        $hours = 0;
-                                    }
+                            if ($hours >= 1) {
+                                $hours = $hours;
+                            } else {
+                                $hours = 0;
+                            }
 
-                                    if ($minutes >= 1) {
-                                        $minutes = $minutes;
-                                    } else {
-                                        $minutes = '';
-                                    }
-                                    $hrs += $hours;
-                                @endphp
-                            @endif
-                        @endif
-                    @endforeach
-                    @if ($hrs >= 1)
-                        <span style="color: black">
-                            {{ $hrs }}
-                        </span>
+                            if ($minutes >= 1) {
+                                $minutes = $minutes;
+                            } else {
+                                $minutes = '';
+                            }
+                            $hrs += $hours;
+                        @endphp
                     @endif
-                </tr>
-            </table>
+                @endif
+            @endforeach
+
+
+            @if ($hrs >= 1)
+                <span style="color: black;important;font-weight:bold">
+                    {{ $hrs }}
+                </span>
+            @endif
         @endif
     @break
 
