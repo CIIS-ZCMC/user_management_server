@@ -46,15 +46,23 @@ class LeaveType extends Model
         return $this->hasmany(LeaveTypeRequirement::class);
     }
 
-    public function leaveRequirements() {
+    public function leaveTypeName()
+    {
+        return $this->name;
+    }
+
+    public function leaveRequirements()
+    {
         return $this->belongsTo(Requirement::class);
     }
 
-    public function requirements() {
+    public function requirements()
+    {
         return $this->belongsToMany(Requirement::class, 'leave_type_requirements', 'leave_type_id', 'leave_requirement_id');
     }
 
-    public function attachments() {
+    public function attachments()
+    {
         return $this->belongsToMany(LeaveAttachment::class, 'leave_attachments', 'leave_type_id', 'id');
     }
 

@@ -23,7 +23,7 @@ use App\Models\Section;
 use App\Models\Schedule;
 use App\Helpers\Helpers as Help;
 use App\Methods\DTRPull;
-
+use App\Models\LeaveType;
 use Illuminate\Support\Facades\Cache;
 
 class DTRcontroller extends Controller
@@ -726,6 +726,8 @@ class DTRcontroller extends Controller
                 return $row['status'] == "approved";
             });
 
+
+
             $leavedata = [];
             foreach ($leaveapp as $rows) {
                 $leavedata[] = [
@@ -733,10 +735,12 @@ class DTRcontroller extends Controller
                     'city' => $rows['city'],
                     'from' => $rows['date_from'],
                     'to' => $rows['date_to'],
+                    'leavetype' => LeaveType::find($rows['leave_type_id'])->name ?? "",
                     'without_pay' => $rows['without_pay'],
                     'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to'])
                 ];
             }
+
 
             //Official business
             $officialBusiness = array_values($employee->officialBusinessApplications->filter(function ($row) {

@@ -43,6 +43,10 @@ class FamilyBackground extends Model
 
     public function fatherName()
     {
+        if ($this->father_last_name === NULL && $this->father_first_name === NULL) {
+            return null;
+        }
+
         if ($this->father_middle_name === NULL) {
             return $this->father_last_name . ', ' . $this->father_first_name;
         }

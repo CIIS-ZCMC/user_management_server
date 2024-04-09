@@ -74,12 +74,12 @@ class PlantillaController extends Controller
             toassign : New Plantilla_number_ID
             password : userPassword
             */
-            $user = $request->user;
-            $cleanData['pin'] = strip_tags($request->password);
+            // $user = $request->user;
+            // $cleanData['pin'] = strip_tags($request->password);
 
-            if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
-            }
+            // if ($user['authorization_pin'] !==  $cleanData['pin']) {
+            //     return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+            // }
             $employee_profile = EmployeeProfile::findOrFail($id);
             $to_assign = $request->toassign;
             /* plantilla_id | plantilla_numbers */

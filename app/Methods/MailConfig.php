@@ -2,6 +2,7 @@
 
 namespace App\Methods;
 
+use App\Helpers\Helpers;
 use Illuminate\Support\Facades\Cache;
 use League\OAuth2\Client\Provider\Google;
 use PHPMailer\PHPMailer\Exception;
@@ -20,11 +21,11 @@ class MailConfig
 
     public function __construct()
     {
-        $this->client_id = Cache::get('google_api_client_id');
-        $this->client_secret = Cache::get('google_api_client_secret');
-        $this->token = Cache::get('system_email_token');
-        $this->sys_email = Cache::get('system_email');
-        $this->from_System = Cache::get('system_name');
+        $this->client_id = "595317458897-8kio3rsqktn70cuomcpev8cqau2sl0oi.apps.googleusercontent.com";
+        $this->client_secret = "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";
+        $this->token = "1//0gv1dy3TRxnqMCgYIARAAGBASNwF-L9IrgPQTTi8NYfel7ENvwhtw8S3cBAMKGIvblfe9fbE8E29EdemDBJYakiFMBDR4PL_lW8c";
+        $this->sys_email = "ciis.zcmc@gmail.com";
+        $this->from_System = "ZCMC Portal";
         $this->provider = new Google([
             'clientId' => $this->client_id,
             'clientSecret' => $this->client_secret,
@@ -33,12 +34,14 @@ class MailConfig
     public function send($data)
     {
         $mail = new PHPMailer(true);
+
         try {
             $mail->isSMTP();
             $mail->SMTPDebug = SMTP::DEBUG_OFF;
             $mail->Host = 'smtp.gmail.com';
             $mail->Port = 465;
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+            // $mail->SMTPAutoTLS = false;
             $mail->SMTPAuth = true;
             $mail->AuthType = 'XOAUTH2';
             $mail->setOAuth(
@@ -62,7 +65,9 @@ class MailConfig
             } else {
                 return false;
             }
-        } catch (Exception $e) {
+        } catch (\Throwable $th) {
+            Helpers::errorLog("MailConfig", "send", $th->getMessage());
+
             return false;
         }
     }
