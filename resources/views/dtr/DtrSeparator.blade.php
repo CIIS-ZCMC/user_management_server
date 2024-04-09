@@ -1,13 +1,13 @@
-@php
-    $absent = false;
-    $holiday = '';
-@endphp
+
+
 @switch($entry)
     @case('firstin')
-        @php
-            $isHoliday = false;
-        @endphp
-
+    @php
+    $isHoliday = false;
+    $appshown = true;
+    $dayoffshown = true;
+    $notabsent = false;
+    @endphp
 
         @foreach ($holidays as $item)
             @if ($item->month_day == sprintf('%02d-%02d', $month, $i))
@@ -18,32 +18,30 @@
             @endif
         @endforeach
 
-
-
-
         @php
-            $countin = 0;
+        $countin = 0;
+    @endphp
+
+    @foreach ($firstin as $key => $f1)
+        @php
+
+            $empSched = $schedule->filter(function ($sched) use ($f1) {
+                return date('Y-m-d', strtotime($sched->schedule)) === date('Y-m-d', strtotime($f1['dtr_date'])) &&
+                    $sched->second_in === null &&
+                    $sched->second_out === null;
+            });
+
         @endphp
 
-        @foreach ($firstin as $key => $f1)
-            @php
-
-                $empSched = $schedule->filter(function ($sched) use ($f1) {
-                    return date('Y-m-d', strtotime($sched->schedule)) === date('Y-m-d', strtotime($f1['dtr_date'])) &&
-                        $sched->second_in === null &&
-                        $sched->second_out === null;
-                });
-
-            @endphp
-
-
-
-            @if ($biometric_ID == $f1['biometric_ID'])
-                @if ($f1['first_in'])
-                    @if (date('d', strtotime($f1['dtr_date'])) == $i)
-                        <span class="fentry">
-                            @if (date('A', strtotime($f1['first_in'])) == 'AM')
-                                @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
+        @if ($biometric_ID == $f1['biometric_ID'])
+            @if ($f1['first_in'])
+                @if (date('d', strtotime($f1['dtr_date'])) == $i)
+                    {{-- check if schedule is half , then check the time if its am or pm --}}
+                    @if (count($empSched) >= 1)
+                        {{-- checktime if its pm --}}
+                        @if (date('A', strtotime($f1['first_in'])) == 'AM')
+                            @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
+                                @if ($appshown)
                                     @if ($leave_Count)
                                         <span class="timefirstarrival">{{ $leavemessage }}</span>
                                     @elseif ($ot_Count)
@@ -53,46 +51,29 @@
                                     @elseif ($cto_Count)
                                         <span class="timefirstarrival">{{ $ctoMessage }}</span>
                                     @endif
-                                @else
-                                    <span class="fentry">
-                                        {{ date('h:i a', strtotime($f1['first_in'])) }}
-                                    </span>
-                                    <script>
-                                        $(document).ready(function() {
-                                            $("#entry{{ $i }}1").addClass("Present");
-                                            $("#entry{{ $i }}2").addClass("Present");
-                                            $("#entry{{ $i }}3").addClass("Present");
-                                            $("#entry{{ $i }}4").addClass("Present");
-
-                                        })
-                                    </script>
                                 @endif
+                                @php
+                                    $appshown = false;
+                                @endphp
+                            @else
+                                <span class="fentry">
+                                    {{ date('h:i a', strtotime($f1['first_in'])) }}
+                                </span>
+                                <script>
+                                    $(document).ready(function() {
+                                        $("#entry{{ $i }}1").addClass("Present");
+                                        $("#entry{{ $i }}2").addClass("Present");
+                                        $("#entry{{ $i }}3").addClass("Present");
+                                        $("#entry{{ $i }}4").addClass("Present");
+    
+                                    })
+                                </script>
                             @endif
-
-
-                        </span>
-
-
-                        @php
-                            $countin++;
-                        @endphp
-                    @endif
-                @endif
-            @endif
-        @endforeach
-
-        @if (date('D', strtotime(date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)))) == 'Sun')
-            @if (!$isHoliday)
-                @if ($countin == 0)
-                    @php
-                        $checkSched = $schedule->filter(function ($row) use ($year, $month, $i) {
-                            return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) &&
-                                $row->attendance_status == 0;
-                        });
-
-                    @endphp
-                    @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
-                        @if ($leave_Count)
+                        @endif
+                    @else
+                        @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
+                            @if ($appshown)
+                            @if ($leave_Count)
                             <span class="timefirstarrival">{{ $leavemessage }}</span>
                         @elseif ($ot_Count)
                             <span class="timefirstarrival">{{ $officialTime }}</span>
@@ -101,301 +82,356 @@
                         @elseif ($cto_Count)
                             <span class="timefirstarrival">{{ $ctoMessage }}</span>
                         @endif
-                    @else
-                        @if (count($checkSched) >= 1)
-                            <span class="fentry">
-                                <span class="timefirstarrival" style="color:#FF6969;">{{ $absentMessage }}</span>
-
-                                <script>
-                                    $(document).ready(function() {
-                                        $("#entry{{ $i }}1").addClass("Absent");
-                                        $("#entry{{ $i }}2").addClass("Absent");
-                                        $("#entry{{ $i }}3").addClass("Absent");
-                                        $("#entry{{ $i }}4").addClass("Absent");
-
-                                    })
-                                </script>
-                            </span>
+                            @endif
+                            @php
+                                $appshown = false;
+                            @endphp
                         @else
-                            <span class="timefirstarrival" style="color:gray">{{ $dayoffmessage }}</span>
+                            <span class="fentry">
+                                {{ date('h:i a', strtotime($f1['first_in'])) }}
+                            </span>
+                            <script>
+                                $(document).ready(function() {
+                                    $("#entry{{ $i }}1").addClass("Present");
+                                    $("#entry{{ $i }}2").addClass("Present");
+                                    $("#entry{{ $i }}3").addClass("Present");
+                                    $("#entry{{ $i }}4").addClass("Present");
+
+                                })
+                            </script>
                         @endif
                     @endif
+                    @php
+                        $countin++;
+                    @endphp
+                @else
+                    @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
+                        @if ($appshown)
+                        @if ($leave_Count)
+                        <span class="timefirstarrival">{{ $leavemessage }}</span>
+                    @elseif ($ot_Count)
+                        <span class="timefirstarrival">{{ $officialTime }}</span>
+                    @elseif ($ob_Count)
+                        <span class="timefirstarrival">{{ $officialBusinessMessage }}</span>
+                    @elseif ($cto_Count)
+                        <span class="timefirstarrival">{{ $ctoMessage }}</span>
+                    @endif
+                        @endif
+                        @php
+                            $appshown = false;
+                        @endphp
+                    @endif
+                @endif
+            @endif
+        @endif
+    @endforeach
+    @php
+        $checkSched = $schedule->filter(function ($row) use ($year, $month, $i) {
+            return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) &&
+                $row->attendance_status == 0;
+        });
 
+    @endphp
+
+
+
+
+
+    @if (date('D', strtotime(date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)))) == 'Sun')
+        @if (!$isHoliday)
+            @if ($countin == 0)
+
+                @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
+                    @if ($appshown)
+                    @if ($leave_Count)
+                    <span class="timefirstarrival">{{ $leavemessage }}</span>
+                @elseif ($ot_Count)
+                    <span class="timefirstarrival">{{ $officialTime }}</span>
+                @elseif ($ob_Count)
+                    <span class="timefirstarrival">{{ $officialBusinessMessage }}</span>
+                @elseif ($cto_Count)
+                    <span class="timefirstarrival">{{ $ctoMessage }}</span>
+                @endif
+                    @endif
+                    @php
+                        $appshown = false;
+                    @endphp
+                @else
+                    @if (count($checkSched) >= 1 && date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) < date('Y-m-d'))
+                        <span class="timefirstarrival">{{ $absentMessage }}</span>
+                        <script>
+                            $(document).ready(function() {
+                                $("#entry{{ $i }}1").addClass("Absent");
+                                $("#entry{{ $i }}2").addClass("Absent");
+                                $("#entry{{ $i }}3").addClass("Absent");
+                                $("#entry{{ $i }}4").addClass("Absent");
+
+                            })
+                        </script>
+                        @php
+                        $notabsent = true;
+                    @endphp
+
+                    @endif
+                @endif
+
+
+
+
+            @endif
+
+        @endif
+    @elseif(date('D', strtotime(date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)))) == 'Sat')
+        @if ($countin == 0)
+
+
+            @php
+                $count2 = 0;
+            @endphp
+
+
+            @foreach ($secondin as $s1)
+                @if ($s1['second_in'])
+                    @if (date('d', strtotime($s1['second_in'])) != $i)
+                        @php
+                            $count2++;
+                        @endphp
+                    @endif
+                @endif
+            @endforeach
+            @php
+                $checkSched = $schedule->filter(function ($row) use ($year, $month, $i) {
+                    return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) &&
+                        $row->attendance_status == 0;
+                });
+
+            @endphp
+
+            @if ($count2 >= 1)
+                @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
+                  
+                @else
+                    @if (count($checkSched) >= 1 && date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) < date('Y-m-d'))
+                        <span class="timefirstarrival">{{ $absentMessage }}</span>
+                        <script>
+                            $(document).ready(function() {
+                                $("#entry{{ $i }}1").addClass("Absent");
+                                $("#entry{{ $i }}2").addClass("Absent");
+                                $("#entry{{ $i }}3").addClass("Absent");
+                                $("#entry{{ $i }}4").addClass("Absent");
+
+                            })
+                        </script>
+                        @php
+                        $notabsent = true;
+                    @endphp
+                    @endif
+                @endif
+            @else
+                @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
+               
+                @else
+                    @if (count($checkSched) >= 1 && date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) < date('Y-m-d'))
+                        <script>
+                            $(document).ready(function() {
+
+                                $("#entry{{ $i }}1").addClass("Absent");
+                                $("#entry{{ $i }}2").addClass("Absent");
+                                $("#entry{{ $i }}3").addClass("Absent");
+                                $("#entry{{ $i }}4").addClass("Absent");
+                            })
+                        </script>
+                        <span class="timefirstarrival">{{ $absentMessage }} </span>
+                        <script>
+                            $(document).ready(function() {
+                                $("#entry{{ $i }}1").addClass("Absent");
+                                $("#entry{{ $i }}2").addClass("Absent");
+                                $("#entry{{ $i }}3").addClass("Absent");
+                                $("#entry{{ $i }}4").addClass("Absent");
+
+                            })
+                        </script>
+                            @php
+                            $notabsent = true;
+                        @endphp
+                    @else
+                    @endif
                 @endif
 
             @endif
-        @elseif(date('D', strtotime(date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)))) == 'Sat')
-            @if ($countin == 0)
-                @php
-                    $count2 = 0;
-                @endphp
-
-
-                @foreach ($secondin as $s1)
-                    @if ($s1['second_in'])
-                        @if (date('d', strtotime($s1['dtr_date'])) != $i)
-                            @php
-                                $count2++;
-                            @endphp
-                        @endif
-                    @endif
-                @endforeach
-                <span class="fentry">
+        @else
+        @endif
+    @else
+        @if ($countin == 0)
+            @if (date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) < date('Y-m-d'))
+                @if ($isHoliday)
+                    {{-- <span style="color:gray">HOLIDAY</span> --}}
+                @else
                     @php
                         $checkSched = $schedule->filter(function ($row) use ($year, $month, $i) {
                             return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) &&
                                 $row->attendance_status == 0;
                         });
 
+                        $presentSched = $schedule->filter(function ($row) use ($year, $month, $i) {
+                            return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) &&
+                                $row->attendance_status == 1;
+                        });
+
                     @endphp
-                    @if ($count2 >= 1)
-                        @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
-                            @if ($leave_Count)
-                                <span class="timefirstarrival">{{ $leavemessage }}</span>
-                            @elseif ($ot_Count)
-                                <span class="timefirstarrival">{{ $officialTime }}</span>
-                            @elseif ($ob_Count)
-                                <span class="timefirstarrival">{{ $officialBusinessMessage }}</span>
-                            @elseif ($cto_Count)
-                                <span class="timefirstarrival">{{ $ctoMessage }}</span>
-                            @endif
-                        @else
-                            @if (count($checkSched) >= 1)
-                                <script>
-                                    $(document).ready(function() {
 
-                                        $("#entry{{ $i }}1").addClass("Absent");
-                                        $("#entry{{ $i }}2").addClass("Absent");
-                                        $("#entry{{ $i }}3").addClass("Absent");
-                                        $("#entry{{ $i }}4").addClass("Absent");
-                                    })
-                                </script>
-                                <span class="timefirstarrival"
-                                    style="color:gray;font-style:italic;color:#FF6969;">{{ $absentMessage }}</span>
-                            @else
-                                <span class="timefirstarrival" style="color:gray">{{ $dayoffmessage }}</span>
-                            @endif
-                        @endif
+                    @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
+                      
                     @else
-                        @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
-                            @if ($leave_Count)
-                                <span class="timefirstarrival">{{ $leavemessage }}</span>
-                            @elseif ($ot_Count)
-                                <span class="timefirstarrival">{{ $officialTime }}</span>
-                            @elseif ($ob_Count)
-                                <span class="timefirstarrival">{{ $officialBusinessMessage }}</span>
-                            @elseif ($cto_Count)
-                                <span class="timefirstarrival">{{ $ctoMessage }}</span>
-                            @endif
-                        @else
-                            @if (count($checkSched) >= 1)
-                                <script>
-                                    $(document).ready(function() {
+                        @if (count($checkSched) >= 1 && date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) < date('Y-m-d'))
+                            <span class="timefirstarrival">{{ $absentMessage }} </span>
+                            <script>
+                                $(document).ready(function() {
+                                    $("#entry{{ $i }}1").addClass("Absent");
+                                    $("#entry{{ $i }}2").addClass("Absent");
+                                    $("#entry{{ $i }}3").addClass("Absent");
+                                    $("#entry{{ $i }}4").addClass("Absent");
 
-                                        $("#entry{{ $i }}1").addClass("Absent");
-                                        $("#entry{{ $i }}2").addClass("Absent");
-                                        $("#entry{{ $i }}3").addClass("Absent");
-                                        $("#entry{{ $i }}4").addClass("Absent");
-                                    })
-                                </script>
-                                <span class="timefirstarrival"
-                                    style="color:gray;font-style:italic;color:#FF6969;">{{ $absentMessage }}</span>
-                            @else
-                                @if (!$isHoliday)
-                                    <span class="timefirstarrival" style="color:gray">{{ $dayoffmessage }}</span>
-                                @endif
-                            @endif
-                        @endif
-
-                    @endif
-                </span>
-            @endif
-        @else
-            @if ($countin == 0)
-                @if (date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) < date('Y-m-d'))
-                    @if ($isHoliday)
-                        {{-- <span style="color:gray">HOLIDAY</span> --}}
-                    @else
-                        @php
-                            $checkSched = $schedule->filter(function ($row) use ($year, $month, $i) {
-                                return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) &&
-                                    $row->attendance_status == 0;
-                            });
-
-                            $presentSched = $schedule->filter(function ($row) use ($year, $month, $i) {
-                                return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) &&
-                                    $row->attendance_status == 1;
-                            });
-
+                                })
+                            </script>
+                            @php
+                            $notabsent = true;
                         @endphp
-                        <span class="fentry">
-                            @if (count($checkSched) >= 1)
-                                @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
-                                    @if ($leave_Count)
-                                        <span class="timefirstarrival">{{ $leavemessage }}</span>
-                                    @elseif ($ot_Count)
-                                        <span class="timefirstarrival">{{ $officialTime }}</span>
-                                    @elseif ($ob_Count)
-                                        <span class="timefirstarrival">{{ $officialBusinessMessage }}</span>
-                                    @elseif ($cto_Count)
-                                        <span class="timefirstarrival">{{ $ctoMessage }}</span>
-                                    @endif
-                                @else
-                                    <span class="timefirstarrival"
-                                        style="color:gray;font-style:italic;color:#FF6969">{{ $absentMessage }}</span>
-
-                                    <script>
-                                        $(document).ready(function() {
-
-                                            $("#entry{{ $i }}1").addClass("Absent");
-                                            $("#entry{{ $i }}2").addClass("Absent");
-                                            $("#entry{{ $i }}3").addClass("Absent");
-                                            $("#entry{{ $i }}4").addClass("Absent");
-                                        })
-                                    </script>
-                                @endif
-                            @else
-                                @if (count($presentSched) == 0)
-                                    <span class="timefirstarrival" style="color:gray;">{{ $dayoffmessage }}</span>
-                                @else
-                                    <script>
-                                        $(document).ready(function() {
-                                            $("#entry{{ $i }}1").addClass("Present");
-                                            $("#entry{{ $i }}2").addClass("Present");
-                                            $("#entry{{ $i }}3").addClass("Present");
-                                            $("#entry{{ $i }}4").addClass("Present");
-
-                                        })
-                                    </script>
-                                @endif
-                            @endif
-                        </span>
-
-
+                        @endif
                     @endif
 
+
+
                 @endif
+
+            @endif
+        @endif
+
+
+    @endif
+
+
+
+    @if ($isHoliday)
+        {{-- This is for checking holiday. --}}
+        @if (!$countin)
+
+
+
+            @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
+                @if ($appshown)
+                @if ($leave_Count)
+                <span class="timefirstarrival">{{ $leavemessage }}</span>
+            @elseif ($ot_Count)
+                <span class="timefirstarrival">{{ $officialTime }}</span>
+            @elseif ($ob_Count)
+                <span class="timefirstarrival">{{ $officialBusinessMessage }}</span>
+            @elseif ($cto_Count)
+                <span class="timefirstarrival">{{ $ctoMessage }}</span>
+            @endif
+                @endif
+                @php
+                    $appshown = false;
+                @endphp
+            @else
+                <span class="timefirstarrival">{{ $holidayMessage }}</span>
+                <script>
+                    $(document).ready(function() {
+                        $("#entry{{ $i }}1").addClass("Holiday");
+                        $("#entry{{ $i }}2").addClass("Holiday");
+                        $("#entry{{ $i }}3").addClass("Holiday");
+                        $("#entry{{ $i }}4").addClass("Holiday");
+                    })
+                </script>
             @endif
 
-
         @endif
-        @if ($isHoliday)
-            <span class="fentry">
-                @if (!$countin)
-                    <span class="timefirstarrival" style="color:rgb(112, 82, 0); font-weight: normal">Holiday</span>
-                    <script>
-                        $(document).ready(function() {
-                            $("#entry{{ $i }}1").addClass("Holiday");
-                            $("#entry{{ $i }}2").addClass("Holiday");
-                            $("#entry{{ $i }}3").addClass("Holiday");
-                            $("#entry{{ $i }}4").addClass("Holiday");
-                        })
-                    </script>
+    @else
+        @php
+            $checkSched = $schedule->filter(function ($row) use ($year, $month, $i) {
+                return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) &&
+                    $row->attendance_status == 0;
+            });
+            $showdd = true;
+        @endphp
+
+        {{-- Checking Schedule and outputing DAY-OFF --}}
+        @if (!$countin)
+
+
+            @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
+
+                @if ($appshown)
+                @if ($leave_Count)
+                <span class="timefirstarrival">{{ $leavemessage }}</span>
+            @elseif ($ot_Count)
+                <span class="timefirstarrival">{{ $officialTime }}</span>
+            @elseif ($ob_Count)
+                <span class="timefirstarrival">{{ $officialBusinessMessage }}</span>
+            @elseif ($cto_Count)
+                <span class="timefirstarrival">{{ $ctoMessage }}</span>
+            @endif
                 @endif
+                @php
+                    $appshown = false;
+                @endphp
+            @else
+                @if (count($checkSched) == 0)
+
+                    @if (date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) < date('Y-m-d'))
+                        <span class="timefirstarrival">{{ $dayoffmessage }}</span>
+
+                        @php
+                            $showdd = false;
+                        @endphp
+                    @else
+                        @if (date('D', strtotime(date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)))) == 'Sun' ||
+                                date('D', strtotime(date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)))) == 'Sat')
+                            
+                            @if ($showdd)
+                                <span class="timefirstarrival">{{ $dayoffmessage }}</span>
+                            @endif
+                            @php
+                                $showdd = false;
+                            @endphp
+                        @endif
+                    @endif
+                @else
+                   
+                    @if (date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) > date('Y-m-d') &&
+                            date('D', strtotime(date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)))) == 'Sun' ||
+                            date('D', strtotime(date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)))) == 'Sat' )
+                         @if ($showdd && !$notabsent)
+                         <span class="timefirstarrival">{{ $dayoffmessage }}</span>
+                     @endif
+                     @php
+                         $showdd = false;
+                     @endphp
+                    @endif
+                @endif
+
+            @endif
+
         @endif
-        </span>
-    @break
 
-    @case('firstout')
-        <span class="fentry">
-            <!-- FIRST OUT -->
-
+        @if (date('D', strtotime(date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)))) != 'Sun' &&
+                date('D', strtotime(date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)))) != 'Sat' &&
+                !$leave_Count &&
+                !$ot_Count &&
+                !$ob_Count &&
+                !$cto_Count &&
+                !$countin)
+            @if ($showdd && date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) < date('Y-m-d') && !$notabsent)
+                <span class="timefirstarrival">{{ $dayoffmessage }}</span>
+            @endif
             @php
-                $fo = 0;
-                if ($fspan) {
-                    $fo = $i + 1;
-                } else {
-                    $fo = $i;
-                }
-
+                $showdd = false;
             @endphp
-            @foreach ($firstout as $f2)
-                @php
+        @endif
+      
 
-                    $empSched = $schedule->filter(function ($sched) use ($f2) {
-                        return date('Y-m-d', strtotime($sched->schedule)) ===
-                            date('Y-m-d', strtotime($f2['dtr_date'])) &&
-                            $sched->second_in === null &&
-                            $sched->second_out === null;
-                    });
+    @endif
 
-                    // echo count($empSched);
-
-                @endphp
-
-
-                @if ($biometric_ID == $f2['biometric_ID'])
-                    @if ($f2['first_out'])
-                        @if (!$leave_Count && !$ot_Count && !$ob_Count && !$cto_Count)
-                            @if (count($empSched) >= 1)
-                                @if (date('d', strtotime($f2['first_out'])) == $fo)
-                                    @if (date('A', strtotime($f2['first_out'])) == 'AM')
-                                        {{ date('h:i a', strtotime($f2['first_out'])) }}
-                                    @endif
-                                @endif
-                            @else
-                                @if (date('d', strtotime($f2['dtr_date'])) == $fo)
-                                    @if (date('A', strtotime($f2['first_out'])) == 'PM')
-                                        {{ date('h:i a', strtotime($f2['first_out'])) }}
-                                    @else
-                                        {{ date('h:i a', strtotime($f2['first_out'])) }}
-                                    @endif
-                                @endif
-                            @endif
-                        @endif
-                    @endif
-                @endif
-            @endforeach
-        </span>
-    @break
-
-    @case('secondin')
-        <span class="fentry">
-            <!-- SECOND IN -->
-
-
-
-            @foreach ($secondin as $f3)
-                @php
-
-                    $empSched = $schedule->filter(function ($sched) use ($f3) {
-                        return date('Y-m-d', strtotime($sched->schedule)) ===
-                            date('Y-m-d', strtotime($f3['dtr_date'])) &&
-                            $sched->second_in === null &&
-                            $sched->second_out === null;
-                    });
-
-                @endphp
-
-                @if ($biometric_ID == $f3['biometric_ID'])
-                    @if (date('d', strtotime($f3['second_in'])) == $i)
-                        @if (!$leave_Count && !$ot_Count && !$ob_Count && !$cto_Count)
-                            @if (date('A', strtotime($f3['second_in'])) === 'PM')
-                                @if ($f3['second_in'])
-                                    {{ date('h:i a', strtotime($f3['second_in'])) }}
-                                @endif
-                            @endif
-                        @endif
-                    @endif
-                @endif
-            @endforeach
-
-
-            @foreach ($firstin as $key => $f1)
-                @if ($biometric_ID == $f1['biometric_ID'])
-                    @if (date('d', strtotime($f1['first_in'])) == $i)
-                        @if (!$leave_Count && !$ot_Count && !$ob_Count && !$cto_Count)
-                            @if (date('A', strtotime($f1['first_in'])) === 'PM')
-                                @if ($f1['first_in'])
-                                    {{ date('h:i a', strtotime($f1['first_in'])) }}
-                                @endif
-                            @endif
-                        @endif
-                    @endif
-                @endif
-            @endforeach
-
-        </span>
     @break
 
     @case('secondout')

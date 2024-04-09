@@ -21,6 +21,7 @@ use App\Http\Requests\VoluntaryWorkRequest;
 use App\Http\Requests\WorkExperienceRequest;
 use App\Models\EmploymentType;
 use App\Models\OfficerInChargeTrail;
+use App\Models\WorkExperience;
 use Carbon\Carbon;
 
 use App\Models\Role;
@@ -2850,6 +2851,21 @@ class EmployeeProfileController extends Controller
 
             $last_login = LoginTrail::where('employee_profile_id', $employee_profile->id)->orderByDesc('created_at')->first();
 
+            
+            $work_experiences = WorkExperience::where('personal_information_id', $personal_information->id)->where('government_office', "Yes")->get();
+
+            $totalMonths = 0; // Initialize total months variable
+            $totalYears = 0; // Initialize total months variable
+
+            foreach ($work_experiences as $work) {
+                $dateFrom = Carbon::parse($work->date_from);
+                $dateTo = Carbon::parse($work->date_to);
+                $months = $dateFrom->diffInMonths($dateTo);
+                $totalMonths += $months;
+            }
+
+            $totalYears = floor($totalMonths/12);
+
             $employee = [
                 'profile_url' => Cache::get('server_domain') . "/photo/profiles/" . $employee_profile->profile_url,
                 'employee_id' => $employee_profile->employee_id,
@@ -2860,7 +2876,9 @@ class EmployeeProfileController extends Controller
                 'employment_type_id' => $employee_profile->employmentType->id,
                 'years_of_service' => $employee_profile->personalInformation->years_of_service,
                 'last_login' => $last_login === null ? null : $last_login->created_at,
-                'biometric_id' => $employee_profile->biometric_id
+                'biometric_id' => $employee_profile->biometric_id,
+                'total_months' => $totalMonths - ($totalYears * 12),
+                'total_years' => $totalYears
             ];
 
             $personal_information_data = [
