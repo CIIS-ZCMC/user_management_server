@@ -274,7 +274,7 @@ class EmployeeProfile extends Authenticatable
 
         /** Department Chief */
         $head = Department::where('head_employee_profile_id', $this->id)->first();
-        $nurse_service = Division::where('code', 'NS')->first();
+        $nurse_service = Division::where('code', 'NURSING')->first();
 
         if ($head) {
             if ($head->department_id === $nurse_service->id) {

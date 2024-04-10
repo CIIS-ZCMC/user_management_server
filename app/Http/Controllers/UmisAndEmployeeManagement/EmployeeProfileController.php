@@ -2532,6 +2532,7 @@ class EmployeeProfileController extends Controller
             }
 
             $cleanData['allow_time_adjustment'] = strip_tags($request->allow_time_adjustment) === 1 ? true : false;
+            $cleanData['shifting'] = strip_tags($request->shifting) === 1 ? true : false;
             $cleanData['password_encrypted'] = $encryptedPassword;
             $cleanData['password_created_at'] = now();
             $cleanData['password_expiration_at'] = $twominutes;
