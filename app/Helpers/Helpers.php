@@ -744,7 +744,7 @@ class Helpers
                 }
             }
 
-            $schedule->employee()->attach($employee_id);
+            $schedule->employeeProfile()->attach($employee_id);
         }
     }
 
