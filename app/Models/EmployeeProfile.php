@@ -339,6 +339,26 @@ class EmployeeProfile extends Authenticatable
             ];
         }
 
+        /** for HR ADMIN */
+        $assign_area = AssignArea::where('employee_profile_id', $this->id)->first();
+        if($assign_area->section_id !== null){
+            $hr_employee = Section::find($assign_area->section_id);
+            
+            if($hr_employee->code === 'HRMO'){
+                $role = Role::where('code', "HR-ADMIN")->first();
+                $system_role = SystemRole::where('role_id', $role->id)->first();
+                $special_access_role = SpecialAccessRole::where('employee_profile_id', $this->id)
+                    ->where('system_role_id', $system_role->id)->first();
+    
+                if($special_access_role){
+                    return [
+                        'position' => "HR Staff",
+                        'area' => $hr_employee
+                    ];
+                }
+            }
+        }
+
         /** Unit Head */
         $head = Unit::where('head_employee_profile_id', $this->id)->first();
 
