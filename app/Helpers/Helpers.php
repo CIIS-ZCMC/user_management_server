@@ -206,6 +206,8 @@ class Helpers
                         "approving_officer" => $department->division->chief_employee_profile_id,
                     ];
                 }
+
+                //do not remove this
                 return [
                     "recommending_officer" => $section->supervisor_employee_profile_id ,
                     "approving_officer" => $department->division->chief_employee_profile_id,
@@ -703,5 +705,19 @@ class Helpers
             ->exists();
 
         return $overlappingLeave || $overlappingOb || $overlappingOT || $overlappingCTO;
+    }
+
+    public static function hasSchedule($start, $end, $employeeId)
+    {
+        $checkSchedule = EmployeeSchedule::where('employee_profile_id', $employeeId)
+        ->where(function ($query) use ($start, $end) {
+            $query->whereHas('schedule', function ($innerQuery) use ($start, $end) {
+                $innerQuery->whereDate('date', '>=', $start)
+                    ->whereDate('date', '<=', $end);
+            });
+        })
+        ->exists();
+
+        return $checkSchedule;
     }
 }

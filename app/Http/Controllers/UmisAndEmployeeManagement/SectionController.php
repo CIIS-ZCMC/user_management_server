@@ -205,45 +205,25 @@ class SectionController extends Controller
     {
         try{
             $cleanData = [];
-            $division_id = null;
-            $department_id = null;
 
-            if(($request->division_id === 'null' || $request->division_id === null) && ($request->department_id === 'null' || $request->department_id === null)){
+            if($request->division_id === 'null' && $request->department_id === 'null'){
                 return response()->json(['message' => "Section must be under a division or department."], Response::HTTP_BAD_REQUEST);
             }
-
-            if($request->department_id !== 'null' || $request->department_id !== null){
-                if(!is_integer(strip_tags($request->department_id))){
-                    return response()->json(['message' => "Invalid data for department_id"], Response::HTTP_BAD_REQUEST);
-                }
-                $department_id = strip_tags($request->department_id);
-                $department = Department::find($department_id);
-
-                if(!$department){
-                    return response()->json(['message' => 'No department record found for id '.$department_id], Response::HTTP_BAD_REQUEST);
-                }
-            }else{
-                if(!is_integer(strip_tags($request->division_id))){
-                    return response()->json(['message' => "Invalid data for division_id"], Response::HTTP_BAD_REQUEST);
-                }
-                $division_id = strip_tags($request->division_id);
-                $division = Division::find($division_id);
-
-                if(!$division){
-                    return response()->json(['message' => 'No division record found for id '.$division_id], Response::HTTP_BAD_REQUEST);
-                }
-            }
-            
-            $cleanData['department_id'] = $department_id;
-            $cleanData['division_id'] = $division_id;
             
             foreach ($request->all() as $key => $value) {
+                if($key === 'department_id' || $key === 'division_id'){
+                    if($value === 'null'){
+                        $cleanData[$key] = null;
+                        continue;
+                    }
+                    $cleanData[$key] = (int) $value;
+                }
                 if($value === null){
                     $cleanData[$key] = $value;
                     continue;
                 }
                 if($key === 'attachment'){
-                    $cleanData['section_attachment_url'] = $this->file_validation_and_upload->check_save_file($request, 'section/files');
+                    $cleanData['section_attachment_url'] = Helpers::checkSaveFile($request->attachment, 'section/files');
                     continue;
                 }
                 $cleanData[$key] = strip_tags($value);
