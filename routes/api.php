@@ -2025,10 +2025,6 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('exchange-duty-employee', 'ScheduleController@employeeList');
         });
 
-        Route::middleware(['auth.permission:UMIS-ES view'])->group(function () {
-            Route::get('exchange-duty-schedule', 'ScheduleController@findSchedule');
-        });
-
         /**
          * Pull Out Module
          */
