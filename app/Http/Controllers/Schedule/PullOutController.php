@@ -123,7 +123,7 @@ class PullOutController extends Controller
                             break;
 
                         case 'Unit':
-                            $approving_officer = $employee->assignedArea->department->head_employee_profile_id ;
+                            $approving_officer = $employee->assignedArea->unit->head_employee_profile_id ;
                             break;
 
                         default:
