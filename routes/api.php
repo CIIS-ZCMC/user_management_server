@@ -2046,6 +2046,14 @@ Route::middleware('auth.cookie')->group(function () {
             Route::delete('pull-out/{id}', 'PullOutController@destroy');
         });
 
+        Route::middleware(['auth.permission:UMIS-POM write'])->group(function () {
+            Route::get('pull-out-section', 'PullOutController@sections');
+        });
+
+        Route::middleware(['auth.permission:UMIS-POM write'])->group(function () {
+            Route::get('pull-out-section-employee', 'PullOutController@sectionEmployees');
+        });
+
         /**
          * Generate Schedule Module
          */

@@ -207,7 +207,7 @@ class Helpers
                     ];
                 }
                 return [
-                    "recommending_officer" => $section->supervisor_employee_profile_id ,
+                    "recommending_officer" => $section->supervisor_employee_profile_id,
                     "approving_officer" => $department->division->chief_employee_profile_id,
                 ];
 
@@ -703,5 +703,46 @@ class Helpers
             ->exists();
 
         return $overlappingLeave || $overlappingOb || $overlappingOT || $overlappingCTO;
+    }
+
+    public static function generateSchedule($start_duty, $employee_id)
+    {
+        $duty_start = new DateTime($start_duty);
+
+        // Get the last day of the duty start month
+        $duty_end = new DateTime("last day of " . $duty_start->format('Y-m'));
+
+        // Generate schedule from $duty_start to $duty_end
+        $scheduleDates = [];
+
+        while ($duty_start <= $duty_end) {
+            // Add duty for $duty_start date to the schedule array
+            $scheduleDates[] = $duty_start->format('Y-m-d');
+
+            // Move to the next day
+            $duty_start->add(new DateInterval('P1D'));
+        }
+
+        // Now, $scheduleDates contains all the dates from $start_duty to the end of the month
+        foreach ($scheduleDates as $date) {
+            $schedule = Schedule::where('time_shift_id', 1)
+                ->where('date', $date)
+                ->first();
+
+            if (!$schedule) {
+                // Create a new schedule if it doesn't exist
+                $isWeekend = Carbon::parse($date)->isWeekend();
+
+                if ($isWeekend === false) {
+                    $schedule = new Schedule;
+                    $schedule->time_shift_id = 1; // Assuming time_shift_id should be set to 1
+                    $schedule->date = $date;
+                    $schedule->is_weekend = $isWeekend ? 1 : 0;
+                    $schedule->save();
+                }
+            }
+
+            $schedule->employee()->attach($employee_id);
+        }
     }
 }
