@@ -282,7 +282,7 @@ class ExchangeDutyController extends Controller
 
             return response()->json(['data' => new EmployeeScheduleResource($data)], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            return $th;
+
             Helpers::errorLog($this->CONTROLLER_NAME, 'findSchedule', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -291,25 +291,30 @@ class ExchangeDutyController extends Controller
     public function findRelieverSchedule(Request $request)
     {
         try {
+
             $user = $request->user->id;
-            $reliever_id = $request->employee_id;
+            $reliever_id = $request->reliever_id;
+            $date_to_swap = $request->date_to_swap;
+            $date_to_duty = $request->date_to_duty;
 
-            $user_schedule = EmployeeSchedule::where('employee_profile_id', $user)
-                ->whereHas('schedule', function ($query) use ($request) {
-                    $query->where('date', $request->date_selected);
-                })->get();
+            if ($date_to_swap !== $date_to_duty) {
+                $user_schedule = EmployeeSchedule::where('employee_profile_id', $user)
+                    ->whereHas('schedule', function ($query) use ($request) {
+                        $query->where('date', $request->date_to_duty);
+                    })->get();
 
-            if ($user_schedule->isNotEmpty()) {
-                return response()->json(['message' => "Your already have schedule on date:" . $request->date_selected], Response::HTTP_OK);
+                if ($user_schedule->isNotEmpty()) {
+                    return response()->json(['message' => "Your already have schedule on date:" . $request->date_to_duty], Response::HTTP_OK);
+                }
             }
 
             $sql = EmployeeSchedule::where('employee_profile_id', $reliever_id)
                 ->whereHas('schedule', function ($query) use ($request) {
-                    $query->where('date', $request->date_selected);
+                    $query->where('date', $request->date_to_duty);
                 })->get();
 
             if ($sql->isEmpty()) {
-                return response()->json(['message' => "Reliever has no schedule on date: " . $request->date_selected], Response::HTTP_OK);
+                return response()->json(['message' => "Reliever has no schedule on date: " . $request->date_to_duty, $sql], Response::HTTP_OK);
             }
 
             $schedule = [];

@@ -350,7 +350,7 @@ class MonetizationApplicationController extends Controller
             }
 
             $hrmo_officer = Helpers::getHrmoOfficer();
-            $recommending_officer = Division::where('code', 'HOPPS')->first();
+            $recommending_officer = Division::where('code', 'HOPSS')->first();
             $approving_officer = Division::where('code', 'OMCC')->first();
 
 

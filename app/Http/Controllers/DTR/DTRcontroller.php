@@ -26,6 +26,10 @@ use App\Methods\DTRPull;
 use App\Models\LeaveType;
 use Illuminate\Support\Facades\Cache;
 
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
+
 class DTRcontroller extends Controller
 {
     protected $helper;
@@ -2006,6 +2010,33 @@ class DTRcontroller extends Controller
 
     public function test()
     {
+        $mail = new PHPMailer(true);
+        try {
+            $mail->isSMTP();
+            $mail->SMTPDebug = 2;
+            $mail->Host = gethostbyname('www.mail.gov.ph');
+            $mail->Port = 587;
+            $mail->SMTPSecure ='tls';
+            $mail->SMTPAuth = true;
+            $mail->Username = 'innovations@doh.zcmc.gov.ph'; // Your email address
+            $mail->Password = 'Innov020623!~'; // Your email password
+            $mail->setFrom('innovations@doh.zcmc.gov.ph', 'ZCMC-Portal');
+            $mail->addAddress('reenjie17@gmail.com', 'Reenjay Caimor');
+            $mail->Subject = 'THIS IS JUST A TEST EMAIL ZCMC PORTAL';
+            $mail->CharSet = PHPMailer::CHARSET_UTF8;
+            $mail->isHTML(true);
+            $mail->Body = "Hi there. Im working!!";
+            $mail->AltBody = 'This is a plain text message body';
+            if ($mail->send()) {
+                return "send";
+            } else {
+                return "failed to sendd";
+            }
+        } catch (\Throwable $th) {
+            return $th;
+        }
+
+
         /*
         **
         * test on how to access request function on another controller for instance
@@ -2054,38 +2085,38 @@ class DTRcontroller extends Controller
         //     // }
         // }
 
-        for ($i = 1; $i <= 30; $i++) {
+        // for ($i = 1; $i <= 30; $i++) {
 
-            $date = date('Y-m-d', strtotime('2024-02-' . $i));
+        //     $date = date('Y-m-d', strtotime('2024-02-' . $i));
 
-            if (date('D', strtotime($date)) != 'Sun') {
-                $firstin = date('H:i:s', strtotime('today') + rand(25200, 30600));
-                $firstout =  date('H:i:s', strtotime('today') + rand(42600, 47400));
-                $secondin =  date('H:i:s', strtotime('today') + rand(45000, 49800));
-                $secondout = date('H:i:s', strtotime('today') + rand(59400, 77400));
+        //     if (date('D', strtotime($date)) != 'Sun') {
+        //         $firstin = date('H:i:s', strtotime('today') + rand(25200, 30600));
+        //         $firstout =  date('H:i:s', strtotime('today') + rand(42600, 47400));
+        //         $secondin =  date('H:i:s', strtotime('today') + rand(45000, 49800));
+        //         $secondout = date('H:i:s', strtotime('today') + rand(59400, 77400));
 
-                DailyTimeRecords::create([
-                    'biometric_id' => 1,
-                    'dtr_date' => $date,
-                    'first_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin)),
-                    'first_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstout)),
-                    'second_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $secondin)),
-                    'second_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $secondout)),
-                    'interval_req' => null,
-                    'required_working_hours' => null,
-                    'required_working_minutes' => null,
-                    'total_working_hours' => null,
-                    'total_working_minutes' => null,
-                    'overtime' => null,
-                    'overtime_minutes' => null,
-                    'undertime' => null,
-                    'undertime_minutes' => null,
-                    'overall_minutes_rendered' => null,
-                    'total_minutes_reg' => null,
-                    'is_biometric' => 1,
-                    'created_at' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin))
-                ]);
-            }
-        }
+        //         DailyTimeRecords::create([
+        //             'biometric_id' => 1,
+        //             'dtr_date' => $date,
+        //             'first_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin)),
+        //             'first_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstout)),
+        //             'second_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $secondin)),
+        //             'second_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $secondout)),
+        //             'interval_req' => null,
+        //             'required_working_hours' => null,
+        //             'required_working_minutes' => null,
+        //             'total_working_hours' => null,
+        //             'total_working_minutes' => null,
+        //             'overtime' => null,
+        //             'overtime_minutes' => null,
+        //             'undertime' => null,
+        //             'undertime_minutes' => null,
+        //             'overall_minutes_rendered' => null,
+        //             'total_minutes_reg' => null,
+        //             'is_biometric' => 1,
+        //             'created_at' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin))
+        //         ]);
+        //     }
+        // }
     }
 }
