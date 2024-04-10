@@ -77,6 +77,7 @@ class LeaveApplicationRequest extends FormRequest
             "remarks" => "nullable|string",
             "attachment_name.*" => "required|string|max:255",
             "attachment_file.*" => "required|file|mimes:jpeg,png,jpg,pdf|max:10000",
+            "is_printed" => "nullable|boolean",
         ];
     }
 }

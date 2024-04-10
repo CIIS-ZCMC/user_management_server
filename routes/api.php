@@ -1763,6 +1763,10 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('leave-application-print/{id}', 'LeaveApplicationController@printLeaveForm');
         });
 
+        Route::middleware(['auth.permission:UMIS-LM download'])->group(function () {
+            Route::post('print-leave-application/{id}', 'LeaveApplicationController@updatePrint');
+        });
+
         Route::middleware(['auth.permission:UMIS-LM write'])->group(function () {
             Route::post('leave-credit-add', 'LeaveApplicationController@addCredit');
         });
