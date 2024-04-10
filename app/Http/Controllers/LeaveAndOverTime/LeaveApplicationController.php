@@ -12,6 +12,7 @@ use App\Models\EmployeeCreditLog;
 use App\Models\EmployeeOvertimeCredit;
 use App\Models\LeaveType;
 use App\Models\Section;
+use App\Models\TaskSchedules;
 use App\Models\Unit;
 use Carbon\Carbon;
 use App\Helpers\Helpers;
@@ -595,6 +596,16 @@ class LeaveApplicationController extends Controller
                     $from = Carbon::parse($leave_application->date_from)->format('F d, Y');
                     $to = Carbon::parse($leave_application->date_to)->format('F d, Y');
                     $message = "Your " . $leave_application->leaveType->name . " request with date from " . $from . " to " . $to . " has been approved.";
+
+                    if($leave_application->employee_oic_id !== null){
+                        TaskSchedules::create([
+                            'action' => "OIC",
+                            'effective_at' => $leave_application->date_from,
+                            'end_at' => $leave_application->date_to,
+                            'employee_profile_id' => $leave_application->employee_profile_id,
+                            'candidate_employee' => $leave_application->employee_oic_id
+                        ]);
+                    }
                     Helpers::notifications($leave_application->employee_profile_id, $message, $leave_application->leaveType->name);
                     break;
             }
