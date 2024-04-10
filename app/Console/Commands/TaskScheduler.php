@@ -27,7 +27,6 @@ class TaskScheduler extends Command
      */
     public function handle()
     {
-        Helpers::infoLog("TaskScheduler", "hanlde", "TEST RUN");
         $currentDate = now()->toDateString();
         $today_tasks = TaskSchedules::whereDate('effective_at', $currentDate)->get();
 
