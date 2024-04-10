@@ -670,7 +670,7 @@ class LeaveApplicationController extends Controller
             $result = [];
 
             $start = Carbon::parse($request->date_from);
-            $end = Carbon::parse($request->date_to);
+            $end =  Carbon::parse($request->date_to);
 
             $currentDate = Carbon::now();
             $twoMonthsAhead = $currentDate->copy()->addMonths(2);
@@ -694,11 +694,12 @@ class LeaveApplicationController extends Controller
                 // Initialize the variable to store the final date of the consecutive schedule
                 $finalConsecutiveScheduleDate = null;
                 $foundConsecutiveDays = 0;
-
-                // Loop through each day starting from the end date
+              
                 $Date = $end->copy();
-                while ($foundConsecutiveDays < 3) {
-                    if (Helpers::hasSchedule($Date, $Date, $employeeId)) {
+               // Loop through each day starting from the end date
+              
+                while ($foundConsecutiveDays  <= 4) {
+                    if (Helpers::hasSchedule($Date->toDateString(), $Date->toDateString(), $employeeId)) {
                         // If a schedule is found, increment the counter
                         $foundConsecutiveDays++;
 
@@ -706,10 +707,15 @@ class LeaveApplicationController extends Controller
                         $finalConsecutiveScheduleDate = $Date->copy();
                     }
                     // Move to the next day
-                    $Date->addDay();
+                  
+                $Date->addDay();
                 }
+               
+               
+              
 
                 $finalDate = $finalConsecutiveScheduleDate ? $finalConsecutiveScheduleDate->toDateString() : null;
+            
                 if ($finalDate && $currentDate->gt($finalDate)) {
                     return response()->json(['message' => "You missed the filing deadline."], Response::HTTP_FORBIDDEN);
                 }
