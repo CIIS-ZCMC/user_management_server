@@ -27,6 +27,8 @@ return new class extends Migration
             $table->text('remarks')->nullable();
             $table->boolean('without_pay')->default(false);
             $table->text('reason')->nullable();
+            $table->boolean('is_printed')->default(false);
+            $table->datetime('print_datetime')->nullable();
             $table->unsignedBigInteger('employee_profile_id')->unsigned();
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->unsignedBigInteger('leave_type_id')->unsigned();

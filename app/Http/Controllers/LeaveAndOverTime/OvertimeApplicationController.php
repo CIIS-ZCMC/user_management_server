@@ -2289,7 +2289,8 @@ class OvertimeApplicationController extends Controller
 
             $columnsString = "";
             $process_name = "Applied";
-            $this->storeOvertimeApplicationLog($ovt_id, $process_name, $columnsString, '1');
+            $user = $request->user;
+            $this->storeOvertimeApplicationLog($ovt_id, $process_name, $columnsString,$user->id);
             DB::commit();
             $overtime_applications = OvertimeApplication::with(['employeeProfile.assignedArea.division', 'employeeProfile.personalInformation', 'logs', 'directDates'])
                 ->where('id', $ovt_id)->get();
@@ -2800,6 +2801,8 @@ class OvertimeApplicationController extends Controller
     public function storeOvertimeApplicationLog($overtime_application_id, $process_name, $changedfields, $user_id)
     {
         try {
+
+
             $data = [
                 'overtime_application_id' => $overtime_application_id,
                 'action_by_id' => $user_id,

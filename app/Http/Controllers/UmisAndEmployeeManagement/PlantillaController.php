@@ -11,6 +11,7 @@ use App\Models\Designation;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use App\Helpers\Helpers;
 use App\Http\Requests\PasswordApprovalRequest;
@@ -340,9 +341,9 @@ class PlantillaController extends Controller
 
             $cleanData['plantilla_id'] = $plantilla->id;
 
-            PlantillaRequirement::create($cleanData);
+            DB::beginTransaction();
 
-            $failed = [];
+            PlantillaRequirement::create($cleanData);
 
             $plantilla_numbers = [];
 
@@ -350,14 +351,14 @@ class PlantillaController extends Controller
                 try {
                     $existing = PlantillaNumber::where('number', $value)->first();
 
-                    if (!is_string($value) || $existing !== null) {
-                        $failed_to_register = [
-                            'plantilla_number' => $value,
-                            'remarks' => 'Invalid type require string.'
-                        ];
+                    if($existing){
+                        DB::rollBack();
+                        return response()->json(['message' => "Plantilla number already exist."], Response::HTTP_FORBIDDEN);
+                    }
 
-                        $failed[] = $failed_to_register;
-                        continue;
+                    if (!is_string($value) || $existing !== null) {
+                        DB::rollBack();
+                        return response()->json(['message' => "Invalid type require string."], Response::HTTP_FORBIDDEN);
                     }
 
                     $plantilla_number_new = PlantillaNumber::create([
@@ -367,30 +368,15 @@ class PlantillaController extends Controller
 
                     $plantilla_numbers[] = $plantilla_number_new;
                 } catch (\Throwable $th) {
-                    $failed_to_register = [
-                        'plantilla_number' => $value,
-                        'remarks' => 'Something went wrong.'
-                    ];
-                    $failed[] = $failed_to_register;
-                    continue;
+                    DB::rollBack();
+                    return response()->json(['message' => "Please check fields."], Response::HTTP_FORBIDDEN);
                 }
             }
 
+            DB::commit();
+
             $data = PlantillaNumberAllResource::collection($plantilla_numbers);
             $message = 'Plantilla created successfully.';
-
-            if (count($failed) === count($cleanData['plantilla_number'])) {
-                $data = [];
-                $message = 'Failed to register plantilla numbers.';
-            }
-
-            if (count($failed) > 0) {
-                $data = [
-                    'new_plantilla' => PlantillaNumberAllResource::collection($plantilla_numbers),
-                    'failed' => $failed
-                ];
-                $message = 'Some plantilla number failed to register.';
-            }
 
             Helpers::registerSystemLogs($request, null, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
 

@@ -17,6 +17,7 @@ class LeaveApplication extends Model
         'is_outpatient' => 'boolean',
         'is_masters' => 'boolean', 
         'is_board' => 'boolean', 
+        'is_printed' => 'boolean', 
         // 'is_commutation' => 'boolean', 
     ];
 
@@ -37,6 +38,8 @@ class LeaveApplication extends Model
         'remarks',
         'without_pay',
         'reason',
+        'is_printed',
+        'print_datetime',
         'hrmo_officer',
         'recommending_officer',
         'approving_officer',
