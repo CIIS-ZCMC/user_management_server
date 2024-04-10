@@ -83,6 +83,8 @@ class LeaveApplicationResource extends JsonResource
                 "remarks" => $this->remarks, //Reason of leave application.
                 "without_pay" => $this->without_pay,
                 'reason' => $this->reason,
+                'is_printed' => $this->is_printed,
+                'print_datetime' => $this->print_datetime,
                 'credit_balance' => $this->leaveType->is_special ? null : $leave_credits->total_leave_credits,
                 "hrmo_officer" => [
                     "employee_id" => $this->hrmoOfficer->employee_id,
@@ -127,6 +129,8 @@ class LeaveApplicationResource extends JsonResource
             "remarks" => $this->remarks, //Reason of leave application.
             "without_pay" => $this->without_pay,
             'reason' => $this->reason,
+            'is_printed' => $this->is_printed,
+            'print_datetime' => $this->print_datetime,
             'credit_balance' => $this->leaveType->is_special ? null : $leave_credits->total_leave_credits,
             "hrmo_officer" => [
                 "employee_id" => $this->hrmoOfficer->employee_id,
