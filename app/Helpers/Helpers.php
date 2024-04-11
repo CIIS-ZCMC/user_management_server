@@ -707,10 +707,8 @@ class Helpers
         return $overlappingLeave || $overlappingOb || $overlappingOT || $overlappingCTO;
     }
 
-    public static function generateSchedule($start_duty, $employee_id)
+    public static function generateSchedule($duty_start, $employee_id)
     {
-        $duty_start = new DateTime($start_duty);
-
         // Get the last day of the duty start month
         $duty_end = new DateTime("last day of " . $duty_start->format('Y-m'));
 
@@ -744,7 +742,7 @@ class Helpers
                 }
             }
 
-            $schedule->employee()->attach($employee_id);
+            $schedule->employee()->attach($employee_id, ['updated_at' => now()]);
         }
     }
 

@@ -345,7 +345,7 @@ class PlantillaController extends Controller
 
             PlantillaRequirement::create($cleanData);
 
-            $plantilla_numbers = [];
+            
 
             foreach ($cleanData['plantilla_number'] as $value) {
                 try {

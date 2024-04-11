@@ -56,6 +56,7 @@ class EmployeeProfileNewResource extends FormRequest
             'designation_id' => 'required|integer',
             // 'plantilla_number_id' => 'nullable|integer',
             'allow_time_adjustment' => 'required|integer',
+            'shifting' => 'required|integer',
             // 'attachment' => 'nullable|file|mimes:jpeg,png,pdf,doc,docx'
         ];
     }

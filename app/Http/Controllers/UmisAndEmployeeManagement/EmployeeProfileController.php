@@ -2590,6 +2590,7 @@ class EmployeeProfileController extends Controller
                     'max_credit_annual' => 120
                 ]);
             }
+
             /**
              * Issuance module
              */
@@ -2606,6 +2607,10 @@ class EmployeeProfileController extends Controller
             $issuance_controller->store($employee_profile->id, $issuance_request);
 
             DB::commit();
+
+            if(!$employee_profile->shifting){
+                Helpers::generateSchedule(Carbon::now(), $employee_profile->id);
+            }
 
             Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . '.');
 
