@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Schedule;
 
+use App\Models\AssignArea;
+use App\Models\Department;
 use App\Models\EmployeeSchedule;
 use App\Models\PullOut;
 use App\Models\EmployeeProfile;
@@ -12,6 +14,7 @@ use App\Http\Resources\PullOutResource;
 use App\Http\Requests\PullOutRequest;
 use App\Helpers\Helpers;
 
+use App\Models\Unit;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
 
@@ -50,7 +53,7 @@ class PullOutController extends Controller
         try {
 
             $user = $request->user;
-            $data = PullOut::where('employee_profile_id ', $user->id)->get();
+            $data = PullOut::where('requesting_officer', $user->id)->get();
             return response()->json(['data' => PullOutResource::collection($data)], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
@@ -103,45 +106,14 @@ class PullOutController extends Controller
             foreach ($employees as $employee) {
                 $employeeArea = $employee->assignedArea->findDetails();
 
-                if ($employeeArea) {
-                    switch ($employeeArea['sector']) {
-                        case 'Division':
-                            $approving_officer = $employee->assignedArea->division->chief_employee_profile_id;
-                            break;
-
-                        case 'Department':
-                            $approving_officer = $employee->assignedArea->department->head_employee_profile_id;
-                            break;
-
-                        case 'Section':
-                            $section = Section::find($employeeArea['details']->id);
-                            if ($section->division !== null) {
-                                $approving_officer = $section->division->chief_employee_profile_id;
-                            }
-
-                            $approving_officer = $employee->assignedArea->section->supervisor_employee_profile_id;
-                            break;
-
-                        case 'Unit':
-                            $approving_officer = $employee->assignedArea->unit->head_employee_profile_id ;
-                            break;
-
-                        default:
-                            return null;
-                    }
+                $unit = Unit::where('id', $employeeArea['details']->id)->first();
+                if ($unit !== null) {
+                    $section = Section::where('id', $unit->section_id)->first();
+                    $approving_officer = $section->supervisor_employee_profile_id;
                 }
-
                 $selectedEmployees[] = $employee;
-                
-                // $schedule = Schedule::with(['employee'])
-                // ->where(function ($query) use ($employee, $cleanData) {
-                //     $query->where('date', $cleanData['pull_out_date'])->whereHas('employee', function ($innerQuery) use ($employee) {
-                //         $innerQuery->where('employee_profile_id', $employee,);
-                //     });
-                // })->get();
             }
 
-            // return response()->json($schedule);
 
             foreach ($selectedEmployees as $selectedEmployee) {
                 $data = PullOut::create(array_merge($cleanData, [
@@ -153,9 +125,11 @@ class PullOutController extends Controller
             }
 
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
-            return response()->json(['data' => new PullOutResource($data),
-                                    'logs' => Helpers::registerPullOutLogs($data->id, $user->id, 'Store'),
-                                    'msg' => 'Pull out requested'], Response::HTTP_OK);
+            return response()->json([
+                'data' => new PullOutResource($data),
+                'logs' => Helpers::registerPullOutLogs($data->id, $user->id, 'Store'),
+                'msg' => 'Pull out requested'
+            ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
@@ -163,6 +137,28 @@ class PullOutController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+
+    public function edit(Request $request)
+    {
+        try {
+            $user = $request->user;
+
+            $model = PullOut::where('approving_officer', $user->id)
+                ->where('deleted_at', null)
+                ->get();
+
+            return response()->json([
+                'data' => PullOutResource::collection($model),
+            ], Response::HTTP_OK);
+
+        } catch (\Throwable $th) {
+
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
 
     /**
      * Update the specified resource in storage.
@@ -178,14 +174,10 @@ class PullOutController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $password = strip_tags($request->password);
+            $cleanData['pin'] = strip_tags($request->password);
 
-            $employee_profile = $request->user;
-
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
-
-            if (!Hash::check($password . Cache::get('salt_value'), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_FORBIDDEN);
+            if ($user['authorization_pin'] !== $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $status = null;
@@ -203,15 +195,17 @@ class PullOutController extends Controller
                         break;
                 }
             } else if ($request->approval_status === 'declined') {
-                $status = 'declined';   
+                $status = 'declined';
             }
 
             $data->update(['status' => $status, 'remarks' => $request->remarks, 'approval_date' => Carbon::now()]);
 
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in updating.' . $this->SINGULAR_MODULE_NAME . '.');
-            return response()->json(['data' => new PullOutResource($data),
-                                    'logs' => Helpers::registerPullOutLogs($data->id, $user->id, $status),
-                                    'msg' => 'Pull out is '.$status], Response::HTTP_OK);
+            return response()->json([
+                'data' => new PullOutResource($data),
+                'logs' => Helpers::registerPullOutLogs($data->id, $user->id, $status),
+                'msg' => 'Pull out is ' . $status
+            ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
@@ -235,9 +229,12 @@ class PullOutController extends Controller
             }
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in delete ' . $this->SINGULAR_MODULE_NAME . '.');
-            return response()->json(['data' => $data,
-                                    'logs' => Helpers::registerPullOutLogs($data->id, $request->user->id,'Destroy'),
-                                    'msg' => 'Request successfully deleted.', Response::HTTP_OK]);
+            return response()->json([
+                'data' => $data,
+                'logs' => Helpers::registerPullOutLogs($data->id, $request->user->id, 'Destroy'),
+                'msg' => 'Request successfully deleted.',
+                Response::HTTP_OK
+            ]);
 
         } catch (\Throwable $th) {
 
@@ -245,5 +242,58 @@ class PullOutController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
 
         }
+    }
+
+    public function sections(Request $request)
+    {
+        try {
+            $user = $request->user;
+            $my_area = $user->assignedArea->findDetails();
+
+            $sections = Section::whereNot('id', $my_area['details']->id)->get();
+            $data = $sections->map(function ($section) {
+                return [
+                    'id' => $section->id,
+                    'name' => $section->name
+                ];
+            });
+
+            return response()->json(['data' => $data], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'sections', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function sectionEmployees(Request $request) // find all employee of specific section
+    {
+        try {
+            $new_employee_list = collect(); // Initialize as empty collection
+
+            $units = Unit::where('section_id', $request->section_id)->get();
+            foreach ($units as $unit) {
+                $assign_areas = AssignArea::where('unit_id', $unit->id)
+                    ->whereNotIn('employee_profile_id', [$request->user->id])
+                    ->get();
+
+                // Using map to retrieve employee profiles and then flatten and add them to the collection
+                $new_employee_list = $new_employee_list->merge($assign_areas->pluck('employeeProfile'));
+            }
+
+            $data = $new_employee_list->map(function ($employee) {
+                return [
+                    'id' => $employee->id,
+                    'name' => $employee->name() // Assuming you have a name method in your employeeProfile model
+                ];
+            });
+
+            return response()->json(['data' => $data], Response::HTTP_OK);
+
+
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'sectionEmployee', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+
     }
 }

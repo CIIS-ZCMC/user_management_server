@@ -2033,10 +2033,12 @@ Route::middleware('auth.cookie')->group(function () {
          * Pull Out Module
          */
         Route::middleware(['auth.permission:UMIS-POM view-all'])->group(function () {
-            Route::get('pull-out', 'PullOutController@index');
+            Route::get('pull-outs', 'PullOutController@index');
         });
 
-        // add create here
+        Route::middleware(['auth.permission:UMIS-POM view'])->group(function () {
+            Route::get('pull-out', 'PullOutController@create');
+        });
 
         Route::middleware(['auth.permission:UMIS-POM write'])->group(function () {
             Route::post('pull-out', 'PullOutController@store');
@@ -2049,6 +2051,19 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-POM delete'])->group(function () {
             Route::delete('pull-out/{id}', 'PullOutController@destroy');
         });
+
+        Route::middleware(['auth.permission:UMIS-POM approve'])->group(function () {
+            Route::get('pull-out-aprroval', 'PullOutController@edit');
+        });
+
+        Route::middleware(['auth.permission:UMIS-POM write'])->group(function () {
+            Route::get('pull-out-section', 'PullOutController@sections');
+        });
+
+        Route::middleware(['auth.permission:UMIS-POM write'])->group(function () {
+            Route::get('pull-out-section-employee', 'PullOutController@sectionEmployees');
+        });
+
 
         /**
          * Generate Schedule Module
