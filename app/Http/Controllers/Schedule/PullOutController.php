@@ -53,7 +53,7 @@ class PullOutController extends Controller
         try {
 
             $user = $request->user;
-            $data = PullOut::where('employee_profile_id ', $user->id)->get();
+            $data = PullOut::where('requesting_officer', $user->id)->get();
             return response()->json(['data' => PullOutResource::collection($data)], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
@@ -138,6 +138,28 @@ class PullOutController extends Controller
         }
     }
 
+
+    public function edit(Request $request)
+    {
+        try {
+            $user = $request->user;
+
+            $model = PullOut::where('approving_officer', $user->id)
+                ->where('deleted_at', null)
+                ->get();
+
+            return response()->json([
+                'data' => PullOutResource::collection($model),
+            ], Response::HTTP_OK);
+
+        } catch (\Throwable $th) {
+
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
     /**
      * Update the specified resource in storage.
      */
@@ -152,14 +174,10 @@ class PullOutController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            $password = strip_tags($request->password);
+            $cleanData['pin'] = strip_tags($request->password);
 
-            $employee_profile = $request->user;
-
-            $password_decrypted = Crypt::decryptString($employee_profile['password_encrypted']);
-
-            if (!Hash::check($password . Cache::get('salt_value'), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_FORBIDDEN);
+            if ($user['authorization_pin'] !== $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $status = null;
