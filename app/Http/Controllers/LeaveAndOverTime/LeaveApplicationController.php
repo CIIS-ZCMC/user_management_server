@@ -1000,7 +1000,7 @@ class LeaveApplicationController extends Controller
 
             $from = Carbon::parse($leave_application->date_from)->format('F d, Y');
             $to = Carbon::parse($leave_application->date_to)->format('F d, Y');
-            $message = "Your " . $leave_application->leave_type->name . " request with date from " . $from . " to " . $to . " has been declined by " . $declined_by . " .";
+            $message = "Your " . $leave_application->leaveType->name . " request with date from " . $from . " to " . $to . " has been declined by " . $declined_by . " .";
             Helpers::notifications($leave_application->employee_profile_id, $message, $leave_application->leaveType->name);
 
             if (!$leave_type->is_special) {

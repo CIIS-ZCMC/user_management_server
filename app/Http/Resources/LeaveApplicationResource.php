@@ -50,6 +50,8 @@ class LeaveApplicationResource extends JsonResource
                 'oic' => $this->oic->personalInformation->name(),
                 'position' => $this->oic->assignedArea->designation->name
             ];
+
+         
         }
 
         //Check if requester is under HRMO
