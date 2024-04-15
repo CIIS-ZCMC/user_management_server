@@ -144,10 +144,13 @@ class PullOutController extends Controller
         try {
             $user = $request->user;
 
-            $model = PullOut::where('approving_officer', $user->id)
-                ->where('deleted_at', null)
-                ->get();
-
+            if ($user->employee_id === "1918091351") {
+                $model = PullOut::all();
+            } else {
+                $model = PullOut::where('approving_officer', $user->id)
+                    ->where('deleted_at', null)
+                    ->get();
+            }
             return response()->json([
                 'data' => PullOutResource::collection($model),
             ], Response::HTTP_OK);
@@ -181,21 +184,15 @@ class PullOutController extends Controller
             }
 
             $status = null;
-            if ($request->approval_status === 'approved') {
-                switch ($data->status) {
-                    case 'applied':
-                        $status = 'approved';
-                        break;
+            switch ($request->approval_status) {
+                case 'approved':
+                    $status = 'approved';
+                    break;
 
-                    case 'declined':
-                        $status = 'declined';
+                case 'declined':
+                    $status = 'declined';
 
-                    default:
-                        $status = 'approved';
-                        break;
-                }
-            } else if ($request->approval_status === 'declined') {
-                $status = 'declined';
+                default;
             }
 
             $data->update(['status' => $status, 'remarks' => $request->remarks, 'approval_date' => Carbon::now()]);
@@ -204,7 +201,7 @@ class PullOutController extends Controller
             return response()->json([
                 'data' => new PullOutResource($data),
                 'logs' => Helpers::registerPullOutLogs($data->id, $user->id, $status),
-                'msg' => 'Pull out is ' . $status
+                'message' => 'Pull out is ' . $status
             ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {

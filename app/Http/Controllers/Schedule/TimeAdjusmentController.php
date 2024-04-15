@@ -134,12 +134,35 @@ class TimeAdjusmentController extends Controller
                     'second_in' => $value['secondIn'] ?? null,
                     'second_out' => $value['secondOut'] ?? null,
                     'employee_profile_id' => $employee->id,
-                    'daily_time_record_id' => $daily_time_record->id ?? null,   
+                    'daily_time_record_id' => $daily_time_record->id ?? null,
                     'date' => $value['date'],
-                    'recommended_by' => $recommending_officer->id ?? $approving_officer ,
+                    'recommended_by' => $recommending_officer->id ?? $approving_officer,
                     'approve_by' => $approving_officer,
                     'remarks' => $value['remarks'],
                 ]);
+
+                $dtr = DailyTimeRecords::where('dtr_date', Carbon::parse($data->date))->first();
+
+                if ($dtr === null) {
+                    $employees = EmployeeProfile::find($data->employee_profile_id);
+
+                    $dtr = DailyTimeRecords::create([
+                        'biometric_id' => $employees->biometric_id,
+                        'dtr_date' => $data->date,
+                        'first_in' => $data->first_in,
+                        'first_out' => $data->first_out,
+                        'second_in' => $data->second_in,
+                        'second_out' => $data->second_out,
+                    ]);
+
+                } else {
+
+                    $dtr->first_in = $data->first_in ?? $dtr->first_in;
+                    $dtr->first_out = $data->first_out ?? $dtr->first_out;
+                    $dtr->second_in = $data->second_in ?? $dtr->second_in;
+                    $dtr->second_out = $data->second_out ?? $dtr->second_in;
+                    $dtr->update();
+                }
             }
 
             Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
@@ -175,7 +198,7 @@ class TimeAdjusmentController extends Controller
             if (!Hash::check($password . Cache::get('salt_value'), $password_decrypted)) {
                 return response()->json(['message' => "Password incorrect."], Response::HTTP_FORBIDDEN);
             }
-            
+
             $status = null;
             if ($request->status === 'approved') {
                 switch ($data->status) {
@@ -184,9 +207,9 @@ class TimeAdjusmentController extends Controller
 
                         if ($dtr === null) {
                             $employees = EmployeeProfile::find($data->employee_profile_id);
-                            $positions = 'CMPS II' || 'MCC I' || 'MCC II' || 'MO I'  || 'MO II' || 'MO III' || 'MO IV' || 'MS I' || 'MS I (PT)' || 'MS II' || 'MS II (PT)' ||
-                                            'MS III' || 'MS III (PT)' || 'MS IV' || 'MS IV (PT)';
-        
+                            $positions = 'CMPS II' || 'MCC I' || 'MCC II' || 'MO I' || 'MO II' || 'MO III' || 'MO IV' || 'MS I' || 'MS I (PT)' || 'MS II' || 'MS II (PT)' ||
+                                'MS III' || 'MS III (PT)' || 'MS IV' || 'MS IV (PT)';
+
                             if ($employees->findDesignation()['code'] !== $positions) {
                                 return response()->json(['message' => 'User is not allowed to Time Adjust'], Response::HTTP_NOT_FOUND);
                             }
@@ -203,20 +226,20 @@ class TimeAdjusmentController extends Controller
                         } else {
 
                             $dtr->first_in = $data->first_in ?? $dtr->first_in;
-                            $dtr->first_out = $data->first_out ?? $dtr->first_out ;
+                            $dtr->first_out = $data->first_out ?? $dtr->first_out;
                             $dtr->second_in = $data->second_in ?? $dtr->second_in;
                             $dtr->second_out = $data->second_out ?? $dtr->second_in;
                             $dtr->update();
                         }
 
                         $status = 'approved';
-                    break;
+                        break;
 
                     case 'declined':
                         $status = 'declined';
-                    break;
+                        break;
                 }
-                
+
             } else if ($request->status === 'declined') {
                 $status = 'declined';
             }
@@ -225,14 +248,14 @@ class TimeAdjusmentController extends Controller
                 'daily_time_record_id' => $data->daily_time_record_id ?? $dtr->id,
                 'approval_date' => Carbon::now(),
                 'remarks' => $request->remarks,
-                'status' => $status,  
+                'status' => $status,
             ]);
 
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in updating.' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json([
                 'data' => TimeAdjustmentResource::collection(TimeAdjusment::where('id', $data->id)->get()),
                 'logs' => Helpers::registerTimeAdjustmentLogs($data->id, $employee_profile->id, $status),
-                'msg' => 'Request '.$status
+                'msg' => 'Request ' . $status
             ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
