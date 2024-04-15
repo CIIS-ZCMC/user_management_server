@@ -247,7 +247,7 @@ class OfficialTimeController extends Controller
 
 
             if ($employee_profile['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
             }
 
             if ($request->status === 'approved') {

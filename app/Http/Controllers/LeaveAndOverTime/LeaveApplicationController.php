@@ -79,6 +79,8 @@ class LeaveApplicationController extends Controller
                         'remarks',
                         'without_pay',
                         'reason',
+                        'is_printed',
+                        'print_datetime',
                         'hrmo_officer',
                         'recommending_officer',
                         'approving_officer',
@@ -134,6 +136,8 @@ class LeaveApplicationController extends Controller
                     'remarks',
                     'without_pay',
                     'reason',
+                    'is_printed',
+                    'print_datetime',
                     'hrmo_officer',
                     'recommending_officer',
                     'approving_officer',
@@ -413,7 +417,7 @@ class LeaveApplicationController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !== $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
             }
 
             foreach ($request->credits as $credit) {
@@ -481,7 +485,7 @@ class LeaveApplicationController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !== $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
             }
 
             foreach ($request->credits as $credit) {
@@ -542,7 +546,7 @@ class LeaveApplicationController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !== $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
             }
 
             $leave_application = LeaveApplication::find($id);
@@ -666,7 +670,7 @@ class LeaveApplicationController extends Controller
             $cleanData['pin'] = strip_tags($request->pin);
 
             if ($employee_profile['authorization_pin'] !== $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
             }
             
             $recommending_and_approving = Helpers::getRecommendingAndApprovingOfficer($employee_profile->assignedArea->findDetails(), $employee_profile->id);
@@ -973,7 +977,7 @@ class LeaveApplicationController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !== $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
             }
 
             $leave_application = LeaveApplication::find($id);
@@ -1000,7 +1004,7 @@ class LeaveApplicationController extends Controller
 
             $from = Carbon::parse($leave_application->date_from)->format('F d, Y');
             $to = Carbon::parse($leave_application->date_to)->format('F d, Y');
-            $message = "Your " . $leave_application->leave_type->name . " request with date from " . $from . " to " . $to . " has been declined by " . $declined_by . " .";
+            $message = "Your " . $leave_application->leaveType->name . " request with date from " . $from . " to " . $to . " has been declined by " . $declined_by . " .";
             Helpers::notifications($leave_application->employee_profile_id, $message, $leave_application->leaveType->name);
 
             if (!$leave_type->is_special) {

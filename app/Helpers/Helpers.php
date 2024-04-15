@@ -194,7 +194,7 @@ class Helpers
                     }
 
                     return [
-                        "recommending_officer" => $division->chief_employee_profile_id,
+                        "recommending_officer" => $section->supervisor_employee_profile_id,
                         "approving_officer" => $division->chief_employee_profile_id,
                     ];
                 }

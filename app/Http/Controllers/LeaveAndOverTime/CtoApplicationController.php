@@ -130,7 +130,7 @@ class CtoApplicationController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
             }
 
             if ($request->status === 'approved') {
@@ -330,7 +330,7 @@ class CtoApplicationController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
             }
 
             $cto_application = CtoApplication::find($id);
