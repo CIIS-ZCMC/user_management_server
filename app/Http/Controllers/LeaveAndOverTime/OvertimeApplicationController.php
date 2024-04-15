@@ -2285,8 +2285,6 @@ class OvertimeApplicationController extends Controller
                     }
                 }
             }
-
-
             $columnsString = "";
             $process_name = "Applied";
             $this->storeOvertimeApplicationLog($ovt_id, $process_name, $columnsString, '1');

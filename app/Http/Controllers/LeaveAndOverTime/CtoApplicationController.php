@@ -97,7 +97,7 @@ class CtoApplicationController extends Controller
         }
     }
 
-    public function create(Request $request) 
+    public function create(Request $request)
     {
         try {
 
@@ -234,9 +234,8 @@ class CtoApplicationController extends Controller
                 }
                 $date = Carbon::parse($value->date);
                 $employeeId= $employee_profile->id;
-
                 $overlapExists = Helpers::hasOverlappingCTO($date, $employeeId);
-                
+
                 if ($overlapExists) {
                     return response()->json(['message' => 'You already have an application for the same dates.'], Response::HTTP_FORBIDDEN);
                 } else {

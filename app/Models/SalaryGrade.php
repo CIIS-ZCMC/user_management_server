@@ -22,7 +22,8 @@ class SalaryGrade extends Model
         'seven',
         'eight',
         'tranch',
-        'effective_at'
+        'effective_at',
+        'is_active'
     ];
 
     public $timestamps = TRUE;

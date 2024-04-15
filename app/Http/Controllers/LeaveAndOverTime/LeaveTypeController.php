@@ -56,7 +56,7 @@ class LeaveTypeController extends Controller
             $leave_types = LeaveType::all();
 
             $result_data = [];
-
+            
             foreach($leave_types as $leave_type){
                 $requirements = $leave_type->requirements()->get();
 
@@ -80,6 +80,9 @@ class LeaveTypeController extends Controller
                     if(count($schedules) > 0){
                         $last_schedule = $schedules->last();
                         $final_date = $last_schedule ? Carbon::parse($last_schedule->date)->format('Y-m-d') : null;
+                    }else {
+                        // If there are no schedules, set the final date to 5 days from tomorrow
+                        $final_date = Carbon::parse($tomorrow)->addDays(10)->format('Y-m-d');
                     }
                 }
 

@@ -19,10 +19,12 @@ class OvtApplicationLog extends Model
         'fields'
 
     ];
-        public function overtime_application(){
-            return $this->belongsTo(OvertimeApplication::class);
-        }
-        public function employeeProfile() {
-            return $this->belongsTo(EmployeeProfile::class, 'action_by_id');
-        }
+    public function overtime_application()
+    {
+        return $this->belongsTo(OvertimeApplication::class);
+    }
+    public function employeeProfile()
+    {
+        return $this->belongsTo(EmployeeProfile::class, 'action_by_id');
+    }
 }

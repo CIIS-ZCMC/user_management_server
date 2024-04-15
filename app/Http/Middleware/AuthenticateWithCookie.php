@@ -11,6 +11,7 @@ use Illuminate\Support\Collection;
 use Carbon\Carbon;
 
 use App\Models\AccessToken;
+use Illuminate\Support\Facades\Cache;
 
 
 class AuthenticateWithCookie

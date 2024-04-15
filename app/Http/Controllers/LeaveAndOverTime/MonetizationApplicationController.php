@@ -4,6 +4,7 @@ namespace App\Http\Controllers\LeaveAndOverTime;
 
 use App\Helpers\Helpers;
 use App\Http\Requests\AuthPinApprovalRequest;
+use App\Http\Resources\LeaveTypeResource;
 use App\Http\Resources\MonetizationApplicationResource;
 use App\Models\Division;
 use App\Models\EmployeeLeaveCredit;
@@ -16,6 +17,8 @@ use App\Models\LeaveType as ModelsLeaveType;
 use App\Models\MoneApplicationLog;
 use App\Models\Section;
 use App\Models\Unit;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Models\EmployeeLeaveCreditLogs;
@@ -32,27 +35,85 @@ class MonetizationApplicationController extends Controller
     {
         try {
             $employee_profile = $request->user;
-            $mone_applications = MonetizationApplication::all();
-            $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)
-                ->whereIn('leave_type_id', [1, 2])
-                ->get();
 
-            $result = [];
+            /**
+             * HR division
+             * Only newly applied leave application
+             */
 
-            foreach ($employeeCredit as $leaveCredit) {
-                $leaveType = $leaveCredit->leaveType->name;
-                $totalCredits = $leaveCredit->total_leave_credits;
-                $usedCredits = $leaveCredit->used_leave_credits;
+            if (Helpers::getHrmoOfficer() === $employee_profile->id) {
+                $employeeId = $employee_profile->id;
+                $hrmo = ["applied", "for recommending approval", "for approving approval", "approved", "declined by hrmo officer"];
 
-                $result[] = [
-                    'leave_type_name' => $leaveType,
-                    'total_leave_credits' => $totalCredits,
-                    'used_leave_credits' => $usedCredits
-                ];
+                $mone_applications = MonetizationApplication::select('monetization_applications.*')
+                    ->where(function ($query) use ($hrmo, $employeeId) {
+                        $query->whereIn('monetization_applications.status', $hrmo)
+                            ->where('monetization_applications.hrmo_officer', $employeeId);
+                    })
+                    ->groupBy(
+                        'id',
+                        'employee_profile_id',
+                        'leave_type_id',
+                        'reason',
+                        'status',
+                        'remarks',
+                        'credit_value',
+                        'attachment',
+                        'hrmo_officer',
+                        'recommending_officer',
+                        'approving_officer',
+                        'created_at',
+                        'updated_at'
+                    )
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+
+                // $leave_applications = collect($leave_applications)->filter(function ($leave_application) use ($employeeId) {
+                //     // Keep the leave application if the status is "applied" or if the employee profile ID is not equal to $employeeId
+                //     return $leave_application->status === "applied" || $leave_application->employee_profile_id !== $employeeId;
+                // })->all();
+
+                return response()->json([
+                    'data' => MonetizationApplicationResource::collection($mone_applications),
+                    'message' => 'Retrieve all leave monetization records.'
+                ], Response::HTTP_OK);
             }
+
+            $employeeId = $employee_profile->id;
+            $recommending = ["for recommending approval", "for approving approval", "approved", "declined by recommending officer"];
+            $approving = ["for approving approval", "approved", "declined by approving officer"];
+
+            /**
+             * Supervisor = for recommending, for approving, approved, de
+             */
+            $mone_applications = MonetizationApplication::select('monetization_applications.*')
+                ->where(function ($query) use ($recommending, $approving, $employeeId) {
+                    $query->whereIn('monetization_applications.status', $recommending)
+                        ->where('monetization_applications.recommending_officer', $employeeId);
+                })
+                ->orWhere(function ($query) use ($recommending, $approving, $employeeId) {
+                    $query->whereIn('monetization_applications.status', $approving)
+                        ->where('monetization_applications.approving_officer', $employeeId);
+                })
+                ->groupBy(
+                    'id',
+                    'employee_profile_id',
+                    'leave_type_id',
+                    'reason',
+                    'status',
+                    'remarks',
+                    'credit_value',
+                    'attachment',
+                    'hrmo_officer',
+                    'recommending_officer',
+                    'approving_officer',
+                    'created_at',
+                    'updated_at'
+                )
+                ->orderBy('created_at', 'desc')
+                ->get();
             return response()->json([
                 'data' => MonetizationApplicationResource::collection($mone_applications),
-                'credits' => $result,
                 'message' => "Monetization Application list."
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -60,6 +121,7 @@ class MonetizationApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
 
     public function userBalance(Request $request)
     {
@@ -98,7 +160,6 @@ class MonetizationApplicationController extends Controller
             $employeeCredit =  EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)
                                 ->whereIn('leave_type_id', [1, 2])
                                 ->get();
-            $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)->get();
             $monePosting = MonitizationPosting::where('created_by', $employee_profile->id)->get();
             $result = [];
 
@@ -557,6 +618,69 @@ class MonetizationApplicationController extends Controller
         } catch (\Exception $e) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'cancelmoneApplication', $e->getMessage());
             return response()->json(['message' => $e->getMessage(),  'error' => true], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function printLeaveForm($id)
+    {
+        try {
+            $data = MonetizationApplication::with(['employeeProfile', 'leaveType', 'hrmoOfficer', 'recommending', 'approving'])->where('id', $id)->first();
+            $vl_employee_credit = EmployeeLeaveCredit::where('leave_type_id', LeaveType::where('code', 'VL')->first()->id)
+                                    ->where('employee_profile_id', $data->employee_profile_id)
+                                    ->first();
+            $sl_employee_credit = EmployeeLeaveCredit::where('leave_type_id', LeaveType::where('code', 'SL')->first()->id)
+                                    ->where('employee_profile_id', $data->employee_profile_id)
+                                    ->first();
+
+            // return $data;
+            $leave_type = MonetizationApplicationResource::collection(LeaveType::all());
+            $my_leave_type = new LeaveTypeResource(LeaveType::find($data->leave_type_id));
+            $hrmo_officer = Section::with(['supervisor'])->where('code', 'HRMO')->first();
+
+            $employeeLeaveCredit = EmployeeLeaveCredit::with('employeeLeaveCreditLogs')
+                ->where('employee_profile_id', $data->employee_profile_id)
+                ->where('leave_type_id', $data->leave_type_id)
+                ->first();
+
+            if ($employeeLeaveCredit) {
+                $creditLogs = $employeeLeaveCredit->employeeLeaveCreditLogs;
+                // Now you can work with $creditLogs
+            } else {
+                // Handle the case when no matching record is found
+                $creditLogs = null; // Or any other appropriate action
+            }
+
+            // return view('leave_from.leave_application_form', compact('data', 'leave_type', 'hrmo_officer'));
+            $is_monetization=true;
+            $options = new Options();
+            $options->set('isPhpEnabled', true);
+            $options->set('isHtml5ParserEnabled', true);
+            $options->set('isRemoteEnabled', true);
+            $dompdf = new Dompdf($options);
+            $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
+            $html = view('leave_from.leave_application_form', compact('data', 'leave_type', 'my_leave_type', 'vl_employee_credit', 'sl_employee_credit', 'is_monetization'))->render();
+            $dompdf->loadHtml($html);
+
+            $dompdf->setPaper('Legal', 'portrait');
+            $dompdf->render();
+            $filename = 'LEAVE REPORT - (' . $data->employeeProfile->personalInformation->name() . ').pdf';
+
+            // Use 'I' instead of 'D' to open in the browser
+                $dompdf->stream($filename, array('Attachment' => false));
+            // $dompdf->stream($filename);
+
+
+            // if ($dompdf->loadHtml($html)) {
+            // $dompdf->setPaper('Legal', 'portrait');
+            // $dompdf->render();
+            // $filename = 'Leave Application('. $data->employeeProfile->personalInformation->name() .').pdf';
+            // $dompdf->stream($filename);
+            // } else {
+            //     return response()->json(['message' => 'Error loading HTML content', 'error' => true]);
+            // }
+
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage(), 'error' => true]);
         }
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Cache;
 
 class DepartmentResource extends JsonResource
 {
@@ -55,7 +56,7 @@ class DepartmentResource extends JsonResource
                 'head' => $head,
                 'head_designation' => $this->head->assignedArea->designation,
                 'head_status' => $head_status,
-                'head_profile_url' => env('SERVER_DOMAIN') . "/photo/profiles/". $this->head->profile_url,
+                'head_profile_url' => Cache::get("server_domain") . "/photo/profiles/". $this->head->profile_url,
                 'training_officer' => $training_officer,
                 'training_officer_designation' => $toe_designation,
                 'approving_officer' => $approving_officer,

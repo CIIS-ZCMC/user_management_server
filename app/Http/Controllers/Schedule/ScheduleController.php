@@ -148,26 +148,23 @@ class ScheduleController extends Controller
             $all_employee_schedules = new Collection();
 
             if ($selected_date === "") {
-                foreach ($employees as $employee) {
-                    $existing_employee_ids = EmployeeProfile::where('id', $employee)->pluck('id');
-
-                    foreach ($existing_employee_ids as $employee_id) {
-                        $employee_schedules = EmployeeSchedule::where('employee_profile_id', $employee_id)
-                            // ->whereHas('schedule', function ($query) use ($employee_id) {
-                            //     $query->whereYear('date', '=', $year)
-                            //         ->whereMonth('date', '=', $month);
-                            // })
-                            ->first();
-                        $employee_schedules->delete();
-                    }
+                // Delete all of the month if calendar is blank 
+                $existing_employee_ids = EmployeeProfile::where('id', $employees)->pluck('id');
+                foreach ($existing_employee_ids as $employee_id) {
+                    $employee_schedules = EmployeeSchedule::where('employee_profile_id', $employee_id)
+                        // ->whereHas('schedule', function ($query) use ($employee_id) {
+                        //     $query->whereYear('date', '=', $year)
+                        //         ->whereMonth('date', '=', $month);
+                        // })
+                        ->first();
+                    $employee_schedules->delete();
                 }
+
             } else {
                 // Delete existing data for the selected dates and time shifts
-                foreach ($employees as $employee) {
-                    $schedule = EmployeeSchedule::where('employee_profile_id', $employee)->get();
-                    foreach ($schedule as $value) {
-                        $value->forceDelete();
-                    }
+                $schedule = EmployeeSchedule::where('employee_profile_id', $employees)->get();
+                foreach ($schedule as $value) {
+                    $value->forceDelete();
                 }
 
                 // Save new data
@@ -176,7 +173,7 @@ class ScheduleController extends Controller
 
                     foreach ($selectedDate['date'] as $date) {
 
-                        $existingSchedule = EmployeeSchedule::whereHas('schedule', function ($query) use ($timeShiftId, $date) {
+                        $existingSchedule = EmployeeSchedule::where('employee_profile_id', $employees)->whereHas('schedule', function ($query) use ($timeShiftId, $date) {
                             $query->where('time_shift_id', $timeShiftId)
                                 ->where('date', $date);
                         })->exists();
@@ -185,7 +182,7 @@ class ScheduleController extends Controller
                             return response()->json(['message' => 'Duplicates of schedules are not allowed. Please check the date: ' . $date], Response::HTTP_FOUND);
                         }
 
-                        $moreThanOneSchedule = EmployeeSchedule::whereHas('schedule', function ($query) use ($date) {
+                        $moreThanOneSchedule = EmployeeSchedule::where('employee_profile_id', $employees)->whereHas('schedule', function ($query) use ($date) {
                             $query->where('date', $date);
                         })->exists();
 
@@ -220,7 +217,6 @@ class ScheduleController extends Controller
                 'message' => 'New employee schedule registered.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
-
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -415,7 +411,7 @@ class ScheduleController extends Controller
         }
     }
 
-    public function employee(Request $request)
+    public function employeeList(Request $request)
     {
         try {
             $employees = [];
@@ -473,7 +469,7 @@ class ScheduleController extends Controller
             $schedule = [];
             foreach ($sql as $value) {
                 $schedule[] = [
-                    'id' => $value->schedule->timeShift->id,
+                    'id' => $value->schedule->id,
                     'start' => $value->schedule->date,
                     'title' => $value->schedule->timeShift->timeShiftDetails(),
                     'color' => $value->schedule->timeShift->color,

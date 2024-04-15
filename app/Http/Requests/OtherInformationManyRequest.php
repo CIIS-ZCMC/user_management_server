@@ -22,11 +22,11 @@ class OtherInformationManyRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'others.title' => 'required|string|max:255',
-            'others.skills_hobbies' => 'nullable|boolean',
-            'others.recognition' => 'nullable|boolean',
-            'others.organization' => 'nullable|boolean',
-            'others.personal_information_id' => 'required|integer'
+            'others.*.title' => 'required|string|max:255',
+            'others.*.skills_hobbies' => 'nullable|boolean',
+            'others.*.recognition' => 'nullable|boolean',
+            'others.*.organization' => 'nullable|boolean',
+            'others.*.personal_information_id' => 'required|integer'
         ];
     }
 }

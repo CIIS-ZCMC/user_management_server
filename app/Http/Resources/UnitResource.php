@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Cache;
 
 class UnitResource extends JsonResource
 {
@@ -41,7 +42,7 @@ class UnitResource extends JsonResource
                 'name' => $name,
                 'code' => $code,
                 'head' => $head,
-                'head_profile_url' => env('SERVER_DOMAIN') . "/photo/profiles/".  $this->head->profile_url,
+                'head_profile_url' => Cache::get("server_domain") . "/photo/profiles/".  $this->head->profile_url,
                 'head_designation' => $this->head->assignedArea->designation,
                 'section' => new SectionResource($this->section),
                 'head_status' => $head_status,

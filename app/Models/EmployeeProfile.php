@@ -130,7 +130,7 @@ class EmployeeProfile extends Authenticatable
             'token_exp' => $token_exp
         ]);
 
-        $encryptedToken = openssl_encrypt($token, Cache::get('encrypt_decrypt_algorithm'), env("APP_KEY"), 0, substr(md5(env("APP_KEY")), 0, 16));
+        $encryptedToken = openssl_encrypt($token, Cache::get('encrypt_decrypt_algorithm'), env("APP_KEY"), 0, substr(md5(Cache::get('app_key')), 0, 16));
 
         return $encryptedToken;
     }
@@ -529,5 +529,10 @@ class EmployeeProfile extends Authenticatable
         }
 
         return $employees;
+    }
+
+    public function salaryGrade()
+    {
+        return $this->belongsTo(SalaryGrade::class);
     }
 }

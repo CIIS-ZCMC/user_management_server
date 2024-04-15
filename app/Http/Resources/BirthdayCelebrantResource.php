@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Cache;
 
 class BirthdayCelebrantResource extends JsonResource
 {
@@ -17,7 +18,7 @@ class BirthdayCelebrantResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'profile_url' => env('SERVER_DOMAIN').$this->employeeProfile->profile_url,
+            'profile_url' => Cache::get("server_domain").$this->employeeProfile->profile_url,
             'employee_id' => $this->employeeProfile->employee_id,
             'name' => $this->name(),
             'age' => Carbon::now()->diffInYears($this->date_of_birth),
