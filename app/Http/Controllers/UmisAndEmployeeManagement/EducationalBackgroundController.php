@@ -108,7 +108,7 @@ class EducationalBackgroundController extends Controller
                     }
                     $cleanData[$key] = strip_tags($value);
                 }
-                $cleanData['$personal_information_id'] = $personal_information_id;
+                $cleanData['personal_information_id'] = $personal_information_id;
                 $educational_background = EducationalBackground::create($cleanData);
                 
                 if(!$educational_background){
