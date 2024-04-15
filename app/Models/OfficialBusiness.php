@@ -17,8 +17,6 @@ class OfficialBusiness extends Model
     protected $fillable = [
         'date_from',
         'date_to',
-        'time_from',
-        'time_to',
         'status',
         'purpose',
         'personal_order_file',
