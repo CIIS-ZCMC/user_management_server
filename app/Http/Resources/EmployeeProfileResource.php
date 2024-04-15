@@ -35,7 +35,7 @@ class EmployeeProfileResource extends JsonResource
             'id' => $this->id,
             'employee_id' => $this->employee_id,
             'name' => $name,
-            'profile_url' =>  Cache::get("server_domain") . "/photo/profiles/" . $this->profile_url,
+            'profile_url' =>  config("app.server_domain") . "/photo/profiles/" . $this->profile_url,
             'area' => $area,
             'is_regular_employee' => $is_regular_employee,
             'designation' => $designation_name,

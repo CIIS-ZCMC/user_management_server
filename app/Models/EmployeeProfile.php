@@ -130,7 +130,7 @@ class EmployeeProfile extends Authenticatable
             'token_exp' => $token_exp
         ]);
 
-        $encryptedToken = openssl_encrypt($token, Cache::get('encrypt_decrypt_algorithm'), Cache::get('app_key'), 0, substr(md5(Cache::get('app_key')), 0, 16));
+        $encryptedToken = openssl_encrypt($token, config('app.encrypt_decrypt_algorithm'), config('app.app_key'), 0, substr(md5(config('app.app_key')), 0, 16));
 
         return $encryptedToken;
     }

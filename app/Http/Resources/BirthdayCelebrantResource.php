@@ -18,7 +18,7 @@ class BirthdayCelebrantResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'profile_url' => Cache::get("server_domain").$this->employeeProfile->profile_url,
+            'profile_url' => config("app.server_domain").$this->employeeProfile->profile_url,
             'employee_id' => $this->employeeProfile->employee_id,
             'name' => $this->name(),
             'age' => Carbon::now()->diffInYears($this->date_of_birth),
