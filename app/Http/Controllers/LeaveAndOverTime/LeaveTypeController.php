@@ -70,6 +70,8 @@ class LeaveTypeController extends Controller
                 
                 $final_date = null;
                 $tomorrow = Carbon::tomorrow();
+
+                
                 
                 if($leave_type->file_after === null && $leave_type->file_before !== null){
                     $schedules = EmployeeSchedule::select("s.date")->join('schedules as s', 's.id', 'employee_profile_schedule.schedule_id')
@@ -80,10 +82,11 @@ class LeaveTypeController extends Controller
                     if(count($schedules) > 0){
                         $last_schedule = $schedules->last();
                         $final_date = $last_schedule ? Carbon::parse($last_schedule->date)->format('Y-m-d') : null;
-                    }else {
-                        // If there are no schedules, set the final date to 5 days from tomorrow
-                        $final_date = Carbon::parse($tomorrow)->addDays(10)->format('Y-m-d');
                     }
+                    // else {
+                    //     // If there are no schedules, set the final date to 5 days from tomorrow
+                    //     $final_date = Carbon::parse($tomorrow)->addDays(10)->format('Y-m-d');
+                    // }
                 }
 
                 if($leave_type->file_after !== null && $leave_type->code !== 'SL'){
