@@ -1739,6 +1739,8 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('my-leave-application-approved/{id}', 'LeaveApplicationController@employeeApprovedLeaveApplication');
         });
 
+
+
         Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
             Route::get('user-leave-application', 'LeaveApplicationController@userLeaveApplication');
         });
@@ -1746,6 +1748,16 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
             Route::get('leave-application/{id}', 'LeaveApplicationController@show');
         });
+
+        Route::middleware(['auth.permission:UMIS-LM update'])->group(function () {
+            Route::get('receive-leave-application/{id}', 'LeaveApplicationController@received');
+        });
+
+
+        Route::middleware(['auth.permission:UMIS-LM update'])->group(function () {
+            Route::get('cancel-leave-application/{id}', 'LeaveApplicationController@cancelled');
+        });
+
 
         Route::middleware(['auth.permission:UMIS-LM request'])->group(function () {
             Route::post('leave-application', 'LeaveApplicationController@store');
