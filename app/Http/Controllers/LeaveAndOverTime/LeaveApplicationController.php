@@ -295,7 +295,7 @@ class LeaveApplicationController extends Controller
         }
     }
 
-    public function ApprovedLeaveApplication()
+    public function approvedLeaveApplication()
     {
         try {
             $leave_applications = LeaveApplication::where('status', 'approved')->get();
