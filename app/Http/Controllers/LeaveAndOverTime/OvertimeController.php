@@ -259,7 +259,68 @@ class OvertimeController extends Controller
         }
     }
 
-   
+    public function declined($id, AuthPinApprovalRequest $request)
+    {
+        try {
+            $user = $request->user;
+            $employee_profile = $user;
+            $declined_by = null;
+            $cleanData['pin'] = strip_tags($request->password);
+
+            if ($user['authorization_pin'] !== $cleanData['pin']) {
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
+            }
+
+            $overtime_application = OvertimeApplication::find($id);
+            $overtime_type = $overtime_application->overtimeType;
+            $overtime_application_hrmo = $overtime_application->hrmo_officer;
+            $overtime_application_recommending = $overtime_application->recommending_officer;
+            $overtime_application_approving = $overtime_application->approving_officer;
+
+            if ($employee_profile->id === $overtime_application_recommending) {
+                $status = 'declined by recommending officer';
+                $declined_by = "Recommending officer";
+            } else if ($employee_profile->id === $overtime_application_approving) {
+                $status = 'declined by approving officer';
+                $declined_by = "Approving officer";
+            }
+
+            $overtime_application->update([
+                'status' => $status,
+                'remarks' => strip_tags($request->remarks),
+            ]);
+
+
+
+
+                $employee_credit = EmployeeOvertimeCredit::where('employee_profile_id', $overtime_application->employee_profile_id)
+                    ->where('overtime_type_id', $overtime_application->overtime_type_id)->first();
+
+                $current_overtime_credit = $employee_credit->total_overtime_credits;
+                $current_used_overtime_credit = $employee_credit->used_overtime_credits;
+
+                $employee_credit->update([
+                    'total_overtime_credits' => $current_overtime_credit + $overtime_application->applied_credits,
+                    'used_overtime_credits' => $current_used_overtime_credit - $overtime_application->applied_credits
+                ]);
+
+                EmployeeOvertimeCreditLog::create([
+                    'employee_leave_credit_id' => $employee_credit->id,
+                    'previous_credit' => $current_leave_credit,
+                    'leave_credits' => $leave_application->applied_credits,
+                    'reason' => "declined"
+                ]);
+
+
+            return response()->json([
+                'data' => new LeaveApplicationResource($leave_application),
+                'message' => 'Declined leave application successfully.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     /**
      * Store a newly created resource in storage.
      */
@@ -343,8 +404,8 @@ class OvertimeController extends Controller
                 'overtime_letter_of_request' =>  $fileName,
                 'overtime_letter_of_request_path' =>  $file_name_encrypted,
                 'overtime_letter_of_request_size' =>  $size,
-                'recommending_officer_id' => $recommending_and_approving['recommending_officer'],
-                'approving_officer_id' => $recommending_and_approving['approving_officer'],
+                'recommending_officer' => $recommending_and_approving['recommending_officer'],
+                'approving_officer' => $recommending_and_approving['approving_officer'],
             ]);
 
             $ovt_id = $overtime_application->id;
@@ -424,8 +485,8 @@ class OvertimeController extends Controller
                 'employee_profile_id' => $user->id,
                 'status' => $status,
                 'purpose' => $request->purpose,
-                'recommending_officer_id' => $recommending_and_approving['recommending_officer'],
-                'approving_officer_id' => $recommending_and_approving['approving_officer'],
+                'recommending_officer' => $recommending_and_approving['recommending_officer'],
+                'approving_officer' => $recommending_and_approving['approving_officer'],
             ]);
             $ovt_id = $overtime_application->id;
 
