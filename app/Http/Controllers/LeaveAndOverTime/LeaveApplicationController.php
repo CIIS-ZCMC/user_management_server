@@ -478,23 +478,6 @@ class LeaveApplicationController extends Controller
         }
     }
 
-    public function updatePrint($id,Request $request)
-    {
-        try {
-            $employee_leave_application = $id;
-            $employee_print = LeaveApplication::where('id', $employee_leave_application)->first();
-            $employee_print->update([
-                'is_printed' => 1,
-                'print_datetime' => Carbon::now()
-            ]);
-            $response[] = $employee_print;
-            return response()->json(['message' => 'Successfully printed', 'data' => $response,], 200);
-        } catch (\Throwable $th) {
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-
     public function addCredit(AuthPinApprovalRequest $request)
     {
         try {
