@@ -291,31 +291,9 @@ class OvertimeController extends Controller
                 'remarks' => strip_tags($request->remarks),
             ]);
 
-
-
-
-                $employee_credit = EmployeeOvertimeCredit::where('employee_profile_id', $overtime_application->employee_profile_id)
-                    ->where('overtime_type_id', $overtime_application->overtime_type_id)->first();
-
-                $current_overtime_credit = $employee_credit->total_overtime_credits;
-                $current_used_overtime_credit = $employee_credit->used_overtime_credits;
-
-                $employee_credit->update([
-                    'total_overtime_credits' => $current_overtime_credit + $overtime_application->applied_credits,
-                    'used_overtime_credits' => $current_used_overtime_credit - $overtime_application->applied_credits
-                ]);
-
-                EmployeeOvertimeCreditLog::create([
-                    'employee_leave_credit_id' => $employee_credit->id,
-                    'previous_credit' => $current_leave_credit,
-                    'leave_credits' => $leave_application->applied_credits,
-                    'reason' => "declined"
-                ]);
-
-
             return response()->json([
-                'data' => new LeaveApplicationResource($leave_application),
-                'message' => 'Declined leave application successfully.'
+                'data' => new OvertimeResource($overtime_application),
+                'message' => 'Declined overtime application successfully.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -386,12 +364,12 @@ class OvertimeController extends Controller
                         // Compare with max_credit_monthly and max_credit_annual including valid_until
                         if ($totalOvertimeHours > $employeeProfile->overtimeCredit->max_credit_monthly && $validUntil == $employeeProfile->overtimeCredit->valid_until) {
                             // Handle exceeding max_credit_monthly
-                            return response()->json(['message' => 'Employee ' . $employeeId . ' has exceeded the monthly leave credit.'], Response::HTTP_BAD_REQUEST);
+                            return response()->json(['message' => 'Employee ' . $employeeId . ' has exceeded the monthly overtime credit.'], Response::HTTP_BAD_REQUEST);
                         }
 
                         if ($totalEarnedCredit > $employeeProfile->overtimeCredit->max_credit_annual && $validUntil == $employeeProfile->overtimeCredit->valid_until) {
                             // Handle exceeding max_credit_annual
-                            return response()->json(['message' => 'Employee ' . $employeeId . ' has exceeded the annual leave credit.'], Response::HTTP_BAD_REQUEST);
+                            return response()->json(['message' => 'Employee ' . $employeeId . ' has exceeded the annual overtime credit.'], Response::HTTP_BAD_REQUEST);
                         }
                     }
                 }
@@ -618,7 +596,7 @@ class OvertimeController extends Controller
 
             return response()->json([
                 'data' => new OvertimeResource($overtime_application),
-                'message' => 'Retrieve leave application record.'
+                'message' => 'Retrieve overtime application record.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
