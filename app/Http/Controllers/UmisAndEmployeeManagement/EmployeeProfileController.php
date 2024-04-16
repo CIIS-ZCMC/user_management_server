@@ -305,6 +305,7 @@ class EmployeeProfileController extends Controller
                 'employee_profile_id' => $employee_profile['id']
             ]);
 
+            Helpers::infoLog("EmployeeProfileController", "SignIn", config("app.session_domain"));
 
             return response()
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
@@ -932,6 +933,7 @@ class EmployeeProfileController extends Controller
                 'browser_version' => is_bool($device['version']) ? 'Postman' : $device['version'],
                 'employee_profile_id' => $employee_profile['id']
             ]);
+
 
             return response()
                 ->json(['data' => $data, 'message' => "Success signout to other device you are now login."], Response::HTTP_OK)
