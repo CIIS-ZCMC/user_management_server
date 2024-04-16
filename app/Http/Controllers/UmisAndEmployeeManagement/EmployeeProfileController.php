@@ -747,6 +747,7 @@ class EmployeeProfileController extends Controller
         ];
 
         $personal_information_data = [
+            'personal_information_id' => $personal_information->id,
             'full_name' => $personal_information->nameWithSurnameFirst(),
             'first_name' => $personal_information->first_name,
             'last_name' => $personal_information->last_name,
@@ -803,6 +804,7 @@ class EmployeeProfileController extends Controller
         }
 
         return [
+            'personal_information_id' =>  $personal_information->id,
             'employee_profile_id' => $employee_profile['id'],
             'employee_id' => $employee_profile['employee_id'],
             'name' => $personal_information->employeeName(),
@@ -2940,6 +2942,7 @@ class EmployeeProfileController extends Controller
             }
 
             $data = [
+                'personal_information_id' =>  $personal_information->id,
                 'employee_profile_id' => $employee_profile['id'],
                 'employee_id' => $employee_profile['employee_id'],
                 'name' => $personal_information->employeeName(),
@@ -2951,6 +2954,7 @@ class EmployeeProfileController extends Controller
                 'employee_details' => [
                     'employee' => $employee,
                     'personal_information' => $personal_information_data,
+                    'personal_information_id' =>  $personal_information->id,
                     'contact' => new ContactResource($personal_information->contact),
                     'address' => $address,
                     'address_update' => AddressResource::collection($personal_information->addresses),
