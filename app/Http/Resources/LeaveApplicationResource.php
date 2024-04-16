@@ -158,6 +158,8 @@ class LeaveApplicationResource extends JsonResource
             "oic" => $oic,
             'attachments' => $this->leaveApplicationRequirements === null ? [] : LeaveApplicationAttachmentResource::collection($this->leaveApplicationRequirements),
             'logs' => $this->logs ? LeaveApplicationLog::collection($this->logs) : [],
+            'received_at' => $this->received_at,
+            'cancelled_at' => $this->cancelled_at,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'is_under_hrmo' => $isUnderHRM == null ? false : true
