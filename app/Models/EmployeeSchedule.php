@@ -17,9 +17,8 @@ class EmployeeSchedule extends Model
     protected $fillable = [
         'employee_profile_id',
         'schedule_id',
-        'is_on_call',
     ];
-        
+
     public $timestamps = true;
 
     public function employee()
