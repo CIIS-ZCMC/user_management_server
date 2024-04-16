@@ -17,6 +17,7 @@ use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Resources\MyApprovedLeaveApplicationResource;
 use App\Models\Department;
 use App\Models\EmployeeOvertimeCredit;
+use App\Models\EmployeeOvertimeCreditLog;
 use App\Models\EmployeeProfile;
 use App\Models\OvtApplicationLog;
 use App\Models\Section;
@@ -138,7 +139,21 @@ class OvertimeController extends Controller
         }
     }
 
-    public function approvedLeaveRequest(Request $request)
+    public function employeeApprovedOvertimeApplication($id, Request $request)
+    {
+        try {
+            $overtime_applications = OvertimeApplication::where('status', 'approved')->where('employee_profile_id', $id)->get();
+
+            return response()->json([
+                'data' => Overtime::collection($overtime_applications),
+                'message' => 'Retrieve list.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function approvedOvertimeRequest(Request $request)
     {
         try {
             $employee_profile = $request->user;
@@ -232,7 +247,7 @@ class OvertimeController extends Controller
         }
     }
 
-    public function approvedLeaveApplication()
+    public function approvedOvertimeApplication()
     {
         try {
             $overtime_applications = OvertimeApplication::where('status', 'approved')->get();
@@ -245,6 +260,7 @@ class OvertimeController extends Controller
         }
     }
 
+   
     /**
      * Store a newly created resource in storage.
      */
