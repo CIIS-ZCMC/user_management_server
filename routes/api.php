@@ -1753,11 +1753,11 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-LM update'])->group(function () {
-            Route::get('receive-leave-application/{id}', 'LeaveApplicationController@received');
+            Route::post('receive-leave-application/{id}', 'LeaveApplicationController@received');
         });
 
         Route::middleware(['auth.permission:UMIS-LM update'])->group(function () {
-            Route::get('cancel-leave-application/{id}', 'LeaveApplicationController@cancelled');
+            Route::post('cancel-leave-application/{id}', 'LeaveApplicationController@cancelled');
         });
 
 

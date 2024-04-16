@@ -298,7 +298,7 @@ class LeaveApplicationController extends Controller
     public function approvedLeaveApplication()
     {
         try {
-            $leave_applications = LeaveApplication::where('status', 'approved')->get();
+            $leave_applications = LeaveApplication::where('status', 'approved')->orWhere('status', 'received')->orWhere('status', 'cancelled')->get();
             return response()->json([
                 'data' => LeaveApplicationResource::collection($leave_applications),
                 'message' => 'Retrieve list.'
@@ -615,25 +615,6 @@ class LeaveApplicationController extends Controller
                     $message = "Your " . $leave_application->leaveType->name . " request with date from " . $from . " to " . $to . " has been approved.";
                     Helpers::notifications($leave_application->employee_profile_id, $message, $leave_application->leaveType->name);
                     break;
-                case 'approved':
-                        $status = 'cancelled';
-                        $log_status = 'Cancelled by HRMO';
-                        $leave_application->update(['status' => $status]);
-                        $from = Carbon::parse($leave_application->date_from)->format('F d, Y');
-                        $to = Carbon::parse($leave_application->date_to)->format('F d, Y');
-                        $message = "Your " . $leave_application->leaveType->name . " request with date from " . $from . " to " . $to . " has been cancelled.";
-
-                    if($leave_application->employee_oic_id !== null){
-                        TaskSchedules::create([
-                            'action' => "OIC",
-                            'effective_at' => $leave_application->date_from,
-                            'end_at' => $leave_application->date_to,
-                            'employee_profile_id' => $leave_application->employee_profile_id,
-                            'candidate_employee' => $leave_application->employee_oic_id
-                        ]);
-                    }
-                    Helpers::notifications($leave_application->employee_profile_id, $message, $leave_application->leaveType->name);
-                        break;
             }
 
             $employee_profile = $leave_application->employeeProfile;
@@ -1105,7 +1086,7 @@ class LeaveApplicationController extends Controller
         try {
             $user = $request->user;
             $employee_profile = $user;
-            $declined_by = null;
+            $cancelled_by = 'HRMO';
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !== $cleanData['pin']) {
@@ -1118,21 +1099,11 @@ class LeaveApplicationController extends Controller
             $leave_application_recommending = $leave_application->recommending_officer;
             $leave_application_approving = $leave_application->approving_officer;
 
-            if ($employee_profile->id === $leave_application_hrmo) {
-                $status = 'cancelled by hrmo officer';
-                $cancelled_by = "HR";
-            } else if ($employee_profile->id === $leave_application_recommending) {
-                $status = 'cancelled by recommending officer';
-                $cancelled_by = "Recommending officer";
-            } else if ($employee_profile->id === $leave_application_approving) {
-                $status = 'cancelled by approving officer';
-                $cancelled_by = "Approving officer";
-            }
 
             $leave_application->update([
-                'status' => $status,
+                'status' => 'cancelled',
                 'cancelled_at' => Carbon::now(),
-                'remarks' => strip_tags($request->remarks),
+                'remarks' => 'Cancelled by HRMO.',
             ]);
 
             $from = Carbon::parse($leave_application->date_from)->format('F d, Y');
@@ -1157,7 +1128,7 @@ class LeaveApplicationController extends Controller
 
             return response()->json([
                 'data' => new LeaveApplicationResource($leave_application),
-                'message' => 'Declined leave application successfully.'
+                'message' => 'Cancelled leave application successfully.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -1182,13 +1153,27 @@ class LeaveApplicationController extends Controller
 
             return response()->json([
                 'data' => new LeaveApplicationResource($leave_application),
-                'message' => 'Declined leave application successfully.'
+                'message' => 'Received leave application successfully.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
+    public function updatePrint($id)
+    {
+        try {
+            $employee_leave_application = $id;
+            $employee_print = LeaveApplication::where('id', $employee_leave_application)->first();
+            $employee_print->update([
+                'is_printed' => 1,
+                'print_datetime' => Carbon::now()
+            ]);
+            $response[] = $employee_print;
+            return response()->json(['data' => new LeaveApplicationResource($employee_print),'message' => 'Successfully printed'], 200);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
     public function printLeaveForm($id)
     {
         try {
