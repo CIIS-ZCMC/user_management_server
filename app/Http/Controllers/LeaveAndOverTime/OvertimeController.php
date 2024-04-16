@@ -137,7 +137,7 @@ class OvertimeController extends Controller
         }
     }
 
-    public function approvedLeaveRequest(Request $request)
+    public function approvedOvertimeRequest(Request $request)
     {
         try {
             $employee_profile = $request->user;
@@ -231,7 +231,7 @@ class OvertimeController extends Controller
         }
     }
 
-    public function approvedLeaveApplication()
+    public function approvedOvertimeApplication()
     {
         try {
             $overtime_applications = OvertimeApplication::where('status', 'approved')->get();
