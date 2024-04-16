@@ -697,6 +697,7 @@ class LeaveApplicationController extends Controller
 
             $employeeId = $employee_profile->id;
             $recommending_and_approving = Helpers::getRecommendingAndApprovingOfficer($employee_profile->assignedArea->findDetails(), $employee_profile->id);
+
             $hrmo_officer = Helpers::getHrmoOfficer();
 
 
@@ -793,14 +794,8 @@ class LeaveApplicationController extends Controller
                     if ($leave_type->period < $daysDiff) {
                         return response()->json(['message' => 'Exceeds days entitled for ' . $leave_type->name], Response::HTTP_FORBIDDEN);
                     }
-                    $totalHours = Helpers::getTotalHours($start, $end, $employeeId);
-                    $totalDeductCredits= (int) ($totalHours / 8);
-                    if($employee_profile->employmentType === 'Permanent Part-time')
-                    {
-                        $totalDeductCredits=$totalDeductCredits/8;
-                    }
 
-                    $cleanData['applied_credits'] = $totalDeductCredits;
+                    $cleanData['applied_credits'] = $daysDiff;
                     $cleanData['employee_profile_id'] = $employee_profile->id;
                     $cleanData['hrmo_officer'] = $hrmo_officer;
 
@@ -814,6 +809,7 @@ class LeaveApplicationController extends Controller
                         $cleanData['recommending_officer'] = $recommending_and_approving['recommending_officer'];
                         $cleanData['approving_officer'] = $recommending_and_approving['approving_officer'];
                     }
+
 
                     $cleanData['status'] = 'applied';
 
@@ -864,6 +860,8 @@ class LeaveApplicationController extends Controller
                         'action' => 'Applied'
                     ]);
                 } else {
+
+
                     $employee_credit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)
                         ->where('leave_type_id', $request->leave_type_id)->first();
 
@@ -872,8 +870,13 @@ class LeaveApplicationController extends Controller
                     if ($request->without_pay == 0 && $employee_credit->total_leave_credits < $daysDiff) {
                         return response()->json(['message' => 'Insufficient leave credits.'], Response::HTTP_BAD_REQUEST);
                     } else {
-
-                        $cleanData['applied_credits'] = $daysDiff;
+                        $totalHours = Helpers::getTotalHours($start, $end, $employeeId);
+                        $totalDeductCredits= (int) ($totalHours / 8);
+                        if($employee_profile->employmentType === 'Permanent Part-time')
+                        {
+                            $totalDeductCredits=$totalDeductCredits/8;
+                        }
+                        $cleanData['applied_credits'] = $totalDeductCredits;
                         $cleanData['employee_profile_id'] = $employee_profile->id;
                         $cleanData['hrmo_officer'] = $hrmo_officer;
 
@@ -884,9 +887,18 @@ class LeaveApplicationController extends Controller
                         $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $employee_profile->id)->first();
 
                         if (!$isMCC) {
+
+                            if($leave_type->code='VL' && $request->country != 'Philippines')
+                            {
+                                $cleanData['recommending_officer'] = Helpers::getDivHead($employee_profile->assignedArea->findDetails());
+                                $cleanData['approving_officer'] = Helpers::getChiefOfficer();
+                            }
+
                             $cleanData['recommending_officer'] = $recommending_and_approving['recommending_officer'];
                             $cleanData['approving_officer'] = $recommending_and_approving['approving_officer'];
                         }
+
+
 
                         $cleanData['status'] = 'applied';
 
@@ -1119,6 +1131,7 @@ class LeaveApplicationController extends Controller
 
             $leave_application->update([
                 'status' => $status,
+                'cancelled_at' => Carbon::now(),
                 'remarks' => strip_tags($request->remarks),
             ]);
 
@@ -1139,12 +1152,7 @@ class LeaveApplicationController extends Controller
                     'used_leave_credits' => $current_used_leave_credit - $leave_application->applied_credits
                 ]);
 
-                EmployeeLeaveCreditLogs::create([
-                    'employee_leave_credit_id' => $employee_credit->id,
-                    'previous_credit' => $current_leave_credit,
-                    'leave_credits' => $leave_application->applied_credits,
-                    'reason' => "declined"
-                ]);
+           
             }
 
             return response()->json([
@@ -1160,8 +1168,6 @@ class LeaveApplicationController extends Controller
     {
         try {
             $user = $request->user;
-            $employee_profile = $user;
-            $declined_by = null;
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !== $cleanData['pin']) {
@@ -1170,7 +1176,8 @@ class LeaveApplicationController extends Controller
 
             $leave_application = LeaveApplication::find($id);
             $leave_application->update([
-                'status' => 'received'
+                'status' => 'received',
+                'received_at' => Carbon::now(),
             ]);
 
             return response()->json([
