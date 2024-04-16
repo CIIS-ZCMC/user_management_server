@@ -213,6 +213,7 @@ class ExchangeDutyController extends Controller
             ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
+            return $th;
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }

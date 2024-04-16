@@ -61,7 +61,7 @@ class LeaveApplicationResource extends JsonResource
             return [
                 "id" => $this->id,
                 "employee_profile" => [
-                    'employee_id' => $this->employeeProfile->id,
+                    'employee_id' => $this->employeeProfile->employee_id,
                     'name' => $this->employeeProfile->personalInformation->name(),
                     'designation_name' => $this->employeeProfile->assignedArea->designation->name,
                     'designation_code' => $this->employeeProfile->assignedArea->designation->code,
@@ -107,7 +107,7 @@ class LeaveApplicationResource extends JsonResource
         return [
             "id" => $this->id,
             "employee_profile" => [
-                'employee_id' => $this->employeeProfile->id,
+                'employee_id' => $this->employeeProfile->employee_id,
                 'name' => $this->employeeProfile->personalInformation->name(),
                 'designation_name' => $this->employeeProfile->assignedArea->designation->name,
                 'designation_code' => $this->employeeProfile->assignedArea->designation->code,
