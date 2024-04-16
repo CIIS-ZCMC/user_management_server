@@ -706,23 +706,26 @@ class DTRcontroller extends Controller
 
             $holidays = DB::table('holidays')->get();
 
-            $employeeSched = DB::table('schedules')
-                ->select('date as schedule')
-                ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT first_in FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as first_in')
-                ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT first_out FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as first_out')
-                ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT second_in FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as second_in')
-                ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT second_out FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as second_out')
-                ->selectRaw('(CASE WHEN date = (SELECT dtr_date FROM `daily_time_records` WHERE dtr_date = schedules.date AND biometric_id = ' . $biometric_id . ' LIMIT 1) THEN 1 ELSE 0 END) as attendance_status')
-                ->whereIn('id', function ($query) use ($biometric_id) {
-                    $query->select('schedule_id')
-                        ->from('employee_profile_schedule')
-                        ->whereIn('employee_profile_id', function ($innerQuery) use ($biometric_id) {
-                            $innerQuery->select('id')
-                                ->from('employee_profiles')
-                                ->where('biometric_id', $biometric_id);
-                        });
-                })
-                ->get();
+            $employeeSched =DB::table('schedules')
+            ->select('date as schedule')
+            ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT first_in FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as first_in')
+            ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT first_out FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as first_out')
+            ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT second_in FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as second_in')
+            ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT second_out FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as second_out')
+            ->selectRaw('(CASE WHEN date = (SELECT dtr_date FROM `daily_time_records` WHERE dtr_date = schedules.date AND biometric_id = 22 LIMIT 1) THEN 1 ELSE 0 END) AS attendance_status')
+            ->selectRaw('(CASE WHEN schedules.id THEN (SELECT is_on_call FROM `employee_profile_schedule` WHERE schedule_id = schedules.id and employee_profile_id in (select id from employee_profiles where biometric_id = '.$biometric_id.')) else null end) as is_on_call')
+            ->whereIn('id', function ($query) use ($biometric_id) {
+                $query->select('schedule_id')
+                    ->from('employee_profile_schedule')
+                    ->whereIn('employee_profile_id', function ($innerQuery) use ($biometric_id) {
+                        $innerQuery->select('id')
+                            ->from('employee_profiles')
+                            ->where('biometric_id', $biometric_id);
+                    });
+            })
+            ->get();
+
+
 
             $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
 
@@ -1136,22 +1139,23 @@ class DTRcontroller extends Controller
                 $holidays = DB::table('holidays')->get();
 
                 $employeeSched = DB::table('schedules')
-                    ->select('date as schedule')
-                    ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT first_in FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as first_in')
-                    ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT first_out FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as first_out')
-                    ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT second_in FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as second_in')
-                    ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT second_out FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as second_out')
-                    ->selectRaw('(CASE WHEN date = (SELECT dtr_date FROM `daily_time_records` WHERE dtr_date = schedules.date AND biometric_id = ' . $biometric_id . ' LIMIT 1) THEN 1 ELSE 0 END) as attendance_status')
-                    ->whereIn('id', function ($query) use ($biometric_id) {
-                        $query->select('schedule_id')
-                            ->from('employee_profile_schedule')
-                            ->whereIn('employee_profile_id', function ($innerQuery) use ($biometric_id) {
-                                $innerQuery->select('id')
-                                    ->from('employee_profiles')
-                                    ->where('biometric_id', $biometric_id);
-                            });
-                    })
-                    ->get();
+                ->select('date as schedule')
+                ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT first_in FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as first_in')
+                ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT first_out FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as first_out')
+                ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT second_in FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as second_in')
+                ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT second_out FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as second_out')
+                ->selectRaw('(CASE WHEN date = (SELECT dtr_date FROM `daily_time_records` WHERE dtr_date = schedules.date AND biometric_id = 22 LIMIT 1) THEN 1 ELSE 0 END) AS attendance_status')
+                ->selectRaw('(CASE WHEN schedules.id THEN (SELECT is_on_call FROM `employee_profile_schedule` WHERE schedule_id = schedules.id and employee_profile_id in (select id from employee_profiles where biometric_id = '.$biometric_id.')) else null end) as is_on_call')
+                ->whereIn('id', function ($query) use ($biometric_id) {
+                    $query->select('schedule_id')
+                        ->from('employee_profile_schedule')
+                        ->whereIn('employee_profile_id', function ($innerQuery) use ($biometric_id) {
+                            $innerQuery->select('id')
+                                ->from('employee_profiles')
+                                ->where('biometric_id', $biometric_id);
+                        });
+                })
+                ->get();
 
                 $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
 

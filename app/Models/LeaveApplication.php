@@ -44,6 +44,8 @@ class LeaveApplication extends Model
         'recommending_officer',
         'approving_officer',
         'employee_oic_id',
+        'received_at',
+        'cancelled_at',
     ];
 
     public function oic(){
