@@ -6,16 +6,19 @@ use App\Http\Resources\EmployeeScheduleResource;
 use App\Http\Resources\HolidayResource;
 use App\Http\Resources\TimeShiftResource;
 use App\Models\AssignArea;
+use App\Models\Department;
 use App\Models\EmployeeSchedule;
 use App\Models\Holiday;
 use App\Models\Schedule;
 use App\Models\EmployeeProfile;
+use App\Models\Section;
 use App\Models\TimeShift;
 
 use App\Http\Resources\ScheduleResource;
 use App\Http\Requests\ScheduleRequest;
 use App\Helpers\Helpers;
 
+use App\Models\Unit;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Http\Response;
@@ -38,7 +41,6 @@ class ScheduleController extends Controller
     public function index(Request $request)
     {
         try {
-            $employees = [];
             $user = $request->user;
             $month = $request->month;   // Replace with the desired month (1 to 12)
             $year = $request->year;     // Replace with the desired year
@@ -57,13 +59,7 @@ class ScheduleController extends Controller
                         ->whereYear('date', '=', $year)
                         ->whereMonth('date', '=', $month);
                 }
-            ])->whereIn('id', $employee_ids)
-                ->where(function ($query) use ($user, $assigned_area) {
-                    return $assigned_area['details']['code'] === "HRMO" ?
-                        $query->whereNotIn('id', [$user->id, 1, 2, 3, 4, 5]) :
-                        $query->where('id', '!=', $user->id);
-                })
-                ->get();
+            ])->whereIn('id', $employee_ids)->get();
 
             return response()->json([
                 'data' => ScheduleResource::collection($array),
@@ -106,7 +102,7 @@ class ScheduleController extends Controller
                 'holiday' => HolidayResource::collection(Holiday::all())
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'create', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -139,17 +135,16 @@ class ScheduleController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $user = $request->user;
-            $employees = $cleanData['employee'];
+            $employee = $cleanData['employee'];
             $selected_date = $cleanData['selected_date'];   // Selected Date;
 
             $schedule = null;
             $employee_schedules = null;
-            $all_employee_schedules = new Collection();
 
             if ($selected_date === "") {
-                // Delete all of the month if calendar is blank 
-                $existing_employee_ids = EmployeeProfile::where('id', $employees)->pluck('id');
+                // foreach ($employees as $employee) {
+                $existing_employee_ids = EmployeeProfile::where('id', $employee)->pluck('id');
+
                 foreach ($existing_employee_ids as $employee_id) {
                     $employee_schedules = EmployeeSchedule::where('employee_profile_id', $employee_id)
                         // ->whereHas('schedule', function ($query) use ($employee_id) {
@@ -159,13 +154,15 @@ class ScheduleController extends Controller
                         ->first();
                     $employee_schedules->delete();
                 }
-
+                // }
             } else {
                 // Delete existing data for the selected dates and time shifts
-                $schedule = EmployeeSchedule::where('employee_profile_id', $employees)->get();
+                // foreach ($employees as $employee) {
+                $schedule = EmployeeSchedule::where('employee_profile_id', $employee)->get();
                 foreach ($schedule as $value) {
                     $value->forceDelete();
                 }
+                // }
 
                 // Save new data
                 foreach ($selected_date as $selectedDate) {
@@ -173,7 +170,7 @@ class ScheduleController extends Controller
 
                     foreach ($selectedDate['date'] as $date) {
 
-                        $existingSchedule = EmployeeSchedule::where('employee_profile_id', $employees)->whereHas('schedule', function ($query) use ($timeShiftId, $date) {
+                        $existingSchedule = EmployeeSchedule::where('employee_profile_id', $employee)->whereHas('schedule', function ($query) use ($timeShiftId, $date) {
                             $query->where('time_shift_id', $timeShiftId)
                                 ->where('date', $date);
                         })->exists();
@@ -182,7 +179,7 @@ class ScheduleController extends Controller
                             return response()->json(['message' => 'Duplicates of schedules are not allowed. Please check the date: ' . $date], Response::HTTP_FOUND);
                         }
 
-                        $moreThanOneSchedule = EmployeeSchedule::where('employee_profile_id', $employees)->whereHas('schedule', function ($query) use ($date) {
+                        $moreThanOneSchedule = EmployeeSchedule::where('employee_profile_id', $employee)->whereHas('schedule', function ($query) use ($date) {
                             $query->where('date', $date);
                         })->exists();
 
@@ -206,17 +203,18 @@ class ScheduleController extends Controller
                         }
 
                         // Attach employees to the schedule
-                        $schedule->employee()->attach($employees);
+                        $schedule->employee()->attach($employee);
                     }
                 }
             }
 
             // Helpers::registerSystemLogs($request, $schedule['id'], true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json([
-                // 'data' =>  $all_employee_schedules,
+                // 'data' => new EmployeeScheduleResource($schedule),
                 'message' => 'New employee schedule registered.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
+
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -251,7 +249,7 @@ class ScheduleController extends Controller
                 // 'week_end' => $schedule->countWeekEnd($year, $month)
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'edit', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -302,16 +300,6 @@ class ScheduleController extends Controller
                 $schedule->date = $cleanData['date'];
                 $schedule->save();
             }
-
-            // $is24Hrs = Helpers::checkIs24PrevNextSchedule($schedule, $data->employee_profile_id, $cleanData['date']);
-
-            // if ($is24Hrs['result'] !== 'No Schedule') {
-            //     return response()->json([$is24Hrs['result']], Response::HTTP_FOUND);
-            // }
-
-            // if ($this->hasOverlappingSchedule($cleanData['time_shift_id'], $cleanData['date'], $data['employee_profile_id'])) {
-            //     return response()->json(['message' => 'Overlap with existing schedule'], Response::HTTP_FOUND);
-            // }
 
             $data->schedule_id = $schedule->id;
             $data->update();
@@ -365,24 +353,20 @@ class ScheduleController extends Controller
             $dates = Helpers::getDatesInMonth($year, Carbon::parse($month)->month, "");
 
             //Array
-            $myEmployees = $user->areaEmployee($assigned_area);
-            $supervisors = $user->sectorHeads();
+            // $myEmployees = $user->areaEmployee($assigned_area);
+            // $supervisors = $user->sectorHeads();
 
-            $employees = [...$myEmployees, ...$supervisors];
-            $employee_ids = collect($employees)->pluck('id')->toArray();
+            // $employees = [...$myEmployees, ...$supervisors];
+            // $employee_ids = collect($employees)->pluck('id')->toArray();
 
+            $myEmployees = $user->myEmployees($assigned_area, $user);
+            $employee_ids = collect($myEmployees)->pluck('id')->toArray();
 
             $sql = EmployeeProfile::where(function ($query) use ($assigned_area) {
                 $query->whereHas('schedule', function ($innerQuery) use ($assigned_area) {
                     $innerQuery->with(['timeShift', 'holiday']);
                 });
-            })->whereIn('id', $employee_ids)
-                ->where(function ($query) use ($user, $assigned_area) {
-                    return $assigned_area['details']['code'] === "HRMO" ?
-                        $query->whereNotIn('id', [$user->id, 1, 2, 3, 4, 5]) :
-                        $query->where('id', '!=', $user->id);
-                })
-                ->with(['personalInformation', 'assignedArea', 'schedule.timeShift'])->get();
+            })->whereIn('id', $employee_ids)->with(['personalInformation', 'assignedArea', 'schedule.timeShift'])->get();
 
             $employee = ScheduleResource::collection($sql);
 
@@ -452,7 +436,7 @@ class ScheduleController extends Controller
 
             return response()->json(['data' => $data], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'employeeList', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -460,8 +444,22 @@ class ScheduleController extends Controller
     public function findSchedule(Request $request)
     {
         try {
-            $user = $request->employee_id;
-            $sql = EmployeeSchedule::where('employee_profile_id', $user)
+            $user = $request->user->id;
+            $reliever_id = $request->employee_id;
+
+            $user_schedule = EmployeeSchedule::where('employee_profile_id', $user)
+                ->whereHas('schedule', function ($query) use ($request) {
+                    $query->where('date', $request->date_selected);
+                })->first();
+
+            if ($user_schedule !== null) {
+                return response()->json([
+                    'data' => $request->employee_id,
+                    'message' => "Your already have schedule on " . $request->date_selected
+                ], Response::HTTP_FOUND);
+            }
+
+            $sql = EmployeeSchedule::where('employee_profile_id', $reliever_id)
                 ->whereHas('schedule', function ($query) use ($request) {
                     $query->where('date', $request->date_selected);
                 })->get();
@@ -484,39 +482,9 @@ class ScheduleController extends Controller
 
             return response()->json(['data' => new EmployeeScheduleResource($data)], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'findSchedule', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-    }
-
-    private function hasOverlappingSchedule($timeShiftId, $date, $employees)
-    {
-        foreach ($employees as $employee) {
-            $existingSchedules = EmployeeProfile::find($employee)->schedule()->where('date', $date)->get();
-
-            foreach ($existingSchedules as $existingSchedule) {
-                if ($this->checkOverlap($timeShiftId, $existingSchedule->timeShift)) {
-                    return true; // Overlapping schedule found
-                }
-            }
-        }
-
-        return false; // No overlapping schedule found
-    }
-
-    private function checkOverlap($newTimeShiftId, $existingTimeShift)
-    {
-        $newTimeShift = TimeShift::find($newTimeShiftId);
-
-        // Convert time shift times to Carbon instances
-        $newStart = Carbon::parse($newTimeShift->first_in);
-        $newEnd = $newTimeShift->second_out ? Carbon::parse($newTimeShift->second_out) : Carbon::parse($newTimeShift->first_out);
-
-        $existingStart = Carbon::parse($existingTimeShift->first_in);
-        $existingEnd = $existingTimeShift->second_out ? Carbon::parse($existingTimeShift->second_out) : Carbon::parse($existingTimeShift->first_out);
-
-        // Check for overlap
-        return !($newStart >= $existingEnd || $newEnd <= $existingStart);
     }
 
     private function updateAutomaticScheduleStatus()
@@ -534,7 +502,6 @@ class ScheduleController extends Controller
 
     public function retrieveEmployees($employees, $key, $id, $myId)
     {
-
         $assign_areas = AssignArea::where($key, $id)
             ->whereNotIn('employee_profile_id', $myId)->get();
 
@@ -543,6 +510,75 @@ class ScheduleController extends Controller
         })->flatten()->all();
 
         return [...$employees, ...$new_employee_list];
+    }
+
+
+    public function myAreas(Request $request)
+    {
+        try {
+            $user = $request->user;
+            $position = $user->position();
+
+            if (!$position) {
+                return response()->json(['message' => "You don't have authorization as a supervisor of area."], Response::HTTP_FORBIDDEN);
+            }
+
+            $my_area = $user->assignedArea->findDetails();
+            $areas = [];
+
+            switch ($my_area['sector']) {
+                case "Division":
+                    $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'sector' => $my_area['sector']];
+                    $deparmtents = Department::where('division_id', $my_area['details']->id)->get();
+
+                    foreach ($deparmtents as $department) {
+                        $areas[] = ['id' => $department->id, 'name' => $department->name, 'sector' => 'Department'];
+
+                        $sections = Section::where('department_id', $department->id)->get();
+                        foreach ($sections as $section) {
+                            $areas[] = ['id' => $section->id, 'name' => $section->name, 'sector' => 'Section'];
+
+                            $units = Unit::where('section_id', $section->id)->get();
+                            foreach ($units as $unit) {
+                                $areas[] = ['id' => $unit->id, 'name' => $unit->name, 'sector' => 'Unit'];
+                            }
+                        }
+                    }
+                    break;
+                case "Department":
+                    $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'sector' => $my_area['sector']];
+                    $sections = Section::where('department_id', $my_area['details']->id)->get();
+
+                    foreach ($sections as $section) {
+                        $areas[] = ['id' => $section->id, 'name' => $section->name, 'sector' => 'Section'];
+
+                        $units = Unit::where('section_id', $section->id)->get();
+                        foreach ($units as $unit) {
+                            $areas[] = ['id' => $unit->id, 'name' => $unit->name, 'sector' => 'Unit'];
+                        }
+                    }
+                    break;
+                case "Section":
+                    $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'sector' => $my_area['sector']];
+
+                    $units = Unit::where('section_id', $my_area['details']->id)->get();
+                    foreach ($units as $unit) {
+                        $areas[] = ['id' => $unit->id, 'name' => $unit->name, 'sector' => 'Unit'];
+                    }
+                    break;
+                case "Unit":
+                    $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'sector' => $my_area['sector']];
+                    break;
+            }
+
+            return response()->json([
+                'data' => $areas,
+                'message' => 'Successfully retrieved all my areas.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'myAreas', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
 }

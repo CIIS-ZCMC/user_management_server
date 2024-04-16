@@ -164,6 +164,11 @@ class OfficialTimeController extends Controller
             }
             $officers   = Helpers::getRecommendingAndApprovingOfficer($assigned_area, $user->id);
 
+            
+            if ($officers === null || $officers['recommending_officer'] === null || $officers['approving_officer'] === null) {
+                return response()->json(['message' => 'No recommending officer and/or supervising officer assigned.'], Response::HTTP_FORBIDDEN);
+            }
+            
             $recommending_officer   = $officers['recommending_officer'];
             $approving_officer      = $officers['approving_officer'];
 
@@ -181,6 +186,8 @@ class OfficialTimeController extends Controller
                     $data->date_from                        = $cleanData['date_from'];
                     $data->date_to                          = $cleanData['date_to'];
                     $data->purpose                          = $cleanData['purpose'];
+                    $data->time_from                        = $cleanData['time_from'];
+                    $data->time_to                          = $cleanData['time_to'];
                     $data->personal_order_file              = $cleanData['personal_order_file']->getClientOriginalName();;
                     $data->personal_order_size              = $cleanData['personal_order_file']->getSize();
                     $data->personal_order_path              = Helpers::checkSaveFile($cleanData['personal_order_file'], 'official_time');
@@ -242,7 +249,7 @@ class OfficialTimeController extends Controller
 
 
             if ($employee_profile['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
             }
 
             if ($request->status === 'approved') {

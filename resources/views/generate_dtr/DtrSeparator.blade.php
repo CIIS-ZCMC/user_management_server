@@ -2,7 +2,9 @@
     @case('firstin')
         @php
             $isHoliday = false;
-
+            $appshown = true;
+            $dayoffshown = true;
+            $notabsent = false;
         @endphp
 
         @foreach ($holidays as $item)
@@ -12,10 +14,6 @@
                 @endphp
             @endif
         @endforeach
-
-
-
-
         @php
             $countin = 0;
         @endphp
@@ -39,6 +37,29 @@
                             {{-- checktime if its pm --}}
                             @if (date('A', strtotime($f1['first_in'])) == 'AM')
                                 @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
+                                    @if ($appshown)
+                                        @if ($leave_Count)
+                                            <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
+                                        @elseif ($ot_Count)
+                                            <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
+                                        @elseif ($ob_Count)
+                                            <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
+                                        @elseif ($cto_Count)
+                                            <span style="font-size:8px;font-weight:bold">{{ $ctoMessage }}</span>
+                                        @endif
+                                    @endif
+                                    @php
+                                        $appshown = false;
+                                    @endphp
+                                @else
+                                    <span class="fentry">
+                                        {{ date('h:i a', strtotime($f1['first_in'])) }}
+                                    </span>
+                                @endif
+                            @endif
+                        @else
+                            @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
+                                @if ($appshown)
                                     @if ($leave_Count)
                                         <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
                                     @elseif ($ot_Count)
@@ -48,14 +69,22 @@
                                     @elseif ($cto_Count)
                                         <span style="font-size:8px;font-weight:bold">{{ $ctoMessage }}</span>
                                     @endif
-                                @else
-                                    <span class="fentry">
-                                        {{ date('h:i a', strtotime($f1['first_in'])) }}
-                                    </span>
                                 @endif
+                                @php
+                                    $appshown = false;
+                                @endphp
+                            @else
+                                <span class="fentry">
+                                    {{ date('h:i a', strtotime($f1['first_in'])) }}
+                                </span>
                             @endif
-                        @else
-                            @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
+                        @endif
+                        @php
+                            $countin++;
+                        @endphp
+                    @else
+                        @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
+                            @if ($appshown)
                                 @if ($leave_Count)
                                     <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
                                 @elseif ($ot_Count)
@@ -65,18 +94,11 @@
                                 @elseif ($cto_Count)
                                     <span style="font-size:8px;font-weight:bold">{{ $ctoMessage }}</span>
                                 @endif
-                            @else
-                                <span class="fentry">
-                                    {{ date('h:i a', strtotime($f1['first_in'])) }}
-                                </span>
                             @endif
+                            @php
+                                $appshown = false;
+                            @endphp
                         @endif
-
-
-
-                        @php
-                            $countin++;
-                        @endphp
                     @endif
                 @endif
             @endif
@@ -98,20 +120,28 @@
                 @if ($countin == 0)
 
                     @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
-                        @if ($leave_Count)
-                            <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
-                        @elseif ($ot_Count)
-                            <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
-                        @elseif ($ob_Count)
-                            <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
-                        @elseif ($cto_Count)
-                            <span style="font-size:8px;font-weight:bold">{{ $ctoMessage }}</span>
+                        @if ($appshown)
+                            @if ($leave_Count)
+                                <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
+                            @elseif ($ot_Count)
+                                <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
+                            @elseif ($ob_Count)
+                                <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
+                            @elseif ($cto_Count)
+                                <span style="font-size:8px;font-weight:bold">{{ $ctoMessage }}</span>
+                            @endif
                         @endif
+                        @php
+                            $appshown = false;
+                        @endphp
                     @else
-                        @if (count($checkSched) >= 1)
+                        @if (count($checkSched) >= 1 && date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) < date('Y-m-d'))
                             <span style="font-size:8px;font-weight:bold">{{ $absentMessage }}</span>
-                        @else
-                            <span style="font-size:8px;font-weight:bold">{{ $dayoffmessage }}</span>
+                           
+                            @php
+                            $notabsent = true;
+                        @endphp
+
                         @endif
                     @endif
 
@@ -149,35 +179,20 @@
 
                 @if ($count2 >= 1)
                     @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
-                        @if ($leave_Count)
-                            <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
-                        @elseif ($ot_Count)
-                            <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
-                        @elseif ($ob_Count)
-                            <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
-                        @elseif ($cto_Count)
-                            <span style="font-size:8px;font-weight:bold">{{ $ctoMessage }}</span>
-                        @endif
+                 
                     @else
-                        @if (count($checkSched) >= 1)
+                        @if (count($checkSched) >= 1 && date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) < date('Y-m-d'))
                             <span style=";font-size:8px;font-weight:bold">{{ $absentMessage }}</span>
-                        @else
-                            <span style="font-size:8px;font-weight:bold">{{ $dayoffmessage }}</span>
+                            @php
+                            $notabsent = true;
+                        @endphp
                         @endif
                     @endif
                 @else
                     @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
-                        @if ($leave_Count)
-                            <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
-                        @elseif ($ot_Count)
-                            <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
-                        @elseif ($ob_Count)
-                            <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
-                        @elseif ($cto_Count)
-                            <span style="font-size:8px;font-weight:bold">{{ $ctoMessage }}</span>
-                        @endif
+                       
                     @else
-                        @if (count($checkSched) >= 1)
+                        @if (count($checkSched) >= 1 && date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) < date('Y-m-d'))
                             <script>
                                 $(document).ready(function() {
 
@@ -187,12 +202,11 @@
                                     $("#entry{{ $i }}4").addClass("Absent");
                                 })
                             </script>
-                            <span class="timefirstarrival"
-                                style="color:gray;font-style:italic;color:#FF6969;">{{ $absentMessage }}</span>
+                            <span style="font-size:8px;font-weight:bold">{{ $absentMessage }} </span>
+                                @php
+                                $notabsent = true;
+                            @endphp
                         @else
-                            @if (!$isHoliday)
-                                <span style="font-size:8px;font-weight:bold">{{ $dayoffmessage }}</span>
-                            @endif
                         @endif
                     @endif
 
@@ -219,26 +233,15 @@
                         @endphp
 
                         @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
-                            @if ($leave_Count)
-                                <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
-                            @elseif ($ot_Count)
-                                <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
-                            @elseif ($ob_Count)
-                                <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
-                            @elseif ($cto_Count)
-                                <span style="font-size:8px;font-weight:bold">{{ $ctoMessage }}</span>
-                            @endif
+                        
                         @else
-                            @if (count($checkSched) >= 1)
+                            @if (count($checkSched) >= 1 && date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) < date('Y-m-d'))
                                 <span style="font-size:8px;font-weight:bold">{{ $absentMessage }} </span>
-                            @else
-                                @if (count($presentSched) == 0)
-                                    <span style="font-size:8px;font-weight:bold">{{ $dayoffmessage }}</span>
-                                @endif
+                                @php
+                                $notabsent = true;
+                            @endphp
                             @endif
-
                         @endif
-
 
 
 
@@ -249,10 +252,119 @@
 
 
         @endif
+
+
+
         @if ($isHoliday)
+            {{-- This is for checking holiday. --}}
             @if (!$countin)
-                <span style="font-size:8px;font-weight:bold">{{ $holidayMessage }}</span>
+
+
+
+                @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
+                    @if ($appshown)
+                        @if ($leave_Count)
+                            <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
+                        @elseif ($ot_Count)
+                            <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
+                        @elseif ($ob_Count)
+                            <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
+                        @elseif ($cto_Count)
+                            <span style="font-size:8px;font-weight:bold">{{ $ctoMessage }}</span>
+                        @endif
+                    @endif
+                    @php
+                        $appshown = false;
+                    @endphp
+                @else
+                    <span style="font-size:8px;font-weight:bold">{{ $holidayMessage }}</span>
+                @endif
+
             @endif
+        @else
+            @php
+                $checkSched = $schedule->filter(function ($row) use ($year, $month, $i) {
+                    return $row->schedule === date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) &&
+                        $row->attendance_status == 0;
+                });
+                $showdd = true;
+            @endphp
+
+            {{-- Checking Schedule and outputing DAY-OFF --}}
+            @if (!$countin)
+
+
+                @if ($leave_Count || $ot_Count || $ob_Count || $cto_Count)
+
+                    @if ($appshown)
+                        @if ($leave_Count)
+                            <span style="font-size:8px;font-weight:bold">{{ $leavemessage }}</span>
+                        @elseif ($ot_Count)
+                            <span style="font-size:8px;font-weight:bold">{{ $officialTime }}</span>
+                        @elseif ($ob_Count)
+                            <span style="font-size:8px;font-weight:bold">{{ $officialBusinessMessage }}</span>
+                        @elseif ($cto_Count)
+                            <span style="font-size:8px;font-weight:bold">{{ $ctoMessage }}</span>
+                        @endif
+                    @endif
+                    @php
+                        $appshown = false;
+                    @endphp
+                @else
+                    @if (count($checkSched) == 0)
+
+                        @if (date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) < date('Y-m-d'))
+                            <span style="font-size:8px;font-weight:bold">{{ $dayoffmessage }}</span>
+
+                            @php
+                                $showdd = false;
+                            @endphp
+                        @else
+                            @if (date('D', strtotime(date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)))) == 'Sun' ||
+                                    date('D', strtotime(date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)))) == 'Sat')
+                                
+                                @if ($showdd)
+                                    <span style="font-size:8px;font-weight:bold">{{ $dayoffmessage }}</span>
+                                @endif
+                                @php
+                                    $showdd = false;
+                                @endphp
+                            @endif
+                        @endif
+                    @else
+                       
+                        @if (date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) > date('Y-m-d') &&
+                                date('D', strtotime(date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)))) == 'Sun' ||
+                                date('D', strtotime(date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)))) == 'Sat' )
+                             @if ($showdd && !$notabsent)
+                             <span style="font-size:8px;font-weight:bold">{{ $dayoffmessage }}</span>
+                         @endif
+                         @php
+                             $showdd = false;
+                         @endphp
+                        @endif
+                    @endif
+
+                @endif
+
+            @endif
+
+            @if (date('D', strtotime(date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)))) != 'Sun' &&
+                    date('D', strtotime(date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)))) != 'Sat' &&
+                    !$leave_Count &&
+                    !$ot_Count &&
+                    !$ob_Count &&
+                    !$cto_Count &&
+                    !$countin)
+                @if ($showdd && date('Y-m-d', strtotime($year . '-' . $month . '-' . $i)) < date('Y-m-d') && !$notabsent)
+                    <span style="font-size:8px;font-weight:bold">{{ $dayoffmessage }}</span>
+                @endif
+                @php
+                    $showdd = false;
+                @endphp
+            @endif
+          
+
         @endif
     @break
 
@@ -449,44 +561,42 @@
 
     @case('undertime_hours')
         @if (!$leave_Count && !$ot_Count && !$ob_Count && !$cto_Count)
-            <table style="border:none">
-                <tr style="border:none">
-                    @php
-                        $hours = 0;
-                        $minutes = '';
-                        $hrs = 0;
-                    @endphp
-                    @foreach ($undertime as $ut)
-                        @if ($biometric_ID == $ut['biometric_ID'])
-                            @if (date('d', strtotime($ut['created'])) == $i)
-                                @php
-                                    $uttime = $ut['undertime'];
-                                    $hours = floor($uttime / 60);
-                                    $minutes = $uttime % 60;
+            @php
+                $hours = 0;
+                $minutes = '';
+                $hrs = 0;
+            @endphp
+            @foreach ($undertime as $ut)
+                @if ($biometric_ID == $ut['biometric_ID'])
+                    @if (date('d', strtotime($ut['created'])) == $i)
+                        @php
+                            $uttime = $ut['undertime'];
+                            $hours = floor($uttime / 60);
+                            $minutes = $uttime % 60;
 
-                                    if ($hours >= 1) {
-                                        $hours = $hours;
-                                    } else {
-                                        $hours = 0;
-                                    }
+                            if ($hours >= 1) {
+                                $hours = $hours;
+                            } else {
+                                $hours = 0;
+                            }
 
-                                    if ($minutes >= 1) {
-                                        $minutes = $minutes;
-                                    } else {
-                                        $minutes = '';
-                                    }
-                                    $hrs += $hours;
-                                @endphp
-                            @endif
-                        @endif
-                    @endforeach
-                    @if ($hrs >= 1)
-                        <span style="color: black">
-                            {{ $hrs }}
-                        </span>
+                            if ($minutes >= 1) {
+                                $minutes = $minutes;
+                            } else {
+                                $minutes = '';
+                            }
+                            $hrs += $hours;
+                        @endphp
                     @endif
-                </tr>
-            </table>
+                @endif
+            @endforeach
+
+
+            @if ($hrs >= 1)
+                <span style="color: black;important;font-weight:bold">
+                    {{ $hrs }}
+                </span>
+            @endif
         @endif
     @break
 

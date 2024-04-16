@@ -94,7 +94,7 @@ class SectionController extends Controller
 
             $cleanData = [];
             $cleanData['supervisor_employee_profile_id'] = $employee_profile->id;
-            $cleanData['supervisor_attachment_url'] = $request->attachment===null?'NONE': $this->file_validation_and_upload->check_save_file($request,'section/files');
+            $cleanData['supervisor_attachment_url'] = $request->attachment===null?'NONE': Helpers::checkSaveFile($request->attachment,'section/files');
             $cleanData['supervisor_effective_at'] = Carbon::now();
 
             $section->update($cleanData);
@@ -112,7 +112,7 @@ class SectionController extends Controller
                 $system_role = SystemRole::where('role_id', $role->id)->first();
 
                 SpecialAccessRole::create([
-                    'system_role' => $system_role->id,
+                    'system_role_id' => $system_role->id,
                     'employee_profile_id' => $employee_profile->id
                 ]);
             }
@@ -176,13 +176,13 @@ class SectionController extends Controller
 
             $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
 
-            if (!Hash::check($cleanData['password'].Cache::get('salt_value'), $decryptedPassword)) {
+            if (!Hash::check($cleanData['password'].config('app.salt_value'), $decryptedPassword)) {
                 return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
             }
 
             $cleanData = [];
             $cleanData['oic_employee_profile_id'] = $employee_profile->id;
-            $cleanData['oic_attachment_url'] = $request->input('attachment')===null?'NONE': $this->file_validation_and_upload->check_save_file($request,"section/files");
+            $cleanData['oic_attachment_url'] = $request->input('attachment')===null?'NONE': Helpers::checkSaveFile($request->attachment,"section/files");
             $cleanData['oic_effective_at'] = strip_tags($request->effective_at);
             $cleanData['oic_end_at'] = strip_tags($request->end_at);
 
@@ -206,50 +206,24 @@ class SectionController extends Controller
         try{
             $cleanData = [];
 
-            /**
-             * Validate if no given diviosn id or department id
-             * as it is important and required by the system.
-             */
-            if($request->division_id === null && $request->department_id === null)
-            {
-                return response() -> json(['message'=> 'Division or Department area is required.'], Response::HTTP_BAD_REQUEST);
-            }
-
-            /**
-             * Validate if has division id
-             * Validate if division id trully exist.
-             */
-            if($request->division_id !== null)
-            {
-                $division = Division::find($request->division_id);
-
-                if(!$division)
-                {
-                    return response()->json(['message' => 'No division record found for id '.$request->input('division_id')], Response::HTTP_BAD_REQUEST);
-                }
-            }
-
-            /**
-             * Validate if has department id
-             * Validate if department id trully exist.
-             */
-            if($request->department_id !== null)
-            {
-                $division = Department::find($request->department_id);
-
-                if(!$division)
-                {
-                    return response()->json(['message' => 'No department record found for id '.$request->department_id], Response::HTTP_BAD_REQUEST);
-                }
+            if($request->division_id === 'null' && $request->department_id === 'null'){
+                return response()->json(['message' => "Section must be under a division or department."], Response::HTTP_BAD_REQUEST);
             }
             
             foreach ($request->all() as $key => $value) {
+                if($key === 'department_id' || $key === 'division_id'){
+                    if($value === 'null'){
+                        $cleanData[$key] = null;
+                        continue;
+                    }
+                    $cleanData[$key] = (int) $value;
+                }
                 if($value === null){
                     $cleanData[$key] = $value;
                     continue;
                 }
                 if($key === 'attachment'){
-                    $cleanData['section_attachment_url'] = $this->file_validation_and_upload->check_save_file($request, 'section/files');
+                    $cleanData['section_attachment_url'] = Helpers::checkSaveFile($request->attachment, 'section/files');
                     continue;
                 }
                 $cleanData[$key] = strip_tags($value);
@@ -299,7 +273,40 @@ class SectionController extends Controller
     {
         try{
             $user = $request->user;
-            $cleanData['pin'] = strip_tags($request->password);
+            $cleanData['pin'] = strip_tags($request->password); 
+            $division_id = null;
+            $department_id = null;
+
+
+             if($request->division_id === 'null' && $request->department_id === 'null'){
+                return response()->json(['message' => "Section must be under a division or department."], Response::HTTP_BAD_REQUEST);
+            }
+
+            // if(($request->department_id === 'null' || $request->department_id === null) && $request->department_id === 'null' || $request->department_id === null){
+            //     return response()->json(['message' => "Section must be under a division or department."], Response::HTTP_BAD_REQUEST);
+            // }
+
+            // if($request->department_id !== 'null' || $request->department_id !== null){
+            //     if(!is_integer(strip_tags($request->department_id))){
+            //         return response()->json(['message' => "Invalid data for department_id"], Response::HTTP_BAD_REQUEST);
+            //     }
+            //     $department_id = strip_tags($request->department_id);
+            //     $department = Department::find($department_id);
+
+            //     if(!$department){
+            //         return response()->json(['message' => 'No department record found for id '.$department_id], Response::HTTP_BAD_REQUEST);
+            //     }
+            // }else{
+            //     if(!is_integer(strip_tags($request->division_id))){
+            //         return response()->json(['message' => "Invalid data for division_id"], Response::HTTP_BAD_REQUEST);
+            //     }
+            //     $division_id = strip_tags($request->division_id);
+            //     $division = Division::find($division_id);
+
+            //     if(!$division){
+            //         return response()->json(['message' => 'No division record found for id '.$division_id], Response::HTTP_BAD_REQUEST);
+            //     }
+            // }
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
@@ -313,55 +320,42 @@ class SectionController extends Controller
             }
             
             $cleanData = [];
+            // $cleanData['department_id'] = $department_id;
+            // $cleanData['division_id'] = $division_id;
 
-            /**
-             * Validate if no given diviosn id or department id
-             * as it is important and required by the system.
-             */
-            if($request->input('division_id') === null && $request->input('department_id') === null)
-            {
-                return response() -> json(['message'=> 'Division or Department area is required.'], Response::HTTP_BAD_REQUEST);
-            }
-
-            /**
-             * Validate if has division id
-             * Validate if division id trully exist.
-             */
-            if($request->input('division_id') !== null)
-            {
-                $division = Division::find($request->input('division_id'));
-
-                if(!$division)
-                {
-                    return response()->json(['message' => 'No division record found for id '.$request->input('division_id')], Response::HTTP_BAD_REQUEST);
-                }
-            }
-
-            /**
-             * Validate if has department id
-             * Validate if department id trully exist.
-             */
-            if($request->input('department_id') !== null)
-            {
-                $division = Department::find($request->input('department_id'));
-
-                if(!$division)
-                {
-                    return response()->json(['message' => 'No department record found for id '.$request->input('department_id')], Response::HTTP_BAD_REQUEST);
-                }
-            }
+           
             
             foreach ($request->all() as $key => $value) {
+                if($key === 'department_id' || $key === 'division_id'){
+                    if($value === 'null'){
+                        $cleanData[$key] = null;
+                        continue;
+                    }
+                    $cleanData[$key] = (int) $value;
+                }
                 if($value === null){
                     $cleanData[$key] = $value;
                     continue;
                 }
                 if($key === 'attachment'){
-                    $cleanData['section_attachment_url'] = $this->file_validation_and_upload->check_save_file($request, 'section/files');
+                    $cleanData['section_attachment_url'] = Helpers::checkSaveFile($request->attachment, 'section/files');
                     continue;
                 }
                 $cleanData[$key] = strip_tags($value);
             }
+
+            
+            // foreach ($request->all() as $key => $value) {
+            //     if($value === null){
+            //         $cleanData[$key] = $value;
+            //         continue;
+            //     }
+            //     if($key === 'attachment'){
+            //         $cleanData['section_attachment_url'] = $this->file_validation_and_upload->check_save_file($request, 'section/files');
+            //         continue;
+            //     }
+            //     $cleanData[$key] = strip_tags($value);
+            // }
 
             $section -> update($cleanData);
 

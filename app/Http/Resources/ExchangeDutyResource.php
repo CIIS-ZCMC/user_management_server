@@ -19,7 +19,7 @@ class ExchangeDutyResource extends JsonResource
         $requester = [
             'id' => $this->requestedEmployee->id,
             'name' => $this->requestedEmployee->personalInformation->name(),
-            'profile_url' => Cache::get("server_domain") . "/photo/profiles/" . $this->relieverEmployee->profile_url,
+            'profile_url' => config("app.server_domain") . "/photo/profiles/" . $this->relieverEmployee->profile_url,
             'designation' => $this->requestedEmployee->assignedArea->designation->name,
             'area' => $this->requestedEmployee->assignedArea->findDetails(),
         ];
@@ -27,7 +27,7 @@ class ExchangeDutyResource extends JsonResource
         $reliever = [
             'id' => $this->relieverEmployee->id,
             'name' => $this->relieverEmployee->personalInformation->name(),
-            'profile_url' => Cache::get("server_domain") . "/photo/profiles/" . $this->relieverEmployee->profile_url,
+            'profile_url' => config("app.server_domain") . "/photo/profiles/" . $this->relieverEmployee->profile_url,
             'designation' => $this->relieverEmployee->assignedArea->designation->name,
             'area' => $this->relieverEmployee->assignedArea->findDetails(),
         ];
@@ -35,7 +35,7 @@ class ExchangeDutyResource extends JsonResource
         $approval = [
             'id' => $this->approvingOfficer->id,
             'name' => $this->approvingOfficer->personalInformation->name(),
-            'profile_url' => Cache::get("server_domain") . "/photo/profiles/" . $this->approvingOfficer->profile_url,
+            'profile_url' => config("app.server_domain") . "/photo/profiles/" . $this->approvingOfficer->profile_url,
             'designation' => $this->approvingOfficer->assignedArea->designation->name,
             'area' => $this->approvingOfficer->assignedArea->findDetails(),
         ];

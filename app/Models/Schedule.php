@@ -47,6 +47,11 @@ class Schedule extends Model
         return $this->belongsToMany(EmployeeProfile::class, 'employee_profile_schedule')->withPivot('employee_profile_id');
     }
 
+    public function employeeProfile()
+    {
+        return $this->belongsTo(EmployeeProfile::class);
+    }
+
     public function isOnCall()
     {
         return $this->belongsToMany(EmployeeProfile::class, 'employee_profile_schedule');

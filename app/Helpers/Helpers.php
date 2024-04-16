@@ -29,7 +29,6 @@ use DateInterval;
 use DatePeriod;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 
@@ -180,45 +179,54 @@ class Helpers
                 ];
             case 'Section':
                 // If employee is Section head
-                $section = Section::find($assigned_area['details']->id);
 
+                $section = Section::find($assigned_area['details']->id);
                 if ($section->division !== null) {
                     $division = $section->division;
+                    $department = $section->department;
+                    //section head
                     if ($section->supervisor_employee_profile_id === $employee_profile_id) {
                         return [
                             "recommending_officer" => $division->chief_employee_profile_id,
-                            "approving_officer" => Helpers::getChiefOfficer()
+                            "approving_officer" => Helpers::getChiefOfficer(),
                         ];
                     }
 
                     return [
                         "recommending_officer" => $section->supervisor_employee_profile_id,
-                        "approving_officer" => $division->chief_employee_profile_id
+                        "approving_officer" => $division->chief_employee_profile_id,
+                    ];
+                }
+                $department = $section->department;
+                //regular
+                if ($section->supervisor_employee_profile_id === $employee_profile_id) {
+                    return [
+                        "recommending_officer" => $department->head_employee_profile_id,
+                        "approving_officer" => $department->division->chief_employee_profile_id,
                     ];
                 }
 
-                $department = $section->department;
-
+                //do not remove this
                 return [
-                    "recommending_officer" => $department->head_employee_profile_id,
-                    "approving_officer" => $department->division->chief_employee_profile_id
+                    "recommending_officer" => $section->supervisor_employee_profile_id,
+                    "approving_officer" => $department->division->chief_employee_profile_id,
                 ];
 
             case 'Unit':
                 // If employee is Unit head
                 $section = Unit::find($assigned_area['details']->id)->section;
-                if ($section->department_id !== null) {
-                    $department = $section->department;
+                // if ($section->department_id !== null) {
+                //     $department = $section->department;
 
-                    return [
-                        "recommending_officer" => $department->head_employee_profile_id,
-                        "approving_officer" => $department->division->chief_employee_profile_id
-                    ];
-                }
+                //     return [
+                //         "recommending_officer" => $department->head_employee_profile_id,
+                //         "approving_officer" => $department->division->chief_employee_profile_id
+                //     ];
+                // }
 
                 return [
                     "recommending_officer" => $section->supervisor_employee_profile_id,
-                    "approving_officer" => $section->division->chief_employee_profile_id
+                    "approving_officer" => $section->department->division->chief_employee_profile_id ?? $section->division->chief_employee_profile_id,
                 ];
             default:
                 return null;
@@ -545,14 +553,13 @@ class Helpers
                 return ["approve_by" => $department->head_employee_profile_id];
 
             case 'Unit':
-                $section = Unit::find($assigned_area['details']['id'])->section;
-                if ($section->department_id !== null) {
-                    $department = $section->department;
-                    return ["approve_by" => $department->head_employee_profile_id];
+                $unit = Unit::find($assigned_area['details']['id']);
+                if ($unit->section_id !== null) {
+                    return ["approve_by" => $unit->head_employee_profile_id];
                 }
 
+                $section = $unit->section;
                 return ["approve_by" => $section->supervisor_employee_profile_id];
-
             default:
                 return null;
         }
@@ -567,61 +574,9 @@ class Helpers
         ]);
     }
 
-    public static function checkIs24PrevNextSchedule($schedule, $employeeId, $date)
-    {
-        foreach ($employeeId as $employee_id) {
-
-            $employeeID = $employee_id['employee_id'];
-
-            // Check if the schedule spans a 24-hour shift for the current date and the adjacent dates
-            $is24Hours = $schedule->timeShift->is24HourDuty();
-            $prevDate = Carbon::parse($date)->copy()->subDay();
-            $nextDate = Carbon::parse($date)->copy()->addDay();
-
-            $isPrev24Hours = Schedule::whereHas('employee', function ($query) use ($employeeID) {
-                $query->where('employee_profile_id', $employeeID);
-            })
-                ->where('date', $prevDate->toDateString())
-                ->first()
-                ?->timeShift->is24HourDuty() ?? false;
-
-            $isNext24Hours = Schedule::whereHas('employee', function ($query) use ($employeeID) {
-                $query->where('employee_profile_id', $employeeID);
-            })
-                ->where('date', $nextDate->toDateString())
-                ->first()
-                ?->timeShift->is24HourDuty() ?? false;
-
-            // Check if the current date itself spans a 24-hour shift
-            $isCurrentDate24Hours = $is24Hours && $isPrev24Hours && $isNext24Hours;
-
-            if ($is24Hours) {
-                // return $employeeSchedules[$date->toDateString()] = '24hrs';
-                return ["result" => "Employee has 24hrs duty"];
-            }
-
-            if ($isPrev24Hours) {
-                // return $employeeSchedules[$date->toDateString()] = 'Employee worked 24hrs yesterday';
-                return ["result" => 'Employee worked 24hrs yesterday'];
-            }
-
-            if ($isNext24Hours) {
-                // return $employeeSchedules[$date->toDateString()] = 'Employee worked 24hrs tomorrow';
-                //validate first end of time shift (remarks: 02-29-2024)
-                return ["result" => "Employee worked 24hrs tomorrow"];
-            }
-        }
-        return ["result" => "No Schedule"];
-    }
-
     public static function hashKey($encryptedToken)
     {
-        return openssl_decrypt($encryptedToken->token, Cache::get('encrypt_decrypt_algorithm'), Cache::get('app_key'), 0, substr(md5(Cache::get('app_key')), 0, 16));
-    }
-
-    public static function Cookie_Name()
-    {
-        return "ZCMCPortal";
+        return openssl_decrypt($encryptedToken->token, config('app.encrypt_decrypt_algorithm'), config('app.app_key'), 0, substr(md5(config('app.app_key')), 0, 16));
     }
 
     public static function registerTimeAdjustmentLogs($data_id, $user_id, $action)
@@ -746,6 +701,60 @@ class Helpers
         return $overlappingLeave || $overlappingOb || $overlappingOT || $overlappingCTO;
     }
 
+    public static function generateSchedule($start_duty, $employee_id)
+    {
+        $duty_start = new DateTime($start_duty);
+
+        // Get the last day of the duty start month
+        $duty_end = new DateTime("last day of " . $duty_start->format('Y-m'));
+
+        // Generate schedule from $duty_start to $duty_end
+        $scheduleDates = [];
+
+        while ($duty_start <= $duty_end) {
+            // Add duty for $duty_start date to the schedule array
+            $scheduleDates[] = $duty_start->format('Y-m-d');
+
+            // Move to the next day
+            $duty_start->add(new DateInterval('P1D'));
+        }
+
+        // Now, $scheduleDates contains all the dates from $start_duty to the end of the month
+        foreach ($scheduleDates as $date) {
+            $schedule = Schedule::where('time_shift_id', 1)
+                ->where('date', $date)
+                ->first();
+
+            if (!$schedule) {
+                // Create a new schedule if it doesn't exist
+                $isWeekend = Carbon::parse($date)->isWeekend();
+
+                if ($isWeekend === false) {
+                    $schedule = new Schedule;
+                    $schedule->time_shift_id = 1; // Assuming time_shift_id should be set to 1
+                    $schedule->date = $date;
+                    $schedule->is_weekend = $isWeekend ? 1 : 0;
+                    $schedule->save();
+                }
+            }
+
+            $schedule->employeeProfile()->attach($employee_id);
+        }
+    }
+
+    public static function hasSchedule($start, $end, $employeeId)
+    {
+        $checkSchedule = EmployeeSchedule::where('employee_profile_id', $employeeId)
+            ->where(function ($query) use ($start, $end) {
+                $query->whereHas('schedule', function ($innerQuery) use ($start, $end) {
+                    $innerQuery->whereDate('date', '>=', $start)
+                        ->whereDate('date', '<=', $end);
+                });
+            })
+            ->exists();
+
+        return $checkSchedule;
+    }
     public static function hasSchedule($start, $end, $employeeId)
     {
         $checkSchedule = EmployeeSchedule::where('employee_profile_id', $employeeId)

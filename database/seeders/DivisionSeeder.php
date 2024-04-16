@@ -26,18 +26,18 @@ class DivisionSeeder extends Seeder
         ]);
         
         Division::create([
-            'name' => 'Hospital Operations & Patient Support Services',
-            'code' => 'HOPPS'
+            'name' => 'Hospital Operations and Patient Support System',
+            'code' => 'HOPSS'
         ]);
         
         Division::create([
             'name' => 'Nursing Service',
-            'code' => 'NS'
+            'code' => 'NURSING'
         ]);
         
         Division::create([
             'name' => 'Finance Service',
-            'code' => 'FS'
+            'code' => 'FINANCE'
         ]);
     }
 }

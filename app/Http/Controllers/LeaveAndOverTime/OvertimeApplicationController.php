@@ -2287,7 +2287,8 @@ class OvertimeApplicationController extends Controller
             }
             $columnsString = "";
             $process_name = "Applied";
-            $this->storeOvertimeApplicationLog($ovt_id, $process_name, $columnsString, '1');
+            $user = $request->user;
+            $this->storeOvertimeApplicationLog($ovt_id, $process_name, $columnsString,$user->id);
             DB::commit();
             $overtime_applications = OvertimeApplication::with(['employeeProfile.assignedArea.division', 'employeeProfile.personalInformation', 'logs', 'directDates'])
                 ->where('id', $ovt_id)->get();
@@ -2798,6 +2799,8 @@ class OvertimeApplicationController extends Controller
     public function storeOvertimeApplicationLog($overtime_application_id, $process_name, $changedfields, $user_id)
     {
         try {
+
+
             $data = [
                 'overtime_application_id' => $overtime_application_id,
                 'action_by_id' => $user_id,
@@ -2824,9 +2827,17 @@ class OvertimeApplicationController extends Controller
                 ->first();
             if ($overtime_applications) {
                 $user = $request->user;
-                $user_password = $user->password_encrypted;
-                $password = $request->password;
-                if ($user_password == $password) {
+
+                $cleanData['pin'] = strip_tags($request->pin);
+
+
+
+                if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                    return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+
+                }
+                $proceed = true;
+                if ($proceed) {
                     // if($user_id){
                     DB::beginTransaction();
                     $overtime_application_log = new OvtApplicationLog();
@@ -3255,10 +3266,13 @@ class OvertimeApplicationController extends Controller
     {
         try {
             $user = $request->user;
-            $password_decrypted = Crypt::decryptString($user['password_encrypted']);
-            $password = strip_tags($request->password);
-            if (!Hash::check($password . Cache::get('salt_value'), $password_decrypted)) {
-                return response()->json(['message' => "Password incorrect."], Response::HTTP_FORBIDDEN);
+
+            $cleanData['pin'] = strip_tags($request->pin);
+
+
+
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             } else {
                 $message_action = '';
                 $action = '';

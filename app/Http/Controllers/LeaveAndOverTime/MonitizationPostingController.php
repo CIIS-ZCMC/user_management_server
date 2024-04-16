@@ -43,6 +43,7 @@ class MonitizationPostingController extends Controller
                     'data' => $latest_posting,
                     'message' => 'Retrieve posting records.'
                 ], Response::HTTP_OK);
+                
             } else {
                 $latest_posting = [
                     'id' => null,

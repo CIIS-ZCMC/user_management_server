@@ -12,6 +12,7 @@ use App\Models\EmployeeCreditLog;
 use App\Models\EmployeeOvertimeCredit;
 use App\Models\LeaveType;
 use App\Models\Section;
+use App\Models\TaskSchedules;
 use App\Models\Unit;
 use Carbon\Carbon;
 use App\Helpers\Helpers;
@@ -79,6 +80,8 @@ class LeaveApplicationController extends Controller
                         'remarks',
                         'without_pay',
                         'reason',
+                        'is_printed',
+                        'print_datetime',
                         'hrmo_officer',
                         'recommending_officer',
                         'approving_officer',
@@ -134,6 +137,8 @@ class LeaveApplicationController extends Controller
                     'remarks',
                     'without_pay',
                     'reason',
+                    'is_printed',
+                    'print_datetime',
                     'hrmo_officer',
                     'recommending_officer',
                     'approving_officer',
@@ -309,7 +314,7 @@ class LeaveApplicationController extends Controller
     {
         try {
             $employee_profile = $request->user;
-            $leave_applications = LeaveApplication::where('employee_profile_id', $employee_profile->id)->get();
+            $leave_applications = LeaveApplication::where('status', 'approved')->where('employee_profile_id', $employee_profile->id)->get();
 
             return response()->json([
                 'data' => MyApprovedLeaveApplicationResource::collection($leave_applications),
@@ -323,7 +328,7 @@ class LeaveApplicationController extends Controller
     public function employeeApprovedLeaveApplication($id, Request $request)
     {
         try {
-            $leave_applications = LeaveApplication::where('employee_profile_id', $id)->get();
+            $leave_applications = LeaveApplication::where('status', 'approved')->where('employee_profile_id', $id)->get();
 
             return response()->json([
                 'data' => MyApprovedLeaveApplicationResource::collection($leave_applications),
@@ -412,7 +417,7 @@ class LeaveApplicationController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !== $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
             }
 
             foreach ($request->credits as $credit) {
@@ -497,7 +502,7 @@ class LeaveApplicationController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !== $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
             }
 
             foreach ($request->credits as $credit) {
@@ -558,7 +563,7 @@ class LeaveApplicationController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !== $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
             }
 
             $leave_application = LeaveApplication::find($id);
@@ -621,7 +626,17 @@ class LeaveApplicationController extends Controller
                         $from = Carbon::parse($leave_application->date_from)->format('F d, Y');
                         $to = Carbon::parse($leave_application->date_to)->format('F d, Y');
                         $message = "Your " . $leave_application->leaveType->name . " request with date from " . $from . " to " . $to . " has been cancelled.";
-                        Helpers::notifications($leave_application->employee_profile_id, $message, $leave_application->leaveType->name);
+
+                    if($leave_application->employee_oic_id !== null){
+                        TaskSchedules::create([
+                            'action' => "OIC",
+                            'effective_at' => $leave_application->date_from,
+                            'end_at' => $leave_application->date_to,
+                            'employee_profile_id' => $leave_application->employee_profile_id,
+                            'candidate_employee' => $leave_application->employee_oic_id
+                        ]);
+                    }
+                    Helpers::notifications($leave_application->employee_profile_id, $message, $leave_application->leaveType->name);
                         break;
             }
 
@@ -678,8 +693,16 @@ class LeaveApplicationController extends Controller
         try {
             $employee_profile = $request->user;
             $employeeId = $employee_profile->id;
+            $cleanData['pin'] = strip_tags($request->pin);
+
+            if ($employee_profile['authorization_pin'] !== $cleanData['pin']) {
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
+            }
+
+            $employeeId = $employee_profile->id;
             $recommending_and_approving = Helpers::getRecommendingAndApprovingOfficer($employee_profile->assignedArea->findDetails(), $employee_profile->id);
             $hrmo_officer = Helpers::getHrmoOfficer();
+
 
             if ($hrmo_officer === null || $recommending_and_approving === null || $recommending_and_approving['recommending_officer'] === null || $recommending_and_approving['approving_officer'] === null) {
                 return response()->json(['message' => 'No recommending officer and/or supervising officer assigned.'], Response::HTTP_FORBIDDEN);
@@ -689,7 +712,8 @@ class LeaveApplicationController extends Controller
             $result = [];
 
             $start = Carbon::parse($request->date_from);
-            $end = Carbon::parse($request->date_to);
+            $end =  Carbon::parse($request->date_to);
+
             $currentDate = Carbon::now();
             $twoMonthsAhead = $currentDate->copy()->addMonths(2);
             if ($start->greaterThan($twoMonthsAhead)) {
@@ -699,11 +723,38 @@ class LeaveApplicationController extends Controller
             $daysDiff = $start->diffInDays($end) + 1;
             $leave_type = LeaveType::find($request->leave_type_id);
 
-            if ($leave_type->code === 'SL' && $leave_type->file_after !== null) {
-                $daysDiffcheck = Carbon::now()->diffInDays($end);
+            $checkSchedule = Helpers::hasSchedule($start, $end, $employeeId);
 
-                if ($daysDiffcheck > $leave_type->file_after) {
-                    return response()->json(['message' => "Filing of application must be " . $leave_type->file_after . " days after the return of employee."], Response::HTTP_FORBIDDEN);
+            if(!$checkSchedule)
+            {
+                return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
+            }
+
+            if ($leave_type->code === 'SL' && $leave_type->file_after !== null) {
+                // Initialize the variable to store the final date of the consecutive schedule
+                $finalConsecutiveScheduleDate = null;
+                $foundConsecutiveDays = 0;
+
+                $Date = $end->copy();
+               // Loop through each day starting from the end date
+
+                while ($foundConsecutiveDays  <= 4) {
+                    if (Helpers::hasSchedule($Date->toDateString(), $Date->toDateString(), $employeeId)) {
+                        // If a schedule is found, increment the counter
+                        $foundConsecutiveDays++;
+
+                        // Store the date of the current consecutive schedule
+                        $finalConsecutiveScheduleDate = $Date->copy();
+                    }
+                    // Move to the next day
+
+                $Date->addDay();
+                }
+
+                $finalDate = $finalConsecutiveScheduleDate ? $finalConsecutiveScheduleDate->toDateString() : null;
+
+                if ($finalDate && $currentDate->gt($finalDate)) {
+                    return response()->json(['message' => "You missed the filing deadline."], Response::HTTP_FORBIDDEN);
                 }
                 $checkSchedule = Helpers::hasSchedule($start, $end, $employeeId);
 
@@ -750,7 +801,7 @@ class LeaveApplicationController extends Controller
                     $totalDeductCredits= (int) ($totalHours / 8);
                     if($employee_profile->employmentType === 'Permanent Part-time')
                     {
-                        $totalDeductCredits=$totalDeductCredits/2;
+                        $totalDeductCredits=$totalDeductCredits/8;
                     }
 
                     $cleanData['applied_credits'] = $totalDeductCredits;
@@ -982,7 +1033,7 @@ class LeaveApplicationController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !== $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
             }
 
             $leave_application = LeaveApplication::find($id);
@@ -1009,7 +1060,7 @@ class LeaveApplicationController extends Controller
 
             $from = Carbon::parse($leave_application->date_from)->format('F d, Y');
             $to = Carbon::parse($leave_application->date_to)->format('F d, Y');
-            $message = "Your " . $leave_application->leave_type->name . " request with date from " . $from . " to " . $to . " has been declined by " . $declined_by . " .";
+            $message = "Your " . $leave_application->leaveType->name . " request with date from " . $from . " to " . $to . " has been declined by " . $declined_by . " .";
             Helpers::notifications($leave_application->employee_profile_id, $message, $leave_application->leaveType->name);
 
             if (!$leave_type->is_special) {
@@ -1040,7 +1091,21 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
+    public function updatePrint($id)
+    {
+        try {
+            $employee_leave_application = $id;
+            $employee_print = LeaveApplication::where('id', $employee_leave_application)->first();
+            $employee_print->update([
+                'is_printed' => 1,
+                'print_datetime' => Carbon::now()
+            ]);
+            $response[] = $employee_print;
+            return response()->json(['data' => new LeaveApplicationResource($employee_print),'message' => 'Successfully printed'], 200);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
     public function printLeaveForm($id)
     {
         try {

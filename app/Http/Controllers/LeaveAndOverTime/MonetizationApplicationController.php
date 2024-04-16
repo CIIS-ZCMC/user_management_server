@@ -275,7 +275,7 @@ class MonetizationApplicationController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
             }
 
             $position = $employee_profile->position();
@@ -350,7 +350,7 @@ class MonetizationApplicationController extends Controller
             }
 
             $hrmo_officer = Helpers::getHrmoOfficer();
-            $recommending_officer = Division::where('code', 'HOPPS')->first();
+            $recommending_officer = Division::where('code', 'HOPSS')->first();
             $approving_officer = Division::where('code', 'OMCC')->first();
 
 
@@ -441,7 +441,7 @@ class MonetizationApplicationController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($employee_profile['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
             }
 
             $mone_application = MonetizationApplication::find($id);

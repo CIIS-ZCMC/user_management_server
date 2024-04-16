@@ -422,6 +422,7 @@
                         $dateToMatch = date('Y-m-d', strtotime($year . '-' . $month . '-' . $i));
                         return $dateToCompare === $dateToMatch;
                     });
+
                     $leave_Count = count($leaveApplication);
 
                     //Check obD ates
@@ -459,13 +460,87 @@
                     });
                     $cto_Count = count($ctoApplication);
 
-                    $leavemessage = 'On leave';
                     $officialTime = 'Official Time';
                     $officialBusinessMessage = 'OFf|Business';
                     $absentMessage = 'Absent';
                     $dayoffmessage = 'Day-Off';
                     $holidayMessage = 'HOLIDAY';
                     $ctoMessage = 'CTO';
+
+                    $ourdata = [];
+
+                    foreach ($leaveapp as $row) {
+                        $dates_Interval = [];
+                        $from = strtotime($row['from']);
+                        $to = strtotime($row['to']);
+                        while ($from <= $to) {
+                            $dates_Interval[] = date('Y-m-d', $from);
+                            $from = strtotime('+1 day', $from);
+                        }
+
+                        if (
+                            in_array($year . '-' . sprintf('%02d', $month) . '-' . sprintf('%02d', $i), $dates_Interval)
+                        ) {
+                            // Date is covered, include this leave application in $leavedata
+                            $ourdata[] = [
+                                'country' => $row['country'],
+                                'city' => $row['city'],
+                                'from' => $row['from'],
+                                'to' => $row['to'],
+                                'without_pay' => $row['without_pay'],
+                                'leavetype' => $row['leavetype'],
+                            ];
+                        }
+                    }
+                    $leavemessage = '';
+                    foreach ($ourdata as $key => $value) {
+                        switch ($value['leavetype']) {
+                            case 'Vacation Leave':
+                                $leavemessage = 'VL';
+                                break;
+                            case 'Sick Leave':
+                                $leavemessage = 'SL';
+                                break;
+                            case 'Special Privilege Leave':
+                                $leavemessage = 'SPL';
+                                break;
+                            case 'Mandatory/Forced Leave':
+                                $leavemessage = 'FL';
+                                break;
+                            case 'Solo Parent Leave':
+                                $leavemessage = 'SoloParent';
+                                break;
+                            case 'Maternity Leave':
+                                $leavemessage = 'ML';
+                                break;
+                            case 'Allocation of Maternity Leave (Paternity leave)':
+                                $leavemessage = 'PL';
+                                break;
+                            case 'Paternity leave (Regular Paternity leave)':
+                                $leavemessage = 'RPL';
+                                break;
+                            case 'Study Leave':
+                                $leavemessage = 'Study';
+                                break;
+                            case 'Adoption Leave':
+                                $leavemessage = 'AL';
+                                break;
+                            case '10-Day VAWC Leave':
+                                $leavemessage = '10d VAWC';
+                                break;
+                            case 'Rehabilitation Leave':
+                                $leavemessage = 'RL';
+                                break;
+                            case 'Special Leave Benefits for Women':
+                                $leavemessage = 'SLB';
+                                break;
+                            case 'Special Emergency (Calamity) Leave':
+                                $leavemessage = 'SEL';
+                                break;
+                        }
+                    }
+
+                    //    $leavemessage = 'On leave';
 
                 @endphp
 

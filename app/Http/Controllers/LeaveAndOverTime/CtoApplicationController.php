@@ -130,7 +130,7 @@ class CtoApplicationController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
             }
 
             if ($request->status === 'approved') {
@@ -187,11 +187,11 @@ class CtoApplicationController extends Controller
         try {
 
             $employee_profile = $request->user;
-            $recommending_and_approving = Helpers::getRecommendingAndApprovingOfficer($employee_profile->assignedArea->findDetails(), $employee_profile->id);
             $cto_applications = [];
 
             $assigned_area = $employee_profile->assignedArea->findDetails();
             $approving_officer = Helpers::getDivHead($assigned_area);
+            $hrmo_officer= Helpers::getHrmoOfficer();
 
 
             $reason = [];
@@ -199,6 +199,10 @@ class CtoApplicationController extends Controller
 
             if (!$employee_profile) {
                 return response()->json(['message' => 'Unauthorized.'], Response::HTTP_FORBIDDEN);
+            }
+
+            if ($hrmo_officer === null || $approving_officer === null) {
+                return response()->json(['message' => 'No recommending officer and/or supervising officer assigned.'], Response::HTTP_FORBIDDEN);
             }
 
             $cleanData = [];
@@ -226,7 +230,7 @@ class CtoApplicationController extends Controller
             foreach (json_decode($request->cto_applications) as $key=>$value) {
 
                 $employee_credit = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)->first();
-                $hrmo_officer= Helpers::getHrmoOfficer();
+                
                 if ($employee_credit->earned_credit_by_hour < $value->applied_credits) {
                     $failed[] = $value;
                     $reason[] = 'Insufficient overtime credit.';
@@ -276,7 +280,7 @@ class CtoApplicationController extends Controller
                     $cto_applications[] = $cto_application;
                 }
             }
-
+            
                     if (count($failed) === count(json_decode($request->cto_applications, true))) {
                         return response()->json([
                             'failed' => $failed,
@@ -287,11 +291,11 @@ class CtoApplicationController extends Controller
 
                     if (count($failed) > 0) {
                         return response()->json([
-                            'data' => new CtoApplicationResource($cto_applications),
+                            'data' =>CtoApplicationResource::collection($cto_applications),
                             'failed' => $failed,
-                            'reason' => $reason,
-                            'message' => count($cto_applications) . ' of ' . count($request->cto_applications) . ' registered and ' . count($failed) . ' failed.'
-                        ], Response::HTTP_BAD_REQUEST);
+                            'employee_credit' => EmployeeOvertimeCreditResource::collection($employeeCredit),
+                            'message' => count($failed) . 'application/s failed to register.' 
+                        ], Response::HTTP_OK);
                     }
 
                     return response()->json([
@@ -325,7 +329,7 @@ class CtoApplicationController extends Controller
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
-                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
             }
 
             $cto_application = CtoApplication::find($id);

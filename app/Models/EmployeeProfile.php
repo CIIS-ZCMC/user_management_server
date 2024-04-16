@@ -130,6 +130,7 @@ class EmployeeProfile extends Authenticatable
             'token_exp' => $token_exp
         ]);
 
+        $encryptedToken = openssl_encrypt($token, config('app.encrypt_decrypt_algorithm'), config('app.app_key'), 0, substr(md5(config('app.app_key')), 0, 16));
         $encryptedToken = openssl_encrypt($token, Cache::get('encrypt_decrypt_algorithm'), env("APP_KEY"), 0, substr(md5(Cache::get('app_key')), 0, 16));
 
         return $encryptedToken;
@@ -274,7 +275,7 @@ class EmployeeProfile extends Authenticatable
 
         /** Department Chief */
         $head = Department::where('head_employee_profile_id', $this->id)->first();
-        $nurse_service = Division::where('code', 'NS')->first();
+        $nurse_service = Division::where('code', 'NURSING')->first();
 
         if ($head) {
             if ($head->department_id === $nurse_service->id) {
@@ -337,6 +338,26 @@ class EmployeeProfile extends Authenticatable
                 'position' => 'Section OIC',
                 'area' => $section_oic
             ];
+        }
+
+        /** for HR ADMIN */
+        $assign_area = AssignArea::where('employee_profile_id', $this->id)->first();
+        if($assign_area->section_id !== null){
+            $hr_employee = Section::find($assign_area->section_id);
+
+            if($hr_employee->code === 'HRMO'){
+                $role = Role::where('code', "HR-ADMIN")->first();
+                $system_role = SystemRole::where('role_id', $role->id)->first();
+                $special_access_role = SpecialAccessRole::where('employee_profile_id', $this->id)
+                    ->where('system_role_id', $system_role->id)->first();
+
+                if($special_access_role){
+                    return [
+                        'position' => "HR Staff",
+                        'area' => $hr_employee
+                    ];
+                }
+            }
         }
 
         /** Unit Head */
@@ -434,9 +455,13 @@ class EmployeeProfile extends Authenticatable
                 break;
 
             case 'Section':
-                $units = Unit::where('section_id', $assign_area['details']->id)->get();
-                foreach ($units as $unit) {
-                    $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1]);
+                if ($assign_area['details']->code === "HRMO") {
+                    $employees = AssignArea::whereNotIn('employee_profile_id', [$user->id, 1])->get();
+                } else {
+                    $units = Unit::where('section_id', $assign_area['details']->id)->get();
+                    foreach ($units as $unit) {
+                        $employees = $this->retrieveEmployees($employees, 'unit_id', $unit->id, [$user->id, 1]);
+                    }
                 }
                 break;
         }

@@ -23,7 +23,12 @@ use App\Models\Section;
 use App\Models\Schedule;
 use App\Helpers\Helpers as Help;
 use App\Methods\DTRPull;
+use App\Models\LeaveType;
+use Illuminate\Support\Facades\Cache;
 
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
 
 class DTRcontroller extends Controller
 {
@@ -65,7 +70,7 @@ class DTRcontroller extends Controller
             $sched = $this->helper->getSchedule($biometric_id, null);
 
             if ($selfRecord) {
-                if ($sched['third_entry'] == NULL && $sched['last_entry']  == NULL) {
+                if ($selfRecord->first_in !== NULL && $selfRecord->first_out !== NULL && $selfRecord->second_in === NULL && $selfRecord->second_out === NULL) {
                     return [
                         'dtr_date' => $selfRecord->dtr_date,
                         'first_in' => $selfRecord->first_in ? date('H:i', strtotime($selfRecord->first_in)) : ' --:--',
@@ -160,9 +165,8 @@ class DTRcontroller extends Controller
                                 $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
                                 $DaySchedule = $Schedule['daySchedule'];
                                 $BreakTime = $Schedule['break_Time_Req'];
-
-
-
+                                $DaySchedule = [];
+                                $BreakTime = [];
 
                                 if (count($DaySchedule) >= 1) {
                                     if (count($BreakTime) >= 1) {
@@ -170,6 +174,8 @@ class DTRcontroller extends Controller
                                          * With Schedule
                                          * 4 sets of sched
                                          */
+
+
                                         $this->DTR->HasBreaktimePull($DaySchedule, $BreakTime, $bioEntry, $biometric_id);
                                     } else {
                                         /**
@@ -229,7 +235,7 @@ class DTRcontroller extends Controller
             }
         } catch (\Throwable $th) {
             Helpersv2::errorLog($this->CONTROLLER_NAME, 'fetchDTRFromDevice', $th->getMessage());
-            return $th;
+
             // Log::channel("custom-dtr-log-error")->error($th->getMessage());
             // return response()->json(['message' => 'Unable to connect to device', 'Throw error' => $th->getMessage()]);
         }
@@ -437,6 +443,7 @@ class DTRcontroller extends Controller
             $year_of = $request->yearof;
             $view = $request->view;
             $FrontDisplay = $request->frontview;
+            $ishalf = $request->ishalf;
 
             /*
             Multiple IDS for Multiple PDF generation
@@ -450,7 +457,7 @@ class DTRcontroller extends Controller
             }
 
             if (count($id) >= 2) {
-                return $this->GenerateMultiple($id, $month_of, $year_of, $view);
+                return $this->GenerateMultiple($id, $month_of, $year_of, $view,$ishalf);
             }
 
             $emp_name = '';
@@ -540,7 +547,7 @@ class DTRcontroller extends Controller
                 'biometric_ID' => $biometric_id
             ];
 
-            return $this->PrintDtr($month_of, $year_of, $biometric_id, $emp_Details, $view, $FrontDisplay);
+            return $this->PrintDtr($month_of, $year_of, $biometric_id, $emp_Details, $view, $FrontDisplay,$ishalf);
         } catch (\Throwable $th) {
             Helpersv2::errorLog($this->CONTROLLER_NAME, 'generateDTR', $th->getMessage());
             return response()->json(['message' =>  $th->getMessage()]);
@@ -553,7 +560,7 @@ class DTRcontroller extends Controller
     *
     */
 
-    public function printDtr($month_of, $year_of, $biometric_id, $emp_Details, $view, $FrontDisplay)
+    public function printDtr($month_of, $year_of, $biometric_id, $emp_Details, $view, $FrontDisplay,$ishalf)
     {
         try {
             $dtr = DB::table('daily_time_records')
@@ -650,7 +657,7 @@ class DTRcontroller extends Controller
 
             // return $sctest;
 
-            $days_In_Month = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
+            $days_In_Month = isset($ishalf) && $ishalf ? 15 :cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
             $second_in = [];
             $second_out = [];
             $first_in = array_map(function ($res) {
@@ -724,6 +731,8 @@ class DTRcontroller extends Controller
                 return $row['status'] == "approved";
             });
 
+
+
             $leavedata = [];
             foreach ($leaveapp as $rows) {
                 $leavedata[] = [
@@ -731,10 +740,12 @@ class DTRcontroller extends Controller
                     'city' => $rows['city'],
                     'from' => $rows['date_from'],
                     'to' => $rows['date_to'],
+                    'leavetype' => LeaveType::find($rows['leave_type_id'])->name ?? "",
                     'without_pay' => $rows['without_pay'],
                     'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to'])
                 ];
             }
+
 
             //Official business
             $officialBusiness = array_values($employee->officialBusinessApplications->filter(function ($row) {
@@ -882,7 +893,7 @@ class DTRcontroller extends Controller
         }
     }
 
-    public function GenerateMultiple($id, $month_of, $year_of, $view)
+    public function GenerateMultiple($id, $month_of, $year_of, $view,$ishalf)
     {
         $data = [];
         $emp_Details = [];
@@ -970,11 +981,11 @@ class DTRcontroller extends Controller
 
 
 
-        return $this->MultiplePrintOrView($id, $month_of, $year_of, $view, $emp_Details);
+        return $this->MultiplePrintOrView($id, $month_of, $year_of, $view, $emp_Details,$ishalf);
     }
 
 
-    public function MultiplePrintOrView($id, $month_of, $year_of, $view, $emp_Details)
+    public function MultiplePrintOrView($id, $month_of, $year_of, $view, $emp_Details,$ishalf)
     {
 
         $data = [];
@@ -1075,7 +1086,7 @@ class DTRcontroller extends Controller
                     }
                 }
 
-                $days_In_Month = cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
+                $days_In_Month = isset($ishalf) && $ishalf ? 15 :cal_days_in_month(CAL_GREGORIAN, $month_of, $year_of);
 
                 $first_in = array_map(function ($res) {
                     return [
@@ -1157,6 +1168,7 @@ class DTRcontroller extends Controller
                         'from' => $rows['date_from'],
                         'to' => $rows['date_to'],
                         'without_pay' => $rows['without_pay'],
+                        'leavetype' => LeaveType::find($rows['leave_type_id'])->name ?? "",
                         'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to'])
                     ];
                 }
@@ -1998,6 +2010,33 @@ class DTRcontroller extends Controller
 
     public function test()
     {
+        $mail = new PHPMailer(true);
+        try {
+            $mail->isSMTP();
+            $mail->SMTPDebug = 2;
+            $mail->Host = gethostbyname('www.mail.gov.ph');
+            $mail->Port = 587;
+            $mail->SMTPSecure ='tls';
+            $mail->SMTPAuth = true;
+            $mail->Username = 'innovations@doh.zcmc.gov.ph'; // Your email address
+            $mail->Password = 'Innov020623!~'; // Your email password
+            $mail->setFrom('innovations@doh.zcmc.gov.ph', 'ZCMC-Portal');
+            $mail->addAddress('reenjie17@gmail.com', 'Reenjay Caimor');
+            $mail->Subject = 'THIS IS JUST A TEST EMAIL ZCMC PORTAL';
+            $mail->CharSet = PHPMailer::CHARSET_UTF8;
+            $mail->isHTML(true);
+            $mail->Body = "Hi there. Im working!!";
+            $mail->AltBody = 'This is a plain text message body';
+            if ($mail->send()) {
+                return "send";
+            } else {
+                return "failed to sendd";
+            }
+        } catch (\Throwable $th) {
+            return $th;
+        }
+
+
         /*
         **
         * test on how to access request function on another controller for instance
@@ -2046,38 +2085,38 @@ class DTRcontroller extends Controller
         //     // }
         // }
 
-        for ($i = 1; $i <= 30; $i++) {
+        // for ($i = 1; $i <= 30; $i++) {
 
-            $date = date('Y-m-d', strtotime('2024-02-' . $i));
+        //     $date = date('Y-m-d', strtotime('2024-02-' . $i));
 
-            if (date('D', strtotime($date)) != 'Sun') {
-                $firstin = date('H:i:s', strtotime('today') + rand(25200, 30600));
-                $firstout =  date('H:i:s', strtotime('today') + rand(42600, 47400));
-                $secondin =  date('H:i:s', strtotime('today') + rand(45000, 49800));
-                $secondout = date('H:i:s', strtotime('today') + rand(59400, 77400));
+        //     if (date('D', strtotime($date)) != 'Sun') {
+        //         $firstin = date('H:i:s', strtotime('today') + rand(25200, 30600));
+        //         $firstout =  date('H:i:s', strtotime('today') + rand(42600, 47400));
+        //         $secondin =  date('H:i:s', strtotime('today') + rand(45000, 49800));
+        //         $secondout = date('H:i:s', strtotime('today') + rand(59400, 77400));
 
-                DailyTimeRecords::create([
-                    'biometric_id' => 1,
-                    'dtr_date' => $date,
-                    'first_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin)),
-                    'first_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstout)),
-                    'second_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $secondin)),
-                    'second_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $secondout)),
-                    'interval_req' => null,
-                    'required_working_hours' => null,
-                    'required_working_minutes' => null,
-                    'total_working_hours' => null,
-                    'total_working_minutes' => null,
-                    'overtime' => null,
-                    'overtime_minutes' => null,
-                    'undertime' => null,
-                    'undertime_minutes' => null,
-                    'overall_minutes_rendered' => null,
-                    'total_minutes_reg' => null,
-                    'is_biometric' => 1,
-                    'created_at' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin))
-                ]);
-            }
-        }
+        //         DailyTimeRecords::create([
+        //             'biometric_id' => 1,
+        //             'dtr_date' => $date,
+        //             'first_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin)),
+        //             'first_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstout)),
+        //             'second_in' => date('Y-m-d H:i:s', strtotime($date . ' ' . $secondin)),
+        //             'second_out' => date('Y-m-d H:i:s', strtotime($date . ' ' . $secondout)),
+        //             'interval_req' => null,
+        //             'required_working_hours' => null,
+        //             'required_working_minutes' => null,
+        //             'total_working_hours' => null,
+        //             'total_working_minutes' => null,
+        //             'overtime' => null,
+        //             'overtime_minutes' => null,
+        //             'undertime' => null,
+        //             'undertime_minutes' => null,
+        //             'overall_minutes_rendered' => null,
+        //             'total_minutes_reg' => null,
+        //             'is_biometric' => 1,
+        //             'created_at' => date('Y-m-d H:i:s', strtotime($date . ' ' . $firstin))
+        //         ]);
+        //     }
+        // }
     }
 }

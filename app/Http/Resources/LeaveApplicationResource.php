@@ -50,6 +50,8 @@ class LeaveApplicationResource extends JsonResource
                 'oic' => $this->oic->personalInformation->name(),
                 'position' => $this->oic->assignedArea->designation->name
             ];
+
+         
         }
 
         //Check if requester is under HRMO
@@ -66,7 +68,7 @@ class LeaveApplicationResource extends JsonResource
                     'area' => $area['details']->name,
                     'area_code' => $area['details']->code,
                     'area_sector' => $area['sector'],
-                    'profile_url'=>Cache::get("server_domain") . "/photo/profiles/" . $this->employeeProfile->profile_url,
+                    'profile_url'=>config("app.server_domain") . "/photo/profiles/" . $this->employeeProfile->profile_url,
                 ],
                 "leave_type" => $this->leaveType,
                 "date_from" => $this->date_from,
@@ -83,13 +85,15 @@ class LeaveApplicationResource extends JsonResource
                 "remarks" => $this->remarks, //Reason of leave application.
                 "without_pay" => $this->without_pay,
                 'reason' => $this->reason,
+                'is_printed' => $this->is_printed,
+                'print_datetime' => $this->print_datetime,
                 'credit_balance' => $this->leaveType->is_special ? null : $leave_credits->total_leave_credits,
                 "hrmo_officer" => [
                     "employee_id" => $this->hrmoOfficer->employee_id,
                     "name" => $this->hrmoOfficer->personalInformation->name(),
                     "designation" => $this->hrmoOfficer->assignedArea->designation->name,
                     "designation_code" => $this->hrmoOfficer->assignedArea->designation->code,
-                    "profile_url" => Cache::get("server_domain") . "/photo/profiles/" . $this->hrmoOfficer->profile_url,
+                    "profile_url" => config("app.server_domain") . "/photo/profiles/" . $this->hrmoOfficer->profile_url,
                 ],
                 "oic" => $oic,
                 'attachments' =>$this->leaveApplicationRequirements === null? []: LeaveApplicationAttachmentResource::collection($this->leaveApplicationRequirements),
@@ -110,7 +114,7 @@ class LeaveApplicationResource extends JsonResource
                 'area' => $area['details']->name,
                 'area_code' => $area['details']->code,
                 'area_sector' => $area['sector'],
-                'profile_url'=>Cache::get("server_domain") . "/photo/profiles/" . $this->employeeProfile->profile_url,
+                'profile_url'=>config("app.server_domain") . "/photo/profiles/" . $this->employeeProfile->profile_url,
             ],
             "leave_type" => $this->leaveType,
             "date_from" => $this->date_from,
@@ -127,27 +131,29 @@ class LeaveApplicationResource extends JsonResource
             "remarks" => $this->remarks, //Reason of leave application.
             "without_pay" => $this->without_pay,
             'reason' => $this->reason,
+            'is_printed' => $this->is_printed,
+            'print_datetime' => $this->print_datetime,
             'credit_balance' => $this->leaveType->is_special ? null : $leave_credits->total_leave_credits,
             "hrmo_officer" => [
                 "employee_id" => $this->hrmoOfficer->employee_id,
                 "name" => $this->hrmoOfficer->personalInformation->name(),
                 "designation" => $this->hrmoOfficer->assignedArea->designation->name,
                 "designation_code" => $this->hrmoOfficer->assignedArea->designation->code,
-                "profile_url" => Cache::get("server_domain") . "/photo/profiles/" . $this->hrmoOfficer->profile_url,
+                "profile_url" => config("app.server_domain") . "/photo/profiles/" . $this->hrmoOfficer->profile_url,
             ],
             "recommending_officer" => [
                 "employee_id" => $this->recommendingOfficer->employee_id,
                 "name" => $this->recommendingOfficer->personalInformation->name(),
                 "designation" => $this->recommendingOfficer->assignedArea->designation->name,
                 "designation_code" => $this->recommendingOfficer->assignedArea->designation->code,
-                "profile_url" => Cache::get("server_domain") . "/photo/profiles/" . $this->recommendingOfficer->profile_url,
+                "profile_url" => config("app.server_domain") . "/photo/profiles/" . $this->recommendingOfficer->profile_url,
             ],
             "approving_officer" => [
                 "employee_id" => $this->approvingOfficer->employee_id,
                 "name" => $this->approvingOfficer->personalInformation->name(),
                 "designation" => $this->approvingOfficer->assignedArea->designation->name,
                 "designation_code" => $this->approvingOfficer->assignedArea->designation->code,
-                "profile_url" => Cache::get("server_domain") . "/photo/profiles/" . $this->approvingOfficer->profile_url,
+                "profile_url" => config("app.server_domain") . "/photo/profiles/" . $this->approvingOfficer->profile_url,
             ],
             "oic" => $oic,
             'attachments' =>$this->leaveApplicationRequirements === null? []: LeaveApplicationAttachmentResource::collection($this->leaveApplicationRequirements),
