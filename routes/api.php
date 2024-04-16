@@ -1726,7 +1726,7 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
             Route::get('leave-application-approved', 'LeaveApplicationController@approvedLeaveRequest');
         });
-          //Secretary
+        //hr
           Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
             Route::get('leave-application-approved-hr', 'LeaveApplicationController@ApprovedLeaveApplication');
         });
