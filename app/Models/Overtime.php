@@ -5,9 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class OvertimeApplication extends Model
+class Overtime extends Model
 {
-
     use HasFactory;
     protected $table = 'overtime_applications';
 
@@ -97,7 +96,5 @@ class OvertimeApplication extends Model
 
           return true;
       }
-
-
 
 }

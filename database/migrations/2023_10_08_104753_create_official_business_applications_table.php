@@ -17,8 +17,6 @@ return new class extends Migration
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->date('date_from');
             $table->date('date_to');
-            $table->time('time_from');
-            $table->time('time_to');
             $table->string('purpose');
             $table->string('status')->default('for recommending approval');
             $table->string('personal_order_file')->nullable();

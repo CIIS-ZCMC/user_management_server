@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('employee_profile_id')->unsigned();
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles')->onDelete('cascade');
-            $table->string('reference_number')->nullable();
             $table->string('status');
             $table->string('hrmo_officer_id')->nullable();
             $table->string('recommending_officer_id')->nullable();
@@ -25,9 +24,6 @@ return new class extends Migration
             $table->string('overtime_letter_of_request')->nullable();
             $table->string('overtime_letter_of_request_path')->nullable();
             $table->string('overtime_letter_of_request_size')->nullable();
-            $table->string('path')->nullable();
-            $table->string('date');
-            $table->string('time')->nullable();
             $table->string('decline_reason')->nullable();
             $table->timestamps();
         });

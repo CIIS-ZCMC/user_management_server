@@ -26,14 +26,14 @@ class AuthenticateWithCookie
     public function handle(Request $request, Closure $next, ...$access)
     {
         try {
-            $cookieValue = $request->cookie('ZCMCPortal');
+            $cookieValue = $request->cookie(config("app.cookie_name"));
 
             if (is_array($cookieValue)) {
-                $cookieValue = $cookieValue['ZCMCPortal'];
+                $cookieValue = $cookieValue[config("app.cookie_name")];
             }
 
             if (!$cookieValue) {
-                return response()->json(["data" => "/", 'message' => 'un-authorized'], Response::HTTP_UNAUTHORIZED)->cookie(Cache::get('cookie_name'), '', -1);
+                return response()->json(["data" => "/", 'message' => 'un-authorized'], Response::HTTP_UNAUTHORIZED)->cookie(config("app.cookie_name"), '', -1);
             }
 
             $encryptedToken = json_decode($cookieValue);

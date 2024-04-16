@@ -25,10 +25,10 @@ class MonitizationPostingController extends Controller
                 $end_posting_date = strtotime($latest_posting->end_filing_date);
                 $start_posting_date = strtotime($latest_posting->effective_filing_date);
                 $current_date = strtotime(date('Y-m-d'));
-            
+
                 $start = ($current_date >= $start_posting_date && $current_date <= $end_posting_date);
                 $end = $current_date > $end_posting_date;
-            
+
                 // Populate the latest posting array with necessary data
                 $latest_posting = [
                     'id' => $latest_posting->id,
@@ -38,7 +38,7 @@ class MonitizationPostingController extends Controller
                     'start' => $start,
                     'end' => $end
                 ];
-            
+
                 return response()->json([
                     'data' => $latest_posting,
                     'message' => 'Retrieve posting records.'
@@ -153,7 +153,7 @@ class MonitizationPostingController extends Controller
         // Convert associative array to simple array
         $candidates = array_values($candidates);
 
-            
+
             return response()->json([
                 'data' => $candidates,
                 'message' => "Employees for monetization."

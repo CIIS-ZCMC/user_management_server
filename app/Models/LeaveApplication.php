@@ -15,10 +15,10 @@ class LeaveApplication extends Model
         'without_pay' => 'boolean',
         'patient_type' => 'boolean',
         'is_outpatient' => 'boolean',
-        'is_masters' => 'boolean', 
-        'is_board' => 'boolean', 
-        'is_printed' => 'boolean', 
-        // 'is_commutation' => 'boolean', 
+        'is_masters' => 'boolean',
+        'is_board' => 'boolean',
+        'is_printed' => 'boolean',
+        // 'is_commutation' => 'boolean',
     ];
 
     public $fillable = [
@@ -72,7 +72,7 @@ class LeaveApplication extends Model
 
     public function employeeLeaveCredit()
     {
-        
+
         return $this->belongsTo(EmployeeLeaveCredit::class, 'employee_profile_id','id');
     }
 
@@ -115,7 +115,6 @@ class LeaveApplication extends Model
         return true;
     }
 
-
     public function recommendingOfficer()
     {
         return $this->belongsTo(EmployeeProfile::class, 'recommending_officer');
@@ -126,6 +125,6 @@ class LeaveApplication extends Model
         return $this->belongsTo(EmployeeProfile::class, 'approving_officer');
     }
 
-    
-   
+
+
 }

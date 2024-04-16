@@ -182,8 +182,6 @@ class OfficialBusinessController extends Controller
                 $data->employee_profile_id = $user->id;
                 $data->date_from = $cleanData['date_from'];
                 $data->date_to = $cleanData['date_to'];
-                $data->time_from = $cleanData['time_from'];
-                $data->time_to = $cleanData['time_to'];
                 $data->purpose = $cleanData['purpose'];
                 $data->personal_order_file = $cleanData['personal_order_file']->getClientOriginalName();
                 ;

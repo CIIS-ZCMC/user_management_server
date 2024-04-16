@@ -186,6 +186,8 @@ class OfficialTimeController extends Controller
                     $data->date_from                        = $cleanData['date_from'];
                     $data->date_to                          = $cleanData['date_to'];
                     $data->purpose                          = $cleanData['purpose'];
+                    $data->time_from                        = $cleanData['time_from'];
+                    $data->time_to                          = $cleanData['time_to'];
                     $data->personal_order_file              = $cleanData['personal_order_file']->getClientOriginalName();;
                     $data->personal_order_size              = $cleanData['personal_order_file']->getSize();
                     $data->personal_order_path              = Helpers::checkSaveFile($cleanData['personal_order_file'], 'official_time');

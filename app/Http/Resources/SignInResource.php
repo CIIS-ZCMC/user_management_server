@@ -18,10 +18,10 @@ class SignInResource extends JsonResource
         $employee_profile = $this->employeeProfile;
         $position = $employee_profile->employmentPosition->name;
         $department = $employee_profile->department->name;
-
+        $salary_grade = $employee_profile->assignedArea->designation->salaryGrade->salary_grade_number;
         $legal_informations = LegalInformation::with(['legalInformationQuestion' => function ($query) {
-                $query->orderBy('order_by', 'asc');
-            }])->where('personal_information_id', $this->personalInformation->id)->get();
+            $query->orderBy('order_by', 'asc');
+        }])->where('personal_information_id', $this->personalInformation->id)->get();
 
         return [
             'id' => $this->id,
@@ -29,6 +29,7 @@ class SignInResource extends JsonResource
             'name' => $this->personalInformation->name(),
             'department' => $department,
             'position' => $position,
+            'salary_grade' => $salary_grade,
             'personal_information' => [
                 'personal_information' => new PersonalInformationResource($this->personalInformation),
                 'contact' => new ContactResource($this->personalInformation->contact),
@@ -54,7 +55,7 @@ class SignInResource extends JsonResource
             ]
         ];
     }
-    
+
     public static function collection($resource)
     {
         return parent::collection($resource)->withoutWrapping();
