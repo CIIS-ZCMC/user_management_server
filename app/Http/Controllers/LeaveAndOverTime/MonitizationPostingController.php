@@ -87,7 +87,7 @@ class MonitizationPostingController extends Controller
     {
         try{
             $employee_leave_credits = EmployeeLeaveCredit::select('employee_leave_credits.*')
-            ->join('employee_profiles as ep', 'ep.id', 'employee_leave_credits.employee_profile_id')
+            ->join('employee_profiles as ep', 'ep.id', '=', 'employee_leave_credits.employee_profile_id')
             ->join('assigned_areas', 'assigned_areas.employee_profile_id', '=', 'ep.id')
             ->join('designations', 'designations.id', '=', 'assigned_areas.designation_id')
             ->join('salary_grades as sg', 'sg.id', '=', 'designations.salary_grade_id')
