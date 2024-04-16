@@ -13,9 +13,13 @@ use App\Models\OvtApplicationDatetime;
 use App\Models\OvtApplicationEmployee;
 use Illuminate\Http\Response;
 use App\Http\Requests\AuthPinApprovalRequest;
+use App\Http\Resources\MyApprovedLeaveApplicationResource;
+use App\Models\Department;
 use App\Models\EmployeeOvertimeCredit;
 use App\Models\EmployeeProfile;
 use App\Models\OvtApplicationLog;
+use App\Models\Section;
+use App\Models\Unit;
 
 class OvertimeController extends Controller
 {
@@ -103,7 +107,142 @@ class OvertimeController extends Controller
     {
         //
     }
- 
+    public function myApprovedOvertimeApplication(Request $request)
+    {
+        try {
+            $employee_profile = $request->user;
+            $overtime_applications = OvertimeApplication::where('status', 'approved')
+                ->where('employee_profile_id', $employee_profile->id)->get();
+
+            return response()->json([
+                'data' => OvertimeResource::collection($overtime_applications),
+                'message' => 'Retrieve list.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    public function myOvertimeApplication(Request $request)
+    {
+        try {
+            $employee_profile = $request->user;
+            $overtime_applications = OvertimeApplication::where('status', 'approved')->where('employee_profile_id', $employee_profile->id)->get();
+
+            return response()->json([
+                'data' => OvertimeResource::collection($overtime_applications),
+                'message' => 'Retrieve list.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function approvedLeaveRequest(Request $request)
+    {
+        try {
+            $employee_profile = $request->user;
+            $assigned_area = $employee_profile->assignedArea->findDetails();
+            $division_id = null;
+
+            switch ($assigned_area['sector']) {
+                case "Division":
+                    $division_id = $assigned_area['details']->id;
+                    break;
+                case "Department":
+                    $division_id = Department::find($assigned_area['details']->id)->division_id;
+                    break;
+                case "Section":
+                    $section = Section::find($assigned_area['details']->id);
+
+                    if ($section->department_id === null) {
+                        $division_id = $section->division_id;
+                        break;
+                    }
+
+                    $division_id = $section->department->division_id;
+                    break;
+                case "Unit":
+                    $section = Unit::find($assigned_area['details']->id)->section;
+                    $division_id = $section->department->division_id;
+                    break;
+            }
+
+            if ($division_id === null) {
+                return response()->json(['message' => "GG"], Response::HTTP_OK);
+            }
+
+            $leave_applications = [];
+
+            $units_overtime_applications = OvertimeApplication::select("overtime_applications.*")
+                ->join('employee_profiles as ep', 'overtime_applications.employee_profile_id', 'ep.id')
+                ->join('assigned_areas as aa', 'ep.id', 'aa.employee_profile_id')
+                ->join('units as u', 'aa.unit_id', 'u.id')
+                ->join('sections as s', 'u.section_id', 's.id')
+                ->join('departments as d', 's.department_id', 'd.id')
+                ->join('divisions as dv', 'd.division_id', 'dv.id')
+                ->select('overtime_applications.*')
+                ->where('dv.id', $division_id)
+                ->where('overtime_applications.status', 'approved')
+                ->get();
+
+            $sections_overtime_applications = OvertimeApplication::select("overtime_applications.*")
+                ->join('employee_profiles as ep', 'overtime_applications.employee_profile_id', 'ep.id')
+                ->join('assigned_areas as aa', 'ep.id', 'aa.employee_profile_id')
+                ->join('sections as s', 'aa.section_id', 's.id')
+                ->join('departments as d', 's.department_id', 'd.id')
+                ->join('divisions as dv', 'd.division_id', 'dv.id')
+                ->select('overtime_applications.*')
+                ->where('dv.id', $division_id)
+                ->where('overtime_applications.status', 'approved')
+                ->get();
+
+            $departments_overtime_applications = OvertimeApplication::select("overtime_applications.*")
+                ->join('employee_profiles as ep', 'overtime_applications.employee_profile_id', 'ep.id')
+                ->join('assigned_areas as aa', 'ep.id', 'aa.employee_profile_id')
+                ->join('departments as d', 'aa.department_id', 'd.id')
+                ->join('divisions as dv', 'd.division_id', 'dv.id')
+                ->select('overtime_applications.*')
+                ->where('dv.id', $division_id)
+                ->where('overtime_applications.status', 'approved')
+                ->get();
+
+            $divisions_overtime_applications = OvertimeApplication::select("overtime_applications.*")
+                ->join('employee_profiles as ep', 'overtime_applications.employee_profile_id', 'ep.id')
+                ->join('assigned_areas as aa', 'ep.id', 'aa.employee_profile_id')
+                ->join('divisions as dv', 'aa.division_id', 'dv.id')
+                ->select('overtime_applications.*')
+                ->where('dv.id', $division_id)
+                ->where('overtime_applications.status', 'approved')
+                ->get();
+
+            $overtime_applications = [
+                ...$units_overtime_applications,
+                ...$sections_overtime_applications,
+                ...$departments_overtime_applications,
+                ...$divisions_overtime_applications
+            ];
+
+            return response()->json([
+                'data' => OvertimeResource::collection($overtime_applications),
+                'message' => 'Retrieve list.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function approvedLeaveApplication()
+    {
+        try {
+            $overtime_applications = OvertimeApplication::where('status', 'approved')->get();
+            return response()->json([
+                'data' => OvertimeResource::collection($overtime_applications),
+                'message' => 'Retrieve list.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 
     /**
      * Store a newly created resource in storage.
