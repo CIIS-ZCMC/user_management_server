@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\LeaveAndOverTime;
 
+use App\Http\Controllers\Controller;
 use App\Models\Overtime;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -26,7 +27,7 @@ class OvertimeController extends Controller
     /**
      * Display a listing of the resource.
      */
-    private $CONTROLLER_NAME = 'Overtime';
+    private $CONTROLLER_NAME = 'OvertimeController';
 
     public function index(Request $request)
     {
