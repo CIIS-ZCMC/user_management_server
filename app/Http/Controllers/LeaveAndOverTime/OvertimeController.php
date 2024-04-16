@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\LeaveAndOverTime;
 
+use App\Http\Controllers\Controller;
 use App\Models\Overtime;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -16,6 +17,7 @@ use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Resources\MyApprovedLeaveApplicationResource;
 use App\Models\Department;
 use App\Models\EmployeeOvertimeCredit;
+use App\Models\EmployeeOvertimeCreditLog;
 use App\Models\EmployeeProfile;
 use App\Models\OvtApplicationLog;
 use App\Models\Section;
@@ -26,7 +28,7 @@ class OvertimeController extends Controller
     /**
      * Display a listing of the resource.
      */
-    private $CONTROLLER_NAME = 'Overtime';
+    private $CONTROLLER_NAME = 'OvertimeController';
 
     public function index(Request $request)
     {
@@ -137,7 +139,21 @@ class OvertimeController extends Controller
         }
     }
 
-    public function approvedLeaveRequest(Request $request)
+    public function employeeApprovedOvertimeApplication($id, Request $request)
+    {
+        try {
+            $overtime_applications = OvertimeApplication::where('status', 'approved')->where('employee_profile_id', $id)->get();
+
+            return response()->json([
+                'data' => Overtime::collection($overtime_applications),
+                'message' => 'Retrieve list.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function approvedOvertimeRequest(Request $request)
     {
         try {
             $employee_profile = $request->user;
@@ -231,13 +247,53 @@ class OvertimeController extends Controller
         }
     }
 
-    public function approvedLeaveApplication()
+    public function approvedOvertimeApplication()
     {
         try {
             $overtime_applications = OvertimeApplication::where('status', 'approved')->get();
             return response()->json([
                 'data' => OvertimeResource::collection($overtime_applications),
                 'message' => 'Retrieve list.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function declined($id, AuthPinApprovalRequest $request)
+    {
+        try {
+            $user = $request->user;
+            $employee_profile = $user;
+            $declined_by = null;
+            $cleanData['pin'] = strip_tags($request->password);
+
+            if ($user['authorization_pin'] !== $cleanData['pin']) {
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
+            }
+
+            $overtime_application = OvertimeApplication::find($id);
+            $overtime_type = $overtime_application->overtimeType;
+            $overtime_application_hrmo = $overtime_application->hrmo_officer;
+            $overtime_application_recommending = $overtime_application->recommending_officer;
+            $overtime_application_approving = $overtime_application->approving_officer;
+
+            if ($employee_profile->id === $overtime_application_recommending) {
+                $status = 'declined by recommending officer';
+                $declined_by = "Recommending officer";
+            } else if ($employee_profile->id === $overtime_application_approving) {
+                $status = 'declined by approving officer';
+                $declined_by = "Approving officer";
+            }
+
+            $overtime_application->update([
+                'status' => $status,
+                'remarks' => strip_tags($request->remarks),
+            ]);
+
+            return response()->json([
+                'data' => new OvertimeResource($overtime_application),
+                'message' => 'Declined overtime application successfully.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -308,12 +364,12 @@ class OvertimeController extends Controller
                         // Compare with max_credit_monthly and max_credit_annual including valid_until
                         if ($totalOvertimeHours > $employeeProfile->overtimeCredit->max_credit_monthly && $validUntil == $employeeProfile->overtimeCredit->valid_until) {
                             // Handle exceeding max_credit_monthly
-                            return response()->json(['message' => 'Employee ' . $employeeId . ' has exceeded the monthly leave credit.'], Response::HTTP_BAD_REQUEST);
+                            return response()->json(['message' => 'Employee ' . $employeeId . ' has exceeded the monthly overtime credit.'], Response::HTTP_BAD_REQUEST);
                         }
 
                         if ($totalEarnedCredit > $employeeProfile->overtimeCredit->max_credit_annual && $validUntil == $employeeProfile->overtimeCredit->valid_until) {
                             // Handle exceeding max_credit_annual
-                            return response()->json(['message' => 'Employee ' . $employeeId . ' has exceeded the annual leave credit.'], Response::HTTP_BAD_REQUEST);
+                            return response()->json(['message' => 'Employee ' . $employeeId . ' has exceeded the annual overtime credit.'], Response::HTTP_BAD_REQUEST);
                         }
                     }
                 }
@@ -327,8 +383,8 @@ class OvertimeController extends Controller
                 'overtime_letter_of_request' =>  $fileName,
                 'overtime_letter_of_request_path' =>  $file_name_encrypted,
                 'overtime_letter_of_request_size' =>  $size,
-                'recommending_officer_id' => $recommending_and_approving['recommending_officer'],
-                'approving_officer_id' => $recommending_and_approving['approving_officer'],
+                'recommending_officer' => $recommending_and_approving['recommending_officer'],
+                'approving_officer' => $recommending_and_approving['approving_officer'],
             ]);
 
             $ovt_id = $overtime_application->id;
@@ -408,8 +464,8 @@ class OvertimeController extends Controller
                 'employee_profile_id' => $user->id,
                 'status' => $status,
                 'purpose' => $request->purpose,
-                'recommending_officer_id' => $recommending_and_approving['recommending_officer'],
-                'approving_officer_id' => $recommending_and_approving['approving_officer'],
+                'recommending_officer' => $recommending_and_approving['recommending_officer'],
+                'approving_officer' => $recommending_and_approving['approving_officer'],
             ]);
             $ovt_id = $overtime_application->id;
 
@@ -540,7 +596,7 @@ class OvertimeController extends Controller
 
             return response()->json([
                 'data' => new OvertimeResource($overtime_application),
-                'message' => 'Retrieve leave application record.'
+                'message' => 'Retrieve overtime application record.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
