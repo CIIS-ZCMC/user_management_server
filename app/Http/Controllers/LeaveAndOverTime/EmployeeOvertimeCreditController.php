@@ -62,10 +62,9 @@ class EmployeeOvertimeCreditController extends Controller
 
         ];
 
-        $currentMonth = date('m');
-        $pastMonth = date('m', strtotime('-1 month'));
-        $overtimeApplications = OvertimeApplication::where('status', 'approved')->with('activities', 'directDates')->get();
-
+    $currentMonth = date('m');
+    $pastMonth = date('m', strtotime('-1 month'));
+    $overtimeApplications = OvertimeApplication::where('status', 'approved')->with('activities', 'directDates')->get();
       foreach ($overtimeApplications as $overtimeApplication) {
         if (isset($overtimeApplication->activities)) {
 
@@ -115,20 +114,35 @@ class EmployeeOvertimeCreditController extends Controller
                                         $totalOvertimeHoursFormatted = number_format($totalOvertimeHours / 60, 1);
                                         $employeeregular = EmployeeProfile::where('id', $employee->employee_profile_id)
                                         ->whereHas('employmentType', function ($query) {
-                                            $query->where('name', 'Regular Full-Time')
-                                                  ->orWhere('name', 'Regular Part-Time');
+                                            $query->where('name', 'Permanent Full-Time')
+                                                  ->orWhere('name', 'Permanent Part-Time');
                                         })
                                         ->first();
                                         if($employeeregular)
                                         {
-                                            EmployeeOvertimeCredit::create([
-                                                'employee_profile_id' => $employee->employee_profile_id,
-                                                'date' => date('Y-m-d'),
-                                                'operation' => 'add',
-                                                'overtime_application_id' =>$overtimeApplication->id,
-                                                'credit_value' =>  $totalOvertimeHoursFormatted,
-                                                'overtime_hours' =>  $totalOvertimeHoursFormatted,
-                                            ]);
+                                            $currentYear = date('Y');
+                                            $nextYear = $currentYear + 1;
+                                            $validUntil = $nextYear . '-12-31';
+                                            // Check if a EmployeeOvertimeCredit record exists for the employee with the calculated valid until date
+                                            $existingCredit = EmployeeOvertimeCredit::where('employee_profile_id', $employee->employee_profile_id)
+                                                ->where('valid_until', $validUntil)
+                                                ->first();
+
+                                            if ($existingCredit) {
+                                                // Update the existing record
+                                                $existingCredit->earned_credit_by_hour += $totalOvertimeHoursFormatted;
+                                                $existingCredit->save();
+                                            } else {
+                                                // Create a new record
+                                                EmployeeOvertimeCredit::create([
+                                                    'employee_profile_id' => $employee->employee_profile_id,
+                                                    'earned_credit_by_hour' => $totalOvertimeHoursFormatted,
+                                                    'used_credit_by_hour' => '0',
+                                                    'max_credit_monthly' => '40',
+                                                    'max_credit_annual' => '120',
+                                                    'valid_until' => $validUntil,
+                                                ]);
+                                            }
                                         }
 
                                     }

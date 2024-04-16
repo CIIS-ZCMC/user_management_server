@@ -25,10 +25,10 @@ class MonitizationPostingController extends Controller
                 $end_posting_date = strtotime($latest_posting->end_filing_date);
                 $start_posting_date = strtotime($latest_posting->effective_filing_date);
                 $current_date = strtotime(date('Y-m-d'));
-            
+
                 $start = ($current_date >= $start_posting_date && $current_date <= $end_posting_date);
                 $end = $current_date > $end_posting_date;
-            
+
                 // Populate the latest posting array with necessary data
                 $latest_posting = [
                     'id' => $latest_posting->id,
@@ -38,7 +38,7 @@ class MonitizationPostingController extends Controller
                     'start' => $start,
                     'end' => $end
                 ];
-            
+
                 return response()->json([
                     'data' => $latest_posting,
                     'message' => 'Retrieve posting records.'
@@ -87,7 +87,11 @@ class MonitizationPostingController extends Controller
     {
         try{
             $employee_leave_credits = EmployeeLeaveCredit::select('employee_leave_credits.*')
+<<<<<<< HEAD
+            ->join('employee_profiles as ep', 'ep.id', 'employee_leave_credits.employee_profile_id')
+=======
             ->join('employee_profiles as ep', 'ep.id', '=', 'employee_leave_credits.employee_profile_id')
+>>>>>>> 28b483e436bb28aa50a5620f1f4f9709bb86e42c
             ->join('assigned_areas', 'assigned_areas.employee_profile_id', '=', 'ep.id')
             ->join('designations', 'designations.id', '=', 'assigned_areas.designation_id')
             ->join('salary_grades as sg', 'sg.id', '=', 'designations.salary_grade_id')
@@ -153,7 +157,7 @@ class MonitizationPostingController extends Controller
         // Convert associative array to simple array
         $candidates = array_values($candidates);
 
-            
+
             return response()->json([
                 'data' => $candidates,
                 'message' => "Employees for monetization."

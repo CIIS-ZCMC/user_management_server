@@ -604,13 +604,13 @@
                         <label> 7. C) APPROVED FOR </label>
                         <div style="padding-top: 3px; padding-left: 20px; margin-top: 5px">
                             <span class="small-underline" style="font-size:12px;font-weight:lighter;">
-                                @if ($data->without_pay === 0 ||$data->without_pay === false)
-                                    {{ $data->applied_credits }}
+                                @if ($data->without_pay === false)
+                                    {{ $data->applied_credits + ' ' + $my_leave_type->code  }}
                                 @endif
                             </span>
                             <span style="padding-right: 20px; font-size: 12px">Days with pay</span>    
                             <span style="font-size: 11px;font-weight:lighter; border-bottom: 1px solid #000; display: inline-block; width: 200px;">
-                                @if ($data->without_pay === 0 ||$data->without_pay === false)
+                                @if ($data->without_pay === false)
                                     @if ($data->date_from === $data->date_to)
                                         {{ date(' F d, Y', strtotime($data->date_from)) }}
                                     @else
@@ -620,13 +620,13 @@
                             </span>
                             <br>                                        
                             <span class="small-underline" style="font-weight:lighter;">
-                                @if ($data->without_pay === 1 ||$data->without_pay === true)
+                                @if ($data->without_pay === true)
                                     {{ $data->applied_credits }}
                                 @endif
                             </span>
                             <span style="padding-right: 3px; font-size: 12px">Days without pay</span>    
                             <span style="font-weight:lighter; border-bottom: 1px solid #000; display: inline-block; width: 200px;">
-                                @if ($data->without_pay === 1 ||$data->without_pay === true)
+                                @if ($data->without_pay === true)
                                     @if ($data->date_from === $data->date_to)
                                         {{ date(' F d, Y', strtotime($data->date_from)) }}
                                     @else

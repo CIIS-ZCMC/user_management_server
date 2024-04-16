@@ -20,7 +20,7 @@ class LeaveApplicationAttachmentResource extends JsonResource
             'name' => $this->name,
             'file_name' => $this->file_name,
             'size' => $this->size,
-            'path' => Cache::get("server_domain").'/requirements/'.$this->path
+            'path' => config("app.server_domain").'/requirements/'.$this->path
         ];
     }
 }

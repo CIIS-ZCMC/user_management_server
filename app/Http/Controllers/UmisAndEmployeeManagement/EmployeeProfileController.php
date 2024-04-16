@@ -167,7 +167,7 @@ class EmployeeProfileController extends Controller
 
             $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
 
-            if (!Hash::check($cleanData['password'] . Cache::get('salt_value'), $decryptedPassword)) {
+            if (!Hash::check($cleanData['password'] . config("app.salt_value"), $decryptedPassword)) {
                 return response()->json(['message' => "Employee id or password incorrect."], Response::HTTP_FORBIDDEN);
             }
 
@@ -185,7 +185,7 @@ class EmployeeProfileController extends Controller
              */
             if ($employee_profile->authorization_pin === null) {
                 return response()->json(['message' => 'New account'], Response::HTTP_TEMPORARY_REDIRECT)
-                    ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', Cache::get('session_domain'), false); //status 307
+                    ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false); //status 307
             }
 
             /**
@@ -195,12 +195,12 @@ class EmployeeProfileController extends Controller
                 // Mandatory change password for annual.
                 if (Carbon::now()->year > Carbon::parse($employee_profile->password_expiration_at)->year) {
                     return response()->json(['message' => 'expired-required'], Response::HTTP_TEMPORARY_REDIRECT)
-                        ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', Cache::get('session_domain'), false); //status 307
+                        ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false); //status 307
                 }
 
                 //Optional change password
                 return response()->json(['message' => 'expired-optional'], Response::HTTP_TEMPORARY_REDIRECT)
-                    ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', Cache::get('session_domain'), false); //status 307
+                    ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false); //status 307
             }
 
             /**
@@ -226,7 +226,7 @@ class EmployeeProfileController extends Controller
 
             //             if ($this->mail->send($data)) {
             //                 return response()->json(['message' => "You are currently logged on to other device. An OTP has been sent to your registered email. If you want to signout from that device, submit the OTP."], Response::HTTP_FOUND)
-            //                     ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', Cache::get('session_domain'), false);
+            //                     ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false);
             //             }
 
             //             return response()->json(['message' => "Your account is currently logged on to other device, sending otp to your email has failed please try again later."], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -247,7 +247,7 @@ class EmployeeProfileController extends Controller
 
                 if ($this->mail->send($data)) {
                     return response()->json(['message' => "OTP has sent to your email, submit the OTP to verify that this is your account."], Response::HTTP_FOUND)
-                        ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', Cache::get('session_domain'), false);
+                        ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false);
                 }
 
                 return response()->json([
@@ -308,7 +308,7 @@ class EmployeeProfileController extends Controller
 
             return response()
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
-                ->cookie(config('app.cookie_name'), json_encode(['token' => $token]), 60, '/', Cache::get('session_domain'), false);
+                ->cookie(config('app.cookie_name'), json_encode(['token' => $token]), 60, '/', config('app.session_domain'), false);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'signIn', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -732,7 +732,7 @@ class EmployeeProfileController extends Controller
         $special_access_role = SpecialAccessRole::where('employee_profile_id', $employee_profile->id)->where('system_role_id', 1)->first();
 
         $employee = [
-            'profile_url' => Cache::get('server_domain') . "/photo/profiles/" . $employee_profile->profile_url,
+            'profile_url' => config('app.server_domain') . "/photo/profiles/" . $employee_profile->profile_url,
             'employee_id' => $employee_profile->employee_id,
             'position' => $position,
             'is_2fa' => $employee_profile->is_2fa,
@@ -935,7 +935,7 @@ class EmployeeProfileController extends Controller
 
             return response()
                 ->json(['data' => $data, 'message' => "Success signout to other device you are now login."], Response::HTTP_OK)
-                ->cookie(Helpers::Cookie_Name(), json_encode(['token' => $token]), 60, '/', Cache::get('session_domain'), false);
+                ->cookie(config('app.cookie_name'), json_encode(['token' => $token]), 60, '/', config('app.session_domain'), false);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'signOutFromOtherDevice', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -1024,7 +1024,7 @@ class EmployeeProfileController extends Controller
                 $token->delete();
             }
 
-            return response()->json(['message' => 'User signout.'], Response::HTTP_OK)->cookie(Cache::get('cookie_name'), '', -1);
+            return response()->json(['message' => 'User signout.'], Response::HTTP_OK)->cookie(config('app.cookie_name'), '', -1);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'signOut', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -1047,7 +1047,7 @@ class EmployeeProfileController extends Controller
 
             if ($this->mail->send($data)) {
                 return response()->json(['message' => 'Please check your email address for OTP.'], Response::HTTP_OK)
-                    ->cookie('employee_details', json_encode(['email' => $email, 'employee_id' => $employee->employee_id]), 60, '/', Cache::get('session_domain'), false);
+                    ->cookie('employee_details', json_encode(['email' => $email, 'employee_id' => $employee->employee_id]), 60, '/', config('app.session_domain'), false);
             }
 
             return response()->json([
@@ -1140,7 +1140,7 @@ class EmployeeProfileController extends Controller
 
             return response()
                 ->json(['data' => $data, 'message' => "Success signin with two factor authentication."], Response::HTTP_OK)
-                ->cookie(Helpers::Cookie_Name(), json_encode(['token' => $token]), 60, '/', Cache::get('session_domain'), false);
+                ->cookie(config('app.cookie_name'), json_encode(['token' => $token]), 60, '/', config('app.session_domain'), false);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'signOut', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -1182,7 +1182,7 @@ class EmployeeProfileController extends Controller
 
             $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
 
-            if (!Hash::check($password . Cache::get("salt_value"), $decryptedPassword)) {
+            if (!Hash::check($password . config("app.salt_value"), $decryptedPassword)) {
                 return response()->json(['message' => "Employee id or password incorrect."], Response::HTTP_FORBIDDEN);
             }
 
@@ -1212,11 +1212,11 @@ class EmployeeProfileController extends Controller
 
             $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
 
-            if (!Hash::check($password . Cache::get('salt_value'), $decryptedPassword)) {
+            if (!Hash::check($password . config('app.salt_value'), $decryptedPassword)) {
                 return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
             }
 
-            $hashPassword = Hash::make($new_password . Cache::get('salt_value'));
+            $hashPassword = Hash::make($new_password . config('app.salt_value'));
             $encryptedPassword = Crypt::encryptString($hashPassword);
 
             $threeMonths = Carbon::now()->addMonths(3);
@@ -1254,7 +1254,7 @@ class EmployeeProfileController extends Controller
 
             $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
 
-            if (!Hash::check($password . Cache::get('salt_value'), $decryptedPassword)) {
+            if (!Hash::check($password . config('app.salt_value'), $decryptedPassword)) {
                 return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
             }
 
@@ -1286,13 +1286,13 @@ class EmployeeProfileController extends Controller
             $employee_profile = EmployeeProfile::where('employee_id', $employee_details->employee_id)->first();
             $new_password = strip_tags($request->password);
 
-            $cleanData['password'] = strip_tags($request->input('password'));
+            $cleanData['password'] = strip_tags($request->password);
 
             if ($this->CheckPasswordRepetition($cleanData, 3, $employee_profile)) {
                 return response()->json(['message' => "Please consider changing your password, as it appears you have reused an old password."], Response::HTTP_BAD_REQUEST);
             }
 
-            $hashPassword = Hash::make($new_password . Cache::get('salt_value'));
+            $hashPassword = Hash::make($new_password . config('app.salt_value'));
             $encryptedPassword = Crypt::encryptString($hashPassword);
 
             $threeMonths = Carbon::now()->addMonths(3);
@@ -1378,7 +1378,7 @@ class EmployeeProfileController extends Controller
 
             return response()
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
-                ->cookie(Helpers::Cookie_Name(), json_encode(['token' => $token]), 60, '/', Cache::get('session_domain'), false);
+                ->cookie(config('app.cookie_name'), json_encode(['token' => $token]), 60, '/', config('app.session_domain'), false);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'newPassword', $th->getMessage());
         }
@@ -1391,7 +1391,7 @@ class EmployeeProfileController extends Controller
 
         foreach ($my_old_password_collection as $my_old_password) {
             $decryptedLastPassword = Crypt::decryptString($my_old_password->old_password);
-            if (Hash::check($cleanData['password'] . Cache::get('salt_value'), $decryptedLastPassword)) {
+            if (Hash::check($cleanData['password'] . config('app.salt_value'), $decryptedLastPassword)) {
                 return true;
             }
         }
@@ -1407,7 +1407,7 @@ class EmployeeProfileController extends Controller
 
             $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
 
-            if (!Hash::check($cleanData['password'] . Cache::get('salt_value'), $decryptedPassword)) {
+            if (!Hash::check($cleanData['password'] . config('app.salt_value'), $decryptedPassword)) {
                 return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
             }
 
@@ -1421,7 +1421,7 @@ class EmployeeProfileController extends Controller
 
             $last_password = DefaultPassword::orderBy('effective_at', 'desc')->first();
 
-            $hashPassword = Hash::make($last_password->password . Cache::get('salt_value'));
+            $hashPassword = Hash::make($last_password->password . config('app.salt_value'));
             $encryptedPassword = Crypt::encryptString($hashPassword);
 
             $employee_profile->update([
@@ -1584,7 +1584,7 @@ class EmployeeProfileController extends Controller
 
                     if ($this->mail->send($data)) {
                         return response()->json(['message' => "You are currently logged on to other device. An OTP has been sent to your registered email. If you want to signout from that device, submit the OTP."], Response::HTTP_FOUND)
-                            ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', Cache::get('session_domain'), false);
+                            ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false);
                     }
 
                     return response()->json(['message' => "Your account is currently logged on to other device, sending otp to your email has failed please try again later."], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -1604,7 +1604,7 @@ class EmployeeProfileController extends Controller
 
                 if ($this->mail->send($data)) {
                     return response()->json(['message' => "OTP has sent to your email, submit the OTP to verify that this is your account."], Response::HTTP_FOUND)
-                        ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', Cache::get('session_domain'), false);
+                        ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false);
                 }
 
                 return response()->json([
@@ -1663,7 +1663,7 @@ class EmployeeProfileController extends Controller
 
             return response()
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
-                ->cookie(Helpers::Cookie_Name(), json_encode(['token' => $token]), 60, '/', Cache::get('session_domain'), false);
+                ->cookie(config('app.cookie_name'), json_encode(['token' => $token]), 60, '/', config('app.session_domain'), false);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'updatePasswordExpiration', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -1857,6 +1857,7 @@ class EmployeeProfileController extends Controller
     {
         try {
             $employment_type_id = $request->employment_type_id;
+
             if ($employment_type_id !== null) {
                 $employee_profiles = EmployeeProfile::where('employment_type_id', $employment_type_id)
                     ->get();
@@ -1875,7 +1876,7 @@ class EmployeeProfileController extends Controller
                 'message' => 'list of employees retrieved.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'employeesDTRList', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -1906,7 +1907,7 @@ class EmployeeProfileController extends Controller
             $last_registered_employee = EmployeeProfile::orderBy('biometric_id', 'desc')->first();
             $last_password = DefaultPassword::orderBy('effective_at', 'desc')->first();
 
-            $hashPassword = Hash::make($last_password->password . Cache::get('salt_value'));
+            $hashPassword = Hash::make($last_password->password . config('app.salt_value'));
             $encryptedPassword = Crypt::encryptString($hashPassword);
             $now = Carbon::now();
             $fortyDaysFromNow = $now->addDays(40);
@@ -2506,7 +2507,7 @@ class EmployeeProfileController extends Controller
             $last_registered_employee = EmployeeProfile::orderBy('biometric_id', 'desc')->first();
             $default_password = Helpers::generatePassword();
 
-            $hashPassword = Hash::make($default_password . Cache::get('salt_value'));
+            $hashPassword = Hash::make($default_password . config('app.salt_value'));
             $encryptedPassword = Crypt::encryptString($hashPassword);
             $now = Carbon::now();
 
@@ -2727,7 +2728,7 @@ class EmployeeProfileController extends Controller
                 ->whereDate('status', 1)
                 ->get();
 
-            $hashPassword = Hash::make($default_password['password'] . Cache::get('salt_value'));
+            $hashPassword = Hash::make($default_password['password'] . config('app.salt_value'));
             $password_encrypted = Crypt::encryptString($hashPassword);
 
             $password_created_at = Carbon::now();
@@ -2761,11 +2762,11 @@ class EmployeeProfileController extends Controller
     {
         try {
             $user = $request->user;
-            $cleanData['password'] = strip_tags($request->input('password'));
+            $cleanData['password'] = strip_tags($request->password);
 
             $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
 
-            if (!Hash::check($cleanData['password'] . Cache::get('salt_value'), $decryptedPassword)) {
+            if (!Hash::check($cleanData['password'] . config('app.salt_value'), $decryptedPassword)) {
                 return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
             }
 
@@ -2870,7 +2871,7 @@ class EmployeeProfileController extends Controller
             $totalYears = floor($totalMonths/12);
 
             $employee = [
-                'profile_url' => Cache::get('server_domain') . "/photo/profiles/" . $employee_profile->profile_url,
+                'profile_url' => config('app.server_domain') . "/photo/profiles/" . $employee_profile->profile_url,
                 'employee_id' => $employee_profile->employee_id,
                 'position' => $position,
                 'job_position' => $designation->name,
@@ -3009,11 +3010,11 @@ class EmployeeProfileController extends Controller
     {
         try {
             $user = $request->user;
-            $cleanData['password'] = strip_tags($request->input('password'));
+            $cleanData['password'] = strip_tags($request->password);
 
             $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
 
-            if (!Hash::check($cleanData['password'] . Cache::get('salt_value'), $decryptedPassword)) {
+            if (!Hash::check($cleanData['password'] . config('app.salt_value'), $decryptedPassword)) {
                 return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
             }
 
@@ -3051,11 +3052,11 @@ class EmployeeProfileController extends Controller
     {
         try {
             $user = $request->user;
-            $cleanData['password'] = strip_tags($request->input('password'));
+            $cleanData['password'] = strip_tags($request->password);
 
             $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
 
-            if (!Hash::check($cleanData['password'] . Cache::get('salt_value'), $decryptedPassword)) {
+            if (!Hash::check($cleanData['password'] . config('app.salt_value'), $decryptedPassword)) {
                 return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
             }
 
@@ -3090,7 +3091,7 @@ class EmployeeProfileController extends Controller
             // $user = $request->user;
             // $cleanData['password'] = strip_tags($request->input('password'));
             // $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
-            // if (!Hash::check($cleanData['password'] . Cache::get('salt_value'), $decryptedPassword)) {
+            // if (!Hash::check($cleanData['password'] . config('app.salt_value'), $decryptedPassword)) {
             //     return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
             // }
 
@@ -3330,7 +3331,7 @@ class EmployeeProfileController extends Controller
 
             $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
 
-            if (!Hash::check($cleanData['password'] . Cache::get('salt_value'), $decryptedPassword)) {
+            if (!Hash::check($cleanData['password'] . config('app.salt_value'), $decryptedPassword)) {
                 return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
             }
 

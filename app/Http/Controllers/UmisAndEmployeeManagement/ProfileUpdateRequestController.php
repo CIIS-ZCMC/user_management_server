@@ -795,6 +795,6 @@ class ProfileUpdateRequestController extends Controller
     
     protected function encryptData($dataToEncrypt)
     {
-        return openssl_encrypt($dataToEncrypt, Cache::get('encrypt_decrypt_algorithm'),Cache::get('data_key_encryption'), 0, substr(md5(Cache::get('data_key_encryption')), 0, 16));
+        return openssl_encrypt($dataToEncrypt, config('app.encrypt_decrypt_algorithm'),config('app.data_key_encryption'), 0, substr(md5(config('app.data_key_encryption')), 0, 16));
     }
 }

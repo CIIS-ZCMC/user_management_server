@@ -42,7 +42,7 @@ class UnitResource extends JsonResource
                 'name' => $name,
                 'code' => $code,
                 'head' => $head,
-                'head_profile_url' => Cache::get("server_domain") . "/photo/profiles/".  $this->head->profile_url,
+                'head_profile_url' => config("app.server_domain") . "/photo/profiles/".  $this->head->profile_url,
                 'head_designation' => $this->head->assignedArea->designation,
                 'section' => new SectionResource($this->section),
                 'head_status' => $head_status,

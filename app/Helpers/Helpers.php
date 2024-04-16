@@ -29,7 +29,6 @@ use DateInterval;
 use DatePeriod;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 
@@ -577,12 +576,7 @@ class Helpers
 
     public static function hashKey($encryptedToken)
     {
-        return openssl_decrypt($encryptedToken->token, Cache::get('encrypt_decrypt_algorithm'), Cache::get('app_key'), 0, substr(md5(Cache::get('app_key')), 0, 16));
-    }
-
-    public static function Cookie_Name()
-    {
-        return "ZCMCPortal";
+        return openssl_decrypt($encryptedToken->token, config('app.encrypt_decrypt_algorithm'), config('app.app_key'), 0, substr(md5(config('app.app_key')), 0, 16));
     }
 
     public static function registerTimeAdjustmentLogs($data_id, $user_id, $action)
@@ -761,4 +755,37 @@ class Helpers
 
         return $checkSchedule;
     }
+    public static function hasSchedule($start, $end, $employeeId)
+    {
+        $checkSchedule = EmployeeSchedule::where('employee_profile_id', $employeeId)
+            ->where(function ($query) use ($start, $end) {
+                $query->whereHas('schedule', function ($innerQuery) use ($start, $end) {
+                    $innerQuery->whereDate('date', '>=', $start)
+                        ->whereDate('date', '<=', $end);
+                });
+            })
+            ->exists();
+
+        return $checkSchedule;
+    }
+
+    public static function getTotalHours($start, $end, $employeeId)
+    {
+        $totalHours = EmployeeSchedule::where('employee_profile_id', $employeeId)
+            ->whereHas('schedule', function ($query) use ($start, $end) {
+                $query->whereDate('date', '>=', $start)
+                    ->whereDate('date', '<=', $end);
+            })
+            ->with(['schedule.timeShift']) // Load the time shift relation
+            ->get()
+            ->map(function ($employeeSchedule) {
+                // Calculate total hours for each employee schedule
+                return $employeeSchedule->schedule->timeShift->total_hours;
+            })
+            ->sum();
+
+        return $totalHours;
+    }
+
+
 }
