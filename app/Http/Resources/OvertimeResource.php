@@ -80,13 +80,6 @@ class OvertimeResource extends JsonResource
             "decline_reason" => $this->without_pay,
             'reason' => $this->reason,
             'credit_balance' => $overtime_credits->earned_credit_by_hour,
-            "hrmo_officer" => [
-                "employee_id" => $this->hrmoOfficer->employee_id,
-                "name" => $this->hrmoOfficer->personalInformation->name(),
-                "designation" => $this->hrmoOfficer->assignedArea->designation->name,
-                "designation_code" => $this->hrmoOfficer->assignedArea->designation->code,
-                "profile_url" => Cache::get("server_domain") . "/photo/profiles/" . $this->hrmoOfficer->profile_url,
-            ],
             "recommending_officer" => [
                 "employee_id" => $this->recommendingOfficer->employee_id,
                 "name" => $this->recommendingOfficer->personalInformation->name(),

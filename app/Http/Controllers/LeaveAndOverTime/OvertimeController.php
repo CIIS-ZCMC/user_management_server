@@ -43,7 +43,7 @@ class OvertimeController extends Controller
             $employeeId = $employee_profile->id;
 
             /** FOR NORMAL EMPLOYEE */
-            if ($employee_profile->position() === null) {
+            if ($employee_profile->position() === null && $employee_profile->position() === 'Supervisor') {
                 $overtime_application = OvertimeApplication::where('employee_profile_id', $employee_profile->id)->get();
 
                 return response()->json([
@@ -56,9 +56,9 @@ class OvertimeController extends Controller
                 return response()->json([
                     'data' => OvertimeApplication::collection(OvertimeApplication::where('status', 'approved')->get()),
                     'message' => 'Retrieved all overtime  application'
+
                 ], Response::HTTP_OK);
             }
-
 
             $overtime_application = OvertimeApplication::select('overtime_applications.*')
                 ->where(function ($query) use ($recommending, $approving, $employeeId) {
@@ -297,10 +297,6 @@ class OvertimeController extends Controller
         }
     }
 
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         try {
@@ -601,6 +597,25 @@ class OvertimeController extends Controller
             return 1.5;
         } else {
             return 1;
+        }
+    }
+
+    public function userOvertimeApplication(Request $request)
+    {
+        try {
+            $employee_profile = $request->user;
+
+            $overtime_applications = OvertimeApplication::where('employee_profile_id', $employee_profile->id)->get();
+            $employeeCredit = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)->get();
+            $result = [];
+
+            return response()->json([
+                'data' => OvertimeResource::collection($overtime_applications),
+                'credits' => $result,
+                'message' => 'Retrieve all overtime application records.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
