@@ -43,7 +43,9 @@ class OvertimeController extends Controller
             $employeeId = $employee_profile->id;
 
             /** FOR NORMAL EMPLOYEE */
+
             if ($employee_profile->position() === null || $employee_profile->position()['position'] === 'Supervisor') {
+
                 $overtime_application = OvertimeApplication::where('employee_profile_id', $employee_profile->id)->get();
 
                 return response()->json([
@@ -59,6 +61,7 @@ class OvertimeController extends Controller
 
                 ], Response::HTTP_OK);
             }
+
 
             $overtime_application = OvertimeApplication::select('overtime_applications.*')
                 ->where(function ($query) use ($recommending, $approving, $employeeId) {
@@ -385,7 +388,7 @@ class OvertimeController extends Controller
                     }
                 }
             }
-
+            $assigned_area = $employee_profile->assignedArea->findDetails();
             $status = 'for recommending approval';
             $overtime_application = OvertimeApplication::create([
                 'employee_profile_id' => $user->id,
@@ -394,8 +397,8 @@ class OvertimeController extends Controller
                 'overtime_letter_of_request' =>  $fileName,
                 'overtime_letter_of_request_path' =>  $file_name_encrypted,
                 'overtime_letter_of_request_size' =>  $size,
-                'recommending_officer' => $recommending_and_approving['recommending_officer'],
-                'approving_officer' => $recommending_and_approving['approving_officer'],
+                'recommending_officer' => Helpers::getDivHead($assigned_area),
+                'approving_officer' => Helpers::getChiefOfficer(),
             ]);
 
             $ovt_id = $overtime_application->id;
@@ -604,14 +607,9 @@ class OvertimeController extends Controller
     {
         try {
             $employee_profile = $request->user;
-
             $overtime_applications = OvertimeApplication::where('employee_profile_id', $employee_profile->id)->get();
-            $employeeCredit = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)->get();
-            $result = [];
-
             return response()->json([
                 'data' => OvertimeResource::collection($overtime_applications),
-                'credits' => $result,
                 'message' => 'Retrieve all overtime application records.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
