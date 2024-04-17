@@ -99,7 +99,6 @@ class CtoApplicationController extends Controller
     public function create(Request $request)
     {
         try {
-
             $user = $request->user;
             $sql = CtoApplication::where('employee_profile_id', $user->id)->get();
             $employeeCredit = EmployeeOvertimeCredit::where('employee_profile_id', $user->id)->get();

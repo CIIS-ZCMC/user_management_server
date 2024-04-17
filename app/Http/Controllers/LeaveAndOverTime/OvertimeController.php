@@ -374,8 +374,8 @@ class OvertimeController extends Controller
                 'overtime_letter_of_request' =>  $fileName,
                 'overtime_letter_of_request_path' =>  $file_name_encrypted,
                 'overtime_letter_of_request_size' =>  $size,
-                'recommending_officer' => $recommending_and_approving['recommending_officer'],
-                'approving_officer' => $recommending_and_approving['approving_officer'],
+                'recommending_officer' => Helpers::getDivHead($employeeId),
+                'approving_officer' => Helpers::getChiefOfficer(),
             ]);
 
             $ovt_id = $overtime_application->id;
