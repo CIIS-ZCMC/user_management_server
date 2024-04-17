@@ -43,7 +43,7 @@ class OvertimeController extends Controller
             $employeeId = $employee_profile->id;
 
             /** FOR NORMAL EMPLOYEE */
-            if ($employee_profile->position() === null && $employee_profile->position() === 'Supervisor') {
+            if ($employee_profile->position() === null || $employee_profile->position() === 'Supervisor') {
                 $overtime_application = OvertimeApplication::where('employee_profile_id', $employee_profile->id)->get();
 
                 return response()->json([
