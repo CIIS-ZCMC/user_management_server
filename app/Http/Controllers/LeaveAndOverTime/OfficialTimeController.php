@@ -141,6 +141,13 @@ class OfficialTimeController extends Controller
             $user           = $request->user;
             $assigned_area  = $user->assignedArea->findDetails();
 
+            $employee_profile = $request->user;
+            $employeeId = $employee_profile->id;
+            $cleanData['pin'] = strip_tags($request->pin);
+
+            if ($employee_profile['authorization_pin'] !== $cleanData['pin']) {
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
+            }
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
@@ -164,11 +171,11 @@ class OfficialTimeController extends Controller
             }
             $officers   = Helpers::getRecommendingAndApprovingOfficer($assigned_area, $user->id);
 
-            
+
             if ($officers === null || $officers['recommending_officer'] === null || $officers['approving_officer'] === null) {
                 return response()->json(['message' => 'No recommending officer and/or supervising officer assigned.'], Response::HTTP_FORBIDDEN);
             }
-            
+
             $recommending_officer   = $officers['recommending_officer'];
             $approving_officer      = $officers['approving_officer'];
 

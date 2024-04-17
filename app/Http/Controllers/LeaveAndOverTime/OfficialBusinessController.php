@@ -137,7 +137,14 @@ class OfficialBusinessController extends Controller
         try {
             $user = $request->user;
             $assigned_area = $user->assignedArea->findDetails();
+            
+            $employee_profile = $request->user;
+            $employeeId = $employee_profile->id;
+            $cleanData['pin'] = strip_tags($request->pin);
 
+            if ($employee_profile['authorization_pin'] !== $cleanData['pin']) {
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
+            }
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
