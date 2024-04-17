@@ -71,5 +71,5 @@ class Division extends Model
         return $this->belongsTo(EmployeeProfile::class, 'chief_employee_profile_id');
     }
 
-   
+
 }
