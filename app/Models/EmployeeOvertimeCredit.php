@@ -16,6 +16,7 @@ class EmployeeOvertimeCredit extends Model
         'used_credit_by_hour',
         'max_credit_monthly',
         'max_credit_annual',
+        'valid_until',
     ];
 
     public function employeeProfile()

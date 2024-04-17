@@ -344,7 +344,7 @@ class OvertimeController extends Controller
                 foreach ($employeeList as $dateIndex => $employeeIdList) {
                     foreach ($employeeIdList as $employeeId) {
                         // Retrieve employee's profile using the employee ID
-                        $employeeProfile = EmployeeProfile::find($employeeId);
+                        $employeeProfile = EmployeeProfile::with('overtimeCredit')->find($employeeId);
                         // Get the current year and the next year
                         $currentYear = date('Y');
                         $nextYear = $currentYear + 1;
