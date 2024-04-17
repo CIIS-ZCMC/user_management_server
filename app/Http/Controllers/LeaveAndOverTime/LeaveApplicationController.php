@@ -50,7 +50,7 @@ class LeaveApplicationController extends Controller
 
             if (Helpers::getHrmoOfficer() === $employee_profile->id) {
                 $employeeId = $employee_profile->id;
-                $hrmo = ["applied", "for recommending approval", "approved", "declined by hrmo officer"];
+                $hrmo = ["applied", "for recommending approval", "approved", "declined by hrmo officer", 'cancelled', 'received'];
                 $recommending = ["for recommending approval", "for approving approval", "approved", "declined by recommending officer"];
 
                 $leave_applications = LeaveApplication::select('leave_applications.*')
@@ -1088,6 +1088,7 @@ class LeaveApplicationController extends Controller
     {
         try {
             $user = $request->user;
+            $employee_profile= $user;
             $cancelled_by = 'HRMO';
             $cleanData['pin'] = strip_tags($request->password);
 
