@@ -22,6 +22,7 @@ use App\Models\EmployeeProfile;
 use App\Models\OvtApplicationLog;
 use App\Models\Section;
 use App\Models\Unit;
+use DateTime;
 
 class OvertimeController extends Controller
 {
@@ -501,6 +502,17 @@ class OvertimeController extends Controller
             Helpers::errorLog($this->CONTROLLER_NAME, 'storePast', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private function calculateOvertimeHours($startTime, $endTime) {
+
+        $start = new DateTime($startTime);
+        $end = new DateTime($endTime);
+        $interval = $start->diff($end);
+        $hours = $interval->h;
+        $minutes = $interval->i;
+        $totalHours = $hours + ($minutes / 60);
+        return $totalHours;
     }
 
     public function approved($id, AuthPinApprovalRequest $request)
