@@ -60,9 +60,6 @@ class OvertimeController extends Controller
             }
 
 
-
-
-
             $overtime_application = OvertimeApplication::select('overtime_applications.*')
                 ->where(function ($query) use ($recommending, $approving, $employeeId) {
                     $query->whereIn('overtime_applications.status', $recommending)
@@ -587,14 +584,9 @@ class OvertimeController extends Controller
     {
         try {
             $employee_profile = $request->user;
-
             $overtime_applications = OvertimeApplication::where('employee_profile_id', $employee_profile->id)->get();
-            $employeeCredit = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)->get();
-            $result = [];
-
             return response()->json([
                 'data' => OvertimeResource::collection($overtime_applications),
-                'credits' => $result,
                 'message' => 'Retrieve all overtime application records.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
