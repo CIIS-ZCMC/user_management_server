@@ -19,7 +19,7 @@ return new class extends Migration
             $table->date('date_to');
             $table->time('time_from');
             $table->time('time_to');
-            $table->string('purpose');
+            $table->text('purpose');
             $table->string('status')->default('for recommending approval');
             $table->string('personal_order_file')->nullable();
             $table->string('personal_order_path')->nullable();
