@@ -365,7 +365,7 @@ class OvertimeController extends Controller
                     }
                 }
             }
-
+            $assigned_area = $employee_profile->assignedArea->findDetails();
             $status = 'for recommending approval';
             $overtime_application = OvertimeApplication::create([
                 'employee_profile_id' => $user->id,
@@ -374,7 +374,7 @@ class OvertimeController extends Controller
                 'overtime_letter_of_request' =>  $fileName,
                 'overtime_letter_of_request_path' =>  $file_name_encrypted,
                 'overtime_letter_of_request_size' =>  $size,
-                'recommending_officer' => Helpers::getDivHead($employeeId),
+                'recommending_officer' => Helpers::getDivHead($assigned_area),
                 'approving_officer' => Helpers::getChiefOfficer(),
             ]);
 
