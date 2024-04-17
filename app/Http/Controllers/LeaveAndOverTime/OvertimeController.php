@@ -43,7 +43,7 @@ class OvertimeController extends Controller
             $employeeId = $employee_profile->id;
 
             /** FOR NORMAL EMPLOYEE */
-            if ($employee_profile->position() === null && $employee_profile->position() === 'Supervisor') {
+            if ($employee_profile->position() === null || $employee_profile->position()['position'] === 'Supervisor') {
                 $overtime_application = OvertimeApplication::where('employee_profile_id', $employee_profile->id)->get();
 
                 return response()->json([
@@ -51,7 +51,7 @@ class OvertimeController extends Controller
                     'message' => 'Retrieved all overtime application'
                 ], Response::HTTP_OK);
             }
-
+        //    return response()->json(['message' => $employee_profile->position()['position']], Response::HTTP_INTERNAL_SERVER_ERROR);
             if ($employee_profile->id === Helpers::getHrmoOfficer()) {
                 return response()->json([
                     'data' => OvertimeApplication::collection(OvertimeApplication::where('status', 'approved')->get()),

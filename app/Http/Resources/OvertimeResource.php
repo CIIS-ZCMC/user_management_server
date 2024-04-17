@@ -24,6 +24,7 @@ class OvertimeResource extends JsonResource
     {
 
         $employee_profile = $this->employeeProfile;
+
         $area = $this->employeeProfile->assignedArea->findDetails();
         $overtime_credits = EmployeeOvertimeCredit::where('employee_profile_id', $this->employeeProfile->id)->first();
         $oic = null;
@@ -57,6 +58,7 @@ class OvertimeResource extends JsonResource
         }
 
         return [
+
             "id" => $this->id,
             "employee_profile" => [
                 'employee_id' => $this->employeeProfile->id,
