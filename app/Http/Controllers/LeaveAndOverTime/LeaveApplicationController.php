@@ -1085,7 +1085,6 @@ class LeaveApplicationController extends Controller
     {
         try {
             $user = $request->user;
-            $employee_profile = $user;
             $cancelled_by = 'HRMO';
             $cleanData['pin'] = strip_tags($request->password);
 
@@ -1095,9 +1094,6 @@ class LeaveApplicationController extends Controller
 
             $leave_application = LeaveApplication::find($id);
             $leave_type = $leave_application->leaveType;
-            $leave_application_hrmo = $leave_application->hrmo_officer;
-            $leave_application_recommending = $leave_application->recommending_officer;
-            $leave_application_approving = $leave_application->approving_officer;
 
 
             $leave_application->update([
