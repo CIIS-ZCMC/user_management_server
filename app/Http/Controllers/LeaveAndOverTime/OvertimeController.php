@@ -22,6 +22,7 @@ use App\Models\EmployeeProfile;
 use App\Models\OvtApplicationLog;
 use App\Models\Section;
 use App\Models\Unit;
+use DateTime;
 
 class OvertimeController extends Controller
 {
@@ -355,10 +356,7 @@ class OvertimeController extends Controller
                         // Calculate the total overtime hours requested by the employee
                         $totalOvertimeHours = 0;
                         foreach ($validatedData['dates'][$index][$dateIndex] as $date) {
-                            // Access time_from and time_to values directly from $validatedData
-                            $timeFrom = $validatedData['time_from'][$index][$dateIndex];
-                            $timeTo = $validatedData['time_to'][$index][$dateIndex];
-                            $totalOvertimeHours += $this->calculateOvertimeHours($timeFrom, $timeTo);
+                            $totalOvertimeHours += $this->calculateOvertimeHours($validatedData['time_from'][$index][$dateIndex], $validatedData['time_to'][$index][$dateIndex]);
                         }
 
                         // Calculate the total earned credit accumulated including the current overtime application
@@ -377,6 +375,7 @@ class OvertimeController extends Controller
                     }
                 }
             }
+
             $status = 'for recommending approval';
             $overtime_application = OvertimeApplication::create([
                 'employee_profile_id' => $user->id,
@@ -503,6 +502,17 @@ class OvertimeController extends Controller
             Helpers::errorLog($this->CONTROLLER_NAME, 'storePast', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private function calculateOvertimeHours($startTime, $endTime) {
+
+        $start = new DateTime($startTime);
+        $end = new DateTime($endTime);
+        $interval = $start->diff($end);
+        $hours = $interval->h;
+        $minutes = $interval->i;
+        $totalHours = $hours + ($minutes / 60);
+        return $totalHours;
     }
 
     public function approved($id, AuthPinApprovalRequest $request)
