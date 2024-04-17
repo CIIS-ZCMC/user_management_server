@@ -369,10 +369,11 @@ class OvertimeController extends Controller
                         // Calculate the total overtime hours requested by the employee
                         $totalOvertimeHours = 0;
 
-                        foreach ($validatedData['dates'][$index][$dateIndex] as $date) {
-                            $totalOvertimeHours += $this->calculateOvertimeHours($validatedData['time_from'][$index][$dateIndex], $validatedData['time_to'][$index][$dateIndex]);
-                        }
-                        return response()->json(['message' =>$validatedData['dates'][$index][$dateIndex]], Response::HTTP_FORBIDDEN);
+                        $timeFrom = $validatedData['time_from'][$index][$dateIndex];
+                        $timeTo = $validatedData['time_to'][$index][$dateIndex];
+                        $totalOvertimeHours += $this->calculateOvertimeHours($timeFrom, $timeTo);
+
+                        return response()->json(['message' =>$totalOvertimeHours], Response::HTTP_FORBIDDEN);
                         // Calculate the total earned credit accumulated including the current overtime application
                         $totalEarnedCredit = $employeeProfile->earned_credit_by_hour + $totalOvertimeHours;
 
@@ -389,7 +390,6 @@ class OvertimeController extends Controller
                     }
                 }
             }
-            return response()->json(['message' => "its here"], Response::HTTP_FORBIDDEN);
             $status = 'for recommending approval';
             $overtime_application = OvertimeApplication::create([
                 'employee_profile_id' => $user->id,
