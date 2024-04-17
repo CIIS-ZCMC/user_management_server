@@ -30,6 +30,7 @@ class EmployeeOvertimeCreditResource extends JsonResource
             'used_credit_by_hour' => $this->used_credit_by_hour,
             'max_credit_monthly' => $this->max_credit_monthly,
             'max_credit_annual' => $this->max_credit_annual,
+            'valid_until' => $this->valid_until,
         ];
     }
 }
