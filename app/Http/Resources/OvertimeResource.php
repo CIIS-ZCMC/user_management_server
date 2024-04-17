@@ -31,8 +31,8 @@ class OvertimeResource extends JsonResource
         $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $this->employeeProfile->id)->first();
         $hrmo = Section::where('code', 'HRMO')->first();
 
-        if($this->employee_oic_id  !== null){
-            switch($area['sector']){
+        if ($this->employee_oic_id  !== null) {
+            switch ($area['sector']) {
                 case "Division":
                     $area_details = $employee_profile->assignedArea->division;
                     break;
@@ -66,7 +66,7 @@ class OvertimeResource extends JsonResource
                 'area' => $area['details']->name,
                 'area_code' => $area['details']->code,
                 'area_sector' => $area['sector'],
-                'profile_url'=>Cache::get("server_domain") . "/photo/profiles/" . $this->employeeProfile->profile_url,
+                'profile_url' => Cache::get("server_domain") . "/photo/profiles/" . $this->employeeProfile->profile_url,
             ],
 
             "date" => $this->date_from,
@@ -95,11 +95,11 @@ class OvertimeResource extends JsonResource
                 "profile_url" => Cache::get("server_domain") . "/photo/profiles/" . $this->approvingOfficer->profile_url,
             ],
             "oic" => $oic,
-            'logs' => $this->logs ? OvtApplicationLogResource::collection($this->logs):[],
-            'activities' => $this->activities->isNotEmpty() ? OvtApplicationActivityResource::collection($this->activities) : null,
-            'dates' => $this->dates->isEmpty() ? OvtApplicationDatetime::collection($this->dates) : null,
-            'created_at'=>$this->created_at,
-            'updated_at'=>$this->updated_at,
+            'logs' => $this->logs ? OvtApplicationLogResource::collection($this->logs) : [],
+            'activities' => $this->activities ? OvtApplicationActivityResource::collection($this->activities) : null,
+            'dates' => !$this->activities ? OvtApplicationDatetime::collection($this->dates) : null,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }
