@@ -260,7 +260,7 @@ class OvertimeController extends Controller
         }
     }
 
-   
+
     /**
      * Store a newly created resource in storage.
      */
@@ -268,7 +268,13 @@ class OvertimeController extends Controller
     {
         try {
             $employee_profile = $request->user;
+
+            $cleanData['pin'] = strip_tags($request->pin);
+            if ($employee_profile['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+            }
             $employeeId = $employee_profile->id;
+
             $validatedData = $request->validate([
                 'dates.*' => 'required',
                 'activities.*' => 'required',
@@ -297,12 +303,19 @@ class OvertimeController extends Controller
             $size = "";
             $recommending_and_approving = Helpers::getRecommendingAndApprovingOfficer($employee_profile->assignedArea->findDetails(), $employee_profile->id);
 
+
             if ($recommending_and_approving === null || $recommending_and_approving['recommending_officer'] === null || $recommending_and_approving['approving_officer'] === null) {
                 return response()->json(['message' => 'No recommending officer and/or supervising officer assigned.'], Response::HTTP_FORBIDDEN);
             }
+
+
             foreach ($validatedData['employees'] as $index => $employeeList) {
+
+
                 foreach ($employeeList as $dateIndex => $employeeIdList) {
+
                     foreach ($employeeIdList as $employeeId) {
+
                         // Retrieve employee's profile using the employee ID
                         $employeeProfile = EmployeeProfile::find($employeeId);
                         // Get the current year and the next year
@@ -315,10 +328,11 @@ class OvertimeController extends Controller
 
                         // Calculate the total overtime hours requested by the employee
                         $totalOvertimeHours = 0;
+
                         foreach ($validatedData['dates'][$index][$dateIndex] as $date) {
                             $totalOvertimeHours += $this->calculateOvertimeHours($validatedData['time_from'][$index][$dateIndex], $validatedData['time_to'][$index][$dateIndex]);
                         }
-
+                        return response()->json(['message' =>$validatedData['dates'][$index][$dateIndex]], Response::HTTP_FORBIDDEN);
                         // Calculate the total earned credit accumulated including the current overtime application
                         $totalEarnedCredit = $employeeProfile->earned_credit_by_hour + $totalOvertimeHours;
 
@@ -335,7 +349,7 @@ class OvertimeController extends Controller
                     }
                 }
             }
-
+            return response()->json(['message' => "its here"], Response::HTTP_FORBIDDEN);
             $status = 'for recommending approval';
             $overtime_application = OvertimeApplication::create([
                 'employee_profile_id' => $user->id,
