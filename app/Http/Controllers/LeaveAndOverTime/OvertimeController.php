@@ -42,7 +42,6 @@ class OvertimeController extends Controller
             $position = $employee_profile->position();
             $employeeId = $employee_profile->id;
 
-
             /** FOR NORMAL EMPLOYEE */
             if ($employee_profile->position() === null) {
                 $overtime_application = OvertimeApplication::where('employee_profile_id', $employee_profile->id)->get();
@@ -71,21 +70,15 @@ class OvertimeController extends Controller
                 })
                 ->groupBy(
                     'id',
-                    'date',
-                    'time',
                     'status',
-                    'purpose',
-                    'reference_number',
-                    'hrmo_officer_id',
-                    'recommending_officer_id',
-                    'approving_officer_id',
+                    'recommending_officer',
+                    'approving_officer',
                     'certificate_of_appearance_path',
                     'certificate_of_appearance_size',
                     'remarks',
                     'overtime_letter_of_request',
                     'overtime_letter_of_request_path',
                     'overtime_letter_of_request_size',
-                    'path',
                     'decline_reason',
                     'created_at',
                     'updated_at',
