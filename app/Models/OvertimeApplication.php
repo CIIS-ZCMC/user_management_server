@@ -13,14 +13,13 @@ class OvertimeApplication extends Model
 
     public $fillable = [
         'employee_profile_id',
-        'reference_number',
         'status',
         'purpose',
         'overtime_letter_of_request',
-        'path',
-        'date',
-        'time'
-
+        'overtime_letter_of_request_path',
+        'overtime_letter_of_request_size',
+        'recommending_officer',
+        'approving_officer',
     ];
 
     public function activities()
