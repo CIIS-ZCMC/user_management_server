@@ -43,8 +43,8 @@ class CtoApplicationController extends Controller
              */
 
 
-             /** FOR NORMAL EMPLOYEE */
-            if($employee_profile->position() === null){
+            /** FOR NORMAL EMPLOYEE */
+            if ($employee_profile->position() === null) {
                 $cto_application = CtoApplication::where('employee_profile_id', $employee_profile->id)->get();
 
                 return response()->json([
@@ -91,7 +91,6 @@ class CtoApplicationController extends Controller
                 'data' => CtoApplicationResource::collection($cto_application),
                 'message' => 'Retrieved all official business application'
             ], Response::HTTP_OK);
-
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -104,9 +103,10 @@ class CtoApplicationController extends Controller
             $user = $request->user;
             $sql = CtoApplication::where('employee_profile_id', $user->id)->get();
             $employeeCredit = EmployeeOvertimeCredit::where('employee_profile_id', $user->id)->get();
-            return response()->json(['data' => CtoApplicationResource::collection($sql),
-                                    'employee_credit' => EmployeeOvertimeCreditResource::collection($employeeCredit)], Response::HTTP_OK);
-
+            return response()->json([
+                'data' => CtoApplicationResource::collection($sql),
+                'employee_credit' => EmployeeOvertimeCreditResource::collection($employeeCredit)
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
 
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -119,7 +119,7 @@ class CtoApplicationController extends Controller
             $employee_profile = $request->user;
             $data = CtoApplication::findOrFail($id);
 
-            if(!$data) {
+            if (!$data) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
@@ -138,44 +138,42 @@ class CtoApplicationController extends Controller
                     case 'for recommending approval':
                         $status = 'for approving approval';
                         $log_action = 'Approved by Recommending Officer';
-                    break;
+                        break;
 
                     case 'for approving approval':
                         $status = 'approved';
                         $log_action = 'Approved by Approving Officer';
-                    break;
+                        break;
 
-                    // default:
-                    //     $status = 'declined';
-                    //     $log_action = 'Request Declined';
-                    // break;
+                        // default:
+                        //     $status = 'declined';
+                        //     $log_action = 'Request Declined';
+                        // break;
                 }
             } else if ($request->status === 'declined') {
-                $cto_application_recommending=$data->recommending_officer  ;
-                $cto_application_approving=$data->approving_officer  ;
+                $cto_application_recommending = $data->recommending_officer;
+                $cto_application_approving = $data->approving_officer;
 
 
-                if($employee_profile->id === $cto_application_recommending)
-                {
-                    $status='declined by recommending officer';
-                }
-                else if($employee_profile->id === $cto_application_approving)
-                {
-                    $status='declined by approving officer';
+                if ($employee_profile->id === $cto_application_recommending) {
+                    $status = 'declined by recommending officer';
+                } else if ($employee_profile->id === $cto_application_approving) {
+                    $status = 'declined by approving officer';
                 }
                 $log_action = 'Request Declined';
             }
-                CtoApplicationLog::create([
-                    'action_by' => $employee_profile->id,
-                    'cto_application_id' => $data->id,
-                    'action' => $log_action,
-                ]);
+            CtoApplicationLog::create([
+                'action_by' => $employee_profile->id,
+                'cto_application_id' => $data->id,
+                'action' => $log_action,
+            ]);
 
             $data->update(['status' => $status, 'remarks' => $request->remarks]);
 
-            return response()->json(['data' => CtoApplicationResource::collection(CtoApplication::where('id', $data->id)->get()),
-                                    'message' => $log_action, ], Response::HTTP_OK);
-
+            return response()->json([
+                'data' => CtoApplicationResource::collection(CtoApplication::where('id', $data->id)->get()),
+                'message' => $log_action,
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
 
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -191,12 +189,21 @@ class CtoApplicationController extends Controller
 
             $assigned_area = $employee_profile->assignedArea->findDetails();
             $approving_officer = Helpers::getDivHead($assigned_area);
-            $hrmo_officer= Helpers::getHrmoOfficer();
+            $hrmo_officer = Helpers::getHrmoOfficer();
 
 
             $reason = [];
             $failed = [];
 
+
+            $employee_profile = $request->user;
+            $employeeId = $employee_profile->id;
+            $cleanData['pin'] = strip_tags($request->pin);
+
+            if ($employee_profile['authorization_pin'] !== $cleanData['pin']) {
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
+            }
+            
             if (!$employee_profile) {
                 return response()->json(['message' => 'Unauthorized.'], Response::HTTP_FORBIDDEN);
             }
@@ -227,17 +234,17 @@ class CtoApplicationController extends Controller
             }
 
 
-            foreach (json_decode($request->cto_applications) as $key=>$value) {
+            foreach (json_decode($request->cto_applications) as $key => $value) {
 
                 $employee_credit = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)->first();
-                
+
                 if ($employee_credit->earned_credit_by_hour < $value->applied_credits) {
                     $failed[] = $value;
                     $reason[] = 'Insufficient overtime credit.';
                     continue;
                 }
                 $date = Carbon::parse($value->date);
-                $employeeId= $employee_profile->id;
+                $employeeId = $employee_profile->id;
                 $overlapExists = Helpers::hasOverlappingCTO($date, $employeeId);
 
                 if ($overlapExists) {
@@ -280,29 +287,29 @@ class CtoApplicationController extends Controller
                     $cto_applications[] = $cto_application;
                 }
             }
-            
-                    if (count($failed) === count(json_decode($request->cto_applications, true))) {
-                        return response()->json([
-                            'failed' => $failed,
-                            'reason' => $reason,
-                            'message' => 'Failed to register all compensatory time off applications.'
-                        ], Response::HTTP_BAD_REQUEST);
-                    }
 
-                    if (count($failed) > 0) {
-                        return response()->json([
-                            'data' =>CtoApplicationResource::collection($cto_applications),
-                            'failed' => $failed,
-                            'employee_credit' => EmployeeOvertimeCreditResource::collection($employeeCredit),
-                            'message' => count($failed) . 'application/s failed to register.' 
-                        ], Response::HTTP_OK);
-                    }
+            if (count($failed) === count(json_decode($request->cto_applications, true))) {
+                return response()->json([
+                    'failed' => $failed,
+                    'reason' => $reason,
+                    'message' => 'Failed to register all compensatory time off applications.'
+                ], Response::HTTP_BAD_REQUEST);
+            }
 
-                    return response()->json([
-                        'data' => CtoApplicationResource::collection($cto_applications),
-                        'employee_credit' => EmployeeOvertimeCreditResource::collection($employeeCredit),
-                        'message' => 'Request submitted sucessfully.'
-                    ], Response::HTTP_OK);
+            if (count($failed) > 0) {
+                return response()->json([
+                    'data' => CtoApplicationResource::collection($cto_applications),
+                    'failed' => $failed,
+                    'employee_credit' => EmployeeOvertimeCreditResource::collection($employeeCredit),
+                    'message' => count($failed) . 'application/s failed to register.'
+                ], Response::HTTP_OK);
+            }
+
+            return response()->json([
+                'data' => CtoApplicationResource::collection($cto_applications),
+                'employee_credit' => EmployeeOvertimeCreditResource::collection($employeeCredit),
+                'message' => 'Request submitted sucessfully.'
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }

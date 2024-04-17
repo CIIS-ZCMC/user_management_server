@@ -1208,15 +1208,18 @@ class EmployeeProfileController extends Controller
             $new_password = strip_tags($request->new_password);
             $cleanData = ["password" => $new_password];
 
-            if ($this->CheckPasswordRepetition($cleanData, 3, $employee_profile)) {
-                return response()->json(['message' => "Please consider changing your password, as it appears you have reused an old password."], Response::HTTP_BAD_REQUEST);
-            }
+          
 
             $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
 
             if (!Hash::check($password . config('app.salt_value'), $decryptedPassword)) {
                 return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
             }
+
+            if ($this->CheckPasswordRepetition($cleanData, 3, $employee_profile)) {
+                return response()->json(['message' => "Please consider changing your password, as it appears you have reused an old password."], Response::HTTP_BAD_REQUEST);
+            }
+
 
             $hashPassword = Hash::make($new_password . config('app.salt_value'));
             $encryptedPassword = Crypt::encryptString($hashPassword);
