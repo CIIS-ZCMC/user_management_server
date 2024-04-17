@@ -703,8 +703,7 @@ class LeaveApplicationController extends Controller
 
             $checkSchedule = Helpers::hasSchedule($start, $end, $employeeId);
 
-            if(!$checkSchedule)
-            {
+            if (!$checkSchedule) {
                 return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
             }
 
@@ -714,7 +713,7 @@ class LeaveApplicationController extends Controller
                 $foundConsecutiveDays = 0;
 
                 $Date = $end->copy();
-               // Loop through each day starting from the end date
+                // Loop through each day starting from the end date
 
                 while ($foundConsecutiveDays  <= 4) {
                     if (Helpers::hasSchedule($Date->toDateString(), $Date->toDateString(), $employeeId)) {
@@ -726,7 +725,7 @@ class LeaveApplicationController extends Controller
                     }
                     // Move to the next day
 
-                $Date->addDay();
+                    $Date->addDay();
                 }
 
                 $finalDate = $finalConsecutiveScheduleDate ? $finalConsecutiveScheduleDate->toDateString() : null;
@@ -852,10 +851,9 @@ class LeaveApplicationController extends Controller
                         return response()->json(['message' => 'Insufficient leave credits.'], Response::HTTP_BAD_REQUEST);
                     } else {
                         $totalHours = Helpers::getTotalHours($start, $end, $employeeId);
-                        $totalDeductCredits= (int) ($totalHours / 8);
-                        if($employee_profile->employmentType === 'Permanent Part-time')
-                        {
-                            $totalDeductCredits=$totalDeductCredits/8;
+                        $totalDeductCredits = (int) ($totalHours / 8);
+                        if ($employee_profile->employmentType === 'Permanent Part-time') {
+                            $totalDeductCredits = $totalDeductCredits / 8;
                         }
                         $cleanData['applied_credits'] = $totalDeductCredits;
                         $cleanData['employee_profile_id'] = $employee_profile->id;
@@ -869,8 +867,7 @@ class LeaveApplicationController extends Controller
 
                         if (!$isMCC) {
 
-                            if($leave_type->code='VL' && $request->country != 'Philippines')
-                            {
+                            if ($leave_type->code = 'VL' && $request->country != 'Philippines') {
                                 $cleanData['recommending_officer'] = Helpers::getDivHead($employee_profile->assignedArea->findDetails());
                                 $cleanData['approving_officer'] = Helpers::getChiefOfficer();
                             }
@@ -1072,6 +1069,12 @@ class LeaveApplicationController extends Controller
                 ]);
             }
 
+            LeaveApplicationLog::create([
+                'action_by' => $employee_profile->id,
+                'leave_application_id' => $leave_application->id,
+                'action' => 'Declined'
+            ]);
+
             return response()->json([
                 'data' => new LeaveApplicationResource($leave_application),
                 'message' => 'Declined leave application successfully.'
@@ -1118,9 +1121,13 @@ class LeaveApplicationController extends Controller
                     'total_leave_credits' => $current_leave_credit + $leave_application->applied_credits,
                     'used_leave_credits' => $current_used_leave_credit - $leave_application->applied_credits
                 ]);
-
-           
             }
+
+            LeaveApplicationLog::create([
+                'action_by' => $employee_profile->id,
+                'leave_application_id' => $leave_application->id,
+                'action' => 'Cancelled'
+            ]);
 
             return response()->json([
                 'data' => new LeaveApplicationResource($leave_application),
@@ -1134,7 +1141,9 @@ class LeaveApplicationController extends Controller
     public function received($id, AuthPinApprovalRequest $request)
     {
         try {
+
             $user = $request->user;
+            $employee_profile = $user;
             $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !== $cleanData['pin']) {
@@ -1145,6 +1154,12 @@ class LeaveApplicationController extends Controller
             $leave_application->update([
                 'status' => 'received',
                 'received_at' => Carbon::now(),
+            ]);
+
+            LeaveApplicationLog::create([
+                'action_by' => $employee_profile->id,
+                'leave_application_id' => $leave_application->id,
+                'action' => 'Received'
             ]);
 
             return response()->json([
@@ -1165,7 +1180,7 @@ class LeaveApplicationController extends Controller
                 'print_datetime' => Carbon::now()
             ]);
             $response[] = $employee_print;
-            return response()->json(['data' => new LeaveApplicationResource($employee_print),'message' => 'Successfully printed'], 200);
+            return response()->json(['data' => new LeaveApplicationResource($employee_print), 'message' => 'Successfully printed'], 200);
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -1234,7 +1249,6 @@ class LeaveApplicationController extends Controller
                 'is_printed' => 1,
                 'print_datetime' => Carbon::now()
             ]);
-
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage(), 'error' => true]);
         }
