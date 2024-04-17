@@ -1919,11 +1919,6 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('my-ovt-application-approved/{id}', 'OvertimeController@employeeApprovedOvertimeApplication');
         });
 
-
-
-
-
-
         Route::middleware(['auth.permission:UMIS-OM view'])->group(function () {
             Route::get('user-ovt-application', 'OvertimeController@getUserOvertime');
         });

@@ -16,13 +16,12 @@ class OvtApplicationActivity extends Model
         'quantity',
         'man_hour',
         'period_covered'
-
-
     ];
     public function dates()
     {
         return $this->hasMany(OvtApplicationDatetime::class);
     }
+
     public function overtimeApplication(){
         return $this->belongsTo(OvertimeApplication::class);
     }

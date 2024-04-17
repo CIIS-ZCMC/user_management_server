@@ -20,7 +20,7 @@ class OvtApplicationDateTimeResource extends JsonResource
             "time_from" => $this->name,
             "time_to" => $this->quantity,
             "date" => $this->man_hour,
-            'employees' => OvtApplicationEmployee::collection($this->employees),
+            'employees' => OvtApplicationEmployeeResource::collection($this->employees),
         ];
     }
 }

@@ -95,9 +95,9 @@ class OvertimeResource extends JsonResource
                 "profile_url" => Cache::get("server_domain") . "/photo/profiles/" . $this->approvingOfficer->profile_url,
             ],
             "oic" => $oic,
-            'logs' => $this->logs ? OvtApplicationLog::collection($this->logs):[],
-            'activities' => $this->activities->isNotEmpty() ? OvtApplicationActivity::collection($this->activities) : null,
-            'dates' => $this->activities->isEmpty() ? OvtApplicationDatetime::collection($this->dates) : null,
+            'logs' => $this->logs ? OvtApplicationLogResource::collection($this->logs):[],
+            'activities' => $this->activities->isNotEmpty() ? OvtApplicationActivityResource::collection($this->activities) : null,
+            'dates' => $this->dates->isEmpty() ? OvtApplicationDatetime::collection($this->dates) : null,
             'created_at'=>$this->created_at,
             'updated_at'=>$this->updated_at,
         ];
