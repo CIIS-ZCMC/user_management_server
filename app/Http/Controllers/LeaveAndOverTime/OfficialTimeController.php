@@ -84,6 +84,8 @@ class OfficialTimeController extends Controller
                     'id',
                     'date_from',
                     'date_to',
+                    'time_from',
+                    'time_to',
                     'status',
                     'purpose',
                     'personal_order_file',
@@ -210,7 +212,7 @@ class OfficialTimeController extends Controller
                     return response()->json([
                         'data' => OfficialTimeResource::collection(OfficialTime::where('id', $data->id)->get()),
                         'logs' =>  Helpers::registerOfficialTimeLogs($data->id, $user['id'], 'Applied'),
-                        'msg' => 'Request Complete.'], Response::HTTP_OK);
+                        'message' => 'Request Complete.'], Response::HTTP_OK);
             }
         } catch (\Throwable $th) {
 
@@ -298,7 +300,7 @@ class OfficialTimeController extends Controller
             Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.'); //System Logs
             return response()->json(['data' => OfficialTimeResource::collection(OfficialTime::where('id', $data->id)->get()),
                                     'logs' => Helpers::registerOfficialTimeLogs($data->id, $employee_profile['id'], $log_action),
-                                    'msg' => $log_action, ], Response::HTTP_OK);
+                                    'message' => $log_action, ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 

@@ -42,7 +42,6 @@ class OvertimeController extends Controller
             $position = $employee_profile->position();
             $employeeId = $employee_profile->id;
 
-
             /** FOR NORMAL EMPLOYEE */
             if ($employee_profile->position() === null) {
                 $overtime_application = OvertimeApplication::where('employee_profile_id', $employee_profile->id)->get();
@@ -71,21 +70,14 @@ class OvertimeController extends Controller
                 })
                 ->groupBy(
                     'id',
-                    'date',
-                    'time',
                     'status',
                     'purpose',
-                    'reference_number',
-                    'hrmo_officer_id',
-                    'recommending_officer_id',
-                    'approving_officer_id',
-                    'certificate_of_appearance_path',
-                    'certificate_of_appearance_size',
-                    'remarks',
+                    'recommending_officer',
+                    'approving_officer',
                     'overtime_letter_of_request',
                     'overtime_letter_of_request_path',
                     'overtime_letter_of_request_size',
-                    'path',
+                    'remarks',
                     'decline_reason',
                     'created_at',
                     'updated_at',
@@ -358,7 +350,9 @@ class OvertimeController extends Controller
                     foreach ($employeeIdList as $employeeId) {
 
                         // Retrieve employee's profile using the employee ID
+
                         $employeeProfile = EmployeeProfile::with('overtimeCredits')->find($employeeId);
+
                         // Get the current year and the next year
                         $currentYear = date('Y');
                         $nextYear = $currentYear + 1;
@@ -405,7 +399,7 @@ class OvertimeController extends Controller
             ]);
 
             $ovt_id = $overtime_application->id;
-                foreach ($validatedData['activities'] as $index => $activities) {
+            foreach ($validatedData['activities'] as $index => $activities) {
                 $activity_application = OvtApplicationActivity::create([
                     'overtime_application_id' => $ovt_id,
                     'name' => $activities,
@@ -420,7 +414,7 @@ class OvertimeController extends Controller
                         'date' => $date,
                     ]);
 
-                foreach ($validatedData['employees'][$index][$dateIndex] as $employee) {
+                    foreach ($validatedData['employees'][$index][$dateIndex] as $employee) {
                         OvtApplicationEmployee::create([
                             'ovt_application_datetime_id' => $date_application->id,
                             'employee_profile_id' => $employee,
@@ -443,7 +437,6 @@ class OvertimeController extends Controller
             Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
     }
 
     public function storePast(Request $request)
@@ -520,7 +513,8 @@ class OvertimeController extends Controller
         }
     }
 
-    private function calculateOvertimeHours($startTime, $endTime) {
+    private function calculateOvertimeHours($startTime, $endTime)
+    {
 
         $start = new DateTime($startTime);
         $end = new DateTime($endTime);
@@ -556,14 +550,12 @@ class OvertimeController extends Controller
                     case 'for recommending approval':
                         $status = 'for approving approval';
                         $log_action = 'Approved by Recommending Officer';
-                    break;
+                        break;
 
                     case 'for approving approval':
                         $status = 'approved';
                         $log_action = 'Approved by Approving Officer';
-                    break;
-
-
+                        break;
                 }
             } else if ($request->status === 'declined') {
 
@@ -590,7 +582,6 @@ class OvertimeController extends Controller
                 'data' => new OvertimeResource($data),
                 'message' => $log_action,
             ], Response::HTTP_OK);
-
         } catch (\Throwable $th) {
 
             Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
@@ -601,13 +592,12 @@ class OvertimeController extends Controller
     public function calculateTotal($date)
     {
 
-            $carbonDate = Carbon::parse($date);
-            if ($carbonDate->isWeekend()) {
-                return 1.5;
-            }
-            else {
-                return 1;
-            }
+        $carbonDate = Carbon::parse($date);
+        if ($carbonDate->isWeekend()) {
+            return 1.5;
+        } else {
+            return 1;
+        }
     }
 
     /**
