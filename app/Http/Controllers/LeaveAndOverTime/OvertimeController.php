@@ -388,7 +388,9 @@ class OvertimeController extends Controller
                     }
                 }
             }
+
             $assigned_area = $employee_profile->assignedArea->findDetails();
+          //  return response()->json(['message' =>  Helpers::getDivHead($assigned_area)], Response::HTTP_BAD_REQUEST);
             $status = 'for recommending approval';
             $overtime_application = OvertimeApplication::create([
                 'employee_profile_id' => $user->id,
