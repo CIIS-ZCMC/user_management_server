@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\OvtApplicationDatetime;
+use App\Http\Resources\OvtApplicationDateTimeResource;
 use App\Models\OvtApplicationLog;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -21,7 +22,7 @@ class OvtApplicationActivityResource extends JsonResource
             "quantity" => $this->quantity,
             "man_hour" => $this->man_hour,
             "period_covered" => $this->period_covered,
-            'dates' => OvtApplicationDatetime::collection($this->dates),
+            'dates' => OvtApplicationDateTimeResource::collection($this->dates),
         ];
     }
 }

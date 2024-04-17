@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use App\Models\OvtApplicationEmployee;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-
+use App\Http\Resources\OvtApplicationEmployeeResource;
 class OvtApplicationDateTimeResource extends JsonResource
 {
     /**
@@ -16,11 +16,12 @@ class OvtApplicationDateTimeResource extends JsonResource
 
     public function toArray($request)
     {
+
         return [
             "time_from" => $this->name,
             "time_to" => $this->quantity,
             "date" => $this->man_hour,
-            'employees' => OvtApplicationEmployee::collection($this->employees),
+            'employees' => OvtApplicationEmployeeResource::collection($this->employees),
         ];
     }
 }

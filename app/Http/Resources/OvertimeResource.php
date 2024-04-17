@@ -4,9 +4,9 @@ namespace App\Http\Resources;
 
 use App\Models\Division;
 use App\Models\EmployeeOvertimeCredit;
-use App\Models\OvtApplicationActivity;
-use App\Models\OvtApplicationDatetime;
-use App\Models\OvtApplicationEmployee;
+use App\Http\Resources\OvtApplicationLogResource;
+use App\Http\Resources\OvtApplicationActivityResource;
+use App\Http\Resources\OvtApplicationDateTimeResource;
 use App\Models\OvtApplicationLog;
 use App\Models\Section;
 use Illuminate\Http\Request;
@@ -26,11 +26,28 @@ class OvertimeResource extends JsonResource
         $employee_profile = $this->employeeProfile;
 
         $area = $this->employeeProfile->assignedArea->findDetails();
-        $overtime_credits = EmployeeOvertimeCredit::where('employee_profile_id', $this->employeeProfile->id)->first();
+        $otCreditsRecords = EmployeeOvertimeCredit::where('employee_profile_id', $this->employeeProfile->id);
+        if( $otCreditsRecords->count() >=1){
+            $overtime_credits = $otCreditsRecords->first();
+        }
+
         $oic = null;
 
-        $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $this->employeeProfile->id)->first();
-        $hrmo = Section::where('code', 'HRMO')->first();
+        $omccRec = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $this->employeeProfile->id);
+        if($omccRec->count()>=1){
+            $isMCC =  $omccRec ->first();
+
+        }
+
+
+
+
+        $hrmoRec = Section::where('code', 'HRMO');
+        if($hrmoRec->count()>=1){
+            $hrmo = $hrmoRec->first();
+        }
+
+
 
         if($this->employee_oic_id  !== null){
             switch($area['sector']){
@@ -73,33 +90,33 @@ class OvertimeResource extends JsonResource
 
             "date" => $this->date_from,
             "reference_number" => $this->date_to,
-            "status" => $this->country,
-            "remarks" => $this->city,
-            "purpose" => $this->illness,
+            "status" => $this->status,
+            "remarks" => $this->remarks,
+            "purpose" => $this->purpose,
             "overtime_letter_of_request" => $this->is_masters,
             "overtime_letter_of_request_path" => $this->is_board,
             "overtime_letter_of_request_size" => $this->is_commutation,
             "decline_reason" => $this->without_pay,
             'reason' => $this->reason,
-            'credit_balance' => $overtime_credits->earned_credit_by_hour,
+            'credit_balance' => $overtime_credits->earned_credit_by_hour ?? 0,
             "recommending_officer" => [
-                "employee_id" => $this->recommendingOfficer->employee_id,
+                "employee_id" => $this->recommendingOfficer->id,
                 "name" => $this->recommendingOfficer->personalInformation->name(),
                 "designation" => $this->recommendingOfficer->assignedArea->designation->name,
                 "designation_code" => $this->recommendingOfficer->assignedArea->designation->code,
                 "profile_url" => Cache::get("server_domain") . "/photo/profiles/" . $this->recommendingOfficer->profile_url,
             ],
             "approving_officer" => [
-                "employee_id" => $this->approvingOfficer->employee_id,
+                "employee_id" => $this->approvingOfficer->id,
                 "name" => $this->approvingOfficer->personalInformation->name(),
                 "designation" => $this->approvingOfficer->assignedArea->designation->name,
                 "designation_code" => $this->approvingOfficer->assignedArea->designation->code,
                 "profile_url" => Cache::get("server_domain") . "/photo/profiles/" . $this->approvingOfficer->profile_url,
             ],
             "oic" => $oic,
-            'logs' => $this->logs ? OvtApplicationLog::collection($this->logs):[],
-            'activities' => $this->activities->isNotEmpty() ? OvtApplicationActivity::collection($this->activities) : null,
-            'dates' => $this->activities->isEmpty() ? OvtApplicationDatetime::collection($this->dates) : null,
+            'logs' => $this->logs ? OvtApplicationLogResource::collection($this->logs):[],
+            'activities' => $this->activities->isNotEmpty() ? OvtApplicationActivityResource::collection($this->activities) : null,
+            //'dates' => $this->activities->isEmpty() ? OvtApplicationDateTimeResource::collection($this->dates) : null,
             'created_at'=>$this->created_at,
             'updated_at'=>$this->updated_at,
         ];
