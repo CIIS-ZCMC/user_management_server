@@ -22,6 +22,7 @@ use App\Models\EmployeeProfile;
 use App\Models\OvtApplicationLog;
 use App\Models\Section;
 use App\Models\Unit;
+use DateTime;
 
 class OvertimeController extends Controller
 {
@@ -357,7 +358,7 @@ class OvertimeController extends Controller
                     foreach ($employeeIdList as $employeeId) {
 
                         // Retrieve employee's profile using the employee ID
-                        $employeeProfile = EmployeeProfile::find($employeeId);
+                        $employeeProfile = EmployeeProfile::with('overtimeCredits')->find($employeeId);
                         // Get the current year and the next year
                         $currentYear = date('Y');
                         $nextYear = $currentYear + 1;
@@ -373,23 +374,24 @@ class OvertimeController extends Controller
                         $timeTo = $validatedData['time_to'][$index][$dateIndex];
                         $totalOvertimeHours += $this->calculateOvertimeHours($timeFrom, $timeTo);
 
-                        return response()->json(['message' =>$totalOvertimeHours], Response::HTTP_FORBIDDEN);
+
                         // Calculate the total earned credit accumulated including the current overtime application
                         $totalEarnedCredit = $employeeProfile->earned_credit_by_hour + $totalOvertimeHours;
 
                         // Compare with max_credit_monthly and max_credit_annual including valid_until
-                        if ($totalOvertimeHours > $employeeProfile->overtimeCredit->max_credit_monthly && $validUntil == $employeeProfile->overtimeCredit->valid_until) {
+                        if ($totalOvertimeHours > $employeeProfile->overtimeCredits[0]->max_credit_monthly && $validUntil == $employeeProfile->overtimeCredits[0]->valid_until) {
                             // Handle exceeding max_credit_monthly
                             return response()->json(['message' => 'Employee ' . $employeeId . ' has exceeded the monthly overtime credit.'], Response::HTTP_BAD_REQUEST);
                         }
 
-                        if ($totalEarnedCredit > $employeeProfile->overtimeCredit->max_credit_annual && $validUntil == $employeeProfile->overtimeCredit->valid_until) {
+                        if ($totalEarnedCredit > $employeeProfile->overtimeCredits[0]->max_credit_annual && $validUntil == $employeeProfile->overtimeCredits[0]->valid_until) {
                             // Handle exceeding max_credit_annual
                             return response()->json(['message' => 'Employee ' . $employeeId . ' has exceeded the annual overtime credit.'], Response::HTTP_BAD_REQUEST);
                         }
                     }
                 }
             }
+
             $status = 'for recommending approval';
             $overtime_application = OvertimeApplication::create([
                 'employee_profile_id' => $user->id,
@@ -429,12 +431,12 @@ class OvertimeController extends Controller
             }
             OvtApplicationLog::create([
                 'overtime_application_id' => $ovt_id,
-                'action_by' => $employee_profile->id,
+                'action_by_id' => $employee_profile->id,
                 'action' => 'Applied'
             ]);
             return response()->json([
                 'message' => 'Overtime Application has been sucessfully saved',
-                'data' => OvertimeResource::collection($overtime_application),
+              //  'data' => OvertimeResource::collection($overtime_application),
 
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -516,6 +518,17 @@ class OvertimeController extends Controller
             Helpers::errorLog($this->CONTROLLER_NAME, 'storePast', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private function calculateOvertimeHours($startTime, $endTime) {
+
+        $start = new DateTime($startTime);
+        $end = new DateTime($endTime);
+        $interval = $start->diff($end);
+        $hours = $interval->h;
+        $minutes = $interval->i;
+        $totalHours = $hours + ($minutes / 60);
+        return $totalHours;
     }
 
     public function approved($id, AuthPinApprovalRequest $request)
