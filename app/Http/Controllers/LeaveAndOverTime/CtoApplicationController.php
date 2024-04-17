@@ -195,6 +195,15 @@ class CtoApplicationController extends Controller
             $reason = [];
             $failed = [];
 
+
+            $employee_profile = $request->user;
+            $employeeId = $employee_profile->id;
+            $cleanData['pin'] = strip_tags($request->pin);
+
+            if ($employee_profile['authorization_pin'] !== $cleanData['pin']) {
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
+            }
+            
             if (!$employee_profile) {
                 return response()->json(['message' => 'Unauthorized.'], Response::HTTP_FORBIDDEN);
             }
