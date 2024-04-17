@@ -55,9 +55,10 @@ class OvertimeController extends Controller
             if ($employee_profile->id === Helpers::getHrmoOfficer()) {
                 return response()->json([
                     'data' => OvertimeApplication::collection(OvertimeApplication::where('status', 'approved')->get()),
-                    'message' => 'Retrieved all offical business application'
+                    'message' => 'Retrieved all overtime  application'
                 ], Response::HTTP_OK);
             }
+
 
             $overtime_application = OvertimeApplication::select('overtime_applications.*')
                 ->where(function ($query) use ($recommending, $approving, $employeeId) {
@@ -84,6 +85,8 @@ class OvertimeController extends Controller
                 )
                 ->orderBy('created_at', 'desc')
                 ->get();
+
+
 
             return response()->json([
                 'data' => OvertimeResource::collection($overtime_application),
@@ -121,7 +124,8 @@ class OvertimeController extends Controller
     {
         try {
             $employee_profile = $request->user;
-            $overtime_applications = OvertimeApplication::where('status', 'approved')->where('employee_profile_id', $employee_profile->id)->get();
+
+            $overtime_applications = OvertimeApplication::where('employee_profile_id', $employee_profile->id)->get();
 
             return response()->json([
                 'data' => OvertimeResource::collection($overtime_applications),
