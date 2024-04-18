@@ -529,5 +529,51 @@ class CtoApplicationController extends Controller
 
     }
 
+    public function employeeCreditLog($id, Request $request)
+    {
+        try {
+            $employee_credit_logs = EmployeeOvertimeCredit::where('employee_profile_id ',$id)->get();
+
+            return response()->json([
+                'data' => EmployeeOvertimeCreditResource::collection($employee_credit_logs),
+                'message' => 'Retrieve list.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function getEmployees()
+    {
+        try {
+
+            $overtimeCredits = EmployeeOvertimeCredit::with(['employeeProfile.personalInformation'])->get()->groupBy('employee_profile_id');
+            $response = [];
+            foreach ($overtimeCredits as $employeeProfileId => $credits) {
+                $employeeDetails = $credits->first()->employeeProfile->personalInformation->name();
+                $creditResponse = [];
+                foreach ($credits as $credit) {
+                    $creditResponse[] = [
+                        'earned_credit_by_hour' => $credit->earned_credit_by_hour,
+                        'valid_until' => $credit->valid_until,
+                    ];
+                }
+
+                $employeeResponse = [
+                    'id' => $employeeProfileId,
+                    'name' => $employeeDetails,
+                    'employee_id' => $credits->first()->employeeProfile->employee_id,
+                    'overtime_credits' => $creditResponse, 
+                ];
+
+                $response[] = $employeeResponse;
+            }
+
+            return ['data' => $response];
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
 
 }

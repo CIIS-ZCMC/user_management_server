@@ -1801,6 +1801,10 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('leave-credit-leave-type', 'LeaveApplicationController@getLeaveTypes');
         });
 
+        Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
+            Route::get('employee-credit-logs/{id}', 'LeaveApplicationController@employeeCreditLog');
+        });
+
         /**
          * Official Business Module
          */
@@ -1952,6 +1956,15 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-CT approve'])->group(function () {
             Route::post('cto-application-approve/{id}', 'CtoApplicationController@approved');
         });
+
+        Route::middleware(['auth.permission:UMIS-CT view'])->group(function () {
+            Route::get('employee-cto-credit-logs/{id}', 'CtoApplicationController@employeeCreditLog');
+        });
+
+        Route::middleware(['auth.permission:UMIS-CT view'])->group(function () {
+            Route::get('cto-credit-employees', 'CtoApplicationController@getEmployees');
+        });
+
     });
 
     /**
