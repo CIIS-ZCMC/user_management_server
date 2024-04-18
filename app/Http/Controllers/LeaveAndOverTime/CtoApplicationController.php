@@ -559,7 +559,9 @@ class CtoApplicationController extends Controller
                 $employeeDetails = $credits->first()->employeeProfile->personalInformation->name();
 
                 $currentYearBalance = 0;
+                $currentYearValidUntil= null;
                 $nextYearBalance = 0;
+                $nextYearValidUntil = null;
                 $overallTotalBalance = 0;
 
                 foreach ($credits as $credit) {
