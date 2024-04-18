@@ -377,8 +377,9 @@ class ScheduleController extends Controller
 
             $employee = ScheduleResource::collection($sql);
 
-            $approving_officer = Helpers::ScheduleApprovingOfficer($assigned_area, $user);
-            $head_officer = EmployeeProfile::where('id', $approving_officer['approving_officer'])->first();
+            $RecommendingApprovingOfficer = Helpers::ScheduleApprovingOfficer($assigned_area, $user);
+            $recommending_officer = EmployeeProfile::where('id', $RecommendingApprovingOfficer['recommending_officer'])->first();
+            $approving_officer = EmployeeProfile::where('id', $RecommendingApprovingOfficer['approving_officer'])->first();
             $holiday = Holiday::all();
 
             $options = new Options();
@@ -387,7 +388,7 @@ class ScheduleController extends Controller
             $options->set('isRemoteEnabled', true);
             $dompdf = new Dompdf($options);
             $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
-            $html = view('generate_schedule/section-schedule', compact('employee', 'holiday', 'month', 'year', 'dates', 'user', 'head_officer'))->render();
+            $html = view('generate_schedule/section-schedule', compact('employee', 'holiday', 'month', 'year', 'dates', 'user', 'recommending_officer', 'approving_officer'))->render();
             $dompdf->loadHtml($html);
 
             $dompdf->setPaper('Legal', 'landscape');
