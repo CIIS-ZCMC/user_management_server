@@ -231,6 +231,7 @@ class CtoApplicationController extends Controller
 
                 $cleanData[$key] = strip_tags($value);
             }
+            
             foreach (json_decode($request->cto_applications) as $key => $value) {
 
                 // Get the first valid until date

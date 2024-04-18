@@ -645,7 +645,7 @@ class LeaveApplicationController extends Controller
 
             foreach ($employeeCredit as $leaveCredit) {
                 $leaveType = $leaveCredit->leaveType->name;
-                $totalCredits = $leaveCredit->total_leave_credits;
+                $totalCredits = max(0, $leaveCredit->total_leave_credits); // Ensure total credits are not negative
                 $usedCredits = $leaveCredit->used_leave_credits;
 
                 $result[] = [
