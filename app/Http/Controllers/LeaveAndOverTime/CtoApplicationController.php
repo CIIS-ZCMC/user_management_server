@@ -551,13 +551,22 @@ class CtoApplicationController extends Controller
             $response = [];
             foreach ($overtimeCredits as $employeeProfileId => $credits) {
                 $employeeDetails = $credits->first()->employeeProfile->personalInformation->name();
-                $creditResponse = [];
+
+                $currentYearBalance = 0;
+                $nextYearBalance = 0;
+                $overallTotalBalance = 0;
+
                 foreach ($credits as $credit) {
+
                     if (!$credit->is_expired) {
-                        $creditResponse[] = [
-                            'earned_credit_by_hour' => $credit->earned_credit_by_hour,
-                            'valid_until' => $credit->valid_until,
-                        ];
+                        $validUntil = Carbon::parse($credit->valid_until);
+                        $year = $validUntil->year;
+                        $overallTotalBalance += $credit->earned_credit_by_hour;
+                        if ($year == Carbon::now()->year) {
+                            $currentYearBalance += $credit->earned_credit_by_hour;
+                        } elseif ($year == Carbon::now()->year + 1) {
+                            $nextYearBalance += $credit->earned_credit_by_hour;
+                        }
                     }
                 }
 
@@ -565,7 +574,9 @@ class CtoApplicationController extends Controller
                     'id' => $employeeProfileId,
                     'name' => $employeeDetails,
                     'employee_id' => $credits->first()->employeeProfile->employee_id,
-                    'overtime_credits' => $creditResponse,
+                    'current_year_balance' => $currentYearBalance,
+                    'next_year_balance' => $nextYearBalance,
+                    'overall_total_balance' => $overallTotalBalance,
                 ];
 
                 $response[] = $employeeResponse;
