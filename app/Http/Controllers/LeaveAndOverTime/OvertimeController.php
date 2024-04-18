@@ -43,7 +43,9 @@ class OvertimeController extends Controller
             $employeeId = $employee_profile->id;
 
             /** FOR NORMAL EMPLOYEE */
-            if ($employee_profile->position() === null || $employee_profile->position() === 'Supervisor') {
+
+            if ($employee_profile->position() === null || $employee_profile->position()['position'] === 'Supervisor') {
+
                 $overtime_application = OvertimeApplication::where('employee_profile_id', $employee_profile->id)->get();
 
                 return response()->json([
@@ -51,11 +53,12 @@ class OvertimeController extends Controller
                     'message' => 'Retrieved all overtime application'
                 ], Response::HTTP_OK);
             }
-
+        //    return response()->json(['message' => $employee_profile->position()['position']], Response::HTTP_INTERNAL_SERVER_ERROR);
             if ($employee_profile->id === Helpers::getHrmoOfficer()) {
                 return response()->json([
                     'data' => OvertimeApplication::collection(OvertimeApplication::where('status', 'approved')->get()),
-                    'message' => 'Retrieved all overtime application'
+                    'message' => 'Retrieved all overtime  application'
+
                 ], Response::HTTP_OK);
             }
 
@@ -85,6 +88,8 @@ class OvertimeController extends Controller
                 )
                 ->orderBy('created_at', 'desc')
                 ->get();
+
+
 
             return response()->json([
                 'data' => OvertimeResource::collection($overtime_application),
@@ -122,7 +127,8 @@ class OvertimeController extends Controller
     {
         try {
             $employee_profile = $request->user;
-            $overtime_applications = OvertimeApplication::where('status', 'approved')->where('employee_profile_id', $employee_profile->id)->get();
+
+            $overtime_applications = OvertimeApplication::where('employee_profile_id', $employee_profile->id)->get();
 
             return response()->json([
                 'data' => OvertimeResource::collection($overtime_applications),
@@ -298,7 +304,13 @@ class OvertimeController extends Controller
     {
         try {
             $employee_profile = $request->user;
+
+            $cleanData['pin'] = strip_tags($request->pin);
+            if ($employee_profile['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+            }
             $employeeId = $employee_profile->id;
+
             $validatedData = $request->validate([
                 'dates.*' => 'required',
                 'activities.*' => 'required',
@@ -327,14 +339,23 @@ class OvertimeController extends Controller
             $size = "";
             $recommending_and_approving = Helpers::getRecommendingAndApprovingOfficer($employee_profile->assignedArea->findDetails(), $employee_profile->id);
 
+
             if ($recommending_and_approving === null || $recommending_and_approving['recommending_officer'] === null || $recommending_and_approving['approving_officer'] === null) {
                 return response()->json(['message' => 'No recommending officer and/or supervising officer assigned.'], Response::HTTP_FORBIDDEN);
             }
+
+
             foreach ($validatedData['employees'] as $index => $employeeList) {
+
+
                 foreach ($employeeList as $dateIndex => $employeeIdList) {
+
                     foreach ($employeeIdList as $employeeId) {
+
                         // Retrieve employee's profile using the employee ID
-                        $employeeProfile = EmployeeProfile::with('overtimeCredit')->find($employeeId);
+
+                        $employeeProfile = EmployeeProfile::with('overtimeCredits')->find($employeeId);
+
                         // Get the current year and the next year
                         $currentYear = date('Y');
                         $nextYear = $currentYear + 1;
@@ -345,27 +366,31 @@ class OvertimeController extends Controller
 
                         // Calculate the total overtime hours requested by the employee
                         $totalOvertimeHours = 0;
-                        foreach ($validatedData['dates'][$index][$dateIndex] as $date) {
-                            $totalOvertimeHours += $this->calculateOvertimeHours($validatedData['time_from'][$index][$dateIndex], $validatedData['time_to'][$index][$dateIndex]);
-                        }
+
+                        $timeFrom = $validatedData['time_from'][$index][$dateIndex];
+                        $timeTo = $validatedData['time_to'][$index][$dateIndex];
+                        $totalOvertimeHours += $this->calculateOvertimeHours($timeFrom, $timeTo);
+
 
                         // Calculate the total earned credit accumulated including the current overtime application
                         $totalEarnedCredit = $employeeProfile->earned_credit_by_hour + $totalOvertimeHours;
 
                         // Compare with max_credit_monthly and max_credit_annual including valid_until
-                        if ($totalOvertimeHours > $employeeProfile->overtimeCredit->max_credit_monthly && $validUntil == $employeeProfile->overtimeCredit->valid_until) {
+                        if ($totalOvertimeHours > $employeeProfile->overtimeCredits[0]->max_credit_monthly && $validUntil == $employeeProfile->overtimeCredits[0]->valid_until) {
                             // Handle exceeding max_credit_monthly
                             return response()->json(['message' => 'Employee ' . $employeeId . ' has exceeded the monthly overtime credit.'], Response::HTTP_BAD_REQUEST);
                         }
 
-                        if ($totalEarnedCredit > $employeeProfile->overtimeCredit->max_credit_annual && $validUntil == $employeeProfile->overtimeCredit->valid_until) {
+                        if ($totalEarnedCredit > $employeeProfile->overtimeCredits[0]->max_credit_annual && $validUntil == $employeeProfile->overtimeCredits[0]->valid_until) {
                             // Handle exceeding max_credit_annual
                             return response()->json(['message' => 'Employee ' . $employeeId . ' has exceeded the annual overtime credit.'], Response::HTTP_BAD_REQUEST);
                         }
                     }
                 }
             }
+
             $assigned_area = $employee_profile->assignedArea->findDetails();
+          //  return response()->json(['message' =>  Helpers::getDivHead($assigned_area)], Response::HTTP_BAD_REQUEST);
             $status = 'for recommending approval';
             $overtime_application = OvertimeApplication::create([
                 'employee_profile_id' => $user->id,
@@ -405,12 +430,12 @@ class OvertimeController extends Controller
             }
             OvtApplicationLog::create([
                 'overtime_application_id' => $ovt_id,
-                'action_by' => $employee_profile->id,
+                'action_by_id' => $employee_profile->id,
                 'action' => 'Applied'
             ]);
             return response()->json([
                 'message' => 'Overtime Application has been sucessfully saved',
-                'data' => OvertimeResource::collection($overtime_application),
+              //  'data' => OvertimeResource::collection($overtime_application),
 
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
