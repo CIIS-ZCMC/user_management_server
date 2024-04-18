@@ -78,7 +78,7 @@ class Authorization
             }
         }
         
-        if($employment_type->name === "Permanent" || $employment_type === 'Temporary'){
+        if($employment_type->name === "Permanent Full-time" || $employment_type->name === "Permanent Part-time" || $employment_type->name === 'Temporary'){
             
             $permissions = Cache::get("COMMON-REG");
             
@@ -98,7 +98,7 @@ class Authorization
             }
         }
         
-        if($employment_type->name === "Job order"){
+        if($employment_type->name === "Job Order"){
             $permissions = Cache::get("COMMON-JO");
             
             if($permissions && !$has_rights){

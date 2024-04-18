@@ -42,7 +42,8 @@ class EmployeeProfileResource extends JsonResource
             'designation_code' => $designation_code,
             'date_hired' => $this->date_hired,
             'employment_status' => $employment_status,
-            'account_status' => $account_status
+            'account_status' => $account_status,
+            'renewal_date' => $this->renewal === null? "N/A": $this->renewal
         ];
     }
 }

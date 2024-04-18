@@ -19,6 +19,7 @@ class InActiveEmployee extends Model
         'employment_end_at',
         'employment_type_id',
         'personal_information_id',
+        'status',
         'remarks'
     ];
 

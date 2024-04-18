@@ -761,6 +761,22 @@ Route::middleware('auth.cookie')->group(function () {
         /**
          * Employee Profile Module
          */
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('employees-update-request', 'EmployeeProfileController@profileUpdateRequest');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM approve'])->group(function () {
+            Route::post('employee-approve-request', 'EmployeeProfileController@approvedProfileUpdate');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {
+            Route::post('employees-renew-contract', 'EmployeeProfileController@renewEmployee');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('employees-for-renewal', 'EmployeeProfileController@employeeForRenewal');
+        });
+
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function () {
             Route::post('employees-assign-oic', 'EmployeeProfileController@assignOICByEmployeeID');
         });

@@ -4,8 +4,29 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 
 use App\Http\Controllers\Controller;
 
+use App\Http\Requests\CivilServiceEligibilityManyRequest;
+use App\Http\Requests\ContactRequest;
+use App\Http\Requests\EducationalBackgroundRequest;
+use App\Http\Requests\EmployeeProfileNewResource;
+use App\Http\Requests\FamilyBackgroundRequest;
+use App\Http\Requests\IdentificationNumberRequest;
+use App\Http\Requests\LegalInformationManyRequest;
+use App\Http\Requests\OtherInformationManyRequest;
+use App\Http\Requests\PersonalInformationRequest;
+use App\Http\Requests\ReferenceManyRequest;
+use App\Http\Requests\TrainingManyRequest;
+use App\Http\Requests\VoluntaryWorkRequest;
+use App\Http\Requests\WorkExperienceRequest;
+use App\Models\AssignArea;
+use App\Models\EmployeeLeaveCredit;
+use App\Models\EmploymentType;
+use App\Models\LeaveType;
+use App\Models\PlantillaNumber;
+use Carbon\Carbon;
 use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Requests\PasswordApprovalRequest;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
@@ -22,6 +43,71 @@ class InActiveEmployeeController extends Controller
     private $CONTROLLER_NAME = 'In Active Employee  Module';
     private $PLURAL_MODULE_NAME = 'In active employee modules';
     private $SINGULAR_MODULE_NAME = 'In active employee module';
+
+    // In Complete
+    public function retireAndDeactivateAccount($id, Request $request)
+    {
+        try {
+            $user = $request->user;
+            $cleanData['password'] = strip_tags($request->password);
+
+            $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
+
+            if (!Hash::check($cleanData['password'] . config('app.salt_value'), $decryptedPassword)) {
+                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
+            }
+
+            $employee_profile = EmployeeProfile::find($id);
+
+            if (!$employee_profile) {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $in_active_employee = InActiveEmployee::create([
+                'personal_information_id' => $employee_profile->personal_information_id,
+                'employment_type_id' => $request->employment_type_id,
+                'employee_id' => $employee_profile->employee_id,
+                'profile_url' => $employee_profile->profile_url,
+                'date_hired' => $employee_profile->date_hired,
+                'biometric_id' => $employee_profile->biometric_id,
+                'employment_end_at' => now()
+            ]);
+
+            $employee_profile->issuanceInformation->update([
+                'employee_profile_id' => null,
+                'in_active_employee_id' => $in_active_employee->id
+            ]);
+
+            $assign_area = $employee_profile->assignedArea;
+            $assign_area_trail = AssignAreaTrail::create([
+                'employee_profile_id' => null,
+                'in_active_employee_id' => $in_active_employee->id,
+                'designation_id' => $assign_area->designation_id,
+                'plantilla_id' => $assign_area->plantilla_id,
+                'division_id' => $assign_area->division_id,
+                'department_id' => $assign_area->department_id,
+                'section_id' => $assign_area->section_id,
+                'unit_id' => $assign_area->unit_id,
+                'plantilla_number_id' => $assign_area->plantilla_number_id,
+                'salary_grade_step' => $assign_area->salary_grade_step,
+                'started_at' => $assign_area->effective_at,
+                'end_at' => now()
+            ]);
+
+            $assign_area->delete();
+            $employee_profile->delete();
+
+            Helpers::registerSystemLogs($request, $id, true, 'Success in fetching a ' . $this->SINGULAR_MODULE_NAME . '.');
+
+            return response()->json([
+                'data' => new InActiveEmployeeResource($in_active_employee),
+                'message' => 'Employee record transfer to in active employees.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'retireAndDeactivateAccount', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 
     public function index(Request $request)
     {
@@ -83,21 +169,359 @@ class InActiveEmployeeController extends Controller
         }
     }
 
-    public function reEmployment($id,Request $request)
+    // In Complete
+    public function reEmploy($id, Request $request)
     {
-        try{
-            $employee = InActiveEmployee::find($id);
+        try {
+            DB::beginTransaction();
+            $in_valid_file = false;
+            $in_active_employee = InActiveEmployee::find($id);
 
-            if(!$employee){
-                return response()->json(['message' => 'No record found for in active employee with id '.$id], Response::HTTP_BAD_REQUEST);
+            if (!$in_active_employee) {
+                return response()->json(['message' => "No in active employee with id " . $id], Response::HTTP_NOT_FOUND);
             }
 
-            return response()->json([
-                'data' => '',
-                'message' => 'Successfully re-employed employee.'
-            ], Response::HTTP_OK);
-        }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'reEmployment', $th->getMessage());
+            /**
+             * Personal Information module.
+             */
+            $personal_information_request = new PersonalInformationRequest();
+            $personal_information_json = json_decode($request->personal_information);
+            $personal_information_data = [];
+
+            foreach ($personal_information_json as $key => $value) {
+                $personal_information_data[$key] = $value;
+            }
+
+            $personal_information_request->merge($personal_information_data);
+            $personal_information_controller = new PersonalInformationController();
+            //Update must be done here
+            $personal_information = $personal_information_controller->update($in_active_employee->personal_information_id, $personal_information_request);
+
+            /**
+             * Contact module.
+             */
+            $contact_request = new ContactRequest();
+            $contact_json = json_decode($request->contact);
+            $contact_data = [];
+
+            foreach ($contact_json as $key => $value) {
+                $contact_data[$key] = $value;
+            }
+
+            $contact_id = $in_active_employee->personalInformation->contact->id;
+
+            $contact_request->merge($contact_data);
+            $contact_controller = new ContactController();
+            //Update must be done here
+            $contact_controller->update($contact_id, $contact_request);
+
+            /**
+             * Family background module
+             */
+
+            $family_background_request = new FamilyBackgroundRequest();
+            $family_background_json = json_decode($request->family_background);
+            $family_background_data = [];
+
+            foreach ($family_background_json as $key => $value) {
+                $family_background_data[$key] = $value;
+            }
+
+            $family_background_request->merge($family_background_data);
+            //Update must be done here
+            $family_background_request->merge(['children' => $request->children]);
+            $family_background_controller = new FamilyBackgroundController();
+            //Update must be done here
+            $family_background_controller->update($in_active_employee->personalInformation->familyBackground->id, $family_background_request);
+
+            /**
+             * Education module
+             */
+            $education_request = new EducationalBackgroundRequest();
+            $education_json = json_decode($request->educations);
+            $education_data = [];
+
+            //Update must be done here
+            foreach ($education_json as $key => $value) {
+                $education_data[$key] = $value;
+            }
+
+            $education_request->merge(['educations' => $education_data]);
+            $education_controller = new EducationalBackgroundController();
+            //Update must be done here
+            $education_controller->update($education_request);
+
+            /**
+             * Identification module
+             */
+            $identification_request = new IdentificationNumberRequest();
+            $identification_json = json_decode($request->identification);
+            $identification_data = [];
+
+            //Update must be done here
+            foreach ($identification_json as $key => $value) {
+                $identification_data[$key] = $value;
+            }
+
+            $identification_request->merge($identification_data);
+            $identification_controller = new IdentificationNumberController();
+            //Update must be done here
+            $identification_controller->update($identification_request);
+
+            /**
+             * Work experience module
+             */
+            $work_experience_request = new WorkExperienceRequest();
+            $work_experience_json = json_decode($request->work_experiences);
+            $work_experience_data = [];
+
+            //Update must be done here
+            foreach ($work_experience_json as $key => $value) {
+                $work_experience_data[$key] = $value;
+            }
+
+            $work_experience_request->merge(['work_experiences' => $work_experience_data]);
+            $work_experience_controller = new WorkExperienceController();
+            //Update must be done here
+            $work_experience_controller->update( $work_experience_request);
+
+            /**
+             * Voluntary work module
+             */
+            $voluntary_work_request = new VoluntaryWorkRequest();
+            $voluntary_work_json = json_decode($request->voluntary_work);
+            $voluntary_work_data = [];
+
+            foreach ($voluntary_work_json as $key => $value) {
+                $voluntary_work_data[$key] = $value;
+            }
+
+            $voluntary_work_request->merge(['voluntary_work' => $voluntary_work_data]);
+            $voluntary_work_controller = new VoluntaryWorkController();
+            //Update must be done here
+            $voluntary_work_controller->update($personal_information->id, $voluntary_work_request);
+
+            /**
+             * Other module
+             */
+            $other_request = new OtherInformationManyRequest();
+            $other_json = json_decode($request->others);
+            $other_data = [];
+
+            //Update must be done here
+            foreach ($other_json as $key => $value) {
+                $voluntary_work_data[$key] = $value;
+            }
+
+            $other_request->merge(['others' => $other_data]);
+            $other_controller = new OtherInformationController();
+            //Update must be done here
+            $other_controller->update($other_request);
+
+            /**
+             * Legal information module
+             */
+            $legal_info_request =  new LegalInformationManyRequest();
+            $legal_info_json = json_decode($request->legal_information);
+            $legal_info_data = [];
+
+            //Update must be done here
+            foreach ($legal_info_json as $key => $value) {
+                $legal_info_data[$key] = $value;
+            }
+
+            $legal_info_request->merge(['legal_information' => $legal_info_data]);
+            $legal_information_controller = new LegalInformationController();
+            //Update must be done here
+            $legal_information_controller->update($legal_info_request);
+
+            /**
+             * Training module
+             */
+            $training_request = new TrainingManyRequest();
+            $training_json = json_decode($request->trainings);
+            $training_data = [];
+
+            //Update must be done here
+            foreach ($training_json as $key => $value) {
+                $training_data[$key] = $value;
+            }
+
+            $training_request->merge(['trainings' => $training_data]);
+            $training_controller = new TrainingController();
+            //Update must be done here
+            $training_controller->update($training_request);
+
+            /**
+             * Reference module
+             */
+            $referrence_request = new ReferenceManyRequest();
+            $referrence_json = json_decode($request->reference);
+            $referrence_data = [];
+
+            //Update must be done here
+            foreach ($referrence_json as $key => $value) {
+                $referrence_data[$key] = $value;
+            }
+
+            $referrence_request->merge(['reference' => $referrence_data]);
+            $referrence_controller = new ReferencesController();
+            //Update must be done here
+            $referrence_controller->update($referrence_request);
+
+            /**
+             * Eligibilities module
+             */
+            $eligibilities_request = new CivilServiceEligibilityManyRequest();
+            $eligibilities_json = json_decode($request->eligibilities);
+            $eligibilities_data = [];
+
+            //Update must be done here
+            foreach ($eligibilities_json as $key => $value) {
+                $eligibilities_data[$key] = $value;
+            }
+
+            $eligibilities_request->merge(['eligibilities' => $eligibilities_data]);
+            $eligibilities_controller = new CivilServiceEligibilityController();
+            //Update must be done here
+            $eligibilities_controller->update($eligibilities_request);
+
+            //** Employee Profile Module */
+
+            $previous_employee_profile_id = $in_active_employee->employee_profile_id;
+
+            $dateString = $request->date_hired;
+            $carbonDate = Carbon::parse($dateString);
+            $date_hired_string = $carbonDate->format('Ymd');
+
+            $total_registered_this_day = EmployeeProfile::whereDate('date_hired', $carbonDate)->get();
+            $employee_id_random_digit = 50 + count($total_registered_this_day);
+
+            $employee_data = $in_active_employee;
+            $employee_data['employee_id'] = $employee_id_random_digit;
+
+            $last_registered_employee = EmployeeProfile::orderBy('biometric_id', 'desc')->first();
+            $default_password = Helpers::generatePassword();
+
+            $hashPassword = Hash::make($default_password . config('app.salt_value'));
+            $encryptedPassword = Crypt::encryptString($hashPassword);
+            $now = Carbon::now();
+            $threeMonths = Carbon::now()->addMonths(3);
+
+            $new_biometric_id = $last_registered_employee->biometric_id + 1;
+            $new_employee_id = $date_hired_string . $employee_id_random_digit;
+
+            $employee_data['employee_id'] = $new_employee_id;
+            $employee_data['biometric_id'] = $new_biometric_id;
+            $employee_data['employment_type_id'] = strip_tags($request->employment_type_id);
+            $employee_data['personal_information_id'] = $in_active_employee->personal_information_id;
+
+            try {
+                $fileName = Helpers::checkSaveFile($request->attachment, 'photo/profiles');
+                if (is_string($fileName)) {
+                    $employee_data['profile_url'] = $request->attachment === null || $request->attachment === 'null' ? null : $fileName;
+                }
+
+                if (is_array($fileName)) {
+                    $in_valid_file = true;
+                    $employee_data['profile_url'] = null;
+                }
+            } catch (\Throwable $th) {}
+
+            $employee_data['allow_time_adjustment'] = strip_tags($request->allow_time_adjustment) === 1 ? true : false;
+            $employee_data['password_encrypted'] = $encryptedPassword;
+            $employee_data['password_created_at'] = now();
+            $employee_data['password_expiration_at'] = $threeMonths;
+            $employee_data['salary_grade_step'] = strip_tags($request->salary_grade_step);
+            $employee_data['date_hired'] = $request->date_hired;
+            $employee_data['designation_id'] = $request->designation_id;
+            $employee_data['effective_at'] = $request->date_hired;
+
+            if(EmploymentType::find($employee_data['employment_type_id'])->name === 'Temporary' || EmploymentType::find($employee_data['employment_type_id'])->name === 'Job Order'){
+
+                if($request->renewal === 'null' || $request->renewal === null){
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => 'Temporary or Job order renewal date is required.'
+                    ], Response::HTTP_BAD_REQUEST);
+                }
+
+                if(EmploymentType::find($employee_data['employment_type_id'])->name === 'Temporary'){
+                    $employee_data['renewal'] = Carbon::now()->addYear();
+                }
+
+                $employee_data['renewal'] = strip_tags($request->renewal);
+            }
+
+            $plantilla_number_id = $request->plantilla_number_id === "null" || $request->plantilla_number_id === null ? null : $request->plantilla_number_id;
+
+            $employee_data[Str::lower(strip_tags($request->sector))."_id"] = strip_tags($request->sector_id);
+
+            if ($plantilla_number_id !== null) {
+                $plantilla_number = PlantillaNumber::find($plantilla_number_id);
+
+                if (!$plantilla_number) {
+                    return response()->json(['message' => 'No record found for plantilla number ' . $plantilla_number_id], Response::HTTP_NOT_FOUND);
+                }
+
+                $plantilla = $plantilla_number->plantilla;
+                $designation = $plantilla->designation;
+                $employee_data['designation_id'] = $designation->id;
+                $employee_data['plantilla_number_id'] = $plantilla_number->id;
+            }
+
+
+            $employee_profile = EmployeeProfile::create($employee_data);
+
+            $employee_data['employee_profile_id'] = $employee_profile->id;
+            AssignArea::create($employee_data);
+
+            if ($plantilla_number_id !== null) {
+                $plantilla_number = PlantillaNumber::find($plantilla_number_id);
+                $plantilla_number->update(['employee_profile_id' => $employee_profile->id, 'is_vacant' => false, 'assigned_at' => now()]);
+            }
+
+
+            if ($plantilla_number_id !== null) {
+                $leave_types = LeaveType::where('is_special', 0)->get();
+
+                foreach ($leave_types as $leave_type) {
+                    EmployeeLeaveCredit::create([
+                        'employee_profile_id' => $employee_profile->id,
+                        'leave_type_id' => $leave_type->id,
+                        'total_leave_credits' => 0,
+                        'used_leave_credits' => 0
+                    ]);
+                }
+            }
+
+            //Assign ALL previous Area Trail with new employee id
+            AssignAreaTrail::where(['employee_profile_id', $previous_employee_profile_id])->update(['employee_profile_id', $employee_profile->id]);
+
+            Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . '.');
+
+
+            if ($in_valid_file) {
+                return response()->json(
+                    [
+                        'data' => new EmployeeProfileNewResource($employee_profile),
+                        'message' => 'Newly employee registered.',
+                        'other' => "Invalid attachment."
+                    ],
+                    Response::HTTP_OK
+                );
+            }
+
+            return response()->json(
+                [
+                    'data' => new EmployeeProfileNewResource($employee_profile),
+                    'message' => 'Newly employee registered.'
+                ],
+                Response::HTTP_OK
+            );
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            Helpers::errorLog($this->CONTROLLER_NAME, 'reEmploy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
