@@ -14,6 +14,9 @@ class EmployeeOvertimeCreditResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        if ($this->resource === null) {
+            return []; // Return an empty array or null, depending on your preference
+        }
 
         return [
             'id' => $this->id,
