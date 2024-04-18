@@ -2162,19 +2162,19 @@ Route::middleware('auth.cookie')->group(function () {
         /**
          * MonthlyWorkHours Module
          */
-        Route::middleware(['auth.permission:UMIS-HOL view-all'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-MWH view-all'])->group(function () {
             Route::get('monthly-work-hours', 'MonthlyWorkHoursController@index');
         });
 
-        Route::middleware(['auth.permission:UMIS-HOL write'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-MWH write'])->group(function () {
             Route::post('monthly-work-hour', 'MonthlyWorkHoursController@store');
         });
 
-        Route::middleware(['auth.permission:UMIS-HOL update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-MWH update'])->group(function () {
             Route::put('monthly-work-hour/{id}', 'MonthlyWorkHoursController@update');
         });
 
-        Route::middleware(['auth.permission:UMIS-HOL delete'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-MWH delete'])->group(function () {
             Route::delete('monthly-work-hour/{id}', 'MonthlyWorkHoursController@destroy');
         });
 
