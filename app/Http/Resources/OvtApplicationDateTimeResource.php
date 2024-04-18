@@ -18,9 +18,9 @@ class OvtApplicationDateTimeResource extends JsonResource
     {
 
         return [
-            "time_from" => $this->name,
-            "time_to" => $this->quantity,
-            "date" => $this->man_hour,
+            "time_from" => $this->time_from,
+            "time_to" => $this->time_to,
+            "date" => $this->date,
             'employees' => OvtApplicationEmployeeResource::collection($this->employees),
         ];
     }
