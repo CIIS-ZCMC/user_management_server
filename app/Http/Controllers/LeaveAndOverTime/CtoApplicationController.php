@@ -491,6 +491,8 @@ class CtoApplicationController extends Controller
 
     public function updateCredit(Request $request)
     {
+    try
+    {
         $employeeId = $request->employee_id;
         $validUntil = $request->valid_until;
         $creditValue = $request->credit_value;
@@ -500,7 +502,7 @@ class CtoApplicationController extends Controller
         if ($employee_profile['authorization_pin'] !== $cleanData['pin']) {
             return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
         }
-        
+
         $existingCredit = EmployeeOvertimeCredit::where('employee_profile_id', $employeeId)
             ->where('valid_until', $validUntil)
             ->first();
@@ -522,11 +524,12 @@ class CtoApplicationController extends Controller
                 'action' => 'Add Credit',
                 'hours' => $creditValue
             ]);
+
         }
-        return response()->json([
-            'data' => new EmployeeOvertimeCreditResource($existingCredit),
-            'message' => 'Retrieve employee overtime credit record.'
-        ], Response::HTTP_OK);
+        $response['data'] = $existingCredit ? new EmployeeOvertimeCreditResource($existingCredit) : null;
+    } catch (\Throwable $th) {
+        return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+    }
     }
 
     public function employeeCreditLog($id, Request $request)
