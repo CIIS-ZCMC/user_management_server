@@ -511,7 +511,7 @@ class CtoApplicationController extends Controller
             $existingCredit->save();
         } else {
             // Create a new record
-            EmployeeOvertimeCredit::create([
+            $newCredit = EmployeeOvertimeCredit::create([
                 'employee_profile_id' => $employeeId,
                 'earned_credit_by_hour' => $creditValue,
                 'used_credit_by_hour' => '0',
@@ -525,8 +525,10 @@ class CtoApplicationController extends Controller
                 'hours' => $creditValue
             ]);
 
+            $existingCredit = $newCredit;
+
         }
-        $response['data'] = $existingCredit ? new EmployeeOvertimeCreditResource($existingCredit) : null;
+        $response['data'] = new EmployeeOvertimeCreditResource($existingCredit);
     } catch (\Throwable $th) {
         return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
     }
