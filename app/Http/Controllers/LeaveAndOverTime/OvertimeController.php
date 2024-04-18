@@ -600,7 +600,7 @@ class OvertimeController extends Controller
     public function show($id, Request $request)
     {
         try {
-            $overtime_application = Overtime::find($id);
+            $overtime_application = OvertimeApplication::find($id);
 
             if (!$overtime_application) {
                 return response()->json(['message' => "No overtime application record."], Response::HTTP_NOT_FOUND);
