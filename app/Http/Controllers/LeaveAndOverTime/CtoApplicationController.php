@@ -529,6 +529,7 @@ class CtoApplicationController extends Controller
 
         }
         $response['data'] = new EmployeeOvertimeCreditResource($existingCredit);
+        return response()->json($response, Response::HTTP_OK);
     } catch (\Throwable $th) {
         return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
     }
