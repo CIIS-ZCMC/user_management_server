@@ -34,7 +34,9 @@ class TimeShiftController extends Controller
     {
         try {
             return response()->json(['data' => TimeShiftResource::collection(TimeShift::all())], Response::HTTP_OK);
+
         } catch (\Throwable $th) {
+
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -53,7 +55,7 @@ class TimeShiftController extends Controller
                     $cleanData[$key] = $value;
                     continue;
                 }
-                
+
                 if (is_int($value)) {
                     $cleanData[$key] = $value;
                     continue;
@@ -61,7 +63,7 @@ class TimeShiftController extends Controller
 
                 $cleanData[$key] = strip_tags($value);
             }
-            
+
             $shift = TimeShift::where('first_in', $request->first_in ?? null)
                 ->where('first_out', $request->first_out ?? null)
                 ->where('second_in', $request->second_in ?? null)
@@ -70,7 +72,7 @@ class TimeShiftController extends Controller
 
             if ($shift) {
                 return response()->json(['message' => "Time Shift Already Exist"], Response::HTTP_FOUND);
-            } 
+            }
 
             if ($cleanData['first_in'] != null && $cleanData['first_out'] != null && $cleanData['second_in'] == null && $cleanData['second_out'] == null) {
                 $first_in = Carbon::parse($cleanData['first_in']);
@@ -93,7 +95,7 @@ class TimeShiftController extends Controller
 
             $cleanData['color'] = Helpers::randomHexColor();
             $data = TimeShift::create($cleanData);
-            
+
             Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json([
                 'data' => new TimeShiftResource($data),
