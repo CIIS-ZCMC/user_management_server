@@ -553,17 +553,19 @@ class CtoApplicationController extends Controller
                 $employeeDetails = $credits->first()->employeeProfile->personalInformation->name();
                 $creditResponse = [];
                 foreach ($credits as $credit) {
-                    $creditResponse[] = [
-                        'earned_credit_by_hour' => $credit->earned_credit_by_hour,
-                        'valid_until' => $credit->valid_until,
-                    ];
+                    if (!$credit->is_expired) {
+                        $creditResponse[] = [
+                            'earned_credit_by_hour' => $credit->earned_credit_by_hour,
+                            'valid_until' => $credit->valid_until,
+                        ];
+                    }
                 }
 
                 $employeeResponse = [
                     'id' => $employeeProfileId,
                     'name' => $employeeDetails,
                     'employee_id' => $credits->first()->employeeProfile->employee_id,
-                    'overtime_credits' => $creditResponse, 
+                    'overtime_credits' => $creditResponse,
                 ];
 
                 $response[] = $employeeResponse;
