@@ -564,8 +564,10 @@ class CtoApplicationController extends Controller
                         $overallTotalBalance += $credit->earned_credit_by_hour;
                         if ($year == Carbon::now()->year) {
                             $currentYearBalance += $credit->earned_credit_by_hour;
+                            $currentYearValidUntil = $validUntil->toDateString();
                         } elseif ($year == Carbon::now()->year + 1) {
                             $nextYearBalance += $credit->earned_credit_by_hour;
+                            $nextYearValidUntil = $validUntil->toDateString();
                         }
                     }
                 }
@@ -574,9 +576,13 @@ class CtoApplicationController extends Controller
                     'id' => $employeeProfileId,
                     'name' => $employeeDetails,
                     'employee_id' => $credits->first()->employeeProfile->employee_id,
-                    'current_year_balance' => $currentYearBalance,
-                    'next_year_balance' => $nextYearBalance,
-                    'overall_total_balance' => $overallTotalBalance,
+                    'credits' => [
+                        'current_year_balance' => $currentYearBalance,
+                        'current_valid_until'=> $currentYearValidUntil,
+                        'next_year_balance' => $nextYearBalance,
+                        'next_year_valid_until'=> $nextYearValidUntil,
+                        'overall_total_balance' => $overallTotalBalance,
+                    ],
                 ];
 
                 $response[] = $employeeResponse;
