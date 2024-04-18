@@ -506,10 +506,11 @@ class CtoApplicationController extends Controller
         $existingCredit = EmployeeOvertimeCredit::where('employee_profile_id', $employeeId)
             ->where('valid_until', $validUntil)
             ->first();
-            
+
         if ($existingCredit) {
             $existingCredit->earned_credit_by_hour += $creditValue;
             $existingCredit->save();
+            $responseData = new EmployeeOvertimeCreditResource($existingCredit);
         } else {
             // Create a new record
             $newCredit = EmployeeOvertimeCredit::create([
@@ -526,15 +527,15 @@ class CtoApplicationController extends Controller
                 'hours' => $creditValue
             ]);
 
-            $existingCredit = $newCredit;
+            $responseData = new EmployeeOvertimeCreditResource($newCredit);
         }
         return response()->json([
-            'data' => new EmployeeOvertimeCreditResource($existingCredit),
+            'data' => $responseData,
             'message' => 'CTO credits updated successfully.'
         ], Response::HTTP_OK);
-    } catch (\Throwable $th) {
-        return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-    }
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     public function employeeCreditLog($id, Request $request)
