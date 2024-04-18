@@ -1727,7 +1727,7 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('leave-application-approved', 'LeaveApplicationController@approvedLeaveRequest');
         });
         //hr
-          Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
             Route::get('leave-application-approved-hr', 'LeaveApplicationController@approvedLeaveApplication');
         });
 
@@ -1907,7 +1907,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         //hr
-          Route::middleware(['auth.permission:UMIS-OM view-all'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-OM view-all'])->group(function () {
             Route::get('ovt-application-approved-hr', 'OvertimeController@approvedOvertimeApplication');
         });
 
@@ -2174,5 +2174,25 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::get('holidays', 'HolidayController@calendar');
+
+        /**
+         * MonthlyWorkHours Module
+         */
+        Route::middleware(['auth.permission:UMIS-MWH view-all'])->group(function () {
+            Route::get('monthly-work-hours', 'MonthlyWorkHoursController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-MWH write'])->group(function () {
+            Route::post('monthly-work-hour', 'MonthlyWorkHoursController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-MWH update'])->group(function () {
+            Route::put('monthly-work-hour/{id}', 'MonthlyWorkHoursController@update');
+        });
+
+        Route::middleware(['auth.permission:UMIS-MWH delete'])->group(function () {
+            Route::delete('monthly-work-hour/{id}', 'MonthlyWorkHoursController@destroy');
+        });
+
     });
 });

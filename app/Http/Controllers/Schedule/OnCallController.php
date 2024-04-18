@@ -32,7 +32,6 @@ class OnCallController extends Controller
             $assigned_area = $user->assignedArea->findDetails();
 
             //Array
-            $employees = [];
             $myEmployees = $user->myEmployees($assigned_area, $user);
             $employee_ids = collect($myEmployees)->pluck('id')->toArray();
 
