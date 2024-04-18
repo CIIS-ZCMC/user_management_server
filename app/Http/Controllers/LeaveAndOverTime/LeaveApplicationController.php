@@ -24,6 +24,7 @@ use App\Models\LeaveApplication;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LeaveApplicationRequest;
 use App\Http\Requests\PasswordApprovalRequest;
+use App\Http\Resources\EmployeeLeaveCredit as ResourcesEmployeeLeaveCredit;
 use App\Http\Resources\LeaveApplicationResource;
 use App\Models\EmployeeLeaveCredit;
 use App\Models\EmployeeLeaveCreditLogs;
@@ -352,14 +353,13 @@ class LeaveApplicationController extends Controller
         }
     }
 
-
     public function employeeCreditLog($id, Request $request)
     {
         try {
-            $leave_applications = LeaveApplication::where('status', 'approved')->where('employee_profile_id', $id)->get();
+            $employee_credit_logs = EmployeeLeaveCredit::where('employee_profile_id ',$id)->get();
 
             return response()->json([
-                'data' => MyApprovedLeaveApplicationResource::collection($leave_applications),
+                'data' => ResourcesEmployeeLeaveCredit::collection($employee_credit_logs),
                 'message' => 'Retrieve list.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {

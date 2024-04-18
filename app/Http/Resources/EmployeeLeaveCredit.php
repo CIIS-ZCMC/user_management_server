@@ -20,7 +20,7 @@ class EmployeeLeaveCredit extends JsonResource
             'used_leave_credits' => (float)$this->used_leave_credits,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
-            'logs' => EmployeeLeaveCreditLogs::collection($this->logs),
+            'logs' => EmployeeLeaveCreditLogResource::collection($this->logs),
         ];
     }
 }

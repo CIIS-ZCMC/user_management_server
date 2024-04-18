@@ -1940,6 +1940,9 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('user-cto-application', 'CtoApplicationController@create');
         });
 
+        Route::middleware(['auth.permission:UMIS-CT write'])->group(function () {
+            Route::post('cto-credit-update', 'CtoApplicationController@updateCredit');
+        });
 
         Route::middleware(['auth.permission:UMIS-CT approve'])->group(function () {
             Route::post('cto-application-decline/{id}', 'CtoApplicationController@declineCtoApplication');
