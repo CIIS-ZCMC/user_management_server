@@ -210,6 +210,11 @@ class CtoApplicationController extends Controller
             if ($hrmo_officer === null || $approving_officer === null) {
                 return response()->json(['message' => 'No recommending officer and/or supervising officer assigned.'], Response::HTTP_FORBIDDEN);
             }
+            $date = Carbon::parse($request->date);
+            $checkSchedule = Helpers::hasSchedule($date, $date, $employeeId);
+            if (!$checkSchedule) {
+                return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
+            }
 
             $cleanData = [];
 
@@ -231,13 +236,14 @@ class CtoApplicationController extends Controller
 
                 $cleanData[$key] = strip_tags($value);
             }
-            
+
             foreach (json_decode($request->cto_applications) as $key => $value) {
 
-                // Get the first valid until date
+                // Get the first valid until date that is not expired
                 $first_valid_until = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)
-                                        ->orderBy('valid_until')
-                                        ->value('valid_until');
+                ->where('is_expired', false)
+                ->orderBy('valid_until')
+                ->value('valid_until');
 
                 // Check if the applied date is after the first valid until date
                 if (Carbon::parse($value->date) > Carbon::parse($first_valid_until)) {
@@ -324,7 +330,7 @@ class CtoApplicationController extends Controller
                     $logs =  EmployeeOvertimeCreditLog::create([
                         'employee_ot_credit_id' => $employee_credit->id,
                         'cto_application_id' => $cto_application->id,
-                        'action' => 'CTO',
+                        'action' => 'Applied',
                         'previous_overtime_hours' => $current_overtime_credit,
                         'hours' => $value->applied_credits
                     ]);
@@ -337,8 +343,6 @@ class CtoApplicationController extends Controller
 
                     $cto_applications[] = $cto_application;
                 }
-
-
             }
 
 
@@ -490,4 +494,40 @@ class CtoApplicationController extends Controller
         // }
 
     }
+
+    public function updateCredit(Request $request)
+    {
+        $employeeId=$request->employee_id;
+        $validUntil=$request->valid_until;
+        $creditValue=$request->credit_value;
+        $existingCredit = EmployeeOvertimeCredit::where('employee_profile_id', $employeeId)
+        ->where('valid_until', $validUntil)
+        ->first();
+        if ($existingCredit) {
+            $existingCredit->earned_credit_by_hour += $creditValue;
+            $existingCredit->save();
+        } else {
+            // Create a new record
+            EmployeeOvertimeCredit::create([
+                'employee_profile_id' => $employeeId,
+                'earned_credit_by_hour' => $creditValue,
+                'used_credit_by_hour' => '0',
+                'max_credit_monthly' => '40',
+                'max_credit_annual' => '120',
+                'valid_until' => $validUntil,
+            ]);
+            EmployeeOvertimeCreditLog::create([
+                'employee_ot_credit_id' => $employeeId,
+                'action' => 'Add Credit',
+                'hours' => $creditValue
+            ]);
+        }
+        return response()->json([
+            'data' => new EmployeeOvertimeCreditResource($existingCredit),
+            'message' => 'Retrieve employee overtime credit record.'
+        ], Response::HTTP_OK);
+
+    }
+
+
 }
