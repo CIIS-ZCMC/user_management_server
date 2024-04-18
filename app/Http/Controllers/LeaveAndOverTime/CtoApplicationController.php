@@ -506,6 +506,7 @@ class CtoApplicationController extends Controller
         $existingCredit = EmployeeOvertimeCredit::where('employee_profile_id', $employeeId)
             ->where('valid_until', $validUntil)
             ->first();
+            
         if ($existingCredit) {
             $existingCredit->earned_credit_by_hour += $creditValue;
             $existingCredit->save();
@@ -526,11 +527,10 @@ class CtoApplicationController extends Controller
             ]);
 
             $existingCredit = $newCredit;
-
         }
         return response()->json([
             'data' => new EmployeeOvertimeCreditResource($existingCredit),
-            'message' => 'Retrieve compensatory time off application record.'
+            'message' => 'CTO credits updated successfully.'
         ], Response::HTTP_OK);
     } catch (\Throwable $th) {
         return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
