@@ -2589,11 +2589,15 @@ class EmployeeProfileController extends Controller
                         'used_leave_credits' => 0
                     ]);
                 }
-
+                $currentYear = date('Y');
+                $validUntil = date('Y-m-d', strtotime("$currentYear-12-31"));
+                
                 EmployeeOvertimeCredit::create([
                     'employee_profile_id' => $employee_profile->id,
                     'earned_credit_by_hour' => 0,
                     'used_credit_by_hour' => 0,
+                    'valid_until' => $validUntil,
+                    'is_expired' => 0,
                     'max_credit_monthly' => 40,
                     'max_credit_annual' => 120
                 ]);
