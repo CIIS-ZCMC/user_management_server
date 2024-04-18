@@ -24,6 +24,7 @@ use App\Models\LeaveApplication;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LeaveApplicationRequest;
 use App\Http\Requests\PasswordApprovalRequest;
+use App\Http\Resources\EmployeeLeaveCredit as ResourcesEmployeeLeaveCredit;
 use App\Http\Resources\LeaveApplicationResource;
 use App\Models\EmployeeLeaveCredit;
 use App\Models\EmployeeLeaveCreditLogs;
@@ -352,6 +353,20 @@ class LeaveApplicationController extends Controller
         }
     }
 
+    public function employeeCreditLog($id, Request $request)
+    {
+        try {
+            $employee_credit_logs = EmployeeLeaveCredit::where('employee_profile_id ',$id)->get();
+
+            return response()->json([
+                'data' => ResourcesEmployeeLeaveCredit::collection($employee_credit_logs),
+                'message' => 'Retrieve list.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public function getEmployees()
     {
         try {
@@ -445,14 +460,11 @@ class LeaveApplicationController extends Controller
                 $leaveCredit->save();
             }
 
-            $overtimeCredit = EmployeeOvertimeCredit::where('employee_profile_id', $request->employee_id)->first();
-            $overtimeCredit->earned_credit_by_hour = $request->cto;
-            $overtimeCredit->save();
-
-            EmployeeCreditLog::create([
-                'employee_profile_id' => $employeeId,
-                'action_by' => $employee_profile->id,
-                'action' => 'add'
+            EmployeeLeaveCreditLogs::create([
+                'employee_leave_credit_id' => $leaveCredit->id,
+                'previous_credit' => $leaveCredit->total_leave_credits,
+                'leave_credits' => '0',
+                'reason' => 'Add Credit'
             ]);
 
             $updatedLeaveCredits = EmployeeLeaveCredit::with(['employeeProfile.personalInformation', 'leaveType'])
@@ -471,11 +483,7 @@ class LeaveApplicationController extends Controller
                 foreach ($leaveCreditGroup as $leaveCredit) {
                     $leaveCreditData[$leaveCredit->leaveType->name] = $leaveCredit->total_leave_credits;
                 }
-                // Fetch 'CTO' credit from EmployeeOvertimeCredit
-                $ctoCredit = EmployeeOvertimeCredit::where('employee_profile_id', $employeeProfileId)->value('earned_credit_by_hour');
 
-                // Add 'CTO' credit to the leaveCreditData
-                $leaveCreditData['CTO'] = $ctoCredit;
                 $employeeResponse = [
                     'id' => $employeeProfileId,
                     'name' => $employeeDetails,

@@ -19,7 +19,8 @@ return new class extends Migration
             $table->integer('used_credit_by_hour');
             $table->integer('max_credit_monthly');
             $table->integer('max_credit_annual');
-            $table->DateTime('m');
+            $table->DateTime('valid_until');
+            $table->boolean('is_expired')->default(false);
             $table->timestamps();
         });
     }
