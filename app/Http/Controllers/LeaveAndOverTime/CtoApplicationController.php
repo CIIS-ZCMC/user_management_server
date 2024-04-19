@@ -504,7 +504,7 @@ class CtoApplicationController extends Controller
 
             $existingCredit = EmployeeOvertimeCredit::where('employee_profile_id', $employeeId)
                 ->where('valid_until', $validUntil)
-                ->first();
+                ->get();
 
             if ($existingCredit) {
                 $existingCredit->earned_credit_by_hour += $creditValue;
@@ -518,6 +518,7 @@ class CtoApplicationController extends Controller
                     'max_credit_monthly' => '40',
                     'max_credit_annual' => '120',
                     'valid_until' => $validUntil,
+                    'is_expired' => '0',
                 ]);
                 EmployeeOvertimeCreditLog::create([
                     'employee_ot_credit_id' => $employeeId,
@@ -525,47 +526,50 @@ class CtoApplicationController extends Controller
                     'hours' => $creditValue
                 ]);
 
-                $existingCredit=$newCredit;
-
+                $existingCredit = $newCredit;
             }
-            $currentYear = Carbon::now()->year;
-            $nextYear = $currentYear + 1;
-
+            
+            $overtimeCredits = EmployeeOvertimeCredit::with(['employeeProfile.personalInformation'])->where('employee_profile_id', $employeeId)->get();
             $currentYearBalance = 0;
             $currentYearValidUntil = null;
             $nextYearBalance = 0;
             $nextYearValidUntil = null;
-            $overallTotalBalance = $currentYearBalance + $nextYearBalance;
+            $overallTotalBalance = 0;
 
-            $validUntilYear = Carbon::parse($validUntil)->year;
-            if ($validUntilYear == $currentYear) {
-                $currentYearBalance = $existingCredit->earned_credit_by_hour;
-                $currentYearValidUntil = $existingCredit->valid_until->toDateString();
-            } elseif ($validUntilYear == $nextYear) {
-                $nextYearBalance = $existingCredit->earned_credit_by_hour;
-                $nextYearValidUntil = $existingCredit->valid_until->toDateString();
+            foreach ($overtimeCredits as $employeeProfileId => $credit) {
+                $employeeDetails = $credit->first()->employeeProfile->personalInformation->name();
+                if (!$credit->is_expired) {
+                    $validUntil = Carbon::parse($credit->valid_until);
+                    $year = $validUntil->year;
+                    $overallTotalBalance += $credit->earned_credit_by_hour;
+                    if ($year == Carbon::now()->year) {
+                        $currentYearBalance += $credit->earned_credit_by_hour;
+                        $currentYearValidUntil = $validUntil->toDateString();
+                    } elseif ($year == Carbon::now()->year + 1) {
+                        $nextYearBalance += $credit->earned_credit_by_hour;
+                        $nextYearValidUntil = $validUntil->toDateString();
+                    }
+                }
             }
-                $employeeProfileId = $existingCredit->employee_profile_id;
-                $employeeDetails = $existingCredit->employeeProfile->personalInformation->name();
-                $employeeResponse = [
-                    'id' => $employeeProfileId,
-                    'name' => $employeeDetails,
-                    'employee_id' => $existingCredit->employeeProfile->employee_id,
-                    'credits' => [
-                        'current_year_balance' => $currentYearBalance,
-                        'current_valid_until' => $currentYearValidUntil,
-                        'next_year_balance' => $nextYearBalance,
-                        'next_year_valid_until' => $nextYearValidUntil,
-                        'overall_total_balance' => $overallTotalBalance,
-                    ],
-                ];
 
+            $employeeResponse = [
+                'id' => $employeeProfileId,
+                'name' => $employeeDetails,
+                'employee_id' => $existingCredit->employeeProfile->employee_id,
+                'credits' => [
+                    'current_year_balance' => $currentYearBalance,
+                    'current_valid_until' => $currentYearValidUntil,
+                    'next_year_balance' => $nextYearBalance,
+                    'next_year_valid_until' => $nextYearValidUntil,
+                    'overall_total_balance' => $overallTotalBalance,
+                ],
+            ];
 
-                return response()->json([
-                    'data' => $employeeResponse,
-                    'message' =>  'Leave credits updated successfully'
-                ], Response::HTTP_OK);
-
+            // Return the response
+            return response()->json([
+                'data' => $employeeResponse,
+                'message' =>  'Leave credits updated successfully'
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -601,7 +605,6 @@ class CtoApplicationController extends Controller
                 $overallTotalBalance = 0;
 
                 foreach ($credits as $credit) {
-
                     if (!$credit->is_expired) {
                         $validUntil = Carbon::parse($credit->valid_until);
                         $year = $validUntil->year;

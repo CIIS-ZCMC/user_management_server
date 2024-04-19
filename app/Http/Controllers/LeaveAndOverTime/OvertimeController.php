@@ -108,6 +108,7 @@ class OvertimeController extends Controller
     {
         //
     }
+
     public function myApprovedOvertimeApplication(Request $request)
     {
         try {
@@ -123,6 +124,7 @@ class OvertimeController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
     public function myOvertimeApplication(Request $request)
     {
         try {
@@ -510,6 +512,7 @@ class OvertimeController extends Controller
                     return response()->json(['message' => 'Employee ' . $employeeId . ' has exceeded the annual overtime credit.'], Response::HTTP_BAD_REQUEST);
                 }
             }
+            
             $status = 'for recommending approval';
             $overtime_application = OvertimeApplication::create([
                 'employee_profile_id' => $user->id,
