@@ -14,9 +14,6 @@ class EmployeeOvertimeCreditResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        if ($this->resource === null) {
-            return []; // Return an empty array or null, depending on your preference
-        }
 
         return [
             'id' => $this->id,
@@ -30,7 +27,7 @@ class EmployeeOvertimeCreditResource extends JsonResource
             'is_expired' => $this->is_expired,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
-            'logs' => EmployeeOvertimeCreditLogResource::collection($this->logs),
+            'logs' => !$this->logs->isEmpty() ? EmployeeOvertimeCreditLogResource::collection($this->logs) : null,
         ];
     }
 }
