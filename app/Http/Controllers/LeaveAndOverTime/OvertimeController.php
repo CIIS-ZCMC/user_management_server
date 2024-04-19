@@ -268,7 +268,8 @@ class OvertimeController extends Controller
             $user = $request->user;
             $employee_profile = $user;
             $declined_by = null;
-            $cleanData['pin'] = strip_tags($request->password);
+            $status = "";
+            $cleanData['pin'] = strip_tags($request->pin);
 
             if ($user['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
