@@ -588,9 +588,7 @@ class OvertimeController extends Controller
             if ($employee_profile['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
-
-            if ($request->status === 'for recommending approval') {
-                switch ($data->status) {
+            switch ($data->status) {
                     case 'for recommending approval':
                         $status = 'for approving approval';
                         $log_action = 'Approved by Recommending Officer';
@@ -600,21 +598,9 @@ class OvertimeController extends Controller
                         $status = 'approved';
                         $log_action = 'Approved by Approving Officer';
                         break;
-                }
-            } else if ($request->status === 'declined') {
-
-                $overtime_application_recommending = $data->recommending_officer;
-                $overtime_application_approving = $data->approving_officer;
 
 
-                if ($employee_profile->id === $overtime_application_recommending) {
-                    $status = 'declined by recommending officer';
-                } else if ($employee_profile->id === $overtime_application_approving) {
-                    $status = 'declined by approving officer';
-                }
-                $log_action = 'Request Declined';
             }
-
             $data->update(['status' => $status]);
             OvtApplicationLog::create([
                 'overtime_application_id' => $data->id,
