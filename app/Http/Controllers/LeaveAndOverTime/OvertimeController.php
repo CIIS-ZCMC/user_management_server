@@ -53,7 +53,7 @@ class OvertimeController extends Controller
                     'message' => 'Retrieved all overtime application'
                 ], Response::HTTP_OK);
             }
-        //    return response()->json(['message' => $employee_profile->position()['position']], Response::HTTP_INTERNAL_SERVER_ERROR);
+            //    return response()->json(['message' => $employee_profile->position()['position']], Response::HTTP_INTERNAL_SERVER_ERROR);
             if ($employee_profile->id === Helpers::getHrmoOfficer()) {
                 return response()->json([
                     'data' => OvertimeApplication::collection(OvertimeApplication::where('status', 'approved')->get()),
@@ -339,10 +339,10 @@ class OvertimeController extends Controller
             $size = "";
 
 
-            $division_head=Helpers::getDivHead($assigned_area),
-            if ($recommending_and_approving === null || $recommending_and_approving['recommending_officer'] === null || $recommending_and_approving['approving_officer'] === null) {
-                return response()->json(['message' => 'No recommending officer and/or supervising officer assigned.'], Response::HTTP_FORBIDDEN);
-            }
+            // $division_head=Helpers::getDivHead($assigned_area);
+            // if ($recommending_and_approving === null || $recommending_and_approving['recommending_officer'] === null || $recommending_and_approving['approving_officer'] === null) {
+            //     return response()->json(['message' => 'No recommending officer and/or supervising officer assigned.'], Response::HTTP_FORBIDDEN);
+            // }
 
 
             foreach ($validatedData['employees'] as $index => $employeeList) {
@@ -390,7 +390,7 @@ class OvertimeController extends Controller
             }
 
             $assigned_area = $employee_profile->assignedArea->findDetails();
-          //  return response()->json(['message' =>  Helpers::getDivHead($assigned_area)], Response::HTTP_BAD_REQUEST);
+            //  return response()->json(['message' =>  Helpers::getDivHead($assigned_area)], Response::HTTP_BAD_REQUEST);
             $status = 'for recommending approval';
             $overtime_application = OvertimeApplication::create([
                 'employee_profile_id' => $user->id,
@@ -435,7 +435,7 @@ class OvertimeController extends Controller
             ]);
             return response()->json([
                 'message' => 'Overtime Application has been sucessfully saved',
-              //  'data' => OvertimeResource::collection($overtime_application),
+                //  'data' => OvertimeResource::collection($overtime_application),
 
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
