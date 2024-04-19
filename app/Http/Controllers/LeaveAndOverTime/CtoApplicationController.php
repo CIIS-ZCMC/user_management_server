@@ -553,7 +553,7 @@ class CtoApplicationController extends Controller
             }
 
             $employeeResponse = [
-                'id' => $overtimeCredits->employee_profile_id,
+                'id' => $credit->employee_profile_id,
                 'name' => $employeeDetails,
                 'employee_id' => $existingCredit->employeeProfile->employee_id,
                 'credits' => [
