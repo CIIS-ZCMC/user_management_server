@@ -606,7 +606,7 @@ class OvertimeController extends Controller
             $data->update(['status' => $status]);
             OvtApplicationLog::create([
                 'overtime_application_id' => $data->id,
-                'action_by' => $employee_profile->id,
+                'action_by_id' => $employee_profile->id,
                 'action' => 'Applied'
             ]);
 
