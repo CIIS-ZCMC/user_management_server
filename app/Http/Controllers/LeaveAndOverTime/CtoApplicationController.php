@@ -504,7 +504,7 @@ class CtoApplicationController extends Controller
 
             $existingCredit = EmployeeOvertimeCredit::where('employee_profile_id', $employeeId)
                 ->where('valid_until', $validUntil)
-                ->get();
+                ->first();
 
             if ($existingCredit) {
                 $existingCredit->earned_credit_by_hour += $creditValue;
@@ -528,7 +528,7 @@ class CtoApplicationController extends Controller
 
                 $existingCredit = $newCredit;
             }
-            
+
             $overtimeCredits = EmployeeOvertimeCredit::with(['employeeProfile.personalInformation'])->where('employee_profile_id', $employeeId)->get();
             $currentYearBalance = 0;
             $currentYearValidUntil = null;
