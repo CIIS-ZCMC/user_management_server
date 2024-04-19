@@ -450,8 +450,8 @@ class OvertimeController extends Controller
             $employee_profile = $request->user;
             $employeeId = $employee_profile->id;
             $validatedData = $request->validate([
-                'dates.*' => 'required|date_format:Y-m-d',
-                'time_from.*' => 'required|date_format:H:i',
+                'dates.*' => 'required',
+                'time_from.*' => 'required',
                 'time_to.*' => [
                     'required',
                     'date_format:H:i',
@@ -463,11 +463,9 @@ class OvertimeController extends Controller
                         }
                     },
                 ],
-                'remarks.*' => 'required|string|max:512',
-                'employees' => 'required|array',
-                'employees.*' => 'required|integer|exists:employee_profiles,id',
+                'remarks.*' => 'required',
+                'employees.*' => 'required',
             ]);
-
 
             $assigned_area = $employee_profile->assignedArea->findDetails();
             if (Helpers::getDivHead($assigned_area) === null || Helpers::getChiefOfficer() === null) {

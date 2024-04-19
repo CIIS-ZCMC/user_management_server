@@ -39,9 +39,6 @@ class OvertimeResource extends JsonResource
 
         }
 
-
-
-
         $hrmoRec = Section::where('code', 'HRMO');
         if($hrmoRec->count()>=1){
             $hrmo = $hrmoRec->first();
