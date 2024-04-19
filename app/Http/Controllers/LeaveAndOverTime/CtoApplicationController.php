@@ -527,7 +527,7 @@ class CtoApplicationController extends Controller
 
             }
 
-            $overtimeCredits = EmployeeOvertimeCredit::with(['employeeProfile.personalInformation'])->get()->groupBy('employee_profile_id');
+            $overtimeCredits = EmployeeOvertimeCredit::with(['employeeProfile.personalInformation'])->where('employee_profile_id', $employeeId)->where('valid_until', $validUntil)->get();
             $response = [];
             foreach ($overtimeCredits as $employeeProfileId => $credits) {
                 $employeeDetails = $credits->first()->employeeProfile->personalInformation->name();

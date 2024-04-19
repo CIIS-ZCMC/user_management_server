@@ -474,13 +474,14 @@ class OvertimeController extends Controller
             if ($recommending_and_approving === null || $recommending_and_approving['recommending_officer'] === null || $recommending_and_approving['approving_officer'] === null) {
                 return response()->json(['message' => 'No recommending officer and/or supervising officer assigned.'], Response::HTTP_FORBIDDEN);
             }
+            $assigned_area = $employee_profile->assignedArea->findDetails();
             $status = 'for recommending approval';
             $overtime_application = OvertimeApplication::create([
                 'employee_profile_id' => $user->id,
                 'status' => $status,
                 'purpose' => $request->purpose,
-                'recommending_officer' => $recommending_and_approving['recommending_officer'],
-                'approving_officer' => $recommending_and_approving['approving_officer'],
+                'recommending_officer' => Helpers::getDivHead($assigned_area),
+                'approving_officer' => Helpers::getChiefOfficer(),
             ]);
             $ovt_id = $overtime_application->id;
 
