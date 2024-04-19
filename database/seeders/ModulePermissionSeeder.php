@@ -688,7 +688,7 @@ class ModulePermissionSeeder extends Seeder
         ]);
 
         /**
-         * Holiday
+         * Monthly Working Hours
          */
         $system_module_monthly_working_hours = SystemModule::where('code', 'UMIS-MWH')->first();
 
