@@ -536,8 +536,8 @@ class CtoApplicationController extends Controller
             $nextYearValidUntil = null;
             $overallTotalBalance = 0;
 
-            foreach ($overtimeCredits as $employeeProfileId => $credit) {
-                $employeeDetails = $credit->first()->employeeProfile->personalInformation->name();
+            foreach ($overtimeCredits as $credit) {
+                $employeeDetails = $credit->employeeProfile->personalInformation->name();
                 if (!$credit->is_expired) {
                     $validUntil = Carbon::parse($credit->valid_until);
                     $year = $validUntil->year;
@@ -553,7 +553,7 @@ class CtoApplicationController extends Controller
             }
 
             $employeeResponse = [
-                'id' => $employeeProfileId,
+                'id' => $overtimeCredits->employee_profile_id,
                 'name' => $employeeDetails,
                 'employee_id' => $existingCredit->employeeProfile->employee_id,
                 'credits' => [
@@ -565,7 +565,7 @@ class CtoApplicationController extends Controller
                 ],
             ];
 
-            // Return the response
+
             return response()->json([
                 'data' => $employeeResponse,
                 'message' =>  'Leave credits updated successfully'
