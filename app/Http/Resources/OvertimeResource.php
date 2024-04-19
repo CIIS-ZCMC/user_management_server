@@ -112,8 +112,8 @@ class OvertimeResource extends JsonResource
             ],
             "oic" => $oic,
             'logs' => $this->logs ? OvtApplicationLogResource::collection($this->logs) : [],
-            'activities' => $this->activities ? OvtApplicationActivityResource::collection($this->activities) : null,
-            'dates' => !$this->activities ? OvtApplicationDateTimeResource::collection($this->dates) : null,
+            'activities' => !empty($this->activities) ? OvtApplicationActivityResource::collection($this->activities) : null,
+            'dates' => empty($this->activities) ? OvtApplicationDateTimeResource::collection($this->dates) : null,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];
