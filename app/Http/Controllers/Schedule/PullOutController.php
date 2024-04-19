@@ -4,10 +4,9 @@ namespace App\Http\Controllers\Schedule;
 
 use App\Models\AssignArea;
 use App\Models\Department;
-use App\Models\EmployeeSchedule;
+use App\Models\Division;
 use App\Models\PullOut;
 use App\Models\EmployeeProfile;
-use App\Models\Schedule;
 use App\Models\Section;
 
 use App\Http\Resources\PullOutResource;
@@ -16,13 +15,11 @@ use App\Helpers\Helpers;
 
 use App\Models\Unit;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Crypt;
 
 use Carbon\Carbon;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 
 class PullOutController extends Controller
 {
@@ -106,14 +103,27 @@ class PullOutController extends Controller
             foreach ($employees as $employee) {
                 $employeeArea = $employee->assignedArea->findDetails();
 
-                $unit = Unit::where('id', $employeeArea['details']->id)->first();
-                if ($unit !== null) {
-                    $section = Section::where('id', $unit->section_id)->first();
-                    $approving_officer = $section->supervisor_employee_profile_id;
+                switch ($employeeArea['sector']) {
+                    case 'Division':
+                        $division = Division::where('id', $employeeArea['details']->id)->first();
+                        $approving_officer = $division->chief_employee_profile_id;
+                        break;
+                    case 'Department':
+                        $department = Department::where('id', $employeeArea['details']->id)->first();
+                        $approving_officer = $department->head_employee_profile_id;
+                        break;
+                    case 'Section':
+                        $section = Section::where('id', $employeeArea['details']->id)->first();
+                        $approving_officer = $section->supervisor_employee_profile_id;
+                        break;
+                    case 'Unit':
+                        $unit = Unit::where('id', $employeeArea['details']->id)->first();
+                        $approving_officer = $unit->head_employee_profile_id;
+                        break;
                 }
+
                 $selectedEmployees[] = $employee;
             }
-
 
             foreach ($selectedEmployees as $selectedEmployee) {
                 $data = PullOut::create(array_merge($cleanData, [
@@ -144,10 +154,13 @@ class PullOutController extends Controller
         try {
             $user = $request->user;
 
-            $model = PullOut::where('approving_officer', $user->id)
-                ->where('deleted_at', null)
-                ->get();
-
+            if ($user->employee_id === "1918091351") {
+                $model = PullOut::all();
+            } else {
+                $model = PullOut::where('approving_officer', $user->id)
+                    ->where('deleted_at', null)
+                    ->get();
+            }
             return response()->json([
                 'data' => PullOutResource::collection($model),
             ], Response::HTTP_OK);
@@ -181,21 +194,15 @@ class PullOutController extends Controller
             }
 
             $status = null;
-            if ($request->approval_status === 'approved') {
-                switch ($data->status) {
-                    case 'applied':
-                        $status = 'approved';
-                        break;
+            switch ($request->approval_status) {
+                case 'approved':
+                    $status = 'approved';
+                    break;
 
-                    case 'declined':
-                        $status = 'declined';
+                case 'declined':
+                    $status = 'declined';
 
-                    default:
-                        $status = 'approved';
-                        break;
-                }
-            } else if ($request->approval_status === 'declined') {
-                $status = 'declined';
+                default;
             }
 
             $data->update(['status' => $status, 'remarks' => $request->remarks, 'approval_date' => Carbon::now()]);
@@ -204,7 +211,7 @@ class PullOutController extends Controller
             return response()->json([
                 'data' => new PullOutResource($data),
                 'logs' => Helpers::registerPullOutLogs($data->id, $user->id, $status),
-                'msg' => 'Pull out is ' . $status
+                'message' => 'Pull out is ' . $status
             ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
@@ -248,17 +255,9 @@ class PullOutController extends Controller
     {
         try {
             $user = $request->user;
-            $my_area = $user->assignedArea->findDetails();
+            $assigned_area = $user->assignedArea->findDetails();
 
-            $sections = Section::whereNot('id', $my_area['details']->id)->get();
-            $data = $sections->map(function ($section) {
-                return [
-                    'id' => $section->id,
-                    'name' => $section->name
-                ];
-            });
-
-            return response()->json(['data' => $data], Response::HTTP_OK);
+            return response()->json(['data' => Helpers::DivisionAreas($assigned_area)], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'sections', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -269,16 +268,33 @@ class PullOutController extends Controller
     {
         try {
             $new_employee_list = collect(); // Initialize as empty collection
+            $sector_id = $request->section_id;
+            $sector = $request->sector;
 
-            $units = Unit::where('section_id', $request->section_id)->get();
-            foreach ($units as $unit) {
-                $assign_areas = AssignArea::where('unit_id', $unit->id)
-                    ->whereNotIn('employee_profile_id', [$request->user->id])
-                    ->get();
-
-                // Using map to retrieve employee profiles and then flatten and add them to the collection
-                $new_employee_list = $new_employee_list->merge($assign_areas->pluck('employeeProfile'));
+            switch ($sector) {
+                case 'Division':
+                    $assign_areas = AssignArea::where('division_id', $sector_id)
+                        ->whereNotIn('employee_profile_id', [$request->user->id])
+                        ->get();
+                    break;
+                case 'Department':
+                    $assign_areas = AssignArea::where('department_id', $sector_id)
+                        ->whereNotIn('employee_profile_id', [$request->user->id])
+                        ->get();
+                    break;
+                case 'Section':
+                    $assign_areas = AssignArea::where('section_id', $sector_id)
+                        ->whereNotIn('employee_profile_id', [$request->user->id])
+                        ->get();
+                    break;
+                case 'Unit':
+                    $assign_areas = AssignArea::where('unit_id', $sector_id)
+                        ->whereNotIn('employee_profile_id', [$request->user->id])
+                        ->get();
+                    break;
             }
+
+            $new_employee_list = $new_employee_list->merge($assign_areas->pluck('employeeProfile'));
 
             $data = $new_employee_list->map(function ($employee) {
                 return [
@@ -288,7 +304,6 @@ class PullOutController extends Controller
             });
 
             return response()->json(['data' => $data], Response::HTTP_OK);
-
 
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'sectionEmployee', $th->getMessage());

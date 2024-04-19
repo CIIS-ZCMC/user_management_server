@@ -147,34 +147,37 @@ class WorkExperienceController extends Controller
     public function update($id, WorkExperienceRequest $request)
     {
         try{
-            $work_experience = WorkExperience::find($id);
+            $success = [];
 
-            if(!$work_experience)
-            {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }
+            foreach($request->work_experiences as $work_experience){
+                $cleanData = [];
 
-            $cleanData = [];
+                foreach ($work_experience as $key => $value) {
+                    if($key === 'id' && $value === null) continue;
+                    if($value===null){
+                        $cleanData[$key] = $value;
+                        continue;
+                    }
+                    $cleanData[$key] = strip_tags($value);
+                }
 
-            foreach ($request->all() as $key => $value) {
-                if($value===null){
-                    $cleanData[$key] = $value;
+                if($work_experience->id === null || $work_experience->id === 'id'){
+                    $cleanData['personal_information_id'] = $id;
+                    $work_experience = WorkExperience::create($cleanData);
+                    if(!$work_experience) continue;
+                    $success[] = $work_experience;
                     continue;
                 }
-                $cleanData[$key] = strip_tags($value);
+
+                $work_experience = WorkExperience::find($work_experience->id);
+                $work_experience->update($cleanData);
+
+                $success[] = $work_experience;
             }
 
-            $work_experience -> update($cleanData);
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response()->json([
-                'data' => new WorkExperienceResource($work_experience),
-                'message' => 'Work experience record updated.'
-            ], Response::HTTP_OK);
+            return $success;
         }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            throw new \Exception("Failed to register employee work experience.", 400);
         }
     }
 

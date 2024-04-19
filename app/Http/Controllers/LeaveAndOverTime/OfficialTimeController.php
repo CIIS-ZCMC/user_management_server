@@ -84,6 +84,8 @@ class OfficialTimeController extends Controller
                     'id',
                     'date_from',
                     'date_to',
+                    'time_from',
+                    'time_to',
                     'status',
                     'purpose',
                     'personal_order_file',
@@ -141,6 +143,13 @@ class OfficialTimeController extends Controller
             $user           = $request->user;
             $assigned_area  = $user->assignedArea->findDetails();
 
+            $employee_profile = $request->user;
+            $employeeId = $employee_profile->id;
+            $cleanData['pin'] = strip_tags($request->pin);
+
+            if ($employee_profile['authorization_pin'] !== $cleanData['pin']) {
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
+            }
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
@@ -164,11 +173,11 @@ class OfficialTimeController extends Controller
             }
             $officers   = Helpers::getRecommendingAndApprovingOfficer($assigned_area, $user->id);
 
-            
+
             if ($officers === null || $officers['recommending_officer'] === null || $officers['approving_officer'] === null) {
                 return response()->json(['message' => 'No recommending officer and/or supervising officer assigned.'], Response::HTTP_FORBIDDEN);
             }
-            
+
             $recommending_officer   = $officers['recommending_officer'];
             $approving_officer      = $officers['approving_officer'];
 
@@ -203,7 +212,7 @@ class OfficialTimeController extends Controller
                     return response()->json([
                         'data' => OfficialTimeResource::collection(OfficialTime::where('id', $data->id)->get()),
                         'logs' =>  Helpers::registerOfficialTimeLogs($data->id, $user['id'], 'Applied'),
-                        'msg' => 'Request Complete.'], Response::HTTP_OK);
+                        'message' => 'Request Complete.'], Response::HTTP_OK);
             }
         } catch (\Throwable $th) {
 
@@ -291,7 +300,7 @@ class OfficialTimeController extends Controller
             Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.'); //System Logs
             return response()->json(['data' => OfficialTimeResource::collection(OfficialTime::where('id', $data->id)->get()),
                                     'logs' => Helpers::registerOfficialTimeLogs($data->id, $employee_profile['id'], $log_action),
-                                    'msg' => $log_action, ], Response::HTTP_OK);
+                                    'message' => $log_action, ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 

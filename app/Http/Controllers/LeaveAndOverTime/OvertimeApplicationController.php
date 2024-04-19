@@ -2285,8 +2285,6 @@ class OvertimeApplicationController extends Controller
                     }
                 }
             }
-
-
             $columnsString = "";
             $process_name = "Applied";
             $user = $request->user;

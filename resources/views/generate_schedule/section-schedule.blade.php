@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Employee Schedule</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -36,9 +38,9 @@
             height: 30px;
             width: 90%;
             overflow: hidden;
-            padding-top: 5px;       
+            padding-top: 5px;
         }
-                
+
         footer {
             padding: 10px;
             max-width: 90%;
@@ -46,7 +48,7 @@
             text-align: left;
         }
 
-        
+
         header .float-left {
             position: absolute;
             top: 0px;
@@ -77,25 +79,6 @@
             text-decoration: none;
         }
 
-        footer .signatures .float-left {
-            padding: 0;
-            margin: 0;
-            float: left;
-            display: block;
-            text-align: start;
-            text-decoration: none;
-        }
-
-        footer .signatures .float-right {
-            padding: 0;
-            margin: 0;
-            padding-right: 1%;
-            float: right;
-            display: block;
-            text-align: end;
-            text-decoration: none;
-        }
-
         .container {
             margin: 0;
             padding: 0;
@@ -104,61 +87,83 @@
         }
 
         table {
-            width: 100%; /* Adjusted to fill the container */
+            width: 100%;
+            /* Adjusted to fill the container */
             /* border-collapse: collapse; */
             margin: 0;
             padding-top: 20px;
             text-align: left;
         }
 
-        table, th, td {
+        table,
+        th,
+        td {
             border: 1px solid;
         }
 
-        thead, th {
+        thead,
+        th {
             widows: 100px;
             height: 10px;
             border: 1px solid;
             text-align: center;
             font-size: 12px;
-            padding: 2px 1px 2px 1px ;
+            padding: 2px 1px 2px 1px;
         }
 
         .th-name {
             padding-right: 80px;
-            font-size: 12px; /* Adjusted font size */
+            font-size: 12px;
+            /* Adjusted font size */
         }
 
         .td-name {
-            font-size: 12px; /* Adjusted font size */
+            font-size: 12px;
+            /* Adjusted font size */
             font-weight: bold;
             text-align: left;
         }
 
         td {
             text-align: center;
-            font-size: 12px; /* Adjusted font size */
+            font-size: 12px;
+            /* Adjusted font size */
         }
 
         .signatures {
             padding: 10px;
             display: flex;
             justify-content: center;
-            align-items: center;;
+            align-items: center;
         }
 
         .signature {
-            padding-top: 40px;
+            margin-top: 10px;
+            padding-top: 10px;
             border-bottom: 1px solid #000;
             display: inline-block;
             align-items: center;
-            width: 300px;
             text-align: center;
+            width: 250px;
         }
 
-        .signature span {
-            display: block;
-            margin-bottom: 5px;
+        .row {
+            display: grid;
+            grid-template-columns: auto auto auto auto;
+            grid-gap: 10px;
+            padding: 5px;
+            width: 90%;
+            align-items: center;
+        }
+
+        .row .row-item {
+            display: inline-block;
+            grid-row: 1 / span 5;
+            text-align: center;
+            width: 200px;
+            padding-left: 8rem;
+            padding-top: 10px;
+            margin-top: 5px;
         }
 
         .underline {
@@ -167,6 +172,7 @@
             border-bottom: 1px solid #000;
             /* display: inline-block; */
         }
+
 
         @media print {
             @page {
@@ -183,66 +189,69 @@
         }
     </style>
 </head>
+
 <body>
     <header>
         <div class="float-left">
-            <img style="height: 65px;" id="zcmclogo" src="{{ base_path() . '\public\storage\logo/zcmc.jpeg'}}" alt="ZCMC Logo">
+            <img style="height: 65px;" id="zcmclogo" src="{{ base_path() . '\public\storage\logo/zcmc.jpeg' }}"
+                alt="ZCMC Logo">
         </div>
 
-        <div>   
+        <div>
             <span>Republic of the Philippines</span>
             <h6 style="margin: 0;">ZAMBOANGA CITY MEDICAL CENTER</h6>
             <span>Dr. Evangelista Street, Sta. Catalina, Zamboanga City</span>
         </div>
-        
+
         <div class="float-right">
-            <img style="width: 62px" id="dohlogo" src="{{ base_path() . '\public\storage\logo/doh.jpeg'}}" alt="DOH Logo">
+            <img style="width: 62px" id="dohlogo" src="{{ base_path() . '\public\storage\logo/doh.jpeg' }}"
+                alt="DOH Logo">
         </div>
     </header>
-    
+
     <div class="topnav">
         <div class="float-left">
             Department : <span class="underline">{{ $user->assignedArea->findDetails()['details']['name'] }}</span>
         </div>
-        
+
         <div class="float-right">
-            For The Month of :  <span class="underline"> {{ date('F', strtotime($month)) }} </span>
+            For The Month of : <span class="underline"> {{ date('F', strtotime($month)) }} </span>
         </div>
     </div>
 
-<div class="container">
-    <div class="table-responsive"> <!-- Added -->
-        <table class="table-bordered" border="1" cellspacing="0" cellpadding="10">
-            <thead>
-                <tr>
-                    <th class="schedule-cell" rowspan="2">#</th>
-                    <th class="th-name" rowspan="2">Name</th>
-                    
-                    @foreach($dates as $date)
-                        <th colspan="1" >{{ \Carbon\Carbon::parse($date)->format('d') }}</th>
-                    @endforeach
-                    
-                    <th rowspan="2" style="width: 10px; font-size: 10px">Total Hours</th>
-                </tr>
-                
-                <tr>
-                    @foreach ($dates as $date)
-                        <th style="font-size: 10px">{{ \Carbon\Carbon::parse($date)->format('D') }}</th>
-                    @endforeach
-                </tr>
-            </thead>
+    <div class="container">
+        <div class="table-responsive"> <!-- Added -->
+            <table class="table-bordered" border="1" cellspacing="0" cellpadding="10">
+                <thead>
+                    <tr>
+                        <th class="schedule-cell" rowspan="2">#</th>
+                        <th class="th-name" rowspan="2">Name</th>
 
-            <tbody>
-                @foreach ($employee as $key => $data)
+                        @foreach ($dates as $date)
+                            <th colspan="1">{{ \Carbon\Carbon::parse($date)->format('d') }}</th>
+                        @endforeach
+
+                        <th rowspan="2" style="width: 10px; font-size: 10px">Total Hours</th>
+                    </tr>
+
+                    <tr>
+                        @foreach ($dates as $date)
+                            <th style="font-size: 10px">{{ \Carbon\Carbon::parse($date)->format('D') }}</th>
+                        @endforeach
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach ($employee as $key => $data)
                         <tr>
                             <td class="schedule-cell"> {{ ++$key }} </td>
-                            <td class="td-name"> {{ $data->personalInformation->name() }}  </td>
+                            <td class="td-name"> {{ $data->personalInformation->name() }} </td>
 
                             @php
                                 $totalHours = 0;
                             @endphp
 
-                            @foreach($dates as $date)
+                            @foreach ($dates as $date)
                                 <td>
                                     <div class="schedule-container">
                                         @if ($holiday->where('month_day', date('m-d', strtotime($date)))->count() > 0)
@@ -251,7 +260,7 @@
                                             @php
                                                 $foundShift = false;
                                             @endphp
-                    
+
                                             {{-- Assuming $data->schedule is an array --}}
                                             @foreach ($data->schedule as $shift)
                                                 @if ($shift['date'] === $date)
@@ -261,21 +270,21 @@
                                                         $totalHours += $shift->timeShift->total_hours;
                                                         $foundShift = true;
                                                     @endphp
-                                                    @break
-                                                @endif
-                                            @endforeach
-                    
-                                            {{-- If no shift found for the date --}}
-                                            @if (!$foundShift)
-                                                <span class="schedule-cell">x</span>
+                                                @break
                                             @endif
-                                        @endif
-                                    </div>
-                                </td>
-                            @endforeach
+                                        @endforeach
 
-                            <td> {{ $totalHours  }} </td>
-                        </tr>
+                                        {{-- If no shift found for the date --}}
+                                        @if (!$foundShift)
+                                            <span class="schedule-cell">x</span>
+                                        @endif
+                                    @endif
+                                </div>
+                            </td>
+                        @endforeach
+
+                        <td> {{ $totalHours }} </td>
+                    </tr>
                 @endforeach
             </tbody>
         </table>
@@ -283,25 +292,32 @@
 </div>
 
 <footer>
-
-    {{-- <p><span class="text-danger">*</span> Note: </p> --}}
-    {{-- <span style="padding-left: 10px">Station/Department Contact No: </span> --}}
-
     <div class="signatures">
-        <div class="float-left">
-            <label> Prepared By: </label> <br>
-            <span class="signature">{{ $user->personalInformation->name() }}</span> <br>
-            <span style="padding: 28%">{{ $user->position()['position'] ?? null }}</span>
-        </div>
+        <div class="row">
+            <div class="row-item">
+                <span> Prepared By </span>
+                <span class="signature">{{ $user->personalInformation->name() }}</span>
+                <span>{{ $user->position()['position'] ?? null }}</span>
+            </div>
 
-        <div class="float-right">
-            <label> Approved By: </label> <br>
-            <span class="signature">{{ $head_officer->personalInformation->name() }}</span> <br>
-            <span style="padding: 28%">{{ $head_officer->position()['position'] ?? null }}</span>
+            <div class="row-item">
+                <span> Reviewed By </span>
+                <span class="signature">{{ $recommending_officer->personalInformation->name() }}</span>
+                <span>{{ $recommending_officer->position()['position'] ?? null }}</span>
+            </div>
+
+            <div class="row-item">
+                <span> Approved By </span>
+                <span class="signature">{{ $approving_officer->personalInformation->name() }}</span>
+                <span>{{ $approving_officer->position()['position'] ?? null }}</span>
+            </div>
         </div>
     </div>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous">
+</script>
 </body>
+
 </html>

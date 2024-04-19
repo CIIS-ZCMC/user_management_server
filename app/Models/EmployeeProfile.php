@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Helpers\Helpers;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -130,7 +131,7 @@ class EmployeeProfile extends Authenticatable
             'token' => $token,
             'token_exp' => $token_exp
         ]);
-
+        
         $encryptedToken = openssl_encrypt($token, config('app.encrypt_decrypt_algorithm'), config('app.app_key'), 0, substr(md5(config('app.app_key')), 0, 16));
 
         return $encryptedToken;
@@ -344,13 +345,13 @@ class EmployeeProfile extends Authenticatable
         $assign_area = AssignArea::where('employee_profile_id', $this->id)->first();
         if($assign_area->section_id !== null){
             $hr_employee = Section::find($assign_area->section_id);
-            
+
             if($hr_employee->code === 'HRMO'){
                 $role = Role::where('code', "HR-ADMIN")->first();
                 $system_role = SystemRole::where('role_id', $role->id)->first();
                 $special_access_role = SpecialAccessRole::where('employee_profile_id', $this->id)
                     ->where('system_role_id', $system_role->id)->first();
-    
+
                 if($special_access_role){
                     return [
                         'position' => "HR Staff",
@@ -560,5 +561,4 @@ class EmployeeProfile extends Authenticatable
     {
         return $this->belongsTo(SalaryGrade::class);
     }
-
 }

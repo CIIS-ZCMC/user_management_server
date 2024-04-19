@@ -119,5 +119,12 @@ class SystemModuleSeeder extends Seeder
             'description' => 'Creating Holiday',
             'system_id' => 1
         ]);
+
+        SystemModule::create([
+            'name' => 'Monthly Working Hours Management',
+            'code' => 'UMIS-MWH',
+            'description' => 'Setting Working Hours per month',
+            'system_id' => 1
+        ]);
     }
 }

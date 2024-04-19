@@ -242,17 +242,6 @@ class EmployeeProfileController extends Controller
         } 
     }
 
-    /**
-     * Validate if Employee ID is legitimate
-     * Validate if Account is Deactivated
-     * Decrypt Password from Database
-     * Validate Password Legitemacy
-     * Create Access Token
-     * Retrieve Personal Information
-     * Job Details (Plantilla or Not)
-     *
-     */
-
     public function signIn(SignInRequest $request)
     {
         try {
@@ -430,6 +419,7 @@ class EmployeeProfileController extends Controller
                 'employee_profile_id' => $employee_profile['id']
             ]);
 
+            Helpers::infoLog("EmployeeProfileController", "SignIn", config("app.session_domain"));
 
             return response()
                 ->json(["data" => $data, 'message' => "Success login."], Response::HTTP_OK)
@@ -661,7 +651,7 @@ class EmployeeProfileController extends Controller
         if (($side_bar_details['system']) > 0) {
             $employment_type = $employee_profile->employmentType;
 
-            if ($employment_type->name === "Permanent Full-time" || $employment_type->name === "Permanent Part-time" || $employment_type->name === 'Temporary') {
+            if ($employment_type->name === "Permanent Full-time" || $employment_type->name === "Permanent CTI" || $employment_type->name === "Permanent Part-time" || $employment_type->name === 'Temporary') {
                 $role = Role::where('code', "COMMON-REG")->first();
                 $reg_system_role = SystemRole::where('role_id', $role->id)->first();
 
@@ -872,6 +862,7 @@ class EmployeeProfileController extends Controller
         ];
 
         $personal_information_data = [
+            'personal_information_id' => $personal_information->id,
             'full_name' => $personal_information->nameWithSurnameFirst(),
             'first_name' => $personal_information->first_name,
             'last_name' => $personal_information->last_name,
@@ -928,6 +919,7 @@ class EmployeeProfileController extends Controller
         }
 
         return [
+            'personal_information_id' =>  $personal_information->id,
             'employee_profile_id' => $employee_profile['id'],
             'employee_id' => $employee_profile['employee_id'],
             'name' => $personal_information->employeeName(),
@@ -1055,6 +1047,7 @@ class EmployeeProfileController extends Controller
                 'browser_version' => is_bool($device['version']) ? 'Postman' : $device['version'],
                 'employee_profile_id' => $employee_profile['id']
             ]);
+
 
             return response()
                 ->json(['data' => $data, 'message' => "Success signout to other device you are now login."], Response::HTTP_OK)
@@ -1329,15 +1322,18 @@ class EmployeeProfileController extends Controller
             $new_password = strip_tags($request->new_password);
             $cleanData = ["password" => $new_password];
 
-            if ($this->CheckPasswordRepetition($cleanData, 3, $employee_profile)) {
-                return response()->json(['message' => "Please consider changing your password, as it appears you have reused an old password."], Response::HTTP_BAD_REQUEST);
-            }
+          
 
             $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
 
             if (!Hash::check($password . config('app.salt_value'), $decryptedPassword)) {
                 return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
             }
+
+            if ($this->CheckPasswordRepetition($cleanData, 3, $employee_profile)) {
+                return response()->json(['message' => "Please consider changing your password, as it appears you have reused an old password."], Response::HTTP_BAD_REQUEST);
+            }
+
 
             $hashPassword = Hash::make($new_password . config('app.salt_value'));
             $encryptedPassword = Crypt::encryptString($hashPassword);
@@ -2563,11 +2559,15 @@ class EmployeeProfileController extends Controller
                         'used_leave_credits' => 0
                     ]);
                 }
-
+                $currentYear = date('Y');
+                $validUntil = date('Y-m-d', strtotime("$currentYear-12-31"));
+                
                 EmployeeOvertimeCredit::create([
                     'employee_profile_id' => $employee_profile->id,
                     'earned_credit_by_hour' => 0,
                     'used_credit_by_hour' => 0,
+                    'valid_until' => $validUntil,
+                    'is_expired' => 0,
                     'max_credit_monthly' => 40,
                     'max_credit_annual' => 120
                 ]);
@@ -2637,8 +2637,6 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
-    // API [employee-profile-picture/{id}]
     public function updateEmployeeProfilePicture($id, Request $request)
     {
         try {
@@ -2858,6 +2856,7 @@ class EmployeeProfileController extends Controller
             }
 
             $data = [
+                'personal_information_id' =>  $personal_information->id,
                 'employee_profile_id' => $employee_profile['id'],
                 'employee_id' => $employee_profile['employee_id'],
                 'name' => $personal_information->employeeName(),
@@ -2869,6 +2868,7 @@ class EmployeeProfileController extends Controller
                 'employee_details' => [
                     'employee' => $employee,
                     'personal_information' => $personal_information_data,
+                    'personal_information_id' =>  $personal_information->id,
                     'contact' => new ContactResource($personal_information->contact),
                     'address' => $address,
                     'address_update' => AddressResource::collection($personal_information->addresses),
@@ -2915,10 +2915,6 @@ class EmployeeProfileController extends Controller
         }
     }
 
-    /**
-     * Update needed as this will require approval of HR to update account
-     * data to update of employee and attachment getting from Profile Update Request Table
-     */
     public function update($id, Request $request)
     {
         try {
@@ -2995,20 +2991,7 @@ class EmployeeProfileController extends Controller
 
     public function promotion($id, PromotionRequest $request)
     {
-        // password
-        // effective_date
-        // designation_id
-        // period
-        // area_assigned
         try {
-            // $user = $request->user;
-            // $cleanData['password'] = strip_tags($request->input('password'));
-            // $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
-            // if (!Hash::check($cleanData['password'] . config('app.salt_value'), $decryptedPassword)) {
-            //     return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
-            // }
-
-
             $employee_profile = EmployeeProfile::findOrFail($id);
             $effective_date = $request->effective_date;
             $designation_id = $request->designation_id;
@@ -3031,12 +3014,15 @@ class EmployeeProfileController extends Controller
                 'effective_date' => $effective_date,
                 'promotion' => true
             ]);
+
             $this->reAssignArea($id, $AssignareaRequest);
+
             $Promotion = [
                 'designation_id' => $designation_id,
                 'effective_at' => $effective_date,
                 'end_date' => $end_at
             ];
+
             $trails = [
                 'salary_grade_step' => $assigned->salary_grade_step,
                 'employee_profile_id' => $assigned->employee_profile_id,
@@ -3050,8 +3036,10 @@ class EmployeeProfileController extends Controller
                 'started_at' => $assigned->effective_at,
                 'end_at' => date('Y-m-d H:i:s')
             ];
+            
             AssignAreaTrail::create($trails);
             AssignArea::where('id', $assigned->id)->update($Promotion);
+            
             return response()->json(['message' => 'Employee successfully renewed.'], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'promotion', $th->getMessage());

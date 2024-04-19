@@ -51,15 +51,20 @@ class EmployeeMonthlyEarnCredit extends Command
                 ->where('leave_type_id', $sick_leave->id)->first();
 
             $sick_leave_current_credit = $sick_leave_credit->total_leave_credit;
+            $sick_monthly_value=$sick_leave->monthly_value;
+            if($employee->employmentType->name === 'Permanent Part-time')
+            {
+                $sick_monthly_value=$sick_leave->monthly_value/2;
 
+            }
             $sick_leave_credit->update([
-                'total_leave_credits' => DB::raw("total_leave_credits + $sick_leave->monthly_value")
+                'total_leave_credits' => DB::raw("total_leave_credits + $sick_monthly_value ")
             ]);
 
             EmployeeLeaveCreditLogs::create([
                 'employee_leave_credit_id' => $sick_leave_credit->id,
                 'previous_credit' => $sick_leave_current_credit,
-                'leave_credits' => $sick_leave->monthly_value
+                'leave_credits' =>  $sick_monthly_value
             ]);
 
             /**
@@ -69,15 +74,20 @@ class EmployeeMonthlyEarnCredit extends Command
                 ->where('leave_type_id', $vacation_leave->id)->first();
 
             $vacation_leave_current_credit = $vacation_leave_credit->total_leave_credit;
+            $vl_monthly_value=$vacation_leave->monthly_value;
+            if($employee->employmentType->name === 'Permanent Part-time')
+            {
+                $vl_monthly_value=$vacation_leave->monthly_value/2;
 
+            }
             $vacation_leave_credit->update([
-                'total_leave_credits' => DB::raw("total_leave_credits + $vacation_leave->monthly_value")
+                'total_leave_credits' => DB::raw("total_leave_credits + $vl_monthly_value")
             ]);
 
             EmployeeLeaveCreditLogs::create([
                 'employee_leave_credit_id' => $vacation_leave_credit->id,
                 'previous_credit' => $vacation_leave_current_credit,
-                'leave_credits' => $vacation_leave->monthly_value
+                'leave_credits' => $vl_monthly_value
             ]);
 
             /**
@@ -89,15 +99,20 @@ class EmployeeMonthlyEarnCredit extends Command
                 ->where('leave_type_id', $force_leave->id)->first();
 
                 $force_leave_current_credit = $force_leave_credit->total_leave_credit;
+                $fl_annual_value=$force_leave->annual_value;
+                if($employee->employmentType->name === 'Permanent Part-time')
+                {
+                    $fl_annual_value=$force_leave->annual_value/2;
 
+                }
                 $force_leave_credit->update([
-                    'total_leave_credits' => $force_leave->annual_value
+                      'total_leave_credits' => DB::raw("total_leave_credits + $fl_annual_value")
                 ]);
 
                 EmployeeLeaveCreditLogs::create([
                     'employee_leave_credit_id' => $force_leave_credit->id,
                     'previous_credit' => $force_leave_current_credit,
-                    'leave_credits' => $force_leave->annual_value
+                    'leave_credits' => $fl_annual_value
                 ]);
             }
         }

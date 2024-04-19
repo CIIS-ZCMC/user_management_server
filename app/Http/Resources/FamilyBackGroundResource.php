@@ -14,8 +14,8 @@ class FamilyBackGroundResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $tin_no = $this->tin_no === null? "NONE":$this->decryptData('tin_no');
-        $rdo_no = $this->rdo_no === null? "NONE":$this->decryptData('rdo_no');
+        $tin_no = $this->tin_no === null ? null:$this->decryptData('tin_no');
+        $rdo_no = $this->rdo_no === null ? null:$this->decryptData('rdo_no');
 
         return [
             'id' => $this->id,

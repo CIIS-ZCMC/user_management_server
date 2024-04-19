@@ -145,35 +145,36 @@ class CivilServiceEligibilityController extends Controller
     public function update($id, CivilServiceEligibilityRequest $request)
     {
         try{
-            $civil_service_eligibility = CivilServiceEligibility::find($id);
+            $success = [];
 
-            if(!$civil_service_eligibility)
-            {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }
-
-            $cleanData = [];
-
-            foreach ($request->all() as $key => $value) {
-                if($value === null)
-                {
-                    $cleanData[$key] = $value;
+            foreach($request->eligibilities as $civil_service_eligibility){
+                $cleanData = [];
+                foreach ($civil_service_eligibility as $key => $value) {
+                    if($key === 'id' && $value === null) continue;
+                    if($value === null)
+                    {
+                        $cleanData[$key] = $value;
+                        continue;
+                    }
+                    $cleanData[$key] = strip_tags($value);
+                }
+                
+                if($civil_service_eligibility->id === null || $civil_service_eligibility->id === 'null'){
+                    $cleanData['personal_information_id'] = $id;
+                    $civil_service_eligibility = CivilServiceEligibility::create($cleanData);
+                    if(!$civil_service_eligibility) continue;
+                    $success[] = $civil_service_eligibility;
                     continue;
                 }
-                $cleanData[$key] = strip_tags($value);
+
+                $civil_service_eligibility = CivilServiceEligibility::find($civil_service_eligibility->id);
+                $civil_service_eligibility->update($cleanData);
+                $success[] = $civil_service_eligibility;
             }
 
-            $civil_service_eligibility -> update($cleanData);
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
-
-            return response()->json([
-                'data' =>  new CivilServiceEligibilityResource($civil_service_eligibility),
-                'message'=> 'Employee civil service details updated.'
-            ], Response::HTTP_OK);
+            return $success;
         }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            throw new \Exception("Failed to register employee civil service eligibility record.", 400);
         }
     }
     

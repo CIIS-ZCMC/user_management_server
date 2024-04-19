@@ -182,7 +182,7 @@ class InActiveEmployeeController extends Controller
             }
 
             /**
-             * Personal Information module.
+             * Personal Information module. [DONE]
              */
             $personal_information_request = new PersonalInformationRequest();
             $personal_information_json = json_decode($request->personal_information);
@@ -194,11 +194,10 @@ class InActiveEmployeeController extends Controller
 
             $personal_information_request->merge($personal_information_data);
             $personal_information_controller = new PersonalInformationController();
-            //Update must be done here
             $personal_information = $personal_information_controller->update($in_active_employee->personal_information_id, $personal_information_request);
 
             /**
-             * Contact module.
+             * Contact module. [DONE]
              */
             $contact_request = new ContactRequest();
             $contact_json = json_decode($request->contact);
@@ -212,11 +211,10 @@ class InActiveEmployeeController extends Controller
 
             $contact_request->merge($contact_data);
             $contact_controller = new ContactController();
-            //Update must be done here
             $contact_controller->update($contact_id, $contact_request);
 
             /**
-             * Family background module
+             * Family background module [DONE]
              */
 
             $family_background_request = new FamilyBackgroundRequest();
@@ -228,14 +226,13 @@ class InActiveEmployeeController extends Controller
             }
 
             $family_background_request->merge($family_background_data);
-            //Update must be done here
+            $family_background_request->merge(['personal_info' => $personal_information]);
             $family_background_request->merge(['children' => $request->children]);
             $family_background_controller = new FamilyBackgroundController();
-            //Update must be done here
             $family_background_controller->update($in_active_employee->personalInformation->familyBackground->id, $family_background_request);
 
             /**
-             * Education module
+             * Education module [DONE]
              */
             $education_request = new EducationalBackgroundRequest();
             $education_json = json_decode($request->educations);
@@ -248,45 +245,41 @@ class InActiveEmployeeController extends Controller
 
             $education_request->merge(['educations' => $education_data]);
             $education_controller = new EducationalBackgroundController();
-            //Update must be done here
-            $education_controller->update($education_request);
+            $education_controller->update($personal_information->id,$education_request);
 
             /**
-             * Identification module
+             * Identification module [DONE]
              */
             $identification_request = new IdentificationNumberRequest();
             $identification_json = json_decode($request->identification);
             $identification_data = [];
+            $identification_id = $personal_information->identificationNumber->id;
 
-            //Update must be done here
             foreach ($identification_json as $key => $value) {
                 $identification_data[$key] = $value;
             }
 
             $identification_request->merge($identification_data);
             $identification_controller = new IdentificationNumberController();
-            //Update must be done here
-            $identification_controller->update($identification_request);
+            $identification_controller->update($identification_id, $identification_request);
 
             /**
-             * Work experience module
+             * Work experience module [DONE]
              */
             $work_experience_request = new WorkExperienceRequest();
             $work_experience_json = json_decode($request->work_experiences);
             $work_experience_data = [];
 
-            //Update must be done here
             foreach ($work_experience_json as $key => $value) {
                 $work_experience_data[$key] = $value;
             }
 
             $work_experience_request->merge(['work_experiences' => $work_experience_data]);
             $work_experience_controller = new WorkExperienceController();
-            //Update must be done here
-            $work_experience_controller->update( $work_experience_request);
+            $work_experience_controller->update($personal_information->id, $work_experience_request);
 
             /**
-             * Voluntary work module
+             * Voluntary work module [DONE]
              */
             $voluntary_work_request = new VoluntaryWorkRequest();
             $voluntary_work_json = json_decode($request->voluntary_work);
@@ -298,93 +291,82 @@ class InActiveEmployeeController extends Controller
 
             $voluntary_work_request->merge(['voluntary_work' => $voluntary_work_data]);
             $voluntary_work_controller = new VoluntaryWorkController();
-            //Update must be done here
             $voluntary_work_controller->update($personal_information->id, $voluntary_work_request);
 
             /**
-             * Other module
+             * Other module [DONE]
              */
             $other_request = new OtherInformationManyRequest();
             $other_json = json_decode($request->others);
             $other_data = [];
 
-            //Update must be done here
             foreach ($other_json as $key => $value) {
                 $voluntary_work_data[$key] = $value;
             }
 
             $other_request->merge(['others' => $other_data]);
             $other_controller = new OtherInformationController();
-            //Update must be done here
-            $other_controller->update($other_request);
+            $other_controller->update($personal_information->id, $other_request);
 
             /**
-             * Legal information module
+             * Legal information module [DONE]
              */
             $legal_info_request =  new LegalInformationManyRequest();
             $legal_info_json = json_decode($request->legal_information);
             $legal_info_data = [];
 
-            //Update must be done here
             foreach ($legal_info_json as $key => $value) {
                 $legal_info_data[$key] = $value;
             }
 
             $legal_info_request->merge(['legal_information' => $legal_info_data]);
             $legal_information_controller = new LegalInformationController();
-            //Update must be done here
-            $legal_information_controller->update($legal_info_request);
+            $legal_information_controller->update($personal_information->id, $legal_info_request);
 
             /**
-             * Training module
+             * Training module [DONE]
              */
             $training_request = new TrainingManyRequest();
             $training_json = json_decode($request->trainings);
             $training_data = [];
 
-            //Update must be done here
             foreach ($training_json as $key => $value) {
                 $training_data[$key] = $value;
             }
 
             $training_request->merge(['trainings' => $training_data]);
             $training_controller = new TrainingController();
-            //Update must be done here
-            $training_controller->update($training_request);
+            $training_controller->update($personal_information->id, $training_request);
 
             /**
-             * Reference module
+             * Reference module [DONE]
              */
             $referrence_request = new ReferenceManyRequest();
             $referrence_json = json_decode($request->reference);
             $referrence_data = [];
 
-            //Update must be done here
             foreach ($referrence_json as $key => $value) {
                 $referrence_data[$key] = $value;
             }
 
             $referrence_request->merge(['reference' => $referrence_data]);
             $referrence_controller = new ReferencesController();
-            //Update must be done here
-            $referrence_controller->update($referrence_request);
+            $referrence_controller->update($personal_information->id, $referrence_request);
 
             /**
-             * Eligibilities module
+             * Eligibilities module [DONE]
              */
             $eligibilities_request = new CivilServiceEligibilityManyRequest();
             $eligibilities_json = json_decode($request->eligibilities);
             $eligibilities_data = [];
 
-            //Update must be done here
             foreach ($eligibilities_json as $key => $value) {
                 $eligibilities_data[$key] = $value;
             }
 
             $eligibilities_request->merge(['eligibilities' => $eligibilities_data]);
             $eligibilities_controller = new CivilServiceEligibilityController();
-            //Update must be done here
-            $eligibilities_controller->update($eligibilities_request);
+            $eligibilities_controller->update($personal_information->ud, $eligibilities_request);
 
             //** Employee Profile Module */
 

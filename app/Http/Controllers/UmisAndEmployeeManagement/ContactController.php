@@ -102,10 +102,10 @@ class ContactController extends Controller
         }
     }
     
-    public function update($id, Request $request)
+    public function update($id, ContactRequest $request)
     {
         try{ 
-            $contact = Contact::where("personal_information_id", $id)->first();
+            $contact = Contact::find($id);
 
             if(!$contact)
             {
@@ -115,20 +115,18 @@ class ContactController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
+                if($value === null){
+                    $cleanData[$key] = $value;
+                    continue;
+                }
                 $cleanData[$key] = strip_tags($value);
             }
+            
+            $contact->update($cleanData);
 
-            $contact -> update($cleanData);
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
-
-            return response()->json([
-                'data' => new ContactResource($contact),
-                'message' => 'Employee contact details updated.'
-            ], Response::HTTP_OK);
+            return $contact;
         }catch(\Throwable $th){
-           Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            throw new \Exception("Failed to register employee family background.", 400);
         }
     }
     

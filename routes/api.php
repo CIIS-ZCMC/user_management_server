@@ -1742,6 +1742,11 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
             Route::get('leave-application-approved', 'LeaveApplicationController@approvedLeaveRequest');
         });
+        //hr
+        Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
+            Route::get('leave-application-approved-hr', 'LeaveApplicationController@approvedLeaveApplication');
+        });
+
 
         Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
             Route::get('my-leave-application-approved', 'LeaveApplicationController@myApprovedLeaveApplication');
@@ -1762,6 +1767,15 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
             Route::get('leave-application/{id}', 'LeaveApplicationController@show');
         });
+
+        Route::middleware(['auth.permission:UMIS-LM update'])->group(function () {
+            Route::post('receive-leave-application/{id}', 'LeaveApplicationController@received');
+        });
+
+        Route::middleware(['auth.permission:UMIS-LM update'])->group(function () {
+            Route::post('cancel-leave-application/{id}', 'LeaveApplicationController@cancelled');
+        });
+
 
         Route::middleware(['auth.permission:UMIS-LM request'])->group(function () {
             Route::post('leave-application', 'LeaveApplicationController@store');
@@ -1801,6 +1815,10 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
             Route::get('leave-credit-leave-type', 'LeaveApplicationController@getLeaveTypes');
+        });
+
+        Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
+            Route::get('employee-credit-logs/{id}', 'LeaveApplicationController@employeeCreditLog');
         });
 
         /**
@@ -1881,40 +1899,50 @@ Route::middleware('auth.cookie')->group(function () {
 
 
         Route::middleware(['auth.permission:UMIS-OM view-all'])->group(function () {
-            Route::get('ovt-application-all', 'OvertimeApplicationController@index');
+            Route::get('ovt-application-all', 'OvertimeController@index');
         });
 
         Route::middleware(['auth.permission:UMIS-OM request'])->group(function () {
-            Route::post('ovt-application', 'OvertimeApplicationController@store');
+            Route::post('ovt-application', 'OvertimeController@store');
         });
 
         Route::middleware(['auth.permission:UMIS-OM request'])->group(function () {
-            Route::post('ovt-application-past', 'OvertimeApplicationController@storePast');
-        });
-
-        Route::middleware(['auth.permission:UMIS-OM view'])->group(function () {
-            Route::get('ovt-employee-select', 'OvertimeApplicationController@computeEmployees');
+            Route::post('ovt-application-past', 'OvertimeController@storePast');
         });
 
         Route::middleware(['auth.permission:UMIS-OM approve'])->group(function () {
-            Route::post('ovt-application-decline/{id}', 'OvertimeApplicationController@declineOtApplication');
-        });
-
-        Route::middleware(['auth.permission:UMIS-OM approve'])->group(function () {
-            Route::post('ovt-application-cancel/{id}', 'OvertimeApplicationController@cancelOtApplication');
-        });
-
-        Route::middleware(['auth.permission:UMIS-OM approve'])->group(function () {
-            Route::post('ovt-application-update/{id}/{status}', 'OvertimeApplicationController@updateOvertimeApplicationStatus');
+            Route::post('ovt-application-approved/{id}', 'OvertimeController@approved');
         });
 
         Route::middleware(['auth.permission:UMIS-OM view'])->group(function () {
-            Route::get('user-ovt-application', 'OvertimeApplicationController@getUserOvertimeApplication');
+            Route::get('ovt-application/{id}', 'OvertimeController@show');
         });
 
         Route::middleware(['auth.permission:UMIS-OM view'])->group(function () {
-            Route::get('access-level-ovt-application', 'OvertimeApplicationController@getOvertimeApplications');
+            Route::get('user-ovt-application', 'OvertimeController@userOvertimeApplication');
         });
+
+        //hr
+        Route::middleware(['auth.permission:UMIS-OM view-all'])->group(function () {
+            Route::get('ovt-application-approved-hr', 'OvertimeController@approvedOvertimeApplication');
+        });
+
+        Route::middleware(['auth.permission:UMIS-OM view'])->group(function () {
+            Route::get('my-ovt-application-approved', 'OvertimeController@myApprovedOvertimeApplication');
+        });
+
+        Route::middleware(['auth.permission:UMIS-OM view'])->group(function () {
+            Route::get('my-ovt-application', 'OvertimeController@myOvertimeApplication');
+        });
+
+        Route::middleware(['auth.permission:UMIS-OM view'])->group(function () {
+            Route::get('my-ovt-application-approved/{id}', 'OvertimeController@employeeApprovedOvertimeApplication');
+        });
+
+        Route::middleware(['auth.permission:UMIS-OM view'])->group(function () {
+            Route::get('user-ovt-application', 'OvertimeController@getUserOvertime');
+        });
+
 
 
         Route::post('add-monthly-overtime', 'EmployeeOvertimeCreditController@store');
@@ -1932,6 +1960,9 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('user-cto-application', 'CtoApplicationController@create');
         });
 
+        Route::middleware(['auth.permission:UMIS-CT write'])->group(function () {
+            Route::post('cto-credit-update', 'CtoApplicationController@updateCredit');
+        });
 
         Route::middleware(['auth.permission:UMIS-CT approve'])->group(function () {
             Route::post('cto-application-decline/{id}', 'CtoApplicationController@declineCtoApplication');
@@ -1941,6 +1972,15 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-CT approve'])->group(function () {
             Route::post('cto-application-approve/{id}', 'CtoApplicationController@approved');
         });
+
+        Route::middleware(['auth.permission:UMIS-CT view'])->group(function () {
+            Route::get('employee-cto-credit-logs/{id}', 'CtoApplicationController@employeeCreditLog');
+        });
+
+        Route::middleware(['auth.permission:UMIS-CT view'])->group(function () {
+            Route::get('cto-credit-employees', 'CtoApplicationController@getEmployees');
+        });
+
     });
 
     /**
@@ -2060,7 +2100,7 @@ Route::middleware('auth.cookie')->group(function () {
             Route::post('pull-out', 'PullOutController@store');
         });
 
-        Route::middleware(['auth.permission:UMIS-POM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-POM approve'])->group(function () {
             Route::put('pull-out/{id}', 'PullOutController@update');
         });
 
@@ -2068,15 +2108,15 @@ Route::middleware('auth.cookie')->group(function () {
             Route::delete('pull-out/{id}', 'PullOutController@destroy');
         });
 
-        Route::middleware(['auth.permission:UMIS-POM approve'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-POM view'])->group(function () {
             Route::get('pull-out-aprroval', 'PullOutController@edit');
         });
 
-        Route::middleware(['auth.permission:UMIS-POM write'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-POM view'])->group(function () {
             Route::get('pull-out-section', 'PullOutController@sections');
         });
 
-        Route::middleware(['auth.permission:UMIS-POM write'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-POM view'])->group(function () {
             Route::get('pull-out-section-employee', 'PullOutController@sectionEmployees');
         });
 
@@ -2150,5 +2190,25 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::get('holidays', 'HolidayController@calendar');
+
+        /**
+         * MonthlyWorkHours Module
+         */
+        Route::middleware(['auth.permission:UMIS-MWH view-all'])->group(function () {
+            Route::get('monthly-work-hours', 'MonthlyWorkHoursController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-MWH write'])->group(function () {
+            Route::post('monthly-work-hour', 'MonthlyWorkHoursController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-MWH update'])->group(function () {
+            Route::put('monthly-work-hour/{id}', 'MonthlyWorkHoursController@update');
+        });
+
+        Route::middleware(['auth.permission:UMIS-MWH delete'])->group(function () {
+            Route::delete('monthly-work-hour/{id}', 'MonthlyWorkHoursController@destroy');
+        });
+
     });
 });

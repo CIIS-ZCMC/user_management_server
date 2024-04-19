@@ -81,8 +81,6 @@ class OfficialBusinessController extends Controller
                     'id',
                     'date_from',
                     'date_to',
-                    'time_from',
-                    'time_to',
                     'status',
                     'purpose',
                     'personal_order_file',
@@ -137,7 +135,14 @@ class OfficialBusinessController extends Controller
         try {
             $user = $request->user;
             $assigned_area = $user->assignedArea->findDetails();
+            
+            $employee_profile = $request->user;
+            $employeeId = $employee_profile->id;
+            $cleanData['pin'] = strip_tags($request->pin);
 
+            if ($employee_profile['authorization_pin'] !== $cleanData['pin']) {
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
+            }
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
@@ -199,7 +204,7 @@ class OfficialBusinessController extends Controller
                 return response()->json([
                     'data' => OfficialBusinessResource::collection(OfficialBusiness::where('id', $data->id)->get()),
                     'logs' => Helpers::registerOfficialBusinessLogs($data->id, $user['id'], 'Applied'),
-                    'msg' => 'Request Complete.'
+                    'message' => 'Request Complete.'
                 ], Response::HTTP_OK);
             }
         } catch (\Throwable $th) {
@@ -287,13 +292,13 @@ class OfficialBusinessController extends Controller
             return response()->json([
                 'data' => OfficialBusinessResource::collection(OfficialBusiness::where('id', $data->id)->get()),
                 'logs' => Helpers::registerOfficialBusinessLogs($data->id, $employee_profile['id'], $log_action),
-                'msg' => $log_action,
+                'message' => $log_action,
             ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
 
             Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
-            return response()->json(['msg' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 

@@ -146,34 +146,36 @@ class VoluntaryWorkController extends Controller
     public function update($id, VoluntaryWorkRequest $request)
     {
         try{
-            $voluntary_work = VoluntaryWork::find($id);
+            $success = [];
 
-            if(!$voluntary_work)
-            {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }
+            foreach($request->voluntary_work as $voluntary_work){
+                $cleanData = [];
+                foreach ($voluntary_work as $key => $value) {
+                    if($key === 'id' && $value === null) continue;
+                    if ($value === null) {
+                        $cleanData[$key] = $value;
+                        continue;
+                    }
+                    $cleanData[$key] = strip_tags($value);
+                }
 
-            $cleanData = [];
-
-            foreach ($request->all() as $key => $value) {
-                if ($value === null) {
-                    $cleanData[$key] = $value;
+                if($voluntary_work->id === null || $voluntary_work->id === 'null'){
+                    $cleanData['personal_information_id'] = $id;
+                    $voluntary_work = VoluntaryWork::create($cleanData);
+                    if(!$voluntary_work) continue;
+                    $success[] = $voluntary_work;
                     continue;
                 }
-                $cleanData[$key] = strip_tags($value);
-            }
 
-            $voluntary_work->update($cleanData);
+                $voluntary_work = VoluntaryWork::find($voluntary_work->id);
+                $voluntary_work->update($cleanData);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+                $success[] = $voluntary_work;
+            };
 
-            return response()->json([
-                'data' => new VoluntaryWorkResource($voluntary_work), 
-                'message' => 'Employee voluntary work data is updated.'
-            ], Response::HTTP_OK);
+            return $success;
         }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            throw new \Exception("Failed to register employee voluntary work.", 400);
         }
     }
 

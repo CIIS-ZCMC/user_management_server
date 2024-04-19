@@ -100,26 +100,27 @@ class IdentificationNumberController extends Controller
     public function update($id, IdentificationNumberRequest $request)
     {
         try {
+            $cleanData = [];
             $identification = IdentificationNumber::find($id);
 
-            $cleanData = [];
-
             foreach ($request->all() as $key => $value) {
-                if ($value === null || $key === 'personal_information_id') {
+                if($key === 'personal_information_id') continue;
+                if ($value === 'null' || $value === null || $key === 'personal_information_id') {
                     $cleanData[$key] = $value;
                     continue;
                 }
-                $cleanData[$key] =  $this->encryptData(strip_tags($value));
+                try {
+                    $cleanData[$key] =  $this->encryptData(strip_tags($value));
+                } catch (\Throwable $th) {
+                    $cleanData[$key] = $value;
+                }
             }
 
             $identification->update($cleanData);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating ' . $this->SINGULAR_MODULE_NAME . '.');
-
-            return response()->json(['data' => new IdentificationNumberResource($identification), "message" => 'Employee Identification number updated.'], Response::HTTP_OK);
+            return $identification;
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            throw new \Exception("Failed to register employee identifications number.", 400);
         }
     }
 

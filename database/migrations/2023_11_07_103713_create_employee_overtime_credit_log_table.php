@@ -19,13 +19,13 @@ return new class extends Migration
 
             $table->unsignedBigInteger('cto_application_id')->unsigned()->nullable();
             $table->foreign('cto_application_id')->references('id')->on('cto_applications');
-        
+
             $table->unsignedBigInteger('overtime_application_id')->unsigned()->nullable();
             $table->foreign('overtime_application_id')->references('id')->on('overtime_applications');
-
             $table->string('action');
-            $table->integer('previous_overtime_hours');
-            $table->integer('hours');
+            $table->integer('previous_overtime_hours')->nullable();;
+            $table->integer('hours')->nullable();;
+            $table->integer('expired_credit_by_hour')->nullable();
             $table->timestamps();
         });
     }

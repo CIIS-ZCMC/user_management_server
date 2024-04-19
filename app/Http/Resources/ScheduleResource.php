@@ -29,11 +29,13 @@ class ScheduleResource extends JsonResource
         }
 
         return [
+
             'id' => $this->id,
             'name' => $this->personalInformation->name(),
             'employee_id' => $this->employee_id,
             'biometric_id' => $this->biometric->biometric_id ?? null,
-            'schedule' => $schedules
+            'schedule' => $schedules,
+            'designation'=>$this->findDesignation()->name
         ];
     }
 }

@@ -8,6 +8,7 @@ use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Resources\PlantillaReferrenceResource;
 use App\Http\Resources\PlantillaWithDesignationResource;
 use App\Models\Designation;
+use App\Models\EmploymentType;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
@@ -141,11 +142,18 @@ class PlantillaController extends Controller
                     'effective_at' => now()
                 ]);
 
-                PlantillaNumber::where('id', $user_Current_Plantilla)->update([
-                    'is_dissolve' => 1,
-                    'is_vacant' => 0,
-                    'employee_profile_id' => NULL,
-                ]);
+                if(EmploymentType::where('name', 'Permanent CTI')->first()->id === $employee_profile->employment_type_id){
+                    PlantillaNumber::where('id', $user_Current_Plantilla)->update([
+                        'is_dissolve' => 1,
+                        'is_vacant' => 0,
+                        'employee_profile_id' => NULL,
+                    ]);
+                }else{
+                    $plantilla_number = PlantillaNumber::where('id', $user_Current_Plantilla)->first();
+                    $plantilla_number->update(['is_vacant' => 1,'employee_profile_id' => NULL]);
+                    $plantilla = $plantilla_number->plantilla;
+                    $plantilla->update(['total_used_plantilla_no' => $plantilla->total_used_plantilla_no + 1]);
+                }
 
                 PlantillaNumber::where('id', $to_assign)->update([
                     'employee_profile_id' => $id,
@@ -239,15 +247,6 @@ class PlantillaController extends Controller
             $employee_profile = $plantilla_number->employeeProfile;
 
             $employee_profile->assignedArea->update([...$new_data_of_area, 'effective_at' => $request->effective_at]);
-
-            // if($plantilla_number->employee_profile_id !== null && Carbon::parse($request->effective_at)->isPast()){
-
-            //     Artisan::call('app:plantilla-number-re-assign-task:to-run', [
-            //         '--taskId' => $plantilla_number->id,
-            //         '--area' => $request->area,
-            //         '--sector' => $request->sector
-            //     ]);
-            // }
 
             return response()->json([
                 'data' => new PlantillaNumberAllResource($plantilla_number),

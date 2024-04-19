@@ -20,6 +20,10 @@ class EmploymentTypeSeeder extends Seeder
         EmploymentType::create([
             'name' => "Permanent Part-time"
         ]);
+        
+        EmploymentType::create([
+            'name' => "Permanent CTI"
+        ]);
 
         EmploymentType::create([
             'name' => "Temporary"
