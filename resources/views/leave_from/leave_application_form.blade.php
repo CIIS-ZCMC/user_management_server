@@ -605,7 +605,7 @@
                         <div style="padding-top: 3px; padding-left: 20px; margin-top: 5px">
                             <span class="small-underline" style="font-size:12px;font-weight:lighter;">
                                 @if ($data->without_pay === false)
-                                    {{ $data->applied_credits + ' ' + $my_leave_type->code  }}
+                                {{ $data->applied_credits . ' ' . $my_leave_type->code }}
                                 @endif
                             </span>
                             <span style="padding-right: 20px; font-size: 12px">Days with pay</span>    
