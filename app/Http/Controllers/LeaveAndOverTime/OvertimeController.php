@@ -454,7 +454,6 @@ class OvertimeController extends Controller
                 'time_from.*' => 'required',
                 'time_to.*' => [
                     'required',
-                    'date_format:H:i',
                     function ($attribute, $value, $fail) use ($request) {
                         $index = explode('.', $attribute)[1];
                         $timeFrom = $request->input('time_from.' . $index);
@@ -465,53 +464,50 @@ class OvertimeController extends Controller
                 ],
                 'remarks.*' => 'required',
                 'employees.*' => 'required',
+
             ]);
+
 
             $assigned_area = $employee_profile->assignedArea->findDetails();
             if (Helpers::getDivHead($assigned_area) === null || Helpers::getChiefOfficer() === null) {
                 return response()->json(['message' => 'No recommending officer and/or supervising officer assigned.'], Response::HTTP_FORBIDDEN);
             }
-            foreach ($validatedData['employees'] as $index => $employeeList) {
+            $assigned_area = $employee_profile->assignedArea->findDetails();
+            if (Helpers::getDivHead($assigned_area) === null || Helpers::getChiefOfficer() === null) {
+                return response()->json(['message' => 'No recommending officer and/or supervising officer assigned.'], Response::HTTP_FORBIDDEN);
+            }
 
+            foreach ($validatedData['dates'] as $index => $date) {
+                $employeeId = $validatedData['employees'][$index];
 
-                foreach ($employeeList as $dateIndex => $employeeIdList) {
+                // Retrieve employee's profile using the employee ID
+                $employeeProfile = EmployeeProfile::with('overtimeCredits')->find($employeeId);
 
-                    foreach ($employeeIdList as $employeeId) {
+                // Get the current year and the next year
+                $currentYear = date('Y');
+                $nextYear = $currentYear + 1;
 
-                        // Retrieve employee's profile using the employee ID
+                // Calculate the valid until date (next year's December 31st)
+                $validUntil = $nextYear . '-12-31';
 
-                        $employeeProfile = EmployeeProfile::with('overtimeCredits')->find($employeeId);
+                // Calculate the total overtime hours requested by the employee
+                $totalOvertimeHours = $this->calculateOvertimeHours(
+                    $validatedData['time_from'][$index],
+                    $validatedData['time_to'][$index]
+                );
 
-                        // Get the current year and the next year
-                        $currentYear = date('Y');
-                        $nextYear = $currentYear + 1;
+                // Calculate the total earned credit accumulated including the current overtime application
+                $totalEarnedCredit = $employeeProfile->earned_credit_by_hour + $totalOvertimeHours;
 
-                        // Calculate the valid until date (next year's December 31st)
-                        $validUntil = $nextYear . '-12-31';
-                        // Ensure the relationship is defined in the EmployeeProfile model
+                // Compare with max_credit_monthly and max_credit_annual including valid_until
+                if ($totalOvertimeHours > $employeeProfile->overtimeCredits[0]->max_credit_monthly && $validUntil == $employeeProfile->overtimeCredits[0]->valid_until) {
+                    // Handle exceeding max_credit_monthly
+                    return response()->json(['message' => 'Employee ' . $employeeId . ' has exceeded the monthly overtime credit.'], Response::HTTP_BAD_REQUEST);
+                }
 
-                        // Calculate the total overtime hours requested by the employee
-                        $totalOvertimeHours = 0;
-
-                        $timeFrom = $validatedData['time_from'][$index][$dateIndex];
-                        $timeTo = $validatedData['time_to'][$index][$dateIndex];
-                        $totalOvertimeHours += $this->calculateOvertimeHours($timeFrom, $timeTo);
-
-
-                        // Calculate the total earned credit accumulated including the current overtime application
-                        $totalEarnedCredit = $employeeProfile->earned_credit_by_hour + $totalOvertimeHours;
-
-                        // Compare with max_credit_monthly and max_credit_annual including valid_until
-                        if ($totalOvertimeHours > $employeeProfile->overtimeCredits[0]->max_credit_monthly && $validUntil == $employeeProfile->overtimeCredits[0]->valid_until) {
-                            // Handle exceeding max_credit_monthly
-                            return response()->json(['message' => 'Employee ' . $employeeId . ' has exceeded the monthly overtime credit.'], Response::HTTP_BAD_REQUEST);
-                        }
-
-                        if ($totalEarnedCredit > $employeeProfile->overtimeCredits[0]->max_credit_annual && $validUntil == $employeeProfile->overtimeCredits[0]->valid_until) {
-                            // Handle exceeding max_credit_annual
-                            return response()->json(['message' => 'Employee ' . $employeeId . ' has exceeded the annual overtime credit.'], Response::HTTP_BAD_REQUEST);
-                        }
-                    }
+                if ($totalEarnedCredit > $employeeProfile->overtimeCredits[0]->max_credit_annual && $validUntil == $employeeProfile->overtimeCredits[0]->valid_until) {
+                    // Handle exceeding max_credit_annual
+                    return response()->json(['message' => 'Employee ' . $employeeId . ' has exceeded the annual overtime credit.'], Response::HTTP_BAD_REQUEST);
                 }
             }
             $status = 'for recommending approval';
@@ -531,17 +527,15 @@ class OvertimeController extends Controller
                     'time_to' =>  $validatedData['time_to'][$index],
                     'date' =>  $date,
                 ]);
-
-                $date_id = $date_application->id;
-                foreach ($validatedData['employees'] as $index => $employees) {
-                    OvtApplicationEmployee::create([
-                        'ovt_application_datetime_id' => $date_id,
-                        'employee_profile_id' =>  $validatedData['employees'][$index],
-                        'remarks' =>  $validatedData['remarks'][$index],
-                    ]);
-                }
             }
-
+            $date_id = $date_application->id;
+            foreach ($validatedData['employees'] as $index => $employees) {
+                OvtApplicationEmployee::create([
+                    'ovt_application_datetime_id' => $date_id,
+                    'employee_profile_id' =>  $validatedData['employees'][$index],
+                    'remarks' =>  $validatedData['remarks'][$index],
+                ]);
+            }
             OvtApplicationLog::create([
                 'overtime_application_id' => $ovt_id,
                 'action_by' => $employee_profile->id,
