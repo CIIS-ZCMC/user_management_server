@@ -46,7 +46,7 @@ class OvertimeController extends Controller
 
             if ($employee_profile->position() === null || $employee_profile->position()['position'] === 'Supervisor') {
 
-                $overtime_application = OvertimeApplication::where('employee_profile_id', $employee_profile->id)->get();
+                $overtime_application = OvertimeApplication::with('dates')->where('employee_profile_id', $employee_profile->id)->get();
 
                 return response()->json([
                     'data' => OvertimeResource::collection($overtime_application),
@@ -332,6 +332,8 @@ class OvertimeController extends Controller
                 'employees.*' => 'required',
             ]);
 
+
+
             $user = $request->user;
             $path = "";
             $fileName = "";
@@ -538,13 +540,13 @@ class OvertimeController extends Controller
             }
             OvtApplicationLog::create([
                 'overtime_application_id' => $ovt_id,
-                'action_by' => $employee_profile->id,
+                'action_by_id' => $employee_profile->id,
                 'action' => 'Applied'
             ]);
 
             return response()->json([
                 'message' => 'Overtime Application has been sucessfully saved',
-                'data' => OvertimeResource::collection($overtime_application),
+                //'data' => OvertimeResource::collection($overtime_application),
 
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -579,7 +581,7 @@ class OvertimeController extends Controller
             $log_action = null;
             $employee_profile = $request->user;
 
-            $cleanData['pin'] = strip_tags($request->password);
+            $cleanData['pin'] = strip_tags($request->pin);
 
 
             if ($employee_profile['authorization_pin'] !== $cleanData['pin']) {
