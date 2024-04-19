@@ -142,14 +142,15 @@ class PlantillaController extends Controller
                     'effective_at' => now()
                 ]);
 
-                if(EmploymentType::where('name', 'Permanent CTI')->first()->id === $employee_profile->employment_type_id){
-                    PlantillaNumber::where('id', $user_Current_Plantilla)->update([
+                $plantilla_number = PlantillaNumber::where('id', $user_Current_Plantilla)->first();
+
+                if($plantilla_number->employmentType->name === 'Permanent CTI'){
+                    $plantilla_number->update([
                         'is_dissolve' => 1,
                         'is_vacant' => 0,
                         'employee_profile_id' => NULL,
                     ]);
                 }else{
-                    $plantilla_number = PlantillaNumber::where('id', $user_Current_Plantilla)->first();
                     $plantilla_number->update(['is_vacant' => 1,'employee_profile_id' => NULL]);
                     $plantilla = $plantilla_number->plantilla;
                     $plantilla->update(['total_used_plantilla_no' => $plantilla->total_used_plantilla_no + 1]);
