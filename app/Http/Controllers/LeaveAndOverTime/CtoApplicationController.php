@@ -562,7 +562,7 @@ class CtoApplicationController extends Controller
                         'current_year_balance' => $currentYearBalance,
                         'current_valid_until' => $currentYearValidUntil,
                         'next_year_balance' => $nextYearBalance,
-                        'next_year_valid_until' => $currentYearValidUntil,
+                        'next_year_valid_until' => $nextYearValidUntil,
                         'overall_total_balance' => $overallTotalBalance,
                     ],
                 ];
@@ -628,7 +628,7 @@ class CtoApplicationController extends Controller
                         'current_year_balance' => $currentYearBalance,
                         'current_valid_until' => $currentYearValidUntil,
                         'next_year_balance' => $nextYearBalance,
-                        'next_year_valid_until' => $currentYearValidUntil,
+                        'next_year_valid_until' => $nextYearValidUntil,
                         'overall_total_balance' => $overallTotalBalance,
                     ],
                 ];
