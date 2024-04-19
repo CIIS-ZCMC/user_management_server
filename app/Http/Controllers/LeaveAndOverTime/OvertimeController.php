@@ -337,9 +337,9 @@ class OvertimeController extends Controller
             $fileName = "";
             $file_name_encrypted = "";
             $size = "";
-            $recommending_and_approving = Helpers::getRecommendingAndApprovingOfficer($employee_profile->assignedArea->findDetails(), $employee_profile->id);
 
 
+            $division_head=Helpers::getDivHead($assigned_area),
             if ($recommending_and_approving === null || $recommending_and_approving['recommending_officer'] === null || $recommending_and_approving['approving_officer'] === null) {
                 return response()->json(['message' => 'No recommending officer and/or supervising officer assigned.'], Response::HTTP_FORBIDDEN);
             }
@@ -469,12 +469,12 @@ class OvertimeController extends Controller
                 'employees' => 'required|array',
                 'employees.*' => 'required|integer|exists:employee_profiles,id',
             ]);
-            $recommending_and_approving = Helpers::getRecommendingAndApprovingOfficer($employee_profile->assignedArea->findDetails(), $employee_profile->id);
 
-            if ($recommending_and_approving === null || $recommending_and_approving['recommending_officer'] === null || $recommending_and_approving['approving_officer'] === null) {
+            $assigned_area = $employee_profile->assignedArea->findDetails();
+            if (Helpers::getDivHead($assigned_area) === null || $recommending_and_approving['recommending_officer'] === null || $recommending_and_approving['approving_officer'] === null) {
                 return response()->json(['message' => 'No recommending officer and/or supervising officer assigned.'], Response::HTTP_FORBIDDEN);
             }
-            $assigned_area = $employee_profile->assignedArea->findDetails();
+
             $status = 'for recommending approval';
             $overtime_application = OvertimeApplication::create([
                 'employee_profile_id' => $user->id,
