@@ -39,9 +39,6 @@ class OvertimeResource extends JsonResource
 
         }
 
-
-
-
         $hrmoRec = Section::where('code', 'HRMO');
         if($hrmoRec->count()>=1){
             $hrmo = $hrmoRec->first();
@@ -88,8 +85,6 @@ class OvertimeResource extends JsonResource
                 'profile_url' => Cache::get("server_domain") . "/photo/profiles/" . $this->employeeProfile->profile_url,
             ],
 
-            "date" => $this->date_from,
-            "reference_number" => $this->date_to,
             "status" => $this->status,
             "remarks" => $this->remarks,
             "purpose" => $this->purpose,
@@ -116,7 +111,7 @@ class OvertimeResource extends JsonResource
             "oic" => $oic,
             'logs' => $this->logs ? OvtApplicationLogResource::collection($this->logs) : [],
             'activities' => $this->activities ? OvtApplicationActivityResource::collection($this->activities) : null,
-            'dates' => !$this->activities ? OvtApplicationDateTimeResource::collection($this->dates) : null,
+            'dates' => $this->dates ? OvtApplicationDateTimeResource::collection($this->dates) : null,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

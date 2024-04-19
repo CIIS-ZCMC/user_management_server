@@ -18,10 +18,13 @@ class OvtApplicationDateTimeResource extends JsonResource
     {
 
         return [
+            "overtime_application_id " => $this->overtime_application_id,
             "time_from" => $this->time_from,
             "time_to" => $this->time_to,
             "date" => $this->date,
             'employees' => OvtApplicationEmployeeResource::collection($this->employees),
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }

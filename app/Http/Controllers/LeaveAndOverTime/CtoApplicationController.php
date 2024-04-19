@@ -241,57 +241,57 @@ class CtoApplicationController extends Controller
 
 
                 $first_valid_until = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)
-                ->where('is_expired', false)
-                ->orderBy('valid_until')
-                ->value('valid_until');
-
-                // Check if the applied date is after the first valid until date
-                if (Carbon::parse($value->date) > Carbon::parse($first_valid_until)) {
-                // Get the next valid until date
-                $next_valid_until = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)
                     ->where('is_expired', false)
-                    ->where('valid_until', '>', $first_valid_until)
                     ->orderBy('valid_until')
                     ->value('valid_until');
 
-                // Check if there's a next valid until date
-                if ($next_valid_until) {
-                    // Check if the applied date is within the valid until of the next valid until
-                    if (Carbon::parse($value->date) > Carbon::parse($next_valid_until)) {
-                        // If the applied date is after the next valid until, mark the application as failed
+                // Check if the applied date is after the first valid until date
+                if (Carbon::parse($value->date) > Carbon::parse($first_valid_until)) {
+                    // Get the next valid until date
+                    $next_valid_until = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)
+                        ->where('is_expired', false)
+                        ->where('valid_until', '>', $first_valid_until)
+                        ->orderBy('valid_until')
+                        ->value('valid_until');
+
+                    // Check if there's a next valid until date
+                    if ($next_valid_until) {
+                        // Check if the applied date is within the valid until of the next valid until
+                        if (Carbon::parse($value->date) > Carbon::parse($next_valid_until)) {
+                            // If the applied date is after the next valid until, mark the application as failed
+                            $failed[] = $value;
+                            $reason[] = 'Applied date is after the next valid until date.';
+                            continue;
+                        }
+                        // Retrieve the employee credit for the next valid until date
+                        $employee_credit = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)
+                            ->where('valid_until', $next_valid_until)
+                            ->first();
+                    } else {
+                        // If no next valid until date is found, mark the application as failed
                         $failed[] = $value;
-                        $reason[] = 'Applied date is after the next valid until date.';
+                        $reason[] = 'No more valid overtime credits available.';
                         continue;
                     }
-                    // Retrieve the employee credit for the next valid until date
+                } else {
+                    // Retrieve the employee credit for the first valid until date
                     $employee_credit = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)
-                        ->where('valid_until', $next_valid_until)
+                        ->where('valid_until', $first_valid_until)
                         ->first();
-                } else {
-                    // If no next valid until date is found, mark the application as failed
-                    $failed[] = $value;
-                    $reason[] = 'No more valid overtime credits available.';
-                    continue;
-                }
-                } else {
-                // Retrieve the employee credit for the first valid until date
-                $employee_credit = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)
-                    ->where('valid_until', $first_valid_until)
-                    ->first();
                 }
 
                 // Check if the employee has any earned credits
                 if (!$employee_credit || $employee_credit->earned_credit_by_hour <= 0) {
-                $failed[] = $value;
-                $reason[] = 'No overtime credits available.';
-                continue;
+                    $failed[] = $value;
+                    $reason[] = 'No overtime credits available.';
+                    continue;
                 }
 
                 // Check if the employee has sufficient earned credits for the application
                 if ($employee_credit->earned_credit_by_hour < $value->applied_credits) {
-                $failed[] = $value;
-                $reason[] = 'Insufficient overtime credits available.';
-                continue;
+                    $failed[] = $value;
+                    $reason[] = 'Insufficient overtime credits available.';
+                    continue;
                 }
 
                 $date = Carbon::parse($value->date);
@@ -491,50 +491,88 @@ class CtoApplicationController extends Controller
 
     public function updateCredit(Request $request)
     {
-    try
-    {
-        $employeeId = $request->employee_id;
-        $validUntil = $request->valid_until;
-        $creditValue = $request->credit_value;
+        try {
+            $employeeId = $request->employee_id;
+            $validUntil = $request->valid_until;
+            $creditValue = $request->credit_value;
 
-        $employee_profile = $request->user;
-        $cleanData['pin'] = strip_tags($request->pin);
-        if ($employee_profile['authorization_pin'] !== $cleanData['pin']) {
-            return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
+            $employee_profile = $request->user;
+            $cleanData['pin'] = strip_tags($request->pin);
+            if ($employee_profile['authorization_pin'] !== $cleanData['pin']) {
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
+            }
+
+            $existingCredit = EmployeeOvertimeCredit::where('employee_profile_id', $employeeId)
+                ->where('valid_until', $validUntil)
+                ->first();
+
+            if ($existingCredit) {
+                $existingCredit->earned_credit_by_hour += $creditValue;
+                $existingCredit->save();
+            } else {
+
+                $newCredit = EmployeeOvertimeCredit::create([
+                    'employee_profile_id' => $employeeId,
+                    'earned_credit_by_hour' => $creditValue,
+                    'used_credit_by_hour' => '0',
+                    'max_credit_monthly' => '40',
+                    'max_credit_annual' => '120',
+                    'valid_until' => $validUntil,
+                    'is_expired' => '0',
+                ]);
+                EmployeeOvertimeCreditLog::create([
+                    'employee_ot_credit_id' => $employeeId,
+                    'action' => 'Add Credit',
+                    'hours' => $creditValue
+                ]);
+
+                $existingCredit = $newCredit;
+            }
+
+            $overtimeCredits = EmployeeOvertimeCredit::with(['employeeProfile.personalInformation'])->where('employee_profile_id', $employeeId)->get();
+            $currentYearBalance = 0;
+            $currentYearValidUntil = null;
+            $nextYearBalance = 0;
+            $nextYearValidUntil = null;
+            $overallTotalBalance = 0;
+
+            foreach ($overtimeCredits as $credit) {
+                $employeeDetails = $credit->employeeProfile->personalInformation->name();
+                if (!$credit->is_expired) {
+                    $validUntil = Carbon::parse($credit->valid_until);
+                    $year = $validUntil->year;
+                    $overallTotalBalance += $credit->earned_credit_by_hour;
+                    if ($year == Carbon::now()->year) {
+                        $currentYearBalance += $credit->earned_credit_by_hour;
+                        $currentYearValidUntil = $validUntil->toDateString();
+                    } elseif ($year == Carbon::now()->year + 1) {
+                        $nextYearBalance += $credit->earned_credit_by_hour;
+                        $nextYearValidUntil = $validUntil->toDateString();
+                    }
+                }
+            }
+
+            $employeeResponse = [
+                'id' => $credit->employee_profile_id,
+                'name' => $employeeDetails,
+                'employee_id' => $existingCredit->employeeProfile->employee_id,
+                'credits' => [
+                    'current_year_balance' => $currentYearBalance,
+                    'current_valid_until' => $currentYearValidUntil,
+                    'next_year_balance' => $nextYearBalance,
+                    'next_year_valid_until' => $nextYearValidUntil,
+                    'overall_total_balance' => $overallTotalBalance,
+                ],
+            ];
+
+
+            return response()->json([
+                'data' => $employeeResponse,
+                'message' =>  'Leave credits updated successfully'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
-        $existingCredit = EmployeeOvertimeCredit::where('employee_profile_id', $employeeId)
-            ->where('valid_until', $validUntil)
-            ->first();
-        if ($existingCredit) {
-            $existingCredit->earned_credit_by_hour += $creditValue;
-            $existingCredit->save();
-        } else {
-            // Create a new record
-            $newCredit = EmployeeOvertimeCredit::create([
-                'employee_profile_id' => $employeeId,
-                'earned_credit_by_hour' => $creditValue,
-                'used_credit_by_hour' => '0',
-                'max_credit_monthly' => '40',
-                'max_credit_annual' => '120',
-                'valid_until' => $validUntil,
-            ]);
-            EmployeeOvertimeCreditLog::create([
-                'employee_ot_credit_id' => $employeeId,
-                'action' => 'Add Credit',
-                'hours' => $creditValue
-            ]);
-
-            $existingCredit = $newCredit;
-
-        }
-        return response()->json([
-            'data' => new EmployeeOvertimeCreditResource($existingCredit),
-            'message' => 'Updated employee CTO record.'
-        ], Response::HTTP_OK);
-    } catch (\Throwable $th) {
-        return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-    }
     }
 
     public function employeeCreditLog($id, Request $request)
@@ -561,13 +599,12 @@ class CtoApplicationController extends Controller
                 $employeeDetails = $credits->first()->employeeProfile->personalInformation->name();
 
                 $currentYearBalance = 0;
-                $currentYearValidUntil= null;
+                $currentYearValidUntil = null;
                 $nextYearBalance = 0;
                 $nextYearValidUntil = null;
                 $overallTotalBalance = 0;
 
                 foreach ($credits as $credit) {
-
                     if (!$credit->is_expired) {
                         $validUntil = Carbon::parse($credit->valid_until);
                         $year = $validUntil->year;
@@ -590,7 +627,7 @@ class CtoApplicationController extends Controller
                         'current_year_balance' => $currentYearBalance,
                         'current_valid_until' => $currentYearValidUntil,
                         'next_year_balance' => $nextYearBalance,
-                        'next_year_valid_until' => $currentYearValidUntil,
+                        'next_year_valid_until' => $nextYearValidUntil,
                         'overall_total_balance' => $overallTotalBalance,
                     ],
                 ];

@@ -1943,6 +1943,10 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('user-ovt-application', 'OvertimeController@getUserOvertime');
         });
 
+        Route::middleware(['auth.permission:UMIS-OM approve'])->group(function () {
+            Route::post('ovt-application-decline/{id}', 'OvertimeController@declined');
+        });
+
 
 
         Route::post('add-monthly-overtime', 'EmployeeOvertimeCreditController@store');
