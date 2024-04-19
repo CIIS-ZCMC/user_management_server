@@ -121,31 +121,48 @@ class LegalInformationController extends Controller
     public function update($id, LegalInformationRequest $request)
     {
         try{
-            $legal_information = LegalInformation::find($id);
+            $success = [];
 
-            if(!$legal_information)
-            {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }
+            foreach($request->legal_information as $legal_info){
+                $cleanData = [];
+                foreach ($legal_info as $key => $value) {
+                    if($key === 'id' && $value === null) continue;
+                    if($value === null){
+                        $cleanData[$key] = $value;
+                        continue;
+                    }
+                    if($key === 'legal_iq_id') {
+                        $cleanData[$key] = intval(strip_tags($value));
+                        continue;
+                    }
+                    if($key === 'answer') {
+                        $cleanData[$key] = intval(strip_tags($value)) === 1?true:false;
+                        continue;
+                    }
+                    $cleanData[$key] = strip_tags($value);
+                }
 
-            $cleanData = [];
-
-            foreach ($request->all() as $key => $value) {
-                if($value === null || $key === 'answer'){
-                    $cleanData[$key] = $value;
+                if($legal_info->id === null || $legal_info->id === 'null'){
+                    $cleanData['personal_information_id'] = $id;
+                    $legal_info = LegalInformation::create($cleanData);
+                    if(!$legal_info) continue;
+                    $success[] = $legal_info;
                     continue;
                 }
-                $cleanData[$key] = strip_tags($value);
+
+                if(!$legal_info){
+                    continue;
+                }
+
+                $legal_info = LegalInformation::find($legal_info->id);
+                $legal_info->update($cleanData);
+
+                $success[] = $legal_info;
             }
 
-            $legal_information->update($cleanData);
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
-            
-            return response()->json(['data' => new LegalInformationResource($legal_information) ,'message' => 'Legal information updated'], Response::HTTP_OK);
+            return $success;
         }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            throw new \Exception("Failed to register employee legal information.", 400);
         }
     }
     

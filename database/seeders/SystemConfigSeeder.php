@@ -118,4 +118,3 @@ class SystemConfigSeeder extends Seeder
         } while ($system_name === null);
     }
 }
-}

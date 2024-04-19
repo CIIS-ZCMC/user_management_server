@@ -21,6 +21,9 @@ return new class extends Migration
             $table->date('license_release_at')->nullable();
             $table->unsignedBigInteger('personal_information_id')->nullable();
             $table->foreign('personal_information_id')->references('id')->on('personal_informations');
+            $table->text('attachment')->nullable();
+            $table->boolean('is_request')->default(false);
+            $table->datetime('approved_at')->nullable();
             $table->timestamps();
         });
     }

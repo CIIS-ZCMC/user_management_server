@@ -18,7 +18,10 @@ class CivilServiceEligibility extends Model
         'place_of_examination',
         'license_number',
         'license_release_at',
-        'personal_information_id'
+        'personal_information_id',
+        'attachment',
+        'is_request',
+        'approved_at'
     ];
 
     public $timestamps = TRUE;

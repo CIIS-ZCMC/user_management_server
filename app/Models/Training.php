@@ -19,7 +19,10 @@ class Training extends Model
         'type_of_ld',
         'conducted_by',
         'total_hours',
-        'personal_information_id'
+        'personal_information_id',
+        'attachment',
+        'is_request',
+        'approved_at'
     ];
 
     public $timestamps = TRUE;

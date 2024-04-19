@@ -46,7 +46,7 @@ class OvertimeController extends Controller
 
             if ($employee_profile->position() === null || $employee_profile->position()['position'] === 'Supervisor') {
 
-                $overtime_application = OvertimeApplication::where('employee_profile_id', $employee_profile->id)->get();
+                $overtime_application = OvertimeApplication::with('dates')->where('employee_profile_id', $employee_profile->id)->get();
 
                 return response()->json([
                     'data' => OvertimeResource::collection($overtime_application),
@@ -268,7 +268,8 @@ class OvertimeController extends Controller
             $user = $request->user;
             $employee_profile = $user;
             $declined_by = null;
-            $cleanData['pin'] = strip_tags($request->password);
+            $status = "";
+            $cleanData['pin'] = strip_tags($request->pin);
 
             if ($user['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
@@ -333,6 +334,8 @@ class OvertimeController extends Controller
                 'quantities.*' => 'required',
                 'employees.*' => 'required',
             ]);
+
+
 
             $user = $request->user;
             $path = "";
@@ -512,7 +515,7 @@ class OvertimeController extends Controller
                     return response()->json(['message' => 'Employee ' . $employeeId . ' has exceeded the annual overtime credit.'], Response::HTTP_BAD_REQUEST);
                 }
             }
-            
+
             $status = 'for recommending approval';
             $overtime_application = OvertimeApplication::create([
                 'employee_profile_id' => $user->id,
@@ -541,13 +544,13 @@ class OvertimeController extends Controller
             }
             OvtApplicationLog::create([
                 'overtime_application_id' => $ovt_id,
-                'action_by' => $employee_profile->id,
+                'action_by_id' => $employee_profile->id,
                 'action' => 'Applied'
             ]);
 
             return response()->json([
                 'message' => 'Overtime Application has been sucessfully saved',
-                'data' => OvertimeResource::collection($overtime_application),
+                //'data' => OvertimeResource::collection($overtime_application),
 
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -582,15 +585,13 @@ class OvertimeController extends Controller
             $log_action = null;
             $employee_profile = $request->user;
 
-            $cleanData['pin'] = strip_tags($request->password);
+            $cleanData['pin'] = strip_tags($request->pin);
 
 
             if ($employee_profile['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
-
-            if ($request->status === 'approved') {
-                switch ($data->status) {
+            switch ($data->status) {
                     case 'for recommending approval':
                         $status = 'for approving approval';
                         $log_action = 'Approved by Recommending Officer';
@@ -600,25 +601,13 @@ class OvertimeController extends Controller
                         $status = 'approved';
                         $log_action = 'Approved by Approving Officer';
                         break;
-                }
-            } else if ($request->status === 'declined') {
-
-                $overtime_application_recommending = $data->recommending_officer;
-                $overtime_application_approving = $data->approving_officer;
 
 
-                if ($employee_profile->id === $overtime_application_recommending) {
-                    $status = 'declined by recommending officer';
-                } else if ($employee_profile->id === $overtime_application_approving) {
-                    $status = 'declined by approving officer';
-                }
-                $log_action = 'Request Declined';
             }
-
             $data->update(['status' => $status]);
             OvtApplicationLog::create([
                 'overtime_application_id' => $data->id,
-                'action_by' => $employee_profile->id,
+                'action_by_id' => $employee_profile->id,
                 'action' => 'Applied'
             ]);
 

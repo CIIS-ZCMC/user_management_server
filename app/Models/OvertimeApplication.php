@@ -33,11 +33,10 @@ class OvertimeApplication extends Model
     public function employeeProfile() {
         return $this->belongsTo(EmployeeProfile::class);
     }
-
-    public function directDates() {
+    public function dates()
+    {
         return $this->hasMany(OvtApplicationDatetime::class);
     }
-
     public function oic(){
         return $this->belongsTo(EmployeeProfile::class, 'employee_oic_id');
     }

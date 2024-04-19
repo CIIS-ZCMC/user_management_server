@@ -37,6 +37,7 @@ class EmployeeProfile extends Authenticatable
         'allow_time_adjustment',
         'shifting',
         'is_2fa',
+        'renewal',
         'employee_type_id',
         'employment_type_id'
     ];
