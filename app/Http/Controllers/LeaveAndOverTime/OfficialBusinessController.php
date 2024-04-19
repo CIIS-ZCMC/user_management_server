@@ -135,7 +135,7 @@ class OfficialBusinessController extends Controller
         try {
             $user = $request->user;
             $assigned_area = $user->assignedArea->findDetails();
-            
+
             $employee_profile = $request->user;
             $employeeId = $employee_profile->id;
             $cleanData['pin'] = strip_tags($request->pin);
@@ -265,10 +265,6 @@ class OfficialBusinessController extends Controller
                         $log_action = 'Approved by Approving Officer';
                         break;
 
-                    // default:
-                    //     $status = 'declined';
-                    //     $log_action = 'Request Declined';
-                    // break;
                 }
             } else if ($request->status === 'declined') {
 

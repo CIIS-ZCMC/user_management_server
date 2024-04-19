@@ -23,12 +23,9 @@ class ProcessApprovedOvertimeCredits extends Command
      */
     protected $description = 'Command description';
 
-    /**
-     * Execute the console command.
-     */
     public function handle()
     {
-            $biometricsData = [
+        $biometricsData = [
             [
                 'employee_profile_id' => 1,
                 'date' => '2023-12-12',
@@ -53,16 +50,13 @@ class ProcessApprovedOvertimeCredits extends Command
                 'from_time' => '14:00:00',
                 'to_time' => '17:00:00',
             ],
-
         ];
-
 
         $currentMonth = date('m');
         $pastMonth = date('m', strtotime('-1 month'));
         $overtimeApplications = OvertimeApplication::where('status', 'approved')->with('activities', 'directDates')->get();
         foreach ($overtimeApplications as $overtimeApplication) {
             if (isset($overtimeApplication->activities)) {
-
                 // Check if the overtime application is approved
                     foreach ($overtimeApplication->activities as $activity) {
                         foreach ($activity->dates as $date) {
