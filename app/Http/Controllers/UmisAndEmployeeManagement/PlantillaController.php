@@ -347,22 +347,23 @@ class PlantillaController extends Controller
 
             $plantilla_numbers = [];
 
-            foreach ($cleanData['plantilla_number'] as $value) {
+            foreach (json_decode($cleanData['plantilla_number']) as $value->number) {
                 try {
-                    $existing = PlantillaNumber::where('number', $value)->first();
+                    $existing = PlantillaNumber::where('number', $value->number)->first();
 
                     if($existing){
                         DB::rollBack();
                         return response()->json(['message' => "Plantilla number already exist."], Response::HTTP_FORBIDDEN);
                     }
 
-                    if (!is_string($value) || $existing !== null) {
+                    if (!is_string($value->number) || $existing !== null) {
                         DB::rollBack();
                         return response()->json(['message' => "Invalid type require string."], Response::HTTP_FORBIDDEN);
                     }
 
                     $plantilla_number_new = PlantillaNumber::create([
-                        'number' => $value,
+                        'number' => $value->number,
+                        'employment_type_id' => $value->employment_type_id,
                         'plantilla_id' => $plantilla->id
                     ]);
 
