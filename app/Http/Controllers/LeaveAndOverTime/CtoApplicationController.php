@@ -525,36 +525,32 @@ class CtoApplicationController extends Controller
                     'hours' => $creditValue
                 ]);
 
+                $existingCredit=$newCredit;
+
             }
+            $currentYear = Carbon::now()->year;
+            $nextYear = $currentYear + 1;
 
-            $overtimeCredits = EmployeeOvertimeCredit::with(['employeeProfile.personalInformation'])->where('employee_profile_id', $employeeId)->where('valid_until', $validUntil)->get();
-            $response = [];
-            foreach ($overtimeCredits as $employeeProfileId => $credits) {
-                $employeeDetails = $credits->first()->employeeProfile->personalInformation->name();
-                $currentYearBalance = 0;
-                $currentYearValidUntil = null;
-                $nextYearBalance = 0;
-                $nextYearValidUntil = null;
-                $overallTotalBalance = 0;
+            $currentYearBalance = 0;
+            $currentYearValidUntil = null;
+            $nextYearBalance = 0;
+            $nextYearValidUntil = null;
+            $overallTotalBalance = $currentYearBalance + $nextYearBalance;
 
-                foreach ($credits as $credit) {
-                        $validUntil = Carbon::parse($credit->valid_until);
-                        $year = $validUntil->year;
-                        $overallTotalBalance += $credit->earned_credit_by_hour;
-                        if ($year == Carbon::now()->year) {
-                            $currentYearBalance += $credit->earned_credit_by_hour;
-                            $currentYearValidUntil = $validUntil->toDateString();
-                        } elseif ($year == Carbon::now()->year + 1) {
-                            $nextYearBalance += $credit->earned_credit_by_hour;
-                            $nextYearValidUntil = $validUntil->toDateString();
-                        }
-
-                }
-
+            $validUntilYear = Carbon::parse($validUntil)->year;
+            if ($validUntilYear == $currentYear) {
+                $currentYearBalance = $existingCredit->earned_credit_by_hour;
+                $currentYearValidUntil = $existingCredit->valid_until->toDateString();
+            } elseif ($validUntilYear == $nextYear) {
+                $nextYearBalance = $existingCredit->earned_credit_by_hour;
+                $nextYearValidUntil = $existingCredit->valid_until->toDateString();
+            }
+                $employeeProfileId = $existingCredit->employee_profile_id;
+                $employeeDetails = $existingCredit->employeeProfile->personalInformation->name();
                 $employeeResponse = [
                     'id' => $employeeProfileId,
                     'name' => $employeeDetails,
-                    'employee_id' => $credits->first()->employeeProfile->employee_id,
+                    'employee_id' => $existingCredit->employeeProfile->employee_id,
                     'credits' => [
                         'current_year_balance' => $currentYearBalance,
                         'current_valid_until' => $currentYearValidUntil,
@@ -564,9 +560,9 @@ class CtoApplicationController extends Controller
                     ],
                 ];
 
-                $response[] = $employeeResponse;
-            }
-            return ['data' => $response];
+
+                return response()->json(['data' => $employeeResponse], Response::HTTP_OK);
+
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
