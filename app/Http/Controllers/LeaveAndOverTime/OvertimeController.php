@@ -512,7 +512,7 @@ class OvertimeController extends Controller
                     return response()->json(['message' => 'Employee ' . $employeeId . ' has exceeded the annual overtime credit.'], Response::HTTP_BAD_REQUEST);
                 }
             }
-            
+
             $status = 'for recommending approval';
             $overtime_application = OvertimeApplication::create([
                 'employee_profile_id' => $user->id,
@@ -589,7 +589,7 @@ class OvertimeController extends Controller
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
-            if ($request->status === 'approved') {
+            if ($request->status === 'for recommending approval') {
                 switch ($data->status) {
                     case 'for recommending approval':
                         $status = 'for approving approval';
