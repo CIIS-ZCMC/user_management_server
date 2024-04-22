@@ -353,7 +353,7 @@ class LeaveApplicationController extends Controller
         }
     }
 
-    public function employeeCreditLog($id, Request $request)
+    public function employeeCreditLog($id)
     {
         try {
             $employee_credit_logs = EmployeeLeaveCredit::where('employee_profile_id ',$id)->get();

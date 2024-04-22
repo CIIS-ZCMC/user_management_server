@@ -575,7 +575,7 @@ class CtoApplicationController extends Controller
         }
     }
 
-    public function employeeCreditLog($id, Request $request)
+    public function employeeCreditLog($id)
     {
         try {
             $employee_credit_logs = EmployeeOvertimeCredit::where('employee_profile_id ', $id)->get();
