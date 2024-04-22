@@ -562,7 +562,6 @@ class OvertimeController extends Controller
 
     private function calculateOvertimeHours($startTime, $endTime)
     {
-
         $start = new DateTime($startTime);
         $end = new DateTime($endTime);
         $interval = $start->diff($end);
