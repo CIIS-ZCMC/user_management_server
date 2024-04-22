@@ -3227,6 +3227,7 @@ class EmployeeProfileController extends Controller
     public function deactivateEmployeeAccount($id, Request $request)
     {
         try {
+            DB::beginTransaction();
             $user = $request->user;
             $cleanData['password'] = strip_tags($request->password);
 
@@ -3242,19 +3243,19 @@ class EmployeeProfileController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            if ($employee_profile->position() !== null) {
+            if (is_array($employee_profile->position())) {
                 $position = $employee_profile->position();
                 $area = $employee_profile->assignedArea->findDetails();
-                return response()->json(["message" => "Action is prohibited this employee currently a " . $position->position . " " . $area['details']->name . "."], Response::HTTP_FORBIDDEN);
+                return response()->json(["message" => "Action is prohibited, this employee is currently a " . $position->position . " in " . $area['details']->name . "."], Response::HTTP_FORBIDDEN);
             }
 
             $new_in_active = InActiveEmployee::create([
-                'personal_information_id' => $employee_profile->personal_information,
+                'personal_information_id' => $employee_profile->personalInformation->id,
                 'employment_type_id' => $employee_profile->employment_type_id,
                 'employee_id' => $employee_profile->employee_id,
                 'profile_url' => $employee_profile->profile_url,
                 'date_hired' => $employee_profile->date_hired,
-                'biometic_id' => $employee_profile->biometic_id,
+                'biometric_id' => $employee_profile->biometric_id,
                 'employment_end_at' => now(),
                 'remarks' => strip_tags($request->remarks)
             ]);
@@ -3271,23 +3272,24 @@ class EmployeeProfileController extends Controller
 
             $assign_area = $employee_profile->assignedArea;
 
-            $new_assign_area_data = $assign_area;
-            $new_assign_area_data['employee_profile_id'] = null;
-            $new_assign_area_data['in_active_employee_id'] = $new_in_active->id;
-            $new_assign_area_data['end_at'] = now();
+            AssignAreaTrail::create([$assign_area,   
+                'employee_profile_id' => null,
+                'in_active_employee_id' => $new_in_active->id,
+                'started_at'=> $employee_profile->date_hired,
+                'end_at' => now()
+            ]);
 
-            AssignAreaTrail::create($new_assign_area_data);
-
-            PasswordTrail::where('employee_profile_id', $employee_profile->id)->delete();
-            LoginTrail::where('employee_profile_id', $employee_profile->id)->delete();
-            AccessToken::where('employee_profile_id', $employee_profile->id)->delete();
+            $employee_profile->removeRecords();
             $employee_profile->delete();
 
-            Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in deleting a ' . $this->SINGULAR_MODULE_NAME . '.');
+            DB::commit();
+
+            Helpers::registerSystemLogs($request, null, true, 'Success in deleting a ' . $this->SINGULAR_MODULE_NAME . '.');
 
 
             return response()->json(['message' => 'Employee profile deleted.'], Response::HTTP_OK);
         } catch (\Throwable $th) {
+            DB::rollBack();
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
