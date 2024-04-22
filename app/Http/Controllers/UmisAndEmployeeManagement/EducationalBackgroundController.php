@@ -144,31 +144,39 @@ class EducationalBackgroundController extends Controller
     public function update($id, EducationalBackgroundRequest $request)
     {
         try{
-            $educational_background = EducationalBackground::find($id);
+            $success = [];
 
-            if(!$educational_background)
-            {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }
-
-            $cleanData = [];
-
-            foreach ($request->all() as $key => $value) {
-                if ($value === null) {
-                    $cleanData[$key] = $value;
+            foreach($request->educations as $education){
+                $cleanData = [];
+                foreach ($education as $key => $value) {
+                    if($key === 'id' && $value === null) continue;
+                    if ($value === null) {
+                        $cleanData[$key] = $value;
+                        continue;
+                    }
+                    $cleanData[$key] = strip_tags($value);
+                }
+                
+                if($education->id === null || $education->id === 'null'){
+                    $cleanData['personal_information_id'] = $id;
+                    $educational_background = EducationalBackground::create($cleanData);
+                    $success[] = $educational_background;
                     continue;
                 }
-                $cleanData[$key] = strip_tags($value);
+
+                $educational_background = EducationalBackground::find($education->id);
+                $educational_background->update($cleanData);
+                
+                if(!$educational_background){
+                    continue;
+                }
+
+                $success[] = $educational_background;
             }
 
-            $educational_background->update($cleanData);
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
-
-            return response()->json(['data' => new EducationalBackgroundResource($educational_background), 'message' => 'Employee educational background data has been updated.'], Response::HTTP_OK);
+            return $success;
         }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            throw new \Exception("Failed to register employee education record.", 400);
         }
     }
     

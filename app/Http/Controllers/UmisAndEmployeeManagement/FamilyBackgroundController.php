@@ -140,11 +140,14 @@ class FamilyBackgroundController extends Controller
     public function update($id, FamilyBackgroundRequest $request)
     {
         try {
-            $family_background = FamilyBackground::find($id);
-
+            $personal_info = $request->personal_info;
+            $success = [];
             $cleanData = [];
 
+            $family_background = FamilyBackground::findOrFail($id);
+
             foreach ($request->all() as $key => $value) {
+                if ($key === 'user' || $key === 'children') continue;
                 if ($value === null) {
                     $cleanData[$key] = $value;
                     continue;
@@ -156,14 +159,45 @@ class FamilyBackgroundController extends Controller
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $family_background->update($cleanData);
+            $family_background = FamilyBackground::create($cleanData);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating ' . $this->SINGULAR_MODULE_NAME . '.');
+            foreach (json_decode($request->children) as $child) {
+                $child_data = [];
+                foreach ($child as $key => $value) {
+                    if($key === 'id' && $value === null) continue;
+                    if ($value === null) {
+                        $child_data[$key] = $value;
+                        continue;
+                    }
+                    $child_data[$key] = strip_tags($value);
+                }
+                
+                if($child->id === null || $child->id === 'null'){
+                    $child_data['personal_information_id'] = $personal_info->id;
+                    $child_store = Child::create($child_data);
+                    if (!$child_store) {
+                        $failed[] = $child;
+                    }
+                    continue;
+                }
 
-            return response()->json(['data' => new FamilyBackgroundResource($family_background), 'message' => 'Employee family background details updated.'], Response::HTTP_OK);
+                $child_store = Child::find($child_data['id']);
+                $child_store->update($child_data);
+
+                if (!$child_store) {
+                    $failed[] = $child;
+                    continue;
+                }
+
+                $success[] = $child_store;
+            }
+
+            return [
+                'family_background' => $family_background,
+                'children' => $success
+            ];
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'update', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            throw new \Exception("Failed to register employee family background.", 400);
         }
     }
 

@@ -136,30 +136,31 @@ class ReferencesController extends Controller
     public function update($id, ReferenceRequest $request)
     {
         try{
-            $reference = Reference::find($id);
+            $success = [];
 
-            if(!$reference)
-            {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            foreach($request->reference as $reference){
+                $cleanData = [];
+                foreach ($reference as $key => $value) {
+                    if($key === 'id' && $value === null) continue;
+                    $cleanData[$key] = strip_tags($value);
+                }
+                
+                if($reference->id === null || $reference->id === 'null'){
+                    $cleanData['personal_information_id'] = $id;
+                    $reference = Reference::create($cleanData);
+                    if(!$reference) continue;
+                    $success[] = $reference;
+                    continue;
+                }
+
+                $reference = Reference::find($reference->id);
+                $reference->update($cleanData);
+                $success[] = $reference;
             }
-
-            $cleanData = [];
-
-            foreach ($request->all() as $key => $value) {
-                $cleanData[$key] = strip_tags($value);
-            }
-
-            $reference -> update($cleanData);
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json([
-                'data' => new ReferenceResource($reference),
-                'message' => 'Reference record updated.'
-            ], Response::HTTP_OK);
+            return $success;
         }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            throw new \Exception("Failed to register employee reference record.", 400);
         }
     }
     

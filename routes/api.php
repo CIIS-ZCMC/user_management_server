@@ -761,6 +761,31 @@ Route::middleware('auth.cookie')->group(function () {
         /**
          * Employee Profile Module
          */
+        
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
+            Route::delete('employee-deactivate-account/{id}', 'InActiveEmployee@retireAndDeactivateAccount');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM post'])->group(function () {
+            Route::post('employee-re-employ/{id}', 'InActiveEmployee@reEmploy');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('employees-update-request', 'EmployeeProfileController@profileUpdateRequest');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM approve'])->group(function () {
+            Route::post('employee-approve-request', 'EmployeeProfileController@approvedProfileUpdate');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {
+            Route::post('employees-renew-contract', 'EmployeeProfileController@renewEmployee');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('employees-for-renewal', 'EmployeeProfileController@employeeForRenewal');
+        });
+
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function () {
             Route::post('employees-assign-oic', 'EmployeeProfileController@assignOICByEmployeeID');
         });
@@ -1727,7 +1752,7 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('leave-application-approved', 'LeaveApplicationController@approvedLeaveRequest');
         });
         //hr
-          Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
             Route::get('leave-application-approved-hr', 'LeaveApplicationController@approvedLeaveApplication');
         });
 
@@ -1907,7 +1932,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         //hr
-          Route::middleware(['auth.permission:UMIS-OM view-all'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-OM view-all'])->group(function () {
             Route::get('ovt-application-approved-hr', 'OvertimeController@approvedOvertimeApplication');
         });
 
@@ -1925,6 +1950,10 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-OM view'])->group(function () {
             Route::get('user-ovt-application', 'OvertimeController@getUserOvertime');
+        });
+
+        Route::middleware(['auth.permission:UMIS-OM approve'])->group(function () {
+            Route::post('ovt-application-decline/{id}', 'OvertimeController@declined');
         });
 
 
@@ -2174,5 +2203,25 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::get('holidays', 'HolidayController@calendar');
+
+        /**
+         * MonthlyWorkHours Module
+         */
+        Route::middleware(['auth.permission:UMIS-MWH view-all'])->group(function () {
+            Route::get('monthly-work-hours', 'MonthlyWorkHoursController@index');
+        });
+
+        Route::middleware(['auth.permission:UMIS-MWH write'])->group(function () {
+            Route::post('monthly-work-hour', 'MonthlyWorkHoursController@store');
+        });
+
+        Route::middleware(['auth.permission:UMIS-MWH update'])->group(function () {
+            Route::put('monthly-work-hour/{id}', 'MonthlyWorkHoursController@update');
+        });
+
+        Route::middleware(['auth.permission:UMIS-MWH delete'])->group(function () {
+            Route::delete('monthly-work-hour/{id}', 'MonthlyWorkHoursController@destroy');
+        });
+
     });
 });

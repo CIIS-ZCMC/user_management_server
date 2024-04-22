@@ -107,6 +107,14 @@
             text-align: center;
         }
 
+        .underline {
+            border-bottom: 1px solid #000; 
+            display: inline-block; 
+            width: 20px;
+            text-align: center;
+        }
+
+
         .small-table {
             width: 90%;
             margin: auto;
@@ -603,9 +611,9 @@
                     <td class="topleft" colspan="3" style="border-right: #ddd; border-bottom: #ddd">
                         <label> 7. C) APPROVED FOR </label>
                         <div style="padding-top: 3px; padding-left: 20px; margin-top: 5px">
-                            <span class="small-underline" style="font-size:12px;font-weight:lighter;">
+                            <span class="underline" style="font-size:12px;font-weight:lighter;">
                                 @if ($data->without_pay === false)
-                                    {{ $data->applied_credits + ' ' + $my_leave_type->code  }}
+                                {{ $data->applied_credits . ' ' . $my_leave_type->code }}
                                 @endif
                             </span>
                             <span style="padding-right: 20px; font-size: 12px">Days with pay</span>    
@@ -619,7 +627,7 @@
                                 @endif
                             </span>
                             <br>                                        
-                            <span class="small-underline" style="font-weight:lighter;">
+                            <span class="underline" style="font-weight:lighter;">
                                 @if ($data->without_pay === true)
                                     {{ $data->applied_credits }}
                                 @endif
@@ -635,7 +643,7 @@
                                 @endif
                             </span>    
                             <br>
-                            <span class="small-underline"></span>
+                            <span class="underline"></span>
                             <span style="padding-right: 10px; font-size: 12px">Others (Specify)</span>    
                             <span style="border-bottom: 1px solid #000; display: inline-block; width: 200px;"></span>    
                         </div>

@@ -472,62 +472,62 @@ class Helpers
     public static function ScheduleApprovingOfficer($area, $user)
     {
         if ($area != null) {
-            if ($area['sector'] === 'Division') {
-                $division = Division::where('id', $user->assignedArea->division->id)->first();
+            switch ($area['sector']) {
+                case 'Division':
+                    $division = Division::where('id', $user->assignedArea->division->id)->first();
 
-                if ($division->chief_employee_profile_id !== null) {
-                    return ["approving_officer" => $division->chief_employee_profile_id];
-                }
+                    return [
+                        "recommending_officer" => $user->id,
+                        "approving_officer" => $division->chief_employee_profile_id
+                    ];
 
-                if ($division->oic_employee_profile_id !== null) {
-                    return ["approving_officer" => $division->oic_employee_profile_id];
-                }
-            }
+                case 'Department':
+                    $department = Department::where('id', $user->assignedArea->department->id)->first();
 
-            if ($area['sector'] === 'Department') {
-                $department = Department::where('id', $user->assignedArea->department->id)->first();
+                    return [
+                        "recommending_officer" => $department->head_employee_profile_id,
+                        "approving_officer" => Division::where('id', $department->division_id)->first()->chief_employee_profile_id
+                    ];
 
-                if ($department->head_employee_profile_id !== null) {
-                    return ["approving_officer" => $department->head_employee_profile_id];
-                }
+                case 'Section':
+                    $section = Section::where('id', $user->assignedArea->section->id)->first();
+                    if ($section->division_id !== null) {
 
-                if ($department->oic_employee_profile_id !== null) {
-                    return ["approving_officer" => $department->oic_employee_profile_id];
-                }
-            }
+                        return [
+                            "recommending_officer" => $section->supervisor_employee_profile_id,
+                            "approving_officer" => Division::where('id', $section->division_id)->first()->chief_employee_profile_id
+                        ];
 
-            if ($area['sector'] === 'Section') {
-                $section = Section::where('id', $user->assignedArea->section->id)->first();
-                if ($section) {
-                    if ($section->department_id !== null) {
-                        return ["approving_officer" => Department::where('id', $section->department_id)->first()->head_employee_profile_id];
+                    } else {
+                        $department = Department::find($section->department_id);
+
+                        return [
+                            "recommending_officer" => $section->supervisor_employee_profile_id,
+                            "approving_officer" => Division::where('id', $department->division_id)->first()->chief_employee_profile_id
+                        ];
                     }
 
-                    if ($section->supervisor_employee_profile_id !== null) {
-                        return ["approving_officer" => $section->supervisor_employee_profile_id];
-                    }
-
-                    if ($section->oic_employee_profile_id !== null) {
-                        return ["approving_officer" => $section->oic_employee_profile_id];
-                    }
-                }
-            }
-
-            if ($area['sector'] === 'Unit') {
-                $unit = Unit::where('id', $user->assignedArea->unit->id)->first();
-                if ($unit) {
+                case 'Unit':
+                    $unit = Unit::where('id', $user->assignedArea->unit->id)->first();
                     if ($unit->section_id !== null) {
-                        return ["approving_officer" => Section::where('id', $unit->section_id)->first()->supervisor_employee_profile_id];
-                    }
+                        $section = Section::find($unit->section_id);
+                        if ($section->division_id !== null) {
 
-                    if ($unit->head_employee_profile_id !== null) {
-                        return ["approving_officer" => $unit->head_employee_profile_id];
-                    }
+                            return [
+                                "recommending_officer" => Section::where('id', $unit->section_id)->first()->supervisor_employee_profile_id,
+                                "approving_officer" => Division::where('id', $section->division_id)->first()->chief_employee_profile_id
+                            ];
 
-                    if ($unit->oic_employee_profile_id !== null) {
-                        return ["approving_officer" => $unit->oic_employee_profile_id];
+                        } else {
+                            $department = Department::find($section->department_id);
+
+                            return [
+                                "recommending_officer" => Section::where('id', $unit->section_id)->first()->supervisor_employee_profile_id,
+                                "approving_officer" => Division::where('id', $department->division_id)->first()->chief_employee_profile_id
+                            ];
+                        }
                     }
-                }
+                    break;
             }
         }
     }
@@ -771,6 +771,188 @@ class Helpers
             ->sum();
 
         return $totalHours;
+    }
+
+    public static function DivisionAreas($assign_area)
+    {
+        $area = collect();
+
+        switch ($assign_area['sector']) {
+            case 'Division':
+                $divisions = Division::where('id', $assign_area['details']->id)->get();
+                foreach ($divisions as $div) {
+                    $departments = Department::where('division_id', $div->id)->get();
+                    $area = $area->merge($departments->map(function ($item) {
+                        $item->sectors = 'Department';
+                        return $item;
+                    }));
+
+                    $sections = Section::where('division_id', $div->id)->get();
+                    $area = $area->merge($sections->map(function ($item) {
+                        $item->sectors = 'Section';
+                        return $item;
+                    }));
+
+                    foreach ($sections as $sec) {
+                        $units = Unit::where('section_id', $sec->id)->get();
+                        $area = $area->merge($units->map(function ($item) {
+                            $item->sectors = 'Unit';
+                            return $item;
+                        }));
+                    }
+                }
+                break;
+            case 'Department':
+                $departments = Department::where('id', $assign_area['details']->id)->get();
+                foreach ($departments as $dept) {
+                    $divisions = Division::where('id', $dept->division_id)->get();
+                    $area = $area->merge($divisions->map(function ($item) {
+                        $item->sectors = 'Division';
+                        return $item;
+                    }));
+
+                    $department = Department::where('division_id', $dept->division_id)->get();
+                    $area = $area->merge($department->map(function ($item) {
+                        $item->sectors = 'Department';
+                        return $item;
+                    }));
+
+                    $sections = Section::where('department_id', $dept->id)->get();
+                    $area = $area->merge($sections->map(function ($item) {
+                        $item->sectors = 'Section';
+                        return $item;
+                    }));
+
+                    foreach ($sections as $sec) {
+                        $units = Unit::where('section_id', $sec->id)->get();
+                        $area = $area->merge($units->map(function ($item) {
+                            $item->sectors = 'Unit';
+                            return $item;
+                        }));
+                    }
+                }
+                break;
+            case 'Section':
+                $section = Section::where('id', $assign_area['details']->id)->first();
+
+                if (!$section) {
+                    return response()->json(['data' => []], Response::HTTP_OK);
+                }
+
+                if ($section->division_id !== null) {
+                    $division = Division::where('id', $section->division_id)->get();
+                    $area = $area->merge($division->map(function ($item) {
+                        $item->sectors = 'Division';
+                        return $item;
+                    }));
+
+                    $departments = Department::whereIn('division_id', $division->pluck('id'))->get();
+                    $area = $area->merge($departments->map(function ($item) {
+                        $item->sectors = 'Department';
+                        return $item;
+                    }));
+
+                    $sections = Section::where('division_id', $section->division_id)->get();
+                    $area = $area->merge($sections->map(function ($item) {
+                        $item->sectors = 'Section';
+                        return $item;
+                    }));
+                }
+
+                if ($section->department_id !== null) {
+                    $department = Department::where('id', $section->department_id)->first();
+
+                    $division = Division::where('id', $department->division_id)->get();
+                    $area = $area->merge($division->map(function ($item) {
+                        $item->sectors = 'Division';
+                        return $item;
+                    }));
+
+                    $departments = Department::where('division_id', $department->division_id)->get();
+                    $area = $area->merge($departments->map(function ($item) {
+                        $item->sectors = 'Department';
+                        return $item;
+                    }));
+
+                    $sections = Section::whereIn('department_id', $departments->pluck('id'))->get();
+                    $area = $area->merge($sections->map(function ($item) {
+                        $item->sectors = 'Section';
+                        return $item;
+                    }));
+                }
+
+                $units = Unit::whereIn('section_id', $sections->pluck('id'))->get();
+                $area = $area->merge($units->map(function ($item) {
+                    $item->sectors = 'Unit';
+                    return $item;
+                }));
+                break;
+
+            case 'Unit':
+                $unit = Unit::where('id', $assign_area['details']->id)->first();
+
+                if (!$unit) {
+                    return response()->json(['data' => []], Response::HTTP_OK);
+                }
+
+                $section = Section::where('id', $unit->section_id)->first();
+                if ($section->division_id !== null) {
+                    $division = Division::where('id', $section->division_id)->get();
+                    $area = $area->merge($division->map(function ($item) {
+                        $item->sectors = 'Division';
+                        return $item;
+                    }));
+
+                    $sections = Section::where('division_id', $section->division_id)->get();
+                    $area = $area->merge($sections->map(function ($item) {
+                        $item->sectors = 'Section';
+                        return $item;
+                    }));
+
+                    $units = Unit::whereIn('section_id', $sections->pluck('id'))->get();
+                    $area = $area->merge($units->map(function ($item) {
+                        $item->sectors = 'Unit';
+                        return $item;
+                    }));
+                }
+
+                if ($section->department_id !== null) {
+                    $department = Department::where('id', $section->department_id)->first();
+
+                    $division = Division::where('id', $department->division_id)->get();
+                    $area = $area->merge($division->map(function ($item) {
+                        $item->sectors = 'Division';
+                        return $item;
+                    }));
+
+                    $departments = Department::where('division_id', $department->division_id)->get();
+                    $area = $area->merge($departments->map(function ($item) {
+                        $item->sectors = 'Department';
+                        return $item;
+                    }));
+
+                    $sections = Section::whereIn('department_id', $departments->pluck('id'))->get();
+                    $area = $area->merge($sections->map(function ($item) {
+                        $item->sectors = 'Section';
+                        return $item;
+                    }));
+
+                    $units = Unit::whereIn('section_id', $sections->pluck('id'))->get();
+                    $area = $area->merge($units->map(function ($item) {
+                        $item->sectors = 'Unit';
+                        return $item;
+                    }));
+                }
+                break;
+        }
+
+        return $area->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'name' => $item->name,
+                'sector' => $item->sectors
+            ];
+        });
     }
 
 

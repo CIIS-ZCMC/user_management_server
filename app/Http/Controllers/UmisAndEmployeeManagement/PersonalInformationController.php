@@ -124,11 +124,12 @@ class PersonalInformationController extends Controller
         try{
             $personal_information = PersonalInformation::find($id);
 
+            $is_res_per = $request->is_res_per === 1 ? true:false;
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if($key === 'height' || $key === 'weight'){
-                    $cleanData[$key] = $value === '' || $value==='null' || $value===null? null:$value;
+                if($value === null){
+                    $cleanData[$key] = $value;
                     continue;
                 }
                 $cleanData[$key] = strip_tags($value);
@@ -136,12 +137,43 @@ class PersonalInformationController extends Controller
 
             $personal_information->update($cleanData);
 
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
+            $residential_address = [
+                'res_id' => strip_tags($request->res_id),
+                'address' => strip_tags($request->r_address),
+                'zip_code' => strip_tags($request->r_zip_code),
+                'telephone_no' => strip_tags($request->r_telephone),
+                'is_res_per' => $request->is_res_per,
+                'is_residential' => 1,
+                'personal_information_id' => $personal_information->id
+            ];
             
-            return response()->json(['data' => new PersonalInformationResource($personal_information),'message' => 'Employee PDS updated.'], Response::HTTP_OK);
+            if(($residential_address['res_id'] ===  null || $residential_address['res_id'] === 'null') && $residential_address['address'] !== null){
+                Address::create($residential_address);
+            }
+
+            if(!$residential_address['is_res_per']){
+                $permanent_address =  [
+                    'address' => strip_tags($request->p_address),
+                    'telephone_no' => strip_tags($request->p_telephone),
+                    'zip_code' => strip_tags($request->p_zip_code),
+                    'is_res_per' => 0,
+                    'is_residential' => 0,
+                    'personal_information_id' => $personal_information->id
+                ];
+
+                Address::create($permanent_address);
+            }
+
+            if($residential_address['is_res_per']){
+                $per_address = Address::where('is_residential', 0)->where('personal_information_id', $personal_information->id)->first();
+                if($per_address){
+                    $per_address->delete();
+                }
+            }
+            
+            return $personal_information;
         }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            throw new \Exception("Failed to register employee family background.", 400);
         }
     }
     
