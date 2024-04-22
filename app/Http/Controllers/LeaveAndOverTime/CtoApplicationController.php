@@ -495,6 +495,7 @@ class CtoApplicationController extends Controller
             $employeeId = $request->employee_id;
             $validUntil = $request->valid_until;
             $creditValue = $request->credit_value;
+            $validUntilDate = date('Y-m-d', strtotime($request->valid_until));
 
             $employee_profile = $request->user;
             $cleanData['pin'] = strip_tags($request->pin);
@@ -503,7 +504,7 @@ class CtoApplicationController extends Controller
             }
 
             $existingCredit = EmployeeOvertimeCredit::where('employee_profile_id', $employeeId)
-                ->where('valid_until', $validUntil)
+                ->where('valid_until', $validUntilDate)
                 ->first();
 
             if ($existingCredit) {
