@@ -254,7 +254,7 @@ class OfficialTimeController extends Controller
             $log_action = null;
             $employee_profile = $request->user;
 
-            $cleanData['pin'] = strip_tags($request->password);
+            $cleanData['pin'] = strip_tags($request->pin);
 
 
             if ($employee_profile['authorization_pin'] !==  $cleanData['pin']) {

@@ -356,7 +356,7 @@ class LeaveApplicationController extends Controller
     public function employeeCreditLog($id)
     {
         try {
-            $employee_credit_logs = EmployeeLeaveCredit::where('employee_profile_id ',$id)->get();
+            $employee_credit_logs = EmployeeLeaveCredit::where('employee_profile_id',$id)->get();
 
             return response()->json([
                 'data' => ResourcesEmployeeLeaveCredit::collection($employee_credit_logs),
@@ -464,7 +464,7 @@ class LeaveApplicationController extends Controller
                 'employee_leave_credit_id' => $leaveCredit->id,
                 'previous_credit' => $leaveCredit->total_leave_credits,
                 'leave_credits' => '0',
-                'reason' => 'Add Credit'
+                'reason' => 'update credit'
             ]);
 
             $updatedLeaveCredits = EmployeeLeaveCredit::with(['employeeProfile.personalInformation', 'leaveType'])
@@ -503,7 +503,7 @@ class LeaveApplicationController extends Controller
     {
         try {
             $user = $request->user;
-            $cleanData['pin'] = strip_tags($request->password);
+            $cleanData['pin'] = strip_tags($request->pin);
 
             if ($user['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
@@ -564,7 +564,7 @@ class LeaveApplicationController extends Controller
         try {
             $user = $request->user;
             $employee_profile = $user;
-            $cleanData['pin'] = strip_tags($request->password);
+            $cleanData['pin'] = strip_tags($request->pin);
 
             if ($user['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
@@ -589,12 +589,12 @@ class LeaveApplicationController extends Controller
                     $status = 'for recommending approval';
                     $log_status = 'Approved by HRMO';
                     $leave_application->update(['status' => $status]);
-                    Helpers::pendingLeaveNotfication($leave_application->recommending_officer, $leave_application->leaveType->name);
-                    Helpers::notifications(
-                        $leave_application->employee_profile_id,
-                        "HR has approved your " . $leave_application->leaveType->name . " request.",
-                        $leave_application->leaveType->name
-                    );
+                    // Helpers::pendingLeaveNotfication($leave_application->recommending_officer, $leave_application->leaveType->name);
+                    // Helpers::notifications(
+                    //     $leave_application->employee_profile_id,
+                    //     "HR has approved your " . $leave_application->leaveType->name . " request.",
+                    //     $leave_application->leaveType->name
+                    // );
                     break;
                 case 'for recommending approval':
                     if ($position === null || str_contains($position['position'], 'Unit')) {
@@ -603,12 +603,12 @@ class LeaveApplicationController extends Controller
                     $status = 'for approving approval';
                     $log_status = 'Approved by Recommending Officer';
                     $leave_application->update(['status' => $status]);
-                    Helpers::pendingLeaveNotfication($leave_application->approving_officer, $leave_application->leaveType->name);
-                    Helpers::notifications(
-                        $leave_application->employee_profile_id,
-                        $leave_application->recommendingOfficer->personalInformation->name() . " has approved your " . $leave_application->leaveType->name . " request.",
-                        $leave_application->leaveType->name
-                    );
+                    // Helpers::pendingLeaveNotfication($leave_application->approving_officer, $leave_application->leaveType->name);
+                    // Helpers::notifications(
+                    //     $leave_application->employee_profile_id,
+                    //     $leave_application->recommendingOfficer->personalInformation->name() . " has approved your " . $leave_application->leaveType->name . " request.",
+                    //     $leave_application->leaveType->name
+                    // );
                     break;
                 case 'for approving approval':
                     $approving = Helpers::getRecommendingAndApprovingOfficer($employee_profile->assignedArea->findDetails(), $leave_application->employee_profile_id)['approving_officer'];
@@ -621,7 +621,7 @@ class LeaveApplicationController extends Controller
                     $from = Carbon::parse($leave_application->date_from)->format('F d, Y');
                     $to = Carbon::parse($leave_application->date_to)->format('F d, Y');
                     $message = "Your " . $leave_application->leaveType->name . " request with date from " . $from . " to " . $to . " has been approved.";
-                    Helpers::notifications($leave_application->employee_profile_id, $message, $leave_application->leaveType->name);
+                    // Helpers::notifications($leave_application->employee_profile_id, $message, $leave_application->leaveType->name);
                     break;
             }
 
@@ -702,18 +702,19 @@ class LeaveApplicationController extends Controller
 
             $currentDate = Carbon::now();
             $twoMonthsAhead = $currentDate->copy()->addMonths(2);
-            if ($start->greaterThan($twoMonthsAhead)) {
-                return response()->json(['message' => "Filing 2 months ahead is not allowed."], Response::HTTP_FORBIDDEN);
-            }
+
+            // if ($start->greaterThan($twoMonthsAhead)) {
+            //     return response()->json(['message' => "Filing 2 months ahead is not allowed."], Response::HTTP_FORBIDDEN);
+            // }
 
             $daysDiff = $start->diffInDays($end) + 1;
             $leave_type = LeaveType::find($request->leave_type_id);
 
-            $checkSchedule = Helpers::hasSchedule($start, $end, $employeeId);
+            // $checkSchedule = Helpers::hasSchedule($start, $end, $employeeId);
 
-            if (!$checkSchedule) {
-                return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
-            }
+            // if (!$checkSchedule) {
+            //     return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
+            // }
 
             if ($leave_type->code === 'SL' && $leave_type->file_after !== null) {
                 // Initialize the variable to store the final date of the consecutive schedule
@@ -741,34 +742,8 @@ class LeaveApplicationController extends Controller
                 if ($finalDate && $currentDate->gt($finalDate)) {
                     return response()->json(['message' => "You missed the filing deadline."], Response::HTTP_FORBIDDEN);
                 }
-                $checkSchedule = Helpers::hasSchedule($start, $end, $employeeId);
-
-                if (!$checkSchedule) {
-                    return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
-                }
-
-                // Initialize the variable to store the final date of the consecutive schedule
-                $finalConsecutiveScheduleDate = null;
-                $foundConsecutiveDays = 0;
-
-                // Loop through each day starting from the end date
-                $Date = $end->copy();
-                while ($foundConsecutiveDays < 3) {
-                    if (Helpers::hasSchedule($Date, $Date, $employeeId)) {
-                        // If a schedule is found, increment the counter
-                        $foundConsecutiveDays++;
-
-                        // Store the date of the current consecutive schedule
-                        $finalConsecutiveScheduleDate = $Date->copy();
-                    }
-                    // Move to the next day
-                    $Date->addDay();
-                }
-
-                $finalDate = $finalConsecutiveScheduleDate ? $finalConsecutiveScheduleDate->toDateString() : null;
-                if ($finalDate && $currentDate->gt($finalDate)) {
-                    return response()->json(['message' => "You missed the filing deadline."], Response::HTTP_FORBIDDEN);
-                }
+              
+              
             }
 
 
@@ -862,8 +837,9 @@ class LeaveApplicationController extends Controller
                         $totalDeductCredits = (int) ($totalHours / 8);
                         if ($employee_profile->employmentType === 'Permanent Part-time') {
                             $totalDeductCredits = $totalDeductCredits / 8;
+                            $cleanData['applied_credits'] = $totalDeductCredits;
                         }
-                        $cleanData['applied_credits'] = $totalDeductCredits;
+                        $cleanData['applied_credits'] = $daysDiff;
                         $cleanData['employee_profile_id'] = $employee_profile->id;
                         $cleanData['hrmo_officer'] = $hrmo_officer;
 
@@ -1024,7 +1000,7 @@ class LeaveApplicationController extends Controller
             $user = $request->user;
             $employee_profile = $user;
             $declined_by = null;
-            $cleanData['pin'] = strip_tags($request->password);
+            $cleanData['pin'] = strip_tags($request->pin);
 
             if ($user['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
@@ -1098,7 +1074,7 @@ class LeaveApplicationController extends Controller
             $user = $request->user;
             $employee_profile= $user;
             $cancelled_by = 'HRMO';
-            $cleanData['pin'] = strip_tags($request->password);
+            $cleanData['pin'] = strip_tags($request->pin);
 
             if ($user['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
@@ -1153,7 +1129,7 @@ class LeaveApplicationController extends Controller
 
             $user = $request->user;
             $employee_profile = $user;
-            $cleanData['pin'] = strip_tags($request->password);
+            $cleanData['pin'] = strip_tags($request->pin);
 
             if ($user['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);

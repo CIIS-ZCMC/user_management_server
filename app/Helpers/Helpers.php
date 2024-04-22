@@ -4,6 +4,7 @@ namespace App\Helpers;
 
 use App\Models\AssignArea;
 use App\Models\CtoApplication;
+use App\Models\DailyTimeRecords;
 use App\Models\Department;
 use App\Models\Division;
 use App\Models\EmployeeProfile;
@@ -955,5 +956,38 @@ class Helpers
         });
     }
 
+
+    public static function getFirstInAndOutBiometric($biometric_id, $date, $overtimeFromTime, $overtimeToTime)
+    {
+        $dailyTimeRecord = DailyTimeRecords::where('biometric_id', $biometric_id)
+            ->whereDate('date', $date)
+            ->first();
+
+            // Initialize first in and first out biometric times
+            $firstInBiometric = null;
+            $firstOutBiometric = null;
+
+
+        if ($dailyTimeRecord) {
+            // Convert overtime times to timestamps
+            $overtimeFromTimestamp = strtotime($overtimeFromTime);
+            $overtimeToTimestamp = strtotime($overtimeToTime);
+
+            $timeIn = strtotime($dailyTimeRecord->time_in);
+            $timeOut = strtotime($dailyTimeRecord->time_out);
+
+            // Check if the overtime times fall within the biometric timespan
+            if ($overtimeFromTimestamp >= $timeIn && $overtimeToTimestamp <= $timeOut) {
+                $firstInBiometric = $dailyTimeRecord->time_in;
+                $firstOutBiometric = $dailyTimeRecord->time_out;
+            }
+        }
+
+        return [
+            'first_in_biometric' => $firstInBiometric,
+            'first_out_biometric' => $firstOutBiometric,
+        ];
+
+    }
 
 }
