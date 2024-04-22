@@ -353,7 +353,7 @@ class LeaveApplicationController extends Controller
         }
     }
 
-    public function employeeCreditLog($id, Request $request)
+    public function employeeCreditLog($id)
     {
         try {
             $employee_credit_logs = EmployeeLeaveCredit::where('employee_profile_id ',$id)->get();
@@ -442,7 +442,7 @@ class LeaveApplicationController extends Controller
         try {
             $employee_profile = $request->user;
             $user = $request->user;
-            $cleanData['pin'] = strip_tags($request->password);
+            $cleanData['pin'] = strip_tags($request->pin);
 
             if ($user['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
