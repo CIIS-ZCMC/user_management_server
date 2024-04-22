@@ -25,8 +25,7 @@ use App\Helpers\Helpers as Help;
 use App\Methods\DTRPull;
 use App\Models\LeaveType;
 use Illuminate\Support\Facades\Cache;
-
-
+use Illuminate\Http\Response;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
 
@@ -59,6 +58,40 @@ class DTRcontroller extends Controller
         }
     }
 
+    public function getBiometricLog(Request $request){
+        try{
+            $data = $request->input;
+            $listemployees = [];
+            foreach ($data as $row) {
+                $rows = json_decode($row);
+                $employee = $rows->employees;
+                $dateofot = $rows->dateofovertime;
+                $dtrRecord = [];
+                //check DTR
+                //if exist . out all entries. overtime + overtime minutes, overall reg and other data
+               $dtr = EmployeeProfile::find($employee->id)->getBiometricLog($dateofot);
+               if($dtr){
+                $dtrRecord = $dtr;
+               }
+                //if does not exist . then out empty arr.
+
+                $listemployees[] = [
+                    'empID'=>$employee->id,
+                    'dateofovertime'=>$dateofot,
+                    'biometriclog'=>$dtrRecord
+                ];
+            }
+
+            return response()->json(['data' => $listemployees], Response::HTTP_OK);
+
+
+
+        }catch (\Throwable $th) {
+            Helpersv2::errorLog($this->CONTROLLER_NAME, 'getBiometricLog', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], 401);
+        }
+
+    }
 
     public function pullDTRuser(Request $request)
     {

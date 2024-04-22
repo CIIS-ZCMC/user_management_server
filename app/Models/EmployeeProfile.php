@@ -130,7 +130,7 @@ class EmployeeProfile extends Authenticatable
             'token' => $token,
             'token_exp' => $token_exp
         ]);
-        
+
         $encryptedToken = openssl_encrypt($token, config('app.encrypt_decrypt_algorithm'), config('app.app_key'), 0, substr(md5(config('app.app_key')), 0, 16));
 
         return $encryptedToken;
@@ -224,6 +224,16 @@ class EmployeeProfile extends Authenticatable
         $designation = $assign_area->plantilla_id === null ? $assign_area->designation : $assign_area->plantilla->designation;
 
         return $designation;
+    }
+
+    public function getBiometricLog($date){
+        $dtr = DailyTimeRecords::where('biometric_id',$this->biometric_id)->where('dtr_date',date('Y-m-d',strtotime($date)))->first();
+
+        if($dtr){
+            return $dtr;
+        }
+        return [];
+
     }
 
     public function issuanceInformation()
