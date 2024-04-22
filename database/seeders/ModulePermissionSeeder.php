@@ -518,104 +518,104 @@ class ModulePermissionSeeder extends Seeder
             'system_module_id' => $system_module_time_shift['id']
         ]);
 
-        /**
-         * Exchange Schedule Management
-         */
-        $system_module_exchange_schedule = SystemModule::where('code', 'UMIS-ES')->first();
+        // /**
+        //  * Exchange Schedule Management
+        //  */
+        // $system_module_exchange_schedule = SystemModule::where('code', 'UMIS-ES')->first();
 
-        ModulePermission::create([
-            'code' => $system_module_exchange_schedule['code'] . ' ' . $permission_read_all['action'],
-            'permission_id' => $permission_read_all['id'],
-            'system_module_id' => $system_module_exchange_schedule['id']
-        ]);
+        // ModulePermission::create([
+        //     'code' => $system_module_exchange_schedule['code'] . ' ' . $permission_read_all['action'],
+        //     'permission_id' => $permission_read_all['id'],
+        //     'system_module_id' => $system_module_exchange_schedule['id']
+        // ]);
 
-        ModulePermission::create([
-            'code' => $system_module_exchange_schedule['code'] . ' ' . $permission_read['action'],
-            'permission_id' => $permission_read['id'],
-            'system_module_id' => $system_module_exchange_schedule['id']
-        ]);
+        // ModulePermission::create([
+        //     'code' => $system_module_exchange_schedule['code'] . ' ' . $permission_read['action'],
+        //     'permission_id' => $permission_read['id'],
+        //     'system_module_id' => $system_module_exchange_schedule['id']
+        // ]);
 
-        ModulePermission::create([
-            'code' => $system_module_exchange_schedule['code'] . ' ' . $permission_write['action'],
-            'permission_id' => $permission_write['id'],
-            'system_module_id' => $system_module_exchange_schedule['id']
-        ]);
+        // ModulePermission::create([
+        //     'code' => $system_module_exchange_schedule['code'] . ' ' . $permission_write['action'],
+        //     'permission_id' => $permission_write['id'],
+        //     'system_module_id' => $system_module_exchange_schedule['id']
+        // ]);
 
-        ModulePermission::create([
-            'code' => $system_module_exchange_schedule['code'] . ' ' . $permission_update['action'],
-            'permission_id' => $permission_update['id'],
-            'system_module_id' => $system_module_exchange_schedule['id']
-        ]);
+        // ModulePermission::create([
+        //     'code' => $system_module_exchange_schedule['code'] . ' ' . $permission_update['action'],
+        //     'permission_id' => $permission_update['id'],
+        //     'system_module_id' => $system_module_exchange_schedule['id']
+        // ]);
 
-        ModulePermission::create([
-            'code' => $system_module_exchange_schedule['code'] . ' ' . $permission_delete['action'],
-            'permission_id' => $permission_delete['id'],
-            'system_module_id' => $system_module_exchange_schedule['id']
-        ]);
+        // ModulePermission::create([
+        //     'code' => $system_module_exchange_schedule['code'] . ' ' . $permission_delete['action'],
+        //     'permission_id' => $permission_delete['id'],
+        //     'system_module_id' => $system_module_exchange_schedule['id']
+        // ]);
 
-        /**
-         * Pull Out Management
-         */
-        $system_module_pull_out_management = SystemModule::where('code', 'UMIS-POM')->first();
+        // /**
+        //  * Pull Out Management
+        //  */
+        // $system_module_pull_out_management = SystemModule::where('code', 'UMIS-POM')->first();
 
-        ModulePermission::create([
-            'code' => $system_module_pull_out_management['code'] . ' ' . $permission_read_all['action'],
-            'permission_id' => $permission_read_all['id'],
-            'system_module_id' => $system_module_pull_out_management['id']
-        ]);
+        // ModulePermission::create([
+        //     'code' => $system_module_pull_out_management['code'] . ' ' . $permission_read_all['action'],
+        //     'permission_id' => $permission_read_all['id'],
+        //     'system_module_id' => $system_module_pull_out_management['id']
+        // ]);
 
-        ModulePermission::create([
-            'code' => $system_module_pull_out_management['code'] . ' ' . $permission_read['action'],
-            'permission_id' => $permission_read['id'],
-            'system_module_id' => $system_module_pull_out_management['id']
-        ]);
+        // ModulePermission::create([
+        //     'code' => $system_module_pull_out_management['code'] . ' ' . $permission_read['action'],
+        //     'permission_id' => $permission_read['id'],
+        //     'system_module_id' => $system_module_pull_out_management['id']
+        // ]);
 
-        ModulePermission::create([
-            'code' => $system_module_pull_out_management['code'] . ' ' . $permission_write['action'],
-            'permission_id' => $permission_write['id'],
-            'system_module_id' => $system_module_pull_out_management['id']
-        ]);
+        // ModulePermission::create([
+        //     'code' => $system_module_pull_out_management['code'] . ' ' . $permission_write['action'],
+        //     'permission_id' => $permission_write['id'],
+        //     'system_module_id' => $system_module_pull_out_management['id']
+        // ]);
 
-        ModulePermission::create([
-            'code' => $system_module_pull_out_management['code'] . ' ' . $permission_update['action'],
-            'permission_id' => $permission_update['id'],
-            'system_module_id' => $system_module_pull_out_management['id']
-        ]);
+        // ModulePermission::create([
+        //     'code' => $system_module_pull_out_management['code'] . ' ' . $permission_update['action'],
+        //     'permission_id' => $permission_update['id'],
+        //     'system_module_id' => $system_module_pull_out_management['id']
+        // ]);
 
-        ModulePermission::create([
-            'code' => $system_module_pull_out_management['code'] . ' ' . $permission_delete['action'],
-            'permission_id' => $permission_delete['id'],
-            'system_module_id' => $system_module_pull_out_management['id']
-        ]);
+        // ModulePermission::create([
+        //     'code' => $system_module_pull_out_management['code'] . ' ' . $permission_delete['action'],
+        //     'permission_id' => $permission_delete['id'],
+        //     'system_module_id' => $system_module_pull_out_management['id']
+        // ]);
 
-        /**
-         * On Call Management
-         */
-        $system_module_on_call_management = SystemModule::where('code', 'UMIS-OCM')->first();
+        // /**
+        //  * On Call Management
+        //  */
+        // $system_module_on_call_management = SystemModule::where('code', 'UMIS-OCM')->first();
 
-        ModulePermission::create([
-            'code' => $system_module_on_call_management['code'] . ' ' . $permission_read_all['action'],
-            'permission_id' => $permission_read_all['id'],
-            'system_module_id' => $system_module_on_call_management['id']
-        ]);
+        // ModulePermission::create([
+        //     'code' => $system_module_on_call_management['code'] . ' ' . $permission_read_all['action'],
+        //     'permission_id' => $permission_read_all['id'],
+        //     'system_module_id' => $system_module_on_call_management['id']
+        // ]);
 
-        ModulePermission::create([
-            'code' => $system_module_on_call_management['code'] . ' ' . $permission_read['action'],
-            'permission_id' => $permission_read['id'],
-            'system_module_id' => $system_module_on_call_management['id']
-        ]);
+        // ModulePermission::create([
+        //     'code' => $system_module_on_call_management['code'] . ' ' . $permission_read['action'],
+        //     'permission_id' => $permission_read['id'],
+        //     'system_module_id' => $system_module_on_call_management['id']
+        // ]);
 
-        ModulePermission::create([
-            'code' => $system_module_on_call_management['code'] . ' ' . $permission_write['action'],
-            'permission_id' => $permission_write['id'],
-            'system_module_id' => $system_module_on_call_management['id']
-        ]);
+        // ModulePermission::create([
+        //     'code' => $system_module_on_call_management['code'] . ' ' . $permission_write['action'],
+        //     'permission_id' => $permission_write['id'],
+        //     'system_module_id' => $system_module_on_call_management['id']
+        // ]);
 
-        ModulePermission::create([
-            'code' => $system_module_on_call_management['code'] . ' ' . $permission_delete['action'],
-            'permission_id' => $permission_delete['id'],
-            'system_module_id' => $system_module_on_call_management['id']
-        ]);
+        // ModulePermission::create([
+        //     'code' => $system_module_on_call_management['code'] . ' ' . $permission_delete['action'],
+        //     'permission_id' => $permission_delete['id'],
+        //     'system_module_id' => $system_module_on_call_management['id']
+        // ]);
 
         /**
          * Time Adjustment
