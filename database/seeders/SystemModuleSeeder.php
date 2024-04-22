@@ -92,26 +92,26 @@ class SystemModuleSeeder extends Seeder
             'system_id' => 1
         ]);
 
-        SystemModule::create([
-            'name' => 'Exchange Schedule',
-            'code' => 'UMIS-ES',
-            'description' => 'Creating  and approving of Exchange Schdule request',
-            'system_id' => 1
-        ]);
+        // SystemModule::create([
+        //     'name' => 'Exchange Schedule',
+        //     'code' => 'UMIS-ES',
+        //     'description' => 'Creating  and approving of Exchange Schdule request',
+        //     'system_id' => 1
+        // ]);
 
-        SystemModule::create([
-            'name' => 'Pull Out Management',
-            'code' => 'UMIS-POM',
-            'description' => 'Creating  and approving of Pull Out request',
-            'system_id' => 1
-        ]);
+        // SystemModule::create([
+        //     'name' => 'Pull Out Management',
+        //     'code' => 'UMIS-POM',
+        //     'description' => 'Creating  and approving of Pull Out request',
+        //     'system_id' => 1
+        // ]);
 
-        SystemModule::create([
-            'name' => 'On Call Management',
-            'code' => 'UMIS-OCM',
-            'description' => 'Creating On Call',
-            'system_id' => 1
-        ]);
+        // SystemModule::create([
+        //     'name' => 'On Call Management',
+        //     'code' => 'UMIS-OCM',
+        //     'description' => 'Creating On Call',
+        //     'system_id' => 1
+        // ]);
 
         SystemModule::create([
             'name' => 'Holiday Management',
