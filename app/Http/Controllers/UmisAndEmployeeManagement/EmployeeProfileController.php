@@ -3237,10 +3237,11 @@ class EmployeeProfileController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
+
             if (is_array($employee_profile->position())) {
                 $position = $employee_profile->position();
                 $area = $employee_profile->assignedArea->findDetails();
-                return response()->json(["message" => "Action is prohibited, this employee is currently a " . $position->position . " in " . $area['details']->name . "."], Response::HTTP_FORBIDDEN);
+                return response()->json(["message" => "Action is prohibited, this employee is currently a " . $position['position'] . " in " . $area['details']->name . "."], Response::HTTP_FORBIDDEN);
             }
 
             $new_in_active = InActiveEmployee::create([
@@ -3251,8 +3252,10 @@ class EmployeeProfileController extends Controller
                 'date_hired' => $employee_profile->date_hired,
                 'biometric_id' => $employee_profile->biometric_id,
                 'employment_end_at' => now(),
+                'status' => strip_tags($request->status),
                 'remarks' => strip_tags($request->remarks)
             ]);
+
 
             if (!$new_in_active) {
                 return response()->json(['message' => "Failed to deactivate account."], Response::HTTP_BAD_REQUEST);
@@ -3279,7 +3282,6 @@ class EmployeeProfileController extends Controller
             DB::commit();
 
             Helpers::registerSystemLogs($request, null, true, 'Success in deleting a ' . $this->SINGULAR_MODULE_NAME . '.');
-
 
             return response()->json(['message' => 'Employee profile deleted.'], Response::HTTP_OK);
         } catch (\Throwable $th) {
