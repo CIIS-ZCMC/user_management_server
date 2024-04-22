@@ -124,15 +124,24 @@ class EmployeeProfileController extends Controller
     public function profileUpdateRequest(Request $request)
     {
         try {
-            $trainings = Training::select("*","'Educational Background' as type")->where('is_request', true)->whereNot('approved_at', NULL)->get();
+            $trainings = Training::where('is_request', 1)->where('approved_at', NULL)->get();
+            $trainings = $trainings->map(function ($training) {
+                return [...$training, 'type' => "Training"];
+            });
             
-            $eligibility = CivilServiceEligibility::select("'Eligibility' as type")->where('is_request', true)->whereNot('approved_at', NULL)->get();
+            $eligibilities = CivilServiceEligibility::where('is_request', 1)->where('approved_at', NULL)->get();
+            $eligibilities = $eligibilities->map(function ($eligibility) {
+                return [...$eligibility, 'type' => "Eligibility"];
+            });
             
-            $educations = EducationalBackground::select("'Learning and Development' as type")->where('is_request', true)->whereNot('approved_at', NULL)->get();
+            $educations = EducationalBackground::where('is_request', 1)->where('approved_at', NULL)->get();
+            $educations = $educations->map(function ($education) {
+                return [...$education, 'type' => "Educational Background"];
+            });
 
             return response()->json([
-                'data' => EmployeeProfileUpdateResource::collection([...$trainings, ...$eligibility, ...$educations]),
-                'message' => "Retrieve employees list for renewal"
+                'data' => EmployeeProfileUpdateResource::collection([...$trainings, ...$eligibilities, ...$educations]),
+                'message' => "Retrieve employees list for add record approval"
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'employeeForRenwal', $th->getMessage());
@@ -2000,11 +2009,11 @@ class EmployeeProfileController extends Controller
             $user = $request->user;
             $cacheExpiration = Carbon::now()->addDay();
 
-            $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () use ($user) {
-                return EmployeeProfile::whereNotIn('id', [1, $user->id])->get();
-            });
+            // $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () use ($user) {
+            //     return EmployeeProfile::whereNotIn('id', [1, $user->id])->get();
+            // });
 
-            //    $employee_profiles = EmployeeProfile::whereNotIn('id', [1, $user->id])->get();
+               $employee_profiles = EmployeeProfile::whereNotIn('id', [1, $user->id])->get();
      
 
 
@@ -3240,7 +3249,7 @@ class EmployeeProfileController extends Controller
             if (is_array($employee_profile->position())) {
                 $position = $employee_profile->position();
                 $area = $employee_profile->assignedArea->findDetails();
-                return response()->json(["message" => "Action is prohibited, this employee is currently a " . $position->position . " in " . $area['details']->name . "."], Response::HTTP_FORBIDDEN);
+                return response()->json(["message" => "Action is prohibited, this employee is currently a " . $position['position'] . " in " . $area['details']->name . "."], Response::HTTP_FORBIDDEN);
             }
 
             $new_in_active = InActiveEmployee::create([
@@ -3251,8 +3260,10 @@ class EmployeeProfileController extends Controller
                 'date_hired' => $employee_profile->date_hired,
                 'biometric_id' => $employee_profile->biometric_id,
                 'employment_end_at' => now(),
+                'status' => strip_tags($request->status),
                 'remarks' => strip_tags($request->remarks)
             ]);
+
 
             if (!$new_in_active) {
                 return response()->json(['message' => "Failed to deactivate account."], Response::HTTP_BAD_REQUEST);
@@ -3279,7 +3290,6 @@ class EmployeeProfileController extends Controller
             DB::commit();
 
             Helpers::registerSystemLogs($request, null, true, 'Success in deleting a ' . $this->SINGULAR_MODULE_NAME . '.');
-
 
             return response()->json(['message' => 'Employee profile deleted.'], Response::HTTP_OK);
         } catch (\Throwable $th) {

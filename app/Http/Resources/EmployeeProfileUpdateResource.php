@@ -18,10 +18,11 @@ class EmployeeProfileUpdateResource extends JsonResource
             return [
                 "id"=> $this->id,
                 "name" => $this->personalInformation->name(),
-                "employee_id" => $this->personalInformation->employee->employee_id,
+                "employee_id" => $this->personalInformation->employeeProfile->employee_id,
+                "profile_url" => config('app.server_domain')."/profiles/".$this->personalInformation->employeeProfile->profile_url,
                 "type" => $this->type,
                 "date_requested" => $this->created_at,
-                "educational_background" => new EducationalBackgroundResource($this)
+                "details" => new EducationalBackgroundResource($this)
             ];
         }   
 
@@ -29,20 +30,22 @@ class EmployeeProfileUpdateResource extends JsonResource
             return [
                 "id"=> $this->id,
                 "name" => $this->personalInformation->name(),
-                "employee_id" => $this->personalInformation->employee->employee_id,
+                "employee_id" => $this->personalInformation->employeeProfile->employee_id,
+                "profile_url" => config('app.server_domain')."/profiles/".$this->personalInformation->employeeProfile->profile_url,
                 "type" => $this->type,
                 "date_requested" => $this->created_at,
-                "eligibility" => new CivilServiceEligibilityResource($this)
+                "details" => new CivilServiceEligibilityResource($this)
             ];
-        }
+        }   
 
         return [
             "id"=> $this->id,
             "name" => $this->personalInformation->name(),
-            "employee_id" => $this->personalInformation->employee->employee_id,
+            "employee_id" => $this->personalInformation->employeeProfile->employee_id,
+            "profile_url" => config('app.server_domain')."/profiles/".$this->personalInformation->employeeProfile->profile_url,
             "type" => $this->type,
             "date_requested" => $this->created_at,
-            "training" => new TrainingResource($this)
+            "details" => new TrainingResource($this)
         ];
     }
 }

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('in_active_employees', function (Blueprint $table) {
             $table->id();
             $table->string('employee_id');
-            $table->string('profile_url');
+            $table->string('profile_url')->nullable();
             $table->date('date_hired');
             $table->date('date_resigned')->nullable();
             $table->integer('biometric_id');
