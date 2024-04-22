@@ -124,15 +124,15 @@ class EmployeeProfileController extends Controller
     public function profileUpdateRequest(Request $request)
     {
         try {
-            $trainings = Training::select("*","'Educational Background' as type")->where('is_request', true)->whereNot('approved_at', NULL)->get();
+            $trainings = Training::where('is_request', true)->where('approved_at', NULL)->get();
             
-            $eligibility = CivilServiceEligibility::select("'Eligibility' as type")->where('is_request', true)->whereNot('approved_at', NULL)->get();
+            $eligibility = CivilServiceEligibility::where('is_request', true)->where('approved_at', NULL)->get();
             
-            $educations = EducationalBackground::select("'Learning and Development' as type")->where('is_request', true)->whereNot('approved_at', NULL)->get();
+            $educations = EducationalBackground::where('is_request', true)->where('approved_at', NULL)->get();
 
             return response()->json([
                 'data' => EmployeeProfileUpdateResource::collection([...$trainings, ...$eligibility, ...$educations]),
-                'message' => "Retrieve employees list for renewal"
+                'message' => "Retrieve employees list for add record approval"
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'employeeForRenwal', $th->getMessage());
@@ -2000,11 +2000,11 @@ class EmployeeProfileController extends Controller
             $user = $request->user;
             $cacheExpiration = Carbon::now()->addDay();
 
-            $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () use ($user) {
-                return EmployeeProfile::whereNotIn('id', [1, $user->id])->get();
-            });
+            // $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () use ($user) {
+            //     return EmployeeProfile::whereNotIn('id', [1, $user->id])->get();
+            // });
 
-            //    $employee_profiles = EmployeeProfile::whereNotIn('id', [1, $user->id])->get();
+               $employee_profiles = EmployeeProfile::whereNotIn('id', [1, $user->id])->get();
      
 
 
