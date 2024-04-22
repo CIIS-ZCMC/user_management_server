@@ -281,7 +281,8 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                };
+                }
+                ;
 
                 $trials--;
             } while ($trials !== 0);
@@ -744,7 +745,8 @@ class EmployeeProfileController extends Controller
             'years_of_service' => $employee_profile->personalInformation->years_of_service,
             'last_login' => $last_login === null ? null : $last_login->created_at,
             'biometric_id' => $employee_profile->biometric_id,
-            'is_admin' => $special_access_role !== null ? true : false
+            'is_admin' => $special_access_role !== null ? true : false,
+            'is_allowed_ta' => $employee_profile->allow_time_adjustment
         ];
 
         $personal_information_data = [
@@ -805,7 +807,7 @@ class EmployeeProfileController extends Controller
         }
 
         return [
-            'personal_information_id' =>  $personal_information->id,
+            'personal_information_id' => $personal_information->id,
             'employee_profile_id' => $employee_profile['id'],
             'employee_id' => $employee_profile['employee_id'],
             'name' => $personal_information->employeeName(),
@@ -910,7 +912,8 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                };
+                }
+                ;
 
                 $trials--;
             } while ($trials !== 0);
@@ -983,7 +986,8 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                };
+                }
+                ;
 
                 $trials--;
             } while ($trials !== 0);
@@ -1116,7 +1120,8 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                };
+                }
+                ;
 
                 $trials--;
             } while ($trials !== 0);
@@ -1208,7 +1213,7 @@ class EmployeeProfileController extends Controller
             $new_password = strip_tags($request->new_password);
             $cleanData = ["password" => $new_password];
 
-          
+
 
             $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
 
@@ -1357,7 +1362,8 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                };
+                }
+                ;
 
                 $trials--;
             } while ($trials !== 0);
@@ -1642,7 +1648,8 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                };
+                }
+                ;
 
                 $trials--;
             } while ($trials !== 0);
@@ -2055,7 +2062,7 @@ class EmployeeProfileController extends Controller
             });
 
             //    $employee_profiles = EmployeeProfile::whereNotIn('id', [1, $user->id])->get();
-     
+
 
 
             return EmployeeProfileResource::collection($employee_profiles);
@@ -2442,7 +2449,7 @@ class EmployeeProfileController extends Controller
             /**
              * Legal information module
              */
-            $legal_info_request =  new LegalInformationManyRequest();
+            $legal_info_request = new LegalInformationManyRequest();
             $legal_info_json = json_decode($request->legal_information);
             $legal_info_data = [];
 
@@ -2591,7 +2598,7 @@ class EmployeeProfileController extends Controller
                 }
                 $currentYear = date('Y');
                 $validUntil = date('Y-m-d', strtotime("$currentYear-12-31"));
-                
+
                 EmployeeOvertimeCredit::create([
                     'employee_profile_id' => $employee_profile->id,
                     'earned_credit_by_hour' => 0,
@@ -2864,7 +2871,7 @@ class EmployeeProfileController extends Controller
 
             $last_login = LoginTrail::where('employee_profile_id', $employee_profile->id)->orderByDesc('created_at')->first();
 
-            
+
             $work_experiences = WorkExperience::where('personal_information_id', $personal_information->id)->where('government_office', "Yes")->get();
 
             $totalMonths = 0; // Initialize total months variable
@@ -2877,7 +2884,7 @@ class EmployeeProfileController extends Controller
                 $totalMonths += $months;
             }
 
-            $totalYears = floor($totalMonths/12);
+            $totalYears = floor($totalMonths / 12);
 
             $employee = [
                 'profile_url' => config('app.server_domain') . "/photo/profiles/" . $employee_profile->profile_url,
@@ -2952,7 +2959,7 @@ class EmployeeProfileController extends Controller
             }
 
             $data = [
-                'personal_information_id' =>  $personal_information->id,
+                'personal_information_id' => $personal_information->id,
                 'employee_profile_id' => $employee_profile['id'],
                 'employee_id' => $employee_profile['employee_id'],
                 'name' => $personal_information->employeeName(),
@@ -2964,7 +2971,7 @@ class EmployeeProfileController extends Controller
                 'employee_details' => [
                     'employee' => $employee,
                     'personal_information' => $personal_information_data,
-                    'personal_information_id' =>  $personal_information->id,
+                    'personal_information_id' => $personal_information->id,
                     'contact' => new ContactResource($personal_information->contact),
                     'address' => $address,
                     'address_update' => AddressResource::collection($personal_information->addresses),
