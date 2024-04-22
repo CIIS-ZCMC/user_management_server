@@ -126,7 +126,7 @@ class ContactController extends Controller
 
             return $contact;
         }catch(\Throwable $th){
-            throw new \Exception("Failed to register employee family background.", 400);
+            throw new \Exception("Failed to register employee contact.", 400);
         }
     }
     

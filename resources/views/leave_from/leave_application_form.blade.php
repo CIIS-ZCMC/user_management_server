@@ -110,7 +110,7 @@
         .underline {
             border-bottom: 1px solid #000; 
             display: inline-block; 
-            width: 20px;
+            width: 30px;
             text-align: center;
         }
 

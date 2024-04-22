@@ -20,7 +20,8 @@ class EmployeeLeaveCreditLogs extends Model
 
     public $timestamps = true;
 
-    public function leaveTypeCredit()
+
+    public function employeeLeaveCredit()
     {
         return $this->belongsTo(EmployeeLeaveCredit::class);
     }
