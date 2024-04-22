@@ -12,7 +12,7 @@ class EmployeeLeaveCredit extends JsonResource
     public function toArray($request)
     {
         return [
-            "id" => $this->id,
+            "id"=> $this->id,
             'employee_profile_id' => $this->employee_profile_id,
             'name' => $this->employeeProfile->personalInformation->name(),
             'leave_type' => $this->leaveType,
@@ -20,7 +20,7 @@ class EmployeeLeaveCredit extends JsonResource
             'used_leave_credits' => (float)$this->used_leave_credits,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
-            'logs' => $this->logs->isEmpty() ? [] : EmployeeLeaveCreditLogResource::collection($this->logs),
+            'logs' => $this->logs ? EmployeeLeaveCreditLogResource::collection($this->logs) : null,
         ];
     }
 }
