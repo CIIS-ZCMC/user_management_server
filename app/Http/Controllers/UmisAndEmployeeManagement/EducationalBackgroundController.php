@@ -66,6 +66,40 @@ class EducationalBackgroundController extends Controller
         }
     }
     
+    public function employeeUpdateEducation(Request $request)
+    {
+        try{
+            $personal_information = $request->user->personalInformation;
+            $cleanData = [];
+
+            foreach ($request->all() as $key => $value) {
+                if ($value === null) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+                if($key === 'attachment'){
+                    $attachment = Helpers::checkSaveFile($request->attachment, '/education');
+                    $cleanData['attachment'] = $attachment;
+                }
+                $cleanData[$key] = strip_tags($value);
+            }
+
+            $cleanData['personal_information_id'] = $personal_information->id;
+            $cleanData['is_request'] = true;
+            $educational_background = EducationalBackground::create($cleanData);
+
+            Helpers::registerSystemLogs($request, $educational_background['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+           
+            return response()->json([
+                'data' => new EducationalBackgroundResource($educational_background),
+                'message' => 'New employee education background registered.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
     public function store(EducationalBackgroundRequest $request)
     {
         

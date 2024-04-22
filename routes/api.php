@@ -544,6 +544,10 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {
+            Route::post('civil-service-new-request', 'CivilServiceEligibilityController@employeeUpdateEligibilities');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {
             Route::post('civil-service-eligibility', 'CivilServiceEligibilityController@store');
         });
 
@@ -687,6 +691,10 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::put('educational-background-by-employee/{id}', 'EducationalBackgroundController@findByEmployeeID');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {
+            Route::post('educational-new-request', 'EducationalBackgroundController@employeeUpdateEducation');
         });
 
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {
@@ -1420,6 +1428,10 @@ Route::middleware('auth.cookie')->group(function () {
         /**
          * Training Module
          */
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {
+            Route::post('training-new-request', 'TrainingController@employeeUpdateTraining');
+        });
+
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {
             Route::post('training/find-by-personal-info/{id}', 'TrainingController@assignHeadByEmployeeID');
         });

@@ -225,12 +225,37 @@ class EmployeeProfile extends Authenticatable
         AccessToken::where('employee_profile_id', $this->id)->delete();
         SpecialAccessRole::where('employee_profile_id', $this->id)->delete();
         AssignArea::where('employee_profile_id', $this->id)->delete();
-        CtoApplication::where('employee_profile_id', $this->id)->delete();
-        OfficialTimeApplication::where('employee_profile_id', $this->id)->delete();
-        EmployeeOvertimeCredit::where('employee_profile_id', $this->id)->delete();
-        OvertimeApplication::where('employee_profile_id', $this->id)->delete();
-        EmployeeLeaveCredit::where('employee_profile_id', $this->id)->delete();
-        LeaveApplication::where('employee_profile_id', $this->id)->delete();
+        
+        $employee_leave_credits = $this->leaveCredit;
+        EmployeeLeaveCreditLogs::where('employee_leave_credit_id', $employee_leave_credits->id)->delete();
+        $employee_leave_credits->delete();
+
+        $leave_applications = $this->leaveApplications;
+        foreach($leave_applications as $leave_application){
+            LeaveApplicationLog::where('leave_application_id', $leave_application->id)->delete();
+            LeaveApplicationRequirement::where('leave_application_id', $leave_application->id)->delete();
+            $leave_applications->delete();
+        }
+
+        $official_business_applications = $this->officialBusinessApplications;
+        foreach($official_business_applications as $official_business_application){
+            OfficialBusinessLog::where('', $official_business_application->id)->delete();
+            $official_business_application->delete();
+        }
+
+        $offial_time_applications = $this->officialTimeApplications;
+        foreach($offial_time_applications as $offial_time_application){
+            OtApplicationLog::where('official_time_application_id', $offial_time_application->id)->delete();   
+            $offial_time_application->delete();
+        }
+
+        $overtime_applications = $this->overtimeApplication;
+        foreach($overtime_applications as $overtime_application){
+            OvtApplicationLog::where('overtime_application_id', $overtime_application->id)->delete();
+            $overtime_application->delete();
+        }
+
+        
     }
 
     public function findDesignation()

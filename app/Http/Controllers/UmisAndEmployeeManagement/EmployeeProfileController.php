@@ -156,27 +156,21 @@ class EmployeeProfileController extends Controller
             switch($type){
                 case "Educational Background":
                     $profile_request = EducationalBackground::find($request->id);
-                    $attachment = Helpers::checkSaveFile($request->attachment, '/educationalBackground');
                     $profile_request->update([
-                        'attachment' => $attachment,
                         "is_request" => false,
                         "approved_at" => Carbon::now()
                     ]);
                     break;
                 case "Eligibility":
                     $profile_request = CivilServiceEligibility::find($request->id);
-                    $attachment = Helpers::checkSaveFile($request->attachment, '/eligibility');
                     $profile_request->update([
-                        'attachment' => $attachment,
                         "is_request" => false,
                         "approved_at" => Carbon::now()
                     ]);
                     break;
                 case "Learning and Development":
                     $profile_request = Training::find($request->id);
-                    $attachment = Helpers::checkSaveFile($request->attachment, '/training');
                     $profile_request->update([
-                        'attachment' => $attachment,
                         "is_request" => false,
                         "approved_at" => Carbon::now()
                     ]);
