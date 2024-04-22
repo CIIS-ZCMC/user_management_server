@@ -93,6 +93,40 @@ class TrainingController extends Controller
         }
     }
     
+    public function employeeUpdateTraining(Request $request)
+    {
+        try{
+            $personal_information = $request->user->personalInformation;
+            $cleanData = [];
+
+            foreach ($request->all() as $key => $value) {
+                if($value === null || $key === 'type_is_lnd'){
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+                if($key === 'attachment'){
+                    $attachment = Helpers::checkSaveFile($request->attachment, '/training');
+                    $cleanData['attachment'] = $attachment;
+                }
+                $cleanData[$key] = strip_tags($value);
+            }
+
+            $cleanData['personal_information_id'] = $personal_information->id;
+            $cleanData['is_request'] = true;
+            $training = Training::create($cleanData);
+
+            Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            
+            return response()->json([
+                'data' => new TrainingResource($training),
+                'message' => 'New Learning and Development (L&D) record added.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
     public function storeMany($personal_information_id, TrainingManyRequest $request)
     {
         try{

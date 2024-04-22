@@ -23,7 +23,8 @@ class EducationalBackground extends Model
         'academic_honors',
         'attachment',
         'is_request',
-        'approved_at'
+        'approved_at',
+        'attachment'
     ];
 
     public $timestamps = TRUE;

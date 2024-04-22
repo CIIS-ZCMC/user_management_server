@@ -21,7 +21,8 @@ class CivilServiceEligibility extends Model
         'personal_information_id',
         'attachment',
         'is_request',
-        'approved_at'
+        'approved_at',
+        'attachment'
     ];
 
     public $timestamps = TRUE;

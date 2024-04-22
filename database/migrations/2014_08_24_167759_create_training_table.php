@@ -24,6 +24,7 @@ return new class extends Migration
             $table->text('attachment')->nullable();
             $table->boolean('is_request')->default(false);
             $table->datetime('approved_at')->nullable();
+            $table->string('attachment')->nullable();
             $table->timestamps();
         });
     }
