@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Helpers\Helpers;
+use App\Http\Resources\OfficialBusinessApplication;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -217,6 +218,20 @@ class EmployeeProfile extends Authenticatable
     }
 
 
+    public function removeRecords()
+    {
+        PasswordTrail::where('employee_profile_id', $this->id)->delete();
+        LoginTrail::where('employee_profile_id', $this->id)->delete();
+        AccessToken::where('employee_profile_id', $this->id)->delete();
+        SpecialAccessRole::where('employee_profile_id', $this->id)->delete();
+        AssignArea::where('employee_profile_id', $this->id)->delete();
+        CtoApplication::where('employee_profile_id', $this->id)->delete();
+        OfficialTimeApplication::where('employee_profile_id', $this->id)->delete();
+        EmployeeOvertimeCredit::where('employee_profile_id', $this->id)->delete();
+        OvertimeApplication::where('employee_profile_id', $this->id)->delete();
+        EmployeeLeaveCredit::where('employee_profile_id', $this->id)->delete();
+        LeaveApplication::where('employee_profile_id', $this->id)->delete();
+    }
 
     public function findDesignation()
     {
