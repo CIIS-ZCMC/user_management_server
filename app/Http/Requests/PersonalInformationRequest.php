@@ -36,13 +36,13 @@ class PersonalInformationRequest extends FormRequest
             'height' => 'nullable|numeric',
             'weight' => 'nullable|numeric',
             'blood_type' => 'nullable|string|max:255',
-            'r_address' => 'required|string|max:255',
-            'r_telephone' => 'nullable|string|max:255',
-            'r_zip_code' => 'nullable|string|max:255',
+            'residential_address' => 'required|string|max:255',
+            'residential_telephone' => 'nullable|string|max:255',
+            'residential_zip_code' => 'nullable|string|max:255',
             'is_res_per' => 'nullable|integer',
-            'p_address' => 'nullable|string|max:255',
-            'p_telephone' => 'nullable|string|max:255',
-            'p_zip_code' => 'nullable|string|max:255',
+            'permanent_address' => 'nullable|string|max:255',
+            'permanent_telephone' => 'nullable|string|max:255',
+            'permanent_zip_code' => 'nullable|string|max:255',
         ];
     }
 }

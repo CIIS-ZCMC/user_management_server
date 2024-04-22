@@ -58,9 +58,9 @@ class PersonalInformationController extends Controller
             $personal_information = PersonalInformation::create($cleanData);
 
             $residential_address = [
-                'address' => strip_tags($request->r_address),
-                'zip_code' => strip_tags($request->r_zip_code),
-                'telephone_no' => strip_tags($request->r_telephone),
+                'address' => strip_tags($request->residential_address),
+                'zip_code' => strip_tags($request->residential_zip_code),
+                'telephone_no' => strip_tags($request->residential_telephone),
                 'is_res_per' => $request->is_res_per,
                 'is_residential' => 1,
                 'personal_information_id' => $personal_information->id
@@ -79,9 +79,9 @@ class PersonalInformationController extends Controller
             }
 
             $permanent_address =  [
-                'address' => strip_tags($request->p_address),
-                'telephone_no' => strip_tags($request->p_telephone),
-                'zip_code' => strip_tags($request->p_zip_code),
+                'address' => strip_tags($request->permanent_address),
+                'telephone_no' => strip_tags($request->permanent_telephone),
+                'zip_code' => strip_tags($request->permanent_zip_code),
                 'is_res_per' => 0,
                 'is_residential' => 0,
                 'personal_information_id' => $personal_information->id
