@@ -17,7 +17,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 class EmployeeScheduleController extends Controller
-{ 
+{
     private $CONTROLLER_NAME = 'Employee Schedule';
     private $PLURAL_MODULE_NAME = 'employee schedules';
     private $SINGULAR_MODULE_NAME = 'employee schedule';
@@ -27,7 +27,7 @@ class EmployeeScheduleController extends Controller
      */
     public function index(Request $request)
     {
-        // 
+        //
     }
 
     /**
@@ -35,7 +35,7 @@ class EmployeeScheduleController extends Controller
      */
     public function create(Request $request)
     {
-       
+
     }
 
     /**
@@ -43,7 +43,7 @@ class EmployeeScheduleController extends Controller
      */
     public function store(Request $request)
     {
-       //
+        //
     }
 
     /**

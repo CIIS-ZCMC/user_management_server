@@ -313,6 +313,16 @@ class EmployeeProfile extends Authenticatable
         return $designation;
     }
 
+    public function getBiometricLog($date){
+        $dtr = DailyTimeRecords::where('biometric_id',$this->biometric_id)->where('dtr_date',date('Y-m-d',strtotime($date)))->first();
+
+        if($dtr){
+            return $dtr;
+        }
+        return [];
+
+    }
+
     public function issuanceInformation()
     {
         return $this->hasOne(IssuanceInformation::class);
