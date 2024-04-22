@@ -19,8 +19,12 @@ use App\Http\Requests\ReferenceRequest;
 use App\Http\Requests\TrainingManyRequest;
 use App\Http\Requests\VoluntaryWorkRequest;
 use App\Http\Requests\WorkExperienceRequest;
+use App\Http\Resources\EmployeeProfileUpdateResource;
+use App\Models\CivilServiceEligibility;
+use App\Models\EducationalBackground;
 use App\Models\EmploymentType;
 use App\Models\OfficerInChargeTrail;
+use App\Models\Training;
 use App\Models\WorkExperience;
 use Carbon\Carbon;
 
@@ -117,16 +121,129 @@ class EmployeeProfileController extends Controller
         }
     }
 
-    /**
-     * Validate if Employee ID is legitimate
-     * Validate if Account is Deactivated
-     * Decrypt Password from Database
-     * Validate Password Legitemacy
-     * Create Access Token
-     * Retrieve Personal Information
-     * Job Details (Plantilla or Not)
-     *
-     */
+    public function profileUpdateRequest(Request $request)
+    {
+        try {
+            $trainings = Training::where('is_request', 1)->where('approved_at', NULL)->get();
+            $trainings = $trainings->map(function ($training) {
+                return [...$training, 'type' => "Training"];
+            });
+
+            $eligibilities = CivilServiceEligibility::where('is_request', 1)->where('approved_at', NULL)->get();
+            $eligibilities = $eligibilities->map(function ($eligibility) {
+                return [...$eligibility, 'type' => "Eligibility"];
+            });
+
+            $educations = EducationalBackground::where('is_request', 1)->where('approved_at', NULL)->get();
+            $educations = $educations->map(function ($education) {
+                return [...$education, 'type' => "Educational Background"];
+            });
+
+            return response()->json([
+                'data' => EmployeeProfileUpdateResource::collection([...$trainings, ...$eligibilities, ...$educations]),
+                'message' => "Retrieve employees list for add record approval"
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'employeeForRenwal', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function approvedProfileUpdate(Request $request)
+    {
+        try {
+            $employee = $request->user;
+            $pin = strip_tags($request->authorization_pin);
+
+            if ($employee->authorization_pin !== $pin) {
+                return response()->json(['message' => "Invalid pin."], Response::HTTP_FORBIDDEN);
+            }
+            $profile_request = null;
+
+            $type = strip_tags($request->type);
+
+            switch ($type) {
+                case "Educational Background":
+                    $profile_request = EducationalBackground::find($request->id);
+                    $profile_request->update([
+                        "is_request" => false,
+                        "approved_at" => Carbon::now()
+                    ]);
+                    break;
+                case "Eligibility":
+                    $profile_request = CivilServiceEligibility::find($request->id);
+                    $profile_request->update([
+                        "is_request" => false,
+                        "approved_at" => Carbon::now()
+                    ]);
+                    break;
+                case "Learning and Development":
+                    $profile_request = Training::find($request->id);
+                    $profile_request->update([
+                        "is_request" => false,
+                        "approved_at" => Carbon::now()
+                    ]);
+                    break;
+            }
+
+            return response()->json([
+                'data' => new EmployeeProfileUpdateResource($profile_request),
+                'message' => "Retrieve employees list for renewal"
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'approvedProfileUpdate', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function employeeForRenewal(Request $request)
+    {
+        try {
+            $employees = EmployeeProfile::whereBetween('renewal', [Carbon::now(), Carbon::now()->addMonths(2)])->get();
+
+            return response()->json([
+                'data' => EmployeeProfileResource::collection($employees),
+                'message' => "Retrieve employees list for renewal"
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'employeeForRenwal', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function renewEmployee(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            $employees = $request->employees;
+
+            foreach ($request->employees as $employee_renewal) {
+                try {
+                    $employee = EmployeeProfile::find($employee_renewal->id);
+
+                    if (EmploymentType::find($employee_renewal->employment_type_id)->name === 'Temporary') {
+                        $employee->update(['renewal', Carbon::parse($employee->renewal)->addYear()]);
+                    }
+                    $renewal_date = strip_tags($employee_renewal->renewal);
+
+                    $employee->update(['renewal' => $renewal_date]);
+                } catch (\Throwable $th) {
+                    DB::rollBack();
+                    return response()->json(['message' => "Failed to renew please check fields."], Response::HTTP_INTERNAL_SERVER_ERROR);
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'data' => EmployeeProfileResource::collection($employees),
+                'message' => "Successfully renewed employee"
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'renewEmployee', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 
     public function signIn(SignInRequest $request)
     {
@@ -538,7 +655,7 @@ class EmployeeProfileController extends Controller
         if (($side_bar_details['system']) > 0) {
             $employment_type = $employee_profile->employmentType;
 
-            if ($employment_type->name === "Permanent" || $employment_type->name === 'Temporary') {
+            if ($employment_type->name === "Permanent Full-time" || $employment_type->name === "Permanent CTI" || $employment_type->name === "Permanent Part-time" || $employment_type->name === 'Temporary') {
                 $role = Role::where('code', "COMMON-REG")->first();
                 $reg_system_role = SystemRole::where('role_id', $role->id)->first();
 
@@ -600,7 +717,7 @@ class EmployeeProfileController extends Controller
                 }
             }
 
-            if ($employment_type->name == "Job order") {
+            if ($employment_type->name == "Job Order") {
                 $role = Role::where("code", "COMMON-JO")->first();
                 $jo_system_role = SystemRole::where('role_id', $role->id)->first();
 
@@ -1893,175 +2010,17 @@ class EmployeeProfileController extends Controller
         }
     }
 
-    public function reEmploy($id, Request $request)
-    {
-        try {
-
-            $in_valid_file = false;
-            $in_active_employee = InActiveEmployee::find($id);
-
-            if (!$in_active_employee) {
-                return response()->json(['message' => "No in active employee with id " . $id], Response::HTTP_NOT_FOUND);
-            }
-
-            $previous_employee_profile_id = $in_active_employee->employee_profile_id;
-
-            $dateString = $request->date_hired;
-            $carbonDate = Carbon::parse($dateString);
-            $date_hired_string = $carbonDate->format('Ymd');
-
-            $total_registered_this_day = EmployeeProfile::whereDate('date_hired', $carbonDate)->get();
-            $employee_id_random_digit = 50 + count($total_registered_this_day);
-
-            $employee_data = $in_active_employee;
-            $employee_data['employee_id'] = $employee_id_random_digit;
-
-            $last_registered_employee = EmployeeProfile::orderBy('biometric_id', 'desc')->first();
-            $last_password = DefaultPassword::orderBy('effective_at', 'desc')->first();
-
-            $hashPassword = Hash::make($last_password->password . config('app.salt_value'));
-            $encryptedPassword = Crypt::encryptString($hashPassword);
-            $now = Carbon::now();
-            $fortyDaysFromNow = $now->addDays(40);
-            // $fortyDaysExpiration = $now->addMinutes(5)->toDateTimeString();
-
-            $new_biometric_id = $last_registered_employee->biometric_id + 1;
-            $new_employee_id = $date_hired_string . $employee_id_random_digit;
-
-            $employee_data['employee_id'] = $new_employee_id;
-            $employee_data['biometric_id'] = $new_biometric_id;
-            $employee_data['employment_type_id'] = strip_tags($request->employment_type_id);
-            $employee_data['personal_information_id'] = $in_active_employee->personal_information_id;
-
-            try {
-                $fileName = Helpers::checkSaveFile($request->attachment, 'photo/profiles');
-                if (is_string($fileName)) {
-                    $employee_data['profile_url'] = $request->attachment === null || $request->attachment === 'null' ? null : $fileName;
-                }
-
-                if (is_array($fileName)) {
-                    $in_valid_file = true;
-                    $employee_data['profile_url'] = null;
-                }
-            } catch (\Throwable $th) {
-            }
-
-            $employee_data['allow_time_adjustment'] = strip_tags($request->allow_time_adjustment) === 1 ? true : false;
-            $employee_data['password_encrypted'] = $encryptedPassword;
-            $employee_data['password_created_at'] = now();
-            $employee_data['password_expiration_at'] = $fortyDaysFromNow;
-            $employee_data['salary_grade_step'] = strip_tags($request->salary_grade_step);
-            $employee_data['date_hired'] = $request->date_hired;
-            $employee_data['designation_id'] = $request->designation_id;
-            $employee_data['effective_at'] = $request->date_hired;
-
-
-            $plantilla_number_id = $request->plantilla_number_id === "null" || $request->plantilla_number_id === null ? null : $request->plantilla_number_id;
-            $sector_key = '';
-
-            switch (strip_tags($request->sector)) {
-                case "division":
-                    $sector_key = 'division_id';
-                    break;
-                case "department":
-                    $sector_key = 'department_id';
-                    break;
-                case "section":
-                    $sector_key = 'section_id';
-                    break;
-                case "unit":
-                    $sector_key = 'unit_id';
-                    break;
-                default:
-                    $sector_key = null;
-            }
-
-            if ($sector_key === null) {
-                return response()->json(['message' => 'Invalid sector area.'], Response::HTTP_BAD_REQUEST);
-            }
-
-            $employee_data[$sector_key] = strip_tags($request->sector_id);
-
-            if ($plantilla_number_id !== null) {
-                $plantilla_number = PlantillaNumber::find($plantilla_number_id);
-
-
-
-                if (!$plantilla_number) {
-                    return response()->json(['message' => 'No record found for plantilla number ' . $plantilla_number_id], Response::HTTP_NOT_FOUND);
-                }
-
-                $plantilla = $plantilla_number->plantilla;
-                $designation = $plantilla->designation;
-                $employee_data['designation_id'] = $designation->id;
-                $employee_data['plantilla_number_id'] = $plantilla_number->id;
-            }
-
-
-            $employee_profile = EmployeeProfile::create($employee_data);
-
-            $employee_data['employee_profile_id'] = $employee_profile->id;
-            AssignArea::create($employee_data);
-
-            if ($plantilla_number_id !== null) {
-                $plantilla_number = PlantillaNumber::find($plantilla_number_id);
-                $plantilla_number->update(['employee_profile_id' => $employee_profile->id, 'is_vacant' => false, 'assigned_at' => now()]);
-            }
-
-
-            if ($plantilla_number_id !== null) {
-                $leave_types = LeaveType::where('is_special', 0)->get();
-
-                foreach ($leave_types as $leave_type) {
-                    EmployeeLeaveCredit::create([
-                        'employee_profile_id' => $employee_profile->id,
-                        'leave_type_id' => $leave_type->id,
-                        'total_leave_credits' => 0,
-                        'used_leave_credits' => 0
-                    ]);
-                }
-            }
-
-            AssignAreaTrail::where(['employee_profile_id', $previous_employee_profile_id])->update(['employee_profile_id', $employee_profile->id]);
-
-            Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . '.');
-
-
-            if ($in_valid_file) {
-                return response()->json(
-                    [
-                        'data' => new EmployeeProfileResource($employee_profile),
-                        'message' => 'Newly employee registered.',
-                        'other' => "Invalid attachment."
-                    ],
-                    Response::HTTP_OK
-                );
-            }
-
-            return response()->json(
-                [
-                    'data' => new EmployeeProfileResource($employee_profile),
-                    'message' => 'Newly employee registered.'
-                ],
-                Response::HTTP_OK
-            );
-        } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'reEmploy', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-
     public function index(Request $request)
     {
         try {
             $user = $request->user;
             $cacheExpiration = Carbon::now()->addDay();
 
-            $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () use ($user) {
-                return EmployeeProfile::whereNotIn('id', [1, $user->id])->get();
-            });
+            // $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () use ($user) {
+            //     return EmployeeProfile::whereNotIn('id', [1, $user->id])->get();
+            // });
 
-            //    $employee_profiles = EmployeeProfile::whereNotIn('id', [1, $user->id])->get();
+            $employee_profiles = EmployeeProfile::whereNotIn('id', [1, $user->id])->get();
 
 
 
@@ -2321,7 +2280,6 @@ class EmployeeProfileController extends Controller
     public function store(EmployeeProfileNewResource $request)
     {
         try {
-
             DB::beginTransaction();
 
             /**
@@ -2556,6 +2514,22 @@ class EmployeeProfileController extends Controller
             $cleanData['designation_id'] = $request->designation_id;
             $cleanData['effective_at'] = $request->date_hired;
 
+            if (EmploymentType::find($cleanData['employment_type_id'])->name === 'Temporary' || EmploymentType::find($cleanData['employment_type_id'])->name === 'Job Order') {
+
+                if ($request->renewal === 'null' || $request->renewal === null) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => 'Temporary or Job order renewal date is required.'
+                    ], Response::HTTP_BAD_REQUEST);
+                }
+
+                if (EmploymentType::find($cleanData['employment_type_id'])->name === 'Temporary') {
+                    $cleanData['renewal'] = Carbon::now()->addYear();
+                }
+
+                $cleanData['renewal'] = strip_tags($request->renewal);
+            }
+
             $plantilla_number_id = $request->plantilla_number_id === "null" || $request->plantilla_number_id === null ? null : $request->plantilla_number_id;
             $sector = strip_tags($request->sector);
 
@@ -2674,8 +2648,6 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
-    // API [employee-profile-picture/{id}]
     public function updateEmployeeProfilePicture($id, Request $request)
     {
         try {
@@ -2770,70 +2742,6 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => 'Employee account created.'], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'createEmployeeAccount', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    public function updateEmployeeToInActiveEmployees($id, Request $request)
-    {
-        try {
-            $user = $request->user;
-            $cleanData['password'] = strip_tags($request->password);
-
-            $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
-
-            if (!Hash::check($cleanData['password'] . config('app.salt_value'), $decryptedPassword)) {
-                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
-            }
-
-            $employee_profile = EmployeeProfile::find($id);
-
-            if (!$employee_profile) {
-                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
-            }
-
-            $in_active_employee = InActiveEmployee::create([
-                'personal_information_id' => $employee_profile->personal_information_id,
-                'employment_type_id' => $request->employment_type_id,
-                'employee_id' => $employee_profile->employee_id,
-                'profile_url' => $employee_profile->profile_url,
-                'date_hired' => $employee_profile->date_hired,
-                'biometric_id' => $employee_profile->biometric_id,
-                'employment_end_at' => now()
-            ]);
-
-            $employee_profile->issuanceInformation->update([
-                'employee_profile_id' => null,
-                'in_active_employee_id' => $in_active_employee->id
-            ]);
-
-            $assign_area = $employee_profile->assignedArea;
-            $assign_area_trail = AssignAreaTrail::create([
-                'employee_profile_id' => null,
-                'in_active_employee_id' => $in_active_employee->id,
-                'designation_id' => $assign_area->designation_id,
-                'plantilla_id' => $assign_area->plantilla_id,
-                'division_id' => $assign_area->division_id,
-                'department_id' => $assign_area->department_id,
-                'section_id' => $assign_area->section_id,
-                'unit_id' => $assign_area->unit_id,
-                'plantilla_number_id' => $assign_area->plantilla_number_id,
-                'salary_grade_step' => $assign_area->salary_grade_step,
-                'started_at' => $assign_area->effective_at,
-                'end_at' => now()
-            ]);
-
-            $assign_area->delete();
-            $employee_profile->delete();
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in fetching a ' . $this->SINGULAR_MODULE_NAME . '.');
-
-            return response()->json([
-                'data' => $in_active_employee,
-                'message' => 'Employee record transfer to in active employees.'
-            ], Response::HTTP_OK);
-        } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'updateEmployeeToInActiveEmployees', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -3018,10 +2926,6 @@ class EmployeeProfileController extends Controller
         }
     }
 
-    /**
-     * Update needed as this will require approval of HR to update account
-     * data to update of employee and attachment getting from Profile Update Request Table
-     */
     public function update($id, Request $request)
     {
         try {
@@ -3098,20 +3002,7 @@ class EmployeeProfileController extends Controller
 
     public function promotion($id, PromotionRequest $request)
     {
-        // password
-        // effective_date
-        // designation_id
-        // period
-        // area_assigned
         try {
-            // $user = $request->user;
-            // $cleanData['password'] = strip_tags($request->input('password'));
-            // $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
-            // if (!Hash::check($cleanData['password'] . config('app.salt_value'), $decryptedPassword)) {
-            //     return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
-            // }
-
-
             $employee_profile = EmployeeProfile::findOrFail($id);
             $effective_date = $request->effective_date;
             $designation_id = $request->designation_id;
@@ -3134,12 +3025,15 @@ class EmployeeProfileController extends Controller
                 'effective_date' => $effective_date,
                 'promotion' => true
             ]);
+
             $this->reAssignArea($id, $AssignareaRequest);
+
             $Promotion = [
                 'designation_id' => $designation_id,
                 'effective_at' => $effective_date,
                 'end_date' => $end_at
             ];
+
             $trails = [
                 'salary_grade_step' => $assigned->salary_grade_step,
                 'employee_profile_id' => $assigned->employee_profile_id,
@@ -3153,8 +3047,10 @@ class EmployeeProfileController extends Controller
                 'started_at' => $assigned->effective_at,
                 'end_at' => date('Y-m-d H:i:s')
             ];
+
             AssignAreaTrail::create($trails);
             AssignArea::where('id', $assigned->id)->update($Promotion);
+
             return response()->json(['message' => 'Employee successfully renewed.'], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'promotion', $th->getMessage());
@@ -3342,6 +3238,7 @@ class EmployeeProfileController extends Controller
     public function deactivateEmployeeAccount($id, Request $request)
     {
         try {
+            DB::beginTransaction();
             $user = $request->user;
             $cleanData['password'] = strip_tags($request->password);
 
@@ -3357,22 +3254,24 @@ class EmployeeProfileController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            if ($employee_profile->position() !== null) {
+            if (is_array($employee_profile->position())) {
                 $position = $employee_profile->position();
                 $area = $employee_profile->assignedArea->findDetails();
-                return response()->json(["message" => "Action is prohibited this employee currently a " . $position->position . " " . $area['details']->name . "."], Response::HTTP_FORBIDDEN);
+                return response()->json(["message" => "Action is prohibited, this employee is currently a " . $position['position'] . " in " . $area['details']->name . "."], Response::HTTP_FORBIDDEN);
             }
 
             $new_in_active = InActiveEmployee::create([
-                'personal_information_id' => $employee_profile->personal_information,
+                'personal_information_id' => $employee_profile->personalInformation->id,
                 'employment_type_id' => $employee_profile->employment_type_id,
                 'employee_id' => $employee_profile->employee_id,
                 'profile_url' => $employee_profile->profile_url,
                 'date_hired' => $employee_profile->date_hired,
-                'biometic_id' => $employee_profile->biometic_id,
+                'biometric_id' => $employee_profile->biometric_id,
                 'employment_end_at' => now(),
+                'status' => strip_tags($request->status),
                 'remarks' => strip_tags($request->remarks)
             ]);
+
 
             if (!$new_in_active) {
                 return response()->json(['message' => "Failed to deactivate account."], Response::HTTP_BAD_REQUEST);
@@ -3386,23 +3285,24 @@ class EmployeeProfileController extends Controller
 
             $assign_area = $employee_profile->assignedArea;
 
-            $new_assign_area_data = $assign_area;
-            $new_assign_area_data['employee_profile_id'] = null;
-            $new_assign_area_data['in_active_employee_id'] = $new_in_active->id;
-            $new_assign_area_data['end_at'] = now();
+            AssignAreaTrail::create([
+                $assign_area,
+                'employee_profile_id' => null,
+                'in_active_employee_id' => $new_in_active->id,
+                'started_at' => $employee_profile->date_hired,
+                'end_at' => now()
+            ]);
 
-            AssignAreaTrail::create($new_assign_area_data);
-
-            PasswordTrail::where('employee_profile_id', $employee_profile->id)->delete();
-            LoginTrail::where('employee_profile_id', $employee_profile->id)->delete();
-            AccessToken::where('employee_profile_id', $employee_profile->id)->delete();
+            $employee_profile->removeRecords();
             $employee_profile->delete();
 
-            Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in deleting a ' . $this->SINGULAR_MODULE_NAME . '.');
+            DB::commit();
 
+            Helpers::registerSystemLogs($request, null, true, 'Success in deleting a ' . $this->SINGULAR_MODULE_NAME . '.');
 
             return response()->json(['message' => 'Employee profile deleted.'], Response::HTTP_OK);
         } catch (\Throwable $th) {
+            DB::rollBack();
             Helpers::errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }

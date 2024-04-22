@@ -20,7 +20,11 @@ class EducationalBackground extends Model
         'highest_grade',
         'inclusive_from',
         'inclusive_to',
-        'academic_honors'
+        'academic_honors',
+        'attachment',
+        'is_request',
+        'approved_at',
+        'attachment'
     ];
 
     public $timestamps = TRUE;

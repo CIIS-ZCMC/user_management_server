@@ -17,7 +17,8 @@ class PlantillaNumber extends Model
         'assigned_at',
         'is_dissolve',
         'plantilla_id',
-        'employee_profile_id'
+        'employee_profile_id',
+        'employment_type_id'
     ];
 
     public $timestamps = TRUE;
@@ -35,5 +36,10 @@ class PlantillaNumber extends Model
     public function employeeProfile()
     {
         return $this->belongsTo(EmployeeProfile::class);
+    }
+
+    public function employmentType()
+    {
+        return $this->belongsTo(EmploymentType::class);
     }
 }

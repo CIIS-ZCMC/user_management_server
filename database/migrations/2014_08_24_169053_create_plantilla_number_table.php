@@ -19,6 +19,8 @@ return new class extends Migration
             $table->datetime('assigned_at')->nullable();
             $table->unsignedBigInteger('plantilla_id');
             $table->foreign('plantilla_id')->references('id')->on('plantillas');
+            $table->unsignedBigInteger('employment_type_id')->nullable();
+            $table->foreign('employment_type_id')->references('id')->on('employment_types');
             $table->unsignedBigInteger('employee_profile_id')->nullable();
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles');
             $table->timestamps();

@@ -23,6 +23,10 @@ return new class extends Migration
             $table->date('inclusive_from')->nullable();
             $table->date('inclusive_to')->nullable();
             $table->string('academic_honors')->nullable();
+            $table->text('attachment')->nullable();
+            $table->boolean('is_request')->default(false);
+            $table->datetime('approved_at')->nullable();
+            $table->string('attachment')->nullable();
             $table->timestamps();
         });
     }

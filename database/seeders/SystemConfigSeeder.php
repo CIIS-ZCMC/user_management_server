@@ -117,5 +117,4 @@ class SystemConfigSeeder extends Seeder
                 Cache::forever('system_name', $system_name);
         } while ($system_name === null);
     }
-
 }

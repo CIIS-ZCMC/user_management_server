@@ -14,14 +14,16 @@ return new class extends Migration
         Schema::create('in_active_employees', function (Blueprint $table) {
             $table->id();
             $table->string('employee_id');
-            $table->string('profile_url');
+            $table->string('profile_url')->nullable();
             $table->date('date_hired');
+            $table->date('date_resigned')->nullable();
             $table->integer('biometric_id');
             $table->datetime('employment_end_at')->default(now());
             $table->unsignedBigInteger('employment_type_id');
             $table->foreign('employment_type_id')->references('id')->on('employment_types');
             $table->unsignedBigInteger('personal_information_id');
             $table->foreign('personal_information_id')->references('id')->on('personal_informations');
+            $table->string('status')->nullable();
             $table->text('remarks')->nullable();
             $table->timestamps();
         });

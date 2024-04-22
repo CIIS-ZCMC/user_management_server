@@ -272,7 +272,7 @@ class MonetizationApplicationController extends Controller
         try {
             $user = $request->user;
             $employee_profile = $user;
-            $cleanData['pin'] = strip_tags($request->password);
+            $cleanData['pin'] = strip_tags($request->pin);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
                 return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
@@ -438,7 +438,7 @@ class MonetizationApplicationController extends Controller
         try {
             $employee_profile = $request->user;
             $declined_by = null;
-            $cleanData['pin'] = strip_tags($request->password);
+            $cleanData['pin'] = strip_tags($request->pin);
 
             if ($employee_profile['authorization_pin'] !==  $cleanData['pin']) {
                 return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
@@ -574,7 +574,7 @@ class MonetizationApplicationController extends Controller
     {
         try {
             $employee_profile = $request->user;
-            $cleanData['pin'] = strip_tags($request->password);
+            $cleanData['pin'] = strip_tags($request->pin);
 
             if ($employee_profile['authorization_pin'] !==  $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
@@ -601,7 +601,7 @@ class MonetizationApplicationController extends Controller
     {
         try {
             $employee_profile = $request->user;
-            $cleanData['pin'] = strip_tags($request->password);
+            $cleanData['pin'] = strip_tags($request->pin);
 
             if ($employee_profile['authorization_pin'] !==  $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
