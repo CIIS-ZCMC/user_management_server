@@ -132,7 +132,7 @@ class EmployeeProfile extends Authenticatable
             'token' => $token,
             'token_exp' => $token_exp
         ]);
-        
+
         $encryptedToken = openssl_encrypt($token, config('app.encrypt_decrypt_algorithm'), config('app.app_key'), 0, substr(md5(config('app.app_key')), 0, 16));
 
         return $encryptedToken;
@@ -146,10 +146,11 @@ class EmployeeProfile extends Authenticatable
         return $fullName;
     }
 
-    public function leaveCredit()
+    public function employeeLeaveCredits()
     {
         return $this->hasMany(EmployeeLeaveCredit::class);
     }
+    
     public function leaveLogs()
     {
         return $this->hasMany(LeaveTypeLog::class);
@@ -225,7 +226,7 @@ class EmployeeProfile extends Authenticatable
         AccessToken::where('employee_profile_id', $this->id)->delete();
         SpecialAccessRole::where('employee_profile_id', $this->id)->delete();
         AssignArea::where('employee_profile_id', $this->id)->delete();
-        
+
         $employee_leave_credits = $this->leaveCredit;
         EmployeeLeaveCreditLogs::where('employee_leave_credit_id', $employee_leave_credits->id)->delete();
         $employee_leave_credits->delete();
@@ -245,7 +246,7 @@ class EmployeeProfile extends Authenticatable
 
         $offial_time_applications = $this->officialTimeApplications;
         foreach($offial_time_applications as $offial_time_application){
-            OtApplicationLog::where('official_time_application_id', $offial_time_application->id)->delete();   
+            OtApplicationLog::where('official_time_application_id', $offial_time_application->id)->delete();
             $offial_time_application->delete();
         }
 
@@ -255,7 +256,7 @@ class EmployeeProfile extends Authenticatable
             $overtime_application->delete();
         }
 
-        
+
     }
 
     public function findDesignation()
