@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Helpers\Helpers;
+use App\Http\Resources\OfficialBusinessApplication;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -37,6 +38,7 @@ class EmployeeProfile extends Authenticatable
         'allow_time_adjustment',
         'shifting',
         'is_2fa',
+        'renewal',
         'employee_type_id',
         'employment_type_id'
     ];
@@ -144,10 +146,11 @@ class EmployeeProfile extends Authenticatable
         return $fullName;
     }
 
-    public function leaveCredit()
+    public function employeeLeaveCredits()
     {
         return $this->hasMany(EmployeeLeaveCredit::class);
     }
+    
     public function leaveLogs()
     {
         return $this->hasMany(LeaveTypeLog::class);
@@ -216,6 +219,90 @@ class EmployeeProfile extends Authenticatable
     }
 
 
+    public function removeRecords()
+    {
+        IssuanceInformation::where('employee_profile_id', $this->id)->delete();
+        PasswordTrail::where('employee_profile_id', $this->id)->delete();
+        LoginTrail::where('employee_profile_id', $this->id)->delete();
+        AccessToken::where('employee_profile_id', $this->id)->delete();
+        SpecialAccessRole::where('employee_profile_id', $this->id)->delete();
+        AssignArea::where('employee_profile_id', $this->id)->delete();
+
+        $employee_leave_credits = $this->leaveCredit;
+        foreach($employee_leave_credits as $employee_leave_credit){
+            EmployeeLeaveCreditLogs::where('employee_leave_credit_id', $employee_leave_credit->id)->delete();
+            $employee_leave_credit->delete();
+        }
+
+        $leave_applications = $this->leaveApplications;
+        foreach($leave_applications as $leave_application){
+            LeaveApplicationLog::where('leave_application_id', $leave_application->id)->delete();
+            LeaveApplicationRequirement::where('leave_application_id', $leave_application->id)->delete();
+            $leave_application->delete();
+        }
+
+        $official_business_applications = $this->officialBusinessApplications;
+        foreach($official_business_applications as $official_business_application){
+            OfficialBusinessLog::where('official_business_id', $official_business_application->id)->delete();
+            $official_business_application->delete();
+        }
+
+        $offial_time_applications = $this->officialTimeApplications;
+        foreach($offial_time_applications as $offial_time_application){
+            OtApplicationLog::where('official_time_application_id', $offial_time_application->id)->delete();
+            $offial_time_application->delete();
+        }
+
+        OvtApplicationEmployee::where('employee_profile_id', $this->id)->delete();
+        $overtime_applications = $this->overtimeApplication;
+        foreach($overtime_applications as $overtime_application){
+            OvtApplicationLog::where('overtime_application_id', $overtime_application->id)->delete();
+
+            $overtime_application->delete();
+        }
+        
+        $employee_ot_credit = EmployeeOvertimeCredit::where('employee_profile_id', $this->id)->first();
+        EmployeeOvertimeCreditLog::where('employee_ot_credit_id', $employee_ot_credit->id)->delete();
+        $employee_ot_credit->delete();
+
+        $cto_applications = CtoApplication::where('employee_profile_id', $this->id)->get();
+        foreach($cto_applications as $cto_application){
+            CtoApplicationLog::where('cto_application_id', $cto_application->id)->delete();
+            $cto_application->delete();
+        }
+
+        EmployeeSchedule::where('employee_profile_id', $this->id)->delete();
+
+        $pull_outs = PullOut::where('employee_profile_id', $this->id)->get();
+        foreach($pull_outs as $pull_out){
+            PullOutLog::where('pull_out_id', $pull_out->id)->delete();
+            $pull_out->delete();
+        }
+
+        $on_calls = OnCall::where('employee_profile_id', $this->id)->get();
+        foreach($on_calls as $on_call){
+            OnCallLog::where('on_call_id', $on_call->id)->delete();
+            $on_call->delete();
+        }
+
+        $time_adjustments = TimeAdjusment::where('employee_profile_id', $this->id)->get();
+        foreach($time_adjustments as $time_adjustment){
+            TimeAdjustmentLog::where('employee_profile_id', $time_adjustment->id)->delete();
+            $time_adjustment->delete();
+        }
+
+        $exchange_duties = ExchangeDuty::where('reliever_employee_id', $this->id)->get();
+        foreach($exchange_duties as $exchange_duty){
+            ExchangeDutyLog::where('exchange_duty_id', $exchange_duty->id)->delete();
+            $exchange_duty->delete();
+        }
+
+        $exchange_duties = ExchangeDuty::where('requested_employee_id', $this->id)->get();
+        foreach($exchange_duties as $exchange_duty){
+            ExchangeDutyLog::where('exchange_duty_id', $exchange_duty->id)->delete();
+            $exchange_duty->delete();
+        }
+    }
 
     public function findDesignation()
     {

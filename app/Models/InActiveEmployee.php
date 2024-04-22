@@ -11,7 +11,7 @@ class InActiveEmployee extends Model
     
     protected $table = 'in_active_employees';
 
-    public $fillabe = [
+    public $fillable = [
         'employee_id',
         'profile_url',
         'date_hired',
@@ -19,6 +19,7 @@ class InActiveEmployee extends Model
         'employment_end_at',
         'employment_type_id',
         'personal_information_id',
+        'status',
         'remarks'
     ];
 

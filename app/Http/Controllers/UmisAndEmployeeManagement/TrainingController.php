@@ -93,6 +93,40 @@ class TrainingController extends Controller
         }
     }
     
+    public function employeeUpdateTraining(Request $request)
+    {
+        try{
+            $personal_information = $request->user->personalInformation;
+            $cleanData = [];
+
+            foreach ($request->all() as $key => $value) {
+                if($value === null || $key === 'type_is_lnd'){
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+                if($key === 'attachment'){
+                    $attachment = Helpers::checkSaveFile($request->attachment, '/training');
+                    $cleanData['attachment'] = $attachment;
+                }
+                $cleanData[$key] = strip_tags($value);
+            }
+
+            $cleanData['personal_information_id'] = $personal_information->id;
+            $cleanData['is_request'] = true;
+            $training = Training::create($cleanData);
+
+            Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
+            
+            return response()->json([
+                'data' => new TrainingResource($training),
+                'message' => 'New Learning and Development (L&D) record added.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME,'store', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    
     public function storeMany($personal_information_id, TrainingManyRequest $request)
     {
         try{
@@ -148,29 +182,35 @@ class TrainingController extends Controller
     public function update($id, TrainingRequest $request)
     {
         try{
-            $training = Training::find($id);
+            $success = [];
 
-            $cleanData = [];
+            foreach($request->trainings as $training){
+                $cleanData = [];
+                foreach ($training as $key => $value) {
+                    if($key === 'id' && $value === null) continue;
+                    if($value === null || $key === 'type_is_lnd'){
+                        $cleanData[$key] = $value;
+                        continue;
+                    }
+                    $cleanData[$key] = strip_tags($value);
+                }
 
-            foreach ($request->all() as $key => $value) {
-                if($value === null || $key === 'type_is_lnd'){
-                    $cleanData[$key] = $value;
+                if($training->id === null || $training->id === 'null'){
+                    $cleanData['personal_information_id'] = $id;
+                    $training = Training::create($cleanData);
+                    if(!$training) continue;
+                    $success[] = $training;
                     continue;
                 }
-                $cleanData[$key] = strip_tags($value);
+                
+                $training = Training::find($id);
+                $training->update($cleanData);
+                $success[] = $training;
             }
-
-            $training -> update($cleanData);
-
-            Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.');
             
-            return response()->json([
-                'data' => new TrainingResource($training),
-                'message' => 'Training record updated.'
-            ], Response::HTTP_OK);
+            return $success;
         }catch(\Throwable $th){
-            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            throw new \Exception("Failed to register employee training record.", 400);
         }
     }
 

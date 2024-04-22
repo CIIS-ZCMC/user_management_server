@@ -544,6 +544,10 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {
+            Route::post('civil-service-new-request', 'CivilServiceEligibilityController@employeeUpdateEligibilities');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {
             Route::post('civil-service-eligibility', 'CivilServiceEligibilityController@store');
         });
 
@@ -690,6 +694,10 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {
+            Route::post('educational-new-request', 'EducationalBackgroundController@employeeUpdateEducation');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {
             Route::post('educational-background', 'EducationalBackgroundController@store');
         });
 
@@ -761,6 +769,31 @@ Route::middleware('auth.cookie')->group(function () {
         /**
          * Employee Profile Module
          */
+        
+        Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
+            Route::delete('employee-deactivate-account/{id}', 'InActiveEmployee@retireAndDeactivateAccount');
+        });
+        
+        Route::middleware(['auth.permission:UMIS-EM post'])->group(function () {
+            Route::post('employee-re-employ/{id}', 'InActiveEmployee@reEmploy');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('employees-update-request', 'EmployeeProfileController@profileUpdateRequest');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM approve'])->group(function () {
+            Route::post('employee-approve-request', 'EmployeeProfileController@approvedProfileUpdate');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {
+            Route::post('employees-renew-contract', 'EmployeeProfileController@renewEmployee');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('employees-for-renewal', 'EmployeeProfileController@employeeForRenewal');
+        });
+
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function () {
             Route::post('employees-assign-oic', 'EmployeeProfileController@assignOICByEmployeeID');
         });
@@ -1395,6 +1428,10 @@ Route::middleware('auth.cookie')->group(function () {
         /**
          * Training Module
          */
+        Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {
+            Route::post('training-new-request', 'TrainingController@employeeUpdateTraining');
+        });
+
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {
             Route::post('training/find-by-personal-info/{id}', 'TrainingController@assignHeadByEmployeeID');
         });
