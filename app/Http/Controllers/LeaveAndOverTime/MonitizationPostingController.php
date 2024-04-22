@@ -168,7 +168,7 @@ class MonitizationPostingController extends Controller
         try{
             $cleanData = [];
             $employee_profile = $request->user;
-            $cleanData['pin'] = strip_tags($request->password);
+            $cleanData['pin'] = strip_tags($request->pin);
 
             if ($employee_profile['authorization_pin'] !==  $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
@@ -231,7 +231,7 @@ class MonitizationPostingController extends Controller
         try{
             $employee_profile = $request->user;
 
-            $pin = strip_tags($request->password);
+            $pin = strip_tags($request->pin);
 
             if($employee_profile->authorization_pin === $pin)
             {
