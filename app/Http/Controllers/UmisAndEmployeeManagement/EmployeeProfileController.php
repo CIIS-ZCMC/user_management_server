@@ -124,6 +124,7 @@ class EmployeeProfileController extends Controller
     public function profileUpdateRequest(Request $request)
     {
         try {
+
             $trainings = Training::where('is_request', 1)->where('approved_at', NULL)->get();
             $trainings = $trainings->map(function ($training) {
                 return [...$training, 'type' => "Training"];
@@ -3229,15 +3230,15 @@ class EmployeeProfileController extends Controller
 
     public function deactivateEmployeeAccount($id, Request $request)
     {
+        
         try {
+        
             DB::beginTransaction();
             $user = $request->user;
             $cleanData['password'] = strip_tags($request->password);
 
-            $decryptedPassword = Crypt::decryptString($user['password_encrypted']);
-
-            if (!Hash::check($cleanData['password'] . config('app.salt_value'), $decryptedPassword)) {
-                return response()->json(['message' => "Request rejected invalid password."], Response::HTTP_FORBIDDEN);
+            if ($user['authorization_pin'] !==  $cleanData['password']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
             $employee_profile = EmployeeProfile::findOrFail($id);
@@ -3249,21 +3250,19 @@ class EmployeeProfileController extends Controller
             if (is_array($employee_profile->position())) {
                 $position = $employee_profile->position();
                 $area = $employee_profile->assignedArea->findDetails();
-                return response()->json(["message" => "Action is prohibited, this employee is currently a " . $position['position'] . " in " . $area['details']->name . "."], Response::HTTP_FORBIDDEN);
+                return response()->json(["message" => "Action is prohibited, this employee is currently a " . $position->position . " in " . $area['details']->name . "."], Response::HTTP_FORBIDDEN);
             }
 
             $new_in_active = InActiveEmployee::create([
                 'personal_information_id' => $employee_profile->personalInformation->id,
                 'employment_type_id' => $employee_profile->employment_type_id,
                 'employee_id' => $employee_profile->employee_id,
-                'profile_url' => $employee_profile->profile_url,
+                'profile_url' => $employee_profile->profile_url ?? NULL,
                 'date_hired' => $employee_profile->date_hired,
                 'biometric_id' => $employee_profile->biometric_id,
                 'employment_end_at' => now(),
-                'status' => strip_tags($request->status),
                 'remarks' => strip_tags($request->remarks)
             ]);
-
 
             if (!$new_in_active) {
                 return response()->json(['message' => "Failed to deactivate account."], Response::HTTP_BAD_REQUEST);
@@ -3272,7 +3271,7 @@ class EmployeeProfileController extends Controller
             $plantilla_number = $employee_profile->assignedArea->plantillaNumber;
             $plantilla_number->update([
                 'employee_profile_id' => null,
-                'is_dissolve' => true
+                // 'is_dissolve' => true
             ]);
 
             $assign_area = $employee_profile->assignedArea;
@@ -3290,6 +3289,7 @@ class EmployeeProfileController extends Controller
             DB::commit();
 
             Helpers::registerSystemLogs($request, null, true, 'Success in deleting a ' . $this->SINGULAR_MODULE_NAME . '.');
+
 
             return response()->json(['message' => 'Employee profile deleted.'], Response::HTTP_OK);
         } catch (\Throwable $th) {
