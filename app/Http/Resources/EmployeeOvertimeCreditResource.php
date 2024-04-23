@@ -27,7 +27,7 @@ class EmployeeOvertimeCreditResource extends JsonResource
             'is_expired' => $this->is_expired,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
-            'logs' => !$this->logs->isEmpty() ? EmployeeOvertimeCreditLogResource::collection($this->logs) : null,
+            'logs' =>  $this->logs ? EmployeeOvertimeCreditLogResource::collection($this->logs) : null,
         ];
     }
 }

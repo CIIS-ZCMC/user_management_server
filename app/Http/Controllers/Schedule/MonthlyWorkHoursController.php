@@ -10,6 +10,7 @@ use App\Models\MonthlyWorkHours;
 use App\Services\RequestLogger;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Carbon;
 
 class MonthlyWorkHoursController extends Controller
 {
@@ -164,5 +165,26 @@ class MonthlyWorkHoursController extends Controller
             $this->requestLogger->errorLog($this->CONTROLLER_NAME, 'destroy', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    public function getMonthlyWorkHours(Request $request)
+    {
+        try {
+            $monthYearNow = Carbon::parse($request->monthYearNow)->format('m-Y');
+
+            $data = MonthlyWorkHours::where('month_year', $monthYearNow)->first();
+
+            if ($data === null) {
+                return response()->json(['data' => []], Response::HTTP_OK);
+            }
+
+            return response()->json(['data' => new MonthlyWorkHoursResource($data)], Response::HTTP_OK);
+
+        } catch (\Throwable $th) {
+
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME, 'getMonthlyWorkHours', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+
     }
 }

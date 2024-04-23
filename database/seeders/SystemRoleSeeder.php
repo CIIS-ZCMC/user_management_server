@@ -21,7 +21,7 @@ class SystemRoleSeeder extends Seeder
      */
     public function run(): void
     {
-        $system = System::WHERE("code",  Cache::get('system_abbreviation'))->first();
+        $system = System::WHERE("code", Cache::get('system_abbreviation'))->first();
 
         // $role = Role::where('code', "SUPER-USER-00")->first();
 
@@ -47,7 +47,7 @@ class SystemRoleSeeder extends Seeder
 
             switch ($roles->code) {
                 case 'SUPER-USER-00':
-                    $super_Admin =  SystemRole::create([
+                    $super_Admin = SystemRole::create([
                         'role_id' => $roles->id,
                         'system_id' => $system->id
                     ]);
@@ -62,10 +62,10 @@ class SystemRoleSeeder extends Seeder
 
                 case 'OMCC-01':
                     $omcc = SystemRole::create([
-                        'role_id' =>  $roles->id,
+                        'role_id' => $roles->id,
                         'system_id' => $system->id
                     ]);
-                    $module_permitted =  $module_permissions->filter(function ($row) {
+                    $module_permitted = $module_permissions->filter(function ($row) {
                         return
                             /* DTR */
                             $row['code'] === "UMIS-DTRM view-all" ||
@@ -123,10 +123,10 @@ class SystemRoleSeeder extends Seeder
 
                 case 'HRMO-HEAD-01':
                     $hrmo = SystemRole::create([
-                        'role_id' =>  $roles->id,
+                        'role_id' => $roles->id,
                         'system_id' => $system->id
                     ]);
-                    $module_permitted =  $module_permissions->filter(function ($row) {
+                    $module_permitted = $module_permissions->filter(function ($row) {
                         return
                             /* DTR */
                             $row['code'] === "UMIS-DTRM view-all" ||
@@ -195,10 +195,10 @@ class SystemRoleSeeder extends Seeder
 
                 case 'HR-ADMIN':
                     $hr_admin = SystemRole::create([
-                        'role_id' =>  $roles->id,
+                        'role_id' => $roles->id,
                         'system_id' => $system->id
                     ]);
-                    $module_permitted =  $module_permissions->filter(function ($row) {
+                    $module_permitted = $module_permissions->filter(function ($row) {
                         return
                             /* DTR */
                             $row['code'] === "UMIS-DTRM view-all" ||
@@ -255,10 +255,10 @@ class SystemRoleSeeder extends Seeder
 
                 case 'DIV-HEAD-01':
                     $div_head3 = SystemRole::create([
-                        'role_id' =>  $roles->id,
+                        'role_id' => $roles->id,
                         'system_id' => $system->id
                     ]);
-                    $module_permitted =  $module_permissions->filter(function ($row) {
+                    $module_permitted = $module_permissions->filter(function ($row) {
                         return
                             /* DTR */
                             $row['code'] === "UMIS-DTRM view-all" ||
@@ -287,10 +287,10 @@ class SystemRoleSeeder extends Seeder
 
                             $row['code'] === "UMIS-CT view-all" ||
                             $row['code'] === "UMIS-CT approve" ||
-                            
-                            $row['code'] === "UMIS-ES view" ||
-                            $row['code'] === "UMIS-ES view-all" ||
-                            $row['code'] === "UMIS-ES approve" ||
+
+                            // $row['code'] === "UMIS-ES view" ||
+                            // $row['code'] === "UMIS-ES view-all" ||
+                            // $row['code'] === "UMIS-ES approve" ||
 
                             /* Time adjustment  */
 
@@ -323,10 +323,10 @@ class SystemRoleSeeder extends Seeder
                 case 'DEPT-HEAD-01':
 
                     $dept_head4 = SystemRole::create([
-                        'role_id' =>  $roles->id,
+                        'role_id' => $roles->id,
                         'system_id' => $system->id
                     ]);
-                    $module_permitted =  $module_permissions->filter(function ($row) {
+                    $module_permitted = $module_permissions->filter(function ($row) {
                         return
                             /* DTR */
                             $row['code'] === "UMIS-DTRM view-all" ||
@@ -360,10 +360,10 @@ class SystemRoleSeeder extends Seeder
 
                             $row['code'] === "UMIS-TA view-all" ||
                             $row['code'] === "UMIS-TA approve" ||
-                            
-                            $row['code'] === "UMIS-ES view" ||
-                            $row['code'] === "UMIS-ES view-all" ||
-                            $row['code'] === "UMIS-ES approve" ||
+
+                            // $row['code'] === "UMIS-ES view" ||
+                            // $row['code'] === "UMIS-ES view-all" ||
+                            // $row['code'] === "UMIS-ES approve" ||
 
                             /* Schedule management */
                             $row['code'] === "UMIS-ScM write" ||
@@ -392,10 +392,10 @@ class SystemRoleSeeder extends Seeder
                 case 'SECTION-HEAD-01':
 
                     $sec_head5 = SystemRole::create([
-                        'role_id' =>  $roles->id,
+                        'role_id' => $roles->id,
                         'system_id' => $system->id
                     ]);
-                    $module_permitted =  $module_permissions->filter(function ($row) {
+                    $module_permitted = $module_permissions->filter(function ($row) {
                         return
                             /* DTR */
                             $row['code'] === "UMIS-DTRM view-all" ||
@@ -429,10 +429,10 @@ class SystemRoleSeeder extends Seeder
 
                             $row['code'] === "UMIS-TA view-all" ||
                             $row['code'] === "UMIS-TA approve" ||
-                            
-                            $row['code'] === "UMIS-ES view" ||
-                            $row['code'] === "UMIS-ES view-all" ||
-                            $row['code'] === "UMIS-ES approve" ||
+
+                            // $row['code'] === "UMIS-ES view" ||
+                            // $row['code'] === "UMIS-ES view-all" ||
+                            // $row['code'] === "UMIS-ES approve" ||
 
                             /* Schedule management */
                             $row['code'] === "UMIS-ScM write" ||
@@ -440,7 +440,7 @@ class SystemRoleSeeder extends Seeder
                             $row['code'] === "UMIS-ScM update" ||
                             $row['code'] === "UMIS-ScM delete" ||
                             $row['code'] === "UMIS-ScM approve" ||
-                            $row['code'] === "UMIS-ScM download"  ||
+                            $row['code'] === "UMIS-ScM download" ||
 
                             /* Employee management */
 
@@ -462,10 +462,10 @@ class SystemRoleSeeder extends Seeder
                 case 'UNIT-HEAD-01':
 
                     $unit_head6 = SystemRole::create([
-                        'role_id' =>  $roles->id,
+                        'role_id' => $roles->id,
                         'system_id' => $system->id
                     ]);
-                    $module_permitted =  $module_permissions->filter(function ($row) {
+                    $module_permitted = $module_permissions->filter(function ($row) {
                         return
                             /* DTR */
                             $row['code'] === "UMIS-DTRM view-all" ||
@@ -494,10 +494,10 @@ class SystemRoleSeeder extends Seeder
 
                             $row['code'] === "UMIS-CT view-all" ||
                             $row['code'] === "UMIS-CT approve" ||
-                            
-                            $row['code'] === "UMIS-ES view" ||
-                            $row['code'] === "UMIS-ES view-all" ||
-                            $row['code'] === "UMIS-ES approve" ||
+
+                            // $row['code'] === "UMIS-ES view" ||
+                            // $row['code'] === "UMIS-ES view-all" ||
+                            // $row['code'] === "UMIS-ES approve" ||
 
                             /* Time adjustment  */
 
@@ -526,10 +526,10 @@ class SystemRoleSeeder extends Seeder
 
                 case 'COMMON-REG':
                     $common_reg = SystemRole::create([
-                        'role_id' =>  $roles->id,
+                        'role_id' => $roles->id,
                         'system_id' => $system->id
                     ]);
-                    $module_permitted =  $module_permissions->filter(function ($row) {
+                    $module_permitted = $module_permissions->filter(function ($row) {
                         return
                             /* Personal Account Management */
                             $row['code'] === "UMIS-PAM view" ||
@@ -583,10 +583,10 @@ class SystemRoleSeeder extends Seeder
 
                 case 'COMMON-JO':
                     $common_jo = SystemRole::create([
-                        'role_id' =>  $roles->id,
+                        'role_id' => $roles->id,
                         'system_id' => $system->id
                     ]);
-                    $module_permitted =  $module_permissions->filter(function ($row) {
+                    $module_permitted = $module_permissions->filter(function ($row) {
                         return
                             /* Personal Account Management */
                             $row['code'] === "UMIS-PAM view" ||

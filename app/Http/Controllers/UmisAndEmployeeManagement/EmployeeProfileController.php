@@ -124,14 +124,24 @@ class EmployeeProfileController extends Controller
     public function profileUpdateRequest(Request $request)
     {
         try {
-            $trainings = Training::where('is_request', true)->whereNot('approved_at', NULL)->get();
+
+            $trainings = Training::where('is_request', 1)->where('approved_at', NULL)->get();
+            $trainings = $trainings->map(function ($training) {
+                return [...$training, 'type' => "Training"];
+            });
             
-            $eligibility = CivilServiceEligibility::where('is_request', true)->whereNot('approved_at', NULL)->get();
+            $eligibilities = CivilServiceEligibility::where('is_request', 1)->where('approved_at', NULL)->get();
+            $eligibilities = $eligibilities->map(function ($eligibility) {
+                return [...$eligibility, 'type' => "Eligibility"];
+            });
             
-            $educations = EducationalBackground::where('is_request', true)->whereNot('approved_at', NULL)->get();
+            $educations = EducationalBackground::where('is_request', 1)->where('approved_at', NULL)->get();
+            $educations = $educations->map(function ($education) {
+                return [...$education, 'type' => "Educational Background"];
+            });
 
             return response()->json([
-                'data' => EmployeeProfileUpdateResource::collection([...$trainings, ...$eligibility, ...$educations]),
+                'data' => EmployeeProfileUpdateResource::collection([...$trainings, ...$eligibilities, ...$educations]),
                 'message' => "Retrieve employees list for add record approval"
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
