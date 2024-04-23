@@ -228,79 +228,105 @@ class EmployeeProfile extends Authenticatable
         SpecialAccessRole::where('employee_profile_id', $this->id)->delete();
         AssignArea::where('employee_profile_id', $this->id)->delete();
 
+
+     
         $employee_leave_credits = $this->leaveCredit;
-        foreach($employee_leave_credits as $employee_leave_credit){
-            EmployeeLeaveCreditLogs::where('employee_leave_credit_id', $employee_leave_credit->id)->delete();
-            $employee_leave_credit->delete();
+
+        if ($employee_leave_credits != NULL) {
+            foreach($employee_leave_credits as $employee_leave_credit){
+                EmployeeLeaveCreditLogs::where('employee_leave_credit_id', $employee_leave_credit->id)->delete();
+                $employee_leave_credit->delete();
+            }
         }
+        
 
         $leave_applications = $this->leaveApplications;
-        foreach($leave_applications as $leave_application){
-            LeaveApplicationLog::where('leave_application_id', $leave_application->id)->delete();
-            LeaveApplicationRequirement::where('leave_application_id', $leave_application->id)->delete();
-            $leave_application->delete();
+
+        if ($leave_applications != NULL) {
+            foreach($leave_applications as $leave_application){
+                LeaveApplicationLog::where('leave_application_id', $leave_application->id)->delete();
+                LeaveApplicationRequirement::where('leave_application_id', $leave_application->id)->delete();
+                $leave_application->delete();
+            }
         }
 
         $official_business_applications = $this->officialBusinessApplications;
-        foreach($official_business_applications as $official_business_application){
-            OfficialBusinessLog::where('official_business_id', $official_business_application->id)->delete();
-            $official_business_application->delete();
+
+        if ($official_business_applications != NULL) {
+            foreach($official_business_applications as $official_business_application){
+                OfficialBusinessLog::where('official_business_id', $official_business_application->id)->delete();
+                $official_business_application->delete();
+            }
         }
 
         $offial_time_applications = $this->officialTimeApplications;
-        foreach($offial_time_applications as $offial_time_application){
-            OtApplicationLog::where('official_time_application_id', $offial_time_application->id)->delete();
-            $offial_time_application->delete();
+
+        if ($offial_time_applications != NULL) {
+            foreach($offial_time_applications as $offial_time_application){
+                OtApplicationLog::where('official_time_application_id', $offial_time_application->id)->delete();
+                $offial_time_application->delete();
+            }
         }
 
-        OvtApplicationEmployee::where('employee_profile_id', $this->id)->delete();
+
+
         $overtime_applications = $this->overtimeApplication;
-        foreach($overtime_applications as $overtime_application){
-            OvtApplicationLog::where('overtime_application_id', $overtime_application->id)->delete();
 
-            $overtime_application->delete();
+        if ($overtime_applications != NULL) {
+            OvtApplicationEmployee::where('employee_profile_id', $this->id)->delete();
+            foreach($overtime_applications as $overtime_application){
+                OvtApplicationLog::where('overtime_application_id', $overtime_application->id)->delete();
+
+                $overtime_application->delete();
+            }
         }
-        
+
+
         $employee_ot_credit = EmployeeOvertimeCredit::where('employee_profile_id', $this->id)->first();
         EmployeeOvertimeCreditLog::where('employee_ot_credit_id', $employee_ot_credit->id)->delete();
         $employee_ot_credit->delete();
 
         $cto_applications = CtoApplication::where('employee_profile_id', $this->id)->get();
-        foreach($cto_applications as $cto_application){
-            CtoApplicationLog::where('cto_application_id', $cto_application->id)->delete();
-            $cto_application->delete();
+
+        if ($cto_applications != NULL) {
+            foreach($cto_applications as $cto_application){
+                CtoApplicationLog::where('cto_application_id', $cto_application->id)->delete();
+                $cto_application->delete();
+            }
         }
 
         EmployeeSchedule::where('employee_profile_id', $this->id)->delete();
 
         $pull_outs = PullOut::where('employee_profile_id', $this->id)->get();
-        foreach($pull_outs as $pull_out){
-            PullOutLog::where('pull_out_id', $pull_out->id)->delete();
-            $pull_out->delete();
+        if ($pull_outs != NULL) {       
+            foreach($pull_outs as $pull_out){
+                PullOutLog::where('pull_out_id', $pull_out->id)->delete();
+                $pull_out->delete();
+            }
         }
 
         $on_calls = OnCall::where('employee_profile_id', $this->id)->get();
-        foreach($on_calls as $on_call){
-            OnCallLog::where('on_call_id', $on_call->id)->delete();
-            $on_call->delete();
+        if ($on_calls != NULL) {   
+            foreach($on_calls as $on_call){
+                OnCallLog::where('on_call_id', $on_call->id)->delete();
+                $on_call->delete();
+            }
         }
 
         $time_adjustments = TimeAdjusment::where('employee_profile_id', $this->id)->get();
-        foreach($time_adjustments as $time_adjustment){
-            TimeAdjustmentLog::where('employee_profile_id', $time_adjustment->id)->delete();
-            $time_adjustment->delete();
+        if ($time_adjustments != NULL) {   
+            foreach($time_adjustments as $time_adjustment){
+                TimeAdjustmentLog::where('employee_profile_id', $time_adjustment->id)->delete();
+                $time_adjustment->delete();
+            }
         }
 
-        $exchange_duties = ExchangeDuty::where('reliever_employee_id', $this->id)->get();
-        foreach($exchange_duties as $exchange_duty){
-            ExchangeDutyLog::where('exchange_duty_id', $exchange_duty->id)->delete();
-            $exchange_duty->delete();
-        }
-
-        $exchange_duties = ExchangeDuty::where('requested_employee_id', $this->id)->get();
-        foreach($exchange_duties as $exchange_duty){
-            ExchangeDutyLog::where('exchange_duty_id', $exchange_duty->id)->delete();
-            $exchange_duty->delete();
+        $exchange_duties_reliever = ExchangeDuty::where('reliever_employee_id', $this->id)->orWhere('requested_employee_id', $this->id)->get();
+        if ($exchange_duties_reliever != NULL) { 
+            foreach($exchange_duties_reliever as $exchange_duty){
+                ExchangeDutyLog::where('exchange_duty_id', $exchange_duty->id)->delete();
+                $exchange_duty->delete();
+            }
         }
     }
 
@@ -311,6 +337,16 @@ class EmployeeProfile extends Authenticatable
         $designation = $assign_area->plantilla_id === null ? $assign_area->designation : $assign_area->plantilla->designation;
 
         return $designation;
+    }
+
+    public function getBiometricLog($date){
+        $dtr = DailyTimeRecords::where('biometric_id',$this->biometric_id)->where('dtr_date',date('Y-m-d',strtotime($date)))->first();
+
+        if($dtr){
+            return $dtr;
+        }
+        return [];
+
     }
 
     public function issuanceInformation()

@@ -710,11 +710,11 @@ class LeaveApplicationController extends Controller
             $daysDiff = $start->diffInDays($end) + 1;
             $leave_type = LeaveType::find($request->leave_type_id);
 
-            // $checkSchedule = Helpers::hasSchedule($start, $end, $employeeId);
+            $checkSchedule = Helpers::hasSchedule($start, $end, $employeeId);
 
-            // if (!$checkSchedule) {
-            //     return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
-            // }
+            if (!$checkSchedule) {
+                return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
+            }
 
             if ($leave_type->code === 'SL' && $leave_type->file_after !== null) {
                 // Initialize the variable to store the final date of the consecutive schedule

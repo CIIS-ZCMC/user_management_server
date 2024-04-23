@@ -533,15 +533,16 @@ class OvertimeController extends Controller
                     'time_to' =>  $validatedData['time_to'][$index],
                     'date' =>  $date,
                 ]);
+                $date_id = $date_application->id;
+                foreach ($validatedData['employees'] as $index => $employees) {
+                        OvtApplicationEmployee::create([
+                            'ovt_application_datetime_id' => $date_id,
+                            'employee_profile_id' =>  $validatedData['employees'][$index],
+                            'remarks' =>  $validatedData['remarks'][$index],
+                        ]);
+                    }
             }
-            $date_id = $date_application->id;
-            foreach ($validatedData['employees'] as $index => $employees) {
-                OvtApplicationEmployee::create([
-                    'ovt_application_datetime_id' => $date_id,
-                    'employee_profile_id' =>  $validatedData['employees'][$index],
-                    'remarks' =>  $validatedData['remarks'][$index],
-                ]);
-            }
+
             OvtApplicationLog::create([
                 'overtime_application_id' => $ovt_id,
                 'action_by_id' => $employee_profile->id,

@@ -22,8 +22,9 @@ class EmployeeOvertimeCreditLog extends Model
 
     public $timestamps = true;
 
-    public function OvertimeCredit()
+    public function employeeOvertimeCredit()
     {
         return $this->belongsTo(EmployeeOvertimeCredit::class);
     }
+
 }

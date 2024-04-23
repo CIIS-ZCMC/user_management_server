@@ -264,13 +264,27 @@ class OfficialTimeController extends Controller
             if ($request->status === 'approved') {
                 switch ($data->status) {
                     case 'for recommending approval':
-                        $status = 'for approving approval';
-                        $log_action = 'Approved by Recommending Officer';
+                        if($employee_profile->id === $data->recommending_officer){
+                            $status = 'for approving approval';
+                            $log_action = 'Approved by Recommending Officer';
+                        }else{
+                            return response()->json([
+                                'message' => 'You have no access to approve this request.',
+                            ], Response::HTTP_FORBIDDEN);
+                        }
+                     
                     break;
 
                     case 'for approving approval':
-                        $status = 'approved';
-                        $log_action = 'Approved by Approving Officer';
+                        if($employee_profile->id === $data->recommending_officer){
+                            $status = 'approved';
+                            $log_action = 'Approved by Approving Officer';
+                        }else{
+                            return response()->json([
+                                'message' => 'You have no access to approve this request.',
+                            ], Response::HTTP_FORBIDDEN);
+                        }
+                      
                     break;
 
                     // default:
