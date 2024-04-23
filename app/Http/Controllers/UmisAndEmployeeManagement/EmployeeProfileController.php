@@ -126,21 +126,27 @@ class EmployeeProfileController extends Controller
         try {
             $trainings = Training::where('is_request', 1)->where('approved_at', NULL)->get();
             $trainings = $trainings->map(function ($training) {
-                return [...$training, 'type' => "Training"];
+                $new_training = $training;
+                $new_training['type'] = "Training";
+                return $new_training;
             });
             
             $eligibilities = CivilServiceEligibility::where('is_request', 1)->where('approved_at', NULL)->get();
             $eligibilities = $eligibilities->map(function ($eligibility) {
-                return [...$eligibility, 'type' => "Eligibility"];
+                $new_eligibility = $eligibility;
+                $new_eligibility["type"] = "Eligibility";
+                return $new_eligibility;
             });
             
             $educations = EducationalBackground::where('is_request', 1)->where('approved_at', NULL)->get();
             $educations = $educations->map(function ($education) {
-                return [...$education, 'type' => "Educational Background"];
+                $new_education = $education;
+                $new_education['type'] = "Educational Background";
+                return $new_education;
             });
 
             return response()->json([
-                'data' => EmployeeProfileUpdateResource::collection([...$trainings, ...$eligibilities, ...$educations]),
+                'data' => [...$trainings, ...$eligibilities, ...$educations],
                 'message' => "Retrieve employees list for add record approval"
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
