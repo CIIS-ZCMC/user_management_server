@@ -67,6 +67,7 @@ class DTRcontroller extends Controller
                 $employee = $rows->employees;
                 $dateofot = $rows->dateofovertime;
                 $dtrRecord = [];
+
                 //check DTR
                 //if exist . out all entries. overtime + overtime minutes, overall reg and other data
                $dtr = EmployeeProfile::find($employee->id)->getBiometricLog($dateofot);
