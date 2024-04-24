@@ -13,7 +13,7 @@ class TimeAdjustmentLog extends Model
     protected $primaryKey = 'id';
 
     public $fillable = [
-        'time_adjusment_id',
+        'time_adjustment_id',
         'action_by',
         'action',
     ];
