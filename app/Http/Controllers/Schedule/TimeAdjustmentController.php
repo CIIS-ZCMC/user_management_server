@@ -127,8 +127,6 @@ class TimeAdjustmentController extends Controller
 
             $data = TimeAdjustment::create($cleanData);
 
-            return response()->json(['data' => $data], Response::HTTP_OK);
-
             Helpers::registerSystemLogs($request, $data['id'], true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json([
                 'data' => new TimeAdjustmentResource($data),
