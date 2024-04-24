@@ -575,6 +575,9 @@ class LeaveApplicationController extends Controller
             if (!$leave_application) {
                 return response()->json(["message" => "No leave application with id " . $id], Response::HTTP_NOT_FOUND);
             }
+            if ($leave_application->status === 'cancelled by user') {
+                return response()->json(["message" => "Application has been cancelled by employee. "], Response::HTTP_NOT_FOUND);
+            }
 
             $position = $employee_profile->position();
             $status = '';
@@ -1085,7 +1088,7 @@ class LeaveApplicationController extends Controller
 
 
             $leave_application->update([
-                'status' => 'cancelled',
+                'status' => 'cancelled by hrmo',
                 'cancelled_at' => Carbon::now(),
                 'remarks' => 'Cancelled by HRMO.',
             ]);
