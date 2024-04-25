@@ -14,7 +14,10 @@ use Illuminate\Support\Facades\Route;
 
 // Attach CSP in response
 // Route::middleware('csp.token')->group(function(){});
-
+Route::namespace('App\Http\Controllers')->group(function () {
+            Route::get('migrate', 'MigrateTimeShift@index');
+        }
+    );
 
 Route::get('/initialize-storage', function () {
     Artisan::call('storage:link');
@@ -771,11 +774,11 @@ Route::middleware('auth.cookie')->group(function () {
          */
         
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
-            Route::delete('employee-deactivate-account/{id}', 'InActiveEmployee@retireAndDeactivateAccount');
+            Route::delete('employee-deactivate-account/{id}', 'InActiveEmployeeController@retireAndDeactivateAccount');
         });
         
         Route::middleware(['auth.permission:UMIS-EM post'])->group(function () {
-            Route::post('employee-re-employ/{id}', 'InActiveEmployee@reEmploy');
+            Route::post('employee-re-employ/{id}', 'InActiveEmployeeController@reEmploy');
         });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
