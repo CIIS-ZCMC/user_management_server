@@ -299,10 +299,20 @@ class OfficialTimeController extends Controller
 
                 if($employee_profile->id === $ot_application_recommending)
                 {
+                    if($data->status === 'declined by recommending officer'){
+                        return response()->json([
+                            'message' => 'You already declined this request.',
+                        ], Response::HTTP_FORBIDDEN); 
+                    }
                     $status='declined by recommending officer';
                 }
                 else if($employee_profile->id === $ot_application_approving)
                 {
+                    if($data->status === 'declined by approving officer'){
+                        return response()->json([
+                            'message' => 'You already declined this request.',
+                        ], Response::HTTP_FORBIDDEN); 
+                    }
                     $status='declined by approving officer';
                 }
                 $log_action = 'Request Declined';
