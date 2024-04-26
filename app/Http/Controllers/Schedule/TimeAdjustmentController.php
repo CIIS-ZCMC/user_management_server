@@ -120,6 +120,10 @@ class TimeAdjustmentController extends Controller
                     break;
             }
 
+            if ($approving_officer === null) {
+                return response()->json(['message' => 'No approving officer assigned.'], Response::HTTP_FORBIDDEN);
+            }
+
             $cleanData['daily_time_record_id'] = $dtr->id;
             $cleanData['employee_profile_id'] = $employee->id;
             $cleanData['recommending_officer'] = $recommending_officer;
@@ -155,7 +159,7 @@ class TimeAdjustmentController extends Controller
     public function update($id, Request $request)
     {
         try {
-            $data = TimeAdjustment::findOrFail($id);
+            $data = TimeAdjustment::find($id);
 
             if (!$data) {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
@@ -168,47 +172,35 @@ class TimeAdjustmentController extends Controller
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
-            $status = null;
-            if ($request->status === 'approved') {
-                switch ($data->status) {
-                    case 'applied':
-                        $dtr = DailyTimeRecords::where('dtr_date', Carbon::parse($data->date))->first();
+            $status = $request->status === 'approved' ? 'approved' : 'declined';
+            $dtr = null;
 
-                        if ($dtr === null) {
-                            $employees = EmployeeProfile::find($data->employee_profile_id);
+            if ($request->status === 'approved' && $data->status === 'applied') {
+                $dtr = DailyTimeRecords::where('dtr_date', Carbon::parse($data->date))->first();
 
-                            $dtr = DailyTimeRecords::create([
-                                'biometric_id' => $employees->biometric_id,
-                                'dtr_date' => $data->date,
-                                'first_in' => $data->first_in,
-                                'first_out' => $data->first_out,
-                                'second_in' => $data->second_in,
-                                'second_out' => $data->second_out,
-                            ]);
+                if ($dtr === null) {
+                    $employees = EmployeeProfile::find($data->employee_profile_id);
 
-                        } else {
-
-                            $dtr->first_in = $data->first_in ?? $dtr->first_in;
-                            $dtr->first_out = $data->first_out ?? $dtr->first_out;
-                            $dtr->second_in = $data->second_in ?? $dtr->second_in;
-                            $dtr->second_out = $data->second_out ?? $dtr->second_in;
-                            $dtr->update();
-                        }
-
-                        $status = 'approved';
-                        break;
-
-                    case 'declined':
-                        $status = 'declined';
-                        break;
+                    $dtr = DailyTimeRecords::create([
+                        'biometric_id' => $employees->biometric_id,
+                        'dtr_date' => $data->date,
+                        'first_in' => $data->first_in,
+                        'first_out' => $data->first_out,
+                        'second_in' => $data->second_in,
+                        'second_out' => $data->second_out,
+                    ]);
+                } else {
+                    $dtr->update([
+                        'first_in' => $data->first_in ?? $dtr->first_in,
+                        'first_out' => $data->first_out ?? $dtr->first_out,
+                        'second_in' => $data->second_in ?? $dtr->second_in,
+                        'second_out' => $data->second_out ?? $dtr->second_out,
+                    ]);
                 }
-
-            } else if ($request->status === 'declined') {
-                $status = 'declined';
             }
 
             $data->update([
-                'daily_time_record_id' => $data->daily_time_record_id ?? $dtr->id,
+                'daily_time_record_id' => $dtr ? $dtr->id : ($data->daily_time_record_id ?? null),
                 'approval_date' => Carbon::now(),
                 'remarks' => $request->remarks,
                 'status' => $status,
@@ -216,9 +208,9 @@ class TimeAdjustmentController extends Controller
 
             Helpers::registerSystemLogs($request, $data->id, true, 'Success in updating.' . $this->SINGULAR_MODULE_NAME . '.');
             return response()->json([
-                'data' => TimeAdjustmentResource::collection(TimeAdjustment::where('id', $data->id)->get()),
+                'data' => new TimeAdjustmentResource($data),
                 'logs' => Helpers::registerTimeAdjustmentLogs($data->id, $user->id, $status),
-                'msg' => 'Request ' . $status
+                'message' => 'Request ' . $status
             ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
