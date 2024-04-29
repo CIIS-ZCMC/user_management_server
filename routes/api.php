@@ -2232,5 +2232,9 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('get-monthly-work-hours', 'MonthlyWorkHoursController@getMonthlyWorkHours');
         });
 
+        Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function () {
+            Route::get('get-my-total-work-hours', 'MonthlyWorkHoursController@getMyTotalWorkHours');
+        });
+
     });
 });
