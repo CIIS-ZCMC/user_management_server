@@ -74,6 +74,7 @@ class OvertimeController extends Controller
                 })
                 ->groupBy(
                     'id',
+                    'employee_profile_id',
                     'status',
                     'purpose',
                     'recommending_officer',

@@ -160,24 +160,25 @@ class Helpers
                 ];
 
             case 'Department':
-                // If employee is Department head
-                if (Department::find($assigned_area['details']->id)->head_employee_profile_id === $employee_profile_id) {
-                    $division = Department::find($assigned_area['details']->id)->division_id;
+                    // If employee is Department head
+                    $department = Department::find($assigned_area['details']->id);
+                    if ($department->head_employee_profile_id === $employee_profile_id) {
+                        $division = $department->division_id;
+                        $divisionHead = Division::find($division)->chief_employee_profile_id;
 
-                    $division_head = Division::find($division)->chief_employee_profile_id;
+                        return [
+                            "recommending_officer" => $divisionHead,
+                            "approving_officer" => Helpers::getChiefOfficer()
+                        ];
+                    }
+
+                    $departmentHead = $department->head_employee_profile_id;
+                    $omccDivision = Division::where('code', 'OMCC')->first();
 
                     return [
-                        "recommending_officer" => $division_head,
-                        "approving_officer" => Helpers::getChiefOfficer()
+                        "recommending_officer" => $departmentHead,
+                        "approving_officer" => $omccDivision ? $omccDivision->chief_employee_profile_id : null
                     ];
-                }
-
-                $department_head = Department::find($assigned_area['details']->id)->head_employee_profile_id;
-
-                return [
-                    "recommending_officer" => $department_head,
-                    "approving_officer" => Division::where('code', 'OMCC')->chief_employee_profile_id
-                ];
             case 'Section':
                 // If employee is Section head
 
@@ -581,7 +582,7 @@ class Helpers
     public static function registerTimeAdjustmentLogs($data_id, $user_id, $action)
     {
         TimeAdjustmentLog::create([
-            'time_adjusment_id' => $data_id,
+            'time_adjustment_id' => $data_id,
             'action_by' => $user_id,
             'action' => $action,
         ]);
@@ -961,6 +962,9 @@ class Helpers
             ->whereDate('dtr_date', $date)
             ->first();
 
+        // Initialize first in and first out biometric times
+        $firstInBiometric = null;
+        $firstOutBiometric = null;
         // Initialize first in and first out biometric times
         $firstInBiometric = null;
         $firstOutBiometric = null;

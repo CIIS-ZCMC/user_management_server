@@ -2165,23 +2165,23 @@ Route::middleware('auth.cookie')->group(function () {
          * Time Adjustment Module
          */
         Route::middleware(['auth.permission:UMIS-TA view-all'])->group(function () {
-            Route::get('time-adjustment', 'TimeAdjusmentController@index');
+            Route::get('time-adjustments', 'TimeAdjustmentController@index');
         });
 
         Route::middleware(['auth.permission:UMIS-TA view'])->group(function () {
-            Route::get('user-time-adjustment', 'TimeAdjusmentController@create');
+            Route::get('time-adjustment', 'TimeAdjustmentController@create');
         });
 
-        Route::middleware(['auth.permission:UMIS-TA write'])->group(function () {
-            Route::post('time-adjustment', 'TimeAdjusmentController@store');
+        Route::middleware(['auth.permission:UMIS-TA request'])->group(function () {
+            Route::post('time-adjustment', 'TimeAdjustmentController@store');
         });
 
         Route::middleware(['auth.permission:UMIS-TA approve'])->group(function () {
-            Route::put('time-adjustment/{id}', 'TimeAdjusmentController@update');
+            Route::put('time-adjustment/{id}', 'TimeAdjustmentController@update');
         });
 
         Route::middleware(['auth.permission:UMIS-TA delete'])->group(function () {
-            Route::delete('time-adjustment/{id}', 'TimeAdjusmentController@destroy');
+            Route::delete('time-adjustment/{id}', 'TimeAdjustmentController@destroy');
         });
 
         /**

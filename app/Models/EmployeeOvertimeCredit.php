@@ -27,4 +27,10 @@ class EmployeeOvertimeCredit extends Model
     {
         return $this->belongsTo(EmployeeProfile::class, 'employee_profile_id');
     }
+
+    
+    public function logs()
+    {
+        return $this->hasMany(EmployeeOvertimeCreditLog::class, 'employee_ot_credit_id');
+    }
 }
