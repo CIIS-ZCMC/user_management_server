@@ -47,22 +47,22 @@ class TimeAdjustmentResource extends JsonResource
 
         return [
             'id' => $this->id,
-            'daily_time_record' => $this->dailyTimeRecord ? new DailyTimeRecordResource($this->dailyTimeRecord) : null,
-            'employee_profile' => $employee,
-            // 'recommending_officer' => $recommending_officer,
-            'approving_officer' => $approving_officer,
-            'approval_date' => $this->approval_date,
             'dtr_date' => $this->date,
             'first_in' => $this->first_in,
             'first_out' => $this->first_out,
             'second_in' => $this->second_in,
             'second_out' => $this->second_out,
             'remarks' => $this->remarks,
+            'attachement' => $this->attachement,
             'status' => $this->status,
+            'approval_date' => $this->approval_date,
+            'daily_time_record' => $this->dailyTimeRecord ? new DailyTimeRecordResource($this->dailyTimeRecord) : null,
+            'employee_profile' => $this->employee ? $employee : [],
+            // 'recommending_officer' => $this->recommendingOfficer ? $recommending_officer : [],
+            'approving_officer' => $this->approvingOfficer ? $approving_officer : [],
             'deleted_at' => (string) $this->deleted_at,
             'created_at' => (string) $this->created_at,
             'updated_at' => (string) $this->updated_at,
-
         ];
     }
 }
