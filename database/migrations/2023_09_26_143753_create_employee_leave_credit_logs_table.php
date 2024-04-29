@@ -18,6 +18,9 @@ return new class extends Migration
             $table->float('previous_credit');
             $table->float('leave_credits')->nullable();
             $table->text('reason')->nullable();
+            $table->text('action')->nullable();
+            $table->unsignedBigInteger('action_by')->unsigned();
+            $table->foreign('action_by')->references('id')->on('employee_profiles')->onDelete('cascade')->nullable();
             $table->timestamps();
         });
     }

@@ -64,7 +64,9 @@ class EmployeeMonthlyEarnCredit extends Command
             EmployeeLeaveCreditLogs::create([
                 'employee_leave_credit_id' => $sick_leave_credit->id,
                 'previous_credit' => $sick_leave_current_credit,
-                'leave_credits' =>  $sick_monthly_value
+                'leave_credits' =>  $sick_monthly_value,
+                'reason' => "Monthly Sick Leave Credits",
+                'action' => "add"
             ]);
 
             /**
@@ -87,7 +89,9 @@ class EmployeeMonthlyEarnCredit extends Command
             EmployeeLeaveCreditLogs::create([
                 'employee_leave_credit_id' => $vacation_leave_credit->id,
                 'previous_credit' => $vacation_leave_current_credit,
-                'leave_credits' => $vl_monthly_value
+                'leave_credits' => $vl_monthly_value,
+                'reason' => "Monthly Vacation Leave Credits",
+                'action' => "add"
             ]);
 
             /**
@@ -112,7 +116,9 @@ class EmployeeMonthlyEarnCredit extends Command
                 EmployeeLeaveCreditLogs::create([
                     'employee_leave_credit_id' => $force_leave_credit->id,
                     'previous_credit' => $force_leave_current_credit,
-                    'leave_credits' => $fl_annual_value
+                    'leave_credits' => $fl_annual_value,
+                    'reason' => "Monthly Forced Leave Credits",
+                    'action' => "add"
                 ]);
             }
         }

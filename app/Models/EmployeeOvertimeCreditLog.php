@@ -18,6 +18,7 @@ class EmployeeOvertimeCreditLog extends Model
         'action',
         'previous_overtime_hours',
         'hours',
+        'reason',
     ];
 
     public $timestamps = true;

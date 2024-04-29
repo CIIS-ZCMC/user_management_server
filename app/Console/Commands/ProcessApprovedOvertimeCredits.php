@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Helpers\Helpers;
 use App\Models\EmployeeOvertimeCredit;
+use App\Models\EmployeeOvertimeCreditLog;
 use App\Models\EmployeeProfile;
 use App\Models\Holiday;
 use App\Models\OvertimeApplication;
@@ -103,6 +104,12 @@ class ProcessApprovedOvertimeCredits extends Command
                                             // Update the existing record
                                             $existingCredit->earned_credit_by_hour += $totalOverlapHours;
                                             $existingCredit->save();
+
+                                            EmployeeOvertimeCreditLog::create([
+                                                'action' => 'add',
+                                                'reason' => 'overtime',
+                                                'hours' => (float) $totalOverlapHours
+                                            ]);
                                         } else {
                                             // Create a new record
 
@@ -113,6 +120,13 @@ class ProcessApprovedOvertimeCredits extends Command
                                                 'max_credit_monthly' => '40',
                                                 'max_credit_annual' => '120',
                                                 'valid_until' => $validUntil,
+                                            ]);
+
+
+                                            EmployeeOvertimeCreditLog::create([
+                                                'action' => 'add',
+                                                'reason' => 'overtime',
+                                                'hours' => (float) $totalOverlapHours
                                             ]);
                                         }
                                     }
@@ -209,7 +223,7 @@ class ProcessApprovedOvertimeCredits extends Command
                     }
                 }
             }
-            
+
         }
     }
 
