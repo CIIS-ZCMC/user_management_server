@@ -731,6 +731,7 @@ class LeaveApplicationController extends Controller
     public function store(LeaveApplicationRequest $request)
     {
         try {
+
             $employee_profile = $request->user;
             $employeeId = $employee_profile->id;
             $cleanData['pin'] = strip_tags($request->pin);
@@ -765,7 +766,7 @@ class LeaveApplicationController extends Controller
             $daysDiff = $start->diffInDays($end) + 1;
             $leave_type = LeaveType::find($request->leave_type_id);
 
-            $checkSchedule = Helpers::hasSchedule($start, $end, $employeeId);
+            $checkSchedule = Helpers::hasSchedule($start, $end, $hrmo_officer);
 
             if (!$checkSchedule) {
                 return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
