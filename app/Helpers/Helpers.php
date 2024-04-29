@@ -584,7 +584,7 @@ class Helpers
     public static function registerTimeAdjustmentLogs($data_id, $user_id, $action)
     {
         TimeAdjustmentLog::create([
-            'time_adjusment_id' => $data_id,
+            'time_adjustment_id' => $data_id,
             'action_by' => $user_id,
             'action' => $action,
         ]);
@@ -964,9 +964,9 @@ class Helpers
             ->whereDate('date', $date)
             ->first();
 
-            // Initialize first in and first out biometric times
-            $firstInBiometric = null;
-            $firstOutBiometric = null;
+        // Initialize first in and first out biometric times
+        $firstInBiometric = null;
+        $firstOutBiometric = null;
 
 
         if ($dailyTimeRecord) {

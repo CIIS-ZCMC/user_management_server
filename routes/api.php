@@ -769,11 +769,11 @@ Route::middleware('auth.cookie')->group(function () {
         /**
          * Employee Profile Module
          */
-        
+
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
             Route::delete('employee-deactivate-account/{id}', 'InActiveEmployee@retireAndDeactivateAccount');
         });
-        
+
         Route::middleware(['auth.permission:UMIS-EM post'])->group(function () {
             Route::post('employee-re-employ/{id}', 'InActiveEmployee@reEmploy');
         });
@@ -1614,7 +1614,7 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('dtr-fetchuser', 'DTRcontroller@fetchUserDTR');
             Route::get('dtr-reports', 'DTRcontroller@dtrUTOTReport');
             Route::get('dtr-generate', 'DTRcontroller@generateDTR');
-            Route::get('dtr-getusers-biologs','DTRcontroller@getBiometricLog');
+            Route::get('dtr-getusers-biologs', 'DTRcontroller@getBiometricLog');
         });
 
 
@@ -2169,23 +2169,23 @@ Route::middleware('auth.cookie')->group(function () {
          * Time Adjustment Module
          */
         Route::middleware(['auth.permission:UMIS-TA view-all'])->group(function () {
-            Route::get('time-adjustment', 'TimeAdjusmentController@index');
+            Route::get('time-adjustments', 'TimeAdjustmentController@index');
         });
 
         Route::middleware(['auth.permission:UMIS-TA view'])->group(function () {
-            Route::get('user-time-adjustment', 'TimeAdjusmentController@create');
+            Route::get('time-adjustment', 'TimeAdjustmentController@create');
         });
 
-        Route::middleware(['auth.permission:UMIS-TA write'])->group(function () {
-            Route::post('time-adjustment', 'TimeAdjusmentController@store');
+        Route::middleware(['auth.permission:UMIS-TA request'])->group(function () {
+            Route::post('time-adjustment', 'TimeAdjustmentController@store');
         });
 
         Route::middleware(['auth.permission:UMIS-TA approve'])->group(function () {
-            Route::put('time-adjustment/{id}', 'TimeAdjusmentController@update');
+            Route::put('time-adjustment/{id}', 'TimeAdjustmentController@update');
         });
 
         Route::middleware(['auth.permission:UMIS-TA delete'])->group(function () {
-            Route::delete('time-adjustment/{id}', 'TimeAdjusmentController@destroy');
+            Route::delete('time-adjustment/{id}', 'TimeAdjustmentController@destroy');
         });
 
         /**
