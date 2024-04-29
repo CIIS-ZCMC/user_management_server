@@ -77,10 +77,15 @@ class EducationalBackgroundController extends Controller
                     $cleanData[$key] = $value;
                     continue;
                 }
+
                 if($key === 'attachment'){
                     $attachment = Helpers::checkSaveFile($request->attachment, '/education');
-                    $cleanData['attachment'] = $attachment;
+                     if (is_string($attachment)) {
+                        $cleanData['attachment'] = $request->attachment === null || $request->attachment === 'null' ? null : $attachment;
+                    }
+                   
                 }
+
                 $cleanData[$key] = strip_tags($value);
             }
 

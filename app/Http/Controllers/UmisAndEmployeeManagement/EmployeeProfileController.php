@@ -20,6 +20,7 @@ use App\Http\Requests\TrainingManyRequest;
 use App\Http\Requests\VoluntaryWorkRequest;
 use App\Http\Requests\WorkExperienceRequest;
 use App\Http\Resources\EmployeeProfileUpdateResource;
+use App\Http\Resources\ProfileUpdateRequestResource;
 use App\Models\CivilServiceEligibility;
 use App\Models\EducationalBackground;
 use App\Models\EmploymentType;
@@ -147,7 +148,8 @@ class EmployeeProfileController extends Controller
             });
 
             return response()->json([
-                'data' => [...$trainings, ...$eligibilities, ...$educations],
+                'data' => EmployeeProfileUpdateResource::collection([...$trainings, ...$eligibilities, ...$educations]),
+                // 'data' => [...$trainings, ...$eligibilities, ...$educations],
                 'message' => "Retrieve employees list for add record approval"
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {

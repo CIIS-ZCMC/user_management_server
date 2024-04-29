@@ -23,7 +23,8 @@ class EducationalBackgroundResource extends JsonResource
             'highest_grade' => $this->highest_grade,
             'inclusive_from' => $this->inclusive_from,
             'inclusive_to' => $this->inclusive_to,
-            'academic_honors' => $this->academic_honors
+            'academic_honors' => $this->academic_honors,
+            'attachment' =>   config('app.server_domain')."/education/".$this->attachment
         ];
     }
 }
