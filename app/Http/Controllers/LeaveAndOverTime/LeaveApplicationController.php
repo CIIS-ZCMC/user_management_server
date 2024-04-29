@@ -29,10 +29,12 @@ use App\Http\Resources\LeaveApplicationResource;
 use App\Models\EmployeeLeaveCredit;
 use App\Models\EmployeeLeaveCreditLogs;
 use App\Models\EmployeeProfile;
+use App\Models\Holiday;
 use App\Models\LeaveApplicationLog;
 use App\Models\LeaveApplicationRequirement;
 use App\Models\OfficialBusiness;
 use App\Models\OfficialTime;
+use App\Models\OvertimeApplication;
 use App\Models\Schedule;
 use Illuminate\Support\Str;
 
@@ -43,12 +45,10 @@ class LeaveApplicationController extends Controller
         try {
 
             $employee_profile = $request->user;
-
             /**
              * HR division
              * Only newly applied leave application
              */
-
             if (Helpers::getHrmoOfficer() === $employee_profile->id) {
                 $employeeId = $employee_profile->id;
                 $hrmo = ["applied", "for recommending approval", "approved", "declined by hrmo officer", 'cancelled', 'received'];
@@ -356,7 +356,7 @@ class LeaveApplicationController extends Controller
     public function employeeCreditLog($id)
     {
         try {
-            $employee_credit_logs = EmployeeLeaveCredit::where('employee_profile_id',$id)->get();
+            $employee_credit_logs = EmployeeLeaveCredit::where('employee_profile_id', $id)->get();
 
             return response()->json([
                 'data' => ResourcesEmployeeLeaveCredit::collection($employee_credit_logs),
@@ -498,6 +498,8 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+
 
     public function addCredit(AuthPinApprovalRequest $request)
     {
@@ -742,12 +744,7 @@ class LeaveApplicationController extends Controller
                 if ($finalDate && $currentDate->gt($finalDate)) {
                     return response()->json(['message' => "You missed the filing deadline."], Response::HTTP_FORBIDDEN);
                 }
-              
-              
             }
-
-
-
             $overlapExists = Helpers::hasOverlappingRecords($start, $end, $employeeId);
 
             if ($overlapExists) {
@@ -855,6 +852,7 @@ class LeaveApplicationController extends Controller
                                 $cleanData['recommending_officer'] = Helpers::getDivHead($employee_profile->assignedArea->findDetails());
                                 $cleanData['approving_officer'] = Helpers::getChiefOfficer();
                             }
+                            //20 days leave
 
                             $cleanData['recommending_officer'] = $recommending_and_approving['recommending_officer'];
                             $cleanData['approving_officer'] = $recommending_and_approving['approving_officer'];
@@ -1072,7 +1070,7 @@ class LeaveApplicationController extends Controller
     {
         try {
             $user = $request->user;
-            $employee_profile= $user;
+            $employee_profile = $user;
             $cancelled_by = 'HRMO';
             $cleanData['pin'] = strip_tags($request->pin);
 
@@ -1155,6 +1153,7 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+    
     public function updatePrint($id)
     {
         try {
