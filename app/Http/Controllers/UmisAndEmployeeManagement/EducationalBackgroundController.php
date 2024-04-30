@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Requests\EducationalBackgroundManyRequest;
 use App\Http\Requests\PasswordApprovalRequest;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
@@ -73,8 +74,8 @@ class EducationalBackgroundController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if ($value === null) {
-                    $cleanData[$key] = $value;
+                if ( $value == "null" || $value == null) {
+                    $cleanData[$key] = null;
                     continue;
                 }
 
@@ -95,8 +96,21 @@ class EducationalBackgroundController extends Controller
 
             Helpers::registerSystemLogs($request, $educational_background['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
            
+            $response_data =  [
+                "id"=> $personal_information->id,
+                "name" => $personal_information->name(),
+                "assigned_area" => $personal_information->employeeProfile->assignedArea->findDetails()['details']->name,
+                'designation' => $personal_information->employeeProfile->assignedArea->designation->name,
+                "employee_id" => $personal_information->employeeProfile->employee_id,
+                "profile_url" => config('app.server_domain')."/profiles/".$personal_information->employeeProfile->profile_url,
+                "type" =>"Educational Background",
+                "date_requested" => Carbon::now(),
+                "approved_at" => null,
+                "details" => new EducationalBackgroundResource($educational_background)
+            ];
+
             return response()->json([
-                'data' => new EducationalBackgroundResource($educational_background),
+                'data' =>  $response_data,
                 'message' => 'New employee education background registered.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
