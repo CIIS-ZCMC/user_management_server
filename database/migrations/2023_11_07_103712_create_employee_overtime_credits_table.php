@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('employee_profile_id')->unsigned();
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles');
-            $table->integer('earned_credit_by_hour');
-            $table->integer('used_credit_by_hour');
+            $table->decimal('earned_credit_by_hour', 8, 2); // Adjust precision and scale as needed
+            $table->decimal('used_credit_by_hour', 8, 2)->default(0); // Example of another decimal column
             $table->integer('max_credit_monthly');
             $table->integer('max_credit_annual');
             $table->DateTime('valid_until');

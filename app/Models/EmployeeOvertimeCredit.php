@@ -18,6 +18,10 @@ class EmployeeOvertimeCredit extends Model
         'max_credit_annual',
         'valid_until',
     ];
+    protected $casts = [
+        'earned_credit_by_hour' => 'float', // Cast the attribute to a float
+
+    ];
 
     public function employeeProfile()
     {

@@ -29,10 +29,12 @@ use App\Http\Resources\LeaveApplicationResource;
 use App\Models\EmployeeLeaveCredit;
 use App\Models\EmployeeLeaveCreditLogs;
 use App\Models\EmployeeProfile;
+use App\Models\Holiday;
 use App\Models\LeaveApplicationLog;
 use App\Models\LeaveApplicationRequirement;
 use App\Models\OfficialBusiness;
 use App\Models\OfficialTime;
+use App\Models\OvertimeApplication;
 use App\Models\Schedule;
 use Illuminate\Support\Str;
 
@@ -43,12 +45,10 @@ class LeaveApplicationController extends Controller
         try {
 
             $employee_profile = $request->user;
-
             /**
              * HR division
              * Only newly applied leave application
              */
-
             if (Helpers::getHrmoOfficer() === $employee_profile->id) {
                 $employeeId = $employee_profile->id;
                 $hrmo = ["applied", "for recommending approval", "approved", "declined by hrmo officer", 'cancelled', 'received'];
@@ -356,12 +356,61 @@ class LeaveApplicationController extends Controller
     public function employeeCreditLog($id)
     {
         try {
-            $employee_credit_logs = EmployeeLeaveCredit::where('employee_profile_id',$id)->get();
+            $employeeCredits = EmployeeLeaveCredit::with(['logs', 'employeeProfile', 'leaveType'])->where('employee_profile_id', $id)->get();
+            $allLogs = [];
+            $employeeName = null;
+            $employeePosition = null;
+            $totalCreditsEarnedThisMonth = [];
+            $totalCreditsEarnedThisYear = 0;
+            foreach ($employeeCredits as $employeeCredit) {
 
-            return response()->json([
-                'data' => ResourcesEmployeeLeaveCredit::collection($employee_credit_logs),
-                'message' => 'Retrieve list.'
-            ], Response::HTTP_OK);
+                if (!$employeeName) {
+                    $employeeName = $employeeCredit->employeeProfile->name();
+                    $employeePosition = $employeeCredit->employeeProfile->employmentType->name;
+                    $employee_assign_area = $employeeCredit->employeeProfile->assignedArea->findDetails();
+                }
+                $employeeDetails = [
+                    'employee_name' => $employeeCredit->employeeProfile->name(),
+                    'employee_position' => $employeeCredit->employeeProfile->employmentType->name,
+                    'employee_assign_area' => $employeeCredit->employeeProfile->assignedArea->findDetails(),
+                ];
+                $logs = $employeeCredit->logs;
+
+                foreach ($logs as $log) {
+
+                    if ($log->action === 'add') {
+
+                        if (Carbon::parse($log->created_at)->format('Y-m') === Carbon::now()->format('Y-m')) {
+                            $leaveType = $employeeCredit->leaveType->name;
+                            $totalCreditsEarnedThisMonth[$leaveType] = isset($totalCreditsEarnedThisMonth[$leaveType]) ? $totalCreditsEarnedThisMonth[$leaveType] + $log->leave_credits : $log->leave_credits;
+                        }
+
+                        if (Carbon::parse($log->created_at)->format('Y') === Carbon::now()->format('Y')) {
+                            $totalCreditsEarnedThisYear += $log->leave_credits;
+                        }
+                    }
+                    $allLogs[] = [
+                        'leave_type' => $employeeCredit->leaveType->name,
+                        'reason' => $log->reason,
+                        'action' => $log->action,
+                        'previous_credit' => $log->previous_credit,
+                        'leave_credit' => $log->leave_credits,
+                        'remaining' =>  $log->previous_credit - $log->leave_credits ,
+                        'created_at' =>  $log->created_at ,
+                    ];
+                }
+            }
+
+            $response = [
+                'employee_name' => $employeeName,
+                'employee_position' => $employeePosition,
+                'employee_area' => $employee_assign_area,
+                'total_credits_earned_this_month' => $totalCreditsEarnedThisMonth,
+                'total_credits_earned_this_year' => $totalCreditsEarnedThisYear,
+                'logs' => $allLogs,
+            ];
+            // $response =array_merge($employeeDetails,$allLogs);
+            return ['data' => $response];
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -463,8 +512,9 @@ class LeaveApplicationController extends Controller
             EmployeeLeaveCreditLogs::create([
                 'employee_leave_credit_id' => $leaveCredit->id,
                 'previous_credit' => $leaveCredit->total_leave_credits,
-                'leave_credits' => '0',
-                'reason' => 'update credit'
+                'leave_credits' => $credit['credit_value'],
+                'reason' => "Update Credits",
+                'action' => "add"
             ]);
 
             $updatedLeaveCredits = EmployeeLeaveCredit::with(['employeeProfile.personalInformation', 'leaveType'])
@@ -498,6 +548,8 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+
 
     public function addCredit(AuthPinApprovalRequest $request)
     {
@@ -679,6 +731,7 @@ class LeaveApplicationController extends Controller
     public function store(LeaveApplicationRequest $request)
     {
         try {
+
             $employee_profile = $request->user;
             $employeeId = $employee_profile->id;
             $cleanData['pin'] = strip_tags($request->pin);
@@ -713,7 +766,7 @@ class LeaveApplicationController extends Controller
             $daysDiff = $start->diffInDays($end) + 1;
             $leave_type = LeaveType::find($request->leave_type_id);
 
-            $checkSchedule = Helpers::hasSchedule($start, $end, $employeeId);
+            $checkSchedule = Helpers::hasSchedule($start, $end, $hrmo_officer);
 
             if (!$checkSchedule) {
                 return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
@@ -745,12 +798,7 @@ class LeaveApplicationController extends Controller
                 if ($finalDate && $currentDate->gt($finalDate)) {
                     return response()->json(['message' => "You missed the filing deadline."], Response::HTTP_FORBIDDEN);
                 }
-              
-              
             }
-
-
-
             $overlapExists = Helpers::hasOverlappingRecords($start, $end, $employeeId);
 
             if ($overlapExists) {
@@ -858,6 +906,7 @@ class LeaveApplicationController extends Controller
                                 $cleanData['recommending_officer'] = Helpers::getDivHead($employee_profile->assignedArea->findDetails());
                                 $cleanData['approving_officer'] = Helpers::getChiefOfficer();
                             }
+                            //20 days leave
 
                             $cleanData['recommending_officer'] = $recommending_and_approving['recommending_officer'];
                             $cleanData['approving_officer'] = $recommending_and_approving['approving_officer'];
@@ -914,7 +963,8 @@ class LeaveApplicationController extends Controller
                                     'employee_leave_credit_id' => $employee_credit->id,
                                     'previous_credit' => $previous_credit_vl,
                                     'leave_credits' => $daysDiff,
-                                    'reason' => 'apply'
+                                    'reason' => 'apply',
+                                    'action' => 'deduct'
                                 ]);
                             }
 
@@ -922,7 +972,8 @@ class LeaveApplicationController extends Controller
                                 'employee_leave_credit_id' => $employee_credit->id,
                                 'previous_credit' => $previous_credit,
                                 'leave_credits' => $daysDiff,
-                                'reason' => 'apply'
+                                'reason' => 'apply',
+                                'action' => 'deduct'
                             ]);
                         }
 
@@ -1052,7 +1103,8 @@ class LeaveApplicationController extends Controller
                     'employee_leave_credit_id' => $employee_credit->id,
                     'previous_credit' => $current_leave_credit,
                     'leave_credits' => $leave_application->applied_credits,
-                    'reason' => "declined"
+                    'reason' => "declined",
+                    'action' => 'add'
                 ]);
             }
 
@@ -1075,7 +1127,7 @@ class LeaveApplicationController extends Controller
     {
         try {
             $user = $request->user;
-            $employee_profile= $user;
+            $employee_profile = $user;
             $cancelled_by = 'HRMO';
             $cleanData['pin'] = strip_tags($request->pin);
 
@@ -1158,6 +1210,7 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
     public function updatePrint($id)
     {
         try {

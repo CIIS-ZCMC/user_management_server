@@ -324,7 +324,8 @@ class CtoApplicationController extends Controller
                     $logs =  EmployeeOvertimeCreditLog::create([
                         'employee_ot_credit_id' => $employee_credit->id,
                         'cto_application_id' => $cto_application->id,
-                        'action' => 'Applied',
+                        'action' => 'deduct',
+                        'reason' => 'Apply',
                         'previous_overtime_hours' => $current_overtime_credit,
                         'hours' => $value->applied_credits
                     ]);
@@ -412,7 +413,8 @@ class CtoApplicationController extends Controller
             EmployeeOvertimeCreditLog::create([
                 'employee_ot_credit_id' => $employee_credit->id,
                 'cto_application_id' => $cto_application->id,
-                'action' => 'Declined',
+                'action' => 'add',
+                'reason' => 'Declined',
                 'previous_overtime_hours' => $current_overtime_credit,
                 'hours' => $cto_application->applied_credits
             ]);
@@ -495,6 +497,7 @@ class CtoApplicationController extends Controller
             $employeeId = $request->employee_id;
             $validUntil = $request->valid_until;
             $creditValue = $request->credit_value;
+            $validUntilDate = date('Y-m-d', strtotime($request->valid_until));
 
             $employee_profile = $request->user;
             $cleanData['pin'] = strip_tags($request->pin);
@@ -503,7 +506,7 @@ class CtoApplicationController extends Controller
             }
 
             $existingCredit = EmployeeOvertimeCredit::where('employee_profile_id', $employeeId)
-                ->where('valid_until', $validUntil)
+                ->where('valid_until', $validUntilDate)
                 ->first();
 
             if ($existingCredit) {
@@ -522,7 +525,8 @@ class CtoApplicationController extends Controller
                 ]);
                 EmployeeOvertimeCreditLog::create([
                     'employee_ot_credit_id' => $employeeId,
-                    'action' => 'Add Credit',
+                    'action' => 'add',
+                    'reason' => 'Update Credit',
                     'hours' => $creditValue
                 ]);
 
@@ -578,12 +582,60 @@ class CtoApplicationController extends Controller
     public function employeeCreditLog($id)
     {
         try {
-            $employee_credit_logs = EmployeeOvertimeCredit::where('employee_profile_id ', $id)->get();
+            $employeeCredits = EmployeeOvertimeCredit::with(['logs', 'employeeProfile'])->where('employee_profile_id', $id)->get();
+            $allLogs = [];
+            $employeeName = null;
+            $employeePosition = null;
+            $totalCreditsEarnedThisMonth = 0;
+            $totalCreditsEarnedThisYear = 0;
+            foreach ($employeeCredits as $employeeCredit) {
 
-            return response()->json([
-                'data' => EmployeeOvertimeCreditResource::collection($employee_credit_logs),
-                'message' => 'Retrieve list.'
-            ], Response::HTTP_OK);
+                if (!$employeeName) {
+                    $employeeName = $employeeCredit->employeeProfile->name();
+                   $employeePosition = $employeeCredit->employeeProfile->employmentType->name;
+                    $employee_assign_area = $employeeCredit->employeeProfile->assignedArea->findDetails();
+                }
+                $employeeDetails = [
+                    'employee_name' => $employeeCredit->employeeProfile->name(),
+                    'employee_position' => $employeeCredit->employeeProfile->employmentType->name,
+                    'employee_assign_area' => $employeeCredit->employeeProfile->assignedArea->findDetails(),
+                ];
+                $logs = $employeeCredit->logs;
+
+                foreach ($logs as $log) {
+
+                    if ($log->action === 'add') {
+
+                        if (Carbon::parse($log->created_at)->format('Y-m') === Carbon::now()->format('Y-m')) {
+                            $totalCreditsEarnedThisMonth += $log->hours;
+                        }
+
+                        if (Carbon::parse($log->created_at)->format('Y') === Carbon::now()->format('Y')) {
+                            $totalCreditsEarnedThisYear += $log->hours;
+                        }
+                    }
+                    $allLogs[] = [
+
+                        'reason' => $log->reason,
+                        'action' => $log->action,
+                        'previous_overtime_hours' => $log->previous_overtime_hours,
+                        'hours' => $log->hours,
+                        'remaining' =>  $log->previous_overtime_hours - $log->hours ,
+                        'created_at' =>  $log->created_at ,
+                    ];
+                }
+            }
+
+            $response = [
+                'employee_name' => $employeeName,
+                'employee_position' => $employeePosition,
+                'employee_area' => $employee_assign_area,
+                'total_credits_earned_this_month' => $totalCreditsEarnedThisMonth,
+                'total_credits_earned_this_year' => $totalCreditsEarnedThisYear,
+                'logs' => $allLogs,
+            ];
+            // $response =array_merge($employeeDetails,$allLogs);
+            return ['data' => $response];
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
