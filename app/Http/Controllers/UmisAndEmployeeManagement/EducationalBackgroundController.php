@@ -83,7 +83,7 @@ class EducationalBackgroundController extends Controller
                      if (is_string($attachment)) {
                         $cleanData['attachment'] = $request->attachment === null || $request->attachment === 'null' ? null : $attachment;
                     }
-                   
+                    continue;
                 }
 
                 $cleanData[$key] = strip_tags($value);
