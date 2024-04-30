@@ -360,7 +360,7 @@ class LeaveApplicationController extends Controller
             $allLogs = [];
             $employeeName = null;
             $employeePosition = null;
-            $totalCreditsEarnedThisMonth = [];
+            $totalCreditsEarnedThisMonth = null;
             $totalCreditsEarnedThisYear = 0;
             foreach ($employeeCredits as $employeeCredit) {
 
@@ -768,9 +768,9 @@ class LeaveApplicationController extends Controller
 
             $checkSchedule = Helpers::hasSchedule($start, $end, $hrmo_officer);
 
-            if (!$checkSchedule) {
-                return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
-            }
+            // if (!$checkSchedule) {
+            //     return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
+            // }
 
             if ($leave_type->code === 'SL' && $leave_type->file_after !== null) {
                 // Initialize the variable to store the final date of the consecutive schedule
@@ -959,22 +959,22 @@ class LeaveApplicationController extends Controller
                                     'used_leave_credits' => $employee_credit_vl->used_leave_credits + $daysDiff
                                 ]);
 
-                                EmployeeLeaveCreditLogs::create([
-                                    'employee_leave_credit_id' => $employee_credit->id,
-                                    'previous_credit' => $previous_credit_vl,
-                                    'leave_credits' => $daysDiff,
-                                    'reason' => 'apply',
-                                    'action' => 'deduct'
-                                ]);
+                                // EmployeeLeaveCreditLogs::create([
+                                //     'employee_leave_credit_id' => $employee_credit->id,
+                                //     'previous_credit' => $previous_credit_vl,
+                                //     'leave_credits' => $daysDiff,
+                                //     'reason' => 'apply',
+                                //     'action' => 'deduct'
+                                // ]);
                             }
 
-                            EmployeeLeaveCreditLogs::create([
-                                'employee_leave_credit_id' => $employee_credit->id,
-                                'previous_credit' => $previous_credit,
-                                'leave_credits' => $daysDiff,
-                                'reason' => 'apply',
-                                'action' => 'deduct'
-                            ]);
+                            // EmployeeLeaveCreditLogs::create([
+                            //     'employee_leave_credit_id' => $employee_credit->id,
+                            //     'previous_credit' => $previous_credit,
+                            //     'leave_credits' => $daysDiff,
+                            //     'reason' => 'apply',
+                            //     'action' => 'deduct',
+                            // ]);
                         }
 
                         if ($request->requirements) {
@@ -1001,6 +1001,14 @@ class LeaveApplicationController extends Controller
                             'action_by' => $employee_profile->id,
                             'leave_application_id' => $leave_application->id,
                             'action' => 'Applied'
+                        ]);
+
+                        EmployeeLeaveCreditLogs::create([
+                            'employee_leave_credit_id' => $employee_credit->id,
+                            'previous_credit' => $previous_credit,
+                            'leave_credits' => $daysDiff,
+                            'reason' => 'apply',
+                            'action' => 'deduct'
                         ]);
                     }
                 }
