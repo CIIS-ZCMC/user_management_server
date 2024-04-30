@@ -416,6 +416,10 @@ class LeaveApplicationController extends Controller
         }
     }
 
+
+
+
+
     public function getEmployees()
     {
         try {
@@ -767,7 +771,6 @@ class LeaveApplicationController extends Controller
             $leave_type = LeaveType::find($request->leave_type_id);
 
             $checkSchedule = Helpers::hasSchedule($start, $end, $hrmo_officer);
-
             if (!$checkSchedule) {
                 return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
             }
@@ -1125,11 +1128,24 @@ class LeaveApplicationController extends Controller
 
     public function cancelled($id, AuthPinApprovalRequest $request)
     {
+
         try {
-            $user = $request->user;
+            $user = $request->user->id;
             $employee_profile = $user;
+            $employee_area = EmployeeProfile::where('id', $request->user->id)->first();
             $cancelled_by = 'HRMO';
+            $status ='';
+            $remarks ='';
             $cleanData['pin'] = strip_tags($request->pin);
+            $employee_assign_area = $employee_area->assignedArea->findDetails();
+            $code = $code = $employee_assign_area['details']->code;
+            if ( $code === "HRMO") {
+                $status = 'cancelled by hrmo';
+
+            } else {
+                $status = 'cancelled by user';
+
+            }
 
             if ($user['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
@@ -1138,12 +1154,12 @@ class LeaveApplicationController extends Controller
             $leave_application = LeaveApplication::find($id);
             $leave_type = $leave_application->leaveType;
 
-
             $leave_application->update([
-                'status' => 'cancelled by hrmo',
+                'status' => $status,
                 'cancelled_at' => Carbon::now(),
-                'remarks' => 'Cancelled by HRMO.',
+                'remarks' => $request->remarks,
             ]);
+
 
             $from = Carbon::parse($leave_application->date_from)->format('F d, Y');
             $to = Carbon::parse($leave_application->date_to)->format('F d, Y');
@@ -1164,9 +1180,9 @@ class LeaveApplicationController extends Controller
             }
 
             LeaveApplicationLog::create([
-                'action_by' => $employee_profile->id,
+                'action_by' => $employee_profile,
                 'leave_application_id' => $leave_application->id,
-                'action' => 'Cancelled'
+                'action' => $status
             ]);
 
             return response()->json([
@@ -1210,7 +1226,6 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
     public function updatePrint($id)
     {
         try {
@@ -1337,5 +1352,54 @@ class LeaveApplicationController extends Controller
 
         // Return true if any overlap is found, otherwise false
         return $overlappingLeave || $overlappingOb || $overlappingOT;
+    }
+
+    public function reschedule($id, AuthPinApprovalRequest $request)
+    {
+
+        try {
+            $user = $request->user->id;
+            $employee_profile = $user;
+
+            $cleanData['pin'] = strip_tags($request->pin);
+            if ($user['authorization_pin'] !== $cleanData['pin']) {
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
+            }
+            $hrmo_officer = Helpers::getHrmoOfficer();
+            $start = Carbon::parse($request->date_from);
+            $end =  Carbon::parse($request->date_to);
+            $checkSchedule = Helpers::hasSchedule($start, $end, $hrmo_officer);
+            if (!$checkSchedule) {
+                return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
+            }
+            $overlapExists = Helpers::hasOverlappingRecords($start, $end, $user);
+
+            if ($overlapExists) {
+                return response()->json(['message' => 'You already have an application for the same dates.'], Response::HTTP_FORBIDDEN);
+            }
+
+
+            $leave_application = LeaveApplication::find($id);
+            $leave_type = $leave_application->leaveType;
+            $leave_application->update([
+                    'status' => "applied",
+                    'reason' => $request->reason,
+                    'date_from' => $request->date_from,
+                    'date_to' => $request->date_to,
+            ]);
+
+            LeaveApplicationLog::create([
+                'action_by' => $employee_profile,
+                'leave_application_id' => $leave_application->id,
+                'action' => 'Rescheduled by User'
+            ]);
+
+            return response()->json([
+                'data' => new LeaveApplicationResource($leave_application),
+                'message' => 'Rescheduled leave application successfully.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 }
