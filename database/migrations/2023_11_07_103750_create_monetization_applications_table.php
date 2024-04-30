@@ -19,6 +19,7 @@ return new class extends Migration
             $table->foreign('leave_type_id')->references('id')->on('leave_types')->onDelete('cascade');;
             $table->text('reason')->nullable();
             $table->string('credit_value');
+            $table->boolean('is_qualified')->nullable();
             $table->string('status')->nullable();
             $table->string('attachment')->nullable();
             $table->unsignedBigInteger('hrmo_officer')->unsigned()->nullable();
