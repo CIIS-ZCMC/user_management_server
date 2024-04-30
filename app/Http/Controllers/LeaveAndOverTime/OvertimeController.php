@@ -352,7 +352,6 @@ class OvertimeController extends Controller
 
             foreach ($validatedData['employees'] as $index => $employeeList) {
 
-
                 foreach ($employeeList as $dateIndex => $employeeIdList) {
 
                     foreach ($employeeIdList as $employeeId) {

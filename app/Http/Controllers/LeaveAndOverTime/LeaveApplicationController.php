@@ -780,7 +780,7 @@ class LeaveApplicationController extends Controller
                 $Date = $end->copy();
                 // Loop through each day starting from the end date
 
-                while ($foundConsecutiveDays  <= 4) {
+                while ($foundConsecutiveDays  <= 6) {
                     if (Helpers::hasSchedule($Date->toDateString(), $Date->toDateString(), $employeeId)) {
                         // If a schedule is found, increment the counter
                         $foundConsecutiveDays++;
