@@ -382,6 +382,9 @@ class LeaveApplicationController extends Controller
 
                         if (Carbon::parse($log->created_at)->format('Y-m') === Carbon::now()->format('Y-m')) {
                             $leaveType = $employeeCredit->leaveType->name;
+                            if ($leaveType === 'Vacation Leave' || $leaveType === 'Sick Leave') {
+                                $totalCreditsEarnedThisMonth[$leaveType] = isset($totalCreditsEarnedThisMonth[$leaveType]) ? $totalCreditsEarnedThisMonth[$leaveType] + $log->leave_credits : $log->leave_credits;
+                            }
                             $totalCreditsEarnedThisMonth[$leaveType] = isset($totalCreditsEarnedThisMonth[$leaveType]) ? $totalCreditsEarnedThisMonth[$leaveType] + $log->leave_credits : $log->leave_credits;
                         }
 
@@ -770,7 +773,7 @@ class LeaveApplicationController extends Controller
             $daysDiff = $start->diffInDays($end) + 1;
             $leave_type = LeaveType::find($request->leave_type_id);
 
-            $checkSchedule = Helpers::hasSchedule($start, $end, $hrmo_officer);
+            $checkSchedule = Helpers::hasSchedule($start, $end, $employeeId);
             if (!$checkSchedule) {
                 return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
             }
@@ -784,7 +787,7 @@ class LeaveApplicationController extends Controller
                 // Loop through each day starting from the end date
 
                 while ($foundConsecutiveDays  <= 6) {
-                    if (Helpers::hasSchedule($Date->toDateString(), $Date->toDateString(), $employeeId)) {
+                    if (Helpers::hasSchedule($Date->toDateString(), $Date->toDateString(), $hrmo_officer)) {
                         // If a schedule is found, increment the counter
                         $foundConsecutiveDays++;
 
@@ -906,8 +909,31 @@ class LeaveApplicationController extends Controller
                         if (!$isMCC) {
 
                             if ($leave_type->code = 'VL' && $request->country != 'Philippines') {
-                                $cleanData['recommending_officer'] = Helpers::getDivHead($employee_profile->assignedArea->findDetails());
-                                $cleanData['approving_officer'] = Helpers::getChiefOfficer();
+                                // Get the current date
+                                $currentDate = now();
+
+                                // Get the HRMO schedule for the next 20 days
+                                $Date = $currentDate->copy();
+                                $foundConsecutiveDays = 0;
+
+                                while ($foundConsecutiveDays <= 21) {
+                                    if (Helpers::hasSchedule($Date->toDateString(), $Date->toDateString(), $hrmo_officer)) {
+                                        // If a schedule is found, increment the counter
+                                        $foundConsecutiveDays++;
+                                    }
+                                    // Move to the next day
+                                    $Date->addDay();
+                                }
+                                // Check if the selected date is greater than or equal to the final date for the employee to file for leave
+                                if ($Date->gte($finalDate)) {
+                                    $cleanData['recommending_officer'] = Helpers::getDivHead($employee_profile->assignedArea->findDetails());
+                                    $cleanData['approving_officer'] = Helpers::getChiefOfficer();
+                                } else {
+                                    // The selected date is not valid for filing leave
+                                    return response()->json(['message' => "You cannot file for leave on $Date. Please select a date 20 days or more from today."], Response::HTTP_FORBIDDEN);
+                                }
+
+
                             }
                             //20 days leave
 
