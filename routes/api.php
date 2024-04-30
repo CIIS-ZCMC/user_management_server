@@ -781,7 +781,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-EM approve'])->group(function () {
-            Route::post('employee-approve-request', 'EmployeeProfileController@approvedProfileUpdate');
+            Route::put('employee-approve-request', 'EmployeeProfileController@approvedProfileUpdate');
         });
 
         Route::middleware(['auth.permission:UMIS-EM write'])->group(function () {

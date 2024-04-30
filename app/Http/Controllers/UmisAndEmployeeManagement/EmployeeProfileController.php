@@ -108,7 +108,7 @@ class EmployeeProfileController extends Controller
             $job_orders = EmployeeProfile::whereNot('id', 1)->where('employment_type_id', EmploymentType::where('name', 'Job order')->first()->id)->count();
 
             return response()->json([
-                'data' => [
+                'data' => [ 
                     'active_users' => $active_users,
                     'pending_users' => $pending_users,
                     'regular_employees' => $regular_employees,
@@ -162,7 +162,7 @@ class EmployeeProfileController extends Controller
     {
         try {
             $employee = $request->user;
-            $pin = strip_tags($request->authorization_pin);
+            $pin = strip_tags($request->password);
 
             if ($employee->authorization_pin !== $pin) {
                 return response()->json(['message' => "Invalid pin."], Response::HTTP_FORBIDDEN);
@@ -186,7 +186,7 @@ class EmployeeProfileController extends Controller
                         "approved_at" => Carbon::now()
                     ]);
                     break;
-                case "Learning and Development":
+                case "Training":
                     $profile_request = Training::find($request->id);
                     $profile_request->update([
                         "is_request" => false,

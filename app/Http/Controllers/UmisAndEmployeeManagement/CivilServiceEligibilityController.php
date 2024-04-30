@@ -78,6 +78,7 @@ class CivilServiceEligibilityController extends Controller
                 if($key === 'attachment'){
                     $attachment = Helpers::checkSaveFile($request->attachment, '/eligibilities');
                     $cleanData['attachment'] = $attachment;
+                    continue;
                 }
                 $cleanData[$key] = strip_tags($value);
             }

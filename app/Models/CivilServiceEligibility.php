@@ -19,7 +19,6 @@ class CivilServiceEligibility extends Model
         'license_number',
         'license_release_at',
         'personal_information_id',
-        'attachment',
         'is_request',
         'approved_at',
         'attachment'
