@@ -362,6 +362,7 @@ class MonetizationApplicationController extends Controller
             $cleanData['leave_type_id'] = $leave_type->id;
             $cleanData['reason'] = strip_tags($request->reason);
             $cleanData['credit_value'] = strip_tags($request->credit_value);
+            $cleanData['is_qualified'] = 0;
             $cleanData['status'] = 'applied';
             $cleanData['hrmo_officer'] = $hrmo_officer;
             $cleanData['recommending_officer'] = $recommending_officer->chief_employee_profile_id;
