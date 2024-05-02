@@ -366,6 +366,7 @@ class LeaveApplicationController extends Controller
 
                 if (!$employeeName) {
                     $employeeName = $employeeCredit->employeeProfile->name();
+                    $employeeJobPosition = $employeeCredit->employeeProfile->findDesignation()->code;
                     $employeePosition = $employeeCredit->employeeProfile->employmentType->name;
                     $employee_assign_area = $employeeCredit->employeeProfile->assignedArea->findDetails();
                 }
@@ -406,6 +407,7 @@ class LeaveApplicationController extends Controller
 
             $response = [
                 'employee_name' => $employeeName,
+                'employee_job' => $employeeJobPosition,
                 'employee_position' => $employeePosition,
                 'employee_area' => $employee_assign_area,
                 'total_credits_earned_this_month' => $totalCreditsEarnedThisMonth,
