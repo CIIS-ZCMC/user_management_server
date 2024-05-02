@@ -17,11 +17,23 @@ use App\Http\Requests\ReferenceManyRequest;
 use App\Http\Requests\TrainingManyRequest;
 use App\Http\Requests\VoluntaryWorkRequest;
 use App\Http\Requests\WorkExperienceRequest;
+use App\Http\Resources\AddressResource;
+use App\Http\Resources\ChildResource;
+use App\Http\Resources\CivilServiceEligibilityResource;
+use App\Http\Resources\ContactResource;
+use App\Http\Resources\EducationalBackgroundResource;
+use App\Http\Resources\FamilyBackGroundResource;
+use App\Http\Resources\IdentificationNumberResource;
+use App\Http\Resources\OtherInformationResource;
+use App\Http\Resources\TrainingResource;
+use App\Http\Resources\VoluntaryWorkResource;
+use App\Http\Resources\WorkExperienceResource;
 use App\Models\AssignArea;
 use App\Models\EmployeeLeaveCredit;
 use App\Models\EmploymentType;
 use App\Models\LeaveType;
 use App\Models\PlantillaNumber;
+use App\Models\WorkExperience;
 use Carbon\Carbon;
 use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Requests\PasswordApprovalRequest;
@@ -504,6 +516,120 @@ class InActiveEmployeeController extends Controller
         } catch (\Throwable $th) {
             DB::rollBack();
             Helpers::errorLog($this->CONTROLLER_NAME, 'reEmploy', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function showProfile($id, Request $request)
+    {
+        try {
+
+            $in_active_employee = InActiveEmployee::find($id);
+
+            if (!$in_active_employee) {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            Helpers::registerSystemLogs($request, $id, true, 'Success in fetching a ' . $this->SINGULAR_MODULE_NAME . '.');
+
+            $personal_information = $in_active_employee->personalInformation;
+
+            $work_experiences = WorkExperience::where('personal_information_id', $personal_information->id)->where('government_office', "Yes")->get();
+
+            $totalMonths = 0; // Initialize total months variable
+            $totalYears = 0; // Initialize total months variable
+
+            foreach ($work_experiences as $work) {
+                $dateFrom = Carbon::parse($work->date_from);
+                $dateTo = Carbon::parse($work->date_to);
+                $months = $dateFrom->diffInMonths($dateTo);
+                $totalMonths += $months;
+            }
+
+            $totalYears = floor($totalMonths / 12);
+
+            $personal_information_data = [
+                'personal_information_id' => $personal_information->id,
+                'full_name' => $personal_information->nameWithSurnameFirst(),
+                'first_name' => $personal_information->first_name,
+                'last_name' => $personal_information->last_name,
+                'middle_name' => $personal_information->middle_name === null ? ' ' : $personal_information->middle_name,
+                'name_extension' => $personal_information->name_extension === null ? null : $personal_information->name_extension,
+                'employee_id' => $in_active_employee->employee_id,
+                'years_of_service' => $personal_information->years_of_service === null ? null : $personal_information->years_of_service,
+                'name_title' => $personal_information->name_title === null ? null : $personal_information->name_title,
+                'sex' => $personal_information->sex,
+                'date_of_birth' => $personal_information->date_of_birth,
+                'place_of_birth' => $personal_information->place_of_birth,
+                'civil_status' => $personal_information->civil_status,
+                'citizenship' => $personal_information->citizenship,
+                'date_of_marriage' => $personal_information->date_of_marriage === null ? null : $personal_information->date_of_marriage,
+                'blood_type' => $personal_information->blood_type === null ? null : $personal_information->blood_type,
+                'height' => $personal_information->height,
+                'weight' => $personal_information->weight,
+            ];
+
+            $address = [
+                'residential_address' => null,
+                'residential_zip_code' => null,
+                'residential_telephone_no' => null,
+                'permanent_address' => null,
+                'permanent_zip_code' => null,
+                'permanent_telephone_no' => null
+            ];
+
+            $addresses = $personal_information->addresses;
+
+            foreach ($addresses as $value) {
+
+                if ($value->is_residential_and_permanent) {
+                    $address['residential_address'] = $value->address;
+                    $address['residential_zip_code'] = $value->zip_code;
+                    $address['residential_telephone_no'] = $value->telephone_no;
+                    $address['permanent_address'] = $value->address;
+                    $address['permanent_zip_code'] = $value->zip_code;
+                    $address['permanent_telephone_no'] = $value->telephone_no;
+                    break;
+                }
+
+                if ($value->is_residential) {
+                    $address['residential_address'] = $value->address;
+                    $address['residential_zip_code'] = $value->zip_code;
+                    $address['residential_telephone_no'] = $value->telephone_no;
+                } else {
+                    $address['permanent_address'] = $value->address;
+                    $address['permanent_zip_code'] = $value->zip_code;
+                    $address['permanent_telephone_no'] = $value->telephone_no;
+                }
+            }
+
+            $data = [
+                'personal_information_id' => $personal_information->id,
+                'in_active_employee_id' => $in_active_employee['id'],
+                'employee_id' => $in_active_employee['employee_id'],
+                'name' => $personal_information->employeeName(),
+                'employee_details' => [
+                    'personal_information' => $personal_information_data,
+                    'personal_information_id' => $personal_information->id,
+                    'contact' => new ContactResource($personal_information->contact),
+                    'address' => $address,
+                    'address_update' => AddressResource::collection($personal_information->addresses),
+                    'family_background' => new FamilyBackGroundResource($personal_information->familyBackground),
+                    'children' => ChildResource::collection($personal_information->children),
+                    'education' => EducationalBackgroundResource::collection($personal_information->educationalBackground),
+                    'affiliations_and_others' => [
+                        'civil_service_eligibility' => CivilServiceEligibilityResource::collection($personal_information->civilServiceEligibility),
+                        'work_experience' => WorkExperienceResource::collection($personal_information->workExperience),
+                        'voluntary_work_or_involvement' => VoluntaryWorkResource::collection($personal_information->voluntaryWork),
+                        'training' => TrainingResource::collection($personal_information->training),
+                        'other' => OtherInformationResource::collection($personal_information->otherInformation),
+                    ],
+                    'identification' => new IdentificationNumberResource($personal_information->identificationNumber)
+                ]
+            ];
+            return response()->json(['data' => $data, 'message' => 'Employee details found.'], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'showProfile', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
