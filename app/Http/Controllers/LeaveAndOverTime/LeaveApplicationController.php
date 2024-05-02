@@ -1234,7 +1234,6 @@ class LeaveApplicationController extends Controller
         try {
             $user = $request->user->id;
             $employee_profile = $user;
-            $status = '';
 
             $cleanData['pin'] = strip_tags($request->pin);
             if ($user['authorization_pin'] !== $cleanData['pin']) {
@@ -1249,10 +1248,6 @@ class LeaveApplicationController extends Controller
                 'cancelled_at' => Carbon::now(),
                 'remarks' => $request->remarks,
             ]);
-
-
-            $from = Carbon::parse($leave_application->date_from)->format('F d, Y');
-            $to = Carbon::parse($leave_application->date_to)->format('F d, Y');
 
 
             if (!$leave_type->is_special) {
