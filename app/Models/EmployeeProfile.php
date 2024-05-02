@@ -280,7 +280,6 @@ class EmployeeProfile extends Authenticatable
         }
 
 
-
         $overtime_applications = $this->overtimeApplication;
 
         if ($overtime_applications != NULL) {
@@ -324,7 +323,7 @@ class EmployeeProfile extends Authenticatable
             }
         }
 
-        $time_adjustments = TimeAdjusment::where('employee_profile_id', $this->id)->get();
+        $time_adjustments = TimeAdjustment::where('employee_profile_id', $this->id)->get();
         if ($time_adjustments != NULL) {   
             foreach($time_adjustments as $time_adjustment){
                 TimeAdjustmentLog::where('employee_profile_id', $time_adjustment->id)->delete();

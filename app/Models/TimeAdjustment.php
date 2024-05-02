@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 class TimeAdjustment extends Model
 {
     use HasFactory, SoftDeletes;
-    protected $table = 'time_adjustments';
+    protected $table = 'time_adjusments';
 
     protected $primaryKey = 'id';
 
