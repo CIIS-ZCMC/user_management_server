@@ -377,10 +377,10 @@ class LeaveApplicationController extends Controller
                     if ($log->action === 'add') {
 
                         if (Carbon::parse($log->created_at)->format('Y-m') === Carbon::now()->format('Y-m')) {
-                            $leaveType = $employeeCredit->leaveType->name;
-                            if( $leaveType === "Vacation Leave" && $leaveType === "Sick Leave")
+                           $leaveType = $employeeCredit->leaveType->code;
+                            if( $leaveType === "VL" || $leaveType === "SL")
                             {
-                                $totalCreditsEarnedThisMonth[$leaveType] = isset($totalCreditsEarnedThisMonth[$leaveType]) ? $totalCreditsEarnedThisMonth[$leaveType] + $log->leave_credits : $log->leave_credits;
+                                $totalCreditsEarnedThisMonth[$leaveType] = isset($totalCreditsEarnedThisMonth[$leaveType]) ? $totalCreditsEarnedThisMonth[$leaveType] ($log->leave_credits ?? 0) : ($log->leave_credits ?? 0);
                             }
                         }
 
@@ -1182,19 +1182,8 @@ class LeaveApplicationController extends Controller
         try {
             $user = $request->user->id;
             $employee_profile = $user;
-            $employee_area = EmployeeProfile::where('id', $request->user->id)->first();
-            $cancelled_by = 'HRMO';
-            $status = '';
-            $remarks = '';
-            $cleanData['pin'] = strip_tags($request->pin);
-            $employee_assign_area = $employee_area->assignedArea->findDetails();
-            $code = $code = $employee_assign_area['details']->code;
-            if ($code === "HRMO") {
-                $status = 'cancelled by hrmo';
-            } else {
-                $status = 'cancelled by user';
-            }
 
+            $cleanData['pin'] = strip_tags($request->pin);
             if ($user['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
             }
@@ -1203,16 +1192,11 @@ class LeaveApplicationController extends Controller
             $leave_type = $leave_application->leaveType;
 
             $leave_application->update([
-                'status' => $status,
+                'status' => 'Cancelled by hrmo',
                 'cancelled_at' => Carbon::now(),
                 'remarks' => $request->remarks,
             ]);
 
-
-            $from = Carbon::parse($leave_application->date_from)->format('F d, Y');
-            $to = Carbon::parse($leave_application->date_to)->format('F d, Y');
-            $message = "Your " . $leave_application->leaveType->name . " request with date from " . $from . " to " . $to . " has been cancelled by " . $cancelled_by . " .";
-            Helpers::notifications($leave_application->employee_profile_id, $message, $leave_application->leaveType->name);
 
             if (!$leave_type->is_special) {
                 $employee_credit = EmployeeLeaveCredit::where('employee_profile_id', $leave_application->employee_profile_id)
@@ -1228,9 +1212,64 @@ class LeaveApplicationController extends Controller
             }
 
             LeaveApplicationLog::create([
-                'action_by' => $employee_profile,
+                'action_by' => $employee_profile->id,
                 'leave_application_id' => $leave_application->id,
-                'action' => $status
+                'action' =>'Cancelled by hrmo'
+            ]);
+
+            return response()->json([
+                'data' => new LeaveApplicationResource($leave_application),
+                'message' => 'Cancelled leave application successfully.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function cancelUser($id, AuthPinApprovalRequest $request)
+    {
+
+        try {
+            $user = $request->user->id;
+            $employee_profile = $user;
+            $status = '';
+
+            $cleanData['pin'] = strip_tags($request->pin);
+            if ($user['authorization_pin'] !== $cleanData['pin']) {
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
+            }
+
+            $leave_application = LeaveApplication::find($id);
+            $leave_type = $leave_application->leaveType;
+
+            $leave_application->update([
+                'status' => 'Cancelled by user',
+                'cancelled_at' => Carbon::now(),
+                'remarks' => $request->remarks,
+            ]);
+
+
+            $from = Carbon::parse($leave_application->date_from)->format('F d, Y');
+            $to = Carbon::parse($leave_application->date_to)->format('F d, Y');
+
+
+            if (!$leave_type->is_special) {
+                $employee_credit = EmployeeLeaveCredit::where('employee_profile_id', $leave_application->employee_profile_id)
+                    ->where('leave_type_id', $leave_application->leave_type_id)->first();
+
+                $current_leave_credit = $employee_credit->total_leave_credits;
+                $current_used_leave_credit = $employee_credit->used_leave_credits;
+
+                $employee_credit->update([
+                    'total_leave_credits' => $current_leave_credit + $leave_application->applied_credits,
+                    'used_leave_credits' => $current_used_leave_credit - $leave_application->applied_credits
+                ]);
+            }
+
+            LeaveApplicationLog::create([
+                'action_by' => $employee_profile->id,
+                'leave_application_id' => $leave_application->id,
+                'action' =>'Cancelled by user'
             ]);
 
             return response()->json([
