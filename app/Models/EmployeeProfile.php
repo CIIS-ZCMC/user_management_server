@@ -96,15 +96,15 @@ class EmployeeProfile extends Authenticatable
         return $this->hasMany(LoginTrail::class);
     }
 
-    public function isUnderProvation()
+    public function isUnderProbation()
     {
         $area = $this->assignedArea;
-        $provation_period = $area->designation->provation;
+        $probation_period = $area->designation->probation;
         
         $hireDate = Carbon::parse($this->date_hired);
         $currentDate = Carbon::now();
 
-        return $hireDate->diffInMonths($currentDate) < $provation_period;
+        return $hireDate->diffInMonths($currentDate) < $probation_period;
     }
 
     public function isDeactivated()
