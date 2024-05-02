@@ -1798,6 +1798,10 @@ Route::middleware('auth.cookie')->group(function () {
             Route::post('cancel-leave-application/{id}', 'LeaveApplicationController@cancelled');
         });
 
+        Route::middleware(['auth.permission:UMIS-LM update'])->group(function () {
+            Route::post('cancel-leave-application-user/{id}', 'LeaveApplicationController@cancelUser');
+        });
+
         Route::middleware(['auth.permission:UMIS-LM request'])->group(function () {
             Route::post('leave-application', 'LeaveApplicationController@store');
         });
