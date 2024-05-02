@@ -768,6 +768,10 @@ Route::middleware('auth.cookie')->group(function () {
          * Employee Profile Module
          */
 
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('inactive-employees', 'InActiveEmployee@index');
+        });
+
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
             Route::delete('employee-deactivate-account/{id}', 'InActiveEmployee@retireAndDeactivateAccount');
         });
@@ -885,8 +889,6 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function () {
             Route::delete('employee-profile-deactivate/{id}', 'EmployeeProfileController@deactivateEmployeeAccount');
         });
-
-
 
         Route::middleware(['auth.permission:UMIS-EM view'])->group(function () {
             Route::get('employee-profile/find-by-employee/{id}', 'EmployeeProfileController@findByEmployeeID');
