@@ -618,7 +618,7 @@ class CtoApplicationController extends Controller
                     $allLogs[] = [
                         'reason' => $log->reason,
                         'action' => $log->action,
-                        'previous_overtime_hours' => $log->previous_overtime_hours,
+                        'previous_overtime_hours' => $log->previous_overtime_hours ?? 0,
                         'hours' => $log->hours,
                         'remaining' =>  $log->previous_overtime_hours - $log->hours ,
                         'created_at' =>  $log->created_at ,
