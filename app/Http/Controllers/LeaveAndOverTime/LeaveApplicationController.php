@@ -632,7 +632,7 @@ class LeaveApplicationController extends Controller
                 return response()->json(["message" => "No leave application with id " . $id], Response::HTTP_NOT_FOUND);
             }
             if ($leave_application->status === 'cancelled by user') {
-                return response()->json(["message" => "Application has been cancelled by employee. "], Response::HTTP_NOT_FOUND);
+                return response()->json(["message" => "Application has been cancelled by employee. "], Response::HTTP_FORBIDDEN);
             }
 
             $position = $employee_profile->position();
@@ -1121,6 +1121,11 @@ class LeaveApplicationController extends Controller
             $leave_application_recommending = $leave_application->recommending_officer;
             $leave_application_approving = $leave_application->approving_officer;
 
+
+            if ($leave_application->status === 'cancelled by user') {
+                return response()->json(["message" => "Application has been cancelled by employee. "], Response::HTTP_FORBIDDEN);
+            }
+            
             if ($employee_profile->id === $leave_application_hrmo) {
                 $status = 'declined by hrmo officer';
                 $declined_by = "HR";
@@ -1182,7 +1187,7 @@ class LeaveApplicationController extends Controller
     {
 
         try {
-            $user = $request->user->id;
+            $user = $request->user;
             $employee_profile = $user;
 
             $cleanData['pin'] = strip_tags($request->pin);
@@ -1194,7 +1199,7 @@ class LeaveApplicationController extends Controller
             $leave_type = $leave_application->leaveType;
 
             $leave_application->update([
-                'status' => 'Cancelled by hrmo',
+                'status' => 'cancelled by hrmo',
                 'cancelled_at' => Carbon::now(),
                 'remarks' => $request->remarks,
             ]);
@@ -1216,7 +1221,7 @@ class LeaveApplicationController extends Controller
             LeaveApplicationLog::create([
                 'action_by' => $employee_profile->id,
                 'leave_application_id' => $leave_application->id,
-                'action' =>'Cancelled by hrmo'
+                'action' =>'Cancelled by HRMO'
             ]);
 
             return response()->json([
@@ -1230,9 +1235,8 @@ class LeaveApplicationController extends Controller
 
     public function cancelUser($id, AuthPinApprovalRequest $request)
     {
-
         try {
-            $user = $request->user->id;
+            $user = $request->user;
             $employee_profile = $user;
 
             $cleanData['pin'] = strip_tags($request->pin);
@@ -1244,7 +1248,7 @@ class LeaveApplicationController extends Controller
             $leave_type = $leave_application->leaveType;
 
             $leave_application->update([
-                'status' => 'Cancelled by user',
+                'status' => 'cancelled by user',
                 'cancelled_at' => Carbon::now(),
                 'remarks' => $request->remarks,
             ]);
@@ -1266,7 +1270,7 @@ class LeaveApplicationController extends Controller
             LeaveApplicationLog::create([
                 'action_by' => $employee_profile->id,
                 'leave_application_id' => $leave_application->id,
-                'action' =>'Cancelled by user'
+                'action' =>'Cancelled by User'
             ]);
 
             return response()->json([
@@ -1440,9 +1444,8 @@ class LeaveApplicationController extends Controller
 
     public function reschedule($id, AuthPinApprovalRequest $request)
     {
-
         try {
-            $user = $request->user->id;
+            $user = $request->user;
             $employee_profile = $user;
 
             $cleanData['pin'] = strip_tags($request->pin);
@@ -1453,15 +1456,14 @@ class LeaveApplicationController extends Controller
             $start = Carbon::parse($request->date_from);
             $end =  Carbon::parse($request->date_to);
             $checkSchedule = Helpers::hasSchedule($start, $end, $hrmo_officer);
-            if (!$checkSchedule) {
-                return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
-            }
+            // if (!$checkSchedule) {
+            //     return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
+            // }
             $overlapExists = Helpers::hasOverlappingRecords($start, $end, $user);
 
             if ($overlapExists) {
                 return response()->json(['message' => 'You already have an application for the same dates.'], Response::HTTP_FORBIDDEN);
             }
-
 
             $leave_application = LeaveApplication::find($id);
             $leave_type = $leave_application->leaveType;
@@ -1470,10 +1472,11 @@ class LeaveApplicationController extends Controller
                 'reason' => $request->reason,
                 'date_from' => $request->date_from,
                 'date_to' => $request->date_to,
+                'created_at' => Carbon::now(),
             ]);
 
             LeaveApplicationLog::create([
-                'action_by' => $employee_profile,
+                'action_by' => $employee_profile->id,
                 'leave_application_id' => $leave_application->id,
                 'action' => 'Rescheduled by User'
             ]);

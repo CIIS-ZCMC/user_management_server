@@ -774,6 +774,7 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('inactive-employees/{id}', 'InActiveEmployeeController@showProfile');
+
         });
 
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
@@ -1804,6 +1805,10 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-LM update'])->group(function () {
             Route::post('cancel-leave-application-user/{id}', 'LeaveApplicationController@cancelUser');
+        });
+
+        Route::middleware(['auth.permission:UMIS-LM update'])->group(function () {
+            Route::post('reschedule-leave-application/{id}', 'LeaveApplicationController@reschedule');
         });
 
         Route::middleware(['auth.permission:UMIS-LM request'])->group(function () {
