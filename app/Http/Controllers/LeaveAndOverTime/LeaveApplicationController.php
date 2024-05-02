@@ -1230,7 +1230,6 @@ class LeaveApplicationController extends Controller
 
     public function cancelUser($id, AuthPinApprovalRequest $request)
     {
-
         try {
             $user = $request->user->id;
             $employee_profile = $user;
