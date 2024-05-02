@@ -43,7 +43,7 @@ class MonetizationApplicationController extends Controller
 
             if (Helpers::getHrmoOfficer() === $employee_profile->id) {
                 $employeeId = $employee_profile->id;
-                $hrmo = ["applied", "for recommending approval", "for approving approval", "approved", "declined by hrmo officer"];
+                $hrmo = ["applied", "for hrmo approval","for recommending approval", "for approving approval", "approved", "declined by hrmo officer"];
 
                 $mone_applications = MonetizationApplication::select('monetization_applications.*')
                     ->where(function ($query) use ($hrmo, $employeeId) {
@@ -289,18 +289,6 @@ class MonetizationApplicationController extends Controller
 
             switch ($monetization_application->status) {
                 case 'applied':
-                    $employee_profile = $request->user;
-                    $process_name = "Qualified by HRMO";
-                    $monetization_application->update(['status' => 'for hrmo approval']);
-
-                    $mone_application_log = new MoneApplicationLog();
-                    $mone_application_log->monetization_application_id = $monetization_application->id;
-                    $mone_application_log->action_by_id =$employee_profile->id;
-                    $mone_application_log->action = $process_name;
-                    $mone_application_log->save();
-                    break;
-
-                case 'for hrmo approval':
                     $employee_profile = $request->user;
                     $process_name = "Approved by HRMO";
                     $monetization_application->update(['status' => 'for recommending approval']);
