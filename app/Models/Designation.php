@@ -14,6 +14,7 @@ class Designation extends Model
     public $fillable = [
         'name',
         'code',
+        'provation',
         'effective_at',
         'salary_grade_id'
     ];

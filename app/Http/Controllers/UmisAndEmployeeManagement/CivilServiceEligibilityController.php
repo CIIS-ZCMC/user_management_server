@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 
 use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Requests\CivilServiceEligibilityManyRequest;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
@@ -70,9 +71,8 @@ class CivilServiceEligibilityController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if($value === null)
-                {
-                    $cleanData[$key] = $value;
+                if ( $value == "null" || $value == null) {
+                    $cleanData[$key] = null;
                     continue;
                 }
                 if($key === 'attachment'){
@@ -89,8 +89,22 @@ class CivilServiceEligibilityController extends Controller
 
             Helpers::registerSystemLogs($request, $civil_service_eligibility['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
+
+             $response_data =  [
+                "id"=> $personal_information->id,
+                "name" => $personal_information->name(),
+                "assigned_area" => $personal_information->employeeProfile->assignedArea->findDetails()['details']->name,
+                'designation' => $personal_information->employeeProfile->assignedArea->designation->name,
+                "employee_id" => $personal_information->employeeProfile->employee_id,
+                "profile_url" => config('app.server_domain')."/profiles/".$personal_information->employeeProfile->profile_url,
+                "type" => 'Eligibility',
+                "date_requested" => Carbon::now(),
+                "approved_at" => null,
+                "details" => new CivilServiceEligibilityResource($civil_service_eligibility)
+            ];
+
             return response()->json([
-                'data' => new CivilServiceEligibilityResource($civil_service_eligibility), 
+                'data' =>  $response_data, 
                 'message' => 'New civil service record added.',
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
