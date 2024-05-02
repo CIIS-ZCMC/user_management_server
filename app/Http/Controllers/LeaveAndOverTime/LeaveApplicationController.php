@@ -1472,7 +1472,7 @@ class LeaveApplicationController extends Controller
             ]);
 
             LeaveApplicationLog::create([
-                'action_by' => $employee_profile,
+                'action_by' => $employee_profile->id,
                 'leave_application_id' => $leave_application->id,
                 'action' => 'Rescheduled by User'
             ]);
