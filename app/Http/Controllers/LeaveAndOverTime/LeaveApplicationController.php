@@ -1468,6 +1468,7 @@ class LeaveApplicationController extends Controller
                 'reason' => $request->reason,
                 'date_from' => $request->date_from,
                 'date_to' => $request->date_to,
+                'created_at' => Carbon::now(),
             ]);
 
             LeaveApplicationLog::create([
