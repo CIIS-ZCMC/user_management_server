@@ -1465,7 +1465,6 @@ class LeaveApplicationController extends Controller
                 return response()->json(['message' => 'You already have an application for the same dates.'], Response::HTTP_FORBIDDEN);
             }
 
-
             $leave_application = LeaveApplication::find($id);
             $leave_type = $leave_application->leaveType;
             $leave_application->update([
@@ -1473,6 +1472,7 @@ class LeaveApplicationController extends Controller
                 'reason' => $request->reason,
                 'date_from' => $request->date_from,
                 'date_to' => $request->date_to,
+                'created_at' => Carbon::now(),
             ]);
 
             LeaveApplicationLog::create([

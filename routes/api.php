@@ -769,15 +769,15 @@ Route::middleware('auth.cookie')->group(function () {
          */
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::get('inactive-employees', 'InActiveEmployee@index');
+            Route::get('inactive-employees', 'InActiveEmployeeController@index');
         });
 
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
-            Route::delete('employee-deactivate-account/{id}', 'InActiveEmployee@retireAndDeactivateAccount');
+            Route::delete('employee-deactivate-account/{id}', 'InActiveEmployeeController@retireAndDeactivateAccount');
         });
 
         Route::middleware(['auth.permission:UMIS-EM post'])->group(function () {
-            Route::post('employee-re-employ/{id}', 'InActiveEmployee@reEmploy');
+            Route::post('employee-re-employ/{id}', 'InActiveEmployeeController@reEmploy');
         });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
@@ -1803,7 +1803,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-LM update'])->group(function () {
-            Route::post('reschedule-leave-application-user/{id}', 'LeaveApplicationController@reschedule');
+            Route::post('reschedule-leave-application/{id}', 'LeaveApplicationController@reschedule');
         });
 
         Route::middleware(['auth.permission:UMIS-LM request'])->group(function () {

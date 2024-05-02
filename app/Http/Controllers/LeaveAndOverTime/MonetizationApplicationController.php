@@ -290,6 +290,18 @@ class MonetizationApplicationController extends Controller
             switch ($monetization_application->status) {
                 case 'applied':
                     $employee_profile = $request->user;
+                    $process_name = "Qualified by HRMO";
+                    $monetization_application->update(['status' => 'for hrmo approval']);
+
+                    $mone_application_log = new MoneApplicationLog();
+                    $mone_application_log->monetization_application_id = $monetization_application->id;
+                    $mone_application_log->action_by_id =$employee_profile->id;
+                    $mone_application_log->action = $process_name;
+                    $mone_application_log->save();
+                    break;
+
+                case 'for hrmo approval':
+                    $employee_profile = $request->user;
                     $process_name = "Approved by HRMO";
                     $monetization_application->update(['status' => 'for recommending approval']);
 
