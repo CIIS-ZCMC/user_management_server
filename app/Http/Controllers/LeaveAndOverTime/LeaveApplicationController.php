@@ -365,15 +365,12 @@ class LeaveApplicationController extends Controller
             foreach ($employeeCredits as $employeeCredit) {
 
                 if (!$employeeName) {
+
                     $employeeName = $employeeCredit->employeeProfile->name();
+                    $employeeJobPosition = $employeeCredit->employeeProfile->findDesignation()->code;
                     $employeePosition = $employeeCredit->employeeProfile->employmentType->name;
                     $employee_assign_area = $employeeCredit->employeeProfile->assignedArea->findDetails();
                 }
-                $employeeDetails = [
-                    'employee_name' => $employeeCredit->employeeProfile->name(),
-                    'employee_position' => $employeeCredit->employeeProfile->employmentType->name,
-                    'employee_assign_area' => $employeeCredit->employeeProfile->assignedArea->findDetails(),
-                ];
                 $logs = $employeeCredit->logs;
 
                 foreach ($logs as $log) {
@@ -382,10 +379,10 @@ class LeaveApplicationController extends Controller
 
                         if (Carbon::parse($log->created_at)->format('Y-m') === Carbon::now()->format('Y-m')) {
                             $leaveType = $employeeCredit->leaveType->name;
-                            if ($leaveType === 'Vacation Leave' || $leaveType === 'Sick Leave') {
+                            if( $leaveType === "Vacation Leave" && $leaveType === "Sick Leave")
+                            {
                                 $totalCreditsEarnedThisMonth[$leaveType] = isset($totalCreditsEarnedThisMonth[$leaveType]) ? $totalCreditsEarnedThisMonth[$leaveType] + $log->leave_credits : $log->leave_credits;
                             }
-                            $totalCreditsEarnedThisMonth[$leaveType] = isset($totalCreditsEarnedThisMonth[$leaveType]) ? $totalCreditsEarnedThisMonth[$leaveType] + $log->leave_credits : $log->leave_credits;
                         }
 
                         if (Carbon::parse($log->created_at)->format('Y') === Carbon::now()->format('Y')) {
@@ -398,20 +395,22 @@ class LeaveApplicationController extends Controller
                         'action' => $log->action,
                         'previous_credit' => $log->previous_credit,
                         'leave_credit' => $log->leave_credits,
-                        'remaining' =>  $log->previous_credit - $log->leave_credits ,
-                        'created_at' =>  $log->created_at ,
+                        'remaining' =>  $log->previous_credit - $log->leave_credits,
+                        'created_at' =>  $log->created_at,
                     ];
                 }
             }
 
             $response = [
                 'employee_name' => $employeeName,
+                'employee_job' => $employeeJobPosition,
                 'employee_position' => $employeePosition,
                 'employee_area' => $employee_assign_area,
                 'total_credits_earned_this_month' => $totalCreditsEarnedThisMonth,
                 'total_credits_earned_this_year' => $totalCreditsEarnedThisYear,
                 'logs' => $allLogs,
             ];
+
             // $response =array_merge($employeeDetails,$allLogs);
             return ['data' => $response];
         } catch (\Throwable $th) {
@@ -555,8 +554,6 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
-
 
     public function addCredit(AuthPinApprovalRequest $request)
     {
@@ -786,7 +783,7 @@ class LeaveApplicationController extends Controller
                 $Date = $end->copy();
                 // Loop through each day starting from the end date
 
-                while ($foundConsecutiveDays  <= 6) {
+                while ($foundConsecutiveDays  <= 4) {
                     if (Helpers::hasSchedule($Date->toDateString(), $Date->toDateString(), $hrmo_officer)) {
                         // If a schedule is found, increment the counter
                         $foundConsecutiveDays++;
@@ -805,6 +802,30 @@ class LeaveApplicationController extends Controller
                     return response()->json(['message' => "You missed the filing deadline."], Response::HTTP_FORBIDDEN);
                 }
             }
+
+            if ($leave_type->code === 'VL' && $leave_type->code === 'FL') {
+                // Get the current date
+                $currentDate = now();
+
+                // Get the HRMO schedule for the next 5 days
+                $Date = $currentDate->copy();
+                $foundConsecutiveDays = 0;
+                $selected_date = $end->copy();
+                while ($foundConsecutiveDays <= 6) {
+                    if (Helpers::hasSchedule($Date->toDateString(), $Date->toDateString(), $hrmo_officer)) {
+                        // If a schedule is found, increment the counter
+                        $foundConsecutiveDays++;
+                    }
+                    // Move to the next day
+                    $Date->addDay();
+                }
+                if ($Date->lt($selected_date)) {
+
+                    return response()->json(['message' => "You cannot file for leave on $selected_date. Please select a date 5 days or more from today."], Response::HTTP_FORBIDDEN);
+                }
+            }
+
+
             $overlapExists = Helpers::hasOverlappingRecords($start, $end, $employeeId);
 
             if ($overlapExists) {
@@ -932,10 +953,7 @@ class LeaveApplicationController extends Controller
                                     // The selected date is not valid for filing leave
                                     return response()->json(['message' => "You cannot file for leave on $Date. Please select a date 20 days or more from today."], Response::HTTP_FORBIDDEN);
                                 }
-
-
                             }
-                            //20 days leave
 
                             $cleanData['recommending_officer'] = $recommending_and_approving['recommending_officer'];
                             $cleanData['approving_officer'] = $recommending_and_approving['approving_officer'];
@@ -1168,17 +1186,15 @@ class LeaveApplicationController extends Controller
             $employee_profile = $user;
             $employee_area = EmployeeProfile::where('id', $request->user->id)->first();
             $cancelled_by = 'HRMO';
-            $status ='';
-            $remarks ='';
+            $status = '';
+            $remarks = '';
             $cleanData['pin'] = strip_tags($request->pin);
             $employee_assign_area = $employee_area->assignedArea->findDetails();
             $code = $code = $employee_assign_area['details']->code;
-            if ( $code === "HRMO") {
+            if ($code === "HRMO") {
                 $status = 'cancelled by hrmo';
-
             } else {
                 $status = 'cancelled by user';
-
             }
 
             if ($user['authorization_pin'] !== $cleanData['pin']) {
@@ -1416,10 +1432,10 @@ class LeaveApplicationController extends Controller
             $leave_application = LeaveApplication::find($id);
             $leave_type = $leave_application->leaveType;
             $leave_application->update([
-                    'status' => "applied",
-                    'reason' => $request->reason,
-                    'date_from' => $request->date_from,
-                    'date_to' => $request->date_to,
+                'status' => "applied",
+                'reason' => $request->reason,
+                'date_from' => $request->date_from,
+                'date_to' => $request->date_to,
             ]);
 
             LeaveApplicationLog::create([

@@ -151,8 +151,6 @@ class ProcessApprovedOvertimeCredits extends Command
 
                             $matchingBiometrics = Helpers::getFirstInAndOutBiometric($biometric_id, $date->date, $overtimeFromTime, $overtimeToTime);
 
-
-
                             if ($matchingBiometrics) {
 
                                 $totalOverlapHours = $matchingBiometrics;
@@ -226,5 +224,7 @@ class ProcessApprovedOvertimeCredits extends Command
 
         }
     }
+
+
 
 }
