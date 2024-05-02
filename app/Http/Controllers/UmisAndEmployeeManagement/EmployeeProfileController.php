@@ -3263,10 +3263,11 @@ class EmployeeProfileController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            if (is_array($employee_profile->position())) {
-                $position = $employee_profile->position();
+            $position = $employee_profile->position();
+
+            if (is_array($position)) {
                 $area = $employee_profile->assignedArea->findDetails();
-                return response()->json(["message" => "Action is prohibited, this employee is currently a " . $position->position . " in " . $area['details']->name . "."], Response::HTTP_FORBIDDEN);
+                return response()->json(["message" => "Action is prohibited, this employee is currently a " . $position['position'] . " in " . $area['details']->name . "."], Response::HTTP_FORBIDDEN);
             }
 
             $new_in_active = InActiveEmployee::create([
@@ -3285,16 +3286,21 @@ class EmployeeProfileController extends Controller
                 return response()->json(['message' => "Failed to deactivate account."], Response::HTTP_BAD_REQUEST);
             }
 
-            
-            $plantilla_number = $employee_profile->assignedArea->plantillaNumber;
-
-            if ($plantilla_number ) {
+            if($employee_profile->employmentType->name === 'Permanent CTI'){
+                $plantilla_number = $employee_profile->assignedArea->plantillaNumber;
                 $plantilla_number->update([
                     'employee_profile_id' => null,
-                    // 'is_dissolve' => true
+                    'is_dissolve' => true
                 ]);
             }
-            
+
+            if($employee_profile->employmentType->name !== 'Job Order'){
+                $plantilla_number = $employee_profile->assignedArea->plantillaNumber;
+                $plantilla_number->update([
+                    'employee_profile_id' => null
+                ]);
+            }
+
             $assign_area = $employee_profile->assignedArea;
 
             AssignAreaTrail::create([
