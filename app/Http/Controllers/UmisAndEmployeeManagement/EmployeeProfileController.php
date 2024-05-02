@@ -3251,9 +3251,9 @@ class EmployeeProfileController extends Controller
         
             DB::beginTransaction();
             $user = $request->user;
-            $cleanData['password'] = strip_tags($request->password);
+            $cleanData['pin'] = strip_tags($request->password);
 
-            if ($user['authorization_pin'] !==  $cleanData['password']) {
+            if ($user['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
@@ -3306,7 +3306,6 @@ class EmployeeProfileController extends Controller
             DB::commit();
 
             Helpers::registerSystemLogs($request, null, true, 'Success in deleting a ' . $this->SINGULAR_MODULE_NAME . '.');
-
 
             return response()->json(['message' => 'Employee profile deleted.'], Response::HTTP_OK);
         } catch (\Throwable $th) {

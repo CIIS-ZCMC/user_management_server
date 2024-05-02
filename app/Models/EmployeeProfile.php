@@ -96,15 +96,15 @@ class EmployeeProfile extends Authenticatable
         return $this->hasMany(LoginTrail::class);
     }
 
-    public function isUnderProvation()
+    public function isUnderProbation()
     {
         $area = $this->assignedArea;
-        $provation_period = $area->designation->provation;
+        $probation_period = $area->designation->probation;
         
         $hireDate = Carbon::parse($this->date_hired);
         $currentDate = Carbon::now();
 
-        return $hireDate->diffInMonths($currentDate) < $provation_period;
+        return $hireDate->diffInMonths($currentDate) < $probation_period;
     }
 
     public function isDeactivated()
@@ -280,7 +280,6 @@ class EmployeeProfile extends Authenticatable
         }
 
 
-
         $overtime_applications = $this->overtimeApplication;
 
         if ($overtime_applications != NULL) {
@@ -324,7 +323,7 @@ class EmployeeProfile extends Authenticatable
             }
         }
 
-        $time_adjustments = TimeAdjusment::where('employee_profile_id', $this->id)->get();
+        $time_adjustments = TimeAdjustment::where('employee_profile_id', $this->id)->get();
         if ($time_adjustments != NULL) {   
             foreach($time_adjustments as $time_adjustment){
                 TimeAdjustmentLog::where('employee_profile_id', $time_adjustment->id)->delete();
