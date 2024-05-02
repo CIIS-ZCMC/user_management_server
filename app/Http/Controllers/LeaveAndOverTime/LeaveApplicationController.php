@@ -1461,7 +1461,6 @@ class LeaveApplicationController extends Controller
                 return response()->json(['message' => 'You already have an application for the same dates.'], Response::HTTP_FORBIDDEN);
             }
 
-
             $leave_application = LeaveApplication::find($id);
             $leave_type = $leave_application->leaveType;
             $leave_application->update([
