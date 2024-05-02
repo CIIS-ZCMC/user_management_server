@@ -588,18 +588,15 @@ class CtoApplicationController extends Controller
             $employeePosition = null;
             $totalCreditsEarnedThisMonth = 0;
             $totalCreditsEarnedThisYear = 0;
+            $totalCreditsEarnedNextYear = 0;
             foreach ($employeeCredits as $employeeCredit) {
 
                 if (!$employeeName) {
                     $employeeName = $employeeCredit->employeeProfile->name();
-                   $employeePosition = $employeeCredit->employeeProfile->employmentType->name;
+                    $employeePosition = $employeeCredit->employeeProfile->employmentType->name;
                     $employee_assign_area = $employeeCredit->employeeProfile->assignedArea->findDetails();
                 }
-                $employeeDetails = [
-                    'employee_name' => $employeeCredit->employeeProfile->name(),
-                    'employee_position' => $employeeCredit->employeeProfile->employmentType->name,
-                    'employee_assign_area' => $employeeCredit->employeeProfile->assignedArea->findDetails(),
-                ];
+
                 $logs = $employeeCredit->logs;
 
                 foreach ($logs as $log) {
@@ -613,9 +610,12 @@ class CtoApplicationController extends Controller
                         if (Carbon::parse($log->created_at)->format('Y') === Carbon::now()->format('Y')) {
                             $totalCreditsEarnedThisYear += $log->hours;
                         }
+
+                        if (Carbon::parse($log->created_at)->format('Y') === Carbon::now()->addYear()->format('Y')) {
+                            $totalCreditsEarnedNextYear += $log->hours;
+                        }
                     }
                     $allLogs[] = [
-
                         'reason' => $log->reason,
                         'action' => $log->action,
                         'previous_overtime_hours' => $log->previous_overtime_hours,
@@ -632,6 +632,7 @@ class CtoApplicationController extends Controller
                 'employee_area' => $employee_assign_area,
                 'total_credits_earned_this_month' => $totalCreditsEarnedThisMonth,
                 'total_credits_earned_this_year' => $totalCreditsEarnedThisYear,
+                'total_credits_earned_next_year' => $totalCreditsEarnedNextYear,
                 'logs' => $allLogs,
             ];
             // $response =array_merge($employeeDetails,$allLogs);
