@@ -26,6 +26,7 @@ use App\Http\Requests\LeaveApplicationRequest;
 use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Resources\EmployeeLeaveCredit as ResourcesEmployeeLeaveCredit;
 use App\Http\Resources\LeaveApplicationResource;
+use App\Models\DailyTimeRecords;
 use App\Models\EmployeeLeaveCredit;
 use App\Models\EmployeeLeaveCreditLogs;
 use App\Models\EmployeeProfile;
@@ -36,6 +37,7 @@ use App\Models\OfficialBusiness;
 use App\Models\OfficialTime;
 use App\Models\OvertimeApplication;
 use App\Models\Schedule;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class LeaveApplicationController extends Controller
@@ -418,10 +420,6 @@ class LeaveApplicationController extends Controller
         }
     }
 
-
-
-
-
     public function getEmployees()
     {
         try {
@@ -492,67 +490,109 @@ class LeaveApplicationController extends Controller
         }
     }
 
+    // public function updateCredit(AuthPinApprovalRequest $request)
+    // {
+    //     try {
+    //         $employee_profile = $request->user;
+    //         $user = $request->user;
+    //         $cleanData['pin'] = strip_tags($request->pin);
+
+    //         if ($user['authorization_pin'] !== $cleanData['pin']) {
+    //             return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
+    //         }
+
+    //         foreach ($request->credits as $credit) {
+    //             $employeeId = $request->employee_id;
+    //             $leaveTypeId = $credit['leave_id'];
+
+    //             $leaveCredit = EmployeeLeaveCredit::where('employee_profile_id', $employeeId)
+    //                 ->where('leave_type_id', $leaveTypeId)
+    //                 ->firstOrFail();
+
+    //             $leaveCredit->total_leave_credits = $credit['credit_value'];
+    //             $leaveCredit->save();
+    //         }
+
+    //         EmployeeLeaveCreditLogs::create([
+    //             'employee_leave_credit_id' => $leaveCredit->id,
+    //             'previous_credit' => $leaveCredit->total_leave_credits,
+    //             'leave_credits' => $credit['credit_value'],
+    //             'reason' => "Update Credits",
+    //             'action' => "add"
+    //         ]);
+
+    //         $updatedLeaveCredits = EmployeeLeaveCredit::with(['employeeProfile.personalInformation', 'leaveType'])
+    //             ->where('employee_profile_id', $request->employee_id)
+    //             ->get()
+    //             ->groupBy('employee_profile_id');
+
+
+
+    //         $response = [];
+
+    //         foreach ($updatedLeaveCredits as $employeeProfileId => $leaveCreditGroup) {
+    //             $employeeDetails = $leaveCreditGroup->first()->employeeProfile->personalInformation->name();
+    //             $leaveCreditData = [];
+
+    //             foreach ($leaveCreditGroup as $leaveCredit) {
+    //                 $leaveCreditData[$leaveCredit->leaveType->name] = $leaveCredit->total_leave_credits;
+    //             }
+
+    //             $employeeResponse = [
+    //                 'id' => $employeeProfileId,
+    //                 'name' => $employeeDetails,
+    //             ];
+
+    //             $employeeResponse = array_merge($employeeResponse, $leaveCreditData);
+    //             $response[] = $employeeResponse;
+    //         }
+
+    //         return response()->json(['message' => 'Leave credits updated successfully', 'data' => $response,], 200);
+    //     } catch (\Throwable $th) {
+    //         return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+    //     }
+    // }
+
     public function updateCredit(AuthPinApprovalRequest $request)
     {
-        try {
-            $employee_profile = $request->user;
-            $user = $request->user;
-            $cleanData['pin'] = strip_tags($request->pin);
 
-            if ($user['authorization_pin'] !== $cleanData['pin']) {
-                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
+            // Get the first day of last month
+            $firstDayOfLastMonth = now()->subMonth()->startOfMonth();
+            // Get the first day of current month
+            $firstDayOfCurrentMonth = now()->startOfMonth();
+
+            $undertimeLastMonth = DailyTimeRecords::select('employee_profiles.id', DB::raw('SUM(undertime_minutes) as total_undertime_last_month'))
+            ->join('employee_profiles', 'daily_time_records.biometric_id', '=', 'employee_profiles.biometric_id')
+            ->where('dtr_date', '>=', $firstDayOfLastMonth)
+            ->where('dtr_date', '<', $firstDayOfCurrentMonth)
+            ->where('undertime_minutes', '>', 0)
+            ->groupBy('employee_profiles.id')
+            ->get();
+
+            $undertimeByEmployee = [];
+
+            foreach ($undertimeLastMonth as $undertime) {
+                $undertimeByEmployee[$undertime->id] = $undertime->total_undertime_last_month;
+                $undertimeMinutes = $undertime->total_undertime_last_month;
+                $employeeProfileId = $undertime->id;
+                $deduction = $undertimeMinutes / 480;
+
+                $vacationLeaveType = LeaveType::where('name', 'Vacation Leave')->first();
+                $vlid=$vacationLeaveType->id;
+
+                EmployeeLeaveCredit::where('leave_type_id', $vlid)
+                ->where('employee_profile_id', $employeeProfileId)
+                ->decrement('total_leave_credits', $deduction);
+                // $previous_credit_vl = $undertime->total_leave_credits;
+                // EmployeeLeaveCreditLogs::create([
+                //     'previous_credit' => $previous_credit,
+                //     'leave_credits' => $daysDiff,
+                //     'reason' => 'apply',
+                //     'action' => 'deduct'
+                // ]);
             }
 
-            foreach ($request->credits as $credit) {
-                $employeeId = $request->employee_id;
-                $leaveTypeId = $credit['leave_id'];
 
-                $leaveCredit = EmployeeLeaveCredit::where('employee_profile_id', $employeeId)
-                    ->where('leave_type_id', $leaveTypeId)
-                    ->firstOrFail();
-
-                $leaveCredit->total_leave_credits = $credit['credit_value'];
-                $leaveCredit->save();
-            }
-
-            EmployeeLeaveCreditLogs::create([
-                'employee_leave_credit_id' => $leaveCredit->id,
-                'previous_credit' => $leaveCredit->total_leave_credits,
-                'leave_credits' => $credit['credit_value'],
-                'reason' => "Update Credits",
-                'action' => "add"
-            ]);
-
-            $updatedLeaveCredits = EmployeeLeaveCredit::with(['employeeProfile.personalInformation', 'leaveType'])
-                ->where('employee_profile_id', $request->employee_id)
-                ->get()
-                ->groupBy('employee_profile_id');
-
-
-
-            $response = [];
-
-            foreach ($updatedLeaveCredits as $employeeProfileId => $leaveCreditGroup) {
-                $employeeDetails = $leaveCreditGroup->first()->employeeProfile->personalInformation->name();
-                $leaveCreditData = [];
-
-                foreach ($leaveCreditGroup as $leaveCredit) {
-                    $leaveCreditData[$leaveCredit->leaveType->name] = $leaveCredit->total_leave_credits;
-                }
-
-                $employeeResponse = [
-                    'id' => $employeeProfileId,
-                    'name' => $employeeDetails,
-                ];
-
-                $employeeResponse = array_merge($employeeResponse, $leaveCreditData);
-                $response[] = $employeeResponse;
-            }
-
-            return response()->json(['message' => 'Leave credits updated successfully', 'data' => $response,], 200);
-        } catch (\Throwable $th) {
-            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
     }
 
     public function addCredit(AuthPinApprovalRequest $request)
