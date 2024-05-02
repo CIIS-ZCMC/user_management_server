@@ -3271,6 +3271,7 @@ class EmployeeProfileController extends Controller
             }
 
             $new_in_active = InActiveEmployee::create([
+            
                 'personal_information_id' => $employee_profile->personalInformation->id,
                 'employment_type_id' => $employee_profile->employment_type_id,
                 'employee_id' => $employee_profile->employee_id,
