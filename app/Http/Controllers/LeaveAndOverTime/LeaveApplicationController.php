@@ -204,7 +204,8 @@ class LeaveApplicationController extends Controller
         }
     }
 
-    public function hrmoApproval(Request $request){
+    public function hrmoApproval(Request $request)
+    {
         try {
 
             $employee_profile = $request->user;
@@ -522,7 +523,6 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
     public function getAllEmployees()
     {
         try {
@@ -543,7 +543,6 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
     public function getLeaveTypes()
     {
         try {
@@ -557,7 +556,6 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
     public function updateCredit(AuthPinApprovalRequest $request)
     {
         try {
@@ -620,7 +618,6 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
     public function addCredit(AuthPinApprovalRequest $request)
     {
         try {
@@ -680,7 +677,6 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
     public function approved($id, AuthPinApprovalRequest $request)
     {
         try {
@@ -773,7 +769,6 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
     public function userLeaveApplication(Request $request)
     {
         try {
@@ -804,7 +799,6 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
     public function store(LeaveApplicationRequest $request)
     {
         try {
@@ -1156,7 +1150,6 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
     public function show($id, Request $request)
     {
         try {
@@ -1174,7 +1167,6 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
     public function declined($id, AuthPinApprovalRequest $request)
     {
         try {
@@ -1289,7 +1281,6 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
     public function cancelled($id, AuthPinApprovalRequest $request)
     {
 
@@ -1344,7 +1335,6 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
     public function cancelUser($id, AuthPinApprovalRequest $request)
     {
         try {
@@ -1393,7 +1383,6 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
     public function received($id, AuthPinApprovalRequest $request)
     {
         try {
@@ -1449,14 +1438,33 @@ class LeaveApplicationController extends Controller
     public function printLeaveForm($id)
     {
         try {
-           $data = OvertimeApplication::with([
-                 'employeeProfile',
-                 'recommendingOfficer',
-                 'approvingOfficer',
-                 'activities',
-                 'activities.dates',
-                 'activities.dates.employees'
-             ])->where('id', '59')->first();
+            $data = LeaveApplication::with(['employeeProfile', 'leaveType', 'hrmoOfficer', 'recommendingOfficer', 'approvingOfficer'])->where('id', $id)->first();
+            $vl_employee_credit = EmployeeLeaveCredit::where('leave_type_id', LeaveType::where('code', 'VL')->first()->id)
+                ->where('employee_profile_id', $data->employee_profile_id)
+                ->first();
+            $sl_employee_credit = EmployeeLeaveCredit::where('leave_type_id', LeaveType::where('code', 'SL')->first()->id)
+                ->where('employee_profile_id', $data->employee_profile_id)
+                ->first();
+
+            // return $data;
+            $leave_type = LeaveTypeResource::collection(LeaveType::all());
+            $my_leave_type = new LeaveTypeResource(LeaveType::find($data->leave_type_id));
+            $hrmo_officer = Section::with(['supervisor'])->where('code', 'HRMO')->first();
+
+            $employeeLeaveCredit = EmployeeLeaveCredit::with('employeeLeaveCreditLogs')
+                ->where('employee_profile_id', $data->employee_profile_id)
+                ->where('leave_type_id', $data->leave_type_id)
+                ->first();
+
+            // if ($employeeLeaveCredit) {
+            //     $creditLogs = $employeeLeaveCredit->employeeLeaveCreditLogs;
+            //     // Now you can work with $creditLogs
+            // } else {
+            //     // Handle the case when no matching record is found
+            //     $creditLogs = null; // Or any other appropriate action
+            // }
+
+            // return view('leave_from.leave_application_form', compact('data', 'leave_type', 'hrmo_officer'));
 
              $is_monetization = false;
              $options = new Options();
@@ -1524,7 +1532,6 @@ class LeaveApplicationController extends Controller
         // Return true if any overlap is found, otherwise false
         return $overlappingLeave || $overlappingOb || $overlappingOT;
     }
-
     public function reschedule($id, AuthPinApprovalRequest $request)
     {
         try {
