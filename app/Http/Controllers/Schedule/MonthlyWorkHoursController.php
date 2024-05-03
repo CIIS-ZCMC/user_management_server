@@ -6,6 +6,7 @@ use App\Helpers\Helpers;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MonthlyWorkHourRequest;
 use App\Http\Resources\MonthlyWorkHoursResource;
+use App\Models\EmployeeSchedule;
 use App\Models\MonthlyWorkHours;
 use App\Services\RequestLogger;
 use Illuminate\Http\Request;
@@ -185,6 +186,29 @@ class MonthlyWorkHoursController extends Controller
             $this->requestLogger->errorLog($this->CONTROLLER_NAME, 'getMonthlyWorkHours', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
 
+
+    public function getMyTotalWorkHours(Request $request)
+    {
+        try {
+            $employee_id = $request->employeeID;
+            $month_year = Carbon::parse($request->monthYear)->format('m-Y');
+
+            $total_working_hours = EmployeeSchedule::where('employee_profile_id', $employee_id)
+                ->whereHas('schedule', function ($query) use ($month_year) {
+                    $query->whereRaw("DATE_FORMAT(date, '%m-%Y') = ?", [$month_year]);
+                })
+                ->join('schedules', 'employee_profile_schedule.schedule_id', '=', 'schedules.id')
+                ->join('time_shifts', 'schedules.time_shift_id', '=', 'time_shifts.id')
+                ->sum('time_shifts.total_hours');
+
+            return response()->json(['data' => $total_working_hours], Response::HTTP_OK);
+
+        } catch (\Throwable $th) {
+
+            $this->requestLogger->errorLog($this->CONTROLLER_NAME, 'getMonthlyWorkHours', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Helpers\Helpers;
+use App\Models\DailyTimeRecords;
 use App\Models\EmployeeOvertimeCredit;
 use App\Models\EmployeeOvertimeCreditLog;
 use App\Models\EmployeeProfile;
@@ -10,6 +11,7 @@ use App\Models\Holiday;
 use App\Models\OvertimeApplication;
 use Illuminate\Console\Command;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class ProcessApprovedOvertimeCredits extends Command
 {
@@ -227,7 +229,7 @@ class ProcessApprovedOvertimeCredits extends Command
 
     public function handlea()
     {
-       
+
     }
 
 

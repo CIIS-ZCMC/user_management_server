@@ -1472,13 +1472,13 @@ class LeaveApplicationController extends Controller
                 ->where('leave_type_id', $data->leave_type_id)
                 ->first();
 
-            if ($employeeLeaveCredit) {
-                $creditLogs = $employeeLeaveCredit->employeeLeaveCreditLogs;
-                // Now you can work with $creditLogs
-            } else {
-                // Handle the case when no matching record is found
-                $creditLogs = null; // Or any other appropriate action
-            }
+            // if ($employeeLeaveCredit) {
+            //     $creditLogs = $employeeLeaveCredit->employeeLeaveCreditLogs;
+            //     // Now you can work with $creditLogs
+            // } else {
+            //     // Handle the case when no matching record is found
+            //     $creditLogs = null; // Or any other appropriate action
+            // }
 
             // return view('leave_from.leave_application_form', compact('data', 'leave_type', 'hrmo_officer'));
 

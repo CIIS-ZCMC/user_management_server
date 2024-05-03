@@ -772,6 +772,11 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('inactive-employees', 'InActiveEmployeeController@index');
         });
 
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('inactive-employees/{id}', 'InActiveEmployeeController@showProfile');
+
+        });
+
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
             Route::delete('employee-deactivate-account/{id}', 'InActiveEmployeeController@retireAndDeactivateAccount');
         });
@@ -1943,6 +1948,14 @@ Route::middleware('auth.cookie')->group(function () {
             Route::post('ovt-application-past', 'OvertimeController@storePast');
         });
 
+        Route::middleware(['auth.permission:UMIS-OM request'])->group(function () {
+            Route::post('ovt-application-bulk', 'OvertimeController@storeBulk');
+        });
+
+        Route::middleware(['auth.permission:UMIS-LM download'])->group(function () {
+            Route::get('overtime-print/{id}', 'OvertimeController@printOvertimeForm');
+        });
+
         Route::middleware(['auth.permission:UMIS-OM approve'])->group(function () {
             Route::post('ovt-application-approved/{id}', 'OvertimeController@approved');
         });
@@ -2079,6 +2092,10 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-ScM download'])->group(function () {
             Route::get('schedule-generate', 'ScheduleController@generate');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function () {
+            Route::get('schedule-time-shift', 'TimeShiftController@index');
         });
 
         /**
@@ -2240,5 +2257,6 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function () {
             Route::get('get-monthly-work-hours', 'MonthlyWorkHoursController@getMonthlyWorkHours');
         });
+
     });
 });
