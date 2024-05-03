@@ -30,7 +30,7 @@ class ProcessExpiredOvertimeCredits extends Command
         $currentDate = date('Y-m-d');
 
         // Retrieve records where valid_until is past the current date
-        $expiredCredits = EmployeeOvertimeCredit::where('valid_until', '<', $currentDate)->get();
+        $expiredCredits = EmployeeOvertimeCredit::where('valid_until', '<', $currentDate)->where('is_expired', false)->get();
 
         // Log the expired credits before deleting them
         foreach ($expiredCredits as $expiredCredit) {
@@ -38,12 +38,11 @@ class ProcessExpiredOvertimeCredits extends Command
             EmployeeOvertimeCreditLog::create([
                 'employee_profile_id' => $expiredCredit->employee_profile_id,
                 'expired_credit_by_hour' => $expiredCredit->earned_credit_by_hour,
-                'action' => 'Expired',
+                'action' => 'deduct',
+                'reason' => 'expired',
             ]);
+
+            $expiredCredit->update(['is_expired' => true]);
         }
-        
-        $updatedCount = EmployeeOvertimeCredit::where('valid_until', '<', $currentDate)
-        ->where('is_expired', false)
-        ->update(['is_expired' => true]);
     }
 }

@@ -26,14 +26,19 @@ use App\Http\Requests\LeaveApplicationRequest;
 use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Resources\EmployeeLeaveCredit as ResourcesEmployeeLeaveCredit;
 use App\Http\Resources\LeaveApplicationResource;
+use App\Models\DailyTimeRecords;
 use App\Models\EmployeeLeaveCredit;
 use App\Models\EmployeeLeaveCreditLogs;
+use App\Models\EmployeeOvertimeCreditLog;
 use App\Models\EmployeeProfile;
+use App\Models\Holiday;
 use App\Models\LeaveApplicationLog;
 use App\Models\LeaveApplicationRequirement;
 use App\Models\OfficialBusiness;
 use App\Models\OfficialTime;
+use App\Models\OvertimeApplication;
 use App\Models\Schedule;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class LeaveApplicationController extends Controller
@@ -43,12 +48,10 @@ class LeaveApplicationController extends Controller
         try {
 
             $employee_profile = $request->user;
-
             /**
              * HR division
              * Only newly applied leave application
              */
-
             if (Helpers::getHrmoOfficer() === $employee_profile->id) {
                 $employeeId = $employee_profile->id;
                 $hrmo = ["applied", "for recommending approval", "approved", "declined by hrmo officer", 'cancelled', 'received'];
@@ -356,12 +359,63 @@ class LeaveApplicationController extends Controller
     public function employeeCreditLog($id)
     {
         try {
-            $employee_credit_logs = EmployeeLeaveCredit::where('employee_profile_id',$id)->get();
+            $employeeCredits = EmployeeLeaveCredit::with(['logs', 'employeeProfile', 'leaveType'])->where('employee_profile_id', $id)->get();
+            $allLogs = [];
+            $employeeName = null;
+            $employeePosition = null;
+            $totalCreditsEarnedThisMonth = null;
+            $totalCreditsEarnedThisYear = 0;
+            foreach ($employeeCredits as $employeeCredit) {
 
-            return response()->json([
-                'data' => ResourcesEmployeeLeaveCredit::collection($employee_credit_logs),
-                'message' => 'Retrieve list.'
-            ], Response::HTTP_OK);
+                if (!$employeeName) {
+
+                    $employeeName = $employeeCredit->employeeProfile->name();
+                    $employeeJobPosition = $employeeCredit->employeeProfile->findDesignation()->code;
+                    $employeePosition = $employeeCredit->employeeProfile->employmentType->name;
+                    $employee_assign_area = $employeeCredit->employeeProfile->assignedArea->findDetails();
+                }
+                $logs = $employeeCredit->logs;
+
+                foreach ($logs as $log) {
+
+                    if ($log->action === 'add') {
+
+                        if (Carbon::parse($log->created_at)->format('Y-m') === Carbon::now()->format('Y-m')) {
+                           $leaveType = $employeeCredit->leaveType->code;
+                            if( $leaveType === "VL" || $leaveType === "SL")
+                            {
+                                $totalCreditsEarnedThisMonth[$leaveType] = isset($totalCreditsEarnedThisMonth[$leaveType]) ? $totalCreditsEarnedThisMonth[$leaveType] ($log->leave_credits ?? 0) : ($log->leave_credits ?? 0);
+                            }
+                        }
+
+                        if (Carbon::parse($log->created_at)->format('Y') === Carbon::now()->format('Y')) {
+                            $totalCreditsEarnedThisYear += $log->leave_credits;
+                        }
+                    }
+                    $allLogs[] = [
+                        'leave_type' => $employeeCredit->leaveType->name,
+                        'reason' => $log->reason,
+                        'action' => $log->action,
+                        'previous_credit' => $log->previous_credit,
+                        'leave_credit' => $log->leave_credits,
+                        'remaining' =>  $log->previous_credit - $log->leave_credits,
+                        'created_at' =>  $log->created_at,
+                    ];
+                }
+            }
+
+            $response = [
+                'employee_name' => $employeeName,
+                'employee_job' => $employeeJobPosition,
+                'employee_position' => $employeePosition,
+                'employee_area' => $employee_assign_area,
+                'total_credits_earned_this_month' => $totalCreditsEarnedThisMonth,
+                'total_credits_earned_this_year' => $totalCreditsEarnedThisYear,
+                'logs' => $allLogs,
+            ];
+
+            // $response =array_merge($employeeDetails,$allLogs);
+            return ['data' => $response];
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -463,8 +517,9 @@ class LeaveApplicationController extends Controller
             EmployeeLeaveCreditLogs::create([
                 'employee_leave_credit_id' => $leaveCredit->id,
                 'previous_credit' => $leaveCredit->total_leave_credits,
-                'leave_credits' => '0',
-                'reason' => 'update credit'
+                'leave_credits' => $credit['credit_value'],
+                'reason' => "Update Credits",
+                'action' => "add"
             ]);
 
             $updatedLeaveCredits = EmployeeLeaveCredit::with(['employeeProfile.personalInformation', 'leaveType'])
@@ -576,7 +631,7 @@ class LeaveApplicationController extends Controller
                 return response()->json(["message" => "No leave application with id " . $id], Response::HTTP_NOT_FOUND);
             }
             if ($leave_application->status === 'cancelled by user') {
-                return response()->json(["message" => "Application has been cancelled by employee. "], Response::HTTP_NOT_FOUND);
+                return response()->json(["message" => "Application has been cancelled by employee. "], Response::HTTP_FORBIDDEN);
             }
 
             $position = $employee_profile->position();
@@ -679,6 +734,7 @@ class LeaveApplicationController extends Controller
     public function store(LeaveApplicationRequest $request)
     {
         try {
+
             $employee_profile = $request->user;
             $employeeId = $employee_profile->id;
             $cleanData['pin'] = strip_tags($request->pin);
@@ -714,7 +770,6 @@ class LeaveApplicationController extends Controller
             $leave_type = LeaveType::find($request->leave_type_id);
 
             $checkSchedule = Helpers::hasSchedule($start, $end, $employeeId);
-
             if (!$checkSchedule) {
                 return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
             }
@@ -728,7 +783,7 @@ class LeaveApplicationController extends Controller
                 // Loop through each day starting from the end date
 
                 while ($foundConsecutiveDays  <= 4) {
-                    if (Helpers::hasSchedule($Date->toDateString(), $Date->toDateString(), $employeeId)) {
+                    if (Helpers::hasSchedule($Date->toDateString(), $Date->toDateString(), $hrmo_officer)) {
                         // If a schedule is found, increment the counter
                         $foundConsecutiveDays++;
 
@@ -745,10 +800,29 @@ class LeaveApplicationController extends Controller
                 if ($finalDate && $currentDate->gt($finalDate)) {
                     return response()->json(['message' => "You missed the filing deadline."], Response::HTTP_FORBIDDEN);
                 }
-              
-              
             }
 
+            if ($leave_type->code === 'VL' && $leave_type->code === 'FL') {
+                // Get the current date
+                $currentDate = now();
+
+                // Get the HRMO schedule for the next 5 days
+                $Date = $currentDate->copy();
+                $foundConsecutiveDays = 0;
+                $selected_date = $end->copy();
+                while ($foundConsecutiveDays <= 6) {
+                    if (Helpers::hasSchedule($Date->toDateString(), $Date->toDateString(), $hrmo_officer)) {
+                        // If a schedule is found, increment the counter
+                        $foundConsecutiveDays++;
+                    }
+                    // Move to the next day
+                    $Date->addDay();
+                }
+                if ($Date->lt($selected_date)) {
+
+                    return response()->json(['message' => "You cannot file for leave on $selected_date. Please select a date 5 days or more from today."], Response::HTTP_FORBIDDEN);
+                }
+            }
 
 
             $overlapExists = Helpers::hasOverlappingRecords($start, $end, $employeeId);
@@ -855,8 +929,29 @@ class LeaveApplicationController extends Controller
                         if (!$isMCC) {
 
                             if ($leave_type->code = 'VL' && $request->country != 'Philippines') {
-                                $cleanData['recommending_officer'] = Helpers::getDivHead($employee_profile->assignedArea->findDetails());
-                                $cleanData['approving_officer'] = Helpers::getChiefOfficer();
+                                // Get the current date
+                                $currentDate = now();
+
+                                // Get the HRMO schedule for the next 20 days
+                                $Date = $currentDate->copy();
+                                $foundConsecutiveDays = 0;
+
+                                while ($foundConsecutiveDays <= 21) {
+                                    if (Helpers::hasSchedule($Date->toDateString(), $Date->toDateString(), $hrmo_officer)) {
+                                        // If a schedule is found, increment the counter
+                                        $foundConsecutiveDays++;
+                                    }
+                                    // Move to the next day
+                                    $Date->addDay();
+                                }
+                                // Check if the selected date is greater than or equal to the final date for the employee to file for leave
+                                if ($Date->gte($finalDate)) {
+                                    $cleanData['recommending_officer'] = Helpers::getDivHead($employee_profile->assignedArea->findDetails());
+                                    $cleanData['approving_officer'] = Helpers::getChiefOfficer();
+                                } else {
+                                    // The selected date is not valid for filing leave
+                                    return response()->json(['message' => "You cannot file for leave on $Date. Please select a date 20 days or more from today."], Response::HTTP_FORBIDDEN);
+                                }
                             }
 
                             $cleanData['recommending_officer'] = $recommending_and_approving['recommending_officer'];
@@ -910,20 +1005,22 @@ class LeaveApplicationController extends Controller
                                     'used_leave_credits' => $employee_credit_vl->used_leave_credits + $daysDiff
                                 ]);
 
-                                EmployeeLeaveCreditLogs::create([
-                                    'employee_leave_credit_id' => $employee_credit->id,
-                                    'previous_credit' => $previous_credit_vl,
-                                    'leave_credits' => $daysDiff,
-                                    'reason' => 'apply'
-                                ]);
+                                // EmployeeLeaveCreditLogs::create([
+                                //     'employee_leave_credit_id' => $employee_credit->id,
+                                //     'previous_credit' => $previous_credit_vl,
+                                //     'leave_credits' => $daysDiff,
+                                //     'reason' => 'apply',
+                                //     'action' => 'deduct'
+                                // ]);
                             }
 
-                            EmployeeLeaveCreditLogs::create([
-                                'employee_leave_credit_id' => $employee_credit->id,
-                                'previous_credit' => $previous_credit,
-                                'leave_credits' => $daysDiff,
-                                'reason' => 'apply'
-                            ]);
+                            // EmployeeLeaveCreditLogs::create([
+                            //     'employee_leave_credit_id' => $employee_credit->id,
+                            //     'previous_credit' => $previous_credit,
+                            //     'leave_credits' => $daysDiff,
+                            //     'reason' => 'apply',
+                            //     'action' => 'deduct',
+                            // ]);
                         }
 
                         if ($request->requirements) {
@@ -950,6 +1047,14 @@ class LeaveApplicationController extends Controller
                             'action_by' => $employee_profile->id,
                             'leave_application_id' => $leave_application->id,
                             'action' => 'Applied'
+                        ]);
+
+                        EmployeeLeaveCreditLogs::create([
+                            'employee_leave_credit_id' => $employee_credit->id,
+                            'previous_credit' => $previous_credit,
+                            'leave_credits' => $daysDiff,
+                            'reason' => 'apply',
+                            'action' => 'deduct'
                         ]);
                     }
                 }
@@ -1015,6 +1120,11 @@ class LeaveApplicationController extends Controller
             $leave_application_recommending = $leave_application->recommending_officer;
             $leave_application_approving = $leave_application->approving_officer;
 
+
+            if ($leave_application->status === 'cancelled by user') {
+                return response()->json(["message" => "Application has been cancelled by employee. "], Response::HTTP_FORBIDDEN);
+            }
+
             if ($employee_profile->id === $leave_application_hrmo) {
                 $status = 'declined by hrmo officer';
                 $declined_by = "HR";
@@ -1052,7 +1162,8 @@ class LeaveApplicationController extends Controller
                     'employee_leave_credit_id' => $employee_credit->id,
                     'previous_credit' => $current_leave_credit,
                     'leave_credits' => $leave_application->applied_credits,
-                    'reason' => "declined"
+                    'reason' => "declined",
+                    'action' => 'add'
                 ]);
             }
 
@@ -1073,12 +1184,12 @@ class LeaveApplicationController extends Controller
 
     public function cancelled($id, AuthPinApprovalRequest $request)
     {
+
         try {
             $user = $request->user;
-            $employee_profile= $user;
-            $cancelled_by = 'HRMO';
-            $cleanData['pin'] = strip_tags($request->pin);
+            $employee_profile = $user;
 
+            $cleanData['pin'] = strip_tags($request->pin);
             if ($user['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
             }
@@ -1086,17 +1197,12 @@ class LeaveApplicationController extends Controller
             $leave_application = LeaveApplication::find($id);
             $leave_type = $leave_application->leaveType;
 
-
             $leave_application->update([
                 'status' => 'cancelled by hrmo',
                 'cancelled_at' => Carbon::now(),
-                'remarks' => 'Cancelled by HRMO.',
+                'remarks' => $request->remarks,
             ]);
 
-            $from = Carbon::parse($leave_application->date_from)->format('F d, Y');
-            $to = Carbon::parse($leave_application->date_to)->format('F d, Y');
-            $message = "Your " . $leave_application->leaveType->name . " request with date from " . $from . " to " . $to . " has been cancelled by " . $cancelled_by . " .";
-            Helpers::notifications($leave_application->employee_profile_id, $message, $leave_application->leaveType->name);
 
             if (!$leave_type->is_special) {
                 $employee_credit = EmployeeLeaveCredit::where('employee_profile_id', $leave_application->employee_profile_id)
@@ -1114,7 +1220,56 @@ class LeaveApplicationController extends Controller
             LeaveApplicationLog::create([
                 'action_by' => $employee_profile->id,
                 'leave_application_id' => $leave_application->id,
-                'action' => 'Cancelled'
+                'action' =>'Cancelled by HRMO'
+            ]);
+
+            return response()->json([
+                'data' => new LeaveApplicationResource($leave_application),
+                'message' => 'Cancelled leave application successfully.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function cancelUser($id, AuthPinApprovalRequest $request)
+    {
+        try {
+            $user = $request->user;
+            $employee_profile = $user;
+
+            $cleanData['pin'] = strip_tags($request->pin);
+            if ($user['authorization_pin'] !== $cleanData['pin']) {
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
+            }
+
+            $leave_application = LeaveApplication::find($id);
+            $leave_type = $leave_application->leaveType;
+
+            $leave_application->update([
+                'status' => 'cancelled by user',
+                'cancelled_at' => Carbon::now(),
+                'remarks' => $request->remarks,
+            ]);
+
+
+            if (!$leave_type->is_special) {
+                $employee_credit = EmployeeLeaveCredit::where('employee_profile_id', $leave_application->employee_profile_id)
+                    ->where('leave_type_id', $leave_application->leave_type_id)->first();
+
+                $current_leave_credit = $employee_credit->total_leave_credits;
+                $current_used_leave_credit = $employee_credit->used_leave_credits;
+
+                $employee_credit->update([
+                    'total_leave_credits' => $current_leave_credit + $leave_application->applied_credits,
+                    'used_leave_credits' => $current_used_leave_credit - $leave_application->applied_credits
+                ]);
+            }
+
+            LeaveApplicationLog::create([
+                'action_by' => $employee_profile->id,
+                'leave_application_id' => $leave_application->id,
+                'action' =>'Cancelled by User'
             ]);
 
             return response()->json([
@@ -1284,5 +1439,53 @@ class LeaveApplicationController extends Controller
 
         // Return true if any overlap is found, otherwise false
         return $overlappingLeave || $overlappingOb || $overlappingOT;
+    }
+
+    public function reschedule($id, AuthPinApprovalRequest $request)
+    {
+        try {
+            $user = $request->user;
+            $employee_profile = $user;
+
+            $cleanData['pin'] = strip_tags($request->pin);
+            if ($user['authorization_pin'] !== $cleanData['pin']) {
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
+            }
+            $hrmo_officer = Helpers::getHrmoOfficer();
+            $start = Carbon::parse($request->date_from);
+            $end =  Carbon::parse($request->date_to);
+            $checkSchedule = Helpers::hasSchedule($start, $end, $hrmo_officer);
+            // if (!$checkSchedule) {
+            //     return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
+            // }
+            $overlapExists = Helpers::hasOverlappingRecords($start, $end, $user);
+
+            if ($overlapExists) {
+                return response()->json(['message' => 'You already have an application for the same dates.'], Response::HTTP_FORBIDDEN);
+            }
+
+            $leave_application = LeaveApplication::find($id);
+            $leave_type = $leave_application->leaveType;
+            $leave_application->update([
+                'status' => "applied",
+                'reason' => $request->reason,
+                'date_from' => $request->date_from,
+                'date_to' => $request->date_to,
+                'created_at' => Carbon::now(),
+            ]);
+
+            LeaveApplicationLog::create([
+                'action_by' => $employee_profile->id,
+                'leave_application_id' => $leave_application->id,
+                'action' => 'Rescheduled by User'
+            ]);
+
+            return response()->json([
+                'data' => new LeaveApplicationResource($leave_application),
+                'message' => 'Rescheduled leave application successfully.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 }

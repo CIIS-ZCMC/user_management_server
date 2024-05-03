@@ -55,7 +55,8 @@ class EmployeeSixMonthEarnSPLCredit extends Command
                     'employee_leave_credit_id' => $employee_leave_credit->id,
                     'previous_credit' => $current_credit,
                     'leave_credits' => $special_privilege_leave->annual_value,
-                    'reason' => "SPL Annual Earned Credit."
+                    'reason' => "Biannual SPL Credits",
+                    'action' => "add"
                 ]);
             }
         }

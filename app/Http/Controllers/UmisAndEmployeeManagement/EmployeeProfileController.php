@@ -108,7 +108,7 @@ class EmployeeProfileController extends Controller
             $job_orders = EmployeeProfile::whereNot('id', 1)->where('employment_type_id', EmploymentType::where('name', 'Job order')->first()->id)->count();
 
             return response()->json([
-                'data' => [
+                'data' => [ 
                     'active_users' => $active_users,
                     'pending_users' => $pending_users,
                     'regular_employees' => $regular_employees,
@@ -162,7 +162,7 @@ class EmployeeProfileController extends Controller
     {
         try {
             $employee = $request->user;
-            $pin = strip_tags($request->authorization_pin);
+            $pin = strip_tags($request->password);
 
             if ($employee->authorization_pin !== $pin) {
                 return response()->json(['message' => "Invalid pin."], Response::HTTP_FORBIDDEN);
@@ -186,7 +186,7 @@ class EmployeeProfileController extends Controller
                         "approved_at" => Carbon::now()
                     ]);
                     break;
-                case "Learning and Development":
+                case "Training":
                     $profile_request = Training::find($request->id);
                     $profile_request->update([
                         "is_request" => false,
@@ -3251,9 +3251,9 @@ class EmployeeProfileController extends Controller
         
             DB::beginTransaction();
             $user = $request->user;
-            $cleanData['password'] = strip_tags($request->password);
+            $cleanData['pin'] = strip_tags($request->password);
 
-            if ($user['authorization_pin'] !==  $cleanData['password']) {
+            if ($user['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
@@ -3263,13 +3263,15 @@ class EmployeeProfileController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
-            if (is_array($employee_profile->position())) {
-                $position = $employee_profile->position();
+            $position = $employee_profile->position();
+
+            if (is_array($position)) {
                 $area = $employee_profile->assignedArea->findDetails();
-                return response()->json(["message" => "Action is prohibited, this employee is currently a " . $position->position . " in " . $area['details']->name . "."], Response::HTTP_FORBIDDEN);
+                return response()->json(["message" => "Action is prohibited, this employee is currently a " . $position['position'] . " in " . $area['details']->name . "."], Response::HTTP_FORBIDDEN);
             }
 
             $new_in_active = InActiveEmployee::create([
+            
                 'personal_information_id' => $employee_profile->personalInformation->id,
                 'employment_type_id' => $employee_profile->employment_type_id,
                 'employee_id' => $employee_profile->employee_id,
@@ -3284,11 +3286,20 @@ class EmployeeProfileController extends Controller
                 return response()->json(['message' => "Failed to deactivate account."], Response::HTTP_BAD_REQUEST);
             }
 
-            $plantilla_number = $employee_profile->assignedArea->plantillaNumber;
-            $plantilla_number->update([
-                'employee_profile_id' => null,
-                // 'is_dissolve' => true
-            ]);
+            if($employee_profile->employmentType->name === 'Permanent CTI'){
+                $plantilla_number = $employee_profile->assignedArea->plantillaNumber;
+                $plantilla_number->update([
+                    'employee_profile_id' => null,
+                    'is_dissolve' => true
+                ]);
+            }
+
+            if($employee_profile->employmentType->name !== 'Job Order'){
+                $plantilla_number = $employee_profile->assignedArea->plantillaNumber;
+                $plantilla_number->update([
+                    'employee_profile_id' => null
+                ]);
+            }
 
             $assign_area = $employee_profile->assignedArea;
 
@@ -3306,7 +3317,6 @@ class EmployeeProfileController extends Controller
             DB::commit();
 
             Helpers::registerSystemLogs($request, null, true, 'Success in deleting a ' . $this->SINGULAR_MODULE_NAME . '.');
-
 
             return response()->json(['message' => 'Employee profile deleted.'], Response::HTTP_OK);
         } catch (\Throwable $th) {

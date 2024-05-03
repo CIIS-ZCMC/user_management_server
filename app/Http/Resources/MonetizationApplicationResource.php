@@ -32,6 +32,7 @@ class MonetizationApplicationResource extends JsonResource
             'reason' => $this->reason,
             'attachment' => config("app.server_domain").$this->attachment,
             'credit_value' => $this->credit_value,
+            'is_qualified' => $this->is_qualified,
             'status' => $this->status,
             "hrmo_officer" => [
                 "employee_id" => $this->hrmoOfficer->employee_id,

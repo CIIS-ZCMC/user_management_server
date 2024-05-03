@@ -22,9 +22,10 @@ return new class extends Migration
 
             $table->unsignedBigInteger('overtime_application_id')->unsigned()->nullable();
             $table->foreign('overtime_application_id')->references('id')->on('overtime_applications');
-            $table->string('action');
-            $table->integer('previous_overtime_hours')->nullable();;
-            $table->integer('hours')->nullable();;
+            $table->string('action')->nullable();
+            $table->string('reason')->nullable();
+            $table->decimal('previous_overtime_hours', 8, 2)->nullable();
+            $table->integer('hours', 8, 2)->nullable();
             $table->integer('expired_credit_by_hour')->nullable();
             $table->timestamps();
         });
