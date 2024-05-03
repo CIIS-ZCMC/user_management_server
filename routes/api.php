@@ -1777,6 +1777,10 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
             Route::get('leave-application-approved-hr', 'LeaveApplicationController@approvedLeaveApplication');
         });
+          //omcc
+        Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
+            Route::get('leave-application-approved-hr', 'LeaveApplicationController@approvedLeaveApplication');
+        });
 
 
         Route::middleware(['auth.permission:UMIS-LM view'])->group(function () {
