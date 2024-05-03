@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('code');
+            $table->integer('probation')->default(6);
             $table->datetime('effective_at')->default(now());
             $table->unsignedBigInteger('salary_grade_id');
             $table->foreign('salary_grade_id')->references('id')->on('salary_grades');

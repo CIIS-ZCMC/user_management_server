@@ -43,7 +43,7 @@ class MonetizationApplicationController extends Controller
 
             if (Helpers::getHrmoOfficer() === $employee_profile->id) {
                 $employeeId = $employee_profile->id;
-                $hrmo = ["applied", "for recommending approval", "for approving approval", "approved", "declined by hrmo officer"];
+                $hrmo = ["applied", "for hrmo approval","for recommending approval", "for approving approval", "approved", "declined by hrmo officer"];
 
                 $mone_applications = MonetizationApplication::select('monetization_applications.*')
                     ->where(function ($query) use ($hrmo, $employeeId) {
@@ -362,6 +362,7 @@ class MonetizationApplicationController extends Controller
             $cleanData['leave_type_id'] = $leave_type->id;
             $cleanData['reason'] = strip_tags($request->reason);
             $cleanData['credit_value'] = strip_tags($request->credit_value);
+            $cleanData['is_qualified'] = 0;
             $cleanData['status'] = 'applied';
             $cleanData['hrmo_officer'] = $hrmo_officer;
             $cleanData['recommending_officer'] = $recommending_officer->chief_employee_profile_id;
