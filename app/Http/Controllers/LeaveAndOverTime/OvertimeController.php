@@ -787,8 +787,6 @@ class OvertimeController extends Controller
             $dompdf->stream($filename, array('Attachment' => false));
 
 
-
-
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage(), 'error' => true]);
         }

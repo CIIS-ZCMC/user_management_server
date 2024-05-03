@@ -556,6 +556,7 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
     public function getEmployees()
     {
         try {
@@ -769,7 +770,7 @@ class LeaveApplicationController extends Controller
             $log_status = '';
 
             switch ($leave_application->status) {
-                case 'applied': 
+                case 'applied':
                     if($employee_profile->id === $leave_application->hrmo_officer){
                         $status = 'for recommending approval';
                         $log_status = 'Approved by HRMO';
@@ -786,7 +787,7 @@ class LeaveApplicationController extends Controller
                         ], Response::HTTP_FORBIDDEN);
                     }
                     break;
-                case 'for recommending approval': 
+                case 'for recommending approval':
                     if($employee_profile->id === $leave_application->recommending_officer){
                         $status = 'for approving approval';
                     $log_status = 'Approved by Recommending Officer';
@@ -954,7 +955,6 @@ class LeaveApplicationController extends Controller
                     $Date->addDay();
                 }
                 if ($Date->lt($selected_date)) {
-
                     return response()->json(['message' => "You cannot file for leave on $selected_date. Please select a date 5 days or more from today."], Response::HTTP_FORBIDDEN);
                 }
             }
@@ -1258,7 +1258,7 @@ class LeaveApplicationController extends Controller
                 return response()->json(["message" => "Application has been cancelled by employee. "], Response::HTTP_FORBIDDEN);
             }
             switch ($leave_application->status) {
-                case 'applied': 
+                case 'applied':
                     if($employee_profile->id === $leave_application->hrmo_officer){
                         $status = 'declined by hrmo officer';
                         $declined_by = "HR";
@@ -1274,7 +1274,7 @@ class LeaveApplicationController extends Controller
                         ], Response::HTTP_FORBIDDEN);
                     }
                     break;
-                case 'for recommending approval': 
+                case 'for recommending approval':
                     if($employee_profile->id === $leave_application->recommending_officer){
                         $status = 'declined by recommending officer';
                         $declined_by = "Recommending officer";
@@ -1519,10 +1519,10 @@ class LeaveApplicationController extends Controller
             $my_leave_type = new LeaveTypeResource(LeaveType::find($data->leave_type_id));
             $hrmo_officer = Section::with(['supervisor'])->where('code', 'HRMO')->first();
 
-            // $employeeLeaveCredit = EmployeeLeaveCredit::with('employeeLeaveCreditLogs')
-            //     ->where('employee_profile_id', $data->employee_profile_id)
-            //     ->where('leave_type_id', $data->leave_type_id)
-            //     ->first();
+            $employeeLeaveCredit = EmployeeLeaveCredit::with('employeeLeaveCreditLogs')
+                ->where('employee_profile_id', $data->employee_profile_id)
+                ->where('leave_type_id', $data->leave_type_id)
+                ->first();
 
             // if ($employeeLeaveCredit) {
             //     $creditLogs = $employeeLeaveCredit->employeeLeaveCreditLogs;
@@ -1534,42 +1534,27 @@ class LeaveApplicationController extends Controller
 
             // return view('leave_from.leave_application_form', compact('data', 'leave_type', 'hrmo_officer'));
 
-            $is_monetization = false;
-            $options = new Options();
-            $options->set('isPhpEnabled', true);
-            $options->set('isHtml5ParserEnabled', true);
-            $options->set('isRemoteEnabled', true);
-            $dompdf = new Dompdf($options);
-            $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
-            $html = view('leave_from.leave_application_form', compact('data', 'leave_type', 'hrmo_officer', 'my_leave_type', 'vl_employee_credit', 'sl_employee_credit', 'is_monetization'))->render();
-            $dompdf->loadHtml($html);
+             $is_monetization = false;
+             $options = new Options();
+             $options->set('isPhpEnabled', true);
+             $options->set('isHtml5ParserEnabled', true);
+             $options->set('isRemoteEnabled', true);
+             $dompdf = new Dompdf($options);
+             $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
+             $html = view('overtime_form.overtime_authority', compact('data'))->render();
+             $dompdf->loadHtml($html);
 
-            $dompdf->setPaper('Legal', 'portrait');
-            $dompdf->render();
-            $filename = 'LEAVE REPORT - (' . $data->employeeProfile->personalInformation->name() . ').pdf';
-
-            // Use 'I' instead of 'D' to open in the browser
-            $dompdf->stream($filename, array('Attachment' => false));
-            // $dompdf->stream($filename);
+             $dompdf->setPaper('Legal', 'portrait');
+             $dompdf->render();
+             $filename = 'OVERTIME AUTHORITY FORM - (' . $data->employeeProfile->personalInformation->name() . ').pdf';
+             $dompdf->stream($filename, array('Attachment' => false));
 
 
-            // if ($dompdf->loadHtml($html)) {
-            // $dompdf->setPaper('Legal', 'portrait');
-            // $dompdf->render();
-            // $filename = 'Leave Application('. $data->employeeProfile->personalInformation->name() .').pdf';
-            // $dompdf->stream($filename);
-            // } else {
-            //     return response()->json(['message' => 'Error loading HTML content', 'error' => true]);
-            // }
-            $employee_leave_application = $id;
-            $employee_print = LeaveApplication::where('id', $employee_leave_application)->first();
-            $employee_print->update([
-                'is_printed' => 1,
-                'print_datetime' => Carbon::now()
-            ]);
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage(), 'error' => true]);
-        }
+
+
+         } catch (\Exception $e) {
+             return response()->json(['message' => $e->getMessage(), 'error' => true]);
+         }
     }
 
     public static function checkOverlap($start, $end, $employeeId)
