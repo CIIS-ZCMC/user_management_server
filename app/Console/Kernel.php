@@ -4,6 +4,7 @@ namespace App\Console;
 
 use App\Console\Commands\ProcessApprovedOvertimeCredits;
 use App\Console\Commands\ProcessExpiredOvertimeCredits;
+use App\Console\Commands\ProcessUndertimeMonthly;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -33,7 +34,7 @@ class Kernel extends ConsoleKernel
             return now()->day == 1;
         });
 
-        // $schedule->command(ProcessApprovedOvertimeCredits::class)->runInBackground();
+        $schedule->command(ProcessUndertimeMonthly::class)->runInBackground();
     }
 
     /**
