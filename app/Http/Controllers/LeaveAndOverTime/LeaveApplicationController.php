@@ -204,7 +204,8 @@ class LeaveApplicationController extends Controller
         }
     }
 
-    public function hrmoApproval(Request $request){
+    public function hrmoApproval(Request $request)
+    {
         try {
 
             $employee_profile = $request->user;
@@ -487,11 +488,6 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
-
-
-
-
     public function getEmployees()
     {
         try {
@@ -526,7 +522,6 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
     public function getAllEmployees()
     {
         try {
@@ -547,7 +542,6 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
     public function getLeaveTypes()
     {
         try {
@@ -561,7 +555,6 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
     public function updateCredit(AuthPinApprovalRequest $request)
     {
         try {
@@ -624,7 +617,6 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
     public function addCredit(AuthPinApprovalRequest $request)
     {
         try {
@@ -684,7 +676,6 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
     public function approved($id, AuthPinApprovalRequest $request)
     {
         try {
@@ -777,7 +768,6 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
     public function userLeaveApplication(Request $request)
     {
         try {
@@ -808,7 +798,6 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
     public function store(LeaveApplicationRequest $request)
     {
         try {
@@ -1161,7 +1150,6 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
     public function show($id, Request $request)
     {
         try {
@@ -1179,7 +1167,6 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
     public function declined($id, AuthPinApprovalRequest $request)
     {
         try {
@@ -1294,7 +1281,6 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
     public function cancelled($id, AuthPinApprovalRequest $request)
     {
 
@@ -1349,7 +1335,6 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
     public function cancelUser($id, AuthPinApprovalRequest $request)
     {
         try {
@@ -1398,7 +1383,6 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
     public function received($id, AuthPinApprovalRequest $request)
     {
         try {
@@ -1467,10 +1451,10 @@ class LeaveApplicationController extends Controller
             $my_leave_type = new LeaveTypeResource(LeaveType::find($data->leave_type_id));
             $hrmo_officer = Section::with(['supervisor'])->where('code', 'HRMO')->first();
 
-            $employeeLeaveCredit = EmployeeLeaveCredit::with('employeeLeaveCreditLogs')
-                ->where('employee_profile_id', $data->employee_profile_id)
-                ->where('leave_type_id', $data->leave_type_id)
-                ->first();
+            // $employeeLeaveCredit = EmployeeLeaveCredit::with('employeeLeaveCreditLogs')
+            //     ->where('employee_profile_id', $data->employee_profile_id)
+            //     ->where('leave_type_id', $data->leave_type_id)
+            //     ->first();
 
             // if ($employeeLeaveCredit) {
             //     $creditLogs = $employeeLeaveCredit->employeeLeaveCreditLogs;
@@ -1563,7 +1547,6 @@ class LeaveApplicationController extends Controller
         // Return true if any overlap is found, otherwise false
         return $overlappingLeave || $overlappingOb || $overlappingOT;
     }
-
     public function reschedule($id, AuthPinApprovalRequest $request)
     {
         try {
