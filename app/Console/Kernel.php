@@ -33,8 +33,10 @@ class Kernel extends ConsoleKernel
         $schedule->command(ProcessApprovedOvertimeCredits::class)->monthly()->when(function () {
             return now()->day == 1;
         });
-
-        $schedule->command(ProcessUndertimeMonthly::class)->runInBackground();
+        $schedule->command(ProcessUndertimeMonthly::class)->monthly()->when(function () {
+            return now()->day == 1;
+        });
+        // $schedule->command(ProcessUndertimeMonthly::class)->runInBackground();
     }
 
     /**

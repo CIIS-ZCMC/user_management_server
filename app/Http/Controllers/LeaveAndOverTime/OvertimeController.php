@@ -23,6 +23,8 @@ use App\Models\OvtApplicationLog;
 use App\Models\Section;
 use App\Models\Unit;
 use DateTime;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Illuminate\Support\Facades\Validator;
 
 class OvertimeController extends Controller
@@ -756,28 +758,39 @@ class OvertimeController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Overtime $overtime)
+    public function printOvertimeForm($id)
     {
-        //
-    }
+        try {
+           return $data = OvertimeApplication::with([
+                'employeeProfile',
+                'recommendingOfficer',
+                'approvingOfficer',
+                'activities',
+                'activities.dates',
+                'activities.dates.employees'
+            ])->where('id', $id)->first();
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Overtime $overtime)
-    {
-        //
-    }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Overtime $overtime)
-    {
-        //
+            $is_monetization = false;
+            $options = new Options();
+            $options->set('isPhpEnabled', true);
+            $options->set('isHtml5ParserEnabled', true);
+            $options->set('isRemoteEnabled', true);
+            $dompdf = new Dompdf($options);
+            $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
+            $html = view('leave_from.leave_application_form', compact('data', 'leave_type', 'hrmo_officer', 'my_leave_type', 'vl_employee_credit', 'sl_employee_credit', 'is_monetization'))->render();
+            $dompdf->loadHtml($html);
+
+            $dompdf->setPaper('Legal', 'portrait');
+            $dompdf->render();
+            $filename = 'OVERTIME AUTHORITY FORM - (' . $data->employeeProfile->personalInformation->name() . ').pdf';
+            $dompdf->stream($filename, array('Attachment' => false));
+
+
+
+
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage(), 'error' => true]);
+        }
     }
 }
