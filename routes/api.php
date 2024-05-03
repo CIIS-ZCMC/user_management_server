@@ -1779,7 +1779,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
           //omcc
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
-            Route::get('leave-application-approved-hr', 'LeaveApplicationController@approvedLeaveApplication');
+            Route::get('forced-leave-application-mcc', 'LeaveApplicationController@flLeaveApplication');
         });
 
 
@@ -1813,6 +1813,10 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-LM update'])->group(function () {
             Route::post('cancel-leave-application-user/{id}', 'LeaveApplicationController@cancelUser');
+        });
+
+        Route::middleware(['auth.permission:UMIS-LM update'])->group(function () {
+            Route::post('cancel-forced-leave-application/{id}', 'LeaveApplicationController@cancelFL');
         });
 
         Route::middleware(['auth.permission:UMIS-LM update'])->group(function () {

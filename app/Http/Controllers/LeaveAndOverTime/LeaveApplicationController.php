@@ -379,7 +379,75 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+    public function flLeaveApplication()
+    {
+        try {
+            $leave_applications = LeaveApplication::whereHas('leaveType', function ($query) {
+                $query->where('code', 'FL');
+            })->get();
+            return response()->json([
+                'data' => LeaveApplicationResource::collection($leave_applications),
+                'message' => 'Retrieve list.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 
+    public function cancelFL($id, AuthPinApprovalRequest $request)
+    {
+        try {
+            $user = $request->user;
+            $employee_profile = $user;
+
+            $cleanData['pin'] = strip_tags($request->pin);
+            if ($user['authorization_pin'] !== $cleanData['pin']) {
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
+            }
+
+            $leave_application = LeaveApplication::find($id);
+
+            
+            if ($leave_application->status === 'cancelled by mcc') {
+                return response()->json(['message' => "You already cancelled this application."], Response::HTTP_FORBIDDEN);
+            }
+
+            $leave_type = $leave_application->leaveType;
+
+            $leave_application->update([
+                'status' => 'cancelled by mcc',
+                'cancelled_at' => Carbon::now(),
+                'remarks' => $request->remarks,
+            ]);
+
+
+            if (!$leave_type->is_special) {
+                $employee_credit = EmployeeLeaveCredit::where('employee_profile_id', $leave_application->employee_profile_id)
+                    ->where('leave_type_id', $leave_application->leave_type_id)->first();
+
+                $current_leave_credit = $employee_credit->total_leave_credits;
+                $current_used_leave_credit = $employee_credit->used_leave_credits;
+
+                $employee_credit->update([
+                    'total_leave_credits' => $current_leave_credit + $leave_application->applied_credits,
+                    'used_leave_credits' => $current_used_leave_credit - $leave_application->applied_credits
+                ]);
+            }
+
+            LeaveApplicationLog::create([
+                'action_by' => $employee_profile->id,
+                'leave_application_id' => $leave_application->id,
+                'action' =>'Cancelled by MCC'
+            ]);
+
+            return response()->json([
+                'data' => new LeaveApplicationResource($leave_application),
+                'message' => 'Cancelled leave application successfully.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
     public function myApprovedLeaveApplication(Request $request)
     {
         try {
@@ -1295,7 +1363,7 @@ class LeaveApplicationController extends Controller
 
             $leave_application = LeaveApplication::find($id);
 
-            if ($leave_application->status !== 'cancelled by hrmo') {
+            if ($leave_application->status === 'cancelled by hrmo') {
                 return response()->json(['message' => "You already cancelled this application."], Response::HTTP_FORBIDDEN);
             }
 
