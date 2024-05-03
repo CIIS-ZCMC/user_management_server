@@ -71,11 +71,12 @@ class LeaveTypeController extends Controller
                 $final_date = null;
                 $tomorrow = Carbon::tomorrow();
 
-                
+
                 if($leave_type->file_after === null && $leave_type->file_before !== null){
+                    $hrmo_officer = Helpers::getHrmoOfficer();
                     $schedules = EmployeeSchedule::select("s.date")->join('schedules as s', 's.id', 'employee_profile_schedule.schedule_id')
                         ->whereDate('s.date', '>=', $tomorrow)
-                        ->where('employee_profile_schedule.employee_profile_id', $employee_profile->id)
+                        ->where('employee_profile_schedule.employee_profile_id', $hrmo_officer)
                         ->limit($leave_type->file_before)->get();
 
                     if(count($schedules) > 0){
