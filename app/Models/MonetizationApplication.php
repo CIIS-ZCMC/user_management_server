@@ -19,6 +19,8 @@ class MonetizationApplication extends Model
         'is_qualified',
         'status',
         'attachment',
+        'attachment_size',
+        'attachment_path',
         'hrmo_officer',
         'recommending_officer',
         'approving_officer'

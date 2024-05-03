@@ -1760,6 +1760,10 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('leave-application-all', 'LeaveApplicationController@index');
         });
 
+        Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
+            Route::get('leave-application-hrmo-all', 'LeaveApplicationController@hrmoApproval');
+        });
+
         //Secretary
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
             Route::get('leave-application-approved', 'LeaveApplicationController@approvedLeaveRequest');
