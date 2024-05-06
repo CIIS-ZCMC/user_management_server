@@ -22,6 +22,8 @@ return new class extends Migration
             $table->boolean('is_qualified')->nullable();
             $table->string('status')->nullable();
             $table->string('attachment')->nullable();
+            $table->string('attachment_size')->nullable();
+            $table->string('attachment_path')->nullable();
             $table->unsignedBigInteger('hrmo_officer')->unsigned()->nullable();
             $table->foreign('hrmo_officer')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->unsignedBigInteger('recommending_officer')->unsigned()->nullable();
