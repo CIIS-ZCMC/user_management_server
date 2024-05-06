@@ -2,6 +2,7 @@
 
 namespace App\Console;
 
+use App\Console\Commands\EmployeeMonthlyEarnCredit;
 use App\Console\Commands\ProcessApprovedOvertimeCredits;
 use App\Console\Commands\ProcessExpiredOvertimeCredits;
 use App\Console\Commands\ProcessUndertimeMonthly;
@@ -36,7 +37,12 @@ class Kernel extends ConsoleKernel
         $schedule->command(ProcessUndertimeMonthly::class)->monthly()->when(function () {
             return now()->day == 1;
         });
-        // $schedule->command(ProcessUndertimeMonthly::class)->runInBackground();
+
+        $schedule->command(EmployeeMonthlyEarnCredit::class)->monthly()->when(function () {
+            return now()->day == 1;
+        });
+
+        $schedule->command(EmployeeMonthlyEarnCredit::class)->runInBackground();
     }
 
     /**

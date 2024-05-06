@@ -25,8 +25,8 @@ return new class extends Migration
             $table->string('action')->nullable();
             $table->string('reason')->nullable();
             $table->decimal('previous_overtime_hours', 8, 2)->nullable();
-            $table->integer('hours', 8, 2)->nullable();
-            $table->integer('expired_credit_by_hour')->nullable();
+            $table->decimal('hours', 8, 2)->nullable();
+            $table->decimal('expired_credit_by_hour', 8, 2)->nullable();
             $table->timestamps();
         });
     }

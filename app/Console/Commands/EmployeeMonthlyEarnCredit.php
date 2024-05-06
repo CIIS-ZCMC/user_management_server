@@ -31,12 +31,6 @@ class EmployeeMonthlyEarnCredit extends Command
      */
     public function handle()
     {
-        /**
-         * Employee Credit Earn for Sick leave And Vacation Leave
-         * Employee May earn 15credits in a year, and credits will be given every 5th day of the month
-         * where employee will earn credit of (annual credit/number of months)
-         * Employee must be working in the company with 1 month old.
-         */
         $sick_leave = LeaveType::where('code', 'SL')->first();
         $vacation_leave = LeaveType::where('code', 'VL')->first();
         $force_leave = LeaveType::where('code', 'FL')->first();
@@ -50,16 +44,13 @@ class EmployeeMonthlyEarnCredit extends Command
             $sick_leave_credit = EmployeeLeaveCredit::where('employee_profile_id', $employee->id)
                 ->where('leave_type_id', $sick_leave->id)->first();
 
-            $sick_leave_current_credit = $sick_leave_credit->total_leave_credit;
-            $sick_monthly_value=$sick_leave->monthly_value;
+            $sick_leave_current_credit = $sick_leave_credit->total_leave_credits;
+            $sick_monthly_value=$sick_leave->month_value;
             if($employee->employmentType->name === 'Permanent Part-time')
             {
-                $sick_monthly_value=$sick_leave->monthly_value/2;
-
+                $sick_monthly_value=$sick_leave->month_value/2;
             }
-            $sick_leave_credit->update([
-                'total_leave_credits' => DB::raw("total_leave_credits + $sick_monthly_value ")
-            ]);
+            $sick_leave_credit->increment('total_leave_credits', $sick_monthly_value);
 
             EmployeeLeaveCreditLogs::create([
                 'employee_leave_credit_id' => $sick_leave_credit->id,
@@ -72,20 +63,19 @@ class EmployeeMonthlyEarnCredit extends Command
             /**
              * Vacation Leave
              */
+
             $vacation_leave_credit = EmployeeLeaveCredit::where('employee_profile_id', $employee->id)
                 ->where('leave_type_id', $vacation_leave->id)->first();
 
-            $vacation_leave_current_credit = $vacation_leave_credit->total_leave_credit;
-            $vl_monthly_value=$vacation_leave->monthly_value;
+            $vacation_leave_current_credit = $vacation_leave_credit->total_leave_credits;
+            $vl_monthly_value=$vacation_leave->month_value;
             if($employee->employmentType->name === 'Permanent Part-time')
             {
-                $vl_monthly_value=$vacation_leave->monthly_value/2;
+                $vl_monthly_value=$vacation_leave->month_value/2;
 
             }
-            $vacation_leave_credit->update([
-                'total_leave_credits' => DB::raw("total_leave_credits + $vl_monthly_value")
-            ]);
 
+           $vacation_leave_credit->increment('total_leave_credits', $vl_monthly_value);
             EmployeeLeaveCreditLogs::create([
                 'employee_leave_credit_id' => $vacation_leave_credit->id,
                 'previous_credit' => $vacation_leave_current_credit,
@@ -98,28 +88,33 @@ class EmployeeMonthlyEarnCredit extends Command
              * Force Leave
              */
 
-            if($vacation_leave_credit->total_leave_credit >= 10){
+            if($vacation_leave_credit->total_leave_credits >= 10){
                 $force_leave_credit = EmployeeLeaveCredit::where('employee_profile_id', $employee->id)
                 ->where('leave_type_id', $force_leave->id)->first();
 
-                $force_leave_current_credit = $force_leave_credit->total_leave_credit;
-                $fl_annual_value=$force_leave->annual_value;
+                $force_leave_current_credit = $force_leave_credit->total_leave_credits;
+                $fl_annual_value=$force_leave->annual_credit;
                 if($employee->employmentType->name === 'Permanent Part-time')
                 {
-                    $fl_annual_value=$force_leave->annual_value/2;
+                    $fl_annual_value=$force_leave->annual_credit/2;
 
                 }
-                $force_leave_credit->update([
-                      'total_leave_credits' => DB::raw("total_leave_credits + $fl_annual_value")
-                ]);
+                $log_entry_exists = EmployeeLeaveCreditLogs::where('employee_profile_id', $employee->id)
+                ->where('leave_type_id', $force_leave->id)
+                ->where('reason', 'Annual Forced Leave Credits')
+                ->whereYear('created_at', now()->year)
+                ->exists();
 
+                if (!$log_entry_exists) {
+                $force_leave_credit->increment('total_leave_credits', $fl_annual_value);
+                // Log the leave credit increment
                 EmployeeLeaveCreditLogs::create([
-                    'employee_leave_credit_id' => $force_leave_credit->id,
-                    'previous_credit' => $force_leave_current_credit,
-                    'leave_credits' => $fl_annual_value,
-                    'reason' => "Monthly Forced Leave Credits",
-                    'action' => "add"
+                    'employee_profile_id' => $employee->id,
+                    'leave_type_id' => $force_leave->id,
+                    'reason' => 'Annual Forced Leave Credits',
+                    'credits_added' => $fl_annual_value,
                 ]);
+                }
             }
         }
     }
