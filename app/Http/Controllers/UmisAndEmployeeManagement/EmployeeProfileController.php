@@ -3271,7 +3271,6 @@ class EmployeeProfileController extends Controller
             }
 
             $new_in_active = InActiveEmployee::create([
-            
                 'personal_information_id' => $employee_profile->personalInformation->id,
                 'employment_type_id' => $employee_profile->employment_type_id,
                 'employee_id' => $employee_profile->employee_id,
@@ -3312,9 +3311,10 @@ class EmployeeProfileController extends Controller
             ]);
 
             $employee_profile->removeRecords();
+            Helpers::errorLog($this->CONTROLLER_NAME, 'retireAndDeactivateAccount', "Test");
             $employee_profile->delete();
 
-            DB::commit();
+            DB::rollBack();
 
             Helpers::registerSystemLogs($request, null, true, 'Success in deleting a ' . $this->SINGULAR_MODULE_NAME . '.');
 

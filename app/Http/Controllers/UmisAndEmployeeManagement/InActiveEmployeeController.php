@@ -13,6 +13,7 @@ use App\Http\Requests\IdentificationNumberRequest;
 use App\Http\Requests\LegalInformationManyRequest;
 use App\Http\Requests\OtherInformationManyRequest;
 use App\Http\Requests\PersonalInformationRequest;
+use App\Http\Requests\PersonalInformationUpdateRequest;
 use App\Http\Requests\ReferenceManyRequest;
 use App\Http\Requests\TrainingManyRequest;
 use App\Http\Requests\VoluntaryWorkRequest;
@@ -196,7 +197,7 @@ class InActiveEmployeeController extends Controller
             /**
              * Personal Information module. [DONE]
              */
-            $personal_information_request = new PersonalInformationRequest();
+            $personal_information_request = new PersonalInformationUpdateRequest();
             $personal_information_json = json_decode($request->personal_information);
             $personal_information_data = [];
 
@@ -206,7 +207,7 @@ class InActiveEmployeeController extends Controller
 
             $personal_information_request->merge($personal_information_data);
             $personal_information_controller = new PersonalInformationController();
-            $personal_information = $personal_information_controller->update($in_active_employee->personal_information_id, $personal_information_request);
+            $personal_information = $personal_information_controller->update($in_active_employee->personal_information_id,$personal_information_request);
 
             /**
              * Contact module. [DONE]
@@ -333,7 +334,7 @@ class InActiveEmployeeController extends Controller
 
             $legal_info_request->merge(['legal_information' => $legal_info_data]);
             $legal_information_controller = new LegalInformationController();
-            $legal_information_controller->update($personal_information->id, $legal_info_request);
+            $legal_information_controller->storeMany($personal_information->id, $legal_info_request);
 
             /**
              * Training module [DONE]
@@ -494,7 +495,7 @@ class InActiveEmployeeController extends Controller
 
             Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . '.');
 
-
+            DB::commit();
             if ($in_valid_file) {
                 return response()->json(
                     [

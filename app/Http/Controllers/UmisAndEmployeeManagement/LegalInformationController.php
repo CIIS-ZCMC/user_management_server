@@ -118,7 +118,7 @@ class LegalInformationController extends Controller
         }
     }
     
-    public function update($id, LegalInformationRequest $request)
+    public function update($id, LegalInformationManyRequest $request)
     {
         try{
             $success = [];
@@ -162,7 +162,7 @@ class LegalInformationController extends Controller
 
             return $success;
         }catch(\Throwable $th){
-            throw new \Exception("Failed to register employee legal information.", 400);
+            throw new \Exception("Failed to register employee legal information ".$th->getMessage(), 400);
         }
     }
     

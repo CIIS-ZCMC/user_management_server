@@ -773,7 +773,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::get('inactive-employees/{id}', 'InActiveEmployeeController@showProfile');
+            Route::get('inactive-employee/{id}', 'InActiveEmployeeController@showProfile');
 
         });
 
