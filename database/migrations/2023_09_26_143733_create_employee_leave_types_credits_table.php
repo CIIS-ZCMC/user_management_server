@@ -17,8 +17,8 @@ return new class extends Migration
             $table->foreign('employee_profile_id')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->unsignedBigInteger('leave_type_id')->unsigned();
             $table->foreign('leave_type_id')->references('id')->on('leave_types');
-            $table->float('total_leave_credits')->default(0);
-            $table->float('used_leave_credits')->default(0);
+            $table->decimal('total_leave_credits', 8, 3);
+            $table->decimal('used_leave_credits', 8, 3);
             $table->timestamps();
         });
     }
