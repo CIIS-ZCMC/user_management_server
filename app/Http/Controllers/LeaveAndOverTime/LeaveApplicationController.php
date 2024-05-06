@@ -625,158 +625,69 @@ class LeaveApplicationController extends Controller
         }
     }
 
-    // public function updateCredit(AuthPinApprovalRequest $request)
-    // {
-    //     try {
-    //         $employee_profile = $request->user;
-    //         $user = $request->user;
-    //         $cleanData['pin'] = strip_tags($request->pin);
-
-    //         if ($user['authorization_pin'] !== $cleanData['pin']) {
-    //             return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
-    //         }
-
-    //         foreach ($request->credits as $credit) {
-    //             $employeeId = $request->employee_id;
-    //             $leaveTypeId = $credit['leave_id'];
-
-    //             $leaveCredit = EmployeeLeaveCredit::where('employee_profile_id', $employeeId)
-    //                 ->where('leave_type_id', $leaveTypeId)
-    //                 ->firstOrFail();
-
-    //             $leaveCredit->total_leave_credits = $credit['credit_value'];
-    //             $leaveCredit->save();
-    //         }
-
-    //         EmployeeLeaveCreditLogs::create([
-    //             'employee_leave_credit_id' => $leaveCredit->id,
-    //             'previous_credit' => $leaveCredit->total_leave_credits,
-    //             'leave_credits' => $credit['credit_value'],
-    //             'reason' => "Update Credits",
-    //             'action' => "add"
-    //         ]);
-
-    //         $updatedLeaveCredits = EmployeeLeaveCredit::with(['employeeProfile.personalInformation', 'leaveType'])
-    //             ->where('employee_profile_id', $request->employee_id)
-    //             ->get()
-    //             ->groupBy('employee_profile_id');
-
-
-
-    //         $response = [];
-
-    //         foreach ($updatedLeaveCredits as $employeeProfileId => $leaveCreditGroup) {
-    //             $employeeDetails = $leaveCreditGroup->first()->employeeProfile->personalInformation->name();
-    //             $leaveCreditData = [];
-
-    //             foreach ($leaveCreditGroup as $leaveCredit) {
-    //                 $leaveCreditData[$leaveCredit->leaveType->name] = $leaveCredit->total_leave_credits;
-    //             }
-
-    //             $employeeResponse = [
-    //                 'id' => $employeeProfileId,
-    //                 'name' => $employeeDetails,
-    //             ];
-
-    //             $employeeResponse = array_merge($employeeResponse, $leaveCreditData);
-    //             $response[] = $employeeResponse;
-    //         }
-
-    //         return response()->json(['message' => 'Leave credits updated successfully', 'data' => $response,], 200);
-    //     } catch (\Throwable $th) {
-    //         return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-    //     }
-    // }
-
     public function updateCredit(AuthPinApprovalRequest $request)
     {
-        $sick_leave = LeaveType::where('code', 'SL')->first();
-        $vacation_leave = LeaveType::where('code', 'VL')->first();
-        $force_leave = LeaveType::where('code', 'FL')->first();
+        try {
+            $employee_profile = $request->user;
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->pin);
 
-        $employees = EmployeeProfile::where('date_hired', '<', Carbon::now()->subDays(30))->get();
-
-        foreach ($employees as $employee) {
-            /**
-             * Sick Leave
-             */
-            $sick_leave_credit = EmployeeLeaveCredit::where('employee_profile_id', $employee->id)
-                ->where('leave_type_id', $sick_leave->id)->first();
-
-            $sick_leave_current_credit = $sick_leave_credit->total_leave_credits;
-            $sick_monthly_value = $sick_leave->month_value;
-            if ($employee->employmentType->name === 'Permanent Part-time') {
-                $sick_monthly_value = $sick_leave->month_value / 2;
+            if ($user['authorization_pin'] !== $cleanData['pin']) {
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
             }
-            $sick_leave_credit->increment('total_leave_credits', $sick_monthly_value);
+
+            foreach ($request->credits as $credit) {
+                $employeeId = $request->employee_id;
+                $leaveTypeId = $credit['leave_id'];
+
+                $leaveCredit = EmployeeLeaveCredit::where('employee_profile_id', $employeeId)
+                    ->where('leave_type_id', $leaveTypeId)
+                    ->firstOrFail();
+
+                $leaveCredit->total_leave_credits = $credit['credit_value'];
+                $leaveCredit->save();
+            }
 
             EmployeeLeaveCreditLogs::create([
-                'employee_leave_credit_id' => $sick_leave_credit->id,
-                'previous_credit' => $sick_leave_current_credit,
-                'leave_credits' =>  $sick_monthly_value,
-                'reason' => "Monthly Sick Leave Credits",
+                'employee_leave_credit_id' => $leaveCredit->id,
+                'previous_credit' => $leaveCredit->total_leave_credits,
+                'leave_credits' => $credit['credit_value'],
+                'reason' => "Update Credits",
                 'action' => "add"
             ]);
 
-            /**
-             * Vacation Leave
-             */
+            $updatedLeaveCredits = EmployeeLeaveCredit::with(['employeeProfile.personalInformation', 'leaveType'])
+                ->where('employee_profile_id', $request->employee_id)
+                ->get()
+                ->groupBy('employee_profile_id');
 
-            $vacation_leave_credit = EmployeeLeaveCredit::where('employee_profile_id', $employee->id)
-                ->where('leave_type_id', $vacation_leave->id)->first();
 
-            $vacation_leave_current_credit = $vacation_leave_credit->total_leave_credits;
-            $vl_monthly_value = $vacation_leave->month_value;
-            if ($employee->employmentType->name === 'Permanent Part-time') {
-                $vl_monthly_value = $vacation_leave->month_value / 2;
+
+            $response = [];
+
+            foreach ($updatedLeaveCredits as $employeeProfileId => $leaveCreditGroup) {
+                $employeeDetails = $leaveCreditGroup->first()->employeeProfile->personalInformation->name();
+                $leaveCreditData = [];
+
+                foreach ($leaveCreditGroup as $leaveCredit) {
+                    $leaveCreditData[$leaveCredit->leaveType->name] = $leaveCredit->total_leave_credits;
+                }
+
+                $employeeResponse = [
+                    'id' => $employeeProfileId,
+                    'name' => $employeeDetails,
+                ];
+
+                $employeeResponse = array_merge($employeeResponse, $leaveCreditData);
+                $response[] = $employeeResponse;
             }
 
-            $vacation_leave_credit->increment('total_leave_credits', $vl_monthly_value);
-            EmployeeLeaveCreditLogs::create([
-                'employee_leave_credit_id' => $vacation_leave_credit->id,
-                'previous_credit' => $vacation_leave_current_credit,
-                'leave_credits' => $vl_monthly_value,
-                'reason' => "Monthly Vacation Leave Credits",
-                'action' => "add"
-            ]);
-
-            /**
-             * Force Leave
-             */
-
-            if ($vacation_leave_credit->total_leave_credits >= 10) {
-                $force_leave_credit = EmployeeLeaveCredit::where('employee_profile_id', $employee->id)
-                    ->where('leave_type_id', $force_leave->id)->first();
-
-                $force_leave_current_credit = $force_leave_credit->total_leave_credits;
-                $fl_annual_value = $force_leave->annual_credit;
-                if ($employee->employmentType->name === 'Permanent Part-time') {
-                    $fl_annual_value = $force_leave->annual_credit / 2;
-                }
-                $log_entry_exists = EmployeeLeaveCreditLogs::join('employee_leave_credits', 'employee_leave_credit_logs.employee_leave_credit_id', '=', 'employee_leave_credits.id')
-                    ->where('employee_leave_credits.employee_profile_id', $employee->id)
-                    ->where('employee_leave_credits.leave_type_id', $force_leave->id)
-                    ->where('employee_leave_credit_logs.reason', 'Annual Forced Leave Credits')
-                    ->whereYear('employee_leave_credit_logs.created_at', now()->year)
-                    ->exists();
-
-                if (!$log_entry_exists) {
-                    $force_leave_credit->increment('total_leave_credits', $fl_annual_value);
-                    // Log the leave credit increment
-                    EmployeeLeaveCreditLogs::create([
-                        'employee_leave_credit_id' => $force_leave_credit->id,
-                        'reason' => 'Annual Forced Leave Credits',
-                        'action' => "add",
-                        'previous_credit' => $force_leave_current_credit,
-                        'leave_credits' => $fl_annual_value,
-
-                    ]);
-                }
-            }
+            return response()->json(['message' => 'Leave credits updated successfully', 'data' => $response,], 200);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
-
+    
     public function addCredit(AuthPinApprovalRequest $request)
     {
         try {
@@ -1345,6 +1256,7 @@ class LeaveApplicationController extends Controller
                     'credits' => $result ? $result : [],
                     'message' => 'Successfully applied for ' . $leave_type->name
                 ], Response::HTTP_OK);
+            }
 
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

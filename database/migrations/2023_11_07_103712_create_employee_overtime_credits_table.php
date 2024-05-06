@@ -19,7 +19,7 @@ return new class extends Migration
             $table->decimal('used_credit_by_hour', 8, 2); // Example of another decimal column
             $table->integer('max_credit_monthly');
             $table->integer('max_credit_annual');
-            $table->DateTime('valid_until');
+            $table->DateTime('valid_until')->nullable();
             $table->boolean('is_expired')->default(false);
             $table->timestamps();
         });
