@@ -340,7 +340,7 @@ class InActiveEmployeeController extends Controller
 
             $legal_info_request->merge(['legal_information' => $legal_info_data]);
             $legal_information_controller = new LegalInformationController();
-            $legal_information_controller->update($personal_information->id, $legal_info_request);
+            $legal_information_controller->storeMany($personal_information->id, $legal_info_request);
 
             /**
              * Training module [DONE]

@@ -3313,7 +3313,7 @@ class EmployeeProfileController extends Controller
                 'deactivated_at' => now()
             ]);
 
-            DB::commit();
+            DB::rollBack();
 
             Helpers::registerSystemLogs($request, null, true, 'Success in deleting a ' . $this->SINGULAR_MODULE_NAME . '.');
 
