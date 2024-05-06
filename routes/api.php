@@ -1940,6 +1940,8 @@ Route::middleware('auth.cookie')->group(function () {
         Route::post('ovt-application', 'OvertimeController@store');
         // });
 
+        Route::get('ovt-application-print/{id}', 'OvertimeController@printOvertimeForm');
+
         Route::middleware(['auth.permission:UMIS-OM request'])->group(function () {
             Route::post('ovt-application-past', 'OvertimeController@storePast');
         });

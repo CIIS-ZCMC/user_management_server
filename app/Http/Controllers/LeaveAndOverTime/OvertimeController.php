@@ -23,6 +23,8 @@ use App\Models\OvtApplicationLog;
 use App\Models\Section;
 use App\Models\Unit;
 use DateTime;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Illuminate\Support\Facades\Validator;
 
 class OvertimeController extends Controller
@@ -31,6 +33,33 @@ class OvertimeController extends Controller
      * Display a listing of the resource.
      */
     private $CONTROLLER_NAME = 'OvertimeController';
+
+    public function printOvertimeForm($id){
+
+      $overtime_application = OvertimeApplication::where('id',$id)->get();
+
+
+      return response()->json([
+        'data' => OvertimeResource::collection($overtime_application),
+        'message' => 'Retrieved all overtime application'
+    ], Response::HTTP_OK);
+
+
+        // $options = new Options();
+        // $options->set('isPhpEnabled', true);
+        // $options->set('isHtml5ParserEnabled', true);
+        // $options->set('isRemoteEnabled', true);
+        // $dompdf = new Dompdf($options);
+        // $dompdf->getOptions()->setChroot([base_path() . '\public\storage']);
+        // $dompdf->loadHtml(view("overtimeAuthority"));
+
+        // $dompdf->setPaper('Letter', 'portrait');
+        // $dompdf->render();
+
+        // $filename ='testsss.pdf';
+        // $dompdf->stream($filename);
+
+    }
 
     public function index(Request $request)
     {
