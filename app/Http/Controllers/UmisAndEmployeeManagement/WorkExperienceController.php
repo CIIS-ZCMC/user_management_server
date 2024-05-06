@@ -177,6 +177,7 @@ class WorkExperienceController extends Controller
 
             return $success;
         }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             throw new \Exception("Failed to register employee work experience.", 400);
         }
     }

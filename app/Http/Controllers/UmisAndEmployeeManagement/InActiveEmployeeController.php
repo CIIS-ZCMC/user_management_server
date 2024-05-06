@@ -13,6 +13,7 @@ use App\Http\Requests\IdentificationNumberRequest;
 use App\Http\Requests\LegalInformationManyRequest;
 use App\Http\Requests\OtherInformationManyRequest;
 use App\Http\Requests\PersonalInformationRequest;
+use App\Http\Requests\PersonalInformationUpdateRequest;
 use App\Http\Requests\ReferenceManyRequest;
 use App\Http\Requests\TrainingManyRequest;
 use App\Http\Requests\VoluntaryWorkRequest;
@@ -126,7 +127,10 @@ class InActiveEmployeeController extends Controller
         try{
             $in_active_employees = InActiveEmployee::all();
 
-            return response()->json(['data' => InActiveEmployeeResource::collection($in_active_employees), 'message' => 'Record of in-active employee history retrieved.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => InActiveEmployeeResource::collection($in_active_employees), 
+                'message' => 'Record of in-active employee history retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -193,10 +197,13 @@ class InActiveEmployeeController extends Controller
                 return response()->json(['message' => "No in active employee with id " . $id], Response::HTTP_NOT_FOUND);
             }
 
+            $employee_profile = $in_active_employee->employee;
+            $personal_information = $in_active_employee->employee->personalInformation;
+
             /**
              * Personal Information module. [DONE]
              */
-            $personal_information_request = new PersonalInformationRequest();
+            $personal_information_request = new PersonalInformationUpdateRequest();
             $personal_information_json = json_decode($request->personal_information);
             $personal_information_data = [];
 
@@ -206,7 +213,7 @@ class InActiveEmployeeController extends Controller
 
             $personal_information_request->merge($personal_information_data);
             $personal_information_controller = new PersonalInformationController();
-            $personal_information = $personal_information_controller->update($in_active_employee->personal_information_id, $personal_information_request);
+            $personal_information = $personal_information_controller->update($personal_information->id, $personal_information_request);
 
             /**
              * Contact module. [DONE]
@@ -219,7 +226,7 @@ class InActiveEmployeeController extends Controller
                 $contact_data[$key] = $value;
             }
 
-            $contact_id = $in_active_employee->personalInformation->contact->id;
+            $contact_id = $personal_information->contact->id;
 
             $contact_request->merge($contact_data);
             $contact_controller = new ContactController();
@@ -333,7 +340,7 @@ class InActiveEmployeeController extends Controller
 
             $legal_info_request->merge(['legal_information' => $legal_info_data]);
             $legal_information_controller = new LegalInformationController();
-            $legal_information_controller->update($personal_information->id, $legal_info_request);
+            $legal_information_controller->storeMany($personal_information->id, $legal_info_request);
 
             /**
              * Training module [DONE]
@@ -464,8 +471,7 @@ class InActiveEmployeeController extends Controller
                 $employee_data['plantilla_number_id'] = $plantilla_number->id;
             }
 
-
-            $employee_profile = EmployeeProfile::create($employee_data);
+            $employee_profile->update($employee_data);
 
             $employee_data['employee_profile_id'] = $employee_profile->id;
             AssignArea::create($employee_data);
@@ -489,11 +495,11 @@ class InActiveEmployeeController extends Controller
                 }
             }
 
-            //Assign ALL previous Area Trail with new employee id
             AssignAreaTrail::where(['employee_profile_id', $previous_employee_profile_id])->update(['employee_profile_id', $employee_profile->id]);
 
-            Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . '.');
+            $in_active_employee->delete();
 
+            Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . '.');
 
             if ($in_valid_file) {
                 return response()->json(
@@ -531,8 +537,9 @@ class InActiveEmployeeController extends Controller
             }
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in fetching a ' . $this->SINGULAR_MODULE_NAME . '.');
-
-            $personal_information = $in_active_employee->personalInformation;
+        
+            $employee_profile = $in_active_employee->employee;
+            $personal_information = $employee_profile->personalInformation;
 
             $work_experiences = WorkExperience::where('personal_information_id', $personal_information->id)->where('government_office', "Yes")->get();
 

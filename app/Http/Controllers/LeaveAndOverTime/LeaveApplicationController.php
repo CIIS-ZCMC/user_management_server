@@ -871,6 +871,7 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
     public function store(LeaveApplicationRequest $request)
     {
         try {
@@ -1257,7 +1258,10 @@ class LeaveApplicationController extends Controller
                     'message' => 'Successfully applied for ' . $leave_type->name
                 ], Response::HTTP_OK);
             }
+<<<<<<< HEAD
 
+=======
+>>>>>>> af87a374b6ae49fd71aa59fd77cc7be617f9ca9f
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
