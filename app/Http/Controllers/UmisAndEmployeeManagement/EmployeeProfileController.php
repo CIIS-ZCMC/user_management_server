@@ -2029,9 +2029,7 @@ class EmployeeProfileController extends Controller
             //     return EmployeeProfile::whereNotIn('id', [1, $user->id])->get();
             // });
 
-            $employee_profiles = EmployeeProfile::whereNotIn('id', [1, $user->id])->get();
-
-
+            $employee_profiles = EmployeeProfile::whereNotIn('id', [1, $user->id])->where('deactivated_at', NULL)->get();
 
             return EmployeeProfileResource::collection($employee_profiles);
 
@@ -3246,9 +3244,7 @@ class EmployeeProfileController extends Controller
 
     public function deactivateEmployeeAccount($id, Request $request)
     {
-        
         try {
-        
             DB::beginTransaction();
             $user = $request->user;
             $cleanData['pin'] = strip_tags($request->password);
@@ -3270,20 +3266,14 @@ class EmployeeProfileController extends Controller
                 return response()->json(["message" => "Action is prohibited, this employee is currently a " . $position['position'] . " in " . $area['details']->name . "."], Response::HTTP_FORBIDDEN);
             }
 
-            $new_in_active = InActiveEmployee::create([
-                'personal_information_id' => $employee_profile->personalInformation->id,
-                'employment_type_id' => $employee_profile->employment_type_id,
+            $in_active_employee = InActiveEmployee::create([
                 'employee_id' => $employee_profile->employee_id,
-                'profile_url' => $employee_profile->profile_url ?? NULL,
                 'date_hired' => $employee_profile->date_hired,
-                'biometric_id' => $employee_profile->biometric_id,
-                'employment_end_at' => now(),
-                'remarks' => strip_tags($request->remarks)
+                'date_resigned' => $request->date_resigned,
+                'employee_profile_id' => $employee_profile->id,
+                'status' => strip_tags($request->status),
+                'remarks' => strip_tags($request->remarks),
             ]);
-
-            if (!$new_in_active) {
-                return response()->json(['message' => "Failed to deactivate account."], Response::HTTP_BAD_REQUEST);
-            }
 
             if($employee_profile->employmentType->name === 'Permanent CTI'){
                 $plantilla_number = $employee_profile->assignedArea->plantillaNumber;
@@ -3304,15 +3294,24 @@ class EmployeeProfileController extends Controller
 
             AssignAreaTrail::create([
                 $assign_area,
-                'employee_profile_id' => null,
-                'in_active_employee_id' => $new_in_active->id,
+                'employee_profile_id' => $employee_profile->id,
                 'started_at' => $employee_profile->date_hired,
                 'end_at' => now()
             ]);
 
             $employee_profile->removeRecords();
-            Helpers::errorLog($this->CONTROLLER_NAME, 'retireAndDeactivateAccount', "Test");
-            $employee_profile->delete();
+            $employee_profile->update([
+                'employee_id' => null,
+                'date_hired' => null,
+                'encrypted_password' => null,
+                'password_created_at' => null,
+                'password_expiration_at' => null,
+                'authorization_pin' => null,
+                'allow_time_adjustment' => 0,
+                'shifting' => 0,
+                'is_2fa' => 0,
+                'deactivated_at' => now()
+            ]);
 
             DB::rollBack();
 

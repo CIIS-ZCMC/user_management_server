@@ -226,7 +226,7 @@ class PersonalInformationSeeder extends Seeder
             'used_credit_by_hour' => 0,
             'max_credit_monthly' => 40,
             'max_credit_annual' => 120,
-            'valid_until' => Carbon::now()->addMonths(6),
+            'valid_until' => Carbon::now()->addMonths(6)
         ]);
 
         IssuanceInformation::create([
