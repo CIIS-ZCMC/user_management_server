@@ -45,7 +45,7 @@ class ScheduleController extends Controller
 
             $this->updateAutomaticScheduleStatus();
 
-            if ($user->employee_id === "1918091351") {
+            if ($user->employee_id === "1918091351" || $user->employee_id === "2022100950") {
                 return response()->json([
                     'data' => ScheduleResource::collection(EmployeeProfile::all()),
                     'dates' => $dates_with_day,

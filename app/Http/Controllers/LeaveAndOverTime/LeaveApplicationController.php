@@ -26,6 +26,7 @@ use App\Http\Requests\LeaveApplicationRequest;
 use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Resources\EmployeeLeaveCredit as ResourcesEmployeeLeaveCredit;
 use App\Http\Resources\LeaveApplicationResource;
+use App\Models\CtoApplication;
 use App\Models\EmployeeLeaveCredit;
 use App\Models\EmployeeLeaveCreditLogs;
 use App\Models\EmployeeProfile;
@@ -34,6 +35,8 @@ use App\Models\LeaveApplicationLog;
 use App\Models\LeaveApplicationRequirement;
 use App\Models\OfficialBusiness;
 use App\Models\OfficialTime;
+use App\Models\OfficialTimeApplication;
+use App\Models\Overtime;
 use App\Models\OvertimeApplication;
 use App\Models\Schedule;
 use Illuminate\Support\Facades\DB;
@@ -687,7 +690,7 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function addCredit(AuthPinApprovalRequest $request)
     {
         try {
@@ -950,15 +953,18 @@ class LeaveApplicationController extends Controller
             //IF VL OR FL
             if ($leave_type->code === 'VL' || $leave_type->code === 'FL') {
                 // Get the current date
-                $currentDate = now();
+                $currentDate =Carbon::now();
 
                 // Get the HRMO schedule for the next 5 days
                 $Date = $currentDate->copy();
                 $foundConsecutiveDays = 0;
-                $selected_date = $end->copy();
+                $selected_date = $start->copy();
 
-                if (Helpers::hasSchedule($Date->toDateString(), $Date->toDateString(), $hrmo_officer)) {
-                    while ($foundConsecutiveDays <= 6) {
+                $Date->toDateString();
+
+                if (Helpers::hasSchedule( $Date->toDateString(),  $Date->toDateString(), $hrmo_officer)) {
+
+                   while ($foundConsecutiveDays <= 6) {
                         // If a schedule is found, increment the counter
                         $foundConsecutiveDays++;
 
@@ -1010,18 +1016,49 @@ class LeaveApplicationController extends Controller
             if ($overlapExists) {
                 return response()->json(['message' => 'You already have an application for the same dates.'], Response::HTTP_FORBIDDEN);
             } else {
+
                 if ($leave_type->is_special) {
                     if ($leave_type->period < $daysDiff) {
                         return response()->json(['message' => 'Exceeds days entitled for ' . $leave_type->name], Response::HTTP_FORBIDDEN);
                     }
 
                     $cleanData['applied_credits'] = $daysDiff;
-                    $cleanData['employee_profile_id'] = $employee_profile->id;
+                    $cleanData['employee_profile_id'] = $employee_profile;
                     $cleanData['hrmo_officer'] = $hrmo_officer;
 
-                    // if($request->employee_oic_id !== "null" && $request->employee_oic_id !== null ){
-                    //     $cleanData['employee_oic_id'] = (int) strip_tags($request->employee_oic_id);
-                    // }
+                    if($request->employee_oic_id !== "null" && $request->employee_oic_id !== null ){
+                        // $cleanData['employee_oic_id'] = (int) strip_tags($request->employee_oic_id);
+                        LeaveApplication::where('recommending_officer', $employeeId)
+                        ->orWhere('approving_officer', $employeeId)
+                        ->update([
+                            'recommending_officer' => (int) strip_tags($request->employee_oic_id),
+                            'approving_officer' => (int) strip_tags($request->employee_oic_id)
+                        ]);
+                        OfficialTime::where('recommending_officer', $employeeId)
+                        ->orWhere('approving_officer', $employeeId)
+                        ->update([
+                            'recommending_officer' => (int) strip_tags($request->employee_oic_id),
+                            'approving_officer' => (int) strip_tags($request->employee_oic_id)
+                        ]);
+                        OfficialBusiness::where('recommending_officer', $employeeId)
+                        ->orWhere('approving_officer', $employeeId)
+                        ->update([
+                            'recommending_officer' => (int) strip_tags($request->employee_oic_id),
+                            'approving_officer' => (int) strip_tags($request->employee_oic_id)
+                        ]);
+                        CtoApplication::where('recommending_officer', $employeeId)
+                        ->orWhere('approving_officer', $employeeId)
+                        ->update([
+                            'recommending_officer' => (int) strip_tags($request->employee_oic_id),
+                            'approving_officer' => (int) strip_tags($request->employee_oic_id)
+                        ]);
+                        Overtime::where('recommending_officer', $employeeId)
+                        ->orWhere('approving_officer', $employeeId)
+                        ->update([
+                            'recommending_officer' => (int) strip_tags($request->employee_oic_id),
+                            'approving_officer' => (int) strip_tags($request->employee_oic_id)
+                        ]);
+                    }
 
                     $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $employee_profile->id)->first();
 
@@ -1258,10 +1295,6 @@ class LeaveApplicationController extends Controller
                     'message' => 'Successfully applied for ' . $leave_type->name
                 ], Response::HTTP_OK);
             }
-<<<<<<< HEAD
-
-=======
->>>>>>> af87a374b6ae49fd71aa59fd77cc7be617f9ca9f
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
