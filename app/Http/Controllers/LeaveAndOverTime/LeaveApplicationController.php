@@ -1148,7 +1148,7 @@ class LeaveApplicationController extends Controller
 
                         if (!$isMCC) {
 
-                            if ($leave_type->code = 'VL' && $request->country != 'Philippines') {
+                            if ($leave_type->code ==='VL' && $request->country !== 'Philippines') {
                                     $cleanData['recommending_officer'] = Helpers::getDivHead($employee_profile->assignedArea->findDetails());
                                     $cleanData['approving_officer'] = Helpers::getChiefOfficer();
                                 } else {
