@@ -44,10 +44,10 @@ class Kernel extends ConsoleKernel
             return now()->day == 1;
         });
 
-        // $schedule->command(EmployeeMonthlyEarnCredit::class)->runInBackground();
+        $schedule->command(EmployeeMonthlyEarnCredit::class)->daily();
 
-        $schedule->command(UpdateOicLeaveApplication::class)->runInBackground();
-        $schedule->command(RemoveOicLeaveApplication::class)->runInBackground();
+        // $schedule->command(EmployeeMonthlyEarnCredit::class)->runInBackground();
+       
     }
 
     /**
