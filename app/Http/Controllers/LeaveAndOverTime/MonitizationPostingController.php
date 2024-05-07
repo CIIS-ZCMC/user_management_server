@@ -96,7 +96,7 @@ class MonitizationPostingController extends Controller
                 $query->where(function ($query) {
                     $query->where('employee_leave_credits.leave_type_id', LeaveType::where('code', 'VL')->first()->id)
                         ->where('employee_leave_credits.total_leave_credits', '>=', 15);
-                })
+                });
                 // ->orWhere(function ($query) {
                 //     $query->where('employee_leave_credits.leave_type_id', LeaveType::where('code', 'SL')->first()->id)
                 //         ->where('employee_leave_credits.total_leave_credits', '>=', 15);

@@ -53,6 +53,15 @@ class CtoApplicationController extends Controller
                 ], Response::HTTP_OK);
             }
 
+            if ($employee_profile->position() === 'Supervisor') {
+                $cto_application = CtoApplication::where('employee_profile_id', $employee_profile->id)->get();
+
+                return response()->json([
+                    'data' => CtoApplicationResource::collection($cto_application),
+                    'message' => 'Retrieved all CTO application'
+                ], Response::HTTP_OK);
+            }
+
             // if ($employee_area->sector['Section'] === 'HRMO') {
             //     return response()->json([
             //         'data' => CtoApplicationResource::collection(CtoApplication::all()),

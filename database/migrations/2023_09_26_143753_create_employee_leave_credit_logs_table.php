@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('employee_leave_credit_id')->unsigned()->nullable();
             $table->foreign('employee_leave_credit_id')->references('id')->on('employee_leave_credits')->onDelete('cascade')->nullable();
-            $table->float('previous_credit');
-            $table->float('leave_credits')->nullable();
+            $table->decimal('previous_credit', 8, 3)->nullable();
+            $table->decimal('leave_credits', 8, 3)->nullable();
             $table->text('reason')->nullable();
             $table->text('action')->nullable();
             $table->unsignedBigInteger('action_by')->unsigned()->nullable();

@@ -14,18 +14,15 @@ class InActiveEmployeeResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $personal_information = $this->personalInformation;
-        $employment_type = $this->employmentType->name;
+        $personal_information = $this->employee->personalInformation;
 
         return [
             'id' => $this->id,
             'name' => $personal_information->employeeName(),
-            'profile_url' => config('app.server_domain')."/profiles/".$this->profile_url,
+            'profile_url' => config('app.server_domain')."/profiles/".$this->employee->profile_url,
             'date_hired' => $this->date_hired,
-            'biometric_id' => $this->biometric_id,
-            'employment_end_at' => $this->employment_end_at,
-            'employment_type' => $employment_type,
-            'personal_information_id' => $this->personal_information_id,
+            'employment_end_at' => $this->date_resigned,
+            'personal_information_id' => $personal_information->id,
         ];
     }
 }

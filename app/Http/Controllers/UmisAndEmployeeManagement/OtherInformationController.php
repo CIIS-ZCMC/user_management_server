@@ -137,7 +137,7 @@ class OtherInformationController extends Controller
         }
     }
     
-    public function update($id, OtherInformationRequest $request)
+    public function update($id, OtherInformationManyRequest $request)
     {
         try{
             $success = [];
