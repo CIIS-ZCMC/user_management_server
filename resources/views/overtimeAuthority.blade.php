@@ -107,6 +107,35 @@
         font-size:12px;
     }
 
+    #lfooter {
+        font-size: 9px;
+        margin-top: 60px;
+        width: 100% !important;
+        font-size:12px;
+        border:none;
+    }
+
+
+    #f1 {
+        float: left;
+        font-size:10px;
+        border: none;
+    }
+
+    #f2 {
+        font-size:10px;
+        text-align: right;
+        border: none;
+    }
+
+    #f3 {
+        font-size:10px;
+        text-align: right;
+        border: none;
+    }
+
+
+
     </style>
 </head>
 <body>
@@ -125,6 +154,7 @@
 
 
         <span id="rotp">
+
             Republic of the Philippines
             <br>
             Department of Health
@@ -133,29 +163,33 @@
         <span id="zcmc">
             ZAMBOANGA CITY MEDICAL CENTER
         </span>
+
         <br>
         <span id="addr">
             DR. EVANGELISTA ST., STA. CATALINA, ZAMBOANGA CITY
+
+
         </span>
+
 
     </div>
 
-   <div class="container-fluid">
+   <div class="">
+    <div style="text-align: center;margin-top:20px;margin-bottom:20px;margin-right:5px" >
+       <small> <b>OVERTIME AUTHORITY</b></small>
+      </div>
 
-        <div  style="text-align: center;margin-bottom:10px">
-            <small> <b> OVERTIME AUTHORITY </b> </small>
-        </div>
 
         <table class="table-bordered"  cellspacing="0" cellpadding="10">
             <tbody>
        <tr>
-                    <td class="text-start" colspan="5" style="font-weight: bold"> To : AFDAL B. KUNTING. MD. MPH, FPCP </td>
-                    <td class="text-start" colspan="5"> Date : November 23, 2023
+                    <td class="text-start" colspan="5" style="font-weight: bold"> To :  {{$approvingOfficer->name}}</td>
+                    <td class="text-start" colspan="5"> Date : {{$created}}
                     </td>
                 </tr>
 
                 <tr>
-                    <td class="text-start" colspan="5"> Division : Medical Center Chief II </td>
+                    <td class="text-start" colspan="5"> Division : {{$approvingOfficer->designation}}</td>
                     <td class="text-start" colspan="5"> Office/Region : ZAMBOANGA CITY MEDICAL CENTER </td>
                 </tr>
 
@@ -169,54 +203,20 @@
 
                         <table >
                             <tr style="border:none !important">
-                                <td style="border:none !important">
-                                    Fritzie Lynn T. Cabilin
-                                    <br>
-                                    Vanessa N. De Castro
-                                    <br>
-                                    Hany Vincent WS Del Castillo
-                                    <br>
-                                    Kristine Joy L. Fernandez
-                                    <br>
-                                    Ma. Thereza D. Francisco
-                                    <br>
-                                    Ghia Riz G. Mayonlla
-                                    <br>
-                                    Arnie Chelle DC Montuerto
+                                @foreach ($listofEmployees as $key => $item)
+                                @if ($key % 7 == 0)
+                                    {{-- Start a new <td> element --}}
+                                    <td style="border:none !important">
+                                @endif
 
-                                </td>
-                                <td style="border:none !important">
-                                    Fritzie Lynn T. Cabilin
-                                    <br>
-                                    Vanessa N. De Castro
-                                    <br>
-                                    Hany Vincent WS Del Castillo
-                                    <br>
-                                    Kristine Joy L. Fernandez
-                                    <br>
-                                    Ma. Thereza D. Francisco
-                                    <br>
-                                    Ghia Riz G. Mayonlla
-                                    <br>
-                                    Arnie Chelle DC Montuerto
+                                {{ $item->name }}<br>
 
-                                </td>
-                                <td style="border:none !important">
-                                    Fritzie Lynn T. Cabilin
-                                    <br>
-                                    Vanessa N. De Castro
-                                    <br>
-                                    Hany Vincent WS Del Castillo
-                                    <br>
-                                    Kristine Joy L. Fernandez
-                                    <br>
-                                    Ma. Thereza D. Francisco
-                                    <br>
-                                    Ghia Riz G. Mayonlla
-                                    <br>
-                                    Arnie Chelle DC Montuerto
+                                @if ($key % 7 == 6 || $key == count($listofEmployees) - 1)
+                                    {{-- End the current <td> element --}}
+                                    </td>
+                                @endif
+                            @endforeach
 
-                                </td>
                             </tr>
                         </table>
 
@@ -231,7 +231,7 @@
 
                 <tr>
                     <td class="text-start" colspan="10">
-                        Purpose of Overtime: Closing of accounting books and preparation of Financial Statements for FY 2023
+                        Purpose of Overtime: {{$purposeofovertime}}
 
                     </td>
                 </tr>
@@ -250,8 +250,11 @@
 
                  {{-- Contents --}}
 
-                @include('overtimeContents')
-                @include('overtimeContents')
+                 @foreach ($activities as $item)
+                 @include('overtimeContents')
+                 @endforeach
+
+
 
 
 
@@ -263,9 +266,9 @@
                             <br>
 
                          <div style="text-align: center;font-size:13px;margin-top:25px">
-                           <span style="text-transform:uppercase"> Juanita J. Juanito</span>
+                           <span style="text-transform:uppercase"> {{$requestedBy->name}}</span>
                             <br>
-                            <small>Finance and Management Officer II</small>
+                            <small>{{$requestedBy->designation_name}}</small>
 
                          </div>
                         </span>
@@ -320,9 +323,9 @@
                                 <br>
 
                              <div style="text-align: center;font-size:13px;margin-top:25px">
-                               <span style="text-transform:uppercase"> Juanita J. Juanito</span>
+                               <span style="text-transform:uppercase"> {{$recommendingofficer->name}}</span>
                                 <br>
-                                <small>Finance and Management Officer II</small>
+                                <small>{{$recommendingofficer->designation}}</small>
 
                              </div>
                             </span>
@@ -339,11 +342,11 @@
                  <tr  >
                     <td colspan="3" rowspan="2">
 
-                            <div class="text-decoration-offset" style="margin-bottom: 2%;text-align:center;margin-top:25px">
 
-                                AFDAL B. KUNTING, MD, MPH, FPCP
+                            <div class="text-decoration-offset" style="margin-bottom: 2%;text-align:center;margin-top:25px">
+                                <span style="text-transform:uppercase"> {{$approvingOfficer->name}}</span>
                                 <br>
-                                <small>Finance and Management Officer IIss</small>
+                                <small>{{$approvingOfficer->designation}}</small>
 
                             </div>
 
@@ -353,15 +356,48 @@
                  </tr>
 
                  <tr>
-                    <td colspan="4" class="cell-height-1">
-                        Febuary 24-15, 2023
+                    <td colspan="4" >
+
+                        <div style="position:relative;width:280px;font-size:10px">
+                            @foreach ($activities as $item)
+                        {{date("M j",strtotime($item->dates[0]->date))}}
+                        to
+                            {{date("M j",strtotime($item->dates[count($item->dates)-1]->date))}},
+                        @endforeach
+                        </div>
+
+
                     </td>
-                    <td colspan="3" class="cell-height-1">
-                        08:00 AM to 05:00 PM
+                    <td colspan="3" >
+                        <div style="position:relative;width:280px;font-size:10px">
+                        @foreach ($activities as $item)
+                        @php
+                        $timeRanges = [];
+                    foreach ($item->dates as $date) {
+                        $timeRange = date("H:i a", strtotime($date->time_from)) . ' - ' . date("H:i a", strtotime($date->time_to));
+                        $timeRanges[] = $timeRange;
+                    }
+                    $uniqueTimeRanges = array_unique($timeRanges);
+                    foreach ($uniqueTimeRanges as $timeRange) {
+                        echo $timeRange . ', ';
+                    }
+
+                        @endphp
+                        @endforeach
+                        </div>
                     </td>
                 </tr>
             </tbody>
         </table>
+
+        <table id="lfooter">
+            <tr style=" border:none;">
+                <td id="f1">ZCMC-F-HRM0-12</td>
+                <td id="f2">ReV.0</td>
+                <td id="f3">Effectivity Date: June 2, 2014</td>
+            </tr>
+        </table>
+
     </div>
     {{-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script> --}}
 </body>

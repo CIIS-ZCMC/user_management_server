@@ -38,26 +38,62 @@ class OvertimeController extends Controller
 
       $overtime_application = OvertimeApplication::where('id',$id)->get();
 
+      $data = json_decode(json_encode(OvertimeResource::collection($overtime_application)))[0];
 
-      return response()->json([
-        'data' => OvertimeResource::collection($overtime_application),
-        'message' => 'Retrieved all overtime application'
-    ], Response::HTTP_OK);
+      $activities = $data->activities;
+      $uniqueEmployees = [];
 
+      foreach ($activities as $activity) {
+          foreach ($activity->dates as $date) {
+              foreach ($date->employees as $employee) {
+                  $employeeId = $employee->employee_profile->employee_id;
+                  // Check if employee already exists in the uniqueEmployees array
+                  if (!isset($uniqueEmployees[$employeeId])) {
+                      // If not, add the employee to the uniqueEmployees array
+                      $uniqueEmployees[$employeeId] = $employee->employee_profile;
+                  }
+              }
+          }
+      }
 
-        // $options = new Options();
-        // $options->set('isPhpEnabled', true);
-        // $options->set('isHtml5ParserEnabled', true);
-        // $options->set('isRemoteEnabled', true);
-        // $dompdf = new Dompdf($options);
-        // $dompdf->getOptions()->setChroot([base_path() . '\public\storage']);
-        // $dompdf->loadHtml(view("overtimeAuthority"));
+      $listofEmployees = array_values($uniqueEmployees);
+      $purposeofovertime = $data->purpose;
+      $remarks = $data->remarks;
+      $recommendingofficer = $data->recommending_officer;
+      $approvingOfficer = $data->approving_officer;
+      $requestedBy =  $data->employee_profile;
 
-        // $dompdf->setPaper('Letter', 'portrait');
-        // $dompdf->render();
+      $created = date("F j, Y",strtotime($data->created_at));
 
-        // $filename ='testsss.pdf';
-        // $dompdf->stream($filename);
+    //   return view("overtimeAuthority",
+    //   compact('listofEmployees',
+    //   'activities',
+    //   'purposeofovertime',
+    //   'recommendingofficer',
+    //   'requestedBy',
+    //   'approvingOfficer',
+    //   'created'));
+
+        $options = new Options();
+        $options->set('isPhpEnabled', true);
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('isRemoteEnabled', true);
+        $dompdf = new Dompdf($options);
+        $dompdf->getOptions()->setChroot([base_path() . '\public\storage']);
+        $dompdf->loadHtml(view("overtimeAuthority",
+        compact('listofEmployees',
+        'activities',
+        'purposeofovertime',
+        'recommendingofficer',
+        'requestedBy',
+        'approvingOfficer',
+        'created')));
+
+        $dompdf->setPaper('Letter', 'portrait');
+        $dompdf->render();
+
+        $filename ='testsss.pdf';
+        $dompdf->stream($filename);
 
     }
 
