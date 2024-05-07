@@ -8,6 +8,7 @@ use App\Http\Resources\LeaveTypeResource;
 use App\Http\Resources\MyApprovedLeaveApplicationResource;
 use App\Models\Department;
 use App\Models\Division;
+use App\Models\DocumentNumber;
 use App\Models\EmployeeCreditLog;
 use App\Models\EmployeeOvertimeCredit;
 use App\Models\LeaveType;
@@ -1529,6 +1530,12 @@ class LeaveApplicationController extends Controller
     public function printLeaveForm($id)
     {
         try {
+            $doc_title='';
+            $rev_no='';
+            $effective_date='';
+            $is_monetization = false;
+
+
             $data = LeaveApplication::with(['employeeProfile', 'leaveType', 'hrmoOfficer', 'recommendingOfficer', 'approvingOfficer'])->where('id', $id)->first();
             $vl_employee_credit = EmployeeLeaveCredit::where('leave_type_id', LeaveType::where('code', 'VL')->first()->id)
                 ->where('employee_profile_id', $data->employee_profile_id)
@@ -1542,42 +1549,63 @@ class LeaveApplicationController extends Controller
             $my_leave_type = new LeaveTypeResource(LeaveType::find($data->leave_type_id));
             $hrmo_officer = Section::with(['supervisor'])->where('code', 'HRMO')->first();
 
-            $employeeLeaveCredit = EmployeeLeaveCredit::with('employeeLeaveCreditLogs')
-                ->where('employee_profile_id', $data->employee_profile_id)
-                ->where('leave_type_id', $data->leave_type_id)
-                ->first();
+            //FETCH DOCUMENT DETAILS
+           
 
-            // if ($employeeLeaveCredit) {
-            //     $creditLogs = $employeeLeaveCredit->employeeLeaveCreditLogs;
-            //     // Now you can work with $creditLogs
-            // } else {
-            //     // Handle the case when no matching record is found
-            //     $creditLogs = null; // Or any other appropriate action
-            // }
+            $document_details =[];
+
+            $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $data->employee_profile_id)->first();
+
+            if(!$isMCC){
+                 //GET DIV ID FIRST
+                 if($data->country === 'Philippines'){
+                    $div_id = Division::where('chief_employee_profile_id',$data->approvingOfficer->id)->first();
+                    $document_details = DocumentNumber::where('division_id', $div_id->id)->where('is_abroad', 0)->first();
+                 }else{
+                    $document_details= DocumentNumber::where('division_id', 1)->where('is_abroad', 1)->first();
+                 }
+               
+            }else{
+                $document_details=DocumentNumber::where('id', 6)->first();
+            }
 
             // return view('leave_from.leave_application_form', compact('data', 'leave_type', 'hrmo_officer'));
 
-             $is_monetization = false;
-             $options = new Options();
-             $options->set('isPhpEnabled', true);
-             $options->set('isHtml5ParserEnabled', true);
-             $options->set('isRemoteEnabled', true);
-             $dompdf = new Dompdf($options);
-             $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
-             $html = view('overtime_form.overtime_authority', compact('data'))->render();
-             $dompdf->loadHtml($html);
+            $options = new Options();
+            $options->set('isPhpEnabled', true);
+            $options->set('isHtml5ParserEnabled', true);
+            $options->set('isRemoteEnabled', true);
+            $dompdf = new Dompdf($options);
+            $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
+            $html = view('leave_from.leave_application_form', compact('data', 'leave_type', 'hrmo_officer', 'my_leave_type', 'vl_employee_credit', 'sl_employee_credit', 'is_monetization', 'document_details'))->render();
+            $dompdf->loadHtml($html);
 
-             $dompdf->setPaper('Legal', 'portrait');
-             $dompdf->render();
-             $filename = 'OVERTIME AUTHORITY FORM - (' . $data->employeeProfile->personalInformation->name() . ').pdf';
-             $dompdf->stream($filename, array('Attachment' => false));
+            $dompdf->setPaper('Legal', 'portrait');
+            $dompdf->render();
+            $filename = 'LEAVE REPORT - (' . $data->employeeProfile->personalInformation->name() . ').pdf';
+
+            // Use 'I' instead of 'D' to open in the browser
+            $dompdf->stream($filename, array('Attachment' => false));
+            // $dompdf->stream($filename);
 
 
-
-
-         } catch (\Exception $e) {
-             return response()->json(['message' => $e->getMessage(), 'error' => true]);
-         }
+            // if ($dompdf->loadHtml($html)) {
+            // $dompdf->setPaper('Legal', 'portrait');
+            // $dompdf->render();
+            // $filename = 'Leave Application('. $data->employeeProfile->personalInformation->name() .').pdf';
+            // $dompdf->stream($filename);
+            // } else {
+            //     return response()->json(['message' => 'Error loading HTML content', 'error' => true]);
+            // }
+            $employee_leave_application = $id;
+            $employee_print = LeaveApplication::where('id', $employee_leave_application)->first();
+            $employee_print->update([
+                'is_printed' => 1,
+                'print_datetime' => Carbon::now()
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage(), 'error' => true]);
+        }
     }
 
     public static function checkOverlap($start, $end, $employeeId)
