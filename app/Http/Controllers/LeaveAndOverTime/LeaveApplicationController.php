@@ -1149,23 +1149,6 @@ class LeaveApplicationController extends Controller
                         if (!$isMCC) {
 
                             if ($leave_type->code = 'VL' && $request->country != 'Philippines') {
-                                // Get the current date
-                                $currentDate = now();
-
-                                // Get the HRMO schedule for the next 20 days
-                                $Date = $currentDate->copy();
-                                $foundConsecutiveDays = 0;
-
-                                while ($foundConsecutiveDays <= 21) {
-                                    if (Helpers::hasSchedule($Date->toDateString(), $Date->toDateString(), $hrmo_officer)) {
-                                        // If a schedule is found, increment the counter
-                                        $foundConsecutiveDays++;
-                                    }
-                                    // Move to the next day
-                                    $Date->addDay();
-                                }
-                                // Check if the selected date is greater than or equal to the final date for the employee to file for leave
-                                if ($Date->gte($finalDate)) {
                                     $cleanData['recommending_officer'] = Helpers::getDivHead($employee_profile->assignedArea->findDetails());
                                     $cleanData['approving_officer'] = Helpers::getChiefOfficer();
                                 } else {

@@ -10,7 +10,10 @@ class MonetizationApplication extends Model
     use HasFactory;
     
     protected $table = 'monetization_applications';
-
+    protected $casts = [
+        'is_qualified' => 'boolean',
+        // 'is_commutation' => 'boolean',
+    ];
     public $fillable = [
         'employee_profile_id',
         'leave_type_id',
