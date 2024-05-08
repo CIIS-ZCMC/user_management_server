@@ -568,4 +568,17 @@ class ScheduleController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    private function updateAutomaticScheduleStatus()
+    {
+        $date_now = Carbon::now();
+        $data = Schedule::whereDate('date', '<', $date_now->format('Y-m-d'))->get();
+
+        if (!$data->isEmpty()) { // Check if the collection is not empty
+            foreach ($data as $schedule) {
+                $schedule->status = false;
+                $schedule->save(); // or $schedule->update(['status' => false]);
+            }
+        }
+}
 }
