@@ -914,38 +914,37 @@ class LeaveApplicationController extends Controller
             $daysDiff = $start->diffInDays($end) + 1;
             $leave_type = LeaveType::find($request->leave_type_id);
 
-            // $checkSchedule = Helpers::hasSchedule($start, $end, $employeeId);
-            // if (!$checkSchedule) {
-            //     return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
-            // }
+            $checkSchedule = Helpers::hasSchedule($start, $end, $employeeId);
+            if (!$checkSchedule) {
+                return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
+            }
 
             //CHECK SCHEDULES
 
             //IF SICK LEAVE
             if ($leave_type->code === 'SL' && $leave_type->file_after !== null) {
+
                 // Initialize the variable to store the final date of the consecutive schedule
                 $finalConsecutiveScheduleDate = null;
                 $foundConsecutiveDays = 0;
-
+                $currentDate = Carbon::now();
+                $checkDate = $currentDate->copy();
                 $Date = $end->copy();
                 // Loop through each day starting from the end date
 
-                while ($foundConsecutiveDays  <= 4) {
+                while ($foundConsecutiveDays  <= 3) {
                     if (Helpers::hasSchedule($Date->toDateString(), $Date->toDateString(), $employeeId)) {
                         // If a schedule is found, increment the counter
                         $foundConsecutiveDays++;
 
                         // Store the date of the current consecutive schedule
-                        $finalConsecutiveScheduleDate = $Date->copy();
+
                     }
                     // Move to the next day
-
                     $Date->addDay();
                 }
 
-                $finalDate = $finalConsecutiveScheduleDate ? $finalConsecutiveScheduleDate->toDateString() : null;
-
-                if ($finalDate && $currentDate->gt($finalDate)) {
+                if ($Date->lt($checkDate)) {
                     return response()->json(['message' => "You missed the filing deadline."], Response::HTTP_FORBIDDEN);
                 }
             }
