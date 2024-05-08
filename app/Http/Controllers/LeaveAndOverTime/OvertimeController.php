@@ -92,7 +92,7 @@ class OvertimeController extends Controller
         $dompdf->setPaper('Letter', 'portrait');
         $dompdf->render();
 
-        $filename ='testsss.pdf';
+        $filename ="OvertimeAuthority_{$purposeofovertime}.pdf";
         $dompdf->stream($filename);
 
     }

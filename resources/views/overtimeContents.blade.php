@@ -26,10 +26,10 @@
  </tr> --}}
 
  <tr>
-    <td style="font-size:11px !important; border-bottom: 1px solid transparent;" colspan="3">
+    <td style="font-size:11px !important; border-bottom: 1px solid transparent;" colspan="5">
         {{$item->name}}
     </td>
-    <td style="font-size:11px !important; border-bottom: 1px solid transparent;text-align:center" colspan="2">
+    <td style="font-size:11px !important; border-bottom: 1px solid transparent;text-align:center" colspan="1">
       {{$item->quantity}}
     </td>
     <td style="font-size:11px !important; border-bottom: 1px solid transparent;text-align:center" colspan="1">
@@ -84,7 +84,7 @@
             {{date("M j",strtotime($item->dates[count($item->dates)-1]->date))}}
 
     </td>
-    <td style="font-size:11px !important; border-bottom: 1px solid transparent;" colspan="3">
+    <td style="font-size:11px !important; border-bottom: 1px solid transparent;" colspan="4">
         <div style="position:relative;left:1%;width:200px;">
             @php
             $employeeNames = [];

@@ -183,22 +183,22 @@
         <table class="table-bordered"  cellspacing="0" cellpadding="10">
             <tbody>
        <tr>
-                    <td class="text-start" colspan="5" style="font-weight: bold"> To :  {{$approvingOfficer->name}}</td>
-                    <td class="text-start" colspan="5"> Date : {{$created}}
+                    <td class="text-start" colspan="6" style="font-weight: bold"> To :  {{$approvingOfficer->name}}</td>
+                    <td class="text-start" colspan="6"> Date : {{$created}}
                     </td>
                 </tr>
 
                 <tr>
-                    <td class="text-start" colspan="5"> Division : {{$approvingOfficer->designation}}</td>
-                    <td class="text-start" colspan="5"> Office/Region : ZAMBOANGA CITY MEDICAL CENTER </td>
+                    <td class="text-start" colspan="6"> Division : {{$approvingOfficer->designation}}</td>
+                    <td class="text-start" colspan="6"> Office/Region : ZAMBOANGA CITY MEDICAL CENTER </td>
                 </tr>
 
                 <tr>
-                    <td colspan="10"> Name of Employee's Authorized to Render Overtime </td>
+                    <td colspan="12"> Name of Employee's Authorized to Render Overtime </td>
                 </tr>
 
                 <tr>
-                    <td colspan="10">
+                    <td colspan="12">
 
 
                         <table >
@@ -224,28 +224,28 @@
                 </tr>
 
                 <tr>
-                    <td colspan="10" style="text-align: center">
+                    <td colspan="12" style="text-align: center">
                         WORK PROGRAM
                     </td>
                 </tr>
 
                 <tr>
-                    <td class="text-start" colspan="10">
+                    <td class="text-start" colspan="12">
                         Purpose of Overtime: {{$purposeofovertime}}
 
                     </td>
                 </tr>
 
                 <tr style="text-align: center;">
-                    <td style="font-size:11px !important" colspan="3" rowspan="2" >ACTIVITIES TO BE ACCOMPLISHED</td>
-                    <td style="font-size:11px !important" colspan="2" rowspan="1">Est.
+                    <td style="font-size:9px !important" colspan="5" rowspan="2" >ACTIVITIES TO BE ACCOMPLISHED</td>
+                    <td style="font-size:11px !important" colspan="1" rowspan="1">Est.
                     <td style="font-size:11px !important" colspan="1" rowspan="2"> Est. MH Needed</td>
                     <td style="font-size:11px !important" colspan="1" rowspan="2"> Period Covered</td>
-                    <td style="font-size:11px !important" colspan="3" rowspan="2"> PERSONS ASSIGNED</td>
+                    <td style="font-size:9px !important" colspan="4" rowspan="2"> PERSONS ASSIGNED</td>
                  </tr>
 
                  <tr style="text-align: center">
-                    <td style="font-size:11px !important" colspan="2" rowspan="1">Qty.</td>
+                    <td style="font-size:11px !important" colspan="1" rowspan="1">Qty.</td>
                  </tr>
 
                  {{-- Contents --}}
@@ -259,14 +259,15 @@
 
 
                  <tr style="border-top:2px solid rgb(173, 173, 173)">
-                    <td colspan="3">
+                    <td colspan="5">
 
                         <span style="margin-bottom: 0%">
-                            REQUESTED BY:
+
+                            <span style="font-size:10px"> REQUESTED BY:</span>
                             <br>
 
                          <div style="text-align: center;font-size:13px;margin-top:25px">
-                           <span style="text-transform:uppercase"> {{$requestedBy->name}}</span>
+                           <span style="text-transform:uppercase;font-size:11px"> {{$requestedBy->name}}</span>
                             <br>
                             <small>{{$requestedBy->designation_name}}</small>
 
@@ -275,8 +276,8 @@
 
                     </td>
 
-                    <td colspan="7" rowspan="3" style="vertical-align: top; text-align: left;"> Condition:
-                    <div style="position:relative;left:10%;top:1%;width:380px;">
+                    <td colspan="7" rowspan="2" style="vertical-align: top; text-align: left;"> Condition:
+                    <div style="position:relative;left:15%;;width:380px;">
                             <span>
                                 The above names are hereby authorized to render overtime, subject to the following:
                                 <br>
@@ -294,8 +295,8 @@
                     </td>
                  </tr>
 
-                 <tr>
-                    <td colspan="3">
+                 {{-- <tr>
+                    <td colspan="4">
 
 
 
@@ -313,17 +314,17 @@
 
 
                     </td>
-                 </tr>
+                 </tr>  --}}
 
                  <tr>
-                    <td colspan="3" >
+                    <td colspan="5" >
 
                             <span style="margin-bottom: 0%">
-                                RECOMMENDING APPROVAL :
+                               <span style="font-size:10px"> RECOMMENDING APPROVAL :</span>
                                 <br>
 
                              <div style="text-align: center;font-size:13px;margin-top:25px">
-                               <span style="text-transform:uppercase"> {{$recommendingofficer->name}}</span>
+                               <span style="text-transform:uppercase;font-size:11px"> {{$recommendingofficer->name}}</span>
                                 <br>
                                 <small>{{$recommendingofficer->designation}}</small>
 
@@ -335,28 +336,28 @@
                  </tr>
 
                  <tr>
-                    <td colspan="3"> APPROVED BY: </td>
-                    <td colspan="7"> DURATION OF OVERTIME WORK</td>
+                    <td colspan="5" style="font-size:10px"> APPROVED BY: </td>
+                    <td colspan="7" style="font-size:10px"> DURATION OF OVERTIME WORK</td>
                  </tr>
 
                  <tr  >
-                    <td colspan="3" rowspan="2">
+                    <td colspan="5" rowspan="2">
 
 
                             <div class="text-decoration-offset" style="margin-bottom: 2%;text-align:center;margin-top:25px">
-                                <span style="text-transform:uppercase"> {{$approvingOfficer->name}}</span>
+                                <span style="text-transform:uppercase;font-size:11px"> {{$approvingOfficer->name}}</span>
                                 <br>
                                 <small>{{$approvingOfficer->designation}}</small>
 
                             </div>
 
                     </td>
-                    <td colspan="4" class="cell-height-1">Period</td>
-                    <td colspan="3" class="cell-height-1">Time</td>
+                    <td colspan="3" class="cell-height-1">Period</td>
+                    <td colspan="4" class="cell-height-1">Time</td>
                  </tr>
 
                  <tr>
-                    <td colspan="4" >
+                    <td colspan="3" >
 
                         <div style="position:relative;width:280px;font-size:10px">
                             @foreach ($activities as $item)
@@ -368,7 +369,7 @@
 
 
                     </td>
-                    <td colspan="3" >
+                    <td colspan="4" >
                         <div style="position:relative;width:280px;font-size:10px">
                         @foreach ($activities as $item)
                         @php
