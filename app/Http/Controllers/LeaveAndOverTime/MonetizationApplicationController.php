@@ -43,7 +43,7 @@ class MonetizationApplicationController extends Controller
 
             if (Helpers::getHrmoOfficer() === $employee_profile->id) {
                 $employeeId = $employee_profile->id;
-                $hrmo = ["applied", "for hrmo approval","for recommending approval", "for approving approval", "approved", "declined by hrmo officer"];
+                $hrmo = ["applied","for recommending approval", "for approving approval", "approved", "declined by hrmo officer"];
 
                 $mone_applications = MonetizationApplication::select('monetization_applications.*')
                     ->where(function ($query) use ($hrmo, $employeeId) {
@@ -299,7 +299,7 @@ class MonetizationApplicationController extends Controller
                     $mone_application_log->action = $process_name;
                     $mone_application_log->save();
                     break;
-
+      
                 case 'for recommending approval':
                     $process_name = "Approved by Recommending Officer";
                     $monetization_application->update(['status' => 'for approving approval']);
@@ -337,6 +337,14 @@ class MonetizationApplicationController extends Controller
     {
         try {
             $employee_profile = $request->user;
+      
+
+            $cleanData['pin'] = strip_tags($request->pin);
+
+            if ($employee_profile['authorization_pin'] !== $cleanData['pin']) {
+                return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
+            }
+
             $leave_type_code = strip_tags($request->code);
 
             $leave_type = LeaveType::where('code', $leave_type_code)->first();
@@ -353,20 +361,31 @@ class MonetizationApplicationController extends Controller
             $recommending_officer = Division::where('code', 'HOPSS')->first();
             $approving_officer = Division::where('code', 'OMCC')->first();
 
-
+         
             if($recommending_officer === null || $approving_officer === null || $hrmo_officer === null){
                 return response()->json(['message' => "No recommending officer and/or supervising officer assigned."], Response::HTTP_BAD_REQUEST);
             }
             $cleanData = [];
+
+            
             $cleanData['employee_profile_id'] = $employee_profile->id;
             $cleanData['leave_type_id'] = $leave_type->id;
             $cleanData['reason'] = strip_tags($request->reason);
             $cleanData['credit_value'] = strip_tags($request->credit_value);
-            $cleanData['is_qualified'] = 0;
+            $cleanData['is_qualified'] = 1;
             $cleanData['status'] = 'applied';
             $cleanData['hrmo_officer'] = $hrmo_officer;
             $cleanData['recommending_officer'] = $recommending_officer->chief_employee_profile_id;
             $cleanData['approving_officer'] = $approving_officer->chief_employee_profile_id;
+
+            $file = $request->file('attachment');
+            $cleanData['attachment'] = $file->getClientOriginalName();
+            $cleanData['attachment_size'] = $file->getSize();
+            $cleanData['attachment_path'] = Helpers::checkSaveFile($file, 'leave_monetization');
+
+           
+
+            $new_monetization = MonetizationApplication::create($cleanData);
 
             $previous_credit = $credit->total_leave_credits;
 
@@ -374,20 +393,6 @@ class MonetizationApplicationController extends Controller
                 'total_leave_credits' => $credit->total_leave_credits - $request->credit_value,
                 'used_leave_credits' => $credit->used_leave_credits + $request->credit_value
             ]);
-            try {
-                $fileName = Helpers::checkSaveFile($request->attachment, 'monetization/files');
-                if (is_string($fileName)) {
-                    $cleanData['attachment'] = $request->attachment === null  || $request->attachment === 'null' ? null : $fileName;
-                }
-
-                if (is_array($fileName)) {
-                    $in_valid_file = true;
-                    $cleanData['attachment'] = null;
-                }
-            } catch (\Throwable $th) {
-            }
-
-            $new_monetization = MonetizationApplication::create($cleanData);
 
             $process_name = "Applied";
             // $this->storeMonetizationLog($new_monetization->id, $process_name, $employee_profile->id);
@@ -455,20 +460,52 @@ class MonetizationApplicationController extends Controller
             $mone_application_recommending = $mone_application->recommending_officer;
             $mone_application_approving = $mone_application->approving_officer;
 
-            if ($employee_profile->id === $mone_application_hrmo) {
-                $status='declined by hrmo officer';
-                $declined_by = "HR";
+            switch ($mone_application->status) {
+                case 'applied': 
+                    if($employee_profile->id === $mone_application->hrmo_officer){
+                        $status = 'declined by hrmo officer';
+                        $declined_by = "HR";
+                        // Helpers::pendingLeaveNotfication($mone_application->recommending_officer, $mone_application->leaveType->name);
+                        // Helpers::notifications(
+                        //     $mone_application->employee_profile_id,
+                        //     "HR has approved your " . $mone_application->leaveType->name . " request.",
+                        //     $mone_application->leaveType->name
+                        // );
+                    }else{
+                        return response()->json([
+                            'message' => 'You have no access to  decline this request.',
+                        ], Response::HTTP_FORBIDDEN);
+                    }
+                    break;
+                case 'for recommending approval': 
+                    if($employee_profile->id === $mone_application->recommending_officer){
+                        $status = 'declined by recommending officer';
+                        $declined_by = "Recommending officer";
+                    // Helpers::pendingLeaveNotfication($mone_application->approving_officer, $mone_application->leaveType->name);
+                    // Helpers::notifications(
+                    //     $mone_application->employee_profile_id,
+                    //     $mone_application->recommendingOfficer->personalInformation->name() . " has approved your " . $mone_application->leaveType->name . " request.",
+                    //     $mone_application->leaveType->name
+                    // );
+                    }else{
+                        return response()->json([
+                            'message' => 'You have no access to  decline this request.',
+                        ], Response::HTTP_FORBIDDEN);
+                    }
+                    break;
+                case 'for approving approval':
+                    if($employee_profile->id === $mone_application->recommending_officer){
+                        $status = 'declined by approving officer';
+                        $declined_by = "Approving officer";
+                        // Helpers::notifications($mone_application->employee_profile_id, $message, $mone_application->leaveType->name);
+                    }else{
+                        return response()->json([
+                            'message' => 'You have no access to  decline this request.',
+                        ], Response::HTTP_FORBIDDEN);
+                    }
+                    break;
             }
-            else if($employee_profile->id === $mone_application_recommending)
-            {
-                $status='declined by recommending officer';
-                $declined_by = "Recommending officer";
-            }
-            else if($employee_profile->id === $mone_application_approving)
-            {
-                $status='declined by approving officer';
-                $declined_by = "Approving officer";
-            }
+
 
             $mone_application->update([
                 'status' => $status,

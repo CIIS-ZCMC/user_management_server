@@ -22,6 +22,7 @@ class TrainingManyRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'trainings.*.id' => 'nullable|integer',
             'trainings.*.title' => 'required|string|max:255',
             'trainings.*.inclusive_from' => "required|date:Y-m-d",
             'trainings.*.inclusive_to' => "required|date:Y-m-d",

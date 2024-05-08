@@ -34,7 +34,8 @@ class LeaveTypeSeeder extends Seeder
             'code' => "VL",
             'description' => 'Depends on the leave credit balances',
             'period' => 0,
-            'file_date' => '5 days in advance prior to the effective date of leave',
+            'file_date' => '5 days in advance prior to the effective date of leave
+            If abroad, apply at least 20 days in advance prior date of leave',
             'file_before' => 5,
             'month_value' => 15 / 12,
             'annual_credit' => 15,
