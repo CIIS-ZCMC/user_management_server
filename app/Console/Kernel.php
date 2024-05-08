@@ -2,6 +2,7 @@
 
 namespace App\Console;
 
+use App\Console\Commands\EmployeeEarnAnnualSPLCredit;
 use App\Console\Commands\EmployeeMonthlyEarnCredit;
 use App\Console\Commands\ProcessApprovedOvertimeCredits;
 use App\Console\Commands\ProcessExpiredOvertimeCredits;
@@ -46,8 +47,8 @@ class Kernel extends ConsoleKernel
 
         $schedule->command(EmployeeMonthlyEarnCredit::class)->daily();
 
-        // $schedule->command(EmployeeMonthlyEarnCredit::class)->runInBackground();
-       
+        $schedule->command(EmployeeEarnAnnualSPLCredit::class)->runInBackground();
+
     }
 
     /**
