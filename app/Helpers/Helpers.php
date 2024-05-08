@@ -701,7 +701,7 @@ class Helpers
         return $overlappingLeave || $overlappingOb || $overlappingOT || $overlappingCTO;
     }
 
-    public static function generateSchedule($start_duty, $employee_id)
+    public static function generateSchedule($start_duty)
     {
         $duty_start = new DateTime($start_duty);
 
@@ -719,6 +719,8 @@ class Helpers
             $duty_start->add(new DateInterval('P1D'));
         }
 
+        $schedules = [];
+
         // Now, $scheduleDates contains all the dates from $start_duty to the end of the month
         foreach ($scheduleDates as $date) {
             $schedule = Schedule::firstOrNew([
@@ -735,22 +737,11 @@ class Helpers
             }
 
             $schedule->save();
-            $schedule->employeeProfile()->attach($employee_id);
+            $schedules[] = $schedule;
 
-
-            // Attach employee to the schedule
-            // return $schedule->employeeProfile()->attach($employee_id);
-
-            // $employee_schedule = EmployeeSchedule::where('employee_profile_id', $employee_id)->where('schedule_id', $schedule->id)->first();
-
-            // if ($employee_schedule === null) {
-            //     return $schedule->employeeProfile()->attach($employee_id);
-            // }
-
-            // return 'Employee has schedule';
         }
-
-        // return $schedule->employeeProfile()->attach($employee_id);
+        
+        return $schedules;
     }
 
 

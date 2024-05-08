@@ -20,7 +20,7 @@ class TaskScheduler extends Command
      *
      * @var string
      */
-    protected $description = 'Command description';
+    protected $description = 'To trigger the task registered in task_schedules table including such OIC rights that will trigger on effective day 5AM.';
 
     /**
      * Execute the console command.
