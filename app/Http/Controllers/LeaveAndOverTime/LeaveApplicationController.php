@@ -918,6 +918,10 @@ class LeaveApplicationController extends Controller
             if (!$checkSchedule) {
                 return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
             }
+            $checkSchedule = Helpers::hasSchedule($start, $end, $employeeId);
+            if (!$checkSchedule) {
+                return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
+            }
 
             //CHECK SCHEDULES
 
@@ -1236,11 +1240,12 @@ class LeaveApplicationController extends Controller
                 ];
             }
 
-            return response()->json([
-                'data' => new LeaveApplicationResource($leave_application),
-                'credits' => $result ? $result : [],
-                'message' => 'Successfully applied for ' . $leave_type->name
-            ], Response::HTTP_OK);
+                return response()->json([
+                    'data' => new LeaveApplicationResource($leave_application),
+                    'credits' => $result ? $result : [],
+                    'message' => 'Successfully applied for ' . $leave_type->name
+                ], Response::HTTP_OK);
+    
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
