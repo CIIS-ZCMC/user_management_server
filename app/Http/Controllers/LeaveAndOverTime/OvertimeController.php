@@ -34,6 +34,69 @@ class OvertimeController extends Controller
      */
     private $CONTROLLER_NAME = 'OvertimeController';
 
+    public function printOvertimeForm($id){
+
+      $overtime_application = OvertimeApplication::where('id',$id)->get();
+
+      $data = json_decode(json_encode(OvertimeResource::collection($overtime_application)))[0];
+
+      $activities = $data->activities;
+      $uniqueEmployees = [];
+
+      foreach ($activities as $activity) {
+          foreach ($activity->dates as $date) {
+              foreach ($date->employees as $employee) {
+                  $employeeId = $employee->employee_profile->employee_id;
+                  // Check if employee already exists in the uniqueEmployees array
+                  if (!isset($uniqueEmployees[$employeeId])) {
+                      // If not, add the employee to the uniqueEmployees array
+                      $uniqueEmployees[$employeeId] = $employee->employee_profile;
+                  }
+              }
+          }
+      }
+
+      $listofEmployees = array_values($uniqueEmployees);
+      $purposeofovertime = $data->purpose;
+      $remarks = $data->remarks;
+      $recommendingofficer = $data->recommending_officer;
+      $approvingOfficer = $data->approving_officer;
+      $requestedBy =  $data->employee_profile;
+
+      $created = date("F j, Y",strtotime($data->created_at));
+
+    //   return view("overtimeAuthority",
+    //   compact('listofEmployees',
+    //   'activities',
+    //   'purposeofovertime',
+    //   'recommendingofficer',
+    //   'requestedBy',
+    //   'approvingOfficer',
+    //   'created'));
+
+        $options = new Options();
+        $options->set('isPhpEnabled', true);
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('isRemoteEnabled', true);
+        $dompdf = new Dompdf($options);
+        $dompdf->getOptions()->setChroot([base_path() . '\public\storage']);
+        $dompdf->loadHtml(view("overtimeAuthority",
+        compact('listofEmployees',
+        'activities',
+        'purposeofovertime',
+        'recommendingofficer',
+        'requestedBy',
+        'approvingOfficer',
+        'created')));
+
+        $dompdf->setPaper('Letter', 'portrait');
+        $dompdf->render();
+
+        $filename ="OvertimeAuthority_{$purposeofovertime}.pdf";
+        $dompdf->stream($filename);
+
+    }
+
     public function index(Request $request)
     {
         try {
@@ -758,37 +821,37 @@ class OvertimeController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    public function printOvertimeForm($id)
-    {
-        try {
-           return $data = OvertimeApplication::with([
-                'employeeProfile',
-                'recommendingOfficer',
-                'approvingOfficer',
-                'activities',
-                'activities.dates',
-                'activities.dates.employees'
-            ])->where('id', $id)->first();
+    // public function printOvertimeForm($id)
+    // {
+    //     try {
+    //        return $data = OvertimeApplication::with([
+    //             'employeeProfile',
+    //             'recommendingOfficer',
+    //             'approvingOfficer',
+    //             'activities',
+    //             'activities.dates',
+    //             'activities.dates.employees'
+    //         ])->where('id', $id)->first();
 
 
-            $is_monetization = false;
-            $options = new Options();
-            $options->set('isPhpEnabled', true);
-            $options->set('isHtml5ParserEnabled', true);
-            $options->set('isRemoteEnabled', true);
-            $dompdf = new Dompdf($options);
-            $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
-            $html = view('leave_from.leave_application_form', compact('data', 'leave_type', 'hrmo_officer', 'my_leave_type', 'vl_employee_credit', 'sl_employee_credit', 'is_monetization'))->render();
-            $dompdf->loadHtml($html);
+    //         $is_monetization = false;
+    //         $options = new Options();
+    //         $options->set('isPhpEnabled', true);
+    //         $options->set('isHtml5ParserEnabled', true);
+    //         $options->set('isRemoteEnabled', true);
+    //         $dompdf = new Dompdf($options);
+    //         $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
+    //         $html = view('leave_from.leave_application_form', compact('data', 'leave_type', 'hrmo_officer', 'my_leave_type', 'vl_employee_credit', 'sl_employee_credit', 'is_monetization'))->render();
+    //         $dompdf->loadHtml($html);
 
-            $dompdf->setPaper('Legal', 'portrait');
-            $dompdf->render();
-            $filename = 'OVERTIME AUTHORITY FORM - (' . $data->employeeProfile->personalInformation->name() . ').pdf';
-            $dompdf->stream($filename, array('Attachment' => false));
+    //         $dompdf->setPaper('Legal', 'portrait');
+    //         $dompdf->render();
+    //         $filename = 'OVERTIME AUTHORITY FORM - (' . $data->employeeProfile->personalInformation->name() . ').pdf';
+    //         $dompdf->stream($filename, array('Attachment' => false));
 
 
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage(), 'error' => true]);
-        }
-    }
+    //     } catch (\Exception $e) {
+    //         return response()->json(['message' => $e->getMessage(), 'error' => true]);
+    //     }
+    // }
 }
