@@ -914,10 +914,10 @@ class LeaveApplicationController extends Controller
             $daysDiff = $start->diffInDays($end) + 1;
             $leave_type = LeaveType::find($request->leave_type_id);
 
-            // $checkSchedule = Helpers::hasSchedule($start, $end, $employeeId);
-            // if (!$checkSchedule) {
-            //     return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
-            // }
+            $checkSchedule = Helpers::hasSchedule($start, $end, $employeeId);
+            if (!$checkSchedule) {
+                return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
+            }
 
             //CHECK SCHEDULES
 
@@ -930,24 +930,28 @@ class LeaveApplicationController extends Controller
                 $Date = $end->copy();
                 // Loop through each day starting from the end date
 
-                while ($foundConsecutiveDays  <= 4) {
-                    if (Helpers::hasSchedule($Date->toDateString(), $Date->toDateString(), $employeeId)) {
-                        // If a schedule is found, increment the counter
-                        $foundConsecutiveDays++;
-
-                        // Store the date of the current consecutive schedule
-                        $finalConsecutiveScheduleDate = $Date->copy();
+                if (Helpers::hasSchedule( $Date->toDateString(),  $Date->toDateString(), $employeeId)) {
+                    while ($foundConsecutiveDays  <= 4) {
+                       
+                            // If a schedule is found, increment the counter
+                            $foundConsecutiveDays++;
+    
+                            // Store the date of the current consecutive schedule
+                            $finalConsecutiveScheduleDate = $Date->copy();
+                        
+                        // Move to the next day
+    
+                        $Date->addDay();
                     }
-                    // Move to the next day
-
-                    $Date->addDay();
-                }
-
-                $finalDate = $finalConsecutiveScheduleDate ? $finalConsecutiveScheduleDate->toDateString() : null;
-
-                if ($finalDate && $currentDate->gt($finalDate)) {
-                    return response()->json(['message' => "You missed the filing deadline."], Response::HTTP_FORBIDDEN);
-                }
+    
+                    $finalDate = $finalConsecutiveScheduleDate ? $finalConsecutiveScheduleDate->toDateString() : null;
+    
+                    if ($finalDate && $currentDate->gt($finalDate)) {
+                        return response()->json(['message' => "You missed the filing deadline."], Response::HTTP_FORBIDDEN);
+                    }
+                }else{
+                        return response()->json(['message' => "You have no schedule defined."], Response::HTTP_FORBIDDEN);
+                    }
             }
 
 
@@ -1027,39 +1031,6 @@ class LeaveApplicationController extends Controller
                     $cleanData['employee_profile_id'] = $employee_profile;
                     $cleanData['hrmo_officer'] = $hrmo_officer;
 
-                    if($request->employee_oic_id !== "null" && $request->employee_oic_id !== null ){
-                        // $cleanData['employee_oic_id'] = (int) strip_tags($request->employee_oic_id);
-                        LeaveApplication::where('recommending_officer', $employeeId)
-                        ->orWhere('approving_officer', $employeeId)
-                        ->update([
-                            'recommending_officer' => (int) strip_tags($request->employee_oic_id),
-                            'approving_officer' => (int) strip_tags($request->employee_oic_id)
-                        ]);
-                        OfficialTime::where('recommending_officer', $employeeId)
-                        ->orWhere('approving_officer', $employeeId)
-                        ->update([
-                            'recommending_officer' => (int) strip_tags($request->employee_oic_id),
-                            'approving_officer' => (int) strip_tags($request->employee_oic_id)
-                        ]);
-                        OfficialBusiness::where('recommending_officer', $employeeId)
-                        ->orWhere('approving_officer', $employeeId)
-                        ->update([
-                            'recommending_officer' => (int) strip_tags($request->employee_oic_id),
-                            'approving_officer' => (int) strip_tags($request->employee_oic_id)
-                        ]);
-                        CtoApplication::where('recommending_officer', $employeeId)
-                        ->orWhere('approving_officer', $employeeId)
-                        ->update([
-                            'recommending_officer' => (int) strip_tags($request->employee_oic_id),
-                            'approving_officer' => (int) strip_tags($request->employee_oic_id)
-                        ]);
-                        Overtime::where('recommending_officer', $employeeId)
-                        ->orWhere('approving_officer', $employeeId)
-                        ->update([
-                            'recommending_officer' => (int) strip_tags($request->employee_oic_id),
-                            'approving_officer' => (int) strip_tags($request->employee_oic_id)
-                        ]);
-                    }
 
                     $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $employee_profile->id)->first();
 
@@ -1278,7 +1249,7 @@ class LeaveApplicationController extends Controller
                     'credits' => $result ? $result : [],
                     'message' => 'Successfully applied for ' . $leave_type->name
                 ], Response::HTTP_OK);
-            }
+    
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
