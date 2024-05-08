@@ -104,8 +104,8 @@ class EmployeeProfileController extends Controller
         try {
             $active_users = EmployeeProfile::whereNot('id', 1)->whereNot('authorization_pin', NULL)->count();
             $pending_users = EmployeeProfile::whereNot('id', 1)->where('authorization_pin', NULL)->count();
-            $regular_employees = EmployeeProfile::whereNot('id', 1)->where('employment_type_id', EmploymentType::where('name', 'Permanent')->first()->id)->orWhere('employment_type_id', EmploymentType::where('name', 'Temporary')->first()->id)->count();
-            $job_orders = EmployeeProfile::whereNot('id', 1)->where('employment_type_id', EmploymentType::where('name', 'Job order')->first()->id)->count();
+            $regular_employees = EmployeeProfile::whereNot('id', 1)->whereNot('authorization_pin', NULL)->where('employment_type_id', EmploymentType::where('name', 'Permanent Full-time')->first()->id)->orWhere('employment_type_id', EmploymentType::where('name', 'Permanent Part-time')->first()->id)->orWhere('employment_type_id', EmploymentType::where('name', 'Temporary')->first()->id)->count();
+            $job_orders = EmployeeProfile::whereNot('id', 1)->whereNot('authorization_pin', NULL)->where('employment_type_id', EmploymentType::where('name', 'Job order')->first()->id)->count();
 
             return response()->json([
                 'data' => [ 
@@ -3313,7 +3313,7 @@ class EmployeeProfileController extends Controller
                 'deactivated_at' => now()
             ]);
 
-            DB::rollBack();
+            DB::commit();
 
             Helpers::registerSystemLogs($request, null, true, 'Success in deleting a ' . $this->SINGULAR_MODULE_NAME . '.');
 

@@ -192,7 +192,7 @@ class CivilServiceEligibilityController extends Controller
         }
     }
     
-    public function update($id, CivilServiceEligibilityRequest $request)
+    public function update($id, CivilServiceEligibilityManyRequest $request)
     {
         try{
             $success = [];
@@ -200,7 +200,7 @@ class CivilServiceEligibilityController extends Controller
             foreach($request->eligibilities as $civil_service_eligibility){
                 $cleanData = [];
                 foreach ($civil_service_eligibility as $key => $value) {
-                    if($key === 'id' && $value === null) continue;
+                    if(($key === 'id' && $value === null) || $key === 'attachment') continue;
                     if($value === null)
                     {
                         $cleanData[$key] = $value;
@@ -217,13 +217,14 @@ class CivilServiceEligibilityController extends Controller
                     continue;
                 }
 
-                $civil_service_eligibility = CivilServiceEligibility::find($civil_service_eligibility->id);
-                $civil_service_eligibility->update($cleanData);
-                $success[] = $civil_service_eligibility;
+                $civil_service_eligibility_data = CivilServiceEligibility::find($civil_service_eligibility->id);
+                $civil_service_eligibility_data->update($cleanData);
+                $success[] = $civil_service_eligibility_data;
             }
 
             return $success;
         }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             throw new \Exception("Failed to register employee civil service eligibility record.", 400);
         }
     }
