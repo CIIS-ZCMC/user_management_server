@@ -33,7 +33,7 @@ class EmployeeSixMonthEarnSPLCredit extends Command
         $employees = EmployeeProfile::all();
 
         // Get the SPL leave type
-          $special_privilege_leave = LeaveType::where('code', 'SPL')->first();
+        $special_privilege_leave = LeaveType::where('code', 'SPL')->first();
 
         foreach ($employees as $employee) {
                 // Calculate the date 6 months after the employee's hire date
