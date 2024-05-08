@@ -76,6 +76,7 @@
         }
 
         .topcenter {
+            margin-top: 8px;
             font-size: 13px;
             font-weight: lighter;
             vertical-align: center;
@@ -198,7 +199,7 @@
             <tbody>
                 <tr>
                     <td class="topleft" colspan="1" style="width: 35%;"> 1. OFFICE/AGENCY
-                        <div class="mb-3 topcenter">
+                        <div class="mb-1 topcenter">
                             <label>
                                  Zamboanga City Medical Center
                             </label>
@@ -207,28 +208,28 @@
     
 
                     <td class="topleft" colspan="1" style="border-right:#ddd">
-                        <label> 2. Name :</label>
+                        <label "> 2. Name :</label>
                     </td>
 
                     <td class="topleft" colspan="2" style="border-left:#ddd; border-right:#ddd">
                         <label> (Last) </label> <br>
-                        <label class="text-center" style="padding:4px; font-weight:lighter"> {{ $data->employeeProfile->personalInformation->last_name ?? null }} </label>
+                        <label class="text-center" style="padding:4px; font-weight:lighter; margin-top: 8px;"> {{ $data->employeeProfile->personalInformation->last_name ?? null }} </label>
                     </td>
 
                     <td class="topleft" colspan="2"style="border-left:#ddd; border-right:#ddd">
                         <label> (First) </label> <br>
-                        <label class="text-center" style="padding:4px; font-weight:lighter"> {{ $data->employeeProfile->personalInformation->first_name ?? null }} </label>
+                        <label class="text-center" style="padding:4px; font-weight:lighter; margin-top: 8px;"> {{ $data->employeeProfile->personalInformation->first_name ?? null }} </label>
                     </td>
 
                     <td class="topleft" colspan="1" style="border-left:#ddd">
                         <label> (Middle) </label> <br>
-                        <label class="text-center" style="padding:4px; font-weight:lighter"> {{ $data->employeeProfile->personalInformation->middle_name ?? null }} </label>
+                        <label class="text-center" style="padding:4px; font-weight:lighter; margin-top: 8px;"> {{ $data->employeeProfile->personalInformation->middle_name ?? null }} </label>
                     </td>
                 </tr>
 
                 <tr>
                     <td class="topleft" colspan="1"> 3. DATE OF FILING
-                        <div class="mb-3 topcenter">
+                        <div class="mb-2 topcenter">
                             <label>
                                 {{ date(' F d, Y', strtotime($data->created_at)) }}
                             </label>
@@ -236,7 +237,7 @@
                     </td>
 
                     <td class="topleft" colspan="4" style="width: 33%"> 4. POSITION
-                        <div class="mb-3 topcenter">
+                        <div class="mb-2 topcenter">
                             <label>
                                 {{ $data->employeeProfile->findDesignation()['name'] }}
                             </label>
@@ -244,7 +245,7 @@
                     </td>
 
                     <td class="topleft" colspan="2"> 5. SALARY
-                        <div class="mb-3 topcenter">
+                        <div class="mb-2 topcenter">
                             <label>
                             </label>
                         </div>
@@ -273,6 +274,14 @@
                                     </label>
                                 </div>
                             @endforeach
+
+                            <label style="font-weight:lighter; font-size: 11px; margin-top:20px; margin-left: 5px" >Others:</label>
+                            <div style="margin-left: 5px;">
+
+                                <span style="font-size 12px;  padding-top:20px; border-bottom: 1px solid #000; display: inline-block; width: 300px;">
+                             
+                                </span>
+                            </div>
                         </div>
                     </td>
                     
@@ -394,7 +403,7 @@
                             <tr style="border: 0">
                                 <td class="topleft" colspan="4" style="border: 0 ;border-right: 1px solid #000"> 6. C.) NUMBER OF WORKING DAY APPLIED FOR:
                                     <div>
-                                        <div class="text-center">
+                                        <div class="text-center" style="margin-top: 5px;">
                                             <span style="font-size: 12px; font-weight:lighter; border-bottom: 1px solid #000; display: inline-block; width: 300px;">
                                                 {{ number_format($data->applied_credits, 1) }} day(s)
                                             </span>
@@ -426,20 +435,17 @@
                                             @endif
                                                
                                            
-                                        </div>
-            
-                                        <div class="form-check form-check-inline">
                                             @if ($is_monetization === false)
-                                            <label>( X ) Not Requested</label>
+                                            <label> &nbsp;&nbsp; ( X ) Not Requested</label>
                                             @else
-                                            <label>( &nbsp;&nbsp; ) Not Requested</label>
+                                            <label> &nbsp;&nbsp; ( &nbsp;&nbsp; ) Not Requested</label>
                                             @endif
                                         </div>
             
                                         <div style="margin-top: 20px;">
                                             <span style="font-size: 13px; border-bottom: 1px solid #000; display: inline-block; width: 300px; text-transform:uppercase">
                                                 {{ $data->employeeProfile->personalInformation->first_name }}
-                                                {{ substr($data->employeeProfile->personalInformation->middle_name, 0, 1) }}
+                                                {{ substr($data->employeeProfile->personalInformation->middle_name, 0, 1) }}.
                                                 {{ $data->employeeProfile->personalInformation->last_name }} 
                                             </span>
                                             <br> 
@@ -544,7 +550,7 @@
                                         <span style="font-size: 13px; border-bottom: 1px solid #000; display: inline-block; width: 300px; text-transform:uppercase">
                                             @if ($data->hrmoOfficer)
                                             {{ $data->hrmoOfficer->personalInformation->first_name }}
-                                            {{ substr($data->hrmoOfficer->personalInformation->middle_name, 0, 1) }}
+                                            {{ substr($data->hrmoOfficer->personalInformation->middle_name, 0, 1) }}.
                                             {{ $data->hrmoOfficer->personalInformation->last_name }} 
                                         @endif
                                             {{-- {{ $hrmo_officer->supervisor->personalInformation->first_name }}
@@ -562,7 +568,7 @@
                             <td class="topleft" colspan="4" style=" border:0"> 7. B) RECOMMENDATION
                                 <div class="mb-3" style="margin-top: 5px">
                                     <div>
-                                        <div class="form-check form-check-inline">
+                                        <div class="form-check form-check-inline" style="margin-top:10px;">
                                             @if ($data->status === 'for approving officer' ||$data->status === 'approved' )
                                                 <label> ( X ) Approved </label>
                                             @else
@@ -591,7 +597,7 @@
                                         <span style="font-size: 13px; padding-top:40px; border-bottom: 1px solid #000; display: inline-block; width: 300px; text-transform:uppercase">
                                             @if ($data->recommendingOfficer)
                                             {{ $data->recommendingOfficer->personalInformation->first_name }}
-                                            {{ substr($data->recommendingOfficer->personalInformation->middle_name, 0, 1) }}
+                                            {{ substr($data->recommendingOfficer->personalInformation->middle_name, 0, 1) }}.
                                             {{ $data->recommendingOfficer->personalInformation->last_name }} 
                                         @endif
                                       
@@ -610,7 +616,7 @@
                 <tr style="border-color: #ffffff">
                     <td class="topleft" colspan="3" style="border-right: #ddd; border-bottom: #ddd">
                         <label> 7. C) APPROVED FOR </label>
-                        <div style="padding-top: 3px; padding-left: 20px; margin-top: 5px">
+                        <div style="padding-top: 3px; padding-left: 20px; margin-top: 10px">
                             <span class="underline" style="font-size:12px;font-weight:lighter;">
                                 @if ($data->without_pay === false)
                                 {{ $data->applied_credits . ' ' . $my_leave_type->code }}
@@ -651,9 +657,8 @@
                     
                     <td class="topleft" colspan="4" style="border-left: #ddd; border-bottom: #ddd">
                         <label> 7. D) DISAPPROVED DUE TO: </label>
-                        <div class="text-center" style="padding-top: 15px; margin-top: 5px">
-                            <span></span>
-                            <span style="border-bottom: 1px solid #000; display: inline-block; width: 200px;"> {{$data->remarks}} </span>
+                        <div class="text-center" style="padding-top: 15px; margin-top: 10px; height: 40px; overflow: hidden;">
+                            <span style="border-bottom: 1px solid #000; display: inline-block; width: 200px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">{{$data->remarks}}</span>
                         </div>
                     </td>
                 </tr>
@@ -669,8 +674,10 @@
                             <b>
                                 @if ($data->approvingOfficer)
                                 {{ $data->approvingOfficer->personalInformation->first_name }}
-                                {{ substr($data->approvingOfficer->personalInformation->middle_name, 0, 1) }}
+                                {{ substr($data->approvingOfficer->personalInformation->middle_name, 0, 1) }}.
                                 {{ $data->approvingOfficer->personalInformation->last_name }} 
+                                @else
+                                &nbsp;&nbsp;
                             @endif
                                  
                             </b>
@@ -698,15 +705,15 @@
             </div>
 
             <div class="col-10">
-                <span class="text-center" style="display: block; font-size: 8px;">Rev.1</span>
+                <span class="text-center" style="display: block; font-size: 8px;">Rev. {{$document_details->revision_no}}</span>
             </div>
 
             <div class="col-2">
-                <span class="text-end" style="display: block; font-size: 8px; padding-right:90px;">Effectivity Date: June 1, 2021</span>
+                <span class="text-end" style="display: block; font-size: 8px; padding-right:90px;">Effectivity Date: {{ date(' F d, Y', strtotime($document_details->effective_date)) }}</span>
             </div>
 
             <div class="col-12">
-                <span style="display: block; font-size: 8px;">ZCMC-F-HRMO-02(B)</span>  
+                <span style="display: block; font-size: 8px;">{{$document_details->document_no}}</span>  
 
             </div>
         </div>

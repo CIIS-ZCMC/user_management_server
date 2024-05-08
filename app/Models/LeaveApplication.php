@@ -18,6 +18,7 @@ class LeaveApplication extends Model
         'is_masters' => 'boolean',
         'is_board' => 'boolean',
         'is_printed' => 'boolean',
+        'is_effective' => 'boolean',
         // 'is_commutation' => 'boolean',
     ];
 

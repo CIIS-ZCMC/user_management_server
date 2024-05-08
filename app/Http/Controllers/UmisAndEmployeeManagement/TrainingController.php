@@ -194,7 +194,7 @@ class TrainingController extends Controller
         }
     }
     
-    public function update($id, TrainingRequest $request)
+    public function update($id, TrainingManyRequest $request)
     {
         try{
             $success = [];

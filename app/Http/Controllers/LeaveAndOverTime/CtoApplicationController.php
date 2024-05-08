@@ -12,6 +12,7 @@ use App\Http\Resources\CtoApplicationResource;
 use App\Models\CtoApplicationLog;
 use App\Models\EmployeeOvertimeCredit;
 use App\Models\EmployeeOvertimeCreditLog;
+use App\Models\EmployeeProfile;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Carbon\Carbon;
@@ -52,7 +53,6 @@ class CtoApplicationController extends Controller
                     'message' => 'Retrieved all CTO application'
                 ], Response::HTTP_OK);
             }
-
             // if ($employee_area->sector['Section'] === 'HRMO') {
             //     return response()->json([
             //         'data' => CtoApplicationResource::collection(CtoApplication::all()),
@@ -89,9 +89,45 @@ class CtoApplicationController extends Controller
 
             return response()->json([
                 'data' => CtoApplicationResource::collection($cto_application),
-                'message' => 'Retrieved all official business application'
+                'message' => 'Retrieved all cto application'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function CtoApplicationUnderSameArea(Request $request)
+    {
+        try {
+            $employee_profile   = $request->user;
+            $position = $employee_profile->position();
+            if ($position !== null) {
+                $assigned_area = $employee_profile->assignedArea;
+
+                 $employees_in_same_area = EmployeeProfile::where(function ($query) use ($assigned_area) {
+                    if ($assigned_area->division_id !== null) {
+                        $query->whereHas('assignedArea', function ($q) use ($assigned_area) {
+                            $q->where('division_id', $assigned_area->division_id);
+                        });
+                    } elseif ($assigned_area->department_id !== null) {
+                        $query->whereHas('assignedArea', function ($q) use ($assigned_area) {
+                            $q->where('department_id', $assigned_area->department_id);
+                        });
+                    } elseif ($assigned_area->section_id !== null) {
+                        $query->whereHas('assignedArea', function ($q) use ($assigned_area) {
+                            $q->where('section_id', $assigned_area->section_id);
+                        });
+                    }
+                })->has('ctoApplications')->with('ctoApplications')->get();
+
+                $cto_applications_resource = CtoApplicationResource::collection($employees_in_same_area->pluck('ctoApplications')->flatten());
+                return response()->json([
+                    'data' => $cto_applications_resource,
+                    'message' => 'Retrieved CTO applications in the same area'
+                ], Response::HTTP_OK);
+            }
+        } catch (\Throwable $th) {
+
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -190,10 +226,8 @@ class CtoApplicationController extends Controller
             $approving_officer = Helpers::getDivHead($assigned_area);
             $hrmo_officer = Helpers::getHrmoOfficer();
 
-
             $reason = [];
             $failed = [];
-
 
             $employee_profile = $request->user;
             $employeeId = $employee_profile->id;
@@ -594,7 +628,7 @@ class CtoApplicationController extends Controller
                 if (!$employeeName) {
                     $employeeName = $employeeCredit->employeeProfile->name();
                     $employeeJobPosition = $employeeCredit->employeeProfile->findDesignation()->code;
-                   $employeePosition = $employeeCredit->employeeProfile->employmentType->name;
+                    $employeePosition = $employeeCredit->employeeProfile->employmentType->name;
                     $employee_assign_area = $employeeCredit->employeeProfile->assignedArea->findDetails();
                 }
 
@@ -621,8 +655,8 @@ class CtoApplicationController extends Controller
                         'action' => $log->action,
                         'previous_overtime_hours' => $log->previous_overtime_hours ?? 0,
                         'hours' => $log->hours,
-                        'remaining' =>  $log->previous_overtime_hours - $log->hours ,
-                        'created_at' =>  $log->created_at ,
+                        'remaining' =>  $log->previous_overtime_hours - $log->hours,
+                        'created_at' =>  $log->created_at,
                     ];
                 }
             }

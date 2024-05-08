@@ -775,7 +775,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
-            Route::get('inactive-employees/{id}', 'InActiveEmployeeController@showProfile');
+            Route::get('inactive-employee/{id}', 'InActiveEmployeeController@showProfile');
 
         });
 
@@ -1767,6 +1767,10 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('leave-application-all', 'LeaveApplicationController@index');
         });
 
+        Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
+            Route::get('leave-application-hrmo-all', 'LeaveApplicationController@hrmoApproval');
+        });
+
         //Secretary
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
             Route::get('leave-application-approved', 'LeaveApplicationController@approvedLeaveRequest');
@@ -1774,6 +1778,10 @@ Route::middleware('auth.cookie')->group(function () {
         //hr
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
             Route::get('leave-application-approved-hr', 'LeaveApplicationController@approvedLeaveApplication');
+        });
+          //omcc
+        Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
+            Route::get('forced-leave-application-mcc', 'LeaveApplicationController@flLeaveApplication');
         });
 
 
@@ -1807,6 +1815,10 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-LM update'])->group(function () {
             Route::post('cancel-leave-application-user/{id}', 'LeaveApplicationController@cancelUser');
+        });
+
+        Route::middleware(['auth.permission:UMIS-LM update'])->group(function () {
+            Route::post('cancel-forced-leave-application/{id}', 'LeaveApplicationController@cancelFL');
         });
 
         Route::middleware(['auth.permission:UMIS-LM update'])->group(function () {
@@ -1952,6 +1964,9 @@ Route::middleware('auth.cookie')->group(function () {
             Route::post('ovt-application-bulk', 'OvertimeController@storeBulk');
         });
 
+        Route::middleware(['auth.permission:UMIS-LM download'])->group(function () {
+            Route::get('overtime-print/{id}', 'OvertimeController@printOvertimeForm');
+        });
 
         Route::middleware(['auth.permission:UMIS-OM approve'])->group(function () {
             Route::post('ovt-application-approved/{id}', 'OvertimeController@approved');
@@ -1998,6 +2013,11 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-CT view-all'])->group(function () {
             Route::get('cto-application-all', 'CtoApplicationController@index');
         });
+
+        Route::middleware(['auth.permission:UMIS-CT view-all'])->group(function () {
+            Route::get('cto-application-same-area', 'CtoApplicationController@CtoApplicationUnderSameArea');
+        });
+
 
         Route::middleware(['auth.permission:UMIS-CT request'])->group(function () {
             Route::post('cto-application', 'CtoApplicationController@store');
