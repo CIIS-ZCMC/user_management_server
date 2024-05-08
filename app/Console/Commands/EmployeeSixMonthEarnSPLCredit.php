@@ -31,7 +31,7 @@ class EmployeeSixMonthEarnSPLCredit extends Command
     public function handle()
     {
         /**
-         * This task will run every 2day of the month.
+         * This task will run every 2nd day of the month.
          * This task is to ensure that new regular employee will receive the annual SPL credit
          * only for new employees that registered in month of july-december
          */
