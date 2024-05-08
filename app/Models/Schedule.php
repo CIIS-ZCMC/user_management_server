@@ -49,7 +49,7 @@ class Schedule extends Model
 
     public function employeeProfile()
     {
-        return $this->belongsTo(EmployeeProfile::class);
+        return $this->belongsToMany(EmployeeProfile::class);
     }
 
     public function isOnCall()
