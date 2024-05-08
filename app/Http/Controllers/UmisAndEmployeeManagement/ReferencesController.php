@@ -133,12 +133,12 @@ class ReferencesController extends Controller
         }
     }
     
-    public function update($id, ReferenceRequest $request)
+    public function update($id, ReferenceManyRequest $request)
     {
         try{
             $success = [];
 
-            foreach($request->reference as $reference){
+            foreach($request->references as $reference){
                 $cleanData = [];
                 foreach ($reference as $key => $value) {
                     if($key === 'id' && $value === null) continue;
@@ -153,13 +153,14 @@ class ReferencesController extends Controller
                     continue;
                 }
 
-                $reference = Reference::find($reference->id);
-                $reference->update($cleanData);
-                $success[] = $reference;
+                $reference_data = Reference::find($reference->id);
+                $reference_data->update($cleanData);
+                $success[] = $reference_data;
             }
             
             return $success;
         }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, "updates", $th->getMessage());
             throw new \Exception("Failed to register employee reference record.", 400);
         }
     }

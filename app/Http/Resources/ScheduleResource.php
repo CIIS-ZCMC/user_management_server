@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\MonthlyWorkHours;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -29,13 +30,15 @@ class ScheduleResource extends JsonResource
         }
 
         return [
-
             'id' => $this->id,
             'name' => $this->personalInformation->name(),
             'employee_id' => $this->employee_id,
             'biometric_id' => $this->biometric->biometric_id ?? null,
-            'schedule' => $schedules,
-            'designation'=>$this->findDesignation()->name
+            'designation' => $this->findDesignation()->name,
+            'position' => $this->position(),
+            'total_working_hours' => $this->total_working_hours ?? 0, // Include total working hours here
+            'schedule' => $schedules
         ];
+
     }
 }

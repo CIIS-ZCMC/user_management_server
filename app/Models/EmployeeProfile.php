@@ -100,7 +100,7 @@ class EmployeeProfile extends Authenticatable
     {
         $area = $this->assignedArea;
         $probation_period = $area->designation->probation;
-        
+
         $hireDate = Carbon::parse($this->date_hired);
         $currentDate = Carbon::now();
 
@@ -161,7 +161,7 @@ class EmployeeProfile extends Authenticatable
     {
         return $this->hasMany(EmployeeLeaveCredit::class);
     }
-    
+
     public function leaveLogs()
     {
         return $this->hasMany(LeaveTypeLog::class);
@@ -192,11 +192,10 @@ class EmployeeProfile extends Authenticatable
         return $this->hasMany(ObApplicationLog::class);
     }
 
-    public function CTOApplication()
+    public function ctoApplications()
     {
         return $this->hasMany(CtoApplication::class);
     }
-
 
     public function officialBusinessApplications()
     {
@@ -248,10 +247,11 @@ class EmployeeProfile extends Authenticatable
         return $designation;
     }
 
-    public function getBiometricLog($date){
-        $dtr = DailyTimeRecords::where('biometric_id',$this->biometric_id)->where('dtr_date',date('Y-m-d',strtotime($date)))->first();
+    public function getBiometricLog($date)
+    {
+        $dtr = DailyTimeRecords::where('biometric_id', $this->biometric_id)->where('dtr_date', date('Y-m-d', strtotime($date)))->first();
 
-        if($dtr){
+        if ($dtr) {
             return $dtr;
         }
         return [];
@@ -374,16 +374,16 @@ class EmployeeProfile extends Authenticatable
 
         /** for HR ADMIN */
         $assign_area = AssignArea::where('employee_profile_id', $this->id)->first();
-        if($assign_area->section_id !== null){
+        if ($assign_area->section_id !== null) {
             $hr_employee = Section::find($assign_area->section_id);
 
-            if($hr_employee->code === 'HRMO'){
+            if ($hr_employee->code === 'HRMO') {
                 $role = Role::where('code', "HR-ADMIN")->first();
                 $system_role = SystemRole::where('role_id', $role->id)->first();
                 $special_access_role = SpecialAccessRole::where('employee_profile_id', $this->id)
                     ->where('system_role_id', $system_role->id)->first();
 
-                if($special_access_role){
+                if ($special_access_role) {
                     return [
                         'position' => "HR Staff",
                         'area' => $hr_employee
@@ -592,4 +592,10 @@ class EmployeeProfile extends Authenticatable
     {
         return $this->belongsTo(SalaryGrade::class);
     }
+
+    public function monthlyWorkHours()
+    {
+        return $this->belongsTo(MonthlyWorkHours::class);
+    }
+
 }

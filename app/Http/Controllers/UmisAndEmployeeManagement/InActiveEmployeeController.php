@@ -23,6 +23,7 @@ use App\Http\Resources\ChildResource;
 use App\Http\Resources\CivilServiceEligibilityResource;
 use App\Http\Resources\ContactResource;
 use App\Http\Resources\EducationalBackgroundResource;
+use App\Http\Resources\EmployeeProfileResource;
 use App\Http\Resources\FamilyBackGroundResource;
 use App\Http\Resources\IdentificationNumberResource;
 use App\Http\Resources\OtherInformationResource;
@@ -53,7 +54,7 @@ use App\Models\EmployeeProfile;
 
 class InActiveEmployeeController extends Controller
 {
-    private $CONTROLLER_NAME = 'In Active Employee  Module';
+    private $CONTROLLER_NAME = 'In Active Employee Module';
     private $PLURAL_MODULE_NAME = 'In active employee modules';
     private $SINGULAR_MODULE_NAME = 'In active employee module';
 
@@ -197,8 +198,8 @@ class InActiveEmployeeController extends Controller
                 return response()->json(['message' => "No in active employee with id " . $id], Response::HTTP_NOT_FOUND);
             }
 
-            $employee_profile = $in_active_employee->employee;
-            $personal_information = $in_active_employee->employee->personalInformation;
+            $employee_profile = $in_active_employee->employeeProfile;
+            $personal_information = $in_active_employee->employeeProfile->personalInformation;
 
             /**
              * Personal Information module. [DONE]
@@ -248,7 +249,7 @@ class InActiveEmployeeController extends Controller
             $family_background_request->merge(['personal_info' => $personal_information]);
             $family_background_request->merge(['children' => $request->children]);
             $family_background_controller = new FamilyBackgroundController();
-            $family_background_controller->update($in_active_employee->personalInformation->familyBackground->id, $family_background_request);
+            $family_background_controller->update($family_background_request->id, $family_background_request);
 
             /**
              * Education module [DONE]
@@ -264,7 +265,7 @@ class InActiveEmployeeController extends Controller
 
             $education_request->merge(['educations' => $education_data]);
             $education_controller = new EducationalBackgroundController();
-            $education_controller->update($personal_information->id,$education_request);
+            $education_controller->update($personal_information->id, $education_request);
 
             /**
              * Identification module [DONE]
@@ -368,7 +369,7 @@ class InActiveEmployeeController extends Controller
                 $referrence_data[$key] = $value;
             }
 
-            $referrence_request->merge(['reference' => $referrence_data]);
+            $referrence_request->merge(['references' => $referrence_data]);
             $referrence_controller = new ReferencesController();
             $referrence_controller->update($personal_information->id, $referrence_request);
 
@@ -385,7 +386,7 @@ class InActiveEmployeeController extends Controller
 
             $eligibilities_request->merge(['eligibilities' => $eligibilities_data]);
             $eligibilities_controller = new CivilServiceEligibilityController();
-            $eligibilities_controller->update($personal_information->ud, $eligibilities_request);
+            $eligibilities_controller->update($personal_information->id, $eligibilities_request);
 
             //** Employee Profile Module */
 
@@ -398,7 +399,7 @@ class InActiveEmployeeController extends Controller
             $total_registered_this_day = EmployeeProfile::whereDate('date_hired', $carbonDate)->get();
             $employee_id_random_digit = 50 + count($total_registered_this_day);
 
-            $employee_data = $in_active_employee;
+            // $employee_data = $in_active_employee;
             $employee_data['employee_id'] = $employee_id_random_digit;
 
             $last_registered_employee = EmployeeProfile::orderBy('biometric_id', 'desc')->first();
@@ -415,7 +416,6 @@ class InActiveEmployeeController extends Controller
             $employee_data['employee_id'] = $new_employee_id;
             $employee_data['biometric_id'] = $new_biometric_id;
             $employee_data['employment_type_id'] = strip_tags($request->employment_type_id);
-            $employee_data['personal_information_id'] = $in_active_employee->personal_information_id;
 
             try {
                 $fileName = Helpers::checkSaveFile($request->attachment, 'photo/profiles');
@@ -437,21 +437,13 @@ class InActiveEmployeeController extends Controller
             $employee_data['date_hired'] = $request->date_hired;
             $employee_data['designation_id'] = $request->designation_id;
             $employee_data['effective_at'] = $request->date_hired;
+            $employee_data['deactivated_at'] = null;
 
             if(EmploymentType::find($employee_data['employment_type_id'])->name === 'Temporary' || EmploymentType::find($employee_data['employment_type_id'])->name === 'Job Order'){
-
-                if($request->renewal === 'null' || $request->renewal === null){
-                    DB::rollBack();
-                    return response()->json([
-                        'message' => 'Temporary or Job order renewal date is required.'
-                    ], Response::HTTP_BAD_REQUEST);
-                }
 
                 if(EmploymentType::find($employee_data['employment_type_id'])->name === 'Temporary'){
                     $employee_data['renewal'] = Carbon::now()->addYear();
                 }
-
-                $employee_data['renewal'] = strip_tags($request->renewal);
             }
 
             $plantilla_number_id = $request->plantilla_number_id === "null" || $request->plantilla_number_id === null ? null : $request->plantilla_number_id;
@@ -495,16 +487,14 @@ class InActiveEmployeeController extends Controller
                 }
             }
 
-            AssignAreaTrail::where(['employee_profile_id', $previous_employee_profile_id])->update(['employee_profile_id', $employee_profile->id]);
-
             $in_active_employee->delete();
-
+            DB::commit();
             Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . '.');
 
             if ($in_valid_file) {
                 return response()->json(
                     [
-                        'data' => new EmployeeProfileNewResource($employee_profile),
+                        'data' => new EmployeeProfileResource($employee_profile),
                         'message' => 'Newly employee registered.',
                         'other' => "Invalid attachment."
                     ],
@@ -514,7 +504,7 @@ class InActiveEmployeeController extends Controller
 
             return response()->json(
                 [
-                    'data' => new EmployeeProfileNewResource($employee_profile),
+                    'data' => new EmployeeProfileResource($employee_profile),
                     'message' => 'Newly employee registered.'
                 ],
                 Response::HTTP_OK
@@ -538,7 +528,7 @@ class InActiveEmployeeController extends Controller
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in fetching a ' . $this->SINGULAR_MODULE_NAME . '.');
         
-            $employee_profile = $in_active_employee->employee;
+            $employee_profile = $in_active_employee->employeeProfile;
             $personal_information = $employee_profile->personalInformation;
 
             $work_experiences = WorkExperience::where('personal_information_id', $personal_information->id)->where('government_office', "Yes")->get();

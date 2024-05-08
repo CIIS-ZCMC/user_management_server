@@ -219,6 +219,9 @@ class PersonalInformationSeeder extends Seeder
                 'total_leave_credits' => 5
             ]);
         }
+        $currentYear = date('Y');
+        $nextYear = $currentYear + 1;
+        $validUntil = $nextYear . '-12-31';
 
         EmployeeOvertimeCredit::create([
             'employee_profile_id' => $employee_profile->id,

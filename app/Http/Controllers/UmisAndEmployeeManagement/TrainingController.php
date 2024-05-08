@@ -202,7 +202,7 @@ class TrainingController extends Controller
             foreach($request->trainings as $training){
                 $cleanData = [];
                 foreach ($training as $key => $value) {
-                    if($key === 'id' && $value === null) continue;
+                    if(($key === 'id' && $value === null) || $key === 'attachment') continue;
                     if($value === null || $key === 'type_is_lnd'){
                         $cleanData[$key] = $value;
                         continue;
@@ -218,13 +218,14 @@ class TrainingController extends Controller
                     continue;
                 }
                 
-                $training = Training::find($id);
+                $training = Training::find($training->id);
                 $training->update($cleanData);
                 $success[] = $training;
             }
             
             return $success;
         }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             throw new \Exception("Failed to register employee training record.", 400);
         }
     }
