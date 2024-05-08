@@ -22,7 +22,7 @@ class InActiveEmployee extends Model
 
     public $timestamps = TRUE;
 
-    public function employee()
+    public function employeeProfile()
     {
         return $this->belongsTo(EmployeeProfile::class);
     }

@@ -8,6 +8,7 @@ use App\Models\AssignArea;
 use App\Models\Department;
 use App\Models\EmployeeSchedule;
 use App\Models\Holiday;
+use App\Models\MonthlyWorkHours;
 use App\Models\Schedule;
 use App\Models\EmployeeProfile;
 use App\Models\Section;
@@ -486,19 +487,6 @@ class ScheduleController extends Controller
         }
     }
 
-    private function updateAutomaticScheduleStatus()
-    {
-        $date_now = Carbon::now();
-        $data = Schedule::whereDate('date', '<', $date_now->format('Y-m-d'))->get();
-
-        if (!$data->isEmpty()) { // Check if the collection is not empty
-            foreach ($data as $schedule) {
-                $schedule->status = false;
-                $schedule->save(); // or $schedule->update(['status' => false]);
-            }
-        }
-    }
-
     public function retrieveEmployees($employees, $key, $id, $myId)
     {
         $assign_areas = AssignArea::where($key, $id)
@@ -574,9 +562,23 @@ class ScheduleController extends Controller
                 'data' => $areas,
                 'message' => 'Successfully retrieved all my areas.'
             ], Response::HTTP_OK);
+
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'myAreas', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    private function updateAutomaticScheduleStatus()
+    {
+        $date_now = Carbon::now();
+        $data = Schedule::whereDate('date', '<', $date_now->format('Y-m-d'))->get();
+
+        if (!$data->isEmpty()) { // Check if the collection is not empty
+            foreach ($data as $schedule) {
+                $schedule->status = false;
+                $schedule->save(); // or $schedule->update(['status' => false]);
+            }
+        }
+}
 }

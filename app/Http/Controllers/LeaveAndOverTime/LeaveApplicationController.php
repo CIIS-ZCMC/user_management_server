@@ -974,9 +974,9 @@ class LeaveApplicationController extends Controller
                         }
                         $vldateDate->addDay();
                     }
-
+                    $message=$selected_date->toDateString();
                     if ($selected_date->lt($vldateDate)) {
-                        return response()->json(['message' => "You cannot file for leave on $selected_date. Please select a date 5 days or more from today."], Response::HTTP_FORBIDDEN);
+                        return response()->json(['message' => "You cannot file for leave on $message. Please select a date 5 days or more from today."], Response::HTTP_FORBIDDEN);
                     }
                 } else {
                     return response()->json(['message' => "No schedule defined for HRMO"], Response::HTTP_FORBIDDEN);
@@ -1002,9 +1002,9 @@ class LeaveApplicationController extends Controller
                         }
                         $vldateDate->addDay();
                     }
-
+                    $message=$selected_date->toDateString();
                     if ($selected_date->lt($vldateDate)) {
-                        return response()->json(['message' => "You cannot file for leave on $selected_date. Please select a date 20 days or more from today."], Response::HTTP_FORBIDDEN);
+                        return response()->json(['message' => "You cannot file for leave on $message. Please select a date 20 days or more from today."], Response::HTTP_FORBIDDEN);
                     }
                 } else {
                     return response()->json(['message' => "No schedule defined for HRMO"], Response::HTTP_FORBIDDEN);
@@ -1245,7 +1245,7 @@ class LeaveApplicationController extends Controller
                     'credits' => $result ? $result : [],
                     'message' => 'Successfully applied for ' . $leave_type->name
                 ], Response::HTTP_OK);
-    
+
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
