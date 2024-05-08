@@ -160,25 +160,25 @@ class Helpers
                 ];
 
             case 'Department':
-                    // If employee is Department head
-                    $department = Department::find($assigned_area['details']->id);
-                    if ($department->head_employee_profile_id === $employee_profile_id) {
-                        $division = $department->division_id;
-                        $divisionHead = Division::find($division)->chief_employee_profile_id;
-
-                        return [
-                            "recommending_officer" => $divisionHead,
-                            "approving_officer" => Helpers::getChiefOfficer()
-                        ];
-                    }
-
-                    $departmentHead = $department->head_employee_profile_id;
-                    $omccDivision = Division::where('code', 'OMCC')->first();
+                // If employee is Department head
+                $department = Department::find($assigned_area['details']->id);
+                if ($department->head_employee_profile_id === $employee_profile_id) {
+                    $division = $department->division_id;
+                    $divisionHead = Division::find($division)->chief_employee_profile_id;
 
                     return [
-                        "recommending_officer" => $departmentHead,
-                        "approving_officer" => $omccDivision ? $omccDivision->chief_employee_profile_id : null
+                        "recommending_officer" => $divisionHead,
+                        "approving_officer" => Helpers::getChiefOfficer()
                     ];
+                }
+
+                $departmentHead = $department->head_employee_profile_id;
+                $omccDivision = Division::where('code', 'OMCC')->first();
+
+                return [
+                    "recommending_officer" => $departmentHead,
+                    "approving_officer" => $omccDivision ? $omccDivision->chief_employee_profile_id : null
+                ];
             case 'Section':
                 // If employee is Section head
 
@@ -721,26 +721,38 @@ class Helpers
 
         // Now, $scheduleDates contains all the dates from $start_duty to the end of the month
         foreach ($scheduleDates as $date) {
-            $schedule = Schedule::where('time_shift_id', 1)
-                ->where('date', $date)
-                ->first();
+            $schedule = Schedule::firstOrNew([
+                'time_shift_id' => 1,
+                'date' => $date,
+            ]);
 
-            if (!$schedule) {
-                // Create a new schedule if it doesn't exist
-                $isWeekend = Carbon::parse($date)->isWeekend();
-
-                if ($isWeekend === false) {
-                    $schedule = new Schedule;
-                    $schedule->time_shift_id = 1; // Assuming time_shift_id should be set to 1
-                    $schedule->date = $date;
-                    $schedule->is_weekend = $isWeekend ? 1 : 0;
-                    $schedule->save();
-                }
+            if ($schedule->exists) {
+                // The schedule already exists
+                $schedule->is_weekend = Carbon::parse($date)->isWeekend() ? 1 : 0;
+            } else {
+                // Create a new schedule
+                $schedule->is_weekend = Carbon::parse($date)->isWeekend() ? 1 : 0;
             }
 
+            $schedule->save();
             $schedule->employeeProfile()->attach($employee_id);
+
+
+            // Attach employee to the schedule
+            // return $schedule->employeeProfile()->attach($employee_id);
+
+            // $employee_schedule = EmployeeSchedule::where('employee_profile_id', $employee_id)->where('schedule_id', $schedule->id)->first();
+
+            // if ($employee_schedule === null) {
+            //     return $schedule->employeeProfile()->attach($employee_id);
+            // }
+
+            // return 'Employee has schedule';
         }
+
+        // return $schedule->employeeProfile()->attach($employee_id);
     }
+
 
     public static function hasSchedule($start, $end, $employeeId)
     {
@@ -977,12 +989,11 @@ class Helpers
             $timeIn = Carbon::parse($dailyTimeRecord->first_in)->format('H:i:s');
             $timeOut = Carbon::parse($dailyTimeRecord->first_out)->format('H:i:s');
             $secondOut = $dailyTimeRecord->second_out;
-            if($secondOut)
-            {
+            if ($secondOut) {
 
                 $secondOut = Carbon::parse($dailyTimeRecord->second_out)->format('H:i:s');
-                 // Check if there is any overlap between biometric time range and overtime time range
-                 if ($timeIn <= $overtimeToTime && $secondOut >= $overtimeFromTime) {
+                // Check if there is any overlap between biometric time range and overtime time range
+                if ($timeIn <= $overtimeToTime && $secondOut >= $overtimeFromTime) {
                     // Calculate overlap hours
                     $overlapFromTime = max($timeIn, $overtimeFromTime);
                     $overlapToTime = min($secondOut, $overtimeToTime);
@@ -999,9 +1010,7 @@ class Helpers
                     return $totalOverlapHours;
                 }
 
-            }
-            else
-            {
+            } else {
                 // Check if there is any overlap between biometric time range and overtime time range
                 if ($timeIn <= $overtimeToTime && $timeOut >= $overtimeFromTime) {
                     // Calculate overlap hours

@@ -202,7 +202,7 @@ class EducationalBackgroundController extends Controller
             foreach($request->educations as $education){
                 $cleanData = [];
                 foreach ($education as $key => $value) {
-                    if($key === 'id' && $value === null) continue;
+                    if(($key === 'id' && $value === null) || $key === 'attachment') continue;
                     if ($value === null) {
                         $cleanData[$key] = $value;
                         continue;

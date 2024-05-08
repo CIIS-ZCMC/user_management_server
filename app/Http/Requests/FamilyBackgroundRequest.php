@@ -22,6 +22,7 @@ class FamilyBackgroundRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'id' => 'required|int|max:255',
             'spouse' => 'nullable|string|max:255',
             'address' => 'nullable|string|max:255',
             'zip_code' => 'nullable|string|max:255',
