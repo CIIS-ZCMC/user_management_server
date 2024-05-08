@@ -2010,6 +2010,11 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('cto-application-all', 'CtoApplicationController@index');
         });
 
+        Route::middleware(['auth.permission:UMIS-CT view-all'])->group(function () {
+            Route::get('cto-application-same-area', 'CtoApplicationController@CtoApplicationUnderSameArea');
+        });
+
+
         Route::middleware(['auth.permission:UMIS-CT request'])->group(function () {
             Route::post('cto-application', 'CtoApplicationController@store');
         });

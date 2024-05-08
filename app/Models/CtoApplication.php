@@ -12,10 +12,10 @@ class CtoApplication extends Model
     protected $table = 'cto_applications';
 
     protected $casts = [
-      
+
         'is_am' => 'boolean',
         'is_pm' => 'boolean',
-        // 'is_commutation' => 'boolean', 
+        // 'is_commutation' => 'boolean',
     ];
 
     public $fillable = [
@@ -39,11 +39,14 @@ class CtoApplication extends Model
     {
         return $this->hasMany(CtoApplicationLog::class);
     }
-    public function employeeProfile() {
+
+    public function employeeProfile()
+    {
         return $this->belongsTo(EmployeeProfile::class, 'employee_profile_id');
     }
 
-    public function employeeCredit() {
+    public function employeeCredit()
+    {
         return $this->belongsTo(EmployeeOvertimeCredit::class, 'employee_overtime_credits');
     }
 

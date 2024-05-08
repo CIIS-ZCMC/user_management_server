@@ -100,7 +100,7 @@ class EmployeeProfile extends Authenticatable
     {
         $area = $this->assignedArea;
         $probation_period = $area->designation->probation;
-        
+
         $hireDate = Carbon::parse($this->date_hired);
         $currentDate = Carbon::now();
 
@@ -161,7 +161,7 @@ class EmployeeProfile extends Authenticatable
     {
         return $this->hasMany(EmployeeLeaveCredit::class);
     }
-    
+
     public function leaveLogs()
     {
         return $this->hasMany(LeaveTypeLog::class);
@@ -192,11 +192,10 @@ class EmployeeProfile extends Authenticatable
         return $this->hasMany(ObApplicationLog::class);
     }
 
-    public function CTOApplication()
+    public function ctoApplications()
     {
         return $this->hasMany(CtoApplication::class);
     }
-
 
     public function officialBusinessApplications()
     {
