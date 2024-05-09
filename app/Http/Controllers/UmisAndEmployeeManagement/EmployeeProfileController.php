@@ -23,6 +23,7 @@ use App\Http\Resources\EmployeeProfileUpdateResource;
 use App\Http\Resources\ProfileUpdateRequestResource;
 use App\Models\CivilServiceEligibility;
 use App\Models\EducationalBackground;
+use App\Models\EmployeeSchedule;
 use App\Models\EmploymentType;
 use App\Models\OfficerInChargeTrail;
 use App\Models\Training;
@@ -2612,6 +2613,37 @@ class EmployeeProfileController extends Controller
             $issuance_request->merge($issuance_data);
             $issuance_controller = new IssuanceInformationController();
             $issuance_controller->store($employee_profile->id, $issuance_request);
+
+            if(strip_tags($request->shifting) === 0){
+                $schedule_this_month = Helpers::generateSchedule(Carbon::now());
+
+                foreach($schedule_this_month as $schedule){
+                    EmployeeSchedule::create([
+                        'employee_profile_id' => $employee_profile->id,
+                        'schedule_id' => $schedule->id
+                    ]);
+                }
+                
+                $schedule_next_month = Helpers::generateSchedule(Carbon::now()->addMonth()->startOfMonth());
+                
+                foreach($schedule_next_month as $schedule){
+                    EmployeeSchedule::create([
+                        'employee_profile_id' => $employee_profile->id,
+                        'schedule_id' => $schedule->id
+                    ]);
+                }
+            }
+
+            if(strip_tags($request->allow_time_adjustment) === 1){
+                $role = Role::where('code', 'ATA')->first();
+                $system_role = SystemRole::where('role_id', $role->id)->first();
+
+                SpecialAccessRole::create([
+                    'system_role_id' => $system_role->id,
+                    'employee_profile_id' => $employee_profile->id,
+                    'effective_at' => now()
+                ]);
+            }
 
             DB::commit();
 
