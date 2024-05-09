@@ -763,6 +763,8 @@ class DTRcontroller extends Controller
 
             $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
 
+           
+
             if($employee->leaveApplications){
                    //Leave Applications
             $leaveapp  = $employee->leaveApplications->filter(function ($row) {
@@ -821,8 +823,8 @@ class DTRcontroller extends Controller
             }
             }
 
-            if( $employee->CTOApplication){
-                 $CTO =  $employee->CTOApplication->filter(function ($row) {
+            if( $employee->ctoApplications){
+                 $CTO =  $employee->ctoApplications->filter(function ($row) {
                 return $row['status'] == "approved";
             });
             $ctoData = [];
@@ -835,7 +837,7 @@ class DTRcontroller extends Controller
             }
             }
 
-
+           
 
             $schedules = $this->helper->getSchedule($biometric_id, "all-{$year_of}-{$month_of}");
 

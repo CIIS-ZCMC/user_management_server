@@ -1,5 +1,6 @@
 @switch($entry)
     @case('firstin')
+    
         @php
             $isHoliday = false;
             $appshown = true;
