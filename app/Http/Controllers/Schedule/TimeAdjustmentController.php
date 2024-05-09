@@ -87,13 +87,13 @@ class TimeAdjustmentController extends Controller
             $employee_area = $employee->assignedArea->findDetails();
 
             $dtr = DailyTimeRecords::where([
-                ['biometric_id', '=', $employee->biometric->biometric_id],
+                ['biometric_id', '=', $employee->biometric_id],
                 ['dtr_date', '=', Carbon::parse($cleanData['date'])->format('Y-m-d')],
             ])->first();
 
             if ($dtr === null) {
                 $dtr = DailyTimeRecords::create([
-                    'biometric_id' => $employee->biometric->biometric_id,
+                    'biometric_id' => $employee->biometric_id,
                     'dtr_date' => $cleanData['date'],
                     'first_in' => $cleanData['first_in'],
                     'first_out' => $cleanData['first_out'],
@@ -124,9 +124,27 @@ class TimeAdjustmentController extends Controller
                 return response()->json(['message' => 'No approving officer assigned.'], Response::HTTP_FORBIDDEN);
             }
 
+            // if ($request->requirements) {
+            //     $index = 0;
+            //     $requirements_name = $request->requirements_name;
+
+            //     foreach ($request->file('requirements') as $key => $file) {
+            //         $fileName = $file->getClientOriginalName();
+            //         $size = filesize($file);
+            //         $file_name_encrypted = Helpers::checkSaveFile($file, '/requirements');
+
+            //         $cleanData['file_name'] = $fileName;
+            //         $cleanData['name'] = $requirements_name[$index];
+            //         $cleanData['path'] = $file_name_encrypted;
+            //         $cleanData['size'] = $size;
+
+            //         $index++;
+            //     }
+            // }
+
             $cleanData['daily_time_record_id'] = $dtr->id;
             $cleanData['employee_profile_id'] = $employee->id;
-            $cleanData['recommending_officer'] = $recommending_officer;
+            $cleanData['recommending_officer'] = $recommending_officer->id;
             $cleanData['approving_officer'] = $approving_officer;
 
             $data = TimeAdjustment::create($cleanData);
