@@ -144,7 +144,7 @@ class TimeAdjustmentController extends Controller
 
             $cleanData['daily_time_record_id'] = $dtr->id;
             $cleanData['employee_profile_id'] = $employee->id;
-            $cleanData['recommending_officer'] = $recommending_officer;
+            $cleanData['recommending_officer'] = $recommending_officer->id;
             $cleanData['approving_officer'] = $approving_officer;
 
             $data = TimeAdjustment::create($cleanData);
