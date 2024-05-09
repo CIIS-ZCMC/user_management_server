@@ -655,7 +655,7 @@ class CtoApplicationController extends Controller
                 ],
             ];
             $currentYear = Carbon::now()->year;
-            $usedCreditThisYear = (float) CtoApplication::where('employee_profile_id', $user->id)
+            $usedCreditThisYear = (float) CtoApplication::where('employee_profile_id', $employeeId)
             ->where(function ($query) {
                 $query->where('status', 'approved')
                       ->orWhere('status', 'for recommending approval')
