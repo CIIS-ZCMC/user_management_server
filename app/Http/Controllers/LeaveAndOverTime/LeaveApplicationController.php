@@ -831,7 +831,7 @@ class LeaveApplicationController extends Controller
                     }
                     break;
                 case 'for approving approval':
-                    if ($employee_profile->id === $leave_application->recommending_officer) {
+                    if ($employee_profile->id === $leave_application->approving_officer) {
                         $status = 'approved';
                         $log_status = 'Approved by Approving Officer';
                         $leave_application->update(['status' => $status]);
@@ -1342,7 +1342,7 @@ class LeaveApplicationController extends Controller
                     }
                     break;
                 case 'for approving approval':
-                    if ($employee_profile->id === $leave_application->recommending_officer) {
+                    if ($employee_profile->id === $leave_application->approving_officer) {
                         $status = 'declined by approving officer';
                         $declined_by = "Approving officer";
                         // Helpers::notifications($leave_application->employee_profile_id, $message, $leave_application->leaveType->name);
