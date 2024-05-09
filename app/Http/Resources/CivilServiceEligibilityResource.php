@@ -28,5 +28,6 @@ class CivilServiceEligibilityResource extends JsonResource
             'attachment' =>   config('app.server_domain')."/eligibilities/".$this->attachment
 
         ];
-    }
+
+}
 }

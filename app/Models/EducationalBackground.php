@@ -31,6 +31,6 @@ class EducationalBackground extends Model
 
     public function personalInformation()
     {
-        return $this->belongsTo(PersonalInformation::class);
+        return $this->belongsTo(PersonalInformation::class)->where('is_request', 0);
     }
 }

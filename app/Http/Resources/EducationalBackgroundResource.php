@@ -14,6 +14,7 @@ class EducationalBackgroundResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+
         return [
             "id"=> $this->id,
             'name' => $this->name,
@@ -26,5 +27,6 @@ class EducationalBackgroundResource extends JsonResource
             'academic_honors' => $this->academic_honors,
             'attachment' =>   config('app.server_domain')."/education/".$this->attachment
         ];
-    }
+
+}
 }
