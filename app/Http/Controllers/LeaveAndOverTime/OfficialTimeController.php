@@ -276,7 +276,7 @@ class OfficialTimeController extends Controller
                     break;
 
                     case 'for approving approval':
-                        if($employee_profile->id === $data->recommending_officer){
+                        if($employee_profile->id === $data->approving_officer){
                             $status = 'approved';
                             $log_action = 'Approved by Approving Officer';
                         }else{

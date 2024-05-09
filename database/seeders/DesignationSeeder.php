@@ -134,12 +134,14 @@ class DesignationSeeder extends Seeder
         Designation::create([
             'name' => 'Bacteriologist I',
             'code' => 'BACTE I',
+            'position_type' => 'doctors',
             'salary_grade_id' => 1
         ]);
         
         Designation::create([
             'name' => 'Bacteriologist II',
             'code' => 'BACTE II',
+            'position_type' => 'doctors',
             'salary_grade_id' => 1
         ]);
         
@@ -152,12 +154,14 @@ class DesignationSeeder extends Seeder
         Designation::create([
             'name' => 'Chief of Medical Professional Staff II',
             'code' => 'CMPS II',
+            'position_type' => 'doctors',
             'salary_grade_id' => SalaryGrade::where('salary_grade_number', 26)->first()->id
         ]);
         
         Designation::create([
             'name' => 'Computer Maintenance Technologist I',
             'code' => 'CMT I',
+            'position_type' => 'doctors',
             'salary_grade_id' => 1
         ]);
         
@@ -199,24 +203,28 @@ class DesignationSeeder extends Seeder
         Designation::create([
             'name' => 'Dentist I',
             'code' => 'Dentist I',
+            'position_type' => 'doctors',
             'salary_grade_id' => 1
         ]);
         
         Designation::create([
             'name' => 'Dentist II',
             'code' => 'Dentist II',
+            'position_type' => 'doctors',
             'salary_grade_id' => SalaryGrade::where('salary_grade_number', 16)->first()->id
         ]);
         
         Designation::create([
             'name' => 'Dentist III',
             'code' => 'Dentist III',
+            'position_type' => 'doctors',
             'salary_grade_id' => SalaryGrade::where('salary_grade_number', 20)->first()->id
         ]);
         
         Designation::create([
             'name' => 'Dentist V',
             'code' => 'Dentist V',
+            'position_type' => 'doctors',
             'salary_grade_id' => SalaryGrade::where('salary_grade_number', 24)->first()->id
         ]);
         
@@ -259,12 +267,14 @@ class DesignationSeeder extends Seeder
         Designation::create([
             'name' => 'Health Education and Promotion Officer III',
             'code' => 'HEPO III',
+            'position_type' => 'doctors',
             'salary_grade_id' => SalaryGrade::where('salary_grade_number', 18)->first()->id
         ]);
         
         Designation::create([
             'name' => 'Health Physicist III',
             'code' => 'HP III',
+            'position_type' => 'doctors',
             'salary_grade_id' => SalaryGrade::where('salary_grade_number', 22)->first()->id
         ]);
         
@@ -283,6 +293,7 @@ class DesignationSeeder extends Seeder
         Designation::create([
             'name' => 'Laboratory Aide II',
             'code' => 'LABA II',
+            'position_type' => 'doctors',
             'salary_grade_id' => SalaryGrade::where('salary_grade_number', 4)->first()->id
         ]);
         
@@ -301,72 +312,84 @@ class DesignationSeeder extends Seeder
         Designation::create([
             'name' => 'Medical Center Chief I',
             'code' => 'MCC I',
+            'position_type' => 'doctors',
             'salary_grade_id' => 1
         ]);
         
         Designation::create([
             'name' => 'Medical Center Chief II',
             'code' => 'MCC II',
+            'position_type' => 'doctors',
             'salary_grade_id' => SalaryGrade::where('salary_grade_number', 27)->first()->id
         ]);
         
         Designation::create([
             'name' => 'Medical Equipment Technician I',
             'code' => 'MEQT I',
+            'position_type' => 'doctors',
             'salary_grade_id' => SalaryGrade::where('salary_grade_number', 6)->first()->id
         ]);
         
         Designation::create([
             'name' => 'Medical Equipment Technician II',
             'code' => 'MEQT II',
+            'position_type' => 'doctors',
             'salary_grade_id' => SalaryGrade::where('salary_grade_number', 8)->first()->id
         ]);
         
         Designation::create([
             'name' => 'Medical Laboratory Technician III',
             'code' => 'MLT III',
+            'position_type' => 'doctors',
             'salary_grade_id' => SalaryGrade::where('salary_grade_number', 10)->first()->id
         ]);
         
         Designation::create([
             'name' => 'Medical Officer I',
             'code' => 'MO I',
+            'position_type' => 'doctors',
             'salary_grade_id' => 1
         ]);
         
         Designation::create([
             'name' => 'Medical Officer II',
             'code' => 'MO II',
+            'position_type' => 'doctors',
             'salary_grade_id' => 1
         ]);
         
         Designation::create([
             'name' => 'Medical Officer III',
             'code' => 'MO III',
+            'position_type' => 'doctors',
             'salary_grade_id' => SalaryGrade::where('salary_grade_number', 21)->first()->id
         ]);
         
         Designation::create([
             'name' => 'Medical Officer IV',
             'code' => 'MO IV',
+            'position_type' => 'doctors',
             'salary_grade_id' => SalaryGrade::where('salary_grade_number', 23)->first()->id
         ]);
         
         Designation::create([
             'name' => 'Medical Specialist I',
             'code' => 'MS I',
+            'position_type' => 'doctors',
             'salary_grade_id' => 1
         ]);
         
         Designation::create([
             'name' => 'Medical Specialist I (PT)',
             'code' => 'MS I (PT)',
+            'position_type' => 'doctors',
             'salary_grade_id' => 1
         ]);
         
         Designation::create([
             'name' => 'Medial Specialist II',
             'code' => 'MS II',
+            'position_type' => 'doctors',
             'salary_grade_id' => SalaryGrade::where('salary_grade_number', 23)->first()->id
         ]);
         
