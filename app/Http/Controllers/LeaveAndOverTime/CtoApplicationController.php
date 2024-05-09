@@ -445,9 +445,20 @@ class CtoApplicationController extends Controller
                 ], Response::HTTP_OK);
             }
 
+            $currentYear = Carbon::now()->year;
+            $usedCreditThisYear = (float) CtoApplication::where('employee_profile_id', $employeeId)
+            ->where(function ($query) {
+                $query->where('status', 'approved')
+                      ->orWhere('status', 'for recommending approval')
+                      ->orWhere('status', 'for approving approval');
+            })
+                ->whereYear('created_at', $currentYear)
+                ->sum('applied_credits');
+                
             return response()->json([
                 'data' => CtoApplicationResource::collection($cto_applications),
                 'employee_credit' => EmployeeOvertimeCreditResource::collection($employeeCredit),
+                'used_credit_this_year' => $usedCreditThisYear,
                 'message' => 'Request submitted sucessfully.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -654,20 +665,9 @@ class CtoApplicationController extends Controller
                     'overall_total_balance' => $overallTotalBalance,
                 ],
             ];
-            $currentYear = Carbon::now()->year;
-            $usedCreditThisYear = (float) CtoApplication::where('employee_profile_id', $employeeId)
-            ->where(function ($query) {
-                $query->where('status', 'approved')
-                      ->orWhere('status', 'for recommending approval')
-                      ->orWhere('status', 'for approving approval');
-            })
-                ->whereYear('created_at', $currentYear)
-                ->sum('applied_credits');
-
 
             return response()->json([
                 'data' => $employeeResponse,
-                'used_credit_this_year' => $usedCreditThisYear,
                 'message' =>  'Leave credits updated successfully'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
