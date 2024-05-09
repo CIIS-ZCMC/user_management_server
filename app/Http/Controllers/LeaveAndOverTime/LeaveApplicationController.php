@@ -441,6 +441,22 @@ class LeaveApplicationController extends Controller
                 ]);
             }
 
+            $result=[];
+            
+            $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id',  $leave_application->employee_profile_id)->get();
+
+            foreach ($employeeCredit as $leaveCredit) {
+                $leaveType = $leaveCredit->leaveType->name;
+                $totalCredits = $leaveCredit->total_leave_credits;
+                $usedCredits = $leaveCredit->used_leave_credits;
+
+                $result[] = [
+                    'leave_type_name' => $leaveType,
+                    'total_leave_credits' => $totalCredits,
+                    'used_leave_credits' => $usedCredits
+                ];
+            }
+
             LeaveApplicationLog::create([
                 'action_by' => $employee_profile->id,
                 'leave_application_id' => $leave_application->id,
@@ -449,6 +465,7 @@ class LeaveApplicationController extends Controller
 
             return response()->json([
                 'data' => new LeaveApplicationResource($leave_application),
+                'credits' => $result ? $result : [],
                 'message' => 'Cancelled leave application successfully.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -1426,7 +1443,6 @@ class LeaveApplicationController extends Controller
                 'remarks' => $request->remarks,
             ]);
 
-
             if (!$leave_type->is_special) {
                 $employee_credit = EmployeeLeaveCredit::where('employee_profile_id', $leave_application->employee_profile_id)
                     ->where('leave_type_id', $leave_application->leave_type_id)->first();
@@ -1454,7 +1470,6 @@ class LeaveApplicationController extends Controller
                     'used_leave_credits' => $usedCredits
                 ];
             }
-
 
             LeaveApplicationLog::create([
                 'action_by' => $employee_profile->id,
@@ -1492,7 +1507,6 @@ class LeaveApplicationController extends Controller
                 'remarks' => $request->remarks,
             ]);
 
-
             if (!$leave_type->is_special) {
                 $employee_credit = EmployeeLeaveCredit::where('employee_profile_id', $leave_application->employee_profile_id)
                     ->where('leave_type_id', $leave_application->leave_type_id)->first();
@@ -1520,7 +1534,6 @@ class LeaveApplicationController extends Controller
                     'used_leave_credits' => $usedCredits
                 ];
             }
-
 
             LeaveApplicationLog::create([
                 'action_by' => $employee_profile->id,
@@ -1747,6 +1760,22 @@ class LeaveApplicationController extends Controller
                 'created_at' => Carbon::now(),
             ]);
 
+            $result=[];
+            
+            $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id',  $leave_application->employee_profile_id)->get();
+
+            foreach ($employeeCredit as $leaveCredit) {
+                $leaveType = $leaveCredit->leaveType->name;
+                $totalCredits = $leaveCredit->total_leave_credits;
+                $usedCredits = $leaveCredit->used_leave_credits;
+
+                $result[] = [
+                    'leave_type_name' => $leaveType,
+                    'total_leave_credits' => $totalCredits,
+                    'used_leave_credits' => $usedCredits
+                ];
+            }
+
             LeaveApplicationLog::create([
                 'action_by' => $employee_profile->id,
                 'leave_application_id' => $leave_application->id,
@@ -1755,6 +1784,7 @@ class LeaveApplicationController extends Controller
 
             return response()->json([
                 'data' => new LeaveApplicationResource($leave_application),
+                'credits' => $result ? $result : [],
                 'message' => 'Rescheduled leave application successfully.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
