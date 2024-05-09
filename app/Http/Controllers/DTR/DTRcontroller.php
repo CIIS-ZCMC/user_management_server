@@ -763,7 +763,8 @@ class DTRcontroller extends Controller
 
             $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
 
-            //Leave Applications
+            if($employee->leaveApplications){
+                   //Leave Applications
             $leaveapp  = $employee->leaveApplications->filter(function ($row) {
                 return $row['status'] == "approved";
             });
@@ -783,24 +784,29 @@ class DTRcontroller extends Controller
                 ];
             }
 
-
-            //Official business
-            $officialBusiness = array_values($employee->officialBusinessApplications->filter(function ($row) {
-                return $row['status'] == "approved";
-            })->toarray());
-            $obData = [];
-            foreach ($officialBusiness as $rows) {
-                $obData[] = [
-                    'purpose' => $rows['purpose'],
-                    'time_from' => $rows['time_from'],
-                    'time_to' => $rows['time_to'],
-                    'date_from' => $rows['date_from'],
-                    'date_to' => $rows['date_to'],
-                    'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to']),
-                ];
             }
 
-            //Official Time
+
+            //Official business
+            if($employee->officialBusinessApplications){
+                $officialBusiness = array_values($employee->officialBusinessApplications->filter(function ($row) {
+                    return $row['status'] == "approved";
+                })->toarray());
+                $obData = [];
+                foreach ($officialBusiness as $rows) {
+                    $obData[] = [
+                        'purpose' => $rows['purpose'],
+                        'time_from' => $rows['time_from'],
+                        'time_to' => $rows['time_to'],
+                        'date_from' => $rows['date_from'],
+                        'date_to' => $rows['date_to'],
+                        'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to']),
+                    ];
+                }
+            }
+
+            if($employee->officialTimeApplications){
+                  //Official Time
             $officialTime = $employee->officialTimeApplications->filter(function ($row) {
                 return $row['status'] == "approved";
             });
@@ -813,8 +819,10 @@ class DTRcontroller extends Controller
                     'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to'])
                 ];
             }
+            }
 
-            $CTO =  $employee->CTOApplication->filter(function ($row) {
+            if( $employee->CTOApplication){
+                 $CTO =  $employee->CTOApplication->filter(function ($row) {
                 return $row['status'] == "approved";
             });
             $ctoData = [];
@@ -825,6 +833,8 @@ class DTRcontroller extends Controller
                     'remarks' => $rows['remarks'],
                 ];
             }
+            }
+
 
 
             $schedules = $this->helper->getSchedule($biometric_id, "all-{$year_of}-{$month_of}");
@@ -848,10 +858,10 @@ class DTRcontroller extends Controller
                     'halfsched' => $is_Half_Schedule,
                     'biometric_ID' => $biometric_id,
                     'schedule' => $employeeSched,
-                    'leaveapp' => $leavedata,
-                    'obApp' => $obData,
-                    'otApp' => $otData,
-                    'ctoApp' => $ctoData
+                    'leaveapp' => $leavedata ?? [],
+                    'obApp' => $obData ?? [],
+                    'otApp' => $otData ?? [],
+                    'ctoApp' => $ctoData ?? []
 
                 ]);
             }
@@ -879,10 +889,10 @@ class DTRcontroller extends Controller
                     'biometric_ID' => $biometric_id,
                     'schedule' => $employeeSched,
                     'Incharge' => $approver,
-                    'leaveapp' => $leavedata,
-                    'obApp' => $obData,
-                    'otApp' => $otData,
-                    'ctoApp' => $ctoData
+                    'leaveapp' => $leavedata ?? [],
+                    'obApp' => $obData ?? [],
+                    'otApp' => $otData ?? [],
+                    'ctoApp' => $ctoData ?? []
                 ]);
             } else {
                 $options = new Options();
@@ -910,10 +920,10 @@ class DTRcontroller extends Controller
                     'biometric_ID' => $biometric_id,
                     'schedule' => $employeeSched,
                     'Incharge' => $approver,
-                    'leaveapp' => $leavedata,
-                    'obApp' => $obData,
-                    'otApp' => $otData,
-                    'ctoApp' => $ctoData
+                    'leaveapp' => $leavedata ?? [],
+                    'obApp' => $obData ?? [],
+                    'otApp' => $otData ?? [],
+                    'ctoApp' => $ctoData ?? []
                 ]));
 
                 $dompdf->setPaper('Letter', 'portrait');

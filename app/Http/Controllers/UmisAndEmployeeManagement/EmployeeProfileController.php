@@ -23,6 +23,7 @@ use App\Http\Resources\EmployeeProfileUpdateResource;
 use App\Http\Resources\ProfileUpdateRequestResource;
 use App\Models\CivilServiceEligibility;
 use App\Models\EducationalBackground;
+use App\Models\EmployeeSchedule;
 use App\Models\EmploymentType;
 use App\Models\OfficerInChargeTrail;
 use App\Models\Training;
@@ -108,7 +109,7 @@ class EmployeeProfileController extends Controller
             $job_orders = EmployeeProfile::whereNot('id', 1)->whereNot('employee_id', NULL)->where('employment_type_id', EmploymentType::where('name', 'Job Order')->first()->id)->count();
 
             return response()->json([
-                'data' => [ 
+                'data' => [
                     'active_users' => $active_users,
                     'pending_users' => $pending_users,
                     'regular_employees' => $regular_employees,
@@ -932,7 +933,9 @@ class EmployeeProfileController extends Controller
             }
         }
 
-        return [
+        
+       
+            return [
             'personal_information_id' => $personal_information->id,
             'employee_profile_id' => $employee_profile['id'],
             'employee_id' => $employee_profile['employee_id'],
@@ -951,12 +954,18 @@ class EmployeeProfileController extends Controller
                 'address' => $address,
                 'family_background' => new FamilyBackGroundResource($personal_information->familyBackground),
                 'children' => ChildResource::collection($personal_information->children),
-                'education' => EducationalBackgroundResource::collection($personal_information->educationalBackground),
+                'education' =>  EducationalBackgroundResource::collection($personal_information->educationalBackground->filter(function($row){
+                    return $row->is_request === 0;
+                })),
                 'affiliations_and_others' => [
-                    'civil_service_eligibility' => CivilServiceEligibilityResource::collection($personal_information->civilServiceEligibility),
+                    'civil_service_eligibility' => CivilServiceEligibilityResource::collection($personal_information->civilServiceEligibility->filter(function($row){
+                        return $row->is_request === 0;
+                    })),
                     'work_experience' => WorkExperienceResource::collection($personal_information->workExperience),
                     'voluntary_work_or_involvement' => VoluntaryWorkResource::collection($personal_information->voluntaryWork),
-                    'training' => TrainingResource::collection($personal_information->training),
+                    'training' =>  TrainingResource::collection($personal_information->training->filter(function($row){
+                        return $row->is_request === 0;
+                    })),
                     'other' => OtherInformationResource::collection($personal_information->otherInformation),
                 ],
                 'issuance' => $employee_profile->issuanceInformation,
@@ -2604,6 +2613,37 @@ class EmployeeProfileController extends Controller
             $issuance_request->merge($issuance_data);
             $issuance_controller = new IssuanceInformationController();
             $issuance_controller->store($employee_profile->id, $issuance_request);
+
+            if(strip_tags($request->shifting) === 0){
+                $schedule_this_month = Helpers::generateSchedule(Carbon::now());
+
+                foreach($schedule_this_month as $schedule){
+                    EmployeeSchedule::create([
+                        'employee_profile_id' => $employee_profile->id,
+                        'schedule_id' => $schedule->id
+                    ]);
+                }
+                
+                $schedule_next_month = Helpers::generateSchedule(Carbon::now()->addMonth()->startOfMonth());
+                
+                foreach($schedule_next_month as $schedule){
+                    EmployeeSchedule::create([
+                        'employee_profile_id' => $employee_profile->id,
+                        'schedule_id' => $schedule->id
+                    ]);
+                }
+            }
+
+            if(strip_tags($request->allow_time_adjustment) === 1){
+                $role = Role::where('code', 'ATA')->first();
+                $system_role = SystemRole::where('role_id', $role->id)->first();
+
+                SpecialAccessRole::create([
+                    'system_role_id' => $system_role->id,
+                    'employee_profile_id' => $employee_profile->id,
+                    'effective_at' => now()
+                ]);
+            }
 
             DB::commit();
 

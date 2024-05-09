@@ -58,5 +58,9 @@ class RoleSeeder extends Seeder
             'name' => 'Common User - JO',
             'code' => 'COMMON-JO'
         ]);
+        Role::create([
+            'name' => 'Allow Time Adjustment',
+            'code' => 'ATA'
+        ]);
     }
 }

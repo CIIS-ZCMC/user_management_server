@@ -618,6 +618,25 @@ class SystemRoleSeeder extends Seeder
                     }
 
                     break;
+                case 'ATA':
+                    $common_jo = SystemRole::create([
+                        'role_id' => $roles->id,
+                        'system_id' => $system->id
+                    ]);
+                    $module_permitted = $module_permissions->filter(function ($row) {
+                        return
+                            /* Personal Account Management */
+                            $row['code'] === "UMIS-TA view" ||
+                            $row['code'] === "UMIS-TA request";
+                    });
+                    foreach ($module_permitted as $key => $module_permission) {
+                        RoleModulePermission::create([
+                            'system_role_id' => $common_jo['id'],
+                            'module_permission_id' => $module_permission['id']
+                        ]);
+                    }
+
+                    break;
             }
         }
     }

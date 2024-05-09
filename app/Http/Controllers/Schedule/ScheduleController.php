@@ -580,5 +580,5 @@ class ScheduleController extends Controller
                 $schedule->save(); // or $schedule->update(['status' => false]);
             }
         }
-}
+    }
 }

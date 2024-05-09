@@ -14,6 +14,8 @@ class TrainingResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+
+
         return [
             'id' => $this->id,
             'title' => $this->title,
@@ -24,5 +26,6 @@ class TrainingResource extends JsonResource
             'conducted_by' =>  $this->conducted_by,
             'attachment' =>   config('app.server_domain')."/training/".$this->attachment
         ];
-    }
+
+}
 }
