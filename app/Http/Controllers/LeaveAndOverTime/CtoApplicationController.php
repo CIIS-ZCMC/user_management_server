@@ -138,10 +138,12 @@ class CtoApplicationController extends Controller
             $user = $request->user;
             $sql = CtoApplication::where('employee_profile_id', $user->id)->get();
             $currentYear = Carbon::now()->year;
-            $usedCreditThisYear = CtoApplication::where('employee_profile_id', $user->id)
-                ->where('status', 'approved')
-                ->orwhere('status', 'for recommending approval')
-                ->orwhere('status', 'for approving approval')
+            $usedCreditThisYear = (float) CtoApplication::where('employee_profile_id', $user->id)
+            ->where(function ($query) {
+                $query->where('status', 'approved')
+                      ->orWhere('status', 'for recommending approval')
+                      ->orWhere('status', 'for approving approval');
+            })
                 ->whereYear('created_at', $currentYear)
                 ->sum('applied_credits');
 
