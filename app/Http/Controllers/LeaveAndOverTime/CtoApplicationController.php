@@ -314,15 +314,14 @@ class CtoApplicationController extends Controller
                         ->first();
                 }
 
-              
+
                 if ($employee_credit->earned_credit_by_hour === 0) {
                     return 1;
                     $failed[] = $value;
                     $reason[] = 'No overtime credits available.';
                     continue;
                 }
-
-                // Check if the employee has sufficient earned credits for the application
+                
                 if ($employee_credit->earned_credit_by_hour < $value->applied_credits) {
                     $failed[] = $value;
                     $reason[] = 'Insufficient overtime credits available.';
