@@ -296,20 +296,30 @@
         <div class="row">
             <div class="row-item">
                 <span> Prepared By </span>
-                <span class="signature">{{ $user->personalInformation->name() }}</span>
+                <span class="signature">{{ $user->name() }}</span>
                 <span>{{ $user->position()['position'] ?? null }}</span>
             </div>
 
             <div class="row-item">
                 <span> Reviewed By </span>
-                <span class="signature">{{ $recommending_officer->personalInformation->name() }}</span>
-                <span>{{ $recommending_officer->position()['position'] ?? null }}</span>
+                @if ($recommending_officer === null)
+                    <span class="signature"></span>
+                    <span style="margin-top: 100px"></span>
+                @else
+                    <span class="signature">{{ $recommending_officer->name() }}</span>
+                    <span>{{ $recommending_officer->position()['position'] ?? null }}</span>
+                @endif
             </div>
 
             <div class="row-item">
                 <span> Approved By </span>
-                <span class="signature">{{ $approving_officer->personalInformation->name() }}</span>
-                <span>{{ $approving_officer->position()['position'] ?? null }}</span>
+                @if ($recommending_officer === null)
+                    <span class="signature"></span>
+                    <span style="margin-top: 100px"></span>
+                @else
+                    <span class="signature">{{ $approving_officer->name() }}</span>
+                    <span>{{ $approving_officer->position()['position'] ?? null }}</span>
+                @endif
             </div>
         </div>
     </div>
