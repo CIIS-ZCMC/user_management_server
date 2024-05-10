@@ -351,21 +351,18 @@ class ScheduleController extends Controller
 
             $dates = Helpers::getDatesInMonth($year, Carbon::parse($month)->month, "");
 
-            //Array
-            // $myEmployees = $user->areaEmployee($assigned_area);
-            // $supervisors = $user->sectorHeads();
+            $employees = [$request->employees];
+            $employee_ids = explode(',', $employees[0]);
 
-            // $employees = [...$myEmployees, ...$supervisors];
-            // $employee_ids = collect($employees)->pluck('id')->toArray();
-
-            $myEmployees = $user->myEmployees($assigned_area, $user);
-            $employee_ids = collect($myEmployees)->pluck('id')->toArray();
-
-            $sql = EmployeeProfile::where(function ($query) use ($assigned_area) {
-                $query->whereHas('schedule', function ($innerQuery) use ($assigned_area) {
-                    $innerQuery->with(['timeShift', 'holiday']);
-                });
-            })->whereIn('id', $employee_ids)->with(['personalInformation', 'assignedArea', 'schedule.timeShift'])->get();
+            $sql = EmployeeProfile::whereIn('id', $employee_ids)
+                ->with([
+                    'schedule' => function ($query) {
+                        $query->with(['timeShift', 'holiday']);
+                    },
+                    'personalInformation',
+                    'assignedArea',
+                    'schedule.timeShift'
+                ])->get();
 
             $employee = ScheduleResource::collection($sql);
 
