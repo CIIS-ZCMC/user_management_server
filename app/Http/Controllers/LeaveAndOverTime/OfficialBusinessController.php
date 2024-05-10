@@ -189,7 +189,6 @@ class OfficialBusinessController extends Controller
                 $data->date_to = $cleanData['date_to'];
                 $data->purpose = $cleanData['purpose'];
                 $data->personal_order_file = $cleanData['personal_order_file']->getClientOriginalName();
-                ;
                 $data->personal_order_size = $cleanData['personal_order_file']->getSize();
                 $data->personal_order_path = Helpers::checkSaveFile($cleanData['personal_order_file'], 'official_business');
                 $data->certificate_of_appearance = $cleanData['certificate_of_appearance']->getClientOriginalName();
@@ -253,32 +252,32 @@ class OfficialBusinessController extends Controller
                 return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
             }
 
-            
+
 
             if ($request->status === 'approved') {
                 switch ($data->status) {
                     case 'for recommending approval':
-                        if($employee_profile->id === $data->recommending_officer){
+                        if ($employee_profile->id === $data->recommending_officer) {
                             $status = 'for approving approval';
                             $log_action = 'Approved by Recommending Officer';
-                        }else{
+                        } else {
                             return response()->json([
                                 'message' => 'You have no access to approve this request.',
                             ], Response::HTTP_FORBIDDEN);
                         }
-                        
+
                         break;
 
                     case 'for approving approval':
-                        if($employee_profile->id === $data->approving_officer){
+                        if ($employee_profile->id === $data->approving_officer) {
                             $status = 'approved';
                             $log_action = 'Approved by Approving Officer';
-                        }else{
+                        } else {
                             return response()->json([
                                 'message' => 'You have no access to approve this request.',
                             ], Response::HTTP_FORBIDDEN);
                         }
-                       
+
                         break;
 
                 }
@@ -290,17 +289,17 @@ class OfficialBusinessController extends Controller
 
 
                 if ($employee_profile->id === $ob_application_recommending) {
-                    if($data->status === 'declined by recommending officer'){
+                    if ($data->status === 'declined by recommending officer') {
                         return response()->json([
                             'message' => 'You already declined this request.',
-                        ], Response::HTTP_FORBIDDEN); 
+                        ], Response::HTTP_FORBIDDEN);
                     }
                     $status = 'declined by recommending officer';
                 } else if ($employee_profile->id === $ob_application_approving) {
-                    if($data->status === 'declined by approving officer'){
+                    if ($data->status === 'declined by approving officer') {
                         return response()->json([
                             'message' => 'You already declined this request.',
-                        ], Response::HTTP_FORBIDDEN); 
+                        ], Response::HTTP_FORBIDDEN);
                     }
                     $status = 'declined by approving officer';
                 }
