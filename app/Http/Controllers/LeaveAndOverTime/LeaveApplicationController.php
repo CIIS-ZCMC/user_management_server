@@ -937,11 +937,7 @@ class LeaveApplicationController extends Controller
             if (!$checkSchedule) {
                 return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
             }
-            $checkSchedule = Helpers::hasSchedule($start, $end, $employeeId);
-            if (!$checkSchedule) {
-                return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
-            }
-
+           
             //CHECK SCHEDULES
 
             //IF SICK LEAVE
@@ -961,7 +957,6 @@ class LeaveApplicationController extends Controller
                         $foundConsecutiveDays++;
 
                         // Store the date of the current consecutive schedule
-
                     }
                     // Move to the next day
                     $Date->addDay();
@@ -975,7 +970,6 @@ class LeaveApplicationController extends Controller
 
             //IF VL OR FL
             if (($leave_type->code === 'VL' && $request->country === 'Philippines') || $leave_type->code === 'FL') {
-
                 // Get the current date
                 $currentDate = Carbon::now();
                 // Get the HRMO schedule for the next 5 days
@@ -987,14 +981,15 @@ class LeaveApplicationController extends Controller
                     $foundConsecutiveDays = 0;
 
                     while ($foundConsecutiveDays  <= 4) {
-                        if (Helpers::hasSchedule($vldateDate->toDateString(), $vldateDate->toDateString(), $employeeId)) {
+                        if (Helpers::hasSchedule($vldateDate->toDateString(), $vldateDate->toDateString(), $hrmo_officer)) {
                             // If a schedule is found, increment the counter
                             $foundConsecutiveDays++;
                         }
                         $vldateDate->addDay();
                     }
-                    $message=$selected_date->toDateString();
+                    $message = $selected_date->toDateString();
                     if ($selected_date->lt($vldateDate)) {
+                  
                         return response()->json(['message' => "You cannot file for leave on $message. Please select a date 5 days or more from today."], Response::HTTP_FORBIDDEN);
                     }
                 } else {
@@ -1003,7 +998,6 @@ class LeaveApplicationController extends Controller
             }
             //IF OUTSIDE COUNTRY
             if ($leave_type->code === 'VL' && $request->country !== 'Philippines') {
-
                 // Get the current date
                 $currentDate = Carbon::now();
                 // Get the HRMO schedule for the next 5 days
@@ -1015,7 +1009,7 @@ class LeaveApplicationController extends Controller
                     $foundConsecutiveDays = 0;
 
                     while ($foundConsecutiveDays  <= 19) {
-                        if (Helpers::hasSchedule($vldateDate->toDateString(), $vldateDate->toDateString(), $employeeId)) {
+                        if (Helpers::hasSchedule($vldateDate->toDateString(), $vldateDate->toDateString(), $hrmo_officer)) {
                             // If a schedule is found, increment the counter
                             $foundConsecutiveDays++;
                         }
@@ -1023,6 +1017,7 @@ class LeaveApplicationController extends Controller
                     }
                     $message=$selected_date->toDateString();
                     if ($selected_date->lt($vldateDate)) {
+                      
                         return response()->json(['message' => "You cannot file for leave on $message. Please select a date 20 days or more from today."], Response::HTTP_FORBIDDEN);
                     }
                 } else {
