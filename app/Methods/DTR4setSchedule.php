@@ -24,6 +24,7 @@ class DTR4setSchedule
     public function New($DaySchedule, $BreakTime, $entrydate, $entry, $biometric_id, $data, $status)
     {
 
+
         /**
          * Here we are checking if theres an existing first entry this is  for nursing and doctors
          * which has two entries for schedule only.
@@ -32,19 +33,28 @@ class DTR4setSchedule
         $yester_date = date('Y-m-d', strtotime($entrydate . '-1 day'));
 
         $check_yesterday_Records = DailyTimeRecords::whereDate('first_in', $yester_date)->where('biometric_id', $biometric_id)->latest()->first();
+
         if ($check_yesterday_Records !== null) {
 
             $f_1 = $check_yesterday_Records->first_in;
             $f_2 = $check_yesterday_Records->first_out;
 
+
+
             /* this entry only */
             if ($f_1 && !$f_2) {
+
                 /* Validation add expiry. */
                 $TimeAllowance_ =  date('Y-m-d H:i:s', strtotime($entrydate . ' ' . $DaySchedule['second_entry'] . " +5 hours")); // 5 hours allowance
                 /* Update */
+
                 if ($DaySchedule['second_entry'] !== null) {
+
                     if ($TimeAllowance_ > $entry) { // Validation to Ignore Yesterday entry. 5 hours
+
                         if ($status == 255) {
+
+
                             if ($this->helper->withinInterval($f_1, $this->helper->sequence(0, [$data]))) {
                                 $this->helper->saveTotalWorkingHours(
                                     $check_yesterday_Records,
@@ -66,6 +76,7 @@ class DTR4setSchedule
                             );
                         }
                     } else {
+
                         //No DTR saved caused it does not comply the time required
                     }
                 } else {
@@ -142,13 +153,18 @@ class DTR4setSchedule
                 }
             }
         } else {
+
+
             if ($this->helper->EntryisAm($this->helper->sequence(0, [$data])[0]['date_time'])) {
                 if ($status == 0 || $status == 255) {
                     $scheduleEntry = null;
+
                     if (isset($DaySchedule['is_on_call']) && $DaySchedule['is_on_call']) {
                         // $scheduleEntry = date('Y-m-d H:i:s', strtotime($time_stamps_req['date_start'] . ' ' . $time_stamps_req['first_entry'] . '+' . $max_allowed_entry_for_oncall . ' minutes'));
                         $scheduleEntry = $DaySchedule['first_entry'];
                     }
+
+
                     $this->helper->SaveFirstEntry(
                         $this->helper->sequence(0, [$data])[0],
                         $BreakTime,
