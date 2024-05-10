@@ -1779,7 +1779,7 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
             Route::get('leave-application-approved-hr', 'LeaveApplicationController@approvedLeaveApplication');
         });
-          //omcc
+        //omcc
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
             Route::get('forced-leave-application-mcc', 'LeaveApplicationController@flLeaveApplication');
         });
@@ -2096,6 +2096,10 @@ Route::middleware('auth.cookie')->group(function () {
             Route::delete('schedule/{id}', 'EmployeeScheduleController@destroy');
         });
 
+        Route::middleware(['auth.permission:UMIS-ScM download'])->group(function () {
+            Route::get('schedule-generate', 'ScheduleController@generate');
+        });
+
         Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function () {
             Route::get('schedules-my-areas', 'ScheduleController@myAreas');
         });
@@ -2104,9 +2108,6 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('schedules-time-shift', 'TimeShiftController@index');
         });
 
-        Route::middleware(['auth.permission:UMIS-ScM download'])->group(function () {
-            Route::get('schedule-generate', 'ScheduleController@generate');
-        });
 
         /**
          * Exchange Schedule Module

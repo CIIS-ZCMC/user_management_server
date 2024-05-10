@@ -28,6 +28,7 @@ class TimeAdjustmentRequest extends FormRequest
             'second_in' => 'date_format:H:i|nullable',
             'second_out' => 'date_format:H:i|nullable',
             'remarks' => 'required|string',
+            'attachment' => 'required|file',
             'employee_profile_id' => 'required|integer',
         ];
     }
