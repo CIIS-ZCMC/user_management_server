@@ -178,9 +178,6 @@ class DTRcontroller extends Controller
                         $Employee_Info
                     );
 
-
-
-
                     $date_and_timeD = simplexml_load_string($tad->get_date());
                     if ($this->helper->validatedDeviceDT($date_and_timeD)) { //Validating Time of server and time of device
                         $date_now = date('Y-m-d');
@@ -188,7 +185,6 @@ class DTRcontroller extends Controller
                         $check_Records = array_filter($Employee_Attendance, function ($attd) use ($date_now) {
                             return date('Y-m-d', strtotime($attd['date_time'])) == $date_now;
                         });
-
 
 
 
@@ -202,21 +198,20 @@ class DTRcontroller extends Controller
                                 $DaySchedule = [];
                                 $BreakTime = [];
 
+
+
                                 if (count($DaySchedule) >= 1) {
                                     if (count($BreakTime) >= 1) {
                                         /**
                                          * With Schedule
                                          * 4 sets of sched
                                          */
-
-
-                                        $this->DTR->HasBreaktimePull($DaySchedule, $BreakTime, $bioEntry, $biometric_id);
+                                         $this->DTR->HasBreaktimePull($DaySchedule, $BreakTime, $bioEntry, $biometric_id);
                                     } else {
                                         /**
                                          * With Schedule
                                          * 2 sets of sched
                                          */
-
                                         $this->DTR->NoBreaktimePull($DaySchedule, $bioEntry, $biometric_id);
                                     }
                                 } else {
@@ -235,12 +230,50 @@ class DTRcontroller extends Controller
                         } else {
                             //yesterday Time
                             // Save the past 24 hours records
+
+
                             $datenow = date('Y-m-d');
                             $late_Records = array_filter($Employee_Attendance, function ($attd) use ($datenow) {
                                 return date('Y-m-d', strtotime($attd['date_time'])) < $datenow;
                             });
 
-                            // $this->helper->saveDTRRecords($late_Records, true);
+
+
+                            foreach ($late_Records as $bioEntry) {
+                                $biometric_id = $bioEntry['biometric_id'];
+
+                                $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
+                                $DaySchedule = $Schedule['daySchedule'];
+                                $BreakTime = $Schedule['break_Time_Req'];
+                                // $DaySchedule = [];
+                                // $BreakTime = [];
+
+
+
+
+                                if (count($DaySchedule) >= 1) {
+
+                                    if (count($BreakTime) >= 1) {
+
+                                        /**
+                                         * With Schedule
+                                         * 4 sets of sched
+                                         */
+                                        $this->DTR->HasBreaktimePull($DaySchedule, $BreakTime, $bioEntry, $biometric_id);
+                                    } else {
+                                        /**
+                                         * With Schedule
+                                         * 2 sets of sched
+                                         */
+                                        $this->DTR->NoBreaktimePull($DaySchedule, $bioEntry, $biometric_id);
+                                    }
+                                } else {
+                                    /**
+                                     * No Schedule Pulling
+                                     */
+                                    $this->DTR->NoSchedulePull($bioEntry, $biometric_id);
+                                }
+                            }
                             // /* Save DTR Logs */
                             $this->helper->saveDTRLogs($late_Records, 1, $device, 1);
                             // /* Clear device data */
@@ -763,7 +796,7 @@ class DTRcontroller extends Controller
 
             $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
 
-           
+
 
             if($employee->leaveApplications){
                    //Leave Applications
@@ -837,7 +870,7 @@ class DTRcontroller extends Controller
             }
             }
 
-           
+
 
             $schedules = $this->helper->getSchedule($biometric_id, "all-{$year_of}-{$month_of}");
 

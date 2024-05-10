@@ -41,6 +41,7 @@ class DTRNoSchedule
         if ($check_yesterday_Records !== null) {
             $f_1 = $check_yesterday_Records->first_in;
             $f_2 = $check_yesterday_Records->first_out;
+
             if ($f_1 && !$f_2) {
                 //CHECKOUT
                 /**
@@ -48,31 +49,36 @@ class DTRNoSchedule
                  *
                  */
 
+
                 $yesterday_Entry = [
                     'first_in' => $f_1,
                     'date_time' => $f_1
                 ];
 
 
-                /* Get the yesterdaySchedule */
-                $Schedule = $this->helper->CurrentSchedule($biometric_id, $yesterday_Entry, false);
-                $Schedule = $Schedule['daySchedule'];
-                $Outexpiration = date('Y-m-d H:i:s', strtotime($entrydate . ' ' . $Schedule['second_entry'] . '+4 hours')); // Allowable entry until 4 hours
-                $isValidEntry = True; // By default all entry in NoSchedule is Valid
 
-                if (count($Schedule) >= 1) {
-                    if ($entry > $Outexpiration) {
-                        /**
-                         * If this entry has schedule
-                         *  we are Checking if entry is within the alloted time requirement
-                         *if not then we set to false .
-                         * so that only logs will be saved.
-                         */
-                        $isValidEntry = false;
-                    }
-                }
+                // /* Get the yesterdaySchedule */
+                // $Schedule = $this->helper->CurrentSchedule($biometric_id, $yesterday_Entry, false);
+                // $Schedule = $Schedule['daySchedule'];
+                // $Outexpiration = date('Y-m-d H:i:s', strtotime($entrydate . ' ' . $Schedule['second_entry'] . '+4 hours')); // Allowable entry until 4 hours
+                // $isValidEntry = True; // By default all entry in NoSchedule is Valid
 
-                if ($isValidEntry) {
+
+                // if (count($Schedule) >= 1) {
+                //     if ($entry > $Outexpiration) {
+                //         /**
+                //          * If this entry has schedule
+                //          *  we are Checking if entry is within the alloted time requirement
+                //          *if not then we set to false .
+                //          * so that only logs will be saved.
+                //          */
+                //         $isValidEntry = false;
+                //     }
+                // }
+
+
+                // if ($isValidEntry) {
+
                     if ($status == 255) { //Global State
                         if ($this->helper->withinInterval($f_1, $this->helper->sequence(0, [$bioEntry]))) {
                             $this->helper->saveTotalWorkingHours(
@@ -94,11 +100,12 @@ class DTRNoSchedule
                             false
                         );
                     }
-                } else {
-                    /**
-                     * If entry is not allowed anymore . well save it to LOGS
-                     */
-                }
+                // } else {
+
+                //     /**
+                //      * If entry is not allowed anymore . well save it to LOGS
+                //      */
+                // }
             } else {
                 //CHECKIN
                 /**

@@ -75,7 +75,7 @@ class DTR2setSchedule
                      * As long as yesterday records does not have timeout at 2nd entry. it will fill the second entry..
                      * Soon add validation here to handle if employee is  nurse or admin
                      */
-                    if ($this->helper->EntryisAm($this->helper->sequence(0, [$data])[0]['date_time'])) {
+                   // if ($this->helper->EntryisAm($this->helper->sequence(0, [$data])[0]['date_time'])) {
                         if ($status == 255) {
                             if ($this->helper->withinInterval($f_1, $this->helper->sequence(0, [$data]))) {
                                 $this->helper->saveTotalWorkingHours(
@@ -86,7 +86,7 @@ class DTR2setSchedule
                                     false
                                 );
                             }
-                        }
+                     //   }
                         if ($status == 1) {
                             //employeeID
                             $this->helper->SaveTotalWorkingHours(
