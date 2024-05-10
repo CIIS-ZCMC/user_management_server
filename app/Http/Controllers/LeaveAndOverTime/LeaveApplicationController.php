@@ -221,7 +221,7 @@ class LeaveApplicationController extends Controller
              */
             if (Helpers::getHrmoOfficer() === $employee_profile->id) {
                 $employeeId = $employee_profile->id;
-                $hrmo = ["applied", "for recommending approval", "approved", "declined by hrmo officer", 'cancelled', 'received', 'cancelled by user', 'cancelled by hrmo'];
+                $hrmo = ["applied", "for recommending approval", "for approving approval","approved", "declined by hrmo officer", 'cancelled', 'received', 'cancelled by user', 'cancelled by hrmo'];
                 // $recommending = ["for recommending approval", "for approving approval", "approved", "declined by recommending officer"];
 
                 $leave_applications = LeaveApplication::select('leave_applications.*')
