@@ -37,10 +37,15 @@ class DTRPull
     public function HasBreaktimePull($DaySchedule, $BreakTime, $bioEntry, $biometric_id)
     {
         if ($this->helper->isEmployee($biometric_id)) {
+
             $entrydate = date("Y-m-d", strtotime($bioEntry['date_time']));
             $entry = $bioEntry['date_time'];
             $status = $bioEntry['status'];
+
+
+
             $validate = DailyTimeRecords::whereDate('dtr_date', $entrydate)->where('biometric_id', $biometric_id)->latest()->first();
+
             if ($validate !== null) {
                 $this->With_4Set_Schedule->Update($validate, $DaySchedule, $BreakTime, $entrydate, $entry, $biometric_id, $bioEntry, $status);
             } else {
@@ -69,6 +74,7 @@ class DTRPull
 
     public function NoSchedulePull($bioEntry, $biometric_id)
     {
+
         if ($this->helper->isEmployee($biometric_id)) {
             $entrydate = date("Y-m-d", strtotime($bioEntry['date_time']));
             $entry = $bioEntry['date_time'];

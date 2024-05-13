@@ -31,9 +31,7 @@ return new class extends Migration {
             $table->string('second_in')->nullable();
             $table->string('second_out')->nullable();
             $table->string('remarks')->nullable();
-            $table->string('file_name')->nullable();
-            $table->string('path')->nullable();
-            $table->string('size')->nullable();
+            $table->string('attachment')->nullable();
             $table->string('status')->default('applied');
             $table->date('approval_date')->nullable();
 

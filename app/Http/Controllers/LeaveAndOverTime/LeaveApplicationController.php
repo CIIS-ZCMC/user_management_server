@@ -221,7 +221,7 @@ class LeaveApplicationController extends Controller
              */
             if (Helpers::getHrmoOfficer() === $employee_profile->id) {
                 $employeeId = $employee_profile->id;
-                $hrmo = ["applied", "for recommending approval", "approved", "declined by hrmo officer", 'cancelled', 'received', 'cancelled by user', 'cancelled by hrmo'];
+                $hrmo = ["applied", "for recommending approval", "for approving approval","approved", "declined by hrmo officer", 'cancelled', 'received', 'cancelled by user', 'cancelled by hrmo'];
                 // $recommending = ["for recommending approval", "for approving approval", "approved", "declined by recommending officer"];
 
                 $leave_applications = LeaveApplication::select('leave_applications.*')
@@ -441,6 +441,22 @@ class LeaveApplicationController extends Controller
                 ]);
             }
 
+            $result=[];
+            
+            $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id',  $leave_application->employee_profile_id)->get();
+
+            foreach ($employeeCredit as $leaveCredit) {
+                $leaveType = $leaveCredit->leaveType->name;
+                $totalCredits = $leaveCredit->total_leave_credits;
+                $usedCredits = $leaveCredit->used_leave_credits;
+
+                $result[] = [
+                    'leave_type_name' => $leaveType,
+                    'total_leave_credits' => $totalCredits,
+                    'used_leave_credits' => $usedCredits
+                ];
+            }
+
             LeaveApplicationLog::create([
                 'action_by' => $employee_profile->id,
                 'leave_application_id' => $leave_application->id,
@@ -449,6 +465,7 @@ class LeaveApplicationController extends Controller
 
             return response()->json([
                 'data' => new LeaveApplicationResource($leave_application),
+                'credits' => $result ? $result : [],
                 'message' => 'Cancelled leave application successfully.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -814,7 +831,7 @@ class LeaveApplicationController extends Controller
                     }
                     break;
                 case 'for approving approval':
-                    if ($employee_profile->id === $leave_application->recommending_officer) {
+                    if ($employee_profile->id === $leave_application->approving_officer) {
                         $status = 'approved';
                         $log_status = 'Approved by Approving Officer';
                         $leave_application->update(['status' => $status]);
@@ -925,11 +942,7 @@ class LeaveApplicationController extends Controller
             if (!$checkSchedule) {
                 return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
             }
-            $checkSchedule = Helpers::hasSchedule($start, $end, $employeeId);
-            if (!$checkSchedule) {
-                return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
-            }
-
+           
             //CHECK SCHEDULES
 
             //IF SICK LEAVE
@@ -949,7 +962,6 @@ class LeaveApplicationController extends Controller
                         $foundConsecutiveDays++;
 
                         // Store the date of the current consecutive schedule
-
                     }
                     // Move to the next day
                     $Date->addDay();
@@ -963,7 +975,6 @@ class LeaveApplicationController extends Controller
 
             //IF VL OR FL
             if (($leave_type->code === 'VL' && $request->country === 'Philippines') || $leave_type->code === 'FL') {
-
                 // Get the current date
                 $currentDate = Carbon::now();
                 // Get the HRMO schedule for the next 5 days
@@ -975,14 +986,15 @@ class LeaveApplicationController extends Controller
                     $foundConsecutiveDays = 0;
 
                     while ($foundConsecutiveDays  <= 4) {
-                        if (Helpers::hasSchedule($vldateDate->toDateString(), $vldateDate->toDateString(), $employeeId)) {
+                        if (Helpers::hasSchedule($vldateDate->toDateString(), $vldateDate->toDateString(), $hrmo_officer)) {
                             // If a schedule is found, increment the counter
                             $foundConsecutiveDays++;
                         }
                         $vldateDate->addDay();
                     }
-                    $message=$selected_date->toDateString();
+                    $message = $selected_date->toDateString();
                     if ($selected_date->lt($vldateDate)) {
+                  
                         return response()->json(['message' => "You cannot file for leave on $message. Please select a date 5 days or more from today."], Response::HTTP_FORBIDDEN);
                     }
                 } else {
@@ -991,7 +1003,6 @@ class LeaveApplicationController extends Controller
             }
             //IF OUTSIDE COUNTRY
             if ($leave_type->code === 'VL' && $request->country !== 'Philippines') {
-
                 // Get the current date
                 $currentDate = Carbon::now();
                 // Get the HRMO schedule for the next 5 days
@@ -1003,7 +1014,7 @@ class LeaveApplicationController extends Controller
                     $foundConsecutiveDays = 0;
 
                     while ($foundConsecutiveDays  <= 19) {
-                        if (Helpers::hasSchedule($vldateDate->toDateString(), $vldateDate->toDateString(), $employeeId)) {
+                        if (Helpers::hasSchedule($vldateDate->toDateString(), $vldateDate->toDateString(), $hrmo_officer)) {
                             // If a schedule is found, increment the counter
                             $foundConsecutiveDays++;
                         }
@@ -1011,6 +1022,7 @@ class LeaveApplicationController extends Controller
                     }
                     $message=$selected_date->toDateString();
                     if ($selected_date->lt($vldateDate)) {
+                      
                         return response()->json(['message' => "You cannot file for leave on $message. Please select a date 20 days or more from today."], Response::HTTP_FORBIDDEN);
                     }
                 } else {
@@ -1330,7 +1342,7 @@ class LeaveApplicationController extends Controller
                     }
                     break;
                 case 'for approving approval':
-                    if ($employee_profile->id === $leave_application->recommending_officer) {
+                    if ($employee_profile->id === $leave_application->approving_officer) {
                         $status = 'declined by approving officer';
                         $declined_by = "Approving officer";
                         // Helpers::notifications($leave_application->employee_profile_id, $message, $leave_application->leaveType->name);
@@ -1431,7 +1443,6 @@ class LeaveApplicationController extends Controller
                 'remarks' => $request->remarks,
             ]);
 
-
             if (!$leave_type->is_special) {
                 $employee_credit = EmployeeLeaveCredit::where('employee_profile_id', $leave_application->employee_profile_id)
                     ->where('leave_type_id', $leave_application->leave_type_id)->first();
@@ -1459,7 +1470,6 @@ class LeaveApplicationController extends Controller
                     'used_leave_credits' => $usedCredits
                 ];
             }
-
 
             LeaveApplicationLog::create([
                 'action_by' => $employee_profile->id,
@@ -1497,7 +1507,6 @@ class LeaveApplicationController extends Controller
                 'remarks' => $request->remarks,
             ]);
 
-
             if (!$leave_type->is_special) {
                 $employee_credit = EmployeeLeaveCredit::where('employee_profile_id', $leave_application->employee_profile_id)
                     ->where('leave_type_id', $leave_application->leave_type_id)->first();
@@ -1525,7 +1534,6 @@ class LeaveApplicationController extends Controller
                     'used_leave_credits' => $usedCredits
                 ];
             }
-
 
             LeaveApplicationLog::create([
                 'action_by' => $employee_profile->id,
@@ -1752,6 +1760,22 @@ class LeaveApplicationController extends Controller
                 'created_at' => Carbon::now(),
             ]);
 
+            $result=[];
+            
+            $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id',  $leave_application->employee_profile_id)->get();
+
+            foreach ($employeeCredit as $leaveCredit) {
+                $leaveType = $leaveCredit->leaveType->name;
+                $totalCredits = $leaveCredit->total_leave_credits;
+                $usedCredits = $leaveCredit->used_leave_credits;
+
+                $result[] = [
+                    'leave_type_name' => $leaveType,
+                    'total_leave_credits' => $totalCredits,
+                    'used_leave_credits' => $usedCredits
+                ];
+            }
+
             LeaveApplicationLog::create([
                 'action_by' => $employee_profile->id,
                 'leave_application_id' => $leave_application->id,
@@ -1760,6 +1784,7 @@ class LeaveApplicationController extends Controller
 
             return response()->json([
                 'data' => new LeaveApplicationResource($leave_application),
+                'credits' => $result ? $result : [],
                 'message' => 'Rescheduled leave application successfully.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {

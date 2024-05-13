@@ -494,7 +494,7 @@ class MonetizationApplicationController extends Controller
                     }
                     break;
                 case 'for approving approval':
-                    if($employee_profile->id === $mone_application->recommending_officer){
+                    if($employee_profile->id === $mone_application->approving_officer){
                         $status = 'declined by approving officer';
                         $declined_by = "Approving officer";
                         // Helpers::notifications($mone_application->employee_profile_id, $message, $mone_application->leaveType->name);

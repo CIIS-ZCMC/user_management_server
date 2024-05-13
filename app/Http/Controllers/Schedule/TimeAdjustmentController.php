@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Schedule;
 
 use App\Helpers\Helpers;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\TimeAdjustmentRequest;
 use App\Http\Resources\TimeAdjustmentResource;
 use App\Models\DailyTimeRecords;
 use App\Models\EmployeeProfile;
@@ -59,9 +60,10 @@ class TimeAdjustmentController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(TimeAdjustmentRequest $request)
     {
         try {
+
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
@@ -72,6 +74,14 @@ class TimeAdjustmentController extends Controller
 
                 if (is_int($value)) {
                     $cleanData[$key] = $value;
+                    continue;
+                }
+
+                if ($key === 'attachment') {
+                    $attachment = Helpers::checkSaveFile($request->attachment, '/time_adjustment');
+                    if (is_string($attachment)) {
+                        $cleanData['attachment'] = $request->attachment === null || $request->attachment === 'null' ? null : $attachment;
+                    }
                     continue;
                 }
 
@@ -124,27 +134,9 @@ class TimeAdjustmentController extends Controller
                 return response()->json(['message' => 'No approving officer assigned.'], Response::HTTP_FORBIDDEN);
             }
 
-            // if ($request->requirements) {
-            //     $index = 0;
-            //     $requirements_name = $request->requirements_name;
-
-            //     foreach ($request->file('requirements') as $key => $file) {
-            //         $fileName = $file->getClientOriginalName();
-            //         $size = filesize($file);
-            //         $file_name_encrypted = Helpers::checkSaveFile($file, '/requirements');
-
-            //         $cleanData['file_name'] = $fileName;
-            //         $cleanData['name'] = $requirements_name[$index];
-            //         $cleanData['path'] = $file_name_encrypted;
-            //         $cleanData['size'] = $size;
-
-            //         $index++;
-            //     }
-            // }
-
             $cleanData['daily_time_record_id'] = $dtr->id;
             $cleanData['employee_profile_id'] = $employee->id;
-            $cleanData['recommending_officer'] = $recommending_officer->id;
+            $cleanData['recommending_officer'] = $recommending_officer ? $recommending_officer->id : null;
             $cleanData['approving_officer'] = $approving_officer;
 
             $data = TimeAdjustment::create($cleanData);

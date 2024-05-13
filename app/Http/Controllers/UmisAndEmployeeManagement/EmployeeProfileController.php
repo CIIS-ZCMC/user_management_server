@@ -150,11 +150,10 @@ class EmployeeProfileController extends Controller
 
             return response()->json([
                 'data' => EmployeeProfileUpdateResource::collection([...$trainings, ...$eligibilities, ...$educations]),
-                // 'data' => [...$trainings, ...$eligibilities, ...$educations],
                 'message' => "Retrieve employees list for add record approval"
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'employeeForRenwal', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'profileUpdateRequest', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -174,11 +173,13 @@ class EmployeeProfileController extends Controller
 
             switch ($type) {
                 case "Educational Background":
+                    
                     $profile_request = EducationalBackground::find($request->id);
                     $profile_request->update([
                         "is_request" => false,
                         "approved_at" => Carbon::now()
                     ]);
+                    
                     break;
                 case "Eligibility":
                     $profile_request = CivilServiceEligibility::find($request->id);
@@ -197,8 +198,8 @@ class EmployeeProfileController extends Controller
             }
 
             return response()->json([
-                'data' => new EmployeeProfileUpdateResource($profile_request),
-                'message' => "Retrieve employees list for renewal"
+                'data' =>  $profile_request,
+                'message' => "Successfully approved educational background update request"
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'approvedProfileUpdate', $th->getMessage());

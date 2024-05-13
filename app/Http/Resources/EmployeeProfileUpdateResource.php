@@ -51,7 +51,7 @@ class EmployeeProfileUpdateResource extends JsonResource
             'designation' => $this->personalInformation->employeeProfile->assignedArea->designation->name,
             "employee_id" => $this->personalInformation->employeeProfile->employee_id,
             "profile_url" => config('app.server_domain')."/profiles/".$this->personalInformation->employeeProfile->profile_url,
-            "type" => 'Eligibility',
+            "type" => 'Training',
             "date_requested" => $this->created_at,
             "approved_at" => $this->approved_at,
             "details" => new TrainingResource($this)
