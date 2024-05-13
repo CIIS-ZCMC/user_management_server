@@ -105,7 +105,7 @@ class EmployeeProfileController extends Controller
         try {
             $active_users = EmployeeProfile::whereNot('id', 1)->whereNot('authorization_pin', NULL)->whereNot('employee_id', NULL)->count();
             $pending_users = EmployeeProfile::whereNot('id', 1)->where('authorization_pin', NULL)->count();
-            $regular_employees = EmployeeProfile::whereNot('id', 1)->whereNot('authorization_pin', NULL)->whereNot('employee_id', NULL)->where('employment_type_id', EmploymentType::where('name', 'Permanent Full-time')->first()->id)->orWhere('employment_type_id', EmploymentType::where('name', 'Permanent Part-time')->first()->id)->orWhere('employment_type_id', EmploymentType::where('name', 'Temporary')->first()->id)->count();
+            $regular_employees = EmployeeProfile::whereNot('id', 1)->whereNot('authorization_pin', NULL)->whereNot('employee_id', NULL)->where('employment_type_id', EmploymentType::where('name', 'Permanent Full-time')->first())->orWhere('employment_type_id', EmploymentType::where('name', 'Permanent Part-time')->first())->orWhere('employment_type_id', EmploymentType::where('name', 'Temporary')->first())->count();
             $job_orders = EmployeeProfile::whereNot('id', 1)->whereNot('employee_id', NULL)->where('employment_type_id', EmploymentType::where('name', 'Job Order')->first()->id)->count();
 
             return response()->json([
@@ -2533,18 +2533,18 @@ class EmployeeProfileController extends Controller
 
             if (EmploymentType::find($cleanData['employment_type_id'])->name === 'Temporary' || EmploymentType::find($cleanData['employment_type_id'])->name === 'Job Order') {
 
-                if ($request->renewal === 'null' || $request->renewal === null) {
-                    DB::rollBack();
-                    return response()->json([
-                        'message' => 'Temporary or Job order renewal date is required.'
-                    ], Response::HTTP_BAD_REQUEST);
-                }
+                // if ($request->renewal === 'null' || $request->renewal === null) {
+                //     DB::rollBack();
+                //     return response()->json([
+                //         'message' => 'Temporary or Job order renewal date is required.'
+                //     ], Response::HTTP_BAD_REQUEST);
+                // }
 
                 if (EmploymentType::find($cleanData['employment_type_id'])->name === 'Temporary') {
                     $cleanData['renewal'] = Carbon::now()->addYear();
                 }
 
-                $cleanData['renewal'] = strip_tags($request->renewal);
+                // $cleanData['renewal'] = strip_tags($request->renewal);
             }
 
             $plantilla_number_id = $request->plantilla_number_id === "null" || $request->plantilla_number_id === null ? null : $request->plantilla_number_id;
