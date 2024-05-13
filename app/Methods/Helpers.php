@@ -201,10 +201,10 @@ AND id IN (
 
             $scheds[] = [
                 'scheduleDate' => $row->date ?? date('Y-m-d'),
-                'first_entry' => $row->first_in ?? $f1,
-                'second_entry' => $row->first_out ?? $f2,
-                'third_entry' => $row->second_in ?? $f3,
-                'last_entry' => $row->second_out ?? $f4,
+                'first_entry' => $row->first_in ?? null,
+                'second_entry' => $row->first_out ?? null,
+                'third_entry' => $row->second_in ?? null,
+                'last_entry' => $row->second_out ?? null,
                 'total_hours' => $row->total_hours ?? Cache::get('required_working_hours'),
                 'is_on_call' => $row->is_on_call ?? 0,
                 'arrival_departure' => $dp ?? ""

@@ -3251,7 +3251,7 @@ class EmployeeProfileController extends Controller
         $special_right->delete();
     }
 
-    public function revokeRights($id, $access_right_id, AuthPinApprovalRequest $request)
+    public function revokeRights($id, $access_right_id, Request $request)
     {
         try {
             $user = $request->user;
