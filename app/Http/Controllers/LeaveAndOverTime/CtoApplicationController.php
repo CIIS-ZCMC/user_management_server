@@ -12,6 +12,7 @@ use App\Http\Resources\CtoApplicationResource;
 use App\Models\CtoApplicationLog;
 use App\Models\EmployeeOvertimeCredit;
 use App\Models\EmployeeOvertimeCreditLog;
+use App\Models\EmployeeProfile;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Carbon\Carbon;
@@ -52,7 +53,6 @@ class CtoApplicationController extends Controller
                     'message' => 'Retrieved all CTO application'
                 ], Response::HTTP_OK);
             }
-
             // if ($employee_area->sector['Section'] === 'HRMO') {
             //     return response()->json([
             //         'data' => CtoApplicationResource::collection(CtoApplication::all()),
@@ -89,9 +89,45 @@ class CtoApplicationController extends Controller
 
             return response()->json([
                 'data' => CtoApplicationResource::collection($cto_application),
-                'message' => 'Retrieved all official business application'
+                'message' => 'Retrieved all cto application'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function CtoApplicationUnderSameArea(Request $request)
+    {
+        try {
+            $employee_profile   = $request->user;
+            $position = $employee_profile->position();
+            if ($position !== null) {
+                $assigned_area = $employee_profile->assignedArea;
+
+                $employees_in_same_area = EmployeeProfile::where(function ($query) use ($assigned_area) {
+                    if ($assigned_area->division_id !== null) {
+                        $query->whereHas('assignedArea', function ($q) use ($assigned_area) {
+                            $q->where('division_id', $assigned_area->division_id);
+                        });
+                    } elseif ($assigned_area->department_id !== null) {
+                        $query->whereHas('assignedArea', function ($q) use ($assigned_area) {
+                            $q->where('department_id', $assigned_area->department_id);
+                        });
+                    } elseif ($assigned_area->section_id !== null) {
+                        $query->whereHas('assignedArea', function ($q) use ($assigned_area) {
+                            $q->where('section_id', $assigned_area->section_id);
+                        });
+                    }
+                })->has('ctoApplications')->with('ctoApplications')->get();
+
+                $cto_applications_resource = CtoApplicationResource::collection($employees_in_same_area->pluck('ctoApplications')->flatten());
+                return response()->json([
+                    'data' => $cto_applications_resource,
+                    'message' => 'Retrieved CTO applications in the same area'
+                ], Response::HTTP_OK);
+            }
+        } catch (\Throwable $th) {
+
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -101,10 +137,21 @@ class CtoApplicationController extends Controller
         try {
             $user = $request->user;
             $sql = CtoApplication::where('employee_profile_id', $user->id)->get();
+            $currentYear = Carbon::now()->year;
+            $usedCreditThisYear = (float) CtoApplication::where('employee_profile_id', $user->id)
+            ->where(function ($query) {
+                $query->where('status', 'approved')
+                      ->orWhere('status', 'for recommending approval')
+                      ->orWhere('status', 'for approving approval');
+            })
+                ->whereYear('created_at', $currentYear)
+                ->sum('applied_credits');
+
             $employeeCredit = EmployeeOvertimeCredit::where('employee_profile_id', $user->id)->get();
             return response()->json([
                 'data' => CtoApplicationResource::collection($sql),
-                'employee_credit' => EmployeeOvertimeCreditResource::collection($employeeCredit)
+                'employee_credit' => EmployeeOvertimeCreditResource::collection($employeeCredit),
+                'used_credit_this_year' => $usedCreditThisYear
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
 
@@ -183,6 +230,7 @@ class CtoApplicationController extends Controller
     {
         try {
 
+
             $employee_profile = $request->user;
             $cto_applications = [];
 
@@ -190,10 +238,8 @@ class CtoApplicationController extends Controller
             $approving_officer = Helpers::getDivHead($assigned_area);
             $hrmo_officer = Helpers::getHrmoOfficer();
 
-
             $reason = [];
             $failed = [];
-
 
             $employee_profile = $request->user;
             $employeeId = $employee_profile->id;
@@ -279,16 +325,27 @@ class CtoApplicationController extends Controller
                         ->where('valid_until', $first_valid_until)
                         ->first();
                 }
+                $currentDate = Carbon::now();
+                $overtimeCredits = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)->get();
+                $allCreditsUsedUp = true;
 
-                // Check if the employee has any earned credits
-                if (!$employee_credit || $employee_credit->earned_credit_by_hour <= 0) {
+
+                foreach ($overtimeCredits as $credit) {
+                    if ($currentDate->lte($credit->valid_until) && $credit->used_credit_by_hour > 0) {
+                        $allCreditsUsedUp = false;
+                        break;
+                    }
+                }
+                if ($allCreditsUsedUp) {
                     $failed[] = $value;
                     $reason[] = 'No overtime credits available.';
                     continue;
                 }
 
-                // Check if the employee has sufficient earned credits for the application
-                if ($employee_credit->earned_credit_by_hour < $value->applied_credits) {
+                $totalEarnedCredits = $overtimeCredits->sum('earned_credit_by_hour');
+                $appliedCredits = $value->applied_credits;
+                if ($appliedCredits > $totalEarnedCredits) {
+
                     $failed[] = $value;
                     $reason[] = 'Insufficient overtime credits available.';
                     continue;
@@ -319,15 +376,45 @@ class CtoApplicationController extends Controller
                     $current_overtime_credit = $employee_credit->earned_credit_by_hour;
                     $earned_credit = $employee_credit->earned_credit_by_hour;
                     $used_credit = $employee_credit->used_credit_by_hour;
-                    $employee_credit->where('valid_until', $first_valid_until)->update(['earned_credit_by_hour' => $earned_credit - $credits, 'used_credit_by_hour' => $used_credit + $credits]);
-                    $employeeCredit = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)->get();
-                    $logs =  EmployeeOvertimeCreditLog::create([
-                        'employee_ot_credit_id' => $employee_credit->id,
-                        'cto_application_id' => $cto_application->id,
-                        'action' => 'Applied',
-                        'previous_overtime_hours' => $current_overtime_credit,
-                        'hours' => $value->applied_credits
-                    ]);
+                    // $employee_credit->where('valid_until', $first_valid_until)->update(['earned_credit_by_hour' => $earned_credit - $credits, 'used_credit_by_hour' => $used_credit + $credits]);
+                    // $employeeCredit = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)->get();
+                    // $logs =  EmployeeOvertimeCreditLog::create([
+                    //     'employee_ot_credit_id' => $employee_credit->id,
+                    //     'cto_application_id' => $cto_application->id,
+                    //     'action' => 'deduct',
+                    //     'reason' => 'Apply',
+                    //     'previous_overtime_hours' => $current_overtime_credit,
+                    //     'hours' => $value->applied_credits
+                    // ]);
+
+                    $appliedCredits = $credits;
+                    $remainingCredits = $appliedCredits;
+                    $employeeCredit = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)
+                        ->where('is_expired', 0)
+                        ->orderBy('valid_until', 'asc')
+                        ->get();
+
+                    foreach ($employeeCredit as $credit) {
+                        $earnedCredit = $credit->earned_credit_by_hour;
+                        $validUntil = $credit->valid_until;
+
+                        $remainingEarnedCredit = $earnedCredit;
+
+
+                        if ($remainingCredits >= $remainingEarnedCredit) {
+                            $remainingCredits -= $remainingEarnedCredit;
+                            $credit->update(['earned_credit_by_hour' => 0]);
+                        } else {
+                            $remainingEarnedCredit -= $remainingCredits;
+                            $credit->update(['earned_credit_by_hour' => $remainingEarnedCredit]);
+                            $remainingCredits = 0;
+                        }
+
+                        // If all applied credits are utilized, exit the loop
+                        if ($remainingCredits <= 0) {
+                            break;
+                        }
+                    }
 
                     CtoApplicationLog::create([
                         'action_by' => $employee_profile->id,
@@ -358,9 +445,20 @@ class CtoApplicationController extends Controller
                 ], Response::HTTP_OK);
             }
 
+            $currentYear = Carbon::now()->year;
+            $usedCreditThisYear = (float) CtoApplication::where('employee_profile_id', $employeeId)
+            ->where(function ($query) {
+                $query->where('status', 'approved')
+                      ->orWhere('status', 'for recommending approval')
+                      ->orWhere('status', 'for approving approval');
+            })
+                ->whereYear('created_at', $currentYear)
+                ->sum('applied_credits');
+                
             return response()->json([
                 'data' => CtoApplicationResource::collection($cto_applications),
                 'employee_credit' => EmployeeOvertimeCreditResource::collection($employeeCredit),
+                'used_credit_this_year' => $usedCreditThisYear,
                 'message' => 'Request submitted sucessfully.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -412,7 +510,8 @@ class CtoApplicationController extends Controller
             EmployeeOvertimeCreditLog::create([
                 'employee_ot_credit_id' => $employee_credit->id,
                 'cto_application_id' => $cto_application->id,
-                'action' => 'Declined',
+                'action' => 'add',
+                'reason' => 'Declined',
                 'previous_overtime_hours' => $current_overtime_credit,
                 'hours' => $cto_application->applied_credits
             ]);
@@ -495,6 +594,7 @@ class CtoApplicationController extends Controller
             $employeeId = $request->employee_id;
             $validUntil = $request->valid_until;
             $creditValue = $request->credit_value;
+            $validUntilDate = date('Y-m-d', strtotime($request->valid_until));
 
             $employee_profile = $request->user;
             $cleanData['pin'] = strip_tags($request->pin);
@@ -503,7 +603,7 @@ class CtoApplicationController extends Controller
             }
 
             $existingCredit = EmployeeOvertimeCredit::where('employee_profile_id', $employeeId)
-                ->where('valid_until', $validUntil)
+                ->where('valid_until', $validUntilDate)
                 ->first();
 
             if ($existingCredit) {
@@ -522,7 +622,8 @@ class CtoApplicationController extends Controller
                 ]);
                 EmployeeOvertimeCreditLog::create([
                     'employee_ot_credit_id' => $employeeId,
-                    'action' => 'Add Credit',
+                    'action' => 'add',
+                    'reason' => 'Update Credit',
                     'hours' => $creditValue
                 ]);
 
@@ -565,7 +666,6 @@ class CtoApplicationController extends Controller
                 ],
             ];
 
-
             return response()->json([
                 'data' => $employeeResponse,
                 'message' =>  'Leave credits updated successfully'
@@ -578,12 +678,63 @@ class CtoApplicationController extends Controller
     public function employeeCreditLog($id)
     {
         try {
-            $employee_credit_logs = EmployeeOvertimeCredit::where('employee_profile_id ', $id)->get();
+            $employeeCredits = EmployeeOvertimeCredit::with(['logs', 'employeeProfile'])->where('employee_profile_id', $id)->get();
+            $allLogs = [];
+            $employeeName = null;
+            $employeePosition = null;
+            $totalCreditsEarnedThisMonth = 0;
+            $totalCreditsEarnedThisYear = 0;
+            $totalCreditsEarnedNextYear = 0;
+            foreach ($employeeCredits as $employeeCredit) {
 
-            return response()->json([
-                'data' => EmployeeOvertimeCreditResource::collection($employee_credit_logs),
-                'message' => 'Retrieve list.'
-            ], Response::HTTP_OK);
+                if (!$employeeName) {
+                    $employeeName = $employeeCredit->employeeProfile->name();
+                    $employeeJobPosition = $employeeCredit->employeeProfile->findDesignation()->code;
+                    $employeePosition = $employeeCredit->employeeProfile->employmentType->name;
+                    $employee_assign_area = $employeeCredit->employeeProfile->assignedArea->findDetails();
+                }
+
+                $logs = $employeeCredit->logs;
+
+                foreach ($logs as $log) {
+
+                    if ($log->action === 'add') {
+
+                        if (Carbon::parse($log->created_at)->format('Y-m') === Carbon::now()->format('Y-m')) {
+                            $totalCreditsEarnedThisMonth += $log->hours;
+                        }
+
+                        if (Carbon::parse($log->created_at)->format('Y') === Carbon::now()->format('Y')) {
+                            $totalCreditsEarnedThisYear += $log->hours;
+                        }
+
+                        if (Carbon::parse($log->created_at)->format('Y') === Carbon::now()->addYear()->format('Y')) {
+                            return $totalCreditsEarnedNextYear += $log->hours;
+                        }
+                    }
+                    $allLogs[] = [
+                        'reason' => $log->reason,
+                        'action' => $log->action,
+                        'previous_overtime_hours' => $log->previous_overtime_hours ?? 0,
+                        'hours' => $log->hours,
+                        'remaining' =>  $log->previous_overtime_hours - $log->hours,
+                        'created_at' =>  $log->created_at,
+                    ];
+                }
+            }
+
+            $response = [
+                'employee_name' => $employeeName,
+                'employee_job' => $employeeJobPosition,
+                'employee_position' => $employeePosition,
+                'employee_area' => $employee_assign_area,
+                'total_credits_earned_this_month' => $totalCreditsEarnedThisMonth,
+                'total_credits_earned_this_year' => $totalCreditsEarnedThisYear,
+                'total_credits_earned_next_year' => $totalCreditsEarnedNextYear,
+                'logs' => $allLogs,
+            ];
+            // $response =array_merge($employeeDetails,$allLogs);
+            return ['data' => $response];
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }

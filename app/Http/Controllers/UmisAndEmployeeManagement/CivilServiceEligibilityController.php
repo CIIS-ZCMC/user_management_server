@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 
 use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Requests\CivilServiceEligibilityManyRequest;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
@@ -70,14 +71,14 @@ class CivilServiceEligibilityController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if($value === null)
-                {
-                    $cleanData[$key] = $value;
+                if ( $value == "null" || $value == null) {
+                    $cleanData[$key] = null;
                     continue;
                 }
                 if($key === 'attachment'){
                     $attachment = Helpers::checkSaveFile($request->attachment, '/eligibilities');
                     $cleanData['attachment'] = $attachment;
+                    continue;
                 }
                 $cleanData[$key] = strip_tags($value);
             }
@@ -88,8 +89,22 @@ class CivilServiceEligibilityController extends Controller
 
             Helpers::registerSystemLogs($request, $civil_service_eligibility['id'], true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
 
+
+             $response_data =  [
+                "id"=> $personal_information->id,
+                "name" => $personal_information->name(),
+                "assigned_area" => $personal_information->employeeProfile->assignedArea->findDetails()['details']->name,
+                'designation' => $personal_information->employeeProfile->assignedArea->designation->name,
+                "employee_id" => $personal_information->employeeProfile->employee_id,
+                "profile_url" => config('app.server_domain')."/profiles/".$personal_information->employeeProfile->profile_url,
+                "type" => 'Eligibility',
+                "date_requested" => Carbon::now(),
+                "approved_at" => null,
+                "details" => new CivilServiceEligibilityResource($civil_service_eligibility)
+            ];
+
             return response()->json([
-                'data' => new CivilServiceEligibilityResource($civil_service_eligibility), 
+                'data' =>  $response_data, 
                 'message' => 'New civil service record added.',
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -177,7 +192,7 @@ class CivilServiceEligibilityController extends Controller
         }
     }
     
-    public function update($id, CivilServiceEligibilityRequest $request)
+    public function update($id, CivilServiceEligibilityManyRequest $request)
     {
         try{
             $success = [];
@@ -185,7 +200,7 @@ class CivilServiceEligibilityController extends Controller
             foreach($request->eligibilities as $civil_service_eligibility){
                 $cleanData = [];
                 foreach ($civil_service_eligibility as $key => $value) {
-                    if($key === 'id' && $value === null) continue;
+                    if(($key === 'id' && $value === null) || $key === 'attachment') continue;
                     if($value === null)
                     {
                         $cleanData[$key] = $value;
@@ -202,13 +217,14 @@ class CivilServiceEligibilityController extends Controller
                     continue;
                 }
 
-                $civil_service_eligibility = CivilServiceEligibility::find($civil_service_eligibility->id);
-                $civil_service_eligibility->update($cleanData);
-                $success[] = $civil_service_eligibility;
+                $civil_service_eligibility_data = CivilServiceEligibility::find($civil_service_eligibility->id);
+                $civil_service_eligibility_data->update($cleanData);
+                $success[] = $civil_service_eligibility_data;
             }
 
             return $success;
         }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             throw new \Exception("Failed to register employee civil service eligibility record.", 400);
         }
     }

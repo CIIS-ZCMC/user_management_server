@@ -14,8 +14,10 @@ class Designation extends Model
     public $fillable = [
         'name',
         'code',
+        'probation',
         'effective_at',
-        'salary_grade_id'
+        'salary_grade_id',
+        'position_type'
     ];
 
     public $timestamps = TRUE;

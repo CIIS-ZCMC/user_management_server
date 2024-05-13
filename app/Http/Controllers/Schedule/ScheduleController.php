@@ -8,6 +8,7 @@ use App\Models\AssignArea;
 use App\Models\Department;
 use App\Models\EmployeeSchedule;
 use App\Models\Holiday;
+use App\Models\MonthlyWorkHours;
 use App\Models\Schedule;
 use App\Models\EmployeeProfile;
 use App\Models\Section;
@@ -45,7 +46,7 @@ class ScheduleController extends Controller
 
             $this->updateAutomaticScheduleStatus();
 
-            if ($user->employee_id === "1918091351") {
+            if ($user->employee_id === "1918091351" || $user->employee_id === "2022100950") {
                 return response()->json([
                     'data' => ScheduleResource::collection(EmployeeProfile::all()),
                     'dates' => $dates_with_day,
@@ -350,21 +351,18 @@ class ScheduleController extends Controller
 
             $dates = Helpers::getDatesInMonth($year, Carbon::parse($month)->month, "");
 
-            //Array
-            // $myEmployees = $user->areaEmployee($assigned_area);
-            // $supervisors = $user->sectorHeads();
+            $employees = [$request->employees];
+            $employee_ids = explode(',', $employees[0]);
 
-            // $employees = [...$myEmployees, ...$supervisors];
-            // $employee_ids = collect($employees)->pluck('id')->toArray();
-
-            $myEmployees = $user->myEmployees($assigned_area, $user);
-            $employee_ids = collect($myEmployees)->pluck('id')->toArray();
-
-            $sql = EmployeeProfile::where(function ($query) use ($assigned_area) {
-                $query->whereHas('schedule', function ($innerQuery) use ($assigned_area) {
-                    $innerQuery->with(['timeShift', 'holiday']);
-                });
-            })->whereIn('id', $employee_ids)->with(['personalInformation', 'assignedArea', 'schedule.timeShift'])->get();
+            $sql = EmployeeProfile::whereIn('id', $employee_ids)
+                ->with([
+                    'schedule' => function ($query) {
+                        $query->with(['timeShift', 'holiday']);
+                    },
+                    'personalInformation',
+                    'assignedArea',
+                    'schedule.timeShift'
+                ])->get();
 
             $employee = ScheduleResource::collection($sql);
 
@@ -486,19 +484,6 @@ class ScheduleController extends Controller
         }
     }
 
-    private function updateAutomaticScheduleStatus()
-    {
-        $date_now = Carbon::now();
-        $data = Schedule::whereDate('date', '<', $date_now->format('Y-m-d'))->get();
-
-        if (!$data->isEmpty()) { // Check if the collection is not empty
-            foreach ($data as $schedule) {
-                $schedule->status = false;
-                $schedule->save(); // or $schedule->update(['status' => false]);
-            }
-        }
-    }
-
     public function retrieveEmployees($employees, $key, $id, $myId)
     {
         $assign_areas = AssignArea::where($key, $id)
@@ -574,9 +559,23 @@ class ScheduleController extends Controller
                 'data' => $areas,
                 'message' => 'Successfully retrieved all my areas.'
             ], Response::HTTP_OK);
+
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'myAreas', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private function updateAutomaticScheduleStatus()
+    {
+        $date_now = Carbon::now();
+        $data = Schedule::whereDate('date', '<', $date_now->format('Y-m-d'))->get();
+
+        if (!$data->isEmpty()) { // Check if the collection is not empty
+            foreach ($data as $schedule) {
+                $schedule->status = false;
+                $schedule->save(); // or $schedule->update(['status' => false]);
+            }
         }
     }
 }

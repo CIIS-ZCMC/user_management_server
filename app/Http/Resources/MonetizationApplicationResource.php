@@ -30,8 +30,13 @@ class MonetizationApplicationResource extends JsonResource
             ],
             "leave_type" => $this->leaveType,
             'reason' => $this->reason,
-            'attachment' => config("app.server_domain").$this->attachment,
+            'attachment' => [
+                'attachment' => $this->attachment,
+                'attachment_size' => $this->attachment_size,
+                'attachment_path' => config("app.server_domain")."/leave_monetization/".$this->attachment_path,
+            ],
             'credit_value' => $this->credit_value,
+            'is_qualified' => $this->is_qualified,
             'status' => $this->status,
             "hrmo_officer" => [
                 "employee_id" => $this->hrmoOfficer->employee_id,

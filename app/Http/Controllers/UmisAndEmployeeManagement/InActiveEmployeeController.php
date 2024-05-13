@@ -13,15 +13,29 @@ use App\Http\Requests\IdentificationNumberRequest;
 use App\Http\Requests\LegalInformationManyRequest;
 use App\Http\Requests\OtherInformationManyRequest;
 use App\Http\Requests\PersonalInformationRequest;
+use App\Http\Requests\PersonalInformationUpdateRequest;
 use App\Http\Requests\ReferenceManyRequest;
 use App\Http\Requests\TrainingManyRequest;
 use App\Http\Requests\VoluntaryWorkRequest;
 use App\Http\Requests\WorkExperienceRequest;
+use App\Http\Resources\AddressResource;
+use App\Http\Resources\ChildResource;
+use App\Http\Resources\CivilServiceEligibilityResource;
+use App\Http\Resources\ContactResource;
+use App\Http\Resources\EducationalBackgroundResource;
+use App\Http\Resources\EmployeeProfileResource;
+use App\Http\Resources\FamilyBackGroundResource;
+use App\Http\Resources\IdentificationNumberResource;
+use App\Http\Resources\OtherInformationResource;
+use App\Http\Resources\TrainingResource;
+use App\Http\Resources\VoluntaryWorkResource;
+use App\Http\Resources\WorkExperienceResource;
 use App\Models\AssignArea;
 use App\Models\EmployeeLeaveCredit;
 use App\Models\EmploymentType;
 use App\Models\LeaveType;
 use App\Models\PlantillaNumber;
+use App\Models\WorkExperience;
 use Carbon\Carbon;
 use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Requests\PasswordApprovalRequest;
@@ -40,7 +54,7 @@ use App\Models\EmployeeProfile;
 
 class InActiveEmployeeController extends Controller
 {
-    private $CONTROLLER_NAME = 'In Active Employee  Module';
+    private $CONTROLLER_NAME = 'In Active Employee Module';
     private $PLURAL_MODULE_NAME = 'In active employee modules';
     private $SINGULAR_MODULE_NAME = 'In active employee module';
 
@@ -114,7 +128,10 @@ class InActiveEmployeeController extends Controller
         try{
             $in_active_employees = InActiveEmployee::all();
 
-            return response()->json(['data' => InActiveEmployeeResource::collection($in_active_employees), 'message' => 'Record of in-active employee history retrieved.'], Response::HTTP_OK);
+            return response()->json([
+                'data' => InActiveEmployeeResource::collection($in_active_employees), 
+                'message' => 'Record of in-active employee history retrieved.'
+            ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -181,10 +198,13 @@ class InActiveEmployeeController extends Controller
                 return response()->json(['message' => "No in active employee with id " . $id], Response::HTTP_NOT_FOUND);
             }
 
+            $employee_profile = $in_active_employee->employeeProfile;
+            $personal_information = $in_active_employee->employeeProfile->personalInformation;
+
             /**
              * Personal Information module. [DONE]
              */
-            $personal_information_request = new PersonalInformationRequest();
+            $personal_information_request = new PersonalInformationUpdateRequest();
             $personal_information_json = json_decode($request->personal_information);
             $personal_information_data = [];
 
@@ -194,7 +214,7 @@ class InActiveEmployeeController extends Controller
 
             $personal_information_request->merge($personal_information_data);
             $personal_information_controller = new PersonalInformationController();
-            $personal_information = $personal_information_controller->update($in_active_employee->personal_information_id, $personal_information_request);
+            $personal_information = $personal_information_controller->update($personal_information->id, $personal_information_request);
 
             /**
              * Contact module. [DONE]
@@ -207,7 +227,7 @@ class InActiveEmployeeController extends Controller
                 $contact_data[$key] = $value;
             }
 
-            $contact_id = $in_active_employee->personalInformation->contact->id;
+            $contact_id = $personal_information->contact->id;
 
             $contact_request->merge($contact_data);
             $contact_controller = new ContactController();
@@ -229,7 +249,7 @@ class InActiveEmployeeController extends Controller
             $family_background_request->merge(['personal_info' => $personal_information]);
             $family_background_request->merge(['children' => $request->children]);
             $family_background_controller = new FamilyBackgroundController();
-            $family_background_controller->update($in_active_employee->personalInformation->familyBackground->id, $family_background_request);
+            $family_background_controller->update($family_background_request->id, $family_background_request);
 
             /**
              * Education module [DONE]
@@ -245,7 +265,7 @@ class InActiveEmployeeController extends Controller
 
             $education_request->merge(['educations' => $education_data]);
             $education_controller = new EducationalBackgroundController();
-            $education_controller->update($personal_information->id,$education_request);
+            $education_controller->update($personal_information->id, $education_request);
 
             /**
              * Identification module [DONE]
@@ -321,7 +341,7 @@ class InActiveEmployeeController extends Controller
 
             $legal_info_request->merge(['legal_information' => $legal_info_data]);
             $legal_information_controller = new LegalInformationController();
-            $legal_information_controller->update($personal_information->id, $legal_info_request);
+            $legal_information_controller->storeMany($personal_information->id, $legal_info_request);
 
             /**
              * Training module [DONE]
@@ -349,7 +369,7 @@ class InActiveEmployeeController extends Controller
                 $referrence_data[$key] = $value;
             }
 
-            $referrence_request->merge(['reference' => $referrence_data]);
+            $referrence_request->merge(['references' => $referrence_data]);
             $referrence_controller = new ReferencesController();
             $referrence_controller->update($personal_information->id, $referrence_request);
 
@@ -366,7 +386,7 @@ class InActiveEmployeeController extends Controller
 
             $eligibilities_request->merge(['eligibilities' => $eligibilities_data]);
             $eligibilities_controller = new CivilServiceEligibilityController();
-            $eligibilities_controller->update($personal_information->ud, $eligibilities_request);
+            $eligibilities_controller->update($personal_information->id, $eligibilities_request);
 
             //** Employee Profile Module */
 
@@ -379,7 +399,7 @@ class InActiveEmployeeController extends Controller
             $total_registered_this_day = EmployeeProfile::whereDate('date_hired', $carbonDate)->get();
             $employee_id_random_digit = 50 + count($total_registered_this_day);
 
-            $employee_data = $in_active_employee;
+            // $employee_data = $in_active_employee;
             $employee_data['employee_id'] = $employee_id_random_digit;
 
             $last_registered_employee = EmployeeProfile::orderBy('biometric_id', 'desc')->first();
@@ -396,7 +416,6 @@ class InActiveEmployeeController extends Controller
             $employee_data['employee_id'] = $new_employee_id;
             $employee_data['biometric_id'] = $new_biometric_id;
             $employee_data['employment_type_id'] = strip_tags($request->employment_type_id);
-            $employee_data['personal_information_id'] = $in_active_employee->personal_information_id;
 
             try {
                 $fileName = Helpers::checkSaveFile($request->attachment, 'photo/profiles');
@@ -418,21 +437,13 @@ class InActiveEmployeeController extends Controller
             $employee_data['date_hired'] = $request->date_hired;
             $employee_data['designation_id'] = $request->designation_id;
             $employee_data['effective_at'] = $request->date_hired;
+            $employee_data['deactivated_at'] = null;
 
             if(EmploymentType::find($employee_data['employment_type_id'])->name === 'Temporary' || EmploymentType::find($employee_data['employment_type_id'])->name === 'Job Order'){
-
-                if($request->renewal === 'null' || $request->renewal === null){
-                    DB::rollBack();
-                    return response()->json([
-                        'message' => 'Temporary or Job order renewal date is required.'
-                    ], Response::HTTP_BAD_REQUEST);
-                }
 
                 if(EmploymentType::find($employee_data['employment_type_id'])->name === 'Temporary'){
                     $employee_data['renewal'] = Carbon::now()->addYear();
                 }
-
-                $employee_data['renewal'] = strip_tags($request->renewal);
             }
 
             $plantilla_number_id = $request->plantilla_number_id === "null" || $request->plantilla_number_id === null ? null : $request->plantilla_number_id;
@@ -452,8 +463,7 @@ class InActiveEmployeeController extends Controller
                 $employee_data['plantilla_number_id'] = $plantilla_number->id;
             }
 
-
-            $employee_profile = EmployeeProfile::create($employee_data);
+            $employee_profile->update($employee_data);
 
             $employee_data['employee_profile_id'] = $employee_profile->id;
             AssignArea::create($employee_data);
@@ -477,16 +487,14 @@ class InActiveEmployeeController extends Controller
                 }
             }
 
-            //Assign ALL previous Area Trail with new employee id
-            AssignAreaTrail::where(['employee_profile_id', $previous_employee_profile_id])->update(['employee_profile_id', $employee_profile->id]);
-
+            $in_active_employee->delete();
+            DB::commit();
             Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . '.');
-
 
             if ($in_valid_file) {
                 return response()->json(
                     [
-                        'data' => new EmployeeProfileNewResource($employee_profile),
+                        'data' => new EmployeeProfileResource($employee_profile),
                         'message' => 'Newly employee registered.',
                         'other' => "Invalid attachment."
                     ],
@@ -496,7 +504,7 @@ class InActiveEmployeeController extends Controller
 
             return response()->json(
                 [
-                    'data' => new EmployeeProfileNewResource($employee_profile),
+                    'data' => new EmployeeProfileResource($employee_profile),
                     'message' => 'Newly employee registered.'
                 ],
                 Response::HTTP_OK
@@ -504,6 +512,121 @@ class InActiveEmployeeController extends Controller
         } catch (\Throwable $th) {
             DB::rollBack();
             Helpers::errorLog($this->CONTROLLER_NAME, 'reEmploy', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function showProfile($id, Request $request)
+    {
+        try {
+
+            $in_active_employee = InActiveEmployee::find($id);
+
+            if (!$in_active_employee) {
+                return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            Helpers::registerSystemLogs($request, $id, true, 'Success in fetching a ' . $this->SINGULAR_MODULE_NAME . '.');
+        
+            $employee_profile = $in_active_employee->employeeProfile;
+            $personal_information = $employee_profile->personalInformation;
+
+            $work_experiences = WorkExperience::where('personal_information_id', $personal_information->id)->where('government_office', "Yes")->get();
+
+            $totalMonths = 0; // Initialize total months variable
+            $totalYears = 0; // Initialize total months variable
+
+            foreach ($work_experiences as $work) {
+                $dateFrom = Carbon::parse($work->date_from);
+                $dateTo = Carbon::parse($work->date_to);
+                $months = $dateFrom->diffInMonths($dateTo);
+                $totalMonths += $months;
+            }
+
+            $totalYears = floor($totalMonths / 12);
+
+            $personal_information_data = [
+                'personal_information_id' => $personal_information->id,
+                'full_name' => $personal_information->nameWithSurnameFirst(),
+                'first_name' => $personal_information->first_name,
+                'last_name' => $personal_information->last_name,
+                'middle_name' => $personal_information->middle_name === null ? ' ' : $personal_information->middle_name,
+                'name_extension' => $personal_information->name_extension === null ? null : $personal_information->name_extension,
+                'employee_id' => $in_active_employee->employee_id,
+                'years_of_service' => $personal_information->years_of_service === null ? null : $personal_information->years_of_service,
+                'name_title' => $personal_information->name_title === null ? null : $personal_information->name_title,
+                'sex' => $personal_information->sex,
+                'date_of_birth' => $personal_information->date_of_birth,
+                'place_of_birth' => $personal_information->place_of_birth,
+                'civil_status' => $personal_information->civil_status,
+                'citizenship' => $personal_information->citizenship,
+                'date_of_marriage' => $personal_information->date_of_marriage === null ? null : $personal_information->date_of_marriage,
+                'blood_type' => $personal_information->blood_type === null ? null : $personal_information->blood_type,
+                'height' => $personal_information->height,
+                'weight' => $personal_information->weight,
+            ];
+
+            $address = [
+                'residential_address' => null,
+                'residential_zip_code' => null,
+                'residential_telephone_no' => null,
+                'permanent_address' => null,
+                'permanent_zip_code' => null,
+                'permanent_telephone_no' => null
+            ];
+
+            $addresses = $personal_information->addresses;
+
+            foreach ($addresses as $value) {
+
+                if ($value->is_residential_and_permanent) {
+                    $address['residential_address'] = $value->address;
+                    $address['residential_zip_code'] = $value->zip_code;
+                    $address['residential_telephone_no'] = $value->telephone_no;
+                    $address['permanent_address'] = $value->address;
+                    $address['permanent_zip_code'] = $value->zip_code;
+                    $address['permanent_telephone_no'] = $value->telephone_no;
+                    break;
+                }
+
+                if ($value->is_residential) {
+                    $address['residential_address'] = $value->address;
+                    $address['residential_zip_code'] = $value->zip_code;
+                    $address['residential_telephone_no'] = $value->telephone_no;
+                } else {
+                    $address['permanent_address'] = $value->address;
+                    $address['permanent_zip_code'] = $value->zip_code;
+                    $address['permanent_telephone_no'] = $value->telephone_no;
+                }
+            }
+
+            $data = [
+                'personal_information_id' => $personal_information->id,
+                'in_active_employee_id' => $in_active_employee['id'],
+                'employee_id' => $in_active_employee['employee_id'],
+                'name' => $personal_information->employeeName(),
+                'employee_details' => [
+                    'personal_information' => $personal_information_data,
+                    'personal_information_id' => $personal_information->id,
+                    'contact' => new ContactResource($personal_information->contact),
+                    'address' => $address,
+                    'address_update' => AddressResource::collection($personal_information->addresses),
+                    'family_background' => new FamilyBackGroundResource($personal_information->familyBackground),
+                    'children' => ChildResource::collection($personal_information->children),
+                    'education' => EducationalBackgroundResource::collection($personal_information->educationalBackground),
+                    'affiliations_and_others' => [
+                        'civil_service_eligibility' => CivilServiceEligibilityResource::collection($personal_information->civilServiceEligibility),
+                        'work_experience' => WorkExperienceResource::collection($personal_information->workExperience),
+                        'voluntary_work_or_involvement' => VoluntaryWorkResource::collection($personal_information->voluntaryWork),
+                        'training' => TrainingResource::collection($personal_information->training),
+                        'other' => OtherInformationResource::collection($personal_information->otherInformation),
+                    ],
+                    'identification' => new IdentificationNumberResource($personal_information->identificationNumber)
+                ]
+            ];
+            return response()->json(['data' => $data, 'message' => 'Employee details found.'], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'showProfile', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

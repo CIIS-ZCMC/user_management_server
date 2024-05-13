@@ -23,6 +23,9 @@ use App\Models\OvtApplicationLog;
 use App\Models\Section;
 use App\Models\Unit;
 use DateTime;
+use Dompdf\Dompdf;
+use Dompdf\Options;
+use Illuminate\Support\Facades\Validator;
 
 class OvertimeController extends Controller
 {
@@ -30,6 +33,69 @@ class OvertimeController extends Controller
      * Display a listing of the resource.
      */
     private $CONTROLLER_NAME = 'OvertimeController';
+
+    public function printOvertimeForm($id){
+
+      $overtime_application = OvertimeApplication::where('id',$id)->get();
+
+      $data = json_decode(json_encode(OvertimeResource::collection($overtime_application)))[0];
+
+      $activities = $data->activities;
+      $uniqueEmployees = [];
+
+      foreach ($activities as $activity) {
+          foreach ($activity->dates as $date) {
+              foreach ($date->employees as $employee) {
+                  $employeeId = $employee->employee_profile->employee_id;
+                  // Check if employee already exists in the uniqueEmployees array
+                  if (!isset($uniqueEmployees[$employeeId])) {
+                      // If not, add the employee to the uniqueEmployees array
+                      $uniqueEmployees[$employeeId] = $employee->employee_profile;
+                  }
+              }
+          }
+      }
+
+      $listofEmployees = array_values($uniqueEmployees);
+      $purposeofovertime = $data->purpose;
+      $remarks = $data->remarks;
+      $recommendingofficer = $data->recommending_officer;
+      $approvingOfficer = $data->approving_officer;
+      $requestedBy =  $data->employee_profile;
+
+      $created = date("F j, Y",strtotime($data->created_at));
+
+    //   return view("overtimeAuthority",
+    //   compact('listofEmployees',
+    //   'activities',
+    //   'purposeofovertime',
+    //   'recommendingofficer',
+    //   'requestedBy',
+    //   'approvingOfficer',
+    //   'created'));
+
+        $options = new Options();
+        $options->set('isPhpEnabled', true);
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('isRemoteEnabled', true);
+        $dompdf = new Dompdf($options);
+        $dompdf->getOptions()->setChroot([base_path() . '\public\storage']);
+        $dompdf->loadHtml(view("overtimeAuthority",
+        compact('listofEmployees',
+        'activities',
+        'purposeofovertime',
+        'recommendingofficer',
+        'requestedBy',
+        'approvingOfficer',
+        'created')));
+
+        $dompdf->setPaper('Letter', 'portrait');
+        $dompdf->render();
+
+        $filename ="OvertimeAuthority_{$purposeofovertime}.pdf";
+        $dompdf->stream($filename);
+
+    }
 
     public function index(Request $request)
     {
@@ -74,6 +140,7 @@ class OvertimeController extends Controller
                 })
                 ->groupBy(
                     'id',
+                    'employee_profile_id',
                     'status',
                     'purpose',
                     'recommending_officer',
@@ -303,12 +370,12 @@ class OvertimeController extends Controller
         }
     }
 
-    public function store(Request $request)
+    public function store(Request $request, AuthPinApprovalRequest $pin)
     {
         try {
             $employee_profile = $request->user;
 
-            $cleanData['pin'] = strip_tags($request->pin);
+            $cleanData['pin'] = strip_tags($pin->pin);
             if ($employee_profile['authorization_pin'] !==  $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
@@ -350,7 +417,6 @@ class OvertimeController extends Controller
             }
 
             foreach ($validatedData['employees'] as $index => $employeeList) {
-
 
                 foreach ($employeeList as $dateIndex => $employeeIdList) {
 
@@ -447,10 +513,9 @@ class OvertimeController extends Controller
         }
     }
 
-    public function storePast(Request $request)
+    public function storePast(Request $request, AuthPinApprovalRequest $pin)
     {
         try {
-
             $user = $request->user;
             $employee_profile = $request->user;
             $employeeId = $employee_profile->id;
@@ -472,10 +537,9 @@ class OvertimeController extends Controller
 
             ]);
 
-
-            $assigned_area = $employee_profile->assignedArea->findDetails();
-            if (Helpers::getDivHead($assigned_area) === null || Helpers::getChiefOfficer() === null) {
-                return response()->json(['message' => 'No recommending officer and/or supervising officer assigned.'], Response::HTTP_FORBIDDEN);
+            $cleanData['pin'] = strip_tags($pin->pin);
+            if ($employee_profile['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
             $assigned_area = $employee_profile->assignedArea->findDetails();
             if (Helpers::getDivHead($assigned_area) === null || Helpers::getChiefOfficer() === null) {
@@ -534,14 +598,13 @@ class OvertimeController extends Controller
                     'date' =>  $date,
                 ]);
                 $date_id = $date_application->id;
-                OvtApplicationEmployee::create([
-                    'ovt_application_datetime_id' => $date_id,
-                    'employee_profile_id' =>  $validatedData['employees'][$index],
-                    'remarks' =>  $validatedData['remarks'][$index],
-                ]);
-                // foreach ($validatedData['employees'] as $index => $employees) {
-
-                //     }
+                foreach ($validatedData['employees'] as $index => $employees) {
+                    OvtApplicationEmployee::create([
+                        'ovt_application_datetime_id' => $date_id,
+                        'employee_profile_id' =>  $validatedData['employees'][$index],
+                        'remarks' =>  $validatedData['remarks'][$index],
+                    ]);
+                }
             }
 
             OvtApplicationLog::create([
@@ -558,6 +621,98 @@ class OvertimeController extends Controller
         } catch (\Throwable $th) {
 
             Helpers::errorLog($this->CONTROLLER_NAME, 'storePast', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function storeBulk(Request $request)
+    {
+        try {
+            $employee_profile = $request->user;
+
+            $cleanData['pin'] = strip_tags($request->pin);
+            if ($employee_profile['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+            }
+            $employeeId = $employee_profile->id;
+            $validator = Validator::make($request->all(), [
+                'otID' => 'required|integer',
+                'purposeofovertime' => 'required|string',
+                'listdate' => 'required|array',
+                'listdate.*.day' => 'required|integer',
+                'listdate.*.month' => 'required|integer',
+                'listdate.*.year' => 'required|integer',
+                'employees' => 'required|array',
+                'employees.*.otID' => 'required|integer',
+                'employees.*.empName' => 'required|string',
+                'employees.*.id' => 'required|integer',
+                'activitiestobeaccomplished' => 'required|string',
+                'estqty' => 'required|integer',
+                'fromtime' => 'required|string',
+                'totime' => 'required|string',
+            ]);
+
+
+            $user = $request->user;
+            $fileName = "";
+            $file_name_encrypted = "";
+            $size = "";
+
+            $assigned_area = $employee_profile->assignedArea->findDetails();
+            $status = 'for recommending approval';
+            $overtime_application = OvertimeApplication::create([
+                'employee_profile_id' => $user->id,
+                'status' => $status,
+                'purpose' => $request->purpose,
+                'overtime_letter_of_request' =>  $fileName,
+                'overtime_letter_of_request_path' =>  $file_name_encrypted,
+                'overtime_letter_of_request_size' =>  $size,
+                'recommending_officer' => Helpers::getDivHead($assigned_area),
+                'approving_officer' => Helpers::getChiefOfficer(),
+            ]);
+
+           $ovt_id = $overtime_application->id;
+           $jsonData = $request->input('data');
+           $formData = json_decode($jsonData, true);
+            foreach ($formData as $data) {
+
+                $activity_application = OvtApplicationActivity::create([
+                    'overtime_application_id' => $ovt_id,
+                    'name' => $data['activitiestobeaccomplished'],
+                    'quantity' => $data['estqty'],
+                ]);
+                foreach ($data['listdate'] as $date) {
+                    $combinedDate = Carbon::createFromDate(
+                        $date['year'],
+                        $date['month'],
+                        $date['day']
+                    )->toDateString();
+                    $date_application = OvtApplicationDatetime::create([
+                        'ovt_application_activity_id' => $activity_application->id,
+                        'time_from' => $data['fromtime'],
+                        'time_to' => $data['totime'],
+                        'date' => $combinedDate,
+                    ]);
+                    foreach ($data['employees'] as $employee) {
+                        OvtApplicationEmployee::create([
+                            'ovt_application_datetime_id' => $date_application->id,
+                            'employee_profile_id' => $employee['id'],
+                        ]);
+                    }
+                }
+            }
+            OvtApplicationLog::create([
+                'overtime_application_id' => $ovt_id,
+                'action_by_id' => $employee_profile->id,
+                'action' => 'Applied'
+            ]);
+            return response()->json([
+                'message' => 'Overtime Application has been sucessfully saved',
+                //  'data' => OvertimeResource::collection($overtime_application),
+
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'store', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -593,23 +748,21 @@ class OvertimeController extends Controller
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
             switch ($data->status) {
-                    case 'for recommending approval':
-                        $status = 'for approving approval';
-                        $log_action = 'Approved by Recommending Officer';
-                        break;
+                case 'for recommending approval':
+                    $status = 'for approving approval';
+                    $log_action = 'Approved by Recommending Officer';
+                    break;
 
-                    case 'for approving approval':
-                        $status = 'approved';
-                        $log_action = 'Approved by Approving Officer';
-                        break;
-
-
+                case 'for approving approval':
+                    $status = 'approved';
+                    $log_action = 'Approved by Approving Officer';
+                    break;
             }
             $data->update(['status' => $status]);
             OvtApplicationLog::create([
                 'overtime_application_id' => $data->id,
                 'action_by_id' => $employee_profile->id,
-                'action' => 'Applied'
+                'action' => $log_action
             ]);
 
             return response()->json([
@@ -668,28 +821,37 @@ class OvertimeController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+    // public function printOvertimeForm($id)
+    // {
+    //     try {
+    //        return $data = OvertimeApplication::with([
+    //             'employeeProfile',
+    //             'recommendingOfficer',
+    //             'approvingOfficer',
+    //             'activities',
+    //             'activities.dates',
+    //             'activities.dates.employees'
+    //         ])->where('id', $id)->first();
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Overtime $overtime)
-    {
-        //
-    }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Overtime $overtime)
-    {
-        //
-    }
+    //         $is_monetization = false;
+    //         $options = new Options();
+    //         $options->set('isPhpEnabled', true);
+    //         $options->set('isHtml5ParserEnabled', true);
+    //         $options->set('isRemoteEnabled', true);
+    //         $dompdf = new Dompdf($options);
+    //         $dompdf->getOptions()->setChroot([base_path() . '/public/storage']);
+    //         $html = view('leave_from.leave_application_form', compact('data', 'leave_type', 'hrmo_officer', 'my_leave_type', 'vl_employee_credit', 'sl_employee_credit', 'is_monetization'))->render();
+    //         $dompdf->loadHtml($html);
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Overtime $overtime)
-    {
-        //
-    }
+    //         $dompdf->setPaper('Legal', 'portrait');
+    //         $dompdf->render();
+    //         $filename = 'OVERTIME AUTHORITY FORM - (' . $data->employeeProfile->personalInformation->name() . ').pdf';
+    //         $dompdf->stream($filename, array('Attachment' => false));
+
+
+    //     } catch (\Exception $e) {
+    //         return response()->json(['message' => $e->getMessage(), 'error' => true]);
+    //     }
+    // }
 }

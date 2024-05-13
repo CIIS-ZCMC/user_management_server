@@ -30,34 +30,58 @@ class EmployeeSixMonthEarnSPLCredit extends Command
      */
     public function handle()
     {
-        /**
-         * This task will run every 2day of the month.
-         * This task is to ensure that new regular employee will receive the annual SPL credit
-         * only for new employees that registered in month of july-december
-         */
-        if(Carbon::now()->subMonths(7)){
-            //Equals to 6 months
-            $employees = EmployeeProfile::where('date_hired', Carbon::now()->subMonths(6))->get();
+        $employees = EmployeeProfile::all();
 
-            $special_privilege_leave = LeaveType::where('code', 'SPL')->first();
+        // Get the SPL leave type
+        $special_privilege_leave = LeaveType::where('code', 'SPL')->first();
 
-            foreach($employees as $employee){
-                $employee_leave_credit = EmployeeLeaveCredit::where('employee_profile_id', $employee->id)
-                    ->where('leave_type_id', $special_privilege_leave->id)->first();
+        foreach ($employees as $employee) {
+                // Calculate the date 6 months after the employee's hire date
+                $six_months_after_hire = Carbon::parse($employee->date_hired)->addMonths(6);
 
-                $current_credit = $employee_leave_credit->total_leave_credits;
+                // Check if the current date is after or equal to the 6-month interval from the hire date
+                if (Carbon::now()->isSameDay($six_months_after_hire) || Carbon::now()->gt($six_months_after_hire)) {
+                    // Check if SPL credits have already been given for the current interval
+                    $spls_given = EmployeeLeaveCreditLogs::whereHas('employeeLeaveCredit', function ($query) use ($employee, $six_months_after_hire) {
+                        $query->where('employee_profile_id', $employee->id);
+                    })
+                    ->where('created_at', '>=', $six_months_after_hire->subMonths(6)) // Check within the current 6-month interval
+                    ->where('reason', 'Annual SPL Credits')
+                    ->exists();
 
-                $employee_leave_credit -> update([
-                    'total_leave_credits' => $special_privilege_leave->annual_value
-                ]);
+                    if (!$spls_given) {
+                        // Add SPL credits only if they haven't been given already within the current interval
 
-                EmployeeLeaveCreditLogs::create([
-                    'employee_leave_credit_id' => $employee_leave_credit->id,
-                    'previous_credit' => $current_credit,
-                    'leave_credits' => $special_privilege_leave->annual_value,
-                    'reason' => "SPL Annual Earned Credit."
-                ]);
-            }
+                        // Check if the employee already has SPL leave credits
+                        $employee_leave_credit = EmployeeLeaveCredit::where('employee_profile_id', $employee->id)
+                            ->where('leave_type_id', $special_privilege_leave->id)->first();
+
+                        if (!$employee_leave_credit) {
+                            // If the employee doesn't have SPL leave credits, create new records
+                            $employee_leave_credit = EmployeeLeaveCredit::create([
+                                'employee_profile_id' => $employee->id,
+                                'leave_type_id' => $special_privilege_leave->id,
+                                'total_leave_credits' => $special_privilege_leave->annual_credit
+                            ]);
+                        } else {
+                            // If the employee already has SPL leave credits, update the existing record
+                            $current_credit = $employee_leave_credit->total_leave_credits;
+
+                            $employee_leave_credit->update([
+                                'total_leave_credits' => $current_credit + $special_privilege_leave->annual_credit
+                            ]);
+                        }
+
+                        // Create a log entry for the added SPL credits
+                        EmployeeLeaveCreditLogs::create([
+                            'employee_leave_credit_id' => $employee_leave_credit->id,
+                            'previous_credit' => $current_credit ?? 0,
+                            'leave_credits' => $special_privilege_leave->annual_credit,
+                            'reason' => "Annual SPL Credits",
+                            'action' => "add"
+                        ]);
+                    }
+                }
         }
     }
 }

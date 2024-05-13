@@ -1,15 +1,15 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Migration;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use League\Csv\Reader;
-use Illuminate\Support\Facades\Schema;
 
 class MigrateController extends Controller
 {
+
     public function import()
     {
         try {
@@ -56,7 +56,7 @@ class MigrateController extends Controller
                     'blood_type' => $data->BloodType,
                 ]);
             }
-            \Log::info('Personal Information migrate successfully.');
+            // Log::info('Personal Information migrate successfully.');
             DB::commit();
 
 

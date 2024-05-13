@@ -87,7 +87,6 @@ class SystemRoleSeeder extends Seeder
                             $row['code'] === "UMIS-OT approve" ||
 
                             /* Compensantory Time */
-                            $row['code'] === "UMIS-CT view-all" ||
                             $row['code'] === "UMIS-CT approve" ||
                             $row['code'] === "UMIS-CT request" ||
 
@@ -153,7 +152,6 @@ class SystemRoleSeeder extends Seeder
 
                             /* Compensantory Time */
                             $row['code'] === "UMIS-CT write" ||
-                            $row['code'] === "UMIS-CT view-all" ||
                             $row['code'] === "UMIS-CT approve" ||
 
                             /* Time adjustment  */
@@ -223,7 +221,7 @@ class SystemRoleSeeder extends Seeder
 
                             /* Compensantory Time */
                             $row['code'] === "UMIS-CT write" ||
-                            $row['code'] === "UMIS-CT view-all" ||
+                            $row['code'] === "UMIS-CT approve" ||
 
                             /* Time adjustment  */
                             $row['code'] === "UMIS-TA write" ||
@@ -283,9 +281,8 @@ class SystemRoleSeeder extends Seeder
                             $row['code'] === "UMIS-OT approve" ||
                             $row['code'] === "UMIS-CT request" ||
 
-                            /* Compensantory Time */
+                            /* Compensatory Time */
 
-                            $row['code'] === "UMIS-CT view-all" ||
                             $row['code'] === "UMIS-CT approve" ||
 
                             // $row['code'] === "UMIS-ES view" ||
@@ -354,7 +351,7 @@ class SystemRoleSeeder extends Seeder
                             /* Compensantory Time */
 
                             $row['code'] === "UMIS-CT view-all" ||
-                            $row['code'] === "UMIS-CT approve" ||
+                            // $row['code'] === "UMIS-CT approve" ||
 
                             /* Time adjustment  */
 
@@ -423,7 +420,7 @@ class SystemRoleSeeder extends Seeder
                             /* Compensantory Time */
 
                             $row['code'] === "UMIS-CT view-all" ||
-                            $row['code'] === "UMIS-CT approve" ||
+                            // $row['code'] === "UMIS-CT approve" ||
 
                             /* Time adjustment  */
 
@@ -493,7 +490,7 @@ class SystemRoleSeeder extends Seeder
                             /* Compensantory Time */
 
                             $row['code'] === "UMIS-CT view-all" ||
-                            $row['code'] === "UMIS-CT approve" ||
+                            // $row['code'] === "UMIS-CT approve" ||
 
                             // $row['code'] === "UMIS-ES view" ||
                             // $row['code'] === "UMIS-ES view-all" ||
@@ -612,6 +609,25 @@ class SystemRoleSeeder extends Seeder
                             $row['code'] === "UMIS-ScM view" ||
                             $row['code'] === "UMIS-ScM request" ||
                             $row['code'] === "UMIS-ScM download";
+                    });
+                    foreach ($module_permitted as $key => $module_permission) {
+                        RoleModulePermission::create([
+                            'system_role_id' => $common_jo['id'],
+                            'module_permission_id' => $module_permission['id']
+                        ]);
+                    }
+
+                    break;
+                case 'ATA':
+                    $common_jo = SystemRole::create([
+                        'role_id' => $roles->id,
+                        'system_id' => $system->id
+                    ]);
+                    $module_permitted = $module_permissions->filter(function ($row) {
+                        return
+                            /* Personal Account Management */
+                            $row['code'] === "UMIS-TA view" ||
+                            $row['code'] === "UMIS-TA request";
                     });
                     foreach ($module_permitted as $key => $module_permission) {
                         RoleModulePermission::create([

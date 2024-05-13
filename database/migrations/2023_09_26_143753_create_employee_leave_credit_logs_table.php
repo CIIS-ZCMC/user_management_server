@@ -13,11 +13,14 @@ return new class extends Migration
     {
         Schema::create('employee_leave_credit_logs', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('employee_leave_credit_id')->unsigned();
-            $table->foreign('employee_leave_credit_id')->references('id')->on('employee_leave_credits')->onDelete('cascade');
-            $table->float('previous_credit');
-            $table->float('leave_credits')->nullable();
+            $table->unsignedBigInteger('employee_leave_credit_id')->unsigned()->nullable();
+            $table->foreign('employee_leave_credit_id')->references('id')->on('employee_leave_credits')->onDelete('cascade')->nullable();
+            $table->decimal('previous_credit', 8, 3)->nullable();
+            $table->decimal('leave_credits', 8, 3)->nullable();
             $table->text('reason')->nullable();
+            $table->text('action')->nullable();
+            $table->unsignedBigInteger('action_by')->unsigned()->nullable();
+            $table->foreign('action_by')->references('id')->on('employee_profiles')->onDelete('cascade')->nullable();
             $table->timestamps();
         });
     }

@@ -24,6 +24,7 @@ class DesignationRequest extends FormRequest
         return [
             'code' => 'required|string|max:255',
             'name' => 'required|string|max:255',
+            'probation' => 'nullable|numeric',
             'salary_grade_id' => 'required|integer',
             // 'password' => 'required|string|max:255'
         ];

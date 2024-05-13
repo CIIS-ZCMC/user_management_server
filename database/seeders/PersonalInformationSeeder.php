@@ -219,13 +219,17 @@ class PersonalInformationSeeder extends Seeder
                 'total_leave_credits' => 5
             ]);
         }
+        $currentYear = date('Y');
+        $nextYear = $currentYear + 1;
+        $validUntil = $nextYear . '-12-31';
 
         EmployeeOvertimeCredit::create([
             'employee_profile_id' => $employee_profile->id,
             'earned_credit_by_hour' => 0,
             'used_credit_by_hour' => 0,
             'max_credit_monthly' => 40,
-            'max_credit_annual' => 120
+            'max_credit_annual' => 120,
+            'valid_until' => Carbon::now()->addMonths(6)
         ]);
 
         IssuanceInformation::create([

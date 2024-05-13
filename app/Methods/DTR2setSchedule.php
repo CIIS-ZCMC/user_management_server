@@ -75,7 +75,7 @@ class DTR2setSchedule
                      * As long as yesterday records does not have timeout at 2nd entry. it will fill the second entry..
                      * Soon add validation here to handle if employee is  nurse or admin
                      */
-                    if ($this->helper->EntryisAm($this->helper->sequence(0, [$data])[0]['date_time'])) {
+                   // if ($this->helper->EntryisAm($this->helper->sequence(0, [$data])[0]['date_time'])) {
                         if ($status == 255) {
                             if ($this->helper->withinInterval($f_1, $this->helper->sequence(0, [$data]))) {
                                 $this->helper->saveTotalWorkingHours(
@@ -86,7 +86,7 @@ class DTR2setSchedule
                                     false
                                 );
                             }
-                        }
+                     //   }
                         if ($status == 1) {
                             //employeeID
                             $this->helper->SaveTotalWorkingHours(
@@ -106,11 +106,6 @@ class DTR2setSchedule
                 /* Save */
                 //  if ($this->helper->EntryisAm($this->helper->sequence(0, [$data])[0]['date_time'])) {
                 if ($status == 0 || $status == 255) {
-                    $scheduleEntry = null;
-                    if (isset($DaySchedule['is_on_call']) && $DaySchedule['is_on_call']) {
-                        // $scheduleEntry = date('Y-m-d H:i:s', strtotime($time_stamps_req['date_start'] . ' ' . $time_stamps_req['first_entry'] . '+' . $max_allowed_entry_for_oncall . ' minutes'));
-                        $scheduleEntry = $DaySchedule['first_entry'];
-                    }
                     $this->helper->SaveFirstEntry(
                         $this->helper->sequence(0, [$data])[0],
                         [],
@@ -128,11 +123,6 @@ class DTR2setSchedule
 
             //   if ($this->helper->EntryisAm($this->helper->sequence(0, [$data])[0]['date_time'])) {
             if ($status == 0 || $status == 255) {
-                $scheduleEntry = null;
-                if (isset($DaySchedule['is_on_call']) && $DaySchedule['is_on_call']) {
-                    // $scheduleEntry = date('Y-m-d H:i:s', strtotime($time_stamps_req['date_start'] . ' ' . $time_stamps_req['first_entry'] . '+' . $max_allowed_entry_for_oncall . ' minutes'));
-                    $scheduleEntry = $DaySchedule['first_entry'];
-                }
                 $this->helper->SaveFirstEntry(
                     $this->helper->sequence(0, [$data])[0],
                     [],
@@ -209,11 +199,6 @@ class DTR2setSchedule
 
             //if ($this->helper->EntryisAm($this->helper->sequence(0, [$data])[0]['date_time'])) {
             if ($status == 0 || $status == 255) {
-                $scheduleEntry = null;
-                if (isset($DaySchedule['is_on_call']) && $DaySchedule['is_on_call']) {
-                    // $scheduleEntry = date('Y-m-d H:i:s', strtotime($time_stamps_req['date_start'] . ' ' . $time_stamps_req['first_entry'] . '+' . $max_allowed_entry_for_oncall . ' minutes'));
-                    $scheduleEntry = $DaySchedule['first_entry'];
-                }
                 $this->helper->SaveFirstEntry(
                     $this->helper->sequence(0, [$data])[0],
                     [],
@@ -223,25 +208,7 @@ class DTR2setSchedule
                     'AM'
                 );
             }
-            // }
 
-            // if ($this->helper->EntryisPm($this->helper->sequence(0, [$data])[0]['date_time'])) {
-            //     if ($status == 0 || $status == 255) {
-            //         $scheduleEntry = null;
-            //         if (isset($DaySchedule['is_on_call']) && $DaySchedule['is_on_call']) {
-            //             // $scheduleEntry = date('Y-m-d H:i:s', strtotime($time_stamps_req['date_start'] . ' ' . $time_stamps_req['first_entry'] . '+' . $max_allowed_entry_for_oncall . ' minutes'));
-            //             $scheduleEntry = $DaySchedule['first_entry'];
-            //         }
-            //         $this->helper->SaveFirstEntry(
-            //             $this->helper->sequence(0, [$data])[0],
-            //             [],
-            //             $biometric_id,
-            //             false,
-            //             $scheduleEntry,
-            //             'PM'
-            //         );
-            //     }
-            // }
         }
     }
 }

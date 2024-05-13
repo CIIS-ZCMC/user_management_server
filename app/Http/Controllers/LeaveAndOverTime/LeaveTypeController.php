@@ -56,7 +56,7 @@ class LeaveTypeController extends Controller
             $leave_types = LeaveType::all();
 
             $result_data = [];
-            
+
             foreach($leave_types as $leave_type){
                 $requirements = $leave_type->requirements()->get();
 
@@ -67,18 +67,18 @@ class LeaveTypeController extends Controller
                 $leave_type['total_credits'] = ModelsEmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)
                 ->where('leave_type_id', $leave_type->id)
                 ->first();
-                
+
                 $final_date = null;
                 $tomorrow = Carbon::tomorrow();
 
-                
-                
+
                 if($leave_type->file_after === null && $leave_type->file_before !== null){
+                    $hrmo_officer = Helpers::getHrmoOfficer();
                     $schedules = EmployeeSchedule::select("s.date")->join('schedules as s', 's.id', 'employee_profile_schedule.schedule_id')
                         ->whereDate('s.date', '>=', $tomorrow)
-                        ->where('employee_profile_schedule.employee_profile_id', $employee_profile->id)
+                        ->where('employee_profile_schedule.employee_profile_id', $hrmo_officer)
                         ->limit($leave_type->file_before)->get();
-                        
+
                     if(count($schedules) > 0){
                         $last_schedule = $schedules->last();
                         $final_date = $last_schedule ? Carbon::parse($last_schedule->date)->format('Y-m-d') : null;
@@ -100,7 +100,7 @@ class LeaveTypeController extends Controller
                         $final_date = $last_schedule ? Carbon::parse($last_schedule->date)->format('Y-m-d') : null;
                     }
                 }
-                
+
                 $result_data[] = [
                     'value' => $leave_type->id,
                     'label'=> $leave_type->name,
@@ -129,7 +129,7 @@ class LeaveTypeController extends Controller
                     'requirements' => $requirements ?? [],
                 ];
             }
-            
+
 
             return response()->json([
                 'data' => $result_data,
@@ -208,7 +208,7 @@ class LeaveTypeController extends Controller
                 }
 
             }
-            
+
             if ($request->attachments) {
                 foreach ($request->file('attachments') as $key => $file) {
                     $fileName=$file->getClientOriginalName();
@@ -278,12 +278,12 @@ class LeaveTypeController extends Controller
                     $cleanData[$key] = $value?true:false;
                     continue;
                 }
-                
+
                 if (is_array($value)) {
                     $cleanData[$key] = $value;
                     continue;
                 }
-                
+
                 if (is_int($value)) {
                     $cleanData[$key] = $value;
                     continue;
@@ -303,10 +303,10 @@ class LeaveTypeController extends Controller
 
                     if (!$leave_requirements) {
                         $requirements = Requirement::where('id', $value)->first();
-                        $leave_requirements = $leave_type->requirements()->attach($requirements);  
+                        $leave_requirements = $leave_type->requirements()->attach($requirements);
 
                     } else {
-                        
+
                         $sql = Requirement::where('id', $leave_requirements->leave_requirement_id)->pluck('id')->toArray();
                         $leave_type->requirements()->sync($sql);
                     }

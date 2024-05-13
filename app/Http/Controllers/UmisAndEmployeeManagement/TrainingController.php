@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Requests\TrainingManyRequest;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
@@ -100,13 +101,14 @@ class TrainingController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if($value === null || $key === 'type_is_lnd'){
-                    $cleanData[$key] = $value;
+                if ( $value == "null" || $value == null) {
+                    $cleanData[$key] = null;
                     continue;
                 }
                 if($key === 'attachment'){
                     $attachment = Helpers::checkSaveFile($request->attachment, '/training');
                     $cleanData['attachment'] = $attachment;
+                    continue;
                 }
                 $cleanData[$key] = strip_tags($value);
             }
@@ -117,8 +119,21 @@ class TrainingController extends Controller
 
             Helpers::registerSystemLogs($request, null, true, 'Success in creating '.$this->SINGULAR_MODULE_NAME.'.');
             
+            $response_data =  [
+                "id"=> $personal_information->id,
+                "name" => $personal_information->name(),
+                "assigned_area" => $personal_information->employeeProfile->assignedArea->findDetails()['details']->name,
+                'designation' => $personal_information->employeeProfile->assignedArea->designation->name,
+                "employee_id" => $personal_information->employeeProfile->employee_id,
+                "profile_url" => config('app.server_domain')."/profiles/".$personal_information->employeeProfile->profile_url,
+                "type" => 'Training',
+                "date_requested" => Carbon::now(),
+                "approved_at" => null,
+                "details" => new TrainingResource($training)
+            ];
+
             return response()->json([
-                'data' => new TrainingResource($training),
+                'data' =>   $response_data ,
                 'message' => 'New Learning and Development (L&D) record added.'
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
@@ -179,7 +194,7 @@ class TrainingController extends Controller
         }
     }
     
-    public function update($id, TrainingRequest $request)
+    public function update($id, TrainingManyRequest $request)
     {
         try{
             $success = [];
@@ -187,7 +202,7 @@ class TrainingController extends Controller
             foreach($request->trainings as $training){
                 $cleanData = [];
                 foreach ($training as $key => $value) {
-                    if($key === 'id' && $value === null) continue;
+                    if(($key === 'id' && $value === null) || $key === 'attachment') continue;
                     if($value === null || $key === 'type_is_lnd'){
                         $cleanData[$key] = $value;
                         continue;
@@ -203,13 +218,14 @@ class TrainingController extends Controller
                     continue;
                 }
                 
-                $training = Training::find($id);
+                $training = Training::find($training->id);
                 $training->update($cleanData);
                 $success[] = $training;
             }
             
             return $success;
         }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             throw new \Exception("Failed to register employee training record.", 400);
         }
     }

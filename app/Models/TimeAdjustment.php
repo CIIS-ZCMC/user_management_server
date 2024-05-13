@@ -6,47 +6,50 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
 
-class TimeAdjusment extends Model
+class TimeAdjustment extends Model
 {
     use HasFactory, SoftDeletes;
-
-      
-    protected $table = 'time_adjusments';
+    protected $table = 'time_adjustments';
 
     protected $primaryKey = 'id';
 
     protected $fillable = [
+        'date',
         'first_in',
         'first_out',
         'second_in',
         'second_out',
-        'employee_profile_id',
-        'daily_time_record_id',
-        'date',
-        'recommended_by',
-        'approve_by',
         'remarks',
+        'attachment',
         'status',
+        'approval_date',
+        'daily_time_record_id',
+        'employee_profile_id',
+        'recommending_officer',
+        'approving_officer',
     ];
 
     protected $softDelete = true;
 
     public $timestamps = true;
 
-    public function dailyTimeRecord() {
+    public function dailyTimeRecord()
+    {
         return $this->belongsTo(DailyTimeRecords::class, 'daily_time_record_id');
     }
 
-    public function employee() {
+    public function employee()
+    {
         return $this->belongsTo(EmployeeProfile::class, 'employee_profile_id');
     }
 
-    public function recommendedBy() {
-        return $this->belongsTo(EmployeeProfile::class, 'recommended_by');
+    public function recommendingOfficer()
+    {
+        return $this->belongsTo(EmployeeProfile::class, 'recommending_officer');
     }
 
-    public function approveBy() {
-        return $this->belongsTo(EmployeeProfile::class, 'approve_by');
+    public function approvingOfficer()
+    {
+        return $this->belongsTo(EmployeeProfile::class, 'approving_officer');
     }
-
 }

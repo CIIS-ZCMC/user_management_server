@@ -15,7 +15,8 @@ class EmployeeLeaveCreditLogs extends Model
         'employee_leave_credit_id',
         'previous_credit',
         'leave_credits',
-        'reason'
+        'reason',
+        'action',
     ];
 
     public $timestamps = true;

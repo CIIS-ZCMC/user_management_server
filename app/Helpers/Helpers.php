@@ -160,25 +160,25 @@ class Helpers
                 ];
 
             case 'Department':
-                    // If employee is Department head
-                    $department = Department::find($assigned_area['details']->id);
-                    if ($department->head_employee_profile_id === $employee_profile_id) {
-                        $division = $department->division_id;
-                        $divisionHead = Division::find($division)->chief_employee_profile_id;
-                
-                        return [
-                            "recommending_officer" => $divisionHead,
-                            "approving_officer" => Helpers::getChiefOfficer()
-                        ];
-                    }
-                
-                    $departmentHead = $department->head_employee_profile_id;
-                    $omccDivision = Division::where('code', 'OMCC')->first();
-                    
+                // If employee is Department head
+                $department = Department::find($assigned_area['details']->id);
+                if ($department->head_employee_profile_id === $employee_profile_id) {
+                    $division = $department->division_id;
+                    $divisionHead = Division::find($division)->chief_employee_profile_id;
+
                     return [
-                        "recommending_officer" => $departmentHead,
-                        "approving_officer" => $omccDivision ? $omccDivision->chief_employee_profile_id : null
+                        "recommending_officer" => $divisionHead,
+                        "approving_officer" => Helpers::getChiefOfficer()
                     ];
+                }
+
+                $departmentHead = $department->head_employee_profile_id;
+                $omccDivision = Division::where('code', 'OMCC')->first();
+
+                return [
+                    "recommending_officer" => $departmentHead,
+                    "approving_officer" => $omccDivision ? $omccDivision->chief_employee_profile_id : null
+                ];
             case 'Section':
                 // If employee is Section head
 
@@ -499,7 +499,6 @@ class Helpers
                             "recommending_officer" => $section->supervisor_employee_profile_id,
                             "approving_officer" => Division::where('id', $section->division_id)->first()->chief_employee_profile_id
                         ];
-
                     } else {
                         $department = Department::find($section->department_id);
 
@@ -519,7 +518,6 @@ class Helpers
                                 "recommending_officer" => Section::where('id', $unit->section_id)->first()->supervisor_employee_profile_id,
                                 "approving_officer" => Division::where('id', $section->division_id)->first()->chief_employee_profile_id
                             ];
-
                         } else {
                             $department = Department::find($section->department_id);
 
@@ -584,7 +582,7 @@ class Helpers
     public static function registerTimeAdjustmentLogs($data_id, $user_id, $action)
     {
         TimeAdjustmentLog::create([
-            'time_adjusment_id' => $data_id,
+            'time_adjustment_id' => $data_id,
             'action_by' => $user_id,
             'action' => $action,
         ]);
@@ -703,7 +701,7 @@ class Helpers
         return $overlappingLeave || $overlappingOb || $overlappingOT || $overlappingCTO;
     }
 
-    public static function generateSchedule($start_duty, $employee_id)
+    public static function generateSchedule($start_duty)
     {
         $duty_start = new DateTime($start_duty);
 
@@ -721,28 +719,31 @@ class Helpers
             $duty_start->add(new DateInterval('P1D'));
         }
 
+        $schedules = [];
+
         // Now, $scheduleDates contains all the dates from $start_duty to the end of the month
         foreach ($scheduleDates as $date) {
-            $schedule = Schedule::where('time_shift_id', 1)
-                ->where('date', $date)
-                ->first();
+            $schedule = Schedule::firstOrNew([
+                'time_shift_id' => 1,
+                'date' => $date,
+            ]);
 
-            if (!$schedule) {
-                // Create a new schedule if it doesn't exist
-                $isWeekend = Carbon::parse($date)->isWeekend();
-
-                if ($isWeekend === false) {
-                    $schedule = new Schedule;
-                    $schedule->time_shift_id = 1; // Assuming time_shift_id should be set to 1
-                    $schedule->date = $date;
-                    $schedule->is_weekend = $isWeekend ? 1 : 0;
-                    $schedule->save();
-                }
+            if ($schedule->exists) {
+                // The schedule already exists
+                $schedule->is_weekend = Carbon::parse($date)->isWeekend() ? 1 : 0;
+            } else {
+                // Create a new schedule
+                $schedule->is_weekend = Carbon::parse($date)->isWeekend() ? 1 : 0;
             }
 
-            $schedule->employeeProfile()->attach($employee_id);
+            $schedule->save();
+            $schedules[] = $schedule;
+
         }
+        
+        return $schedules;
     }
+
 
     public static function hasSchedule($start, $end, $employeeId)
     {
@@ -961,34 +962,65 @@ class Helpers
     public static function getFirstInAndOutBiometric($biometric_id, $date, $overtimeFromTime, $overtimeToTime)
     {
         $dailyTimeRecord = DailyTimeRecords::where('biometric_id', $biometric_id)
-            ->whereDate('date', $date)
+            ->whereDate('dtr_date', $date)
             ->first();
 
-            // Initialize first in and first out biometric times
-            $firstInBiometric = null;
-            $firstOutBiometric = null;
-
+        // Initialize first in and first out biometric times
+        $firstInBiometric = null;
+        $firstOutBiometric = null;
+        // Initialize first in and first out biometric times
+        $firstInBiometric = null;
+        $firstOutBiometric = null;
 
         if ($dailyTimeRecord) {
-            // Convert overtime times to timestamps
-            $overtimeFromTimestamp = strtotime($overtimeFromTime);
-            $overtimeToTimestamp = strtotime($overtimeToTime);
 
-            $timeIn = strtotime($dailyTimeRecord->time_in);
-            $timeOut = strtotime($dailyTimeRecord->time_out);
+            $overtimeFromTimestamp = Carbon::parse($overtimeFromTime)->format('H:i:s');
+            $overtimeToTimestamp = Carbon::parse($overtimeToTime)->format('H:i:s');
 
-            // Check if the overtime times fall within the biometric timespan
-            if ($overtimeFromTimestamp >= $timeIn && $overtimeToTimestamp <= $timeOut) {
-                $firstInBiometric = $dailyTimeRecord->time_in;
-                $firstOutBiometric = $dailyTimeRecord->time_out;
+            $timeIn = Carbon::parse($dailyTimeRecord->first_in)->format('H:i:s');
+            $timeOut = Carbon::parse($dailyTimeRecord->first_out)->format('H:i:s');
+            $secondOut = $dailyTimeRecord->second_out;
+            if ($secondOut) {
+
+                $secondOut = Carbon::parse($dailyTimeRecord->second_out)->format('H:i:s');
+                // Check if there is any overlap between biometric time range and overtime time range
+                if ($timeIn <= $overtimeToTime && $secondOut >= $overtimeFromTime) {
+                    // Calculate overlap hours
+                    $overlapFromTime = max($timeIn, $overtimeFromTime);
+                    $overlapToTime = min($secondOut, $overtimeToTime);
+
+                    // Convert overlap times to Carbon objects
+                    $startTime = Carbon::createFromFormat('H:i:s', $overlapFromTime);
+                    $endTime = Carbon::createFromFormat('H:i:s', $overlapToTime);
+
+                    // Calculate overlap hours within the overtime range
+                    $totalOvertimeHours = $startTime->diffInMinutes($endTime);
+                    $totalOverlapHours = $totalOvertimeHours / 60;
+
+                    // Return the hours within the overtime range
+                    return $totalOverlapHours;
+                }
+
+            } else {
+                // Check if there is any overlap between biometric time range and overtime time range
+                if ($timeIn <= $overtimeToTime && $timeOut >= $overtimeFromTime) {
+                    // Calculate overlap hours
+                    $overlapFromTime = max($timeIn, $overtimeFromTime);
+                    $overlapToTime = min($timeOut, $overtimeToTime);
+
+                    // Convert overlap times to Carbon objects
+                    $startTime = Carbon::createFromFormat('H:i:s', $overlapFromTime);
+                    $endTime = Carbon::createFromFormat('H:i:s', $overlapToTime);
+
+                    // Calculate overlap hours within the overtime range
+                    $totalOvertimeHours = $startTime->diffInMinutes($endTime);
+                    $totalOverlapHours = $totalOvertimeHours / 60;
+
+                    // Return the hours within the overtime range
+                    return $totalOverlapHours;
+                }
             }
+
         }
-
-        return [
-            'first_in_biometric' => $firstInBiometric,
-            'first_out_biometric' => $firstOutBiometric,
-        ];
-
     }
-
 }

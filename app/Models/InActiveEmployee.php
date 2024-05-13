@@ -13,25 +13,17 @@ class InActiveEmployee extends Model
 
     public $fillable = [
         'employee_id',
-        'profile_url',
         'date_hired',
-        'biometric_id',
-        'employment_end_at',
-        'employment_type_id',
-        'personal_information_id',
+        'date_resigned',
+        'employee_profile_id',
         'status',
         'remarks'
     ];
 
     public $timestamps = TRUE;
 
-    public function personalInformation()
+    public function employeeProfile()
     {
-        return $this->belongsTo(PersonalInformation::class);
-    }
-
-    public function employmentType()
-    {
-        return $this->belongsTo(EmploymentType::class);
+        return $this->belongsTo(EmployeeProfile::class);
     }
 }

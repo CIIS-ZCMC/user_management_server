@@ -123,6 +123,7 @@ class DesignationController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
+                if($key === 'probation' && ($value === null || $value === 'null')) continue;
                 $cleanData[$key] = strip_tags($value);
             }
 
@@ -384,6 +385,7 @@ class DesignationController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
+                if($key === 'probation' && ($value === null || $value === 'null')) continue;
                 $cleanData[$key] = strip_tags($value);
             }
 

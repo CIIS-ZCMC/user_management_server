@@ -18,8 +18,8 @@ return new class extends Migration
             $table->string('profile_url')->nullable();
             $table->date('date_hired')->nullable();
             $table->text('password_encrypted')->nullable();
-            $table->datetime('password_created_at');
-            $table->datetime('password_expiration_at');
+            $table->datetime('password_created_at')->nullable();
+            $table->datetime('password_expiration_at')->nullable();
             $table->string('authorization_pin')->nullable();
             $table->datetime('pin_created_at')->nullable();
             $table->integer('biometric_id')->nullable();

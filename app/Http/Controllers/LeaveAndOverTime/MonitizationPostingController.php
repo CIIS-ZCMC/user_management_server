@@ -96,11 +96,11 @@ class MonitizationPostingController extends Controller
                 $query->where(function ($query) {
                     $query->where('employee_leave_credits.leave_type_id', LeaveType::where('code', 'VL')->first()->id)
                         ->where('employee_leave_credits.total_leave_credits', '>=', 15);
-                })
-                ->orWhere(function ($query) {
-                    $query->where('employee_leave_credits.leave_type_id', LeaveType::where('code', 'SL')->first()->id)
-                        ->where('employee_leave_credits.total_leave_credits', '>=', 15);
                 });
+                // ->orWhere(function ($query) {
+                //     $query->where('employee_leave_credits.leave_type_id', LeaveType::where('code', 'SL')->first()->id)
+                //         ->where('employee_leave_credits.total_leave_credits', '>=', 15);
+                // });
             })
             ->get();
 
@@ -126,10 +126,10 @@ class MonitizationPostingController extends Controller
                 $vacation_leave_balance = $employee_leave_credit->total_leave_credits;
             }
 
-            // Check if SL balance should be added
-            if ($employee_leave_credit->leave_type_id === LeaveType::where('code', 'SL')->first()->id) {
-                $sick_leave_balance = $employee_leave_credit->total_leave_credits;
-            }
+            // // Check if SL balance should be added
+            // if ($employee_leave_credit->leave_type_id === LeaveType::where('code', 'SL')->first()->id) {
+            //     $sick_leave_balance = $employee_leave_credit->total_leave_credits;
+            // }
 
             // Add data to candidates array
             if (!isset($candidates[$employee_id])) {
@@ -141,12 +141,12 @@ class MonitizationPostingController extends Controller
                     'designation' => $designation,
                     'area' => $area,
                     'vacation_leave_balance' => $vacation_leave_balance,
-                    'sick_leave_balance' => $sick_leave_balance
+                    // 'sick_leave_balance' => $sick_leave_balance
                 ];
             } else {
                 // If employee already exists in array, update the leave balances
                 $candidates[$employee_id]['vacation_leave_balance'] += $vacation_leave_balance;
-                $candidates[$employee_id]['sick_leave_balance'] += $sick_leave_balance;
+                // $candidates[$employee_id]['sick_leave_balance'] += $sick_leave_balance;
             }
         }
 
