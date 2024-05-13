@@ -214,10 +214,29 @@ class CtoApplicationController extends Controller
                 'action' => $log_action,
             ]);
 
-            $data->update(['status' => $status, 'remarks' => $request->remarks]);
+            $data->update(['status' => $status, 'remarks' => $request->remarks === 'null' || !$request->remarks ? null : $request->remarks]);
+
+            $employeeCredit = EmployeeOvertimeCredit::where('employee_profile_id', $data->employee_profile_id)
+            ->where('is_expired', 0)
+            ->orderBy('valid_until', 'asc')
+            ->get();
+
+            
+            $currentYear = Carbon::now()->year;
+
+            $usedCreditThisYear = (float) CtoApplication::where('employee_profile_id', $data->employee_profile_id)
+            ->where(function ($query) {
+                $query->where('status', 'approved')
+                      ->orWhere('status', 'for recommending approval')
+                      ->orWhere('status', 'for approving approval');
+            })
+                ->whereYear('created_at', $currentYear)
+                ->sum('applied_credits');
 
             return response()->json([
                 'data' => CtoApplicationResource::collection(CtoApplication::where('id', $data->id)->get()),
+                'employee_credit' => EmployeeOvertimeCreditResource::collection($employeeCredit),
+                'used_credit_this_year' => $usedCreditThisYear,
                 'message' => $log_action,
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -365,7 +384,7 @@ class CtoApplicationController extends Controller
                     $cleanData['is_am'] = $value->is_am;
                     $cleanData['is_pm'] = $value->is_pm;
                     $cleanData['purpose'] = $value->purpose;
-                    $cleanData['remarks'] = $value->remarks;
+                    // $cleanData['remarks'] = $value->remarks;
                     $cleanData['status'] = 'for recommending approval';
                     $cleanData['recommending_officer'] = $hrmo_officer;
                     $cleanData['approving_officer'] = $approving_officer;
@@ -522,8 +541,27 @@ class CtoApplicationController extends Controller
                 'action' => 'Declined'
             ]);
 
+            $employeeCredit = EmployeeOvertimeCredit::where('employee_profile_id', $cto_application->employee_profile_id)
+            ->where('is_expired', 0)
+            ->orderBy('valid_until', 'asc')
+            ->get();
+
+            
+            $currentYear = Carbon::now()->year;
+
+            $usedCreditThisYear = (float) CtoApplication::where('employee_profile_id', $cto_application->employee_profile_id)
+            ->where(function ($query) {
+                $query->where('status', 'approved')
+                      ->orWhere('status', 'for recommending approval')
+                      ->orWhere('status', 'for approving approval');
+            })
+                ->whereYear('created_at', $currentYear)
+                ->sum('applied_credits');
+
             return response()->json([
                 'data' => new CtoApplicationResource($cto_application),
+                'employee_credit' => EmployeeOvertimeCreditResource::collection($employeeCredit),
+                'used_credit_this_year' => $usedCreditThisYear,
                 'message' => 'Retrieve compensatory time off application record.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
