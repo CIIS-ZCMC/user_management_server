@@ -2616,7 +2616,7 @@ class EmployeeProfileController extends Controller
             $issuance_controller->store($employee_profile->id, $issuance_request);
 
             if (strip_tags($request->shifting) === 0) {
-                $schedule_this_month = Helpers::generateSchedule(Carbon::now());
+                $schedule_this_month = Helpers::generateSchedule(Carbon::now(), $cleanData['employment_type_id'], $request->meridian);
 
                 foreach ($schedule_this_month as $schedule) {
                     EmployeeSchedule::create([
@@ -2625,7 +2625,7 @@ class EmployeeProfileController extends Controller
                     ]);
                 }
 
-                $schedule_next_month = Helpers::generateSchedule(Carbon::now()->addMonth()->startOfMonth());
+                $schedule_next_month = Helpers::generateSchedule(Carbon::now()->addMonth()->startOfMonth(), $cleanData['employment_type_id'], $request->meridian);
 
                 foreach ($schedule_next_month as $schedule) {
                     EmployeeSchedule::create([

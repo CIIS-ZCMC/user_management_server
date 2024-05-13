@@ -6,6 +6,7 @@ use App\Http\Resources\EmployeeScheduleResource;
 use App\Http\Resources\HolidayResource;
 use App\Models\AssignArea;
 use App\Models\Department;
+use App\Models\Division;
 use App\Models\EmployeeSchedule;
 use App\Models\Holiday;
 use App\Models\MonthlyWorkHours;
@@ -508,50 +509,56 @@ class ScheduleController extends Controller
             }
 
             $my_area = $user->assignedArea->findDetails();
-            $areas = [];
 
+            if ($my_area['details']->code === 'HRMO') {
+                return response()->json(['data' => $this->areas(), 'message' => "HRMO."], Response::HTTP_OK);
+            }
+
+            $areas = [];
             switch ($my_area['sector']) {
                 case "Division":
-                    $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'sector' => $my_area['sector']];
+                    $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'code' => $my_area['details']->code, 'sector' => $my_area['sector']];
                     $deparmtents = Department::where('division_id', $my_area['details']->id)->get();
 
                     foreach ($deparmtents as $department) {
-                        $areas[] = ['id' => $department->id, 'name' => $department->name, 'sector' => 'Department'];
+                        $areas[] = ['id' => $department->id, 'name' => $department->name, 'code' => $department->code, 'sector' => 'Department'];
 
                         $sections = Section::where('department_id', $department->id)->get();
                         foreach ($sections as $section) {
-                            $areas[] = ['id' => $section->id, 'name' => $section->name, 'sector' => 'Section'];
+                            $areas[] = ['id' => $section->id, 'name' => $section->name, 'code' => $section->code, 'sector' => 'Section'];
 
                             $units = Unit::where('section_id', $section->id)->get();
                             foreach ($units as $unit) {
-                                $areas[] = ['id' => $unit->id, 'name' => $unit->name, 'sector' => 'Unit'];
+                                $areas[] = ['id' => $unit->id, 'name' => $unit->name, 'code' => $unit->code, 'sector' => 'Unit'];
                             }
                         }
                     }
                     break;
                 case "Department":
-                    $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'sector' => $my_area['sector']];
+                    $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'code' => $my_area['details']->code, 'sector' => $my_area['sector']];
                     $sections = Section::where('department_id', $my_area['details']->id)->get();
 
                     foreach ($sections as $section) {
-                        $areas[] = ['id' => $section->id, 'name' => $section->name, 'sector' => 'Section'];
+                        $areas[] = ['id' => $section->id, 'name' => $section->name, 'code' => $section->code, 'sector' => 'Section'];
 
                         $units = Unit::where('section_id', $section->id)->get();
                         foreach ($units as $unit) {
-                            $areas[] = ['id' => $unit->id, 'name' => $unit->name, 'sector' => 'Unit'];
+                            $areas[] = ['id' => $unit->id, 'name' => $unit->name, 'code' => $unit->code, 'sector' => 'Unit'];
                         }
                     }
                     break;
+
                 case "Section":
-                    $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'sector' => $my_area['sector']];
+                    $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'code' => $my_area['details']->code, 'sector' => $my_area['sector']];
 
                     $units = Unit::where('section_id', $my_area['details']->id)->get();
                     foreach ($units as $unit) {
-                        $areas[] = ['id' => $unit->id, 'name' => $unit->name, 'sector' => 'Unit'];
+                        $areas[] = ['id' => $unit->id, 'name' => $unit->name, 'code' => $unit->code, 'sector' => 'Unit'];
                     }
                     break;
+
                 case "Unit":
-                    $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'sector' => $my_area['sector']];
+                    $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'code' => $my_area['details']->code, 'sector' => $my_area['sector']];
                     break;
             }
 
@@ -576,6 +583,60 @@ class ScheduleController extends Controller
                 $schedule->status = false;
                 $schedule->save(); // or $schedule->update(['status' => false]);
             }
+        }
+    }
+
+    private function areas()
+    {
+        try {
+            $divisions = Division::all();
+            $departments = Department::all();
+            $sections = Section::all();
+            $units = Unit::all();
+
+            $all_areas = [];
+
+            foreach ($divisions as $division) {
+                $area = [
+                    'area' => $division->id,
+                    'name' => $division->name,
+                    'sector' => 'division'
+                ];
+                $all_areas[] = $area;
+            }
+
+            foreach ($departments as $department) {
+                $area = [
+                    'area' => $department->id,
+                    'name' => $department->name,
+                    'sector' => 'department'
+                ];
+                $all_areas[] = $area;
+            }
+
+            foreach ($sections as $section) {
+                $area = [
+                    'area' => $section->id,
+                    'name' => $section->name,
+                    'sector' => 'section'
+                ];
+                $all_areas[] = $area;
+            }
+
+            foreach ($units as $unit) {
+                $area = [
+                    'area' => $unit->id,
+                    'name' => $unit->name,
+                    'sector' => 'unit'
+                ];
+                $all_areas[] = $area;
+            }
+
+            return $all_areas;
+
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'assignPlantillaToAreas', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 }
