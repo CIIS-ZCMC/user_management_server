@@ -105,7 +105,7 @@ class EmployeeProfileController extends Controller
         try {
             $active_users = EmployeeProfile::whereNot('id', 1)->whereNot('authorization_pin', NULL)->whereNot('employee_id', NULL)->count();
             $pending_users = EmployeeProfile::whereNot('id', 1)->where('authorization_pin', NULL)->count();
-            $regular_employees = EmployeeProfile::whereNot('id', 1)->whereNot('authorization_pin', NULL)->whereNot('employee_id', NULL)->where('employment_type_id', EmploymentType::where('name', 'Permanent Full-time')->first()->id)->orWhere('employment_type_id', EmploymentType::where('name', 'Permanent Part-time')->first()->id)->orWhere('employment_type_id', EmploymentType::where('name', 'Temporary')->first()->id)->count();
+            $regular_employees = EmployeeProfile::whereNot('id', 1)->whereNot('authorization_pin', NULL)->whereNot('employee_id', NULL)->where('employment_type_id', EmploymentType::where('name', 'Permanent Full-time')->first())->orWhere('employment_type_id', EmploymentType::where('name', 'Permanent Part-time')->first())->orWhere('employment_type_id', EmploymentType::where('name', 'Temporary')->first())->count();
             $job_orders = EmployeeProfile::whereNot('id', 1)->whereNot('employee_id', NULL)->where('employment_type_id', EmploymentType::where('name', 'Job Order')->first()->id)->count();
 
             return response()->json([
@@ -173,13 +173,13 @@ class EmployeeProfileController extends Controller
 
             switch ($type) {
                 case "Educational Background":
-                    
+
                     $profile_request = EducationalBackground::find($request->id);
                     $profile_request->update([
                         "is_request" => false,
                         "approved_at" => Carbon::now()
                     ]);
-                    
+
                     break;
                 case "Eligibility":
                     $profile_request = CivilServiceEligibility::find($request->id);
@@ -198,7 +198,7 @@ class EmployeeProfileController extends Controller
             }
 
             return response()->json([
-                'data' =>  $profile_request,
+                'data' => $profile_request,
                 'message' => "Successfully approved educational background update request"
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -934,9 +934,9 @@ class EmployeeProfileController extends Controller
             }
         }
 
-        
-       
-            return [
+
+
+        return [
             'personal_information_id' => $personal_information->id,
             'employee_profile_id' => $employee_profile['id'],
             'employee_id' => $employee_profile['employee_id'],
@@ -955,16 +955,16 @@ class EmployeeProfileController extends Controller
                 'address' => $address,
                 'family_background' => new FamilyBackGroundResource($personal_information->familyBackground),
                 'children' => ChildResource::collection($personal_information->children),
-                'education' =>  EducationalBackgroundResource::collection($personal_information->educationalBackground->filter(function($row){
+                'education' => EducationalBackgroundResource::collection($personal_information->educationalBackground->filter(function ($row) {
                     return $row->is_request === 0;
                 })),
                 'affiliations_and_others' => [
-                    'civil_service_eligibility' => CivilServiceEligibilityResource::collection($personal_information->civilServiceEligibility->filter(function($row){
+                    'civil_service_eligibility' => CivilServiceEligibilityResource::collection($personal_information->civilServiceEligibility->filter(function ($row) {
                         return $row->is_request === 0;
                     })),
                     'work_experience' => WorkExperienceResource::collection($personal_information->workExperience),
                     'voluntary_work_or_involvement' => VoluntaryWorkResource::collection($personal_information->voluntaryWork),
-                    'training' =>  TrainingResource::collection($personal_information->training->filter(function($row){
+                    'training' => TrainingResource::collection($personal_information->training->filter(function ($row) {
                         return $row->is_request === 0;
                     })),
                     'other' => OtherInformationResource::collection($personal_information->otherInformation),
@@ -2533,18 +2533,18 @@ class EmployeeProfileController extends Controller
 
             if (EmploymentType::find($cleanData['employment_type_id'])->name === 'Temporary' || EmploymentType::find($cleanData['employment_type_id'])->name === 'Job Order') {
 
-                if ($request->renewal === 'null' || $request->renewal === null) {
-                    DB::rollBack();
-                    return response()->json([
-                        'message' => 'Temporary or Job order renewal date is required.'
-                    ], Response::HTTP_BAD_REQUEST);
-                }
+                // if ($request->renewal === 'null' || $request->renewal === null) {
+                //     DB::rollBack();
+                //     return response()->json([
+                //         'message' => 'Temporary or Job order renewal date is required.'
+                //     ], Response::HTTP_BAD_REQUEST);
+                // }
 
                 if (EmploymentType::find($cleanData['employment_type_id'])->name === 'Temporary') {
                     $cleanData['renewal'] = Carbon::now()->addYear();
                 }
 
-                $cleanData['renewal'] = strip_tags($request->renewal);
+                // $cleanData['renewal'] = strip_tags($request->renewal);
             }
 
             $plantilla_number_id = $request->plantilla_number_id === "null" || $request->plantilla_number_id === null ? null : $request->plantilla_number_id;
@@ -2615,19 +2615,19 @@ class EmployeeProfileController extends Controller
             $issuance_controller = new IssuanceInformationController();
             $issuance_controller->store($employee_profile->id, $issuance_request);
 
-            if(strip_tags($request->shifting) === 0){
+            if (strip_tags($request->shifting) === 0) {
                 $schedule_this_month = Helpers::generateSchedule(Carbon::now());
 
-                foreach($schedule_this_month as $schedule){
+                foreach ($schedule_this_month as $schedule) {
                     EmployeeSchedule::create([
                         'employee_profile_id' => $employee_profile->id,
                         'schedule_id' => $schedule->id
                     ]);
                 }
-                
+
                 $schedule_next_month = Helpers::generateSchedule(Carbon::now()->addMonth()->startOfMonth());
-                
-                foreach($schedule_next_month as $schedule){
+
+                foreach ($schedule_next_month as $schedule) {
                     EmployeeSchedule::create([
                         'employee_profile_id' => $employee_profile->id,
                         'schedule_id' => $schedule->id
@@ -2635,7 +2635,7 @@ class EmployeeProfileController extends Controller
                 }
             }
 
-            if(strip_tags($request->allow_time_adjustment) === 1){
+            if (strip_tags($request->allow_time_adjustment) === 1) {
                 $role = Role::where('code', 'ATA')->first();
                 $system_role = SystemRole::where('role_id', $role->id)->first();
 
@@ -3316,7 +3316,7 @@ class EmployeeProfileController extends Controller
                 'remarks' => strip_tags($request->remarks),
             ]);
 
-            if($employee_profile->employmentType->name === 'Permanent CTI'){
+            if ($employee_profile->employmentType->name === 'Permanent CTI') {
                 $plantilla_number = $employee_profile->assignedArea->plantillaNumber;
                 $plantilla_number->update([
                     'employee_profile_id' => null,
@@ -3324,7 +3324,7 @@ class EmployeeProfileController extends Controller
                 ]);
             }
 
-            if($employee_profile->employmentType->name !== 'Job Order'){
+            if ($employee_profile->employmentType->name !== 'Job Order') {
                 $plantilla_number = $employee_profile->assignedArea->plantillaNumber;
                 $plantilla_number->update([
                     'employee_profile_id' => null
