@@ -882,12 +882,17 @@ class LeaveApplicationController extends Controller
     {
         try {
 
+
             $employee_profile = $request->user;
             $employeeId = $employee_profile->id;
             $cleanData['pin'] = strip_tags($request->pin);
-
             if ($employee_profile['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
+            }
+            
+            $employeeProfile = EmployeeProfile::find($employeeId);
+            if ($employeeProfile->isUnderProbation()) {
+                return response()->json(['message' => 'You are under probation.'], Response::HTTP_FORBIDDEN);
             }
 
             $employeeId = $employee_profile->id;
@@ -1369,7 +1374,7 @@ class LeaveApplicationController extends Controller
                 ]);
             }
             $result=[];
-            
+
             $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id',  $leave_application->employee_profile_id)->get();
 
             foreach ($employeeCredit as $leaveCredit) {
@@ -1440,7 +1445,7 @@ class LeaveApplicationController extends Controller
                 ]);
             }
             $result=[];
-            
+
             $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id',  $leave_application->employee_profile_id)->get();
 
             foreach ($employeeCredit as $leaveCredit) {
@@ -1462,7 +1467,7 @@ class LeaveApplicationController extends Controller
                 'action' => 'Cancelled by HRMO'
             ]);
 
-            
+
 
             return response()->json([
                 'data' => new LeaveApplicationResource($leave_application),
@@ -1506,7 +1511,7 @@ class LeaveApplicationController extends Controller
                 ]);
             }
             $result=[];
-            
+
             $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id',  $leave_application->employee_profile_id)->get();
 
             foreach ($employeeCredit as $leaveCredit) {
@@ -1528,7 +1533,7 @@ class LeaveApplicationController extends Controller
                 'action' => 'Cancelled by User'
             ]);
 
-            
+
 
             return response()->json([
                 'data' => new LeaveApplicationResource($leave_application),
