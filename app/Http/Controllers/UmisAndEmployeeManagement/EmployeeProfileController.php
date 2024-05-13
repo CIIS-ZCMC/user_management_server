@@ -103,7 +103,7 @@ class EmployeeProfileController extends Controller
     public function employeesCards(Request $request)
     {
         try {
-            $active_users = EmployeeProfile::whereNot('id', 1)->whereNot('authorization_pin', NULL)->whereNot('employee_id', NULL)->count();
+            $active_users = EmployeeProfile::whereNot('id', 1)->whereNotNull('authorization_pin')->count();
             $pending_users = EmployeeProfile::whereNot('id', 1)->where('authorization_pin', NULL)->count();
             $regular_employees = EmployeeProfile::whereNot('id', 1)->whereNot('authorization_pin', NULL)->whereNot('employee_id', NULL)->where('employment_type_id', EmploymentType::where('name', 'Permanent Full-time')->first())->orWhere('employment_type_id', EmploymentType::where('name', 'Permanent Part-time')->first())->orWhere('employment_type_id', EmploymentType::where('name', 'Temporary')->first())->count();
             $job_orders = EmployeeProfile::whereNot('id', 1)->whereNot('employee_id', NULL)->where('employment_type_id', EmploymentType::where('name', 'Job Order')->first()->id)->count();
@@ -2036,17 +2036,17 @@ class EmployeeProfileController extends Controller
             $cacheExpiration = Carbon::now()->addDay();
 
             // $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () use ($user) {
-            //     return EmployeeProfile::whereNotIn('id', [1, $user->id])->get();
+            //     return EmployeeProfile::whereNotIn('id', [1])->get();
             // });
 
-            $employee_profiles = EmployeeProfile::whereNotIn('id', [1, $user->id])->where('deactivated_at', NULL)->get();
+            $employee_profiles = EmployeeProfile::whereNotIn('id', [1])->where('deactivated_at', NULL)->get();
 
-            return EmployeeProfileResource::collection($employee_profiles);
+            // return EmployeeProfileResource::collection($employee_profiles);
 
-            // return response()->json([
-            //     'data' => EmployeeProfileResource::collection($employee_profiles),
-            //     'message' => 'list of employees retrieved.'
-            // ], Response::HTTP_OK);
+            return response()->json([
+                'data' => EmployeeProfileResource::collection($employee_profiles),
+                'message' => 'list of employees retrieved.'
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
