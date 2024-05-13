@@ -910,7 +910,8 @@ class DTRcontroller extends Controller
                     'leaveapp' => $leavedata ?? [],
                     'obApp' => $obData ?? [],
                     'otApp' => $otData ?? [],
-                    'ctoApp' => $ctoData ?? []
+                    'ctoApp' => $ctoData ?? [],
+                    'biometric_id'=>$biometric_id
 
                 ]);
             }
@@ -941,7 +942,8 @@ class DTRcontroller extends Controller
                     'leaveapp' => $leavedata ?? [],
                     'obApp' => $obData ?? [],
                     'otApp' => $otData ?? [],
-                    'ctoApp' => $ctoData ?? []
+                    'ctoApp' => $ctoData ?? [],
+                    'biometric_id'=>$biometric_id
                 ]);
             } else {
                 $options = new Options();
@@ -972,7 +974,8 @@ class DTRcontroller extends Controller
                     'leaveapp' => $leavedata ?? [],
                     'obApp' => $obData ?? [],
                     'otApp' => $otData ?? [],
-                    'ctoApp' => $ctoData ?? []
+                    'ctoApp' => $ctoData ?? [],
+                    'biometric_id'=>$biometric_id
                 ]));
 
                 $dompdf->setPaper('Letter', 'portrait');
@@ -1340,7 +1343,8 @@ class DTRcontroller extends Controller
                     'leaveapp' => $leavedata,
                     'obApp' => $obData,
                     'otApp' => $otData,
-                    'ctoApp' => $ctoData
+                    'ctoApp' => $ctoData,
+                    'biometric_id'=>$biometric_id
                 ];
             }
         }

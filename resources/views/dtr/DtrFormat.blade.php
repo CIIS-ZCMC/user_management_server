@@ -52,9 +52,30 @@
         font-size: 11px;
         color: #637A9F;
     }
+
+    #btnExport {
+        margin-bottom: 10px;
+        padding: 10px 20px 10px 20px;
+        border:1px solid transparent;
+
+        outline: none;
+        background-color:#A0DEFF;
+        color: rgb(85, 80, 80);
+        cursor: pointer;
+        border-radius: 5px;
+        transition: all ease-out 0.3s;
+    }
+
+    #btnExport:hover {
+        background-color:#cee6f3;
+        color: #3468C0;
+        border: 1px solid #3468C0;
+    }
 </style>
 
 <div id="po">
+
+    <button id="btnExport" onclick="window.open('{{url('/').'/api/dtr-generate?biometric_id=['.$biometric_id.']&monthof='.$month.'&yearof='.$year.'&view=0&frontview=0'}}', '_blank')">Export DTR</button>
 
     <table id="tabledate">
 
