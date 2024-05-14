@@ -92,12 +92,12 @@ class SystemModuleSeeder extends Seeder
             'system_id' => 1
         ]);
 
-        // SystemModule::create([
-        //     'name' => 'Exchange Schedule',
-        //     'code' => 'UMIS-ES',
-        //     'description' => 'Creating  and approving of Exchange Schdule request',
-        //     'system_id' => 1
-        // ]);
+        SystemModule::create([
+            'name' => 'Exchange Schedule',
+            'code' => 'UMIS-ES',
+            'description' => 'Creating  and approving of Exchange Schdule request',
+            'system_id' => 1
+        ]);
 
         // SystemModule::create([
         //     'name' => 'Pull Out Management',
