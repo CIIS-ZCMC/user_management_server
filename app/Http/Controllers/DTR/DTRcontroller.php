@@ -195,32 +195,44 @@ class DTRcontroller extends Controller
                                 $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
                                 $DaySchedule = $Schedule['daySchedule'];
                                 $BreakTime = $Schedule['break_Time_Req'];
-                                $DaySchedule = [];
-                                $BreakTime = [];
 
 
 
-                                if (count($DaySchedule) >= 1) {
-                                    if (count($BreakTime) >= 1) {
-                                        /**
-                                         * With Schedule
-                                         * 4 sets of sched
+                                    if (count($DaySchedule) >= 1) {
+                                       if(isset($DaySchedule) && is_array($DaySchedule) && array_key_exists('first_entry', $DaySchedule) && $DaySchedule['first_entry']){
+
+                                        if (count($BreakTime) >= 1) {
+                                            /**
+                                             * With Schedule
+                                             * 4 sets of sched
+                                             */
+                                             $this->DTR->HasBreaktimePull($DaySchedule, $BreakTime, $bioEntry, $biometric_id);
+                                        } else {
+                                            /**
+                                             * With Schedule
+                                             * 2 sets of sched
+                                             */
+                                            $this->DTR->NoBreaktimePull($DaySchedule, $bioEntry, $biometric_id);
+                                        }
+                                       }else {
+
+                                           /**
+                                         * No Schedule Pulling
                                          */
-                                         $this->DTR->HasBreaktimePull($DaySchedule, $BreakTime, $bioEntry, $biometric_id);
+                                        $this->DTR->NoSchedulePull($bioEntry, $biometric_id);
+                                       }
+
                                     } else {
-                                        /**
-                                         * With Schedule
-                                         * 2 sets of sched
-                                         */
-                                        $this->DTR->NoBreaktimePull($DaySchedule, $bioEntry, $biometric_id);
-                                    }
-                                } else {
 
-                                    /**
-                                     * No Schedule Pulling
-                                     */
-                                    $this->DTR->NoSchedulePull($bioEntry, $biometric_id);
-                                }
+
+                                        /**
+                                         * No Schedule Pulling
+                                         */
+                                        $this->DTR->NoSchedulePull($bioEntry, $biometric_id);
+                                    }
+
+
+
                             }
                             //$this->helper->saveDTRRecords($check_Records, false);
                             /* Save DTR Logs */
@@ -245,34 +257,36 @@ class DTRcontroller extends Controller
                                 $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
                                 $DaySchedule = $Schedule['daySchedule'];
                                 $BreakTime = $Schedule['break_Time_Req'];
-                                // $DaySchedule = [];
-                                // $BreakTime = [];
-
-
-
 
                                 if (count($DaySchedule) >= 1) {
+                                    if(isset($DaySchedule) && is_array($DaySchedule) && array_key_exists('first_entry', $DaySchedule) && $DaySchedule['first_entry']){
 
-                                    if (count($BreakTime) >= 1) {
-
+                                     if (count($BreakTime) >= 1) {
+                                         /**
+                                          * With Schedule
+                                          * 4 sets of sched
+                                          */
+                                          $this->DTR->HasBreaktimePull($DaySchedule, $BreakTime, $bioEntry, $biometric_id);
+                                     } else {
+                                         /**
+                                          * With Schedule
+                                          * 2 sets of sched
+                                          */
+                                         $this->DTR->NoBreaktimePull($DaySchedule, $bioEntry, $biometric_id);
+                                     }
+                                    }else {
                                         /**
-                                         * With Schedule
-                                         * 4 sets of sched
-                                         */
-                                        $this->DTR->HasBreaktimePull($DaySchedule, $BreakTime, $bioEntry, $biometric_id);
-                                    } else {
-                                        /**
-                                         * With Schedule
-                                         * 2 sets of sched
-                                         */
-                                        $this->DTR->NoBreaktimePull($DaySchedule, $bioEntry, $biometric_id);
+                                      * No Schedule Pulling
+                                      */
+                                     $this->DTR->NoSchedulePull($bioEntry, $biometric_id);
                                     }
-                                } else {
-                                    /**
-                                     * No Schedule Pulling
-                                     */
-                                    $this->DTR->NoSchedulePull($bioEntry, $biometric_id);
-                                }
+
+                                 } else {
+                                     /**
+                                      * No Schedule Pulling
+                                      */
+                                     $this->DTR->NoSchedulePull($bioEntry, $biometric_id);
+                                 }
                             }
                             // /* Save DTR Logs */
                             $this->helper->saveDTRLogs($late_Records, 1, $device, 1);
@@ -780,7 +794,6 @@ class DTRcontroller extends Controller
             ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT second_in FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as second_in')
             ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT second_out FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as second_out')
             ->selectRaw('(CASE WHEN date = (SELECT dtr_date FROM `daily_time_records` WHERE dtr_date = schedules.date AND biometric_id = 22 LIMIT 1) THEN 1 ELSE 0 END) AS attendance_status')
-            ->selectRaw('(CASE WHEN schedules.id THEN (SELECT is_on_call FROM `employee_profile_schedule` WHERE schedule_id = schedules.id and employee_profile_id in (select id from employee_profiles where biometric_id = '.$biometric_id.')) else null end) as is_on_call')
             ->whereIn('id', function ($query) use ($biometric_id) {
                 $query->select('schedule_id')
                     ->from('employee_profile_schedule')
@@ -896,7 +909,8 @@ class DTRcontroller extends Controller
                     'leaveapp' => $leavedata ?? [],
                     'obApp' => $obData ?? [],
                     'otApp' => $otData ?? [],
-                    'ctoApp' => $ctoData ?? []
+                    'ctoApp' => $ctoData ?? [],
+                    'biometric_id'=>$biometric_id
 
                 ]);
             }
@@ -927,7 +941,8 @@ class DTRcontroller extends Controller
                     'leaveapp' => $leavedata ?? [],
                     'obApp' => $obData ?? [],
                     'otApp' => $otData ?? [],
-                    'ctoApp' => $ctoData ?? []
+                    'ctoApp' => $ctoData ?? [],
+                    'biometric_id'=>$biometric_id
                 ]);
             } else {
                 $options = new Options();
@@ -958,7 +973,8 @@ class DTRcontroller extends Controller
                     'leaveapp' => $leavedata ?? [],
                     'obApp' => $obData ?? [],
                     'otApp' => $otData ?? [],
-                    'ctoApp' => $ctoData ?? []
+                    'ctoApp' => $ctoData ?? [],
+                    'biometric_id'=>$biometric_id
                 ]));
 
                 $dompdf->setPaper('Letter', 'portrait');
@@ -1224,7 +1240,6 @@ class DTRcontroller extends Controller
                 ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT second_in FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as second_in')
                 ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT second_out FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as second_out')
                 ->selectRaw('(CASE WHEN date = (SELECT dtr_date FROM `daily_time_records` WHERE dtr_date = schedules.date AND biometric_id = 22 LIMIT 1) THEN 1 ELSE 0 END) AS attendance_status')
-                ->selectRaw('(CASE WHEN schedules.id THEN (SELECT is_on_call FROM `employee_profile_schedule` WHERE schedule_id = schedules.id and employee_profile_id in (select id from employee_profiles where biometric_id = '.$biometric_id.')) else null end) as is_on_call')
                 ->whereIn('id', function ($query) use ($biometric_id) {
                     $query->select('schedule_id')
                         ->from('employee_profile_schedule')
@@ -1326,7 +1341,8 @@ class DTRcontroller extends Controller
                     'leaveapp' => $leavedata,
                     'obApp' => $obData,
                     'otApp' => $otData,
-                    'ctoApp' => $ctoData
+                    'ctoApp' => $ctoData,
+                    'biometric_id'=>$biometric_id
                 ];
             }
         }

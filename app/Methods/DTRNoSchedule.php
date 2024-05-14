@@ -56,7 +56,6 @@ class DTRNoSchedule
                 ];
 
 
-
                 // /* Get the yesterdaySchedule */
                 // $Schedule = $this->helper->CurrentSchedule($biometric_id, $yesterday_Entry, false);
                 // $Schedule = $Schedule['daySchedule'];

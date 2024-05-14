@@ -724,9 +724,7 @@
                  *
                  */
                  if(!$empSched->isEmpty()){
-                        if($empSched->first()->is_on_call){
-                            echo "On-Call";
-                        }
+
                  }
 
 
