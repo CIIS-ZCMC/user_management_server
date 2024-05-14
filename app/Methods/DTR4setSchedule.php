@@ -116,10 +116,7 @@ class DTR4setSchedule
                 if ($this->helper->EntryisAm($this->helper->sequence(0, [$data])[0]['date_time'])) {
                     if ($status == 0 || $status == 255) {
                         $scheduleEntry = null;
-                        if (isset($DaySchedule['is_on_call']) && $DaySchedule['is_on_call']) {
-                            // $scheduleEntry = date('Y-m-d H:i:s', strtotime($time_stamps_req['date_start'] . ' ' . $time_stamps_req['first_entry'] . '+' . $max_allowed_entry_for_oncall . ' minutes'));
-                            $scheduleEntry = $DaySchedule['first_entry'];
-                        }
+
                         $this->helper->SaveFirstEntry(
                             $this->helper->sequence(0, [$data])[0],
                             $BreakTime,
@@ -136,10 +133,7 @@ class DTR4setSchedule
 
                     if ($status == 0 || $status == 255) {
                         $scheduleEntry = null;
-                        if (isset($DaySchedule['is_on_call']) && $DaySchedule['is_on_call']) {
-                            // $scheduleEntry = date('Y-m-d H:i:s', strtotime($time_stamps_req['date_start'] . ' ' . $time_stamps_req['first_entry'] . '+' . $max_allowed_entry_for_oncall . ' minutes'));
-                            $scheduleEntry = $DaySchedule['first_entry'];
-                        }
+
 
                         $this->helper->SaveFirstEntry(
                             $this->helper->sequence(0, [$data])[0],
@@ -159,10 +153,7 @@ class DTR4setSchedule
                 if ($status == 0 || $status == 255) {
                     $scheduleEntry = null;
 
-                    if (isset($DaySchedule['is_on_call']) && $DaySchedule['is_on_call']) {
-                        // $scheduleEntry = date('Y-m-d H:i:s', strtotime($time_stamps_req['date_start'] . ' ' . $time_stamps_req['first_entry'] . '+' . $max_allowed_entry_for_oncall . ' minutes'));
-                        $scheduleEntry = $DaySchedule['first_entry'];
-                    }
+
 
 
                     $this->helper->SaveFirstEntry(
@@ -181,10 +172,7 @@ class DTR4setSchedule
 
                 if ($status == 0 || $status == 255) {
                     $scheduleEntry = null;
-                    if (isset($DaySchedule['is_on_call']) && $DaySchedule['is_on_call']) {
-                        // $scheduleEntry = date('Y-m-d H:i:s', strtotime($time_stamps_req['date_start'] . ' ' . $time_stamps_req['first_entry'] . '+' . $max_allowed_entry_for_oncall . ' minutes'));
-                        $scheduleEntry = $DaySchedule['first_entry'];
-                    }
+
 
                     $this->helper->SaveFirstEntry(
                         $this->helper->sequence(0, [$data])[0],

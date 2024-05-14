@@ -723,13 +723,7 @@ class Helpers
 
         // Now, $scheduleDates contains all the dates from $start_duty to the end of the month
         foreach ($scheduleDates as $date) {
-            if ($employment_type_id === 1) {
-                $schedule = Schedule::firstOrNew([
-                    'time_shift_id' => 1,
-                    'date' => $date,
-                ]);
-
-            } else if ($employment_type_id === 2) {
+            if ($employment_type_id === 2) {
                 if ($meridian === 'AM') {
                     $schedule = Schedule::firstOrNew([
                         'time_shift_id' => 7,
@@ -741,6 +735,11 @@ class Helpers
                         'date' => $date,
                     ]);
                 }
+            } else {
+                $schedule = Schedule::firstOrNew([
+                    'time_shift_id' => 1,
+                    'date' => $date,
+                ]);
             }
 
             if ($schedule->exists) {

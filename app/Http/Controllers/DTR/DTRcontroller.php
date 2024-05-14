@@ -794,7 +794,6 @@ class DTRcontroller extends Controller
             ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT second_in FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as second_in')
             ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT second_out FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as second_out')
             ->selectRaw('(CASE WHEN date = (SELECT dtr_date FROM `daily_time_records` WHERE dtr_date = schedules.date AND biometric_id = 22 LIMIT 1) THEN 1 ELSE 0 END) AS attendance_status')
-            ->selectRaw('(CASE WHEN schedules.id THEN (SELECT is_on_call FROM `employee_profile_schedule` WHERE schedule_id = schedules.id and employee_profile_id in (select id from employee_profiles where biometric_id = '.$biometric_id.')) else null end) as is_on_call')
             ->whereIn('id', function ($query) use ($biometric_id) {
                 $query->select('schedule_id')
                     ->from('employee_profile_schedule')
@@ -1241,7 +1240,6 @@ class DTRcontroller extends Controller
                 ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT second_in FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as second_in')
                 ->selectRaw('(CASE WHEN time_shift_id THEN (SELECT second_out FROM `time_shifts` WHERE id = time_shift_id) ELSE NULL END) as second_out')
                 ->selectRaw('(CASE WHEN date = (SELECT dtr_date FROM `daily_time_records` WHERE dtr_date = schedules.date AND biometric_id = 22 LIMIT 1) THEN 1 ELSE 0 END) AS attendance_status')
-                ->selectRaw('(CASE WHEN schedules.id THEN (SELECT is_on_call FROM `employee_profile_schedule` WHERE schedule_id = schedules.id and employee_profile_id in (select id from employee_profiles where biometric_id = '.$biometric_id.')) else null end) as is_on_call')
                 ->whereIn('id', function ($query) use ($biometric_id) {
                     $query->select('schedule_id')
                         ->from('employee_profile_schedule')
