@@ -121,15 +121,7 @@ class Helpers
           AND time_shift_id = s.id
           LIMIT 1)
      ELSE 'NONE'
- END AS date,
-
-  CASE
-     WHEN s.id IS NOT NULL THEN
-          (SELECT is_on_call
-          FROM employee_profile_schedule
-          WHERE schedule_id = s.id limit 1)
-     ELSE 'NONE'
- END AS is_on_call
+ END AS date
 FROM time_shifts s
 WHERE s.id IN (
 SELECT time_shift_id
@@ -205,7 +197,6 @@ AND id IN (
                 'third_entry' => $row->second_in ?? null,
                 'last_entry' => $row->second_out ?? null,
                 'total_hours' => $row->total_hours ?? Cache::get('required_working_hours'),
-                'is_on_call' => $row->is_on_call ?? 0,
                 'arrival_departure' => $dp ?? ""
             ];
         }
@@ -226,8 +217,8 @@ AND id IN (
                 'third_entry' => $get_Sched[0]->second_in,
                 'last_entry' => $get_Sched[0]->second_out,
                 'total_hours' => $get_Sched[0]->total_hours,
-                'date' => $get_Sched[0]->date,
-                'is_on_call' => $get_Sched[0]->is_on_call,
+                'date' => $get_Sched[0]->date
+
             ];
         }
         return [
@@ -238,7 +229,6 @@ AND id IN (
             'total_hours' => config("app.required_working_hours"),
             'date' => null,
             'date_end' => null,
-            'is_on_call' => null,
         ];
     }
 
@@ -383,7 +373,7 @@ AND id IN (
 
         $dtrentry = $dtrentry['date_time'];
         $schedule = $scheduleEntry['first_entry'] ?? config("app.firstin");
-        $isoncall = $scheduleEntry['is_on_call'] ?? 0;
+
 
 
 
@@ -447,7 +437,7 @@ AND id IN (
 
         $dtrentry = $dtrentry['date_time'];
         $schedule = $scheduleEntry['first_entry'] ?? config("app.firstin");
-        $isoncall = $scheduleEntry['is_on_call'] ?? 0;
+
         $alloted_mins_Oncall = 0.5; // 30 minutes
         if (count($scheduleEntry) >= 1) {
             /* With Schedule Entry */
