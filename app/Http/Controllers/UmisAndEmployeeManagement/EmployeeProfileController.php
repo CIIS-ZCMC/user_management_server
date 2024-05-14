@@ -173,13 +173,13 @@ class EmployeeProfileController extends Controller
 
             switch ($type) {
                 case "Educational Background":
-                    
+
                     $profile_request = EducationalBackground::find($request->id);
                     $profile_request->update([
                         "is_request" => false,
                         "approved_at" => Carbon::now()
                     ]);
-                    
+
                     break;
                 case "Eligibility":
                     $profile_request = CivilServiceEligibility::find($request->id);
@@ -285,7 +285,7 @@ class EmployeeProfileController extends Controller
             }
 
             if (!$employee_profile) {
-                return response()->json(['message' => "Employee id or password incorrect."], Response::HTTP_FORBIDDEN);
+                return response()->json(['message' => "Employee id or password incorrect11."], Response::HTTP_FORBIDDEN);
             }
 
             if (!$employee_profile->isDeactivated()) {
@@ -296,7 +296,7 @@ class EmployeeProfileController extends Controller
             $decryptedPassword = Crypt::decryptString($employee_profile['password_encrypted']);
 
             if (!Hash::check($cleanData['password'] . config("app.salt_value"), $decryptedPassword)) {
-                return response()->json(['message' => "Employee id or password incorrect."], Response::HTTP_FORBIDDEN);
+                return response()->json(['message' => "Employee id or password incorrect22."], Response::HTTP_FORBIDDEN);
             }
 
             $agent = new Agent();
@@ -409,8 +409,7 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                }
-                ;
+                };
 
                 $trials--;
             } while ($trials !== 0);
@@ -934,9 +933,9 @@ class EmployeeProfileController extends Controller
             }
         }
 
-        
-       
-            return [
+
+
+        return [
             'personal_information_id' => $personal_information->id,
             'employee_profile_id' => $employee_profile['id'],
             'employee_id' => $employee_profile['employee_id'],
@@ -955,16 +954,16 @@ class EmployeeProfileController extends Controller
                 'address' => $address,
                 'family_background' => new FamilyBackGroundResource($personal_information->familyBackground),
                 'children' => ChildResource::collection($personal_information->children),
-                'education' =>  EducationalBackgroundResource::collection($personal_information->educationalBackground->filter(function($row){
+                'education' =>  EducationalBackgroundResource::collection($personal_information->educationalBackground->filter(function ($row) {
                     return $row->is_request === 0;
                 })),
                 'affiliations_and_others' => [
-                    'civil_service_eligibility' => CivilServiceEligibilityResource::collection($personal_information->civilServiceEligibility->filter(function($row){
+                    'civil_service_eligibility' => CivilServiceEligibilityResource::collection($personal_information->civilServiceEligibility->filter(function ($row) {
                         return $row->is_request === 0;
                     })),
                     'work_experience' => WorkExperienceResource::collection($personal_information->workExperience),
                     'voluntary_work_or_involvement' => VoluntaryWorkResource::collection($personal_information->voluntaryWork),
-                    'training' =>  TrainingResource::collection($personal_information->training->filter(function($row){
+                    'training' =>  TrainingResource::collection($personal_information->training->filter(function ($row) {
                         return $row->is_request === 0;
                     })),
                     'other' => OtherInformationResource::collection($personal_information->otherInformation),
@@ -1048,8 +1047,7 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                }
-                ;
+                };
 
                 $trials--;
             } while ($trials !== 0);
@@ -1122,8 +1120,7 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                }
-                ;
+                };
 
                 $trials--;
             } while ($trials !== 0);
@@ -1256,8 +1253,7 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                }
-                ;
+                };
 
                 $trials--;
             } while ($trials !== 0);
@@ -1498,8 +1494,7 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                }
-                ;
+                };
 
                 $trials--;
             } while ($trials !== 0);
@@ -1784,8 +1779,7 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                }
-                ;
+                };
 
                 $trials--;
             } while ($trials !== 0);
@@ -2615,19 +2609,19 @@ class EmployeeProfileController extends Controller
             $issuance_controller = new IssuanceInformationController();
             $issuance_controller->store($employee_profile->id, $issuance_request);
 
-            if(strip_tags($request->shifting) === 0){
+            if (strip_tags($request->shifting) === 0) {
                 $schedule_this_month = Helpers::generateSchedule(Carbon::now());
 
-                foreach($schedule_this_month as $schedule){
+                foreach ($schedule_this_month as $schedule) {
                     EmployeeSchedule::create([
                         'employee_profile_id' => $employee_profile->id,
                         'schedule_id' => $schedule->id
                     ]);
                 }
-                
+
                 $schedule_next_month = Helpers::generateSchedule(Carbon::now()->addMonth()->startOfMonth());
-                
-                foreach($schedule_next_month as $schedule){
+
+                foreach ($schedule_next_month as $schedule) {
                     EmployeeSchedule::create([
                         'employee_profile_id' => $employee_profile->id,
                         'schedule_id' => $schedule->id
@@ -2635,7 +2629,7 @@ class EmployeeProfileController extends Controller
                 }
             }
 
-            if(strip_tags($request->allow_time_adjustment) === 1){
+            if (strip_tags($request->allow_time_adjustment) === 1) {
                 $role = Role::where('code', 'ATA')->first();
                 $system_role = SystemRole::where('role_id', $role->id)->first();
 
@@ -3316,7 +3310,7 @@ class EmployeeProfileController extends Controller
                 'remarks' => strip_tags($request->remarks),
             ]);
 
-            if($employee_profile->employmentType->name === 'Permanent CTI'){
+            if ($employee_profile->employmentType->name === 'Permanent CTI') {
                 $plantilla_number = $employee_profile->assignedArea->plantillaNumber;
                 $plantilla_number->update([
                     'employee_profile_id' => null,
@@ -3324,7 +3318,7 @@ class EmployeeProfileController extends Controller
                 ]);
             }
 
-            if($employee_profile->employmentType->name !== 'Job Order'){
+            if ($employee_profile->employmentType->name !== 'Job Order') {
                 $plantilla_number = $employee_profile->assignedArea->plantillaNumber;
                 $plantilla_number->update([
                     'employee_profile_id' => null

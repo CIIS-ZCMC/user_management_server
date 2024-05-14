@@ -779,7 +779,6 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('inactive-employee/{id}', 'InActiveEmployeeController@showProfile');
-
         });
 
         Route::middleware(['auth.permission:UMIS-EM delete'])->group(function () {
@@ -2271,13 +2270,9 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function () {
             Route::get('get-monthly-work-hours', 'MonthlyWorkHoursController@getMonthlyWorkHours');
         });
-<<<<<<< HEAD
-=======
 
         Route::middleware(['auth.permission:UMIS-ScM view'])->group(function () {
             Route::get('get-my-total-work-hours', 'MonthlyWorkHoursController@getMyTotalWorkHours');
         });
-
->>>>>>> main
     });
 });

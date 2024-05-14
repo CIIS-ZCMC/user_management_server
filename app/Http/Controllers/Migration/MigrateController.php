@@ -5,7 +5,14 @@ namespace App\Http\Controllers\Migration;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use League\Csv\Reader;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
+use Carbon\Carbon;
+use App\Models\EmployeeProfile;
+use App\Models\EmploymentType;
 
 class MigrateController extends Controller
 {
@@ -15,10 +22,18 @@ class MigrateController extends Controller
         try {
 
             // For migrating the personal information
-            DB::table('personal_informations')->delete();
+            DB::statement('SET FOREIGN_KEY_CHECKS=0');
+
+            // Truncate the table
+            DB::table('personal_informations')->truncate();
+
+            // Re-enable foreign key checks
+
+            DB::table('employee_profiles')->truncate();
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
             DB::beginTransaction();
             // Path to the CSV file
-            $filePath = storage_path('../app/json_data/Listofemployees.csv');
+            $filePath = storage_path('../app/json_data/INNOVATIONS.csv');
 
 
 
@@ -29,7 +44,7 @@ class MigrateController extends Controller
             // Read the CSV data
             $csvData = $reader->getRecords();
 
-            foreach ($csvData as $row) {
+            foreach ($csvData as $index => $row) {
                 $id = $row['employeeid'];
                 $yearsOfService = $this->calculateYearsOfService($id);
                 $data = $this->getPersonalInformation($id);
@@ -37,7 +52,7 @@ class MigrateController extends Controller
                 // dd($data);
 
                 DB::table('personal_informations')->insert([
-                    'id' => $data->employeeid,
+                    'id' => $index,
                     'first_name' => $data->firstname,
                     'middle_name' => $data->middlename,
                     'last_name' => $data->lastname,
@@ -55,12 +70,39 @@ class MigrateController extends Controller
                     'weight' => $data->weight,
                     'blood_type' => $data->BloodType,
                 ]);
+                // dd(EmploymentType::find(3)->id);
+
+                $password = 'Zcmc_Umis2023@';
+                $hashPassword = Hash::make($password . config('app.salt_value'));
+                $encryptedPassword = Crypt::encryptString($hashPassword);
+
+                $now = Carbon::now();
+                $fortyDaysFromNow = $now->addDays(40);
+                $fortyDaysExpiration = $fortyDaysFromNow->toDateTimeString();
+
+                $employee_profile = EmployeeProfile::create([
+                    'employee_id' => $id,
+                    'date_hired' => Carbon::createFromFormat('Y-m-d', $data->datehire),
+                    'password_encrypted' => $encryptedPassword,
+                    'password_created_at' => now(),
+                    'password_expiration_at' => $fortyDaysExpiration,
+                    'biometric_id' => $index,
+                    'allow_time_adjustment' => TRUE,
+                    'employment_type_id' => EmploymentType::find(3)->id || 3,
+                    'personal_information_id' => $index
+                ]);
+
+                Log::info('User Migrate Successfully', [
+                    'user_detail' => $employee_profile,
+                    'user_name' => $employee_profile,
+                    'password' => $password,
+                ]);
             }
-            // Log::info('Personal Information migrate successfully.');
+            Log::info('Personal Information migrate successfully.');
+
+
+
             DB::commit();
-
-
-
 
             return response()->json('success');
         } catch (\Throwable $th) {
@@ -83,6 +125,7 @@ class MigrateController extends Controller
             FROM (
                 SELECT 
                     emp.employeeid,
+                    emp.no,
                     emp.firstname,
                     emp.lastname,
                     empdet.employeeid AS empdet_employeeid,
@@ -106,7 +149,7 @@ class MigrateController extends Controller
                 FROM [hrblizge].[dbo].[employeedetail] empdet 
                 LEFT JOIN employment emt ON empdet.employeedetailid = emt.employeedetailid 
                 RIGHT JOIN employee emp ON emp.employeeid = empdet.employeeid
-            ) AS SubQueryResult where SubQueryResult.employeeid = $id GROUP BY SubQueryResult.employeeid"
+            ) AS SubQueryResult where SubQueryResult.no = '$id' GROUP BY SubQueryResult.employeeid"
         );
         return $yos[0]->yearofservice; // Placeholder value
     }
@@ -118,52 +161,54 @@ class MigrateController extends Controller
         // and call it from here
         $data = DB::connection('sqlsrv')->SELECT(
             "SELECT
-        emp.employeeid,
-        emp.firstname,
-        emp.lastname,
-        emp.middlename,
-        empDet.nametitle,
-        emp.nameextension,
-        emp.birthdate,
-        CONCAT(LOWER(REPLACE(emp.middlename, ' ', '')),LOWER(REPLACE(emp.firstname, ' ', '')),LOWER(REPLACE(REPLACE(emp.nameextension, ' ', ''), '.', ''))) as aa,
-        CASE
-            WHEN empDet.gender = 1 THEN
-                'Male'
-            ELSE 'Female'
-        END as Gender,
-        empDet.birthplace,
-        CASE
-            WHEN empDet.civilstatus = 1 or empDet.civilstatus = 0 THEN
-                'Single'
-            ELSE 'Married'
-        END as civilstatus,
-        empDet.marriagedate,
-        empDet.height,
-        empDet.weight,
-        empDet.agencyemployeeno,
-        empNat.name as citizenship,
-        case
-            when empDet.bloodtype = 1 THEN
-                'A+'
-            when empDet.bloodtype = 2 THEN
-                'B+'
-            when empDet.bloodtype = 3 THEN
-                'AB+'
-            when empDet.bloodtype = 4 THEN
-                'O+'
-            when empDet.bloodtype = 5 THEN
-                'A-'
-            when empDet.bloodtype = 6 THEN
-                'B-'
-            when empDet.bloodtype = 7 THEN
-                'AB-'
-            when empDet.bloodtype = 8 THEN
-                'O-'
-        end as BloodType
-        FROM dbo.employee AS emp
-        LEFT JOIN dbo.employeedetail AS empDet ON emp.employeeid = empDet.employeeid
-        LEFT JOIN dbo.nationality as empNat ON empDet.nationalityid = empNat.nationalityid
-        Where emp.employeeid = $id "
+            emp.employeeid,
+            emp.no,
+            emp.firstname,
+            emp.lastname,
+            emp.middlename,
+            empDet.nametitle,
+            emp.nameextension,
+            emp.birthdate,
+            emp.datehire,
+            CONCAT(LOWER(REPLACE(emp.middlename, ' ', '')),LOWER(REPLACE(emp.firstname, ' ', '')),LOWER(REPLACE(REPLACE(emp.nameextension, ' ', ''), '.', ''))) as aa,
+            CASE
+                WHEN empDet.gender = 1 THEN
+                    'Male'
+                ELSE 'Female'
+            END as Gender,
+            empDet.birthplace,
+            CASE
+                WHEN empDet.civilstatus = 1 or empDet.civilstatus = 0 THEN
+                    'Single'
+                ELSE 'Married'
+            END as civilstatus,
+            empDet.marriagedate,
+            empDet.height,
+            empDet.weight,
+            empDet.agencyemployeeno,
+            empNat.name as citizenship,
+            case
+                when empDet.bloodtype = 1 THEN
+                    'A+'
+                when empDet.bloodtype = 2 THEN
+                    'B+'
+                when empDet.bloodtype = 3 THEN
+                    'AB+'
+                when empDet.bloodtype = 4 THEN
+                    'O+'
+                when empDet.bloodtype = 5 THEN
+                    'A-'
+                when empDet.bloodtype = 6 THEN
+                    'B-'
+                when empDet.bloodtype = 7 THEN
+                    'AB-'
+                when empDet.bloodtype = 8 THEN
+                    'O-'
+            end as BloodType
+            FROM dbo.employee AS emp
+            LEFT JOIN dbo.employeedetail AS empDet ON emp.employeeid = empDet.employeeid
+            LEFT JOIN dbo.nationality as empNat ON empDet.nationalityid = empNat.nationalityid
+            Where emp.no = '$id' "
         );
         return $data[0]; // Placeholder value
     }
