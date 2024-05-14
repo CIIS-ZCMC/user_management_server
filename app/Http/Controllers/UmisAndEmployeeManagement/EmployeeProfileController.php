@@ -2615,8 +2615,7 @@ class EmployeeProfileController extends Controller
             $issuance_controller = new IssuanceInformationController();
             $issuance_controller->store($employee_profile->id, $issuance_request);
 
-            $shifting = strip_tags($request->shifting);
-            if ($shifting === 0) {
+            if (strip_tags($request->shifting) === "0") {
                 $schedule_this_month = Helpers::generateSchedule(Carbon::now(), $cleanData['employment_type_id'], $request->meridian);
 
                 foreach ($schedule_this_month as $schedule) {
