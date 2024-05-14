@@ -811,16 +811,16 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('employees-for-oic', 'EmployeeProfileController@employeesForOIC');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-PAM update'])->group(function () {
             Route::put('employee-profile-update-pin', 'EmployeeProfileController@updatePin');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-PAM update'])->group(function () {
             Route::put('employee-profile-update-password', 'EmployeeProfileController@updatePassword');
         });
 
 
-        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-PAM update'])->group(function () {
             Route::put('employee-profile-twofa-status', 'EmployeeProfileController@update2fa');
         });
 
