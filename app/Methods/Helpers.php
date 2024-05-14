@@ -173,7 +173,6 @@ AND id IN (
                 'sc.is_weekend',
                 'sc.status',
                 'sc.remarks',
-                'esc.is_on_call'
             )
             ->join('schedules as sc', 'sc.time_shift_id', '=', 'ts.id')
             ->join('employee_profile_schedule as esc', 'esc.schedule_id', '=', 'sc.id')
