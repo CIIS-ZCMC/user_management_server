@@ -51,7 +51,7 @@ class Kernel extends ConsoleKernel
 
         $schedule->command(EmployeeSixMonthEarnSPLCredit::class)->daily();
 
-        $schedule->command(EmployeeSixMonthEarnSPLCredit::class)->runInBackground();
+        // $schedule->command(EmployeeSixMonthEarnSPLCredit::class)->runInBackground();
 
     }
 
