@@ -2004,10 +2004,8 @@ class EmployeeProfileController extends Controller
     public function employeesDTRList(Request $request)
     {
         try {
-            $employment_type_id = $request->employment_type_id;
-
-            if ($employment_type_id !== null) {
-                $employee_profiles = EmployeeProfile::where('employment_type_id', $employment_type_id)
+            if (isset($request->employment_type_id) && $request->employment_type_id !== null) {
+                $employee_profiles = EmployeeProfile::where('employment_type_id', $request->employment_type_id)
                     ->get();
 
                 return response()->json([
@@ -2016,7 +2014,7 @@ class EmployeeProfileController extends Controller
                 ], Response::HTTP_OK);
             }
 
-            $employee_profiles = EmployeeProfile::whereNotIn('id', [1])->get();
+            $employee_profiles = EmployeeProfile::whereNotIn('id', [1])->whereNot('employee_id', null)->get();
             Helpers::registerSystemLogs($request, null, true, 'Success in fetching a ' . $this->PLURAL_MODULE_NAME . '.');
 
             return response()->json([
