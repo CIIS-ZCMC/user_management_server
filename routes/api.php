@@ -2120,7 +2120,7 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('exchange-duty', 'ExchangeDutyController@create');
         });
 
-        Route::middleware(['auth.permission:UMIS-ES write'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-ES request'])->group(function () {
             Route::post('exchange-duties', 'ExchangeDutyController@store');
         });
 

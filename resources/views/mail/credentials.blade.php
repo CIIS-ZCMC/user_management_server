@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <style>
         .container {
-          
+
             text-align: left
         }
         h1 {
@@ -19,19 +19,19 @@
         /* #titleBar {
             text-align: center;
             display: flex;
-            justify-content: center; 
+            justify-content: center;
             align-items: center;
         } */
                 #titleBar > * {
-            margin-right: 5px; 
+            margin-right: 5px;
         }
 
         #titleBar > *:last-child {
-            margin-right: 0; 
+            margin-right: 0;
         }
         #zcmclogo {
             width: 70px;
-      
+
         }
         #dohlogo {
             width: 85px
@@ -45,10 +45,10 @@
     {{-- <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
         <tr>
             <td align="center" style="padding: 20px 0;">
-            
+
                 <div style="display: inline-block; text-align: left;">
                     <img style="width:80px" src="https://th.bing.com/th/id/R.4ae65110f08f0d39558fd28c2cc01bd8?rik=zU9J5LxP9cw%2bbw&riu=http%3a%2f%2fdai.global-intelligent-solutions.com%2fimg%2fclients%2fzcmc.png&ehk=jWGGGeHJrilA0FTl4weHQ%2ff0L1diRoZfPim1tkB87eA%3d&risl=&pid=ImgRaw&r=0" alt="">
-              
+
                 </div>
             </td>
         </tr>
@@ -62,7 +62,7 @@
          </span>
         </h4>
 
-        
+
         <h3>
             <style>
                 /* Style for the table */
@@ -98,7 +98,7 @@ td:nth-child(2) {
             <table style="  border-collapse: collapse;
             width: 100%;
             margin-top: 20px; ">
-                <tr >
+                {{-- <tr >
                     <td style="width: 200px !important;
                     border: 1px solid rgb(150, 147, 147);
                     padding: 8px;
@@ -109,7 +109,7 @@ td:nth-child(2) {
                     text-align: left;">
                         {{$authorization_pin}}
                     </td>
-                </tr>
+                </tr> --}}
                 <tr >
                     <td style="width: 200px !important;
                     border: 1px solid rgb(150, 147, 147);
@@ -132,17 +132,17 @@ td:nth-child(2) {
                         {{$Password}}
                     </td>
                 </tr>
-              
-                
+
+
 
             </table>
             <h4 style="font-weight: normal">Upon first login, you will be prompted to change your password.</h4>
 
-           
+
             <table style="  border-collapse: collapse;
             width: 100%;
             margin-top: 20px; ">
-               
+
                 <tr>
                     <td  style="  border: 1px solid rgb(150, 147, 147);
                     padding: 8px;
@@ -162,15 +162,15 @@ td:nth-child(2) {
                 </tr>
             </table>
 
-        
-          
+
+
         </h3>
-     
-     
+
+
         <h4>
            <span id="zcmc">ZCMC</span>-Portal &middot; 2023
            <br>
-           
+
         </h4>
     </div>
 </body>
