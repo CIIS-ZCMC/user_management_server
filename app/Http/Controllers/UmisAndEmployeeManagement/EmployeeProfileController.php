@@ -2519,7 +2519,7 @@ class EmployeeProfileController extends Controller
             } catch (\Throwable $th) {
             }
 
-            $cleanData['allow_time_adjustment'] = strip_tags($request->allow_time_adjustment) === 1 ? true : false;
+            $cleanData['allow_time_adjustment'] = strip_tags($request->allow) === 1 ? true : false;
             $cleanData['shifting'] = strip_tags($request->shifting) === 1 ? true : false;
             $cleanData['password_encrypted'] = $encryptedPassword;
             $cleanData['password_created_at'] = now();
@@ -2852,7 +2852,8 @@ class EmployeeProfileController extends Controller
                 'last_login' => $last_login === null ? null : $last_login->created_at,
                 'biometric_id' => $employee_profile->biometric_id,
                 'total_months' => $totalMonths - ($totalYears * 12),
-                'total_years' => $totalYears
+                'total_years' => $totalYears,
+                'is_allowed_ta' => $employee_profile->allow_time_adjustment
             ];
 
             $personal_information_data = [

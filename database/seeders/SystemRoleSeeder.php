@@ -538,7 +538,6 @@ class SystemRoleSeeder extends Seeder
                             /* Leave Management */
                             $row['code'] === "UMIS-LM view" ||
                             $row['code'] === "UMIS-LM request" ||
-                            $row['code'] === "UMIS-LM download" ||
 
                             /* Overtime Management */
                             $row['code'] === "UMIS-OM view" ||
