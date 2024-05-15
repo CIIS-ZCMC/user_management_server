@@ -160,7 +160,7 @@ class ExchangeDutyController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update($id, AuthPinApprovalRequest $request)
+    public function update($id, Request $request)
     {
         try {
             $user = $request->user;
