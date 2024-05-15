@@ -27,23 +27,21 @@ class OvertimeResource extends JsonResource
 
         $area = $this->employeeProfile->assignedArea->findDetails();
         $otCreditsRecords = EmployeeOvertimeCredit::where('employee_profile_id', $this->employeeProfile->id);
-        if( $otCreditsRecords->count() >=1){
+        if ($otCreditsRecords->count() >= 1) {
             $overtime_credits = $otCreditsRecords->first();
         }
 
         $oic = null;
 
         $omccRec = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $this->employeeProfile->id);
-        if($omccRec->count()>=1){
-            $isMCC =  $omccRec ->first();
-
+        if ($omccRec->count() >= 1) {
+            $isMCC =  $omccRec->first();
         }
 
         $hrmoRec = Section::where('code', 'HRMO');
-        if($hrmoRec->count()>=1){
+        if ($hrmoRec->count() >= 1) {
             $hrmo = $hrmoRec->first();
         }
-
 
 
         if ($this->employee_oic_id  !== null) {
