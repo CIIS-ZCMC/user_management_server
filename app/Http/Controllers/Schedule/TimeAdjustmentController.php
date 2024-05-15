@@ -198,17 +198,17 @@ class TimeAdjustmentController extends Controller
                     $dtr = DailyTimeRecords::create([
                         'biometric_id' => $employees->biometric_id,
                         'dtr_date' => $data->date,
-                        'first_in' => $data->first_in,
-                        'first_out' => $data->first_out,
-                        'second_in' => $data->second_in,
-                        'second_out' => $data->second_out,
+                        'first_in' => $data->date . " " . $data->first_in,
+                        'first_out' => $data->date . " " . $data->first_out,
+                        'second_in' => $data->date . " " . $data->second_in,
+                        'second_out' => $data->date . " " . $data->second_out,
                     ]);
                 } else {
                     $dtr->update([
-                        'first_in' => $data->first_in ?? $dtr->first_in,
-                        'first_out' => $data->first_out ?? $dtr->first_out,
-                        'second_in' => $data->second_in ?? $dtr->second_in,
-                        'second_out' => $data->second_out ?? $dtr->second_out,
+                        'first_in' => $data->date . " " . $data->first_in ?? $dtr->first_in,
+                        'first_out' => $data->date . " " . $data->first_out ?? $dtr->first_out,
+                        'second_in' => $data->date . " " . $data->second_in ?? $dtr->second_in,
+                        'second_out' => $data->date . " " . $data->second_out ?? $dtr->second_out,
                     ]);
                 }
             }
