@@ -34,45 +34,46 @@ class OvertimeController extends Controller
      */
     private $CONTROLLER_NAME = 'OvertimeController';
 
-    public function printOvertimeForm($id){
+    public function printOvertimeForm($id)
+    {
 
-      $overtime_application = OvertimeApplication::where('id',$id)->get();
+        $overtime_application = OvertimeApplication::where('id', $id)->get();
 
-      $data = json_decode(json_encode(OvertimeResource::collection($overtime_application)))[0];
+        $data = json_decode(json_encode(OvertimeResource::collection($overtime_application)))[0];
 
-      $activities = $data->activities;
-      $uniqueEmployees = [];
+        $activities = $data->activities;
+        $uniqueEmployees = [];
 
-      foreach ($activities as $activity) {
-          foreach ($activity->dates as $date) {
-              foreach ($date->employees as $employee) {
-                  $employeeId = $employee->employee_profile->employee_id;
-                  // Check if employee already exists in the uniqueEmployees array
-                  if (!isset($uniqueEmployees[$employeeId])) {
-                      // If not, add the employee to the uniqueEmployees array
-                      $uniqueEmployees[$employeeId] = $employee->employee_profile;
-                  }
-              }
-          }
-      }
+        foreach ($activities as $activity) {
+            foreach ($activity->dates as $date) {
+                foreach ($date->employees as $employee) {
+                    $employeeId = $employee->employee_profile->employee_id;
+                    // Check if employee already exists in the uniqueEmployees array
+                    if (!isset($uniqueEmployees[$employeeId])) {
+                        // If not, add the employee to the uniqueEmployees array
+                        $uniqueEmployees[$employeeId] = $employee->employee_profile;
+                    }
+                }
+            }
+        }
 
-      $listofEmployees = array_values($uniqueEmployees);
-      $purposeofovertime = $data->purpose;
-      $remarks = $data->remarks;
-      $recommendingofficer = $data->recommending_officer;
-      $approvingOfficer = $data->approving_officer;
-      $requestedBy =  $data->employee_profile;
+        $listofEmployees = array_values($uniqueEmployees);
+        $purposeofovertime = $data->purpose;
+        $remarks = $data->remarks;
+        $recommendingofficer = $data->recommending_officer;
+        $approvingOfficer = $data->approving_officer;
+        $requestedBy =  $data->employee_profile;
 
-      $created = date("F j, Y",strtotime($data->created_at));
+        $created = date("F j, Y", strtotime($data->created_at));
 
-    //   return view("overtimeAuthority",
-    //   compact('listofEmployees',
-    //   'activities',
-    //   'purposeofovertime',
-    //   'recommendingofficer',
-    //   'requestedBy',
-    //   'approvingOfficer',
-    //   'created'));
+        //   return view("overtimeAuthority",
+        //   compact('listofEmployees',
+        //   'activities',
+        //   'purposeofovertime',
+        //   'recommendingofficer',
+        //   'requestedBy',
+        //   'approvingOfficer',
+        //   'created'));
 
         $options = new Options();
         $options->set('isPhpEnabled', true);
@@ -80,21 +81,24 @@ class OvertimeController extends Controller
         $options->set('isRemoteEnabled', true);
         $dompdf = new Dompdf($options);
         $dompdf->getOptions()->setChroot([base_path() . '\public\storage']);
-        $dompdf->loadHtml(view("overtimeAuthority",
-        compact('listofEmployees',
-        'activities',
-        'purposeofovertime',
-        'recommendingofficer',
-        'requestedBy',
-        'approvingOfficer',
-        'created')));
+        $dompdf->loadHtml(view(
+            "overtimeAuthority",
+            compact(
+                'listofEmployees',
+                'activities',
+                'purposeofovertime',
+                'recommendingofficer',
+                'requestedBy',
+                'approvingOfficer',
+                'created'
+            )
+        ));
 
         $dompdf->setPaper('Letter', 'portrait');
         $dompdf->render();
 
-        $filename ="OvertimeAuthority_{$purposeofovertime}.pdf";
+        $filename = "OvertimeAuthority_{$purposeofovertime}.pdf";
         $dompdf->stream($filename);
-
     }
 
     public function index(Request $request)
@@ -109,7 +113,6 @@ class OvertimeController extends Controller
             $employeeId = $employee_profile->id;
 
             /** FOR NORMAL EMPLOYEE */
-
             if ($employee_profile->position() === null || $employee_profile->position()['position'] === 'Supervisor') {
 
                 $overtime_application = OvertimeApplication::with('dates')->where('employee_profile_id', $employee_profile->id)->get();
@@ -119,6 +122,7 @@ class OvertimeController extends Controller
                     'message' => 'Retrieved all overtime application'
                 ], Response::HTTP_OK);
             }
+
             //    return response()->json(['message' => $employee_profile->position()['position']], Response::HTTP_INTERNAL_SERVER_ERROR);
             if ($employee_profile->id === Helpers::getHrmoOfficer()) {
                 return response()->json([
@@ -127,7 +131,6 @@ class OvertimeController extends Controller
 
                 ], Response::HTTP_OK);
             }
-
 
             $overtime_application = OvertimeApplication::select('overtime_applications.*')
                 ->where(function ($query) use ($recommending, $approving, $employeeId) {
@@ -625,7 +628,7 @@ class OvertimeController extends Controller
         }
     }
 
-    public function storeBulk(Request $request)
+    public function storeBulk(Request $request,AuthPinApprovalRequest $pin)
     {
         try {
             $employee_profile = $request->user;
@@ -658,6 +661,15 @@ class OvertimeController extends Controller
             $file_name_encrypted = "";
             $size = "";
 
+            $cleanData['pin'] = strip_tags($pin->pin);
+            if ($employee_profile['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+            }
+            $assigned_area = $employee_profile->assignedArea->findDetails();
+            if (Helpers::getDivHead($assigned_area) === null || Helpers::getChiefOfficer() === null) {
+                return response()->json(['message' => 'No recommending officer and/or supervising officer assigned.'], Response::HTTP_FORBIDDEN);
+            }
+
             $assigned_area = $employee_profile->assignedArea->findDetails();
             $status = 'for recommending approval';
             $overtime_application = OvertimeApplication::create([
@@ -671,9 +683,9 @@ class OvertimeController extends Controller
                 'approving_officer' => Helpers::getChiefOfficer(),
             ]);
 
-           $ovt_id = $overtime_application->id;
-           $jsonData = $request->input('data');
-           $formData = json_decode($jsonData, true);
+            $ovt_id = $overtime_application->id;
+            $jsonData = $request->input('data');
+            $formData = json_decode($jsonData, true);
             foreach ($formData as $data) {
 
                 $activity_application = OvtApplicationActivity::create([
