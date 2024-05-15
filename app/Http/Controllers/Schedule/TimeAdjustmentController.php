@@ -96,6 +96,10 @@ class TimeAdjustmentController extends Controller
             $employee = EmployeeProfile::find($cleanData['employee_profile_id']);
             $employee_area = $employee->assignedArea->findDetails();
 
+            if ($employee->biometric_id === null) {
+                return response()->json(['message' => 'Biometric ID is not yet registered'], Response::HTTP_NOT_FOUND);
+            }
+
             $dtr = DailyTimeRecords::where([
                 ['biometric_id', '=', $employee->biometric_id],
                 ['dtr_date', '=', Carbon::parse($cleanData['date'])->format('Y-m-d')],
