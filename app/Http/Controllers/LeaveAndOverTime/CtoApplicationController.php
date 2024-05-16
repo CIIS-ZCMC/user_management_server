@@ -350,11 +350,13 @@ class CtoApplicationController extends Controller
 
 
                 foreach ($overtimeCredits as $credit) {
-                    if ($currentDate->lte($credit->valid_until) && $credit->used_credit_by_hour > 0) {
+                    // Check if the credit is still valid and has used hours remaining
+                    if ($currentDate->lte(Carbon::parse($credit->valid_until)) && $credit->earned_credit_by_hour > 0) {
                         $allCreditsUsedUp = false;
                         break;
                     }
                 }
+
                 if ($allCreditsUsedUp) {
                     $failed[] = $value;
                     $reason[] = 'No overtime credits available.';
