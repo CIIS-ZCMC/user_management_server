@@ -773,7 +773,6 @@ class CtoApplicationController extends Controller
                     ];
                 }
             }
-
             $response = [
                 'employee_name' => $employeeName,
                 'employee_job' => $employeeJobPosition,
