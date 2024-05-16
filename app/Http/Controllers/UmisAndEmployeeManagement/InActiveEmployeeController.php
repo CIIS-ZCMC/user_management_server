@@ -30,6 +30,7 @@ use App\Http\Resources\OtherInformationResource;
 use App\Http\Resources\TrainingResource;
 use App\Http\Resources\VoluntaryWorkResource;
 use App\Http\Resources\WorkExperienceResource;
+use App\Methods\MailConfig;
 use App\Models\AssignArea;
 use App\Models\EmployeeLeaveCredit;
 use App\Models\EmploymentType;
@@ -57,6 +58,12 @@ class InActiveEmployeeController extends Controller
     private $CONTROLLER_NAME = 'In Active Employee Module';
     private $PLURAL_MODULE_NAME = 'In active employee modules';
     private $SINGULAR_MODULE_NAME = 'In active employee module';
+    private $mail;
+
+    public function __construct()
+    {
+        $this->mail = new MailConfig();
+    }
 
     // In Complete
     public function retireAndDeactivateAccount($id, Request $request)
@@ -490,6 +497,26 @@ class InActiveEmployeeController extends Controller
             $in_active_employee->delete();
             DB::commit();
             Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . '.');
+
+            for ($i = 0; $i < $send_attempt; $i++) {
+                $body = view('mail.credentials', [
+                    'authorization_pin' => $employee_profile->authorization_pin,
+                    'employeeID' => $employee_profile->employee_id,
+                    'Password' => $default_password,
+                    "Link" => "http://192.168.5.1:8080"
+                ]);
+
+                $data = [
+                    'Subject' => 'Your Zcmc Portal Account.',
+                    'To_receiver' => $employee_profile->personalinformation->contact->email_address,
+                    'Receiver_Name' => $employee_profile->personalInformation->name(),
+                    'Body' => $body
+                ];
+
+                if ($this->mail->send($data)) {
+                    break;
+                }
+            }
 
             if ($in_valid_file) {
                 return response()->json(
