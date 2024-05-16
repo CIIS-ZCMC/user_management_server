@@ -455,14 +455,13 @@ class MonetizationApplicationController extends Controller
             if (!$mone_application) {
                 return response()->json(['message' => "No monetization application found."], Response::HTTP_NOT_FOUND);
             }
-            $leave_type = $mone_application->leaveType;
             $mone_application_hrmo = $mone_application->hrmo_officer;
             $mone_application_recommending = $mone_application->recommending_officer;
             $mone_application_approving = $mone_application->approving_officer;
 
             switch ($mone_application->status) {
                 case 'applied': 
-                    if($employee_profile->id === $mone_application->hrmo_officer){
+                    if($employee_profile->id === $mone_application_hrmo){
                         $status = 'declined by hrmo officer';
                         $declined_by = "HR";
                         // Helpers::pendingLeaveNotfication($mone_application->recommending_officer, $mone_application->leaveType->name);
@@ -478,7 +477,7 @@ class MonetizationApplicationController extends Controller
                     }
                     break;
                 case 'for recommending approval': 
-                    if($employee_profile->id === $mone_application->recommending_officer){
+                    if($employee_profile->id === $mone_application_recommending){
                         $status = 'declined by recommending officer';
                         $declined_by = "Recommending officer";
                     // Helpers::pendingLeaveNotfication($mone_application->approving_officer, $mone_application->leaveType->name);
@@ -494,7 +493,7 @@ class MonetizationApplicationController extends Controller
                     }
                     break;
                 case 'for approving approval':
-                    if($employee_profile->id === $mone_application->approving_officer){
+                    if($employee_profile->id === $mone_application_approving){
                         $status = 'declined by approving officer';
                         $declined_by = "Approving officer";
                         // Helpers::notifications($mone_application->employee_profile_id, $message, $mone_application->leaveType->name);
