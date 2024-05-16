@@ -56,12 +56,16 @@ class MonetizationApplicationController extends Controller
                         'leave_type_id',
                         'reason',
                         'status',
+                        'is_qualified',
                         'remarks',
                         'credit_value',
                         'attachment',
+                        'attachment_size',
+                        'attachment_path',
                         'hrmo_officer',
                         'recommending_officer',
                         'approving_officer',
+                        'employee_oic_id',
                         'created_at',
                         'updated_at'
                     )
@@ -101,12 +105,16 @@ class MonetizationApplicationController extends Controller
                     'leave_type_id',
                     'reason',
                     'status',
+                    'is_qualified',
                     'remarks',
                     'credit_value',
                     'attachment',
+                    'attachment_size',
+                    'attachment_path',
                     'hrmo_officer',
                     'recommending_officer',
                     'approving_officer',
+                    'employee_oic_id',
                     'created_at',
                     'updated_at'
                 )
