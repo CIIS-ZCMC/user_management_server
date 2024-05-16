@@ -299,7 +299,7 @@ class MonetizationApplicationController extends Controller
                     $mone_application_log->action = $process_name;
                     $mone_application_log->save();
                     break;
-      
+
                 case 'for recommending approval':
                     $process_name = "Approved by Recommending Officer";
                     $monetization_application->update(['status' => 'for approving approval']);
@@ -337,7 +337,7 @@ class MonetizationApplicationController extends Controller
     {
         try {
             $employee_profile = $request->user;
-      
+
 
             $cleanData['pin'] = strip_tags($request->pin);
 
@@ -361,13 +361,13 @@ class MonetizationApplicationController extends Controller
             $recommending_officer = Division::where('code', 'HOPSS')->first();
             $approving_officer = Division::where('code', 'OMCC')->first();
 
-         
+
             if($recommending_officer === null || $approving_officer === null || $hrmo_officer === null){
                 return response()->json(['message' => "No recommending officer and/or supervising officer assigned."], Response::HTTP_BAD_REQUEST);
             }
             $cleanData = [];
 
-            
+
             $cleanData['employee_profile_id'] = $employee_profile->id;
             $cleanData['leave_type_id'] = $leave_type->id;
             $cleanData['reason'] = strip_tags($request->reason);
@@ -383,7 +383,7 @@ class MonetizationApplicationController extends Controller
             $cleanData['attachment_size'] = $file->getSize();
             $cleanData['attachment_path'] = Helpers::checkSaveFile($file, 'leave_monetization');
 
-           
+
 
             $new_monetization = MonetizationApplication::create($cleanData);
 
@@ -408,7 +408,8 @@ class MonetizationApplicationController extends Controller
                 'employee_leave_credit_id' => $credit->id,
                 'previous_credit' => $previous_credit,
                 'leave_credits' => $request->credit_value,
-                'reason' => 'apply'
+                'reason' => 'apply',
+                'action' => 'deduct'
             ]);
 
             $employeeCredit =  EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)
@@ -461,7 +462,7 @@ class MonetizationApplicationController extends Controller
             $mone_application_approving = $mone_application->approving_officer;
 
             switch ($mone_application->status) {
-                case 'applied': 
+                case 'applied':
                     if($employee_profile->id === $mone_application->hrmo_officer){
                         $status = 'declined by hrmo officer';
                         $declined_by = "HR";
@@ -477,7 +478,7 @@ class MonetizationApplicationController extends Controller
                         ], Response::HTTP_FORBIDDEN);
                     }
                     break;
-                case 'for recommending approval': 
+                case 'for recommending approval':
                     if($employee_profile->id === $mone_application->recommending_officer){
                         $status = 'declined by recommending officer';
                         $declined_by = "Recommending officer";
@@ -527,7 +528,8 @@ class MonetizationApplicationController extends Controller
                 'employee_leave_credit_id' => $employee_credit->id,
                 'previous_credit' => $current_leave_credit,
                 'leave_credits' => $mone_application->credit_value,
-                'reason' => "declined"
+                'reason' => "declined",
+                'action' => 'add'
             ]);
 
             return response()->json([
