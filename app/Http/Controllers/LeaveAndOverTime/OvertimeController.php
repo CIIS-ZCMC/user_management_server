@@ -444,7 +444,6 @@ class OvertimeController extends Controller
                         $timeTo = $validatedData['time_to'][$index][$dateIndex];
                         $totalOvertimeHours += $this->calculateOvertimeHours($timeFrom, $timeTo);
 
-
                         // Calculate the total earned credit accumulated including the current overtime application
                         $totalEarnedCredit = $employeeProfile->earned_credit_by_hour + $totalOvertimeHours;
 
@@ -799,14 +798,27 @@ class OvertimeController extends Controller
         }
     }
 
-    public function userOvertimeApplication(Request $request)
+    public function getUserOvertime(Request $request)
     {
         try {
             $employee_profile = $request->user;
-            $overtime_applications = OvertimeApplication::where('employee_profile_id', $employee_profile->id)->get();
+            $employeeId = $employee_profile->id;
+            $overtime_applications = OvertimeApplication::with(['dates.employees', 'activities.dates.employees'])
+
+            ->where(function ($query) use ($employeeId) {
+                // Scenario 1: Direct connection to Dates
+                $query->whereHas('dates.employees', function ($query) use ($employeeId) {
+                    $query->where('employee_profile_id', $employeeId);
+                })
+                // Scenario 2: Indirect connection through Activities and Dates
+                ->orWhereHas('activities.dates.employees', function ($query) use ($employeeId) {
+                    $query->where('employee_profile_id', $employeeId);
+                });
+            })
+            ->get();
             return response()->json([
                 'data' => OvertimeResource::collection($overtime_applications),
-                'message' => 'Retrieve all overtime application records.'
+                'message' => 'Retrieved all overtime application'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
