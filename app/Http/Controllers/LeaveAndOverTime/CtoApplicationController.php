@@ -729,6 +729,7 @@ class CtoApplicationController extends Controller
             $totalCreditsEarnedNextYear = 0;
             $totalCreditsExpiringThisYear = 0;
             $totalCreditsExpiringNextYear = 0;
+            $totalUsableCredits=0;
             foreach ($employeeCredits as $employeeCredit) {
 
                 if (!$employeeName) {
@@ -744,6 +745,7 @@ class CtoApplicationController extends Controller
                 } elseif ($validUntilYear === $nextYear) {
                     $totalCreditsExpiringNextYear += $employeeCredit->earned_credit_by_hour;
                 }
+                $totalUsableCredits =  $totalCreditsExpiringThisYear +  $totalCreditsExpiringNextYear ;
 
                 $logs = $employeeCredit->logs;
 
@@ -778,12 +780,12 @@ class CtoApplicationController extends Controller
                 'employee_job' => $employeeJobPosition,
                 'employee_position' => $employeePosition,
                 'employee_area' => $employee_assign_area,
-                'total_credits_earned_this_month' => $totalCreditsEarnedThisMonth,
-                'total_credits_earned_this_year' => $totalCreditsEarnedThisYear,
-                'total_credits_earned_next_year' => $totalCreditsEarnedNextYear,
-                'total_usable_credits' =>  $employeeCredit->earned_credit_by_hour,
-                'total_credits_expiring_this_year' => $totalCreditsExpiringThisYear,
-                'total_credits_expiring_next_year' => $totalCreditsExpiringNextYear,
+                'earned_this_month' => $totalCreditsEarnedThisMonth,
+                'earned_this_year' => $totalCreditsEarnedThisYear,
+                'earned_next_year' => $totalCreditsEarnedNextYear,
+                'total_usable_credits' =>  $totalUsableCredits,
+                'expiring_this_year' => $totalCreditsExpiringThisYear,
+                'expiring_next_year' => $totalCreditsExpiringNextYear,
                 'logs' => $allLogs,
             ];
             // $response =array_merge($employeeDetails,$allLogs);
