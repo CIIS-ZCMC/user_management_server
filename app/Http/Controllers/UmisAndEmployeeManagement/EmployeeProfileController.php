@@ -1454,14 +1454,25 @@ class EmployeeProfileController extends Controller
                 return response()->json(['message' => "A problem encounter while trying to register new password."], Response::HTTP_BAD_REQUEST);
             }
 
-            $employee_profile->update([
-                'password_encrypted' => $encryptedPassword,
-                'password_created_at' => now(),
-                'password_expiration_at' => $threeMonths,
-                'is_2fa' => $request->two_factor ?? false,
-                'authorization_pin' => strip_tags($request->pin),
-                'pin_created_at' => now()
-            ]);
+
+            if ($request->two_factor === null || $request->two_factor === 'null') {
+                $employee_profile->update([
+                    'password_encrypted' => $encryptedPassword,
+                    'password_created_at' => now(),
+                    'password_expiration_at' => $threeMonths
+                ]);
+                  
+            }  else {
+                $employee_profile->update([
+                    'password_encrypted' => $encryptedPassword,
+                    'password_created_at' => now(),
+                    'password_expiration_at' => $threeMonths,
+                    'is_2fa' => $request->two_factor ?? false,
+                    'authorization_pin' => strip_tags($request->pin),
+                    'pin_created_at' => now()
+                ]);
+            }
+               
 
             $agent = new Agent();
             $device = [
@@ -2004,10 +2015,8 @@ class EmployeeProfileController extends Controller
     public function employeesDTRList(Request $request)
     {
         try {
-            $employment_type_id = $request->employment_type_id;
-
-            if ($employment_type_id !== null) {
-                $employee_profiles = EmployeeProfile::where('employment_type_id', $employment_type_id)
+            if (isset($request->employment_type_id) && $request->employment_type_id !== null) {
+                $employee_profiles = EmployeeProfile::where('employment_type_id', $request->employment_type_id)
                     ->get();
 
                 return response()->json([
@@ -2016,7 +2025,7 @@ class EmployeeProfileController extends Controller
                 ], Response::HTTP_OK);
             }
 
-            $employee_profiles = EmployeeProfile::whereNotIn('id', [1])->get();
+            $employee_profiles = EmployeeProfile::whereNotIn('id', [1])->whereNot('employee_id', null)->get();
             Helpers::registerSystemLogs($request, null, true, 'Success in fetching a ' . $this->PLURAL_MODULE_NAME . '.');
 
             return response()->json([
@@ -2521,7 +2530,7 @@ class EmployeeProfileController extends Controller
             } catch (\Throwable $th) {
             }
 
-            $cleanData['allow_time_adjustment'] = strip_tags($request->allow_time_adjustment) === 1 ? true : false;
+            $cleanData['allow_time_adjustment'] = strip_tags($request->allow) === 1 ? true : false;
             $cleanData['shifting'] = strip_tags($request->shifting) === 1 ? true : false;
             $cleanData['password_encrypted'] = $encryptedPassword;
             $cleanData['password_created_at'] = now();
@@ -2615,8 +2624,7 @@ class EmployeeProfileController extends Controller
             $issuance_controller = new IssuanceInformationController();
             $issuance_controller->store($employee_profile->id, $issuance_request);
 
-            $shifting = strip_tags($request->shifting);
-            if ($shifting === 0) {
+            if (strip_tags($request->shifting) === "0") {
                 $schedule_this_month = Helpers::generateSchedule(Carbon::now(), $cleanData['employment_type_id'], $request->meridian);
 
                 foreach ($schedule_this_month as $schedule) {
@@ -2844,7 +2852,7 @@ class EmployeeProfileController extends Controller
             $totalYears = floor($totalMonths / 12);
 
             $employee = [
-                'profile_url' => config('app.server_domain') . "/photo/profiles/" . $employee_profile->profile_url,
+                'profile_url' => config('app.server_domain') . "/photo/profiles/" . $employee_profile->profile_url, 
                 'employee_id' => $employee_profile->employee_id,
                 'position' => $position,
                 'job_position' => $designation->name,
@@ -2855,7 +2863,8 @@ class EmployeeProfileController extends Controller
                 'last_login' => $last_login === null ? null : $last_login->created_at,
                 'biometric_id' => $employee_profile->biometric_id,
                 'total_months' => $totalMonths - ($totalYears * 12),
-                'total_years' => $totalYears
+                'total_years' => $totalYears,
+                'is_allowed_ta' => $employee_profile->allow_time_adjustment
             ];
 
             $personal_information_data = [

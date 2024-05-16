@@ -41,7 +41,7 @@ class EmployeeScheduleController extends Controller
             $this->updateAutomaticScheduleStatus();
 
             if ($user->employee_id === "1918091351" || $assigned_area['details']['code'] === 'HRMO') {
-                $data = EmployeeProfile::where('id', '!=', 1)
+                $data = EmployeeProfile::where([['id', '!=', 1], ['deactivated_at', '=', null]])
                     ->with([
                         'schedule' => function ($query) use ($year, $month) {
                             $query->whereYear('date', '=', $year)
