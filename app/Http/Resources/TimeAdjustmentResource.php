@@ -55,6 +55,7 @@ class TimeAdjustmentResource extends JsonResource
             'remarks' => $this->remarks,
             'file_name' => $this->attachment,
             'file_path' => config('app.server_domain') . "/time_adjustment/",
+            'file_size' => $this->filesize(),
             'attachment' => config('app.server_domain') . "/time_adjustment/" . $this->attachment,
             'status' => $this->status,
             'approval_date' => $this->approval_date,

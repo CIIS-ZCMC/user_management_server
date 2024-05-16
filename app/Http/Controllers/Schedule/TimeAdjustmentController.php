@@ -96,6 +96,10 @@ class TimeAdjustmentController extends Controller
             $employee = EmployeeProfile::find($cleanData['employee_profile_id']);
             $employee_area = $employee->assignedArea->findDetails();
 
+            if ($employee->biometric_id === null) {
+                return response()->json(['message' => 'Biometric ID is not yet registered'], Response::HTTP_NOT_FOUND);
+            }
+
             $dtr = DailyTimeRecords::where([
                 ['biometric_id', '=', $employee->biometric_id],
                 ['dtr_date', '=', Carbon::parse($cleanData['date'])->format('Y-m-d')],
@@ -136,7 +140,7 @@ class TimeAdjustmentController extends Controller
 
             $cleanData['daily_time_record_id'] = $dtr->id;
             $cleanData['employee_profile_id'] = $employee->id;
-            $cleanData['recommending_officer'] = $recommending_officer ? $recommending_officer->id : null;
+            // $cleanData['recommending_officer'] = $recommending_officer ? $recommending_officer->id : null;
             $cleanData['approving_officer'] = $approving_officer;
 
             $data = TimeAdjustment::create($cleanData);
@@ -194,17 +198,17 @@ class TimeAdjustmentController extends Controller
                     $dtr = DailyTimeRecords::create([
                         'biometric_id' => $employees->biometric_id,
                         'dtr_date' => $data->date,
-                        'first_in' => $data->first_in,
-                        'first_out' => $data->first_out,
-                        'second_in' => $data->second_in,
-                        'second_out' => $data->second_out,
+                        'first_in' => $data->date . " " . $data->first_in,
+                        'first_out' => $data->date . " " . $data->first_out,
+                        'second_in' => $data->date . " " . $data->second_in,
+                        'second_out' => $data->date . " " . $data->second_out,
                     ]);
                 } else {
                     $dtr->update([
-                        'first_in' => $data->first_in ?? $dtr->first_in,
-                        'first_out' => $data->first_out ?? $dtr->first_out,
-                        'second_in' => $data->second_in ?? $dtr->second_in,
-                        'second_out' => $data->second_out ?? $dtr->second_out,
+                        'first_in' => $data->date . " " . $data->first_in ?? $dtr->first_in,
+                        'first_out' => $data->date . " " . $data->first_out ?? $dtr->first_out,
+                        'second_in' => $data->date . " " . $data->second_in ?? $dtr->second_in,
+                        'second_out' => $data->date . " " . $data->second_out ?? $dtr->second_out,
                     ]);
                 }
             }
