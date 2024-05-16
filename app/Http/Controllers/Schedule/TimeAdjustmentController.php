@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Schedule;
 
 use App\Helpers\Helpers;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\TimeAdjustmentRequest;
 use App\Http\Resources\TimeAdjustmentResource;
 use App\Models\DailyTimeRecords;
 use App\Models\EmployeeProfile;
@@ -59,9 +60,10 @@ class TimeAdjustmentController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(TimeAdjustmentRequest $request)
     {
         try {
+
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
@@ -72,6 +74,14 @@ class TimeAdjustmentController extends Controller
 
                 if (is_int($value)) {
                     $cleanData[$key] = $value;
+                    continue;
+                }
+
+                if ($key === 'attachment') {
+                    $attachment = Helpers::checkSaveFile($request->attachment, '/time_adjustment');
+                    if (is_string($attachment)) {
+                        $cleanData['attachment'] = $request->attachment === null || $request->attachment === 'null' ? null : $attachment;
+                    }
                     continue;
                 }
 
@@ -87,13 +97,13 @@ class TimeAdjustmentController extends Controller
             $employee_area = $employee->assignedArea->findDetails();
 
             $dtr = DailyTimeRecords::where([
-                ['biometric_id', '=', $employee->biometric->biometric_id],
+                ['biometric_id', '=', $employee->biometric_id],
                 ['dtr_date', '=', Carbon::parse($cleanData['date'])->format('Y-m-d')],
             ])->first();
 
             if ($dtr === null) {
                 $dtr = DailyTimeRecords::create([
-                    'biometric_id' => $employee->biometric->biometric_id,
+                    'biometric_id' => $employee->biometric_id,
                     'dtr_date' => $cleanData['date'],
                     'first_in' => $cleanData['first_in'],
                     'first_out' => $cleanData['first_out'],
@@ -126,7 +136,7 @@ class TimeAdjustmentController extends Controller
 
             $cleanData['daily_time_record_id'] = $dtr->id;
             $cleanData['employee_profile_id'] = $employee->id;
-            $cleanData['recommending_officer'] = $recommending_officer;
+            $cleanData['recommending_officer'] = $recommending_officer ? $recommending_officer->id : null;
             $cleanData['approving_officer'] = $approving_officer;
 
             $data = TimeAdjustment::create($cleanData);

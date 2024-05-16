@@ -30,10 +30,9 @@ class EmployeeSixMonthEarnSPLCredit extends Command
      */
     public function handle()
     {
-        $employees = EmployeeProfile::all();
-
+        $employees = EmployeeProfile::where('employment_type_id', '!=', 5)->get();
         // Get the SPL leave type
-          $special_privilege_leave = LeaveType::where('code', 'SPL')->first();
+        $special_privilege_leave = LeaveType::where('code', 'SPL')->first();
 
         foreach ($employees as $employee) {
                 // Calculate the date 6 months after the employee's hire date
@@ -42,10 +41,11 @@ class EmployeeSixMonthEarnSPLCredit extends Command
                 // Check if the current date is after or equal to the 6-month interval from the hire date
                 if (Carbon::now()->isSameDay($six_months_after_hire) || Carbon::now()->gt($six_months_after_hire)) {
                     // Check if SPL credits have already been given for the current interval
+                    $currentYear = Carbon::now()->year;
                     $spls_given = EmployeeLeaveCreditLogs::whereHas('employeeLeaveCredit', function ($query) use ($employee, $six_months_after_hire) {
                         $query->where('employee_profile_id', $employee->id);
                     })
-                    ->where('created_at', '>=', $six_months_after_hire->subMonths(6)) // Check within the current 6-month interval
+                    ->whereYear('created_at', $currentYear)// Check within the current 6-month interval
                     ->where('reason', 'Annual SPL Credits')
                     ->exists();
 

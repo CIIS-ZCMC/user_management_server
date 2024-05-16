@@ -701,7 +701,7 @@ class Helpers
         return $overlappingLeave || $overlappingOb || $overlappingOT || $overlappingCTO;
     }
 
-    public static function generateSchedule($start_duty)
+    public static function generateSchedule($start_duty, $employment_type_id, $meridian)
     {
         $duty_start = new DateTime($start_duty);
 
@@ -723,10 +723,24 @@ class Helpers
 
         // Now, $scheduleDates contains all the dates from $start_duty to the end of the month
         foreach ($scheduleDates as $date) {
-            $schedule = Schedule::firstOrNew([
-                'time_shift_id' => 1,
-                'date' => $date,
-            ]);
+            if ($employment_type_id === 2) {
+                if ($meridian === 'AM') {
+                    $schedule = Schedule::firstOrNew([
+                        'time_shift_id' => 7,
+                        'date' => $date,
+                    ]);
+                } else if ($meridian === 'PM') {
+                    $schedule = Schedule::firstOrNew([
+                        'time_shift_id' => 8,
+                        'date' => $date,
+                    ]);
+                }
+            } else {
+                $schedule = Schedule::firstOrNew([
+                    'time_shift_id' => 1,
+                    'date' => $date,
+                ]);
+            }
 
             if ($schedule->exists) {
                 // The schedule already exists
@@ -740,7 +754,7 @@ class Helpers
             $schedules[] = $schedule;
 
         }
-        
+
         return $schedules;
     }
 

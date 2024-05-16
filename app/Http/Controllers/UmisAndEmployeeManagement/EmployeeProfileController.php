@@ -103,13 +103,13 @@ class EmployeeProfileController extends Controller
     public function employeesCards(Request $request)
     {
         try {
-            $active_users = EmployeeProfile::whereNot('id', 1)->whereNot('authorization_pin', NULL)->whereNot('employee_id', NULL)->count();
+            $active_users = EmployeeProfile::whereNot('id', 1)->whereNotNull('authorization_pin')->count();
             $pending_users = EmployeeProfile::whereNot('id', 1)->where('authorization_pin', NULL)->count();
-            $regular_employees = EmployeeProfile::whereNot('id', 1)->whereNot('authorization_pin', NULL)->whereNot('employee_id', NULL)->where('employment_type_id', EmploymentType::where('name', 'Permanent Full-time')->first()->id)->orWhere('employment_type_id', EmploymentType::where('name', 'Permanent Part-time')->first()->id)->orWhere('employment_type_id', EmploymentType::where('name', 'Temporary')->first()->id)->count();
+            $regular_employees = EmployeeProfile::whereNot('id', 1)->whereNot('authorization_pin', NULL)->whereNot('employee_id', NULL)->where('employment_type_id', EmploymentType::where('name', 'Permanent Full-time')->first())->orWhere('employment_type_id', EmploymentType::where('name', 'Permanent Part-time')->first())->orWhere('employment_type_id', EmploymentType::where('name', 'Temporary')->first())->count();
             $job_orders = EmployeeProfile::whereNot('id', 1)->whereNot('employee_id', NULL)->where('employment_type_id', EmploymentType::where('name', 'Job Order')->first()->id)->count();
 
             return response()->json([
-                'data' => [ 
+                'data' => [
                     'active_users' => $active_users,
                     'pending_users' => $pending_users,
                     'regular_employees' => $regular_employees,
@@ -150,11 +150,10 @@ class EmployeeProfileController extends Controller
 
             return response()->json([
                 'data' => EmployeeProfileUpdateResource::collection([...$trainings, ...$eligibilities, ...$educations]),
-                // 'data' => [...$trainings, ...$eligibilities, ...$educations],
                 'message' => "Retrieve employees list for add record approval"
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
-            Helpers::errorLog($this->CONTROLLER_NAME, 'employeeForRenwal', $th->getMessage());
+            Helpers::errorLog($this->CONTROLLER_NAME, 'profileUpdateRequest', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -174,11 +173,13 @@ class EmployeeProfileController extends Controller
 
             switch ($type) {
                 case "Educational Background":
+
                     $profile_request = EducationalBackground::find($request->id);
                     $profile_request->update([
                         "is_request" => false,
                         "approved_at" => Carbon::now()
                     ]);
+
                     break;
                 case "Eligibility":
                     $profile_request = CivilServiceEligibility::find($request->id);
@@ -197,8 +198,8 @@ class EmployeeProfileController extends Controller
             }
 
             return response()->json([
-                'data' => new EmployeeProfileUpdateResource($profile_request),
-                'message' => "Retrieve employees list for renewal"
+                'data' => $profile_request,
+                'message' => "Successfully approved educational background update request"
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'approvedProfileUpdate', $th->getMessage());
@@ -933,6 +934,8 @@ class EmployeeProfileController extends Controller
             }
         }
 
+
+
         return [
             'personal_information_id' => $personal_information->id,
             'employee_profile_id' => $employee_profile['id'],
@@ -952,12 +955,18 @@ class EmployeeProfileController extends Controller
                 'address' => $address,
                 'family_background' => new FamilyBackGroundResource($personal_information->familyBackground),
                 'children' => ChildResource::collection($personal_information->children),
-                'education' => EducationalBackgroundResource::collection($personal_information->educationalBackground),
+                'education' => EducationalBackgroundResource::collection($personal_information->educationalBackground->filter(function ($row) {
+                    return $row->is_request === 0;
+                })),
                 'affiliations_and_others' => [
-                    'civil_service_eligibility' => CivilServiceEligibilityResource::collection($personal_information->civilServiceEligibility),
+                    'civil_service_eligibility' => CivilServiceEligibilityResource::collection($personal_information->civilServiceEligibility->filter(function ($row) {
+                        return $row->is_request === 0;
+                    })),
                     'work_experience' => WorkExperienceResource::collection($personal_information->workExperience),
                     'voluntary_work_or_involvement' => VoluntaryWorkResource::collection($personal_information->voluntaryWork),
-                    'training' => TrainingResource::collection($personal_information->training),
+                    'training' => TrainingResource::collection($personal_information->training->filter(function ($row) {
+                        return $row->is_request === 0;
+                    })),
                     'other' => OtherInformationResource::collection($personal_information->otherInformation),
                 ],
                 'issuance' => $employee_profile->issuanceInformation,
@@ -1445,14 +1454,25 @@ class EmployeeProfileController extends Controller
                 return response()->json(['message' => "A problem encounter while trying to register new password."], Response::HTTP_BAD_REQUEST);
             }
 
-            $employee_profile->update([
-                'password_encrypted' => $encryptedPassword,
-                'password_created_at' => now(),
-                'password_expiration_at' => $threeMonths,
-                'is_2fa' => $request->two_factor ?? false,
-                'authorization_pin' => strip_tags($request->pin),
-                'pin_created_at' => now()
-            ]);
+
+            if ($request->two_factor === null || $request->two_factor === 'null') {
+                $employee_profile->update([
+                    'password_encrypted' => $encryptedPassword,
+                    'password_created_at' => now(),
+                    'password_expiration_at' => $threeMonths
+                ]);
+                  
+            }  else {
+                $employee_profile->update([
+                    'password_encrypted' => $encryptedPassword,
+                    'password_created_at' => now(),
+                    'password_expiration_at' => $threeMonths,
+                    'is_2fa' => $request->two_factor ?? false,
+                    'authorization_pin' => strip_tags($request->pin),
+                    'pin_created_at' => now()
+                ]);
+            }
+               
 
             $agent = new Agent();
             $device = [
@@ -1995,10 +2015,8 @@ class EmployeeProfileController extends Controller
     public function employeesDTRList(Request $request)
     {
         try {
-            $employment_type_id = $request->employment_type_id;
-
-            if ($employment_type_id !== null) {
-                $employee_profiles = EmployeeProfile::where('employment_type_id', $employment_type_id)
+            if (isset($request->employment_type_id) && $request->employment_type_id !== null) {
+                $employee_profiles = EmployeeProfile::where('employment_type_id', $request->employment_type_id)
                     ->get();
 
                 return response()->json([
@@ -2007,7 +2025,7 @@ class EmployeeProfileController extends Controller
                 ], Response::HTTP_OK);
             }
 
-            $employee_profiles = EmployeeProfile::whereNotIn('id', [1])->get();
+            $employee_profiles = EmployeeProfile::whereNotIn('id', [1])->whereNot('employee_id', null)->get();
             Helpers::registerSystemLogs($request, null, true, 'Success in fetching a ' . $this->PLURAL_MODULE_NAME . '.');
 
             return response()->json([
@@ -2027,17 +2045,17 @@ class EmployeeProfileController extends Controller
             $cacheExpiration = Carbon::now()->addDay();
 
             // $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () use ($user) {
-            //     return EmployeeProfile::whereNotIn('id', [1, $user->id])->get();
+            //     return EmployeeProfile::whereNotIn('id', [1])->get();
             // });
 
-            $employee_profiles = EmployeeProfile::whereNotIn('id', [1, $user->id])->where('deactivated_at', NULL)->get();
+            $employee_profiles = EmployeeProfile::whereNotIn('id', [1])->where('deactivated_at', NULL)->get();
 
-            return EmployeeProfileResource::collection($employee_profiles);
+            // return EmployeeProfileResource::collection($employee_profiles);
 
-            // return response()->json([
-            //     'data' => EmployeeProfileResource::collection($employee_profiles),
-            //     'message' => 'list of employees retrieved.'
-            // ], Response::HTTP_OK);
+            return response()->json([
+                'data' => EmployeeProfileResource::collection($employee_profiles),
+                'message' => 'list of employees retrieved.'
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -2512,7 +2530,7 @@ class EmployeeProfileController extends Controller
             } catch (\Throwable $th) {
             }
 
-            $cleanData['allow_time_adjustment'] = strip_tags($request->allow_time_adjustment) === 1 ? true : false;
+            $cleanData['allow_time_adjustment'] = strip_tags($request->allow) === 1 ? true : false;
             $cleanData['shifting'] = strip_tags($request->shifting) === 1 ? true : false;
             $cleanData['password_encrypted'] = $encryptedPassword;
             $cleanData['password_created_at'] = now();
@@ -2524,18 +2542,18 @@ class EmployeeProfileController extends Controller
 
             if (EmploymentType::find($cleanData['employment_type_id'])->name === 'Temporary' || EmploymentType::find($cleanData['employment_type_id'])->name === 'Job Order') {
 
-                if ($request->renewal === 'null' || $request->renewal === null) {
-                    DB::rollBack();
-                    return response()->json([
-                        'message' => 'Temporary or Job order renewal date is required.'
-                    ], Response::HTTP_BAD_REQUEST);
-                }
+                // if ($request->renewal === 'null' || $request->renewal === null) {
+                //     DB::rollBack();
+                //     return response()->json([
+                //         'message' => 'Temporary or Job order renewal date is required.'
+                //     ], Response::HTTP_BAD_REQUEST);
+                // }
 
                 if (EmploymentType::find($cleanData['employment_type_id'])->name === 'Temporary') {
                     $cleanData['renewal'] = Carbon::now()->addYear();
                 }
 
-                $cleanData['renewal'] = strip_tags($request->renewal);
+                // $cleanData['renewal'] = strip_tags($request->renewal);
             }
 
             $plantilla_number_id = $request->plantilla_number_id === "null" || $request->plantilla_number_id === null ? null : $request->plantilla_number_id;
@@ -2606,19 +2624,19 @@ class EmployeeProfileController extends Controller
             $issuance_controller = new IssuanceInformationController();
             $issuance_controller->store($employee_profile->id, $issuance_request);
 
-            if(strip_tags($request->shifting) === 0){
-                $schedule_this_month = Helpers::generateSchedule(Carbon::now());
+            if (strip_tags($request->shifting) === "0") {
+                $schedule_this_month = Helpers::generateSchedule(Carbon::now(), $cleanData['employment_type_id'], $request->meridian);
 
-                foreach($schedule_this_month as $schedule){
+                foreach ($schedule_this_month as $schedule) {
                     EmployeeSchedule::create([
                         'employee_profile_id' => $employee_profile->id,
                         'schedule_id' => $schedule->id
                     ]);
                 }
-                
-                $schedule_next_month = Helpers::generateSchedule(Carbon::now()->addMonth()->startOfMonth());
-                
-                foreach($schedule_next_month as $schedule){
+
+                $schedule_next_month = Helpers::generateSchedule(Carbon::now()->addMonth()->startOfMonth(), $cleanData['employment_type_id'], $request->meridian);
+
+                foreach ($schedule_next_month as $schedule) {
                     EmployeeSchedule::create([
                         'employee_profile_id' => $employee_profile->id,
                         'schedule_id' => $schedule->id
@@ -2626,7 +2644,7 @@ class EmployeeProfileController extends Controller
                 }
             }
 
-            if(strip_tags($request->allow_time_adjustment) === 1){
+            if (strip_tags($request->allow_time_adjustment) === 1) {
                 $role = Role::where('code', 'ATA')->first();
                 $system_role = SystemRole::where('role_id', $role->id)->first();
 
@@ -2834,7 +2852,7 @@ class EmployeeProfileController extends Controller
             $totalYears = floor($totalMonths / 12);
 
             $employee = [
-                'profile_url' => config('app.server_domain') . "/photo/profiles/" . $employee_profile->profile_url,
+                'profile_url' => config('app.server_domain') . "/photo/profiles/" . $employee_profile->profile_url, 
                 'employee_id' => $employee_profile->employee_id,
                 'position' => $position,
                 'job_position' => $designation->name,
@@ -2845,7 +2863,8 @@ class EmployeeProfileController extends Controller
                 'last_login' => $last_login === null ? null : $last_login->created_at,
                 'biometric_id' => $employee_profile->biometric_id,
                 'total_months' => $totalMonths - ($totalYears * 12),
-                'total_years' => $totalYears
+                'total_years' => $totalYears,
+                'is_allowed_ta' => $employee_profile->allow_time_adjustment
             ];
 
             $personal_information_data = [
@@ -3242,7 +3261,7 @@ class EmployeeProfileController extends Controller
         $special_right->delete();
     }
 
-    public function revokeRights($id, $access_right_id, AuthPinApprovalRequest $request)
+    public function revokeRights($id, $access_right_id, Request $request)
     {
         try {
             $user = $request->user;
@@ -3307,7 +3326,7 @@ class EmployeeProfileController extends Controller
                 'remarks' => strip_tags($request->remarks),
             ]);
 
-            if($employee_profile->employmentType->name === 'Permanent CTI'){
+            if ($employee_profile->employmentType->name === 'Permanent CTI') {
                 $plantilla_number = $employee_profile->assignedArea->plantillaNumber;
                 $plantilla_number->update([
                     'employee_profile_id' => null,
@@ -3315,7 +3334,7 @@ class EmployeeProfileController extends Controller
                 ]);
             }
 
-            if($employee_profile->employmentType->name !== 'Job Order'){
+            if ($employee_profile->employmentType->name !== 'Job Order') {
                 $plantilla_number = $employee_profile->assignedArea->plantillaNumber;
                 $plantilla_number->update([
                     'employee_profile_id' => null

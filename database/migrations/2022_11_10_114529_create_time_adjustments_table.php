@@ -13,16 +13,6 @@ return new class extends Migration {
         Schema::create('time_adjustments', function (Blueprint $table) {
             $table->id();
 
-            $table->date('date')->nullable();
-            $table->string('first_in')->nullable();
-            $table->string('first_out')->nullable();
-            $table->string('second_in')->nullable();
-            $table->string('second_out')->nullable();
-            $table->string('remarks')->nullable();
-            $table->string('attachement')->nullable();
-            $table->string('status')->default('applied');
-            $table->date('approval_date')->nullable();
-
             $table->unsignedBigInteger('daily_time_record_id')->nullable();
             $table->foreign('daily_time_record_id')->references('id')->on('daily_time_records')->onDelete('cascade');
 
@@ -34,6 +24,16 @@ return new class extends Migration {
 
             $table->unsignedBigInteger('approving_officer');
             $table->foreign('approving_officer')->references('id')->on('employee_profiles');
+
+            $table->date('date')->nullable();
+            $table->string('first_in')->nullable();
+            $table->string('first_out')->nullable();
+            $table->string('second_in')->nullable();
+            $table->string('second_out')->nullable();
+            $table->string('remarks')->nullable();
+            $table->string('attachment')->nullable();
+            $table->string('status')->default('applied');
+            $table->date('approval_date')->nullable();
 
             $table->softDeletes();
             $table->timestamps();

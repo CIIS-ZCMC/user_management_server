@@ -11,6 +11,7 @@ use App\Models\Biometrics;
 use App\Models\EmployeeProfile;
 use App\Models\Devices;
 use App\Models\TimeShift;
+use PHPUnit\Framework\MockObject\Stub\ReturnArgument;
 
 class Helpers
 {
@@ -120,15 +121,7 @@ class Helpers
           AND time_shift_id = s.id
           LIMIT 1)
      ELSE 'NONE'
- END AS date,
-
-  CASE
-     WHEN s.id IS NOT NULL THEN
-          (SELECT is_on_call
-          FROM employee_profile_schedule
-          WHERE schedule_id = s.id limit 1)
-     ELSE 'NONE'
- END AS is_on_call
+ END AS date
 FROM time_shifts s
 WHERE s.id IN (
 SELECT time_shift_id
@@ -172,7 +165,6 @@ AND id IN (
                 'sc.is_weekend',
                 'sc.status',
                 'sc.remarks',
-                'esc.is_on_call'
             )
             ->join('schedules as sc', 'sc.time_shift_id', '=', 'ts.id')
             ->join('employee_profile_schedule as esc', 'esc.schedule_id', '=', 'sc.id')
@@ -200,12 +192,11 @@ AND id IN (
 
             $scheds[] = [
                 'scheduleDate' => $row->date ?? date('Y-m-d'),
-                'first_entry' => $row->first_in ?? $f1,
-                'second_entry' => $row->first_out ?? $f2,
-                'third_entry' => $row->second_in ?? $f3,
-                'last_entry' => $row->second_out ?? $f4,
+                'first_entry' => $row->first_in ?? null,
+                'second_entry' => $row->first_out ?? null,
+                'third_entry' => $row->second_in ?? null,
+                'last_entry' => $row->second_out ?? null,
                 'total_hours' => $row->total_hours ?? Cache::get('required_working_hours'),
-                'is_on_call' => $row->is_on_call ?? 0,
                 'arrival_departure' => $dp ?? ""
             ];
         }
@@ -226,8 +217,8 @@ AND id IN (
                 'third_entry' => $get_Sched[0]->second_in,
                 'last_entry' => $get_Sched[0]->second_out,
                 'total_hours' => $get_Sched[0]->total_hours,
-                'date' => $get_Sched[0]->date,
-                'is_on_call' => $get_Sched[0]->is_on_call,
+                'date' => $get_Sched[0]->date
+
             ];
         }
         return [
@@ -238,7 +229,6 @@ AND id IN (
             'total_hours' => config("app.required_working_hours"),
             'date' => null,
             'date_end' => null,
-            'is_on_call' => null,
         ];
     }
 
@@ -364,6 +354,7 @@ AND id IN (
     {
         $alloted_hours = config("app.alloted_valid_time_for_firstentry");
 
+
         switch ($InType) {
             case "AM":
                 $this->inEntryAM($biometric_id, $alloted_hours, $scheduleEntry, $dtrentry);
@@ -376,50 +367,56 @@ AND id IN (
 
     public  function inEntryAM($biometric_id, $alloted_hours, $scheduleEntry, $dtrentry)
     {
+
         $dtr_date = date('Y-m-d', strtotime($dtrentry['date_time']));
         $max_allowed_entry_for_oncall = config("app.max_allowed_entry_oncall");
 
         $dtrentry = $dtrentry['date_time'];
         $schedule = $scheduleEntry['first_entry'] ?? config("app.firstin");
-        $isoncall = $scheduleEntry['is_on_call'] ?? 0;
+
+
+
+
         $alloted_mins_Oncall = 0.5; // 30 minutes
         if (count($scheduleEntry) >= 1) {
             /* With Schedule Entry */
             $in_Entry = $schedule;
+            // $time_stamp = strtotime($in_Entry);
+            // $new_Time_stamp = $time_stamp - ($alloted_hours * 3600);
+            // $Calculated_allotedHours = date('Y-m-d H:i:s', $new_Time_stamp);
+            // if ($isoncall) {
+            //     $schedEntry = $time_stamp + ($alloted_mins_Oncall * 1800); // 30 mins
 
-            $time_stamp = strtotime($in_Entry);
-            $new_Time_stamp = $time_stamp - ($alloted_hours * 3600);
-            $Calculated_allotedHours = date('Y-m-d H:i:s', $new_Time_stamp);
-            if ($isoncall) {
-                $schedEntry = $time_stamp + ($alloted_mins_Oncall * 1800); // 30 mins
+            //     $calIn = date("Y-m-d H:i:s", $schedEntry);
+            //     $dtrentry = date("Y-m-d H:i:s", strtotime($dtrentry));
+            //     $newentry = date("Y-m-d H:i:s", $schedEntry);
+            //     if ($calIn <= $dtrentry) {
 
-                $calIn = date("Y-m-d H:i:s", $schedEntry);
-                $dtrentry = date("Y-m-d H:i:s", strtotime($dtrentry));
-                $newentry = date("Y-m-d H:i:s", $schedEntry);
-                if ($calIn <= $dtrentry) {
+            //         //Not within 30 mins.
+            //         // minus 30 mins then save as new Entry
+            //         $newentry = date("Y-m-d H:i:s", strtotime($dtrentry . "-30 minutes"));
+            //     }
 
-                    //Not within 30 mins.
-                    // minus 30 mins then save as new Entry
-                    $newentry = date("Y-m-d H:i:s", strtotime($dtrentry . "-30 minutes"));
-                }
+            //     DailyTimeRecords::create([
+            //         'biometric_id' => $biometric_id,
+            //         'dtr_date' => $dtr_date,
+            //         'first_in' =>  $newentry,
+            //         'is_biometric' => 1,
+            //     ]);
+            // } else {
 
 
-                DailyTimeRecords::create([
-                    'biometric_id' => $biometric_id,
-                    'dtr_date' => $dtr_date,
-                    'first_in' =>  $newentry,
-                    'is_biometric' => 1,
-                ]);
-            } else {
-                if ($Calculated_allotedHours <=  $dtrentry) { //within alloted hours to timein
+         //       if ($Calculated_allotedHours <=  $dtrentry) { //within alloted hours to timein
                     DailyTimeRecords::create([
                         'biometric_id' => $biometric_id,
                         'dtr_date' => $dtr_date,
                         'first_in' =>  $dtrentry,
                         'is_biometric' => 1,
                     ]);
-                }
-            }
+              //  }
+
+
+       //     }
         } else {
             /* No schedule Entry */
             DailyTimeRecords::create([
@@ -440,45 +437,45 @@ AND id IN (
 
         $dtrentry = $dtrentry['date_time'];
         $schedule = $scheduleEntry['first_entry'] ?? config("app.firstin");
-        $isoncall = $scheduleEntry['is_on_call'] ?? 0;
+
         $alloted_mins_Oncall = 0.5; // 30 minutes
         if (count($scheduleEntry) >= 1) {
             /* With Schedule Entry */
             $in_Entry = $schedule;
 
-            $time_stamp = strtotime($in_Entry);
-            $new_Time_stamp = $time_stamp - ($alloted_hours * 3600);
-            $Calculated_allotedHours = date('Y-m-d H:i:s', $new_Time_stamp);
-            if ($isoncall) {
-                $schedEntry = $time_stamp + ($alloted_mins_Oncall * 1800); // 30 mins
+            // $time_stamp = strtotime($in_Entry);
+            // $new_Time_stamp = $time_stamp - ($alloted_hours * 3600);
+            // $Calculated_allotedHours = date('Y-m-d H:i:s', $new_Time_stamp);
+            // if ($isoncall) {
+            //     $schedEntry = $time_stamp + ($alloted_mins_Oncall * 1800); // 30 mins
 
-                $calIn = date("Y-m-d H:i:s", $schedEntry);
-                $dtrentry = date("Y-m-d H:i:s", strtotime($dtrentry));
-                $newentry = date("Y-m-d H:i:s", $schedEntry);
-                if ($calIn <= $dtrentry) {
+            //     $calIn = date("Y-m-d H:i:s", $schedEntry);
+            //     $dtrentry = date("Y-m-d H:i:s", strtotime($dtrentry));
+            //     $newentry = date("Y-m-d H:i:s", $schedEntry);
+            //     if ($calIn <= $dtrentry) {
 
-                    //Not within 30 mins.
-                    // minus 30 mins then save as new Entry
-                    $newentry = date("Y-m-d H:i:s", strtotime($dtrentry . "-30 minutes"));
-                }
+            //         //Not within 30 mins.
+            //         // minus 30 mins then save as new Entry
+            //         $newentry = date("Y-m-d H:i:s", strtotime($dtrentry . "-30 minutes"));
+            //     }
 
 
-                DailyTimeRecords::create([
-                    'biometric_id' => $biometric_id,
-                    'dtr_date' => $dtr_date,
-                    'second_in' =>  $newentry,
-                    'is_biometric' => 1,
-                ]);
-            } else {
-                if ($Calculated_allotedHours <=  $dtrentry) { //within alloted hours to timein
+            //     DailyTimeRecords::create([
+            //         'biometric_id' => $biometric_id,
+            //         'dtr_date' => $dtr_date,
+            //         'second_in' =>  $newentry,
+            //         'is_biometric' => 1,
+            //     ]);
+            // } else {
+            //    if ($Calculated_allotedHours <=  $dtrentry) { //within alloted hours to timein
                     DailyTimeRecords::create([
                         'biometric_id' => $biometric_id,
                         'dtr_date' => $dtr_date,
                         'second_in' =>  $dtrentry,
                         'is_biometric' => 1,
                     ]);
-                }
-            }
+             //   }
+           // }
         } else {
             /* No schedule Entry */
             DailyTimeRecords::create([
