@@ -1455,7 +1455,7 @@ class EmployeeProfileController extends Controller
             }
 
 
-            if ($request->two_factor === null || $request->two_factor === 'null') {
+            if ($request->is_recover || $request->is_recover === 1) {
                 $employee_profile->update([
                     'password_encrypted' => $encryptedPassword,
                     'password_created_at' => now(),
