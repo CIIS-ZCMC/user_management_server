@@ -853,8 +853,6 @@ class LeaveApplicationController extends Controller
                     break;
             }
 
-            $employee_profile = $leave_application->employeeProfile;
-
             LeaveApplicationLog::create([
                 'action_by' => $employee_profile->id,
                 'leave_application_id' => $leave_application->id,
@@ -1595,14 +1593,22 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    public function updatePrint($id)
+    public function updatePrint($id, Request $request)
     {
         try {
+            $user = $request->user;
+            $employee_profile = $user;
             $employee_leave_application = $id;
             $employee_print = LeaveApplication::where('id', $employee_leave_application)->first();
             $employee_print->update([
                 'is_printed' => 1,
                 'print_datetime' => Carbon::now()
+            ]);
+
+            LeaveApplicationLog::create([
+                'action_by' => $employee_profile->id,
+                'leave_application_id' => $employee_print->id,
+                'action' => 'Printed'
             ]);
             $response[] = $employee_print;
             return response()->json(['data' => new LeaveApplicationResource($employee_print), 'message' => 'Successfully printed'], 200);
@@ -1747,9 +1753,11 @@ class LeaveApplicationController extends Controller
             $start = Carbon::parse($request->date_from);
             $end =  Carbon::parse($request->date_to);
             $checkSchedule = Helpers::hasSchedule($start, $end, $hrmo_officer);
-            // if (!$checkSchedule) {
-            //     return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
-            // }
+
+            if (!$checkSchedule) {
+                return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
+            }
+            
             $overlapExists = Helpers::hasOverlappingRecords($start, $end, $user);
 
             if ($overlapExists) {
@@ -1782,10 +1790,12 @@ class LeaveApplicationController extends Controller
                 ];
             }
 
+            LeaveApplicationLog::where('leave_application_id',$leave_application->id)->delete();
+
             LeaveApplicationLog::create([
                 'action_by' => $employee_profile->id,
                 'leave_application_id' => $leave_application->id,
-                'action' => 'Rescheduled by User'
+                'action' => 'Applied'
             ]);
 
             return response()->json([
