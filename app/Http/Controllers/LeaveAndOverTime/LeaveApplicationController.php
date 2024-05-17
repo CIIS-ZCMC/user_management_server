@@ -1767,7 +1767,11 @@ class LeaveApplicationController extends Controller
             $leave_application = LeaveApplication::find($id);
             $date_from = Carbon::parse($request->date_from);
             $date_to = Carbon::parse($request->date_to);
+            $start_date = Carbon::parse($leave_application->date_from);
 
+            if ($start_date->isPast()) {
+                return response()->json(['message' => 'Cannot be rescheduled.'], Response::HTTP_FORBIDDEN);
+            }
             // Check if the dates are in the past relative to the current date
             if ($date_from->isPast() || $date_to->isPast()) {
                 return response()->json(['message' => 'Date cannot be in the past.'], Response::HTTP_FORBIDDEN);
