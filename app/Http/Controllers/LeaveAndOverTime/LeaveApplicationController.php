@@ -442,7 +442,7 @@ class LeaveApplicationController extends Controller
             }
 
             $result=[];
-            
+
             $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id',  $leave_application->employee_profile_id)->get();
 
             foreach ($employeeCredit as $leaveCredit) {
@@ -550,6 +550,12 @@ class LeaveApplicationController extends Controller
                         if (Carbon::parse($log->created_at)->format('Y') === Carbon::now()->format('Y')) {
                             $totalCreditsEarnedThisYear += $log->leave_credits;
                         }
+
+                        $remaining = $log->previous_credit + $log->leave_credits;
+                    }
+                    else
+                    {
+                        $remaining = $log->previous_credit - $log->leave_credits;
                     }
                     $allLogs[] = [
                         'leave_type' => $employeeCredit->leaveType->name,
@@ -557,7 +563,7 @@ class LeaveApplicationController extends Controller
                         'action' => $log->action,
                         'previous_credit' => $log->previous_credit,
                         'leave_credit' => $log->leave_credits,
-                        'remaining' =>  $log->previous_credit - $log->leave_credits,
+                        'remaining' =>  $remaining,
                         'created_at' =>  $log->created_at,
                     ];
                 }
@@ -906,7 +912,7 @@ class LeaveApplicationController extends Controller
             if ($employee_profile['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
             }
-            
+
             $employeeProfile = EmployeeProfile::find($employeeId);
             if ($employeeProfile->isUnderProbation()) {
                 return response()->json(['message' => 'You are under probation.'], Response::HTTP_FORBIDDEN);
@@ -942,7 +948,7 @@ class LeaveApplicationController extends Controller
             if (!$checkSchedule) {
                 return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
             }
-           
+
             //CHECK SCHEDULES
 
             //IF SICK LEAVE
@@ -994,7 +1000,7 @@ class LeaveApplicationController extends Controller
                     }
                     $message = $selected_date->toDateString();
                     if ($selected_date->lt($vldateDate)) {
-                  
+
                         return response()->json(['message' => "You cannot file for leave on $message. Please select a date 5 days or more from today."], Response::HTTP_FORBIDDEN);
                     }
                 } else {
@@ -1022,7 +1028,7 @@ class LeaveApplicationController extends Controller
                     }
                     $message=$selected_date->toDateString();
                     if ($selected_date->lt($vldateDate)) {
-                      
+
                         return response()->json(['message' => "You cannot file for leave on $message. Please select a date 20 days or more from today."], Response::HTTP_FORBIDDEN);
                     }
                 } else {
@@ -1761,7 +1767,7 @@ class LeaveApplicationController extends Controller
             ]);
 
             $result=[];
-            
+
             $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id',  $leave_application->employee_profile_id)->get();
 
             foreach ($employeeCredit as $leaveCredit) {

@@ -24,6 +24,7 @@ return new class extends Migration
             $table->string('attachment')->nullable();
             $table->string('attachment_size')->nullable();
             $table->string('attachment_path')->nullable();
+            $table->text('remarks')->nullable();
             $table->unsignedBigInteger('hrmo_officer')->unsigned()->nullable();
             $table->foreign('hrmo_officer')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->unsignedBigInteger('recommending_officer')->unsigned()->nullable();
