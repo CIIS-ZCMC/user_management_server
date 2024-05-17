@@ -1757,23 +1757,29 @@ class LeaveApplicationController extends Controller
             if (!$checkSchedule) {
                 return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
             }
-            
+
             $overlapExists = Helpers::hasOverlappingRecords($start, $end, $user);
 
             if ($overlapExists) {
-                return response()->json(['message' => 'You already have an application for the same dates.'], Response::HTTP_FORBIDDEN);
+
             }
 
             $leave_application = LeaveApplication::find($id);
-            $leave_type = $leave_application->leaveType;
-            $leave_application->update([
-                'status' => "applied",
-                'reason' => $request->reason,
-                'date_from' => $request->date_from,
-                'date_to' => $request->date_to,
-                'created_at' => Carbon::now(),
-            ]);
+            $date_from = Carbon::parse($request->date_from);
+            $date_to = Carbon::parse($request->date_to);
 
+            // Check if the dates are in the past relative to the current date
+            if ($date_from->isPast() || $date_to->isPast()) {
+                return response()->json(['message' => 'Date cannot be in the past.'], Response::HTTP_FORBIDDEN);
+            } else {
+                $leave_application->update([
+                    'status' => "applied",
+                    'reason' => $request->reason,
+                    'date_from' => $request->date_from,
+                    'date_to' => $request->date_to,
+                    'created_at' => Carbon::now(),
+                ]);
+            }
             $result=[];
 
             $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id',  $leave_application->employee_profile_id)->get();
