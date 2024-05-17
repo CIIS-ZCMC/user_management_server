@@ -30,7 +30,7 @@ class EmployeeSixMonthEarnSPLCredit extends Command
      */
     public function handle()
     {
-        $employees = EmployeeProfile::where('employment_type_id', '!=', 5)->get();
+        $employees = EmployeeProfile::where('employment_type_id', '!=', 5)->where('id', '!=', 1)->get();
         // Get the SPL leave type
         $special_privilege_leave = LeaveType::where('code', 'SPL')->first();
 

@@ -221,7 +221,7 @@ class CtoApplicationController extends Controller
             ->orderBy('valid_until', 'asc')
             ->get();
 
-            
+
             $currentYear = Carbon::now()->year;
 
             $usedCreditThisYear = (float) CtoApplication::where('employee_profile_id', $data->employee_profile_id)
@@ -350,11 +350,13 @@ class CtoApplicationController extends Controller
 
 
                 foreach ($overtimeCredits as $credit) {
-                    if ($currentDate->lte($credit->valid_until) && $credit->used_credit_by_hour > 0) {
+                    // Check if the credit is still valid and has used hours remaining
+                    if ($currentDate->lte(Carbon::parse($credit->valid_until)) && $credit->earned_credit_by_hour > 0) {
                         $allCreditsUsedUp = false;
                         break;
                     }
                 }
+
                 if ($allCreditsUsedUp) {
                     $failed[] = $value;
                     $reason[] = 'No overtime credits available.';
@@ -473,7 +475,7 @@ class CtoApplicationController extends Controller
             })
                 ->whereYear('created_at', $currentYear)
                 ->sum('applied_credits');
-                
+
             return response()->json([
                 'data' => CtoApplicationResource::collection($cto_applications),
                 'employee_credit' => EmployeeOvertimeCreditResource::collection($employeeCredit),
@@ -546,7 +548,7 @@ class CtoApplicationController extends Controller
             ->orderBy('valid_until', 'asc')
             ->get();
 
-            
+
             $currentYear = Carbon::now()->year;
 
             $usedCreditThisYear = (float) CtoApplication::where('employee_profile_id', $cto_application->employee_profile_id)
@@ -720,9 +722,14 @@ class CtoApplicationController extends Controller
             $allLogs = [];
             $employeeName = null;
             $employeePosition = null;
+            $currentYear = Carbon::now()->year;
+            $nextYear = $currentYear + 1;
             $totalCreditsEarnedThisMonth = 0;
             $totalCreditsEarnedThisYear = 0;
             $totalCreditsEarnedNextYear = 0;
+            $totalCreditsExpiringThisYear = 0;
+            $totalCreditsExpiringNextYear = 0;
+            $totalUsableCredits=0;
             foreach ($employeeCredits as $employeeCredit) {
 
                 if (!$employeeName) {
@@ -731,6 +738,14 @@ class CtoApplicationController extends Controller
                     $employeePosition = $employeeCredit->employeeProfile->employmentType->name;
                     $employee_assign_area = $employeeCredit->employeeProfile->assignedArea->findDetails();
                 }
+                 $validUntilYear = Carbon::parse($employeeCredit->valid_until)->year;
+
+                if ($validUntilYear === $currentYear) {
+                    $totalCreditsExpiringThisYear += $employeeCredit->earned_credit_by_hour;
+                } elseif ($validUntilYear === $nextYear) {
+                    $totalCreditsExpiringNextYear += $employeeCredit->earned_credit_by_hour;
+                }
+                $totalUsableCredits =  $totalCreditsExpiringThisYear +  $totalCreditsExpiringNextYear ;
 
                 $logs = $employeeCredit->logs;
 
@@ -755,20 +770,22 @@ class CtoApplicationController extends Controller
                         'action' => $log->action,
                         'previous_overtime_hours' => $log->previous_overtime_hours ?? 0,
                         'hours' => $log->hours,
-                        'remaining' =>  $log->previous_overtime_hours - $log->hours,
+                        'remaining' => $log->previous_overtime_hours !== null ? $log->previous_overtime_hours - $log->hours : $log->hours,
                         'created_at' =>  $log->created_at,
                     ];
                 }
             }
-
             $response = [
                 'employee_name' => $employeeName,
                 'employee_job' => $employeeJobPosition,
                 'employee_position' => $employeePosition,
                 'employee_area' => $employee_assign_area,
-                'total_credits_earned_this_month' => $totalCreditsEarnedThisMonth,
-                'total_credits_earned_this_year' => $totalCreditsEarnedThisYear,
-                'total_credits_earned_next_year' => $totalCreditsEarnedNextYear,
+                'earned_this_month' => $totalCreditsEarnedThisMonth,
+                'earned_this_year' => $totalCreditsEarnedThisYear,
+                'earned_next_year' => $totalCreditsEarnedNextYear,
+                'total_usable_credits' =>  $totalUsableCredits,
+                'expiring_this_year' => $totalCreditsExpiringThisYear,
+                'expiring_next_year' => $totalCreditsExpiringNextYear,
                 'logs' => $allLogs,
             ];
             // $response =array_merge($employeeDetails,$allLogs);

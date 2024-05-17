@@ -375,7 +375,7 @@ class SectionController extends Controller
     {
         try{
             $user = $request->user;
-            $cleanData['pin'] = strip_tags($request->password);
+            $cleanData['pin'] = strip_tags($request->pin);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);

@@ -91,7 +91,6 @@ class MonitizationPostingController extends Controller
             ->join('assigned_areas', 'assigned_areas.employee_profile_id', '=', 'ep.id')
             ->join('designations', 'designations.id', '=', 'assigned_areas.designation_id')
             ->join('salary_grades as sg', 'sg.id', '=', 'designations.salary_grade_id')
-            ->where('sg.salary_grade_number', '<=', 19)
             ->where(function ($query) {
                 $query->where(function ($query) {
                     $query->where('employee_leave_credits.leave_type_id', LeaveType::where('code', 'VL')->first()->id)
