@@ -31,6 +31,8 @@ use DatePeriod;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
+
 
 
 class Helpers
@@ -99,6 +101,7 @@ class Helpers
 
         return null;
     }
+
     public static function generateMyOTP($employee_profile)
     {
         $otp_code = rand(100000, 999999);
@@ -1037,4 +1040,24 @@ class Helpers
 
         }
     }
+
+    public static function sendNotification($body)
+    {
+        $response = Http::post('http://localhost:8030', $body);
+
+        // Check if the request was successful
+        if ($response->successful()) {
+            // Get the response body
+            $body = $response->body();   
+         
+        } else {
+            // Handle the error
+            $status = $response->status();
+            return "HTTP request failed with status: $status";
+        }
+            }
+
 }
+
+
+

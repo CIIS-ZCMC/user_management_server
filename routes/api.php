@@ -37,6 +37,8 @@ Route::
             Route::get('news', 'NewsController@index');
             Route::get('news-search', 'NewsController@searchNews');
             Route::get('news/{id}', 'NewsController@show');
+
+            Route::get('my-notifications/{id}', 'NotificationController@getNotificationsById');
         });
 
 Route::
