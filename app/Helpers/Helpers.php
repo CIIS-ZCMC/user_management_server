@@ -822,16 +822,11 @@ class Helpers
 
     public static function hasSchedule($start, $end, $employeeId)
     {
-        $checkSchedule = EmployeeSchedule::where('employee_profile_id', $employeeId)
-            ->where(function ($query) use ($start, $end) {
-                $query->whereHas('schedule', function ($innerQuery) use ($start, $end) {
-                    $innerQuery->whereDate('date', '>=', $start)
-                        ->whereDate('date', '<=', $end);
-                });
-            })
-            ->exists();
-
-        return $checkSchedule;
+        return EmployeeSchedule::where('employee_profile_id', $employeeId)
+        ->whereHas('schedule', function ($query) use ($start, $end) {
+            $query->whereBetween('date', [$start, $end]);
+        })
+        ->exists();
     }
     public static function getTotalHours($start, $end, $employeeId)
     {
