@@ -105,8 +105,8 @@ class EmployeeProfileController extends Controller
         try {
             $active_users = EmployeeProfile::whereNot('id', 1)->whereNotNull('authorization_pin')->count();
             $pending_users = EmployeeProfile::whereNot('id', 1)->where('authorization_pin', NULL)->count();
-            $regular_employees = EmployeeProfile::whereNot('id', 1)->whereNot('authorization_pin', NULL)->whereNot('employee_id', NULL)->where('employment_type_id', EmploymentType::where('name', 'Permanent Full-time')->first())->orWhere('employment_type_id', EmploymentType::where('name', 'Permanent Part-time')->first())->orWhere('employment_type_id', EmploymentType::where('name', 'Temporary')->first())->count();
-            $job_orders = EmployeeProfile::whereNot('id', 1)->whereNot('employee_id', NULL)->where('employment_type_id', EmploymentType::where('name', 'Job Order')->first()->id)->count();
+            $regular_employees = EmployeeProfile::whereNot('id', 1)->whereNot('employee_id', NULL)->whereNot('employment_type_id', 5)->count();
+            $job_orders = EmployeeProfile::whereNot('id', 1)->whereNot('employee_id', NULL)->where('employment_type_id', 5)->count();
 
             return response()->json([
                 'data' => [

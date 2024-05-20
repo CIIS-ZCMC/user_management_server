@@ -912,7 +912,8 @@ class LeaveApplicationController extends Controller
             }
 
             $employeeProfile = EmployeeProfile::find($employeeId);
-            if ($employeeProfile->isUnderProbation()) {
+            
+            if($employeeProfile->isUnderProbation()) {
                 return response()->json(['message' => 'You are under probation.'], Response::HTTP_FORBIDDEN);
             }
 

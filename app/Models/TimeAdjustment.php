@@ -52,4 +52,35 @@ class TimeAdjustment extends Model
     {
         return $this->belongsTo(EmployeeProfile::class, 'approving_officer');
     }
+
+    public function filesize()
+    {
+        if ($this->attachment) {
+            // Adjusting the file path to the correct directory
+            $filePath = public_path('time_adjustment/' . $this->attachment);
+            if (file_exists($filePath)) {
+                return $this->formatSizeUnits(filesize($filePath));
+            }
+        }
+        return '0';// B';
+    }
+
+    private function formatSizeUnits($bytes)
+    {
+        if ($bytes >= 1073741824) {
+            $bytes = number_format($bytes / 1073741824, 2);// . ' GB';
+        } elseif ($bytes >= 1048576) {
+            $bytes = number_format($bytes / 1048576, 2);// . ' MB';
+        } elseif ($bytes >= 1024) {
+            $bytes = number_format($bytes / 1024, 2);// . ' KB';
+        } elseif ($bytes > 1) {
+            $bytes = $bytes . ' bytes';
+        } elseif ($bytes == 1) {
+            $bytes = $bytes . ' byte';
+        } else {
+            $bytes = '0';// bytes';
+        }
+
+        return $bytes;
+    }
 }

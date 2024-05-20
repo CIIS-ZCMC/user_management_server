@@ -419,6 +419,7 @@ class OvertimeController extends Controller
                 return response()->json(['message' => 'No recommending officer and/or supervising officer assigned.'], Response::HTTP_FORBIDDEN);
             }
 
+
             foreach ($validatedData['employees'] as $index => $employeeList) {
 
                 foreach ($employeeList as $dateIndex => $employeeIdList) {
@@ -489,6 +490,9 @@ class OvertimeController extends Controller
                         'time_to' => $validatedData['time_to'][$index][$dateIndex],
                         'date' => $date,
                     ]);
+
+
+                    
 
                     foreach ($validatedData['employees'][$index][$dateIndex] as $employee) {
                         OvtApplicationEmployee::create([
