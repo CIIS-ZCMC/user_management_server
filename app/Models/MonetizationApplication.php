@@ -21,6 +21,7 @@ class MonetizationApplication extends Model
         'credit_value',
         'is_qualified',
         'status',
+        'remarks',
         'attachment',
         'attachment_size',
         'attachment_path',
@@ -48,12 +49,12 @@ class MonetizationApplication extends Model
     {
         return $this->belongsTo(EmployeeProfile::class, 'hrmo_officer');
     }
-    public function recommending()
+    public function recommendingOfficer()
     {
         return $this->belongsTo(EmployeeProfile::class, 'recommending_officer');
     }
 
-    public function approving()
+    public function approvingOfficer()
     {
         return $this->belongsTo(EmployeeProfile::class, 'approving_officer');
     }
