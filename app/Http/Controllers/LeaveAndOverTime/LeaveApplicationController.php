@@ -853,8 +853,6 @@ class LeaveApplicationController extends Controller
                     break;
             }
 
-            $employee_profile = $leave_application->employeeProfile;
-
             LeaveApplicationLog::create([
                 'action_by' => $employee_profile->id,
                 'leave_application_id' => $leave_application->id,
@@ -914,7 +912,8 @@ class LeaveApplicationController extends Controller
             }
 
             $employeeProfile = EmployeeProfile::find($employeeId);
-            if ($employeeProfile->isUnderProbation()) {
+            
+            if($employeeProfile->isUnderProbation()) {
                 return response()->json(['message' => 'You are under probation.'], Response::HTTP_FORBIDDEN);
             }
 
@@ -1595,14 +1594,22 @@ class LeaveApplicationController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    public function updatePrint($id)
+    public function updatePrint($id, Request $request)
     {
         try {
+            $user = $request->user;
+            $employee_profile = $user;
             $employee_leave_application = $id;
             $employee_print = LeaveApplication::where('id', $employee_leave_application)->first();
             $employee_print->update([
                 'is_printed' => 1,
                 'print_datetime' => Carbon::now()
+            ]);
+
+            LeaveApplicationLog::create([
+                'action_by' => $employee_profile->id,
+                'leave_application_id' => $employee_print->id,
+                'action' => 'Printed'
             ]);
             $response[] = $employee_print;
             return response()->json(['data' => new LeaveApplicationResource($employee_print), 'message' => 'Successfully printed'], 200);
@@ -1747,25 +1754,37 @@ class LeaveApplicationController extends Controller
             $start = Carbon::parse($request->date_from);
             $end =  Carbon::parse($request->date_to);
             $checkSchedule = Helpers::hasSchedule($start, $end, $hrmo_officer);
-            // if (!$checkSchedule) {
-            //     return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
-            // }
+
+            if (!$checkSchedule) {
+                return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
+            }
+
             $overlapExists = Helpers::hasOverlappingRecords($start, $end, $user);
 
             if ($overlapExists) {
-                return response()->json(['message' => 'You already have an application for the same dates.'], Response::HTTP_FORBIDDEN);
+
             }
 
             $leave_application = LeaveApplication::find($id);
-            $leave_type = $leave_application->leaveType;
-            $leave_application->update([
-                'status' => "applied",
-                'reason' => $request->reason,
-                'date_from' => $request->date_from,
-                'date_to' => $request->date_to,
-                'created_at' => Carbon::now(),
-            ]);
+            $date_from = Carbon::parse($request->date_from);
+            $date_to = Carbon::parse($request->date_to);
+            $start_date = Carbon::parse($leave_application->date_from);
 
+            if ($start_date->isPast()) {
+                return response()->json(['message' => 'Cannot be rescheduled.'], Response::HTTP_FORBIDDEN);
+            }
+            // Check if the dates are in the past relative to the current date
+            if ($date_from->isPast() || $date_to->isPast()) {
+                return response()->json(['message' => 'Date cannot be in the past.'], Response::HTTP_FORBIDDEN);
+            } else {
+                $leave_application->update([
+                    'status' => "applied",
+                    'reason' => $request->reason,
+                    'date_from' => $request->date_from,
+                    'date_to' => $request->date_to,
+                    'created_at' => Carbon::now(),
+                ]);
+            }
             $result=[];
 
             $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id',  $leave_application->employee_profile_id)->get();
@@ -1782,10 +1801,12 @@ class LeaveApplicationController extends Controller
                 ];
             }
 
+            LeaveApplicationLog::where('leave_application_id',$leave_application->id)->delete();
+
             LeaveApplicationLog::create([
                 'action_by' => $employee_profile->id,
                 'leave_application_id' => $leave_application->id,
-                'action' => 'Rescheduled by User'
+                'action' => 'Applied'
             ]);
 
             return response()->json([
