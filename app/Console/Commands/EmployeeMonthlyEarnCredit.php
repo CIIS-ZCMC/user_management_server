@@ -36,9 +36,10 @@ class EmployeeMonthlyEarnCredit extends Command
         $force_leave = LeaveType::where('code', 'FL')->first();
 
         $employees = EmployeeProfile::where('employment_type_id', '!=', 5)
+        ->where('id', '!=', 1)
         ->where('date_hired', '<', Carbon::now()->subDays(30))
         ->get();
-        
+
         foreach ($employees as $employee) {
             /**
              * Sick Leave

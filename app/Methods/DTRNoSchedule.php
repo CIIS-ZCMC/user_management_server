@@ -41,8 +41,10 @@ class DTRNoSchedule
         if ($check_yesterday_Records !== null) {
             $f_1 = $check_yesterday_Records->first_in;
             $f_2 = $check_yesterday_Records->first_out;
+            $f_3 = $check_yesterday_Records->second_in;
+            $f_4 = $check_yesterday_Records->second_out;
 
-            if ($f_1 && !$f_2) {
+            if ($f_1 && !$f_2 && !$f_3 && !$f_4 ) {
                 //CHECKOUT
                 /**
                  * Here we validate OUT for nursing or Doctor with out entry

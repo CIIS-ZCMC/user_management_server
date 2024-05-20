@@ -90,7 +90,11 @@ class ProcessApprovedOvertimeCredits extends Command
                                     $employeeregular = EmployeeProfile::where('id', $employee->employee_profile_id)
                                         ->whereHas('employmentType', function ($query) {
                                             $query->where('name', 'Permanent Full-time')
-                                                ->orWhere('name', 'Permanent Part-time');
+                                                ->orWhere('name', 'Permanent Part-time')
+                                                ->orWhere('name', 'Permanent CTI')
+                                                ->orWhere('name', 'Temporary')
+                                                ->orWhere('name', 'Job Order');
+
                                         })
                                         ->first();
                                     if ($employeeregular) {

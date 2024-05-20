@@ -99,7 +99,7 @@ class EmployeeProfile extends Authenticatable
     public function isUnderProbation()
     {
         $area = $this->assignedArea;
-         $probation_period = $area->designation->probation;
+        $probation_period = $area->designation->probation;
 
         $hireDate = Carbon::parse($this->date_hired);
         $currentDate = Carbon::now();

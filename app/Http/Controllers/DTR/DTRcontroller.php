@@ -164,7 +164,7 @@ class DTRcontroller extends Controller
     {
 
         try {
-
+          
             foreach ($this->devices as $device) {
                 if ($tad = $this->device->bIO($device)) { //Checking if connected to device
                     $logs = $tad->get_att_log();
@@ -185,8 +185,6 @@ class DTRcontroller extends Controller
                         $check_Records = array_filter($Employee_Attendance, function ($attd) use ($date_now) {
                             return date('Y-m-d', strtotime($attd['date_time'])) == $date_now;
                         });
-
-
 
                         if (count($check_Records) >= 1) {
                             foreach ($check_Records as $bioEntry) {
@@ -228,7 +226,7 @@ class DTRcontroller extends Controller
                                         /**
                                          * No Schedule Pulling
                                          */
-                                        $this->DTR->NoSchedulePull($bioEntry, $biometric_id);
+                                       $this->DTR->NoSchedulePull($bioEntry, $biometric_id);
                                     }
 
 
