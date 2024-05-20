@@ -109,10 +109,10 @@ class TimeAdjustmentController extends Controller
                 $dtr = DailyTimeRecords::create([
                     'biometric_id' => $employee->biometric_id,
                     'dtr_date' => $cleanData['date'],
-                    'first_in' => $cleanData['first_in'],
-                    'first_out' => $cleanData['first_out'],
-                    'second_in' => $cleanData['second_in'],
-                    'second_out' => $cleanData['second_out'],
+                    'first_in' => $cleanData['date'] . " " . $cleanData['first_in'],
+                    'first_out' => $cleanData['date'] . " " . $cleanData['first_out'],
+                    'second_in' => $cleanData['date'] . " " . $cleanData['second_in'],
+                    'second_out' => $cleanData['date'] . " " . $cleanData['second_out'],
                 ]);
             }
 
