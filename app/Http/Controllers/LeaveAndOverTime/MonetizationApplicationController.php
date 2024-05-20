@@ -346,7 +346,6 @@ class MonetizationApplicationController extends Controller
         try {
             $employee_profile = $request->user;
 
-
             $cleanData['pin'] = strip_tags($request->pin);
 
             if ($employee_profile['authorization_pin'] !== $cleanData['pin']) {
@@ -469,7 +468,7 @@ class MonetizationApplicationController extends Controller
             $mone_application_approving = $mone_application->approving_officer;
 
             switch ($mone_application->status) {
-                case 'applied': 
+                case 'applied':
                     if($employee_profile->id === $mone_application_hrmo){
                         $status = 'declined by hrmo officer';
                         $declined_by = "HR";
@@ -485,7 +484,7 @@ class MonetizationApplicationController extends Controller
                         ], Response::HTTP_FORBIDDEN);
                     }
                     break;
-                case 'for recommending approval': 
+                case 'for recommending approval':
                     if($employee_profile->id === $mone_application_recommending){
                         $status = 'declined by recommending officer';
                         $declined_by = "Recommending officer";
