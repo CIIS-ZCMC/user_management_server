@@ -122,7 +122,18 @@ class DivisionController extends Controller
             }
 
             Helpers::notifications($employee_profile->id, "You been assigned as division head of " . $division->name . " division.");
+             // SEND NOTIF
+            //  Helpers::sendNotification([
+            //     'id' =>  $employee_profile->id,
+            //     'data' => new DivisionResource($division)                   
+            // ]);
+
+          
             Helpers::registerSystemLogs($request, $id, true, 'Success in assigning division chief ' . $this->PLURAL_MODULE_NAME . '.');
+
+           
+            
+            
 
             return response()->json(
                 [
@@ -226,6 +237,8 @@ class DivisionController extends Controller
 
             Helpers::registerSystemLogs($request, $division['id'], true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
 
+
+            
             return response()->json([
                 'data' => new DivisionResource($division),
                 'message' => 'Division created successfully.'

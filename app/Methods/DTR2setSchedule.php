@@ -36,9 +36,10 @@ class DTR2setSchedule
 
             $f_1 = $check_yesterday_Records->first_in;
             $f_2 = $check_yesterday_Records->first_out;
+            $f_3 = $check_yesterday_Records->second_in;
+            $f_4 = $check_yesterday_Records->second_out;
 
-            /* this entry only */
-            if ($f_1 && !$f_2) {
+            if ($f_1 && !$f_2 && !$f_3 && !$f_4 ) {
 
                 /* Validation add expiry. */
                 $TimeAllowance_ =  date('Y-m-d H:i:s', strtotime($entrydate . ' ' . $DaySchedule['second_entry'] . " +5 hours")); // 5 hours allowance
