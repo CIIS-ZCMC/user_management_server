@@ -19,6 +19,8 @@ Route::namespace('App\Http\Controllers\Migration')->group(
         Route::get('migrateTS', 'MigrateTimeShift@index');
         Route::get('migrate', 'MigrateController@import');
         Route::get('plantilla', 'MigratePlantilla@import');
+        // for betaTest migration
+        Route::get('migratePlantillaAssociatedDesignation', 'MigratePlantilla@migratePlantillas');
     }
 );
 
