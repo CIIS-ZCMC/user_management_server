@@ -266,6 +266,7 @@ class DTRNoSchedule
             Overtime and undertime, as well as working hours, have already been calculated.
         */
         if (!$f1 && !$f2 && $f3 && !$f4) {
+          
             if ($this->helper->EntryisPM($this->helper->sequence(0, [$data])[0]['date_time'])) {
                 if ($status == 255) {
                     if ($this->helper->withinInterval($f3, $this->helper->sequence(0, [$data]))) {

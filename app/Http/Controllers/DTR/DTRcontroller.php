@@ -107,19 +107,19 @@ class DTRcontroller extends Controller
                 if ($selfRecord->first_in !== NULL && $selfRecord->first_out !== NULL && $selfRecord->second_in === NULL && $selfRecord->second_out === NULL) {
                     return [
                         'dtr_date' => $selfRecord->dtr_date,
-                        'first_in' => $selfRecord->first_in ? date('H:i', strtotime($selfRecord->first_in)) : ' --:--',
+                        'first_in' => $selfRecord->first_in ? date('h:i a', strtotime($selfRecord->first_in)) : ' --:--',
                         'first_out' => ' --:--',
                         'second_in' =>  ' --:--',
-                        'second_out' => $selfRecord->first_out ? date('H:i', strtotime($selfRecord->first_out)) : ' --:--',
+                        'second_out' => $selfRecord->first_out ? date('h:i a', strtotime($selfRecord->first_out)) : ' --:--',
                     ];
                 }
 
                 return [
                     'dtr_date' => $selfRecord->dtr_date,
-                    'first_in' => $selfRecord->first_in ? date('H:i', strtotime($selfRecord->first_in)) : ' --:--',
-                    'first_out' => $selfRecord->first_out ? date('H:i', strtotime($selfRecord->first_out)) : ' --:--',
-                    'second_in' => $selfRecord->second_in ? date('H:i', strtotime($selfRecord->second_in)) : ' --:--',
-                    'second_out' => $selfRecord->second_out ? date('H:i', strtotime($selfRecord->second_out)) : ' --:--',
+                    'first_in' => $selfRecord->first_in ? date('h:i a', strtotime($selfRecord->first_in)) : ' --:--',
+                    'first_out' => $selfRecord->first_out ? date('h:i a', strtotime($selfRecord->first_out)) : ' --:--',
+                    'second_in' => $selfRecord->second_in ? date('h:i a', strtotime($selfRecord->second_in)) : ' --:--',
+                    'second_out' => $selfRecord->second_out ? date('h:i a', strtotime($selfRecord->second_out)) : ' --:--',
                 ];
             } else {
                 return [
@@ -193,13 +193,14 @@ class DTRcontroller extends Controller
                                 $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
                                 $DaySchedule = $Schedule['daySchedule'];
                                 $BreakTime = $Schedule['break_Time_Req'];
-
-
+                               
+                                 
 
                                     if (count($DaySchedule) >= 1) {
                                        if(isset($DaySchedule) && is_array($DaySchedule) && array_key_exists('first_entry', $DaySchedule) && $DaySchedule['first_entry']){
 
                                         if (count($BreakTime) >= 1) {
+                                        
                                             /**
                                              * With Schedule
                                              * 4 sets of sched
@@ -210,10 +211,11 @@ class DTRcontroller extends Controller
                                              * With Schedule
                                              * 2 sets of sched
                                              */
+                                          
                                             $this->DTR->NoBreaktimePull($DaySchedule, $bioEntry, $biometric_id);
                                         }
                                        }else {
-
+                                      
                                            /**
                                          * No Schedule Pulling
                                          */
@@ -221,17 +223,14 @@ class DTRcontroller extends Controller
                                        }
 
                                     } else {
-
-
+                                  
                                         /**
                                          * No Schedule Pulling
                                          */
                                        $this->DTR->NoSchedulePull($bioEntry, $biometric_id);
                                     }
-
-
-
                             }
+                          
                             //$this->helper->saveDTRRecords($check_Records, false);
                             /* Save DTR Logs */
                             $this->helper->saveDTRLogs($check_Records, 1, $device, 0);
