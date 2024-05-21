@@ -29,8 +29,11 @@ use DateTime;
 use DateInterval;
 use DatePeriod;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
+
 
 
 class Helpers
@@ -99,6 +102,7 @@ class Helpers
 
         return null;
     }
+
     public static function generateMyOTP($employee_profile)
     {
         $otp_code = rand(100000, 999999);
@@ -626,9 +630,10 @@ class Helpers
     public static function hasOverlappingRecords($start, $end, $employeeId)
     {
 
-        // Check for overlapping dates in LeaveApplication
+        //Check for overlapping dates in LeaveApplication
         $overlappingLeave = LeaveApplication::where(function ($query) use ($start, $end, $employeeId) {
             $query->where('employee_profile_id', $employeeId)
+                ->where('status', '!=', 'declined')
                 ->where(function ($query) use ($start, $end) {
                     $query->whereBetween('date_from', [$start, $end])
                         ->orWhereBetween('date_to', [$start, $end])
@@ -642,6 +647,7 @@ class Helpers
         // Check for overlapping dates in OfficialBusiness
         $overlappingOb = OfficialBusiness::where(function ($query) use ($start, $end, $employeeId) {
             $query->where('employee_profile_id', $employeeId)
+                ->where('status', '!=', 'declined')
                 ->where(function ($query) use ($start, $end) {
                     $query->whereBetween('date_from', [$start, $end])
                         ->orWhereBetween('date_to', [$start, $end])
@@ -654,6 +660,7 @@ class Helpers
 
         $overlappingOT = OfficialTime::where(function ($query) use ($start, $end, $employeeId) {
             $query->where('employee_profile_id', $employeeId)
+                ->where('status', '!=', 'declined')
                 ->where(function ($query) use ($start, $end) {
                     $query->whereBetween('date_from', [$start, $end])
                         ->orWhereBetween('date_to', [$start, $end])
@@ -664,14 +671,54 @@ class Helpers
                 });
         })->exists();
 
+        $overlappingCTO = CtoApplication::where('employee_profile_id', $employeeId)
+            ->where('status', '!=', 'declined')
+            ->where(function ($query) use ($start, $end) {
+                $query->whereDate('date', '>=', $start)
+                    ->whereDate('date', '<=', $end);
+            })->exists();
+
+        // Check for overlapping dates in Overtime Application's Activities and Dates
+        $overlappingOvertimeActivities = DB::table('overtime_applications')
+        ->join('ovt_application_activities', 'overtime_applications.id', '=', 'ovt_application_activities.overtime_application_id')
+        ->join('ovt_application_datetimes', 'ovt_application_activities.id', '=', 'ovt_application_datetimes.ovt_application_activity_id')
+        ->join('ovt_application_employees', 'ovt_application_datetimes.id', '=', 'ovt_application_employees.ovt_application_datetime_id')
+        ->where('ovt_application_employees.employee_profile_id', $employeeId)
+        ->where('overtime_applications.status', '!=', 'declined')
+        ->where(function ($query) use ($start, $end) {
+            $query->whereBetween('ovt_application_datetimes.date', [$start, $end])
+                ->orWhere(function ($query) use ($start, $end) {
+                    $query->where('ovt_application_datetimes.date', '<=', $start)
+                        ->where('ovt_application_datetimes.date', '>=', $end);
+                });
+        })
+        ->exists();
+
+        // Check for overlapping dates directly in Overtime Applications
+        $overlappingOvertimeDirect = DB::table('overtime_applications')
+        ->join('ovt_application_datetimes', 'overtime_applications.id', '=', 'ovt_application_datetimes.overtime_application_id')
+        ->join('ovt_application_employees', 'ovt_application_datetimes.id', '=', 'ovt_application_employees.ovt_application_datetime_id')
+        ->where('ovt_application_employees.employee_profile_id', $employeeId)
+        ->where('overtime_applications.status', '!=', 'declined')
+        ->where(function ($query) use ($start, $end) {
+            $query->whereBetween('ovt_application_datetimes.date', [$start, $end])
+                ->orWhere(function ($query) use ($start, $end) {
+                    $query->where('ovt_application_datetimes.date', '<=', $start)
+                        ->where('ovt_application_datetimes.date', '>=', $end);
+                });
+        })
+        ->exists();
+
+
         // Return true if any overlap is found, otherwise false
-        return $overlappingLeave || $overlappingOb || $overlappingOT;
+        return $overlappingLeave || $overlappingOb || $overlappingOT || $overlappingCTO || $overlappingOvertimeActivities || $overlappingOvertimeDirect;
     }
 
     public static function hasOverlappingCTO($date, $employeeId)
     {
         $overlappingLeave = LeaveApplication::where(function ($query) use ($date, $employeeId) {
             $query->where('employee_profile_id', $employeeId)
+                ->where('status', '!=', 'declined')
                 ->where(function ($query) use ($date) {
                     $query->where('date_from', '<=', $date)
                         ->where('date_to', '>=', $date);
@@ -680,6 +727,7 @@ class Helpers
 
         $overlappingOb = OfficialBusiness::where(function ($query) use ($date, $employeeId) {
             $query->where('employee_profile_id', $employeeId)
+                ->where('status', '!=', 'declined')
                 ->where(function ($query) use ($date) {
                     $query->where('date_from', '<=', $date)
                         ->where('date_to', '>=', $date);
@@ -688,6 +736,7 @@ class Helpers
 
         $overlappingOT = OfficialTime::where(function ($query) use ($date, $employeeId) {
             $query->where('employee_profile_id', $employeeId)
+                ->where('status', '!=', 'declined')
                 ->where(function ($query) use ($date) {
                     $query->where('date_from', '<=', $date)
                         ->where('date_to', '>=', $date);
@@ -695,10 +744,34 @@ class Helpers
         })->exists();
 
         $overlappingCTO = CtoApplication::where('employee_profile_id', $employeeId)
+            ->where('status', '!=', 'declined')
             ->whereDate('date', $date)
             ->exists();
 
-        return $overlappingLeave || $overlappingOb || $overlappingOT || $overlappingCTO;
+        // Check for overlapping dates in Overtime Application's Activities and Dates
+        $overlappingOvertimeActivities = DB::table('overtime_applications')
+        ->join('ovt_application_activities', 'overtime_applications.id', '=', 'ovt_application_activities.overtime_application_id')
+        ->join('ovt_application_datetimes', 'ovt_application_activities.id', '=', 'ovt_application_datetimes.ovt_application_activity_id')
+        ->join('ovt_application_employees', 'ovt_application_datetimes.id', '=', 'ovt_application_employees.ovt_application_datetime_id') // assuming pivot table name is ovt_application_employees
+        ->where('ovt_application_employees.employee_profile_id', $employeeId)
+        ->where('overtime_applications.status', '!=', 'declined')
+        ->where(function ($query) use ($date) {
+            $query->whereDate('ovt_application_datetimes.date', $date);
+        })
+        ->exists();
+
+        // Check for overlapping dates directly in Overtime Applications
+        $overlappingOvertimeDirect = DB::table('overtime_applications')
+            ->join('ovt_application_datetimes', 'overtime_applications.id', '=', 'ovt_application_datetimes.overtime_application_id')
+            ->join('ovt_application_employees', 'ovt_application_datetimes.id', '=', 'ovt_application_employees.ovt_application_datetime_id')
+            ->where('ovt_application_employees.employee_profile_id', $employeeId)
+            ->where('overtime_applications.status', '!=', 'declined')
+            ->where(function ($query) use ($date) {
+                $query->whereDate('ovt_application_datetimes.date', $date);
+            })
+            ->exists();
+
+        return $overlappingLeave || $overlappingOb || $overlappingOT || $overlappingCTO || $overlappingOvertimeActivities || $overlappingOvertimeDirect;
     }
 
     public static function generateSchedule($start_duty, $employment_type_id, $meridian)
@@ -761,16 +834,11 @@ class Helpers
 
     public static function hasSchedule($start, $end, $employeeId)
     {
-        $checkSchedule = EmployeeSchedule::where('employee_profile_id', $employeeId)
-            ->where(function ($query) use ($start, $end) {
-                $query->whereHas('schedule', function ($innerQuery) use ($start, $end) {
-                    $innerQuery->whereDate('date', '>=', $start)
-                        ->whereDate('date', '<=', $end);
-                });
-            })
-            ->exists();
-
-        return $checkSchedule;
+        return EmployeeSchedule::where('employee_profile_id', $employeeId)
+        ->whereHas('schedule', function ($query) use ($start, $end) {
+            $query->whereBetween('date', [$start, $end]);
+        })
+        ->exists();
     }
     public static function getTotalHours($start, $end, $employeeId)
     {
@@ -1037,4 +1105,24 @@ class Helpers
 
         }
     }
+
+    public static function sendNotification($body)
+    {
+        $response = Http::post('http://localhost:8030', $body);
+
+        // Check if the request was successful
+        if ($response->successful()) {
+            // Get the response body
+            $body = $response->body();   
+         
+        } else {
+            // Handle the error
+            $status = $response->status();
+            return "HTTP request failed with status: $status";
+        }
+            }
+
 }
+
+
+

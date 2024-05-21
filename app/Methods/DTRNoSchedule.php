@@ -41,8 +41,10 @@ class DTRNoSchedule
         if ($check_yesterday_Records !== null) {
             $f_1 = $check_yesterday_Records->first_in;
             $f_2 = $check_yesterday_Records->first_out;
+            $f_3 = $check_yesterday_Records->second_in;
+            $f_4 = $check_yesterday_Records->second_out;
 
-            if ($f_1 && !$f_2) {
+            if ($f_1 && !$f_2 && !$f_3 && !$f_4 ) {
                 //CHECKOUT
                 /**
                  * Here we validate OUT for nursing or Doctor with out entry
@@ -264,6 +266,7 @@ class DTRNoSchedule
             Overtime and undertime, as well as working hours, have already been calculated.
         */
         if (!$f1 && !$f2 && $f3 && !$f4) {
+          
             if ($this->helper->EntryisPM($this->helper->sequence(0, [$data])[0]['date_time'])) {
                 if ($status == 255) {
                     if ($this->helper->withinInterval($f3, $this->helper->sequence(0, [$data]))) {

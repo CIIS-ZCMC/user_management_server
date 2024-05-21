@@ -419,15 +419,22 @@ class OvertimeController extends Controller
                 return response()->json(['message' => 'No recommending officer and/or supervising officer assigned.'], Response::HTTP_FORBIDDEN);
             }
 
+
             foreach ($validatedData['employees'] as $index => $employeeList) {
 
                 foreach ($employeeList as $dateIndex => $employeeIdList) {
 
                     foreach ($employeeIdList as $employeeId) {
 
+                        $employeeProfile = EmployeeProfile::with('overtimeCredits')->find($employeeId);
+                        // Check for overlapping CTO records
+                        $date = $validatedData['dates'][$index][$dateIndex];
+
+                        if (Helpers::hasOverlappingCTO($date, $employeeId)) {
+                            return response()->json(['message' => 'Overlapping application records found for employee ' . $employeeProfile->name() . ' on date ' . $date . '.'], Response::HTTP_BAD_REQUEST);
+                        }
                         // Retrieve employee's profile using the employee ID
 
-                        $employeeProfile = EmployeeProfile::with('overtimeCredits')->find($employeeId);
 
                         // Get the current year and the next year
                         $currentYear = date('Y');
@@ -490,6 +497,8 @@ class OvertimeController extends Controller
                         'date' => $date,
                     ]);
 
+
+
                     foreach ($validatedData['employees'][$index][$dateIndex] as $employee) {
                         OvtApplicationEmployee::create([
                             'ovt_application_datetime_id' => $date_application->id,
@@ -550,9 +559,14 @@ class OvertimeController extends Controller
 
             foreach ($validatedData['dates'] as $index => $date) {
                 $employeeId = $validatedData['employees'][$index];
-
+            // Check for overlapping CTO records
+            $date = $validatedData['dates'][$index];
                 // Retrieve employee's profile using the employee ID
                 $employeeProfile = EmployeeProfile::with('overtimeCredits')->find($employeeId);
+                if (Helpers::hasOverlappingCTO($date, $employeeId)) {
+                    return response()->json(['message' => 'Overlapping application records found for employee ' . $employeeProfile->name() . ' on date ' . $date . '.'], Response::HTTP_BAD_REQUEST);
+                }
+
 
                 // Get the current year and the next year
                 $currentYear = date('Y');
@@ -654,7 +668,6 @@ class OvertimeController extends Controller
                 'totime' => 'required|string',
             ]);
 
-
             $user = $request->user;
             $fileName = "";
             $file_name_encrypted = "";
@@ -667,6 +680,45 @@ class OvertimeController extends Controller
             $assigned_area = $employee_profile->assignedArea->findDetails();
             if (Helpers::getDivHead($assigned_area) === null || Helpers::getChiefOfficer() === null) {
                 return response()->json(['message' => 'No recommending officer and/or supervising officer assigned.'], Response::HTTP_FORBIDDEN);
+            }
+            $jsonData = $request->input('data');
+            $formData = json_decode($jsonData, true);
+            foreach ($formData as $data) {
+                foreach ($data['employees'] as $employee)
+                {
+                        $employeeId = $employee['id'];
+                        $employeeProfile = EmployeeProfile::with('overtimeCredits')->find($employeeId);
+
+                        foreach ($data['listdate'] as $date) {
+                            $combinedDate = Carbon::createFromDate(
+                                $date['year'],
+                                $date['month'],
+                                $date['day']
+                            )->toDateString();
+                            // Construct the date from year, month, and day
+                            $date = $combinedDate;
+
+                            if (Helpers::hasOverlappingCTO($date, $employeeId)) {
+                                return response()->json(['message' => 'Overlapping application records found for employee ' . $employeeProfile->name() . ' on date ' . $date . '.'], Response::HTTP_BAD_REQUEST);
+                            }
+
+                            // Calculate the total overtime hours requested by the employee
+                            $totalOvertimeHours = $this->calculateOvertimeHours( $data['fromtime'],  $data['totime'],);
+                            $totalEarnedCredit = $employeeProfile->earned_credit_by_hour + $totalOvertimeHours;
+
+                            $currentYear = date('Y');
+                            $nextYear = $currentYear + 1;
+                            $validUntil = $nextYear . '-12-31';
+
+                            if ($totalOvertimeHours > $employeeProfile->overtimeCredits[0]->max_credit_monthly && $validUntil == $employeeProfile->overtimeCredits[0]->valid_until) {
+                                return response()->json(['message' => 'Employee ' . $employeeId . ' has exceeded the monthly overtime credit.'], Response::HTTP_BAD_REQUEST);
+                            }
+
+                            if ($totalEarnedCredit > $employeeProfile->overtimeCredits[0]->max_credit_annual && $validUntil == $employeeProfile->overtimeCredits[0]->valid_until) {
+                                return response()->json(['message' => 'Employee ' . $employeeId . ' has exceeded the annual overtime credit.'], Response::HTTP_BAD_REQUEST);
+                            }
+                        }
+                    }
             }
 
             $assigned_area = $employee_profile->assignedArea->findDetails();
