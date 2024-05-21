@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 
 class TimeAdjustmentResource extends JsonResource
@@ -48,10 +49,10 @@ class TimeAdjustmentResource extends JsonResource
         return [
             'id' => $this->id,
             'dtr_date' => $this->date,
-            'first_in' => $this->first_in,
-            'first_out' => $this->first_out,
-            'second_in' => $this->second_in,
-            'second_out' => $this->second_out,
+            'first_in' => Carbon::parse($this->first_in)->format('H:i A'),
+            'first_out' => Carbon::parse($this->first_out)->format('H:i A'),
+            'second_in' => Carbon::parse($this->second_in)->format('H:i A'),
+            'second_out' => Carbon::parse($this->second_out)->format('H:i A'),
             'remarks' => $this->remarks,
             'file_name' => $this->attachment,
             'file_path' => config('app.server_domain') . "/time_adjustment/",
