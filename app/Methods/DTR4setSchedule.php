@@ -114,14 +114,13 @@ class DTR4setSchedule
                 /* Save */
                 if ($this->helper->EntryisAm($this->helper->sequence(0, [$data])[0]['date_time'])) {
                     if ($status == 0 || $status == 255) {
-                        $scheduleEntry = null;
-
+                    
                         $this->helper->SaveFirstEntry(
                             $this->helper->sequence(0, [$data])[0],
                             $BreakTime,
                             $biometric_id,
                             false,
-                            $scheduleEntry,
+                            $DaySchedule,
                             'AM'
                         );
                     }
@@ -131,9 +130,7 @@ class DTR4setSchedule
                 if ($this->helper->EntryisPm($this->helper->sequence(0, [$data])[0]['date_time'])) {
 
                     if ($status == 0 || $status == 255) {
-                        $scheduleEntry = null;
-
-
+                      
                         $this->helper->SaveFirstEntry(
                             $this->helper->sequence(0, [$data])[0],
                             $BreakTime,
@@ -150,11 +147,7 @@ class DTR4setSchedule
            
             if ($this->helper->EntryisAm($this->helper->sequence(0, [$data])[0]['date_time'])) {
                 if ($status == 0 || $status == 255) {
-                    $scheduleEntry = null;
-
-
-
-
+                  
                     $this->helper->SaveFirstEntry(
                         $this->helper->sequence(0, [$data])[0],
                         $BreakTime,
