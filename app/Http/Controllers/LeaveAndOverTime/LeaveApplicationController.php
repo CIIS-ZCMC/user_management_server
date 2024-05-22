@@ -673,17 +673,23 @@ class LeaveApplicationController extends Controller
                     ->where('leave_type_id', $leaveTypeId)
                     ->firstOrFail();
 
+                // Capture the previous credit before updating
+                $previousCredit = $leaveCredit->total_leave_credits;
+
+                // Update the total leave credits
                 $leaveCredit->total_leave_credits = $credit['credit_value'];
                 $leaveCredit->save();
+
+                // Log the update
+                EmployeeLeaveCreditLogs::create([
+                    'employee_leave_credit_id' => $leaveCredit->id,
+                    'previous_credit' => $previousCredit,
+                    'leave_credits' => $credit['credit_value'],
+                    'reason' => "Update Credits",
+                    'action' => "add"
+                ]);
             }
 
-            EmployeeLeaveCreditLogs::create([
-                'employee_leave_credit_id' => $leaveCredit->id,
-                'previous_credit' => $leaveCredit->total_leave_credits,
-                'leave_credits' => $credit['credit_value'],
-                'reason' => "Update Credits",
-                'action' => "add"
-            ]);
 
             $updatedLeaveCredits = EmployeeLeaveCredit::with(['employeeProfile.personalInformation', 'leaveType'])
                 ->where('employee_profile_id', $request->employee_id)
@@ -705,6 +711,7 @@ class LeaveApplicationController extends Controller
                 $employeeResponse = [
                     'id' => $employeeProfileId,
                     'name' => $employeeDetails,
+                    'employee_id' => $leaveCreditGroup->first()->employeeProfile->employee_id,
                 ];
 
                 $employeeResponse = array_merge($employeeResponse, $leaveCreditData);
