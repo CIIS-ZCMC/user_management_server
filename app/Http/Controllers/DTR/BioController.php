@@ -50,8 +50,6 @@ class BioController extends Controller
 
             $cleanData['pin'] = strip_tags($request->pin);
 
-
-
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
