@@ -12,9 +12,11 @@ use App\Models\DocumentNumber;
 use App\Models\EmployeeCreditLog;
 use App\Models\EmployeeOvertimeCredit;
 use App\Models\LeaveType;
+use App\Models\Notifications;
 use App\Models\Section;
 use App\Models\TaskSchedules;
 use App\Models\Unit;
+use App\Models\UserNotifications;
 use Carbon\Carbon;
 use App\Helpers\Helpers;
 use Dompdf\Dompdf;
@@ -1054,7 +1056,7 @@ class LeaveApplicationController extends Controller
                     }
 
                     $cleanData['applied_credits'] = $daysDiff;
-                    $cleanData['employee_profile_id'] = $employee_profile;
+                    $cleanData['employee_profile_id'] = $employee_profile->id;
                     $cleanData['hrmo_officer'] = $hrmo_officer;
 
                     if ($request->employee_oic_id !== "null" && $request->employee_oic_id !== null) {
@@ -1090,7 +1092,7 @@ class LeaveApplicationController extends Controller
                     }
 
                     $leave_application = LeaveApplication::create($cleanData);
-                    Helpers::pendingLeaveNotfication($cleanData['hrmo_officer'], $leave_type->name);
+                    // Helpers::pendingLeaveNotfication($cleanData['hrmo_officer'], $leave_type->name);   
 
                     if ($request->requirements) {
                         $index = 0;
@@ -1111,13 +1113,39 @@ class LeaveApplicationController extends Controller
                             $index++;
                         }
                     }
+                    
+                    /**
+                     * Sample for notification
+                     */
+                    $title = "New " . $leave_type->name . " request.";
+                    $description = "Employee file for leave application. Please take a look to what need to do.";
+                    
+                    $notification = Notifications::create([
+                        "title" => $title,
+                        "description" => $description,
+                        "module_path" => '/hr-leave-requests',
+                    ]);
+
+                    $user_notification = UserNotifications::create([
+                        'notification_id' => $notification->id,
+                        'employee_profile_id' => $leave_application->hrmo_officer
+                    ]);
+
+                    Helpers::sendNotification([
+                        "id" => $employee_profile->employee_id,
+                        "data" => $user_notification
+                    ]);
+                    /**
+                     * End Sample for notification
+                     */
 
                     LeaveApplicationLog::create([
                         'action_by' => $employee_profile->id,
                         'leave_application_id' => $leave_application->id,
                         'action' => 'Applied'
                     ]);
-                } else {
+                } 
+                else {
 
 
                     $employee_credit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)
@@ -1271,12 +1299,11 @@ class LeaveApplicationController extends Controller
                 ];
             }
 
-                return response()->json([
-                    'data' => new LeaveApplicationResource($leave_application),
-                    'credits' => $result ? $result : [],
-                    'message' => 'Successfully applied for ' . $leave_type->name
-                ], Response::HTTP_OK);
-
+            return response()->json([
+                'data' => new LeaveApplicationResource($leave_application),
+                'credits' => $result ? $result : [],
+                'message' => 'Successfully applied for ' . $leave_type->name
+            ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }

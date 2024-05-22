@@ -64,6 +64,10 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-PAM view'])->group(function () {
             Route::put('notifications/{id}/seen', 'NotificationController@seen');
         });
+        
+        Route::middleware(['auth.permission:UMIS-PAM view'])->group(function () {
+            Route::put('notifications-seen-multiple', 'NotificationController@seenMultipleNotification');
+        });
 
         Route::middleware(['auth.permission:UMIS-SM write', 'request.timing'])->group(function () {
             Route::post('announcements', 'AnnouncementsController@store');

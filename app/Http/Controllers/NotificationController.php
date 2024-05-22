@@ -95,6 +95,25 @@ class NotificationController extends Controller
         }
     }
 
+    public function seenMultipleNotification(Request $request)
+    {
+        try{
+            $notification_ids = $request->notification_ids;
+
+            UserNotifications::whereIn('id', $notification_ids)->update(['seen' => 1]);
+
+            $notification = UserNotifications::whereIn('id', $notification_ids)->get();
+            
+            return response()->json([
+                'data' => NotificationResource::collection($notification), 
+                'message' => 'Notifications retrieved.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME,'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     
     public function destroy($id, Request $request)
     {
