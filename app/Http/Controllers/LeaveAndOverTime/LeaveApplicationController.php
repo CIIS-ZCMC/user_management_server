@@ -1054,7 +1054,7 @@ class LeaveApplicationController extends Controller
                     }
 
                     $cleanData['applied_credits'] = $daysDiff;
-                    $cleanData['employee_profile_id'] = $employee_profile;
+                    $cleanData['employee_profile_id'] = $employee_profile->id;
                     $cleanData['hrmo_officer'] = $hrmo_officer;
 
                     if ($request->employee_oic_id !== "null" && $request->employee_oic_id !== null) {
