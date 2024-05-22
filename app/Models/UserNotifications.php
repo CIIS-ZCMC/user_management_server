@@ -5,24 +5,25 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Notifications extends Model
+class UserNotifications extends Model
 {
     use HasFactory;
 
-    protected $table = 'notifications';
+    protected $table = 'user_notifications';
 
     public $fillable = [
-        'title',
-        'description',
-        'module_path',
         'seen',
+        'notification_id',
         'employee_profile_id'
     ];
 
-    public $timestamps = true;
+    public $timestamps = TRUE;
 
-    public function employee()
-    {
+    public function employeeProfile(){
         return $this->belongsTo(EmployeeProfile::class);
+    }
+
+    public function notification(){
+        return $this->belongsTo(Notifications::class);
     }
 }

@@ -112,16 +112,16 @@ class OvertimeController extends Controller
             $position = $employee_profile->position();
             $employeeId = $employee_profile->id;
 
-            /** FOR NORMAL EMPLOYEE */
-            if ($employee_profile->position() === null || $employee_profile->position()['position'] === 'Supervisor') {
+            // /** FOR NORMAL EMPLOYEE */
+            // if ($employee_profile->position() === null || $employee_profile->position()['position'] === 'Supervisor') {
 
-                $overtime_application = OvertimeApplication::with('dates')->where('employee_profile_id', $employee_profile->id)->get();
+            //     $overtime_application = OvertimeApplication::with('dates')->where('employee_profile_id', $employee_profile->id)->get();
 
-                return response()->json([
-                    'data' => OvertimeResource::collection($overtime_application),
-                    'message' => 'Retrieved all overtime application'
-                ], Response::HTTP_OK);
-            }
+            //     return response()->json([
+            //         'data' => OvertimeResource::collection($overtime_application),
+            //         'message' => 'Retrieved all overtime application'
+            //     ], Response::HTTP_OK);
+            // }
 
             //    return response()->json(['message' => $employee_profile->position()['position']], Response::HTTP_INTERNAL_SERVER_ERROR);
             if ($employee_profile->id === Helpers::getHrmoOfficer()) {
@@ -162,6 +162,7 @@ class OvertimeController extends Controller
 
 
             return response()->json([
+                'user_id' => $employeeId,
                 'data' => OvertimeResource::collection($overtime_application),
                 'message' => 'Retrieved all official business application'
             ], Response::HTTP_OK);
@@ -170,6 +171,39 @@ class OvertimeController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+    public function getSupervisor(Request $request)
+    {
+        try {
+
+            $employee_profile = $request->user;
+            $employeeId = $employee_profile->id;
+
+            /** FOR NORMAL EMPLOYEE */
+            if ($employee_profile->position() === null || $employee_profile->position()['position'] === 'Supervisor') {
+
+                $overtime_application = OvertimeApplication::with('dates')->where('employee_profile_id', $employee_profile->id)->get();
+                return response()->json([
+                    'user_id' => $employeeId,
+                    'data' => OvertimeResource::collection($overtime_application),
+                    'message' => 'Retrieved all overtime application'
+                ], Response::HTTP_OK);
+            }
+
+            //    return response()->json(['message' => $employee_profile->position()['position']], Response::HTTP_INTERNAL_SERVER_ERROR);
+            if ($employee_profile->id === Helpers::getHrmoOfficer()) {
+                return response()->json([
+                    'data' => OvertimeApplication::collection(OvertimeApplication::where('status', 'approved')->get()),
+                    'message' => 'Retrieved all overtime  application'
+
+                ], Response::HTTP_OK);
+            }
+
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
 
     /**
      * Show the form for creating a new resource.
@@ -420,6 +454,8 @@ class OvertimeController extends Controller
             }
 
 
+
+
             foreach ($validatedData['employees'] as $index => $employeeList) {
 
                 foreach ($employeeList as $dateIndex => $employeeIdList) {
@@ -559,8 +595,8 @@ class OvertimeController extends Controller
 
             foreach ($validatedData['dates'] as $index => $date) {
                 $employeeId = $validatedData['employees'][$index];
-            // Check for overlapping CTO records
-            $date = $validatedData['dates'][$index];
+                // Check for overlapping CTO records
+                $date = $validatedData['dates'][$index];
                 // Retrieve employee's profile using the employee ID
                 $employeeProfile = EmployeeProfile::with('overtimeCredits')->find($employeeId);
                 if (Helpers::hasOverlappingCTO($date, $employeeId)) {
@@ -641,7 +677,7 @@ class OvertimeController extends Controller
         }
     }
 
-    public function storeBulk(Request $request,AuthPinApprovalRequest $pin)
+    public function storeBulk(Request $request, AuthPinApprovalRequest $pin)
     {
         try {
             $employee_profile = $request->user;
@@ -684,41 +720,40 @@ class OvertimeController extends Controller
             $jsonData = $request->input('data');
             $formData = json_decode($jsonData, true);
             foreach ($formData as $data) {
-                foreach ($data['employees'] as $employee)
-                {
-                        $employeeId = $employee['id'];
-                        $employeeProfile = EmployeeProfile::with('overtimeCredits')->find($employeeId);
+                foreach ($data['employees'] as $employee) {
+                    $employeeId = $employee['id'];
+                    $employeeProfile = EmployeeProfile::with('overtimeCredits')->find($employeeId);
 
-                        foreach ($data['listdate'] as $date) {
-                            $combinedDate = Carbon::createFromDate(
-                                $date['year'],
-                                $date['month'],
-                                $date['day']
-                            )->toDateString();
-                            // Construct the date from year, month, and day
-                            $date = $combinedDate;
+                    foreach ($data['listdate'] as $date) {
+                        $combinedDate = Carbon::createFromDate(
+                            $date['year'],
+                            $date['month'],
+                            $date['day']
+                        )->toDateString();
+                        // Construct the date from year, month, and day
+                        $date = $combinedDate;
 
-                            if (Helpers::hasOverlappingCTO($date, $employeeId)) {
-                                return response()->json(['message' => 'Overlapping application records found for employee ' . $employeeProfile->name() . ' on date ' . $date . '.'], Response::HTTP_BAD_REQUEST);
-                            }
+                        if (Helpers::hasOverlappingCTO($date, $employeeId)) {
+                            return response()->json(['message' => 'Overlapping application records found for employee ' . $employeeProfile->name() . ' on date ' . $date . '.'], Response::HTTP_BAD_REQUEST);
+                        }
 
-                            // Calculate the total overtime hours requested by the employee
-                            $totalOvertimeHours = $this->calculateOvertimeHours( $data['fromtime'],  $data['totime'],);
-                            $totalEarnedCredit = $employeeProfile->earned_credit_by_hour + $totalOvertimeHours;
+                        // Calculate the total overtime hours requested by the employee
+                        $totalOvertimeHours = $this->calculateOvertimeHours($data['fromtime'],  $data['totime'],);
+                        $totalEarnedCredit = $employeeProfile->earned_credit_by_hour + $totalOvertimeHours;
 
-                            $currentYear = date('Y');
-                            $nextYear = $currentYear + 1;
-                            $validUntil = $nextYear . '-12-31';
+                        $currentYear = date('Y');
+                        $nextYear = $currentYear + 1;
+                        $validUntil = $nextYear . '-12-31';
 
-                            if ($totalOvertimeHours > $employeeProfile->overtimeCredits[0]->max_credit_monthly && $validUntil == $employeeProfile->overtimeCredits[0]->valid_until) {
-                                return response()->json(['message' => 'Employee ' . $employeeId . ' has exceeded the monthly overtime credit.'], Response::HTTP_BAD_REQUEST);
-                            }
+                        if ($totalOvertimeHours > $employeeProfile->overtimeCredits[0]->max_credit_monthly && $validUntil == $employeeProfile->overtimeCredits[0]->valid_until) {
+                            return response()->json(['message' => 'Employee ' . $employeeId . ' has exceeded the monthly overtime credit.'], Response::HTTP_BAD_REQUEST);
+                        }
 
-                            if ($totalEarnedCredit > $employeeProfile->overtimeCredits[0]->max_credit_annual && $validUntil == $employeeProfile->overtimeCredits[0]->valid_until) {
-                                return response()->json(['message' => 'Employee ' . $employeeId . ' has exceeded the annual overtime credit.'], Response::HTTP_BAD_REQUEST);
-                            }
+                        if ($totalEarnedCredit > $employeeProfile->overtimeCredits[0]->max_credit_annual && $validUntil == $employeeProfile->overtimeCredits[0]->valid_until) {
+                            return response()->json(['message' => 'Employee ' . $employeeId . ' has exceeded the annual overtime credit.'], Response::HTTP_BAD_REQUEST);
                         }
                     }
+                }
             }
 
             $assigned_area = $employee_profile->assignedArea->findDetails();
@@ -857,17 +892,17 @@ class OvertimeController extends Controller
             $employeeId = $employee_profile->id;
             $overtime_applications = OvertimeApplication::with(['dates.employees', 'activities.dates.employees'])
 
-            ->where(function ($query) use ($employeeId) {
-                // Scenario 1: Direct connection to Dates
-                $query->whereHas('dates.employees', function ($query) use ($employeeId) {
-                    $query->where('employee_profile_id', $employeeId);
+                ->where(function ($query) use ($employeeId) {
+                    // Scenario 1: Direct connection to Dates
+                    $query->whereHas('dates.employees', function ($query) use ($employeeId) {
+                        $query->where('employee_profile_id', $employeeId);
+                    })
+                        // Scenario 2: Indirect connection through Activities and Dates
+                        ->orWhereHas('activities.dates.employees', function ($query) use ($employeeId) {
+                            $query->where('employee_profile_id', $employeeId);
+                        });
                 })
-                // Scenario 2: Indirect connection through Activities and Dates
-                ->orWhereHas('activities.dates.employees', function ($query) use ($employeeId) {
-                    $query->where('employee_profile_id', $employeeId);
-                });
-            })
-            ->get();
+                ->get();
             return response()->json([
                 'data' => OvertimeResource::collection($overtime_applications),
                 'message' => 'Retrieved all overtime application'

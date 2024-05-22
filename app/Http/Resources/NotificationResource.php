@@ -14,13 +14,15 @@ class NotificationResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $notification = $this->notification;
+
         return [
             'id' => $this->id,
-            'description' => $this->description,
-            'module_path' => $this->module_path,
+            'description' => $notification->description,
+            'module_path' => $notification->module_path,
+            'employee_profile_id' => $this->employee_profile_id,
             'seen' => $this->seen,
             'date' => $this->created_at,
-            'employee_profile_id' => $this->employee_profile_id,
         ];
     }
 }

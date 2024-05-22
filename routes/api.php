@@ -37,8 +37,7 @@ Route::
             Route::get('news', 'NewsController@index');
             Route::get('news-search', 'NewsController@searchNews');
             Route::get('news/{id}', 'NewsController@show');
-
-            Route::get('my-notifications/{id}', 'NotificationController@getNotificationsById');
+            Route::get('notification', 'NotificationController@store');
         });
 
 Route::
@@ -57,6 +56,19 @@ Route::
 Route::middleware('auth.cookie')->group(function () {
 
     Route::namespace ('App\Http\Controllers')->group(function () {
+
+        Route::middleware(['auth.permission:UMIS-PAM view'])->group(function () {
+            Route::get('notifications', 'NotificationController@getNotificationsById');
+        });
+
+        Route::middleware(['auth.permission:UMIS-PAM view'])->group(function () {
+            Route::put('notifications/{id}/seen', 'NotificationController@seen');
+        });
+
+        Route::middleware(['auth.permission:UMIS-PAM view'])->group(function () {
+            Route::put('notifications-seen-multiple', 'NotificationController@seenMultipleNotification');
+        });
+
         Route::middleware(['auth.permission:UMIS-SM write', 'request.timing'])->group(function () {
             Route::post('announcements', 'AnnouncementsController@store');
         });
@@ -2001,6 +2013,10 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-OM view'])->group(function () {
             Route::get('user-ovt-application', 'OvertimeController@getUserOvertime');
+        });
+
+        Route::middleware(['auth.permission:UMIS-OM view'])->group(function () {
+            Route::get('supervisor-ovt-application', 'OvertimeController@getSupervisor');
         });
 
         Route::middleware(['auth.permission:UMIS-OM approve'])->group(function () {
