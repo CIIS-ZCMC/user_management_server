@@ -2632,7 +2632,7 @@ class EmployeeProfileController extends Controller
                         'employee_profile_id' => $employee_profile->id,
                         'schedule_id' => $schedule->id
                     ]);
-                }
+                } 
 
                 $schedule_next_month = Helpers::generateSchedule(Carbon::now()->addMonth()->startOfMonth(), $cleanData['employment_type_id'], $request->meridian);
 
