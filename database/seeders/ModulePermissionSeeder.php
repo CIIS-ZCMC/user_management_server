@@ -635,8 +635,8 @@ class ModulePermissionSeeder extends Seeder
         ]);
 
         ModulePermission::create([
-            'code' => $system_module_time_adjustment['code'] . ' ' . $permission_write['action'],
-            'permission_id' => $permission_write['id'],
+            'code' => $system_module_time_adjustment['code'] . ' ' . $permission_request['action'],
+            'permission_id' => $permission_request['id'],
             'system_module_id' => $system_module_time_adjustment['id']
         ]);
 
