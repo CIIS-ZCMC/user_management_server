@@ -419,6 +419,8 @@ class OvertimeController extends Controller
                 return response()->json(['message' => 'No recommending officer and/or supervising officer assigned.'], Response::HTTP_FORBIDDEN);
             }
 
+            
+
 
             foreach ($validatedData['employees'] as $index => $employeeList) {
 

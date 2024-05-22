@@ -23,17 +23,16 @@ class DTR4setSchedule
 
     public function New($DaySchedule, $BreakTime, $entrydate, $entry, $biometric_id, $data, $status)
     {
-
-
+       
         /**
          * Here we are checking if theres an existing first entry this is  for nursing and doctors
          * which has two entries for schedule only.
          * if data not found. then we save into first entry
          */
         $yester_date = date('Y-m-d', strtotime($entrydate . '-1 day'));
-
+       
         $check_yesterday_Records = DailyTimeRecords::whereDate('first_in', $yester_date)->where('biometric_id', $biometric_id)->latest()->first();
-
+    
         if ($check_yesterday_Records !== null) {
 
             $f_1 = $check_yesterday_Records->first_in;
@@ -41,6 +40,7 @@ class DTR4setSchedule
             $f_3 = $check_yesterday_Records->second_in;
             $f_4 = $check_yesterday_Records->second_out;
 
+          
             if ($f_1 && !$f_2 && !$f_3 && !$f_4 ) {
 
                 /* Validation add expiry. */
@@ -146,8 +146,8 @@ class DTR4setSchedule
                 }
             }
         } else {
-
-
+           
+           
             if ($this->helper->EntryisAm($this->helper->sequence(0, [$data])[0]['date_time'])) {
                 if ($status == 0 || $status == 255) {
                     $scheduleEntry = null;
@@ -168,7 +168,7 @@ class DTR4setSchedule
 
 
             if ($this->helper->EntryisPm($this->helper->sequence(0, [$data])[0]['date_time'])) {
-
+             
                 if ($status == 0 || $status == 255) {
                     $scheduleEntry = null;
 
@@ -182,6 +182,7 @@ class DTR4setSchedule
                         'PM'
                     );
                 }
+
             }
         }
     }
@@ -189,6 +190,8 @@ class DTR4setSchedule
 
     public function Update($validate, $DaySchedule, $BreakTime, $entrydate, $entry, $biometric_id, $data, $status)
     {
+
+      
         $f1 = $validate->first_in;
         $f2 =  $validate->first_out;
         $f3 = $validate->second_in;
@@ -196,7 +199,9 @@ class DTR4setSchedule
         $rwm = $validate->required_working_minutes;
         $o_all_min = $validate->total_working_minutes;
         if ($f1 && !$f2 && !$f3 && !$f4) {
+            
             if ($status == 255) {
+          
                 if ($this->helper->withinInterval($f1, $this->helper->sequence(0, [$data]))) {
                     $this->helper->saveTotalWorkingHours(
                         $validate,
@@ -206,7 +211,9 @@ class DTR4setSchedule
                         false
                     );
                 }
+                
             }
+         
             if ($status == 1) {
                 $this->helper->saveTotalWorkingHours(
                     $validate,
@@ -255,6 +262,7 @@ class DTR4setSchedule
            Overtime and undertime, as well as working hours, have already been calculated.
         */
         if ($f1 && $f2 && $f3 && !$f4) {
+           
             if ($this->helper->EntryisPm($this->helper->sequence(0, [$data])[0]['date_time'])) {
                 if ($status == 255) {
                     if ($this->helper->withinInterval($f3, $this->helper->sequence(0, [$data]))) {
@@ -284,6 +292,7 @@ class DTR4setSchedule
             Overtime and undertime, as well as working hours, have already been calculated.
         */
         if (!$f1 && !$f2 && $f3 && !$f4) {
+           
             if ($this->helper->EntryisPm($this->helper->sequence(0, [$data])[0]['date_time'])) {
                 if ($status == 255) {
                     if ($this->helper->withinInterval($f3, $this->helper->sequence(0, [$data]))) {

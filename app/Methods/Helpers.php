@@ -64,8 +64,9 @@ class Helpers
 
     public function withinInterval($last_entry, $bio_entry)
     {
+       
         $With_Interval = date('Y-m-d H:i:s', strtotime($last_entry) + floor(config("app.alloted_dtr_interval") * 60));
-
+       
 
         if ($With_Interval <= $bio_entry[0]['date_time']) {
             return true;
@@ -320,16 +321,18 @@ AND id IN (
 
         $daySchedule = array_values(array_filter($schedule['schedule'], function ($row) use ($entry, $entryTime) {
             $entryDateTime = strtotime($entry . ' ' . $entryTime);
-
+        
             return date('Y-m-d', strtotime($row['scheduleDate'])) === $entry &&
                 (
                     (date('Y-m-d H:i', $entryDateTime) <= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['first_entry'] . ' +4 hours')) &&
                         date('Y-m-d H:i', $entryDateTime) >= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['first_entry'] . ' -4 hours'))) ||
                     (date('Y-m-d H:i', $entryDateTime) <= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['second_entry'] . ' +4 hours')) &&
-                        date('Y-m-d H:i', $entryDateTime) >= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['second_entry'] . ' -4 hours')))
+                        date('Y-m-d H:i', $entryDateTime) >= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['second_entry'] . ' -4 hours'))) ||
+                    (date('Y-m-d H:i', $entryDateTime) <= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['last_entry'] . ' +4 hours')) &&
+                        date('Y-m-d H:i', $entryDateTime) >= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['last_entry'] . ' -4 hours')))
                 );
         }));
-
+        
 
 
 
