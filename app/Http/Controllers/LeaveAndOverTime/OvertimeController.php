@@ -162,6 +162,7 @@ class OvertimeController extends Controller
 
 
             return response()->json([
+                'user_id' => $employeeId,
                 'data' => OvertimeResource::collection($overtime_application),
                 'message' => 'Retrieved all official business application'
             ], Response::HTTP_OK);
