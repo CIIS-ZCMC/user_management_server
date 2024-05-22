@@ -1461,7 +1461,7 @@ class EmployeeProfileController extends Controller
                     'password_created_at' => now(),
                     'password_expiration_at' => $threeMonths
                 ]);
-                  
+
             }  else {
                 $employee_profile->update([
                     'password_encrypted' => $encryptedPassword,
@@ -1472,7 +1472,7 @@ class EmployeeProfileController extends Controller
                     'pin_created_at' => now()
                 ]);
             }
-               
+
 
             $agent = new Agent();
             $device = [
@@ -2282,7 +2282,7 @@ class EmployeeProfileController extends Controller
             });
 
             $temp_perm = EmployeeProfileResource::collection($employee_profiles->filter(function ($profile) {
-                return $profile->employment_type_id == 1 || $profile->employment_type_id == 2;
+                return $profile->employment_type_id == 1 || $profile->employment_type_id == 2 || $profile->employment_type_id == 3 || $profile->employment_type_id == 4;
             }) ?? []);
 
             $joborder = EmployeeProfileResource::collection($employee_profiles->filter(function ($profile) {
@@ -2852,7 +2852,7 @@ class EmployeeProfileController extends Controller
             $totalYears = floor($totalMonths / 12);
 
             $employee = [
-                'profile_url' => config('app.server_domain') . "/photo/profiles/" . $employee_profile->profile_url, 
+                'profile_url' => config('app.server_domain') . "/photo/profiles/" . $employee_profile->profile_url,
                 'employee_id' => $employee_profile->employee_id,
                 'position' => $position,
                 'job_position' => $designation->name,

@@ -24,6 +24,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Models\EmployeeLeaveCreditLogs;
 use App\Models\MonitizationPosting;
+use Carbon\Carbon;
 
 class MonetizationApplicationController extends Controller
 {
@@ -195,7 +196,7 @@ class MonetizationApplicationController extends Controller
         }
     }
 
-    //old function    
+    //old function
     public function getMoneApplications(Request $request)
     {
         try {
@@ -412,7 +413,15 @@ class MonetizationApplicationController extends Controller
             $cleanData['attachment_size'] = $file->getSize();
             $cleanData['attachment_path'] = Helpers::checkSaveFile($file, 'leave_monetization');
 
+            $currentYear = Carbon::now()->year;
+            $existingApplications = MonetizationApplication::where('employee_profile_id', $employee_profile->id)
+                ->whereYear('created_at', $currentYear)
+                ->whereNotIn('status', ['declined'])
+                ->exists();
 
+            if ($existingApplications) {
+                return response()->json(['message' =>"You have an existing application within the current year."], Response::HTTP_BAD_REQUEST);
+            }
 
             $new_monetization = MonetizationApplication::create($cleanData);
 
@@ -566,7 +575,7 @@ class MonetizationApplicationController extends Controller
                 'action' => 'Declined'
             ]);
 
-            
+
             $employeeCredit =  EmployeeLeaveCredit::where('employee_profile_id', $mone_application->employee_profile_id)
             ->whereIn('leave_type_id', [1, 2])
             ->get();
@@ -749,7 +758,7 @@ class MonetizationApplicationController extends Controller
              $document_details = [];
 
              $isMCC = Division::where('code', 'OMCC')->where('chief_employee_profile_id', $data->employee_profile_id)->first();
- 
+
              if (!$isMCC) {
                  //GET DIV ID FIRST
                  if ($data->country === 'Philippines') {
