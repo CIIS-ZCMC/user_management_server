@@ -93,17 +93,51 @@ class DTRcontroller extends Controller
         }
 
     }
+    public function getValidatedEntry($firstin,$secondin){
+        if($firstin && !$secondin){
+            return $firstin;
+        }
+        if(!$firstin && $secondin){
+            return $secondin;
+        }
+    }
+
+    public function getUserDeviceLogs($biometric_id,$filterDate){
+
+        $log = DailyTimeRecordLogs::where('biometric_id',$biometric_id)->where('dtr_date',$filterDate)->first();
+
+        return [
+            'dtr_date'=>$log->dtr_date,
+            'logs'=>json_decode($log->json_logs),
+            'created_at'=>$log->created_at,
+            'updated_at'=>$log->updated_at
+        ];
+    }
+
 
     public function pullDTRuser(Request $request)
     {
         try {
+            
             $user = $request->user;
-            $today = date('Y-m-d');
             $biometric_id = $user->biometric_id;
+            $today = date('Y-m-d');
+          
             $selfRecord = DailyTimeRecords::where('biometric_id', $biometric_id)->where('dtr_date', $today)->first();
-            $sched = $this->helper->getSchedule($biometric_id, null);
+            
 
             if ($selfRecord) {
+                $bioentry =[
+                    'date_time'=>$this->getValidatedEntry($selfRecord->first_in,$selfRecord->second_in),
+                    'first_in'=>$this->getValidatedEntry($selfRecord->first_in,$selfRecord->second_in),
+                ];
+
+            $Schedule = $this->helper->CurrentSchedule($biometric_id,$bioentry, false);
+            $hasMatchSchedule = count($Schedule['daySchedule']) >=1 ;
+            
+            $deviceLogs = $this->getUserDeviceLogs($biometric_id,$today);
+
+            if($hasMatchSchedule){
                 if ($selfRecord->first_in !== NULL && $selfRecord->first_out !== NULL && $selfRecord->second_in === NULL && $selfRecord->second_out === NULL) {
                     return [
                         'dtr_date' => $selfRecord->dtr_date,
@@ -111,25 +145,31 @@ class DTRcontroller extends Controller
                         'first_out' => ' --:--',
                         'second_in' =>  ' --:--',
                         'second_out' => $selfRecord->first_out ? date('h:i a', strtotime($selfRecord->first_out)) : ' --:--',
+                        'schedule'=>$Schedule['daySchedule'],
+                        'deviceLogs'=>$deviceLogs
                     ];
                 }
-
                 return [
                     'dtr_date' => $selfRecord->dtr_date,
                     'first_in' => $selfRecord->first_in ? date('h:i a', strtotime($selfRecord->first_in)) : ' --:--',
                     'first_out' => $selfRecord->first_out ? date('h:i a', strtotime($selfRecord->first_out)) : ' --:--',
                     'second_in' => $selfRecord->second_in ? date('h:i a', strtotime($selfRecord->second_in)) : ' --:--',
                     'second_out' => $selfRecord->second_out ? date('h:i a', strtotime($selfRecord->second_out)) : ' --:--',
+                    'schedule'=>$Schedule['daySchedule'],
+                    'deviceLogs'=>$deviceLogs
                 ];
-            } else {
-                return [
-                    'dtr_date' => $today,
-                    'first_in' => ' --:--',
-                    'first_out' => ' --:--',
-                    'second_in' => ' --:--',
-                    'second_out' => ' --:--',
-                ];
+          
             }
+            }  
+            return [
+                'dtr_date' => $today,
+                'first_in' => ' --:--',
+                'first_out' => ' --:--',
+                'second_in' => ' --:--',
+                'second_out' => ' --:--',
+                'schedule'=>[],
+                'deviceLogs'=>[]
+            ];
         } catch (\Throwable $th) {
             Helpersv2::errorLog($this->CONTROLLER_NAME, 'pullDTRuser', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], 401);
