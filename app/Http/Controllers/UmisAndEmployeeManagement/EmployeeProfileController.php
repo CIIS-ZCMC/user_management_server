@@ -409,8 +409,7 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                }
-                ;
+                };
 
                 $trials--;
             } while ($trials !== 0);
@@ -1048,8 +1047,7 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                }
-                ;
+                };
 
                 $trials--;
             } while ($trials !== 0);
@@ -1122,8 +1120,7 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                }
-                ;
+                };
 
                 $trials--;
             } while ($trials !== 0);
@@ -1256,8 +1253,7 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                }
-                ;
+                };
 
                 $trials--;
             } while ($trials !== 0);
@@ -1461,8 +1457,7 @@ class EmployeeProfileController extends Controller
                     'password_created_at' => now(),
                     'password_expiration_at' => $threeMonths
                 ]);
-                  
-            }  else {
+            } else {
                 $employee_profile->update([
                     'password_encrypted' => $encryptedPassword,
                     'password_created_at' => now(),
@@ -1472,7 +1467,7 @@ class EmployeeProfileController extends Controller
                     'pin_created_at' => now()
                 ]);
             }
-               
+
 
             $agent = new Agent();
             $device = [
@@ -1509,8 +1504,7 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                }
-                ;
+                };
 
                 $trials--;
             } while ($trials !== 0);
@@ -1795,8 +1789,7 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                }
-                ;
+                };
 
                 $trials--;
             } while ($trials !== 0);
@@ -2277,16 +2270,17 @@ class EmployeeProfileController extends Controller
         try {
             $cacheExpiration = Carbon::now()->addDay();
 
-            $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () {
-                return EmployeeProfile::whereNotIn('id', [1])->get();
-            });
+            // $employee_profiles = Cache::remember('employee_profiles', $cacheExpiration, function () {
+            //     return EmployeeProfile::whereNotIn('id', [1])->get();
+            // });
 
+            $employee_profiles = EmployeeProfile::where('employee_id', '!=', null)->whereNotIn('id', [1])->get();
             $temp_perm = EmployeeProfileResource::collection($employee_profiles->filter(function ($profile) {
-                return $profile->employment_type_id == 1 || $profile->employment_type_id == 2;
+                return $profile->employment_type_id != 5;
             }) ?? []);
 
             $joborder = EmployeeProfileResource::collection($employee_profiles->filter(function ($profile) {
-                return $profile->employment_type_id == 3;
+                return $profile->employment_type_id == 5;
             }) ?? []);
 
 
@@ -2632,7 +2626,7 @@ class EmployeeProfileController extends Controller
                         'employee_profile_id' => $employee_profile->id,
                         'schedule_id' => $schedule->id
                     ]);
-                }
+                } 
 
                 $schedule_next_month = Helpers::generateSchedule(Carbon::now()->addMonth()->startOfMonth(), $cleanData['employment_type_id'], $request->meridian);
 
@@ -2852,7 +2846,7 @@ class EmployeeProfileController extends Controller
             $totalYears = floor($totalMonths / 12);
 
             $employee = [
-                'profile_url' => config('app.server_domain') . "/photo/profiles/" . $employee_profile->profile_url, 
+                'profile_url' => config('app.server_domain') . "/photo/profiles/" . $employee_profile->profile_url,
                 'employee_id' => $employee_profile->employee_id,
                 'position' => $position,
                 'job_position' => $designation->name,

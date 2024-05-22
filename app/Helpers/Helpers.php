@@ -1108,20 +1108,20 @@ class Helpers
 
     public static function sendNotification($body)
     {
-        $response = Http::post('http://localhost:8030', $body);
+        $response = Http::post(config('app.socket_server_domain'.'/notification'), $body);
 
-        // Check if the request was successful
         if ($response->successful()) {
-            // Get the response body
-            $body = $response->body();   
-         
+            $body = $response->body();
+            if ($response->successful()) {
+                return 'Message triggered successfully';
+            } else {
+                return 'Failed to trigger message';
+            }
         } else {
-            // Handle the error
             $status = $response->status();
             return "HTTP request failed with status: $status";
         }
-            }
-
+    }
 }
 
 

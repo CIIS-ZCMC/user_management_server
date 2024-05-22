@@ -13,11 +13,9 @@ return new class extends Migration
     {
         Schema::create('notifications', function (Blueprint $table) {
             $table->id();
+            $table->string('title');
             $table->text('description');
             $table->string('module_path')->nullable();
-            $table->boolean('seen')->default(false);
-            $table->unsignedBigInteger('employee_profile_id')->unsigned();
-            $table->foreign('employee_profile_id')->references('id')->on('employee_profiles')->onDelete('cascade');
             $table->timestamps();
         });
     }
