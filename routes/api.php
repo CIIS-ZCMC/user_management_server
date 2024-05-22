@@ -21,6 +21,7 @@ Route::namespace('App\Http\Controllers\Migration')->group(
         Route::get('plantilla', 'MigratePlantilla@import');
         // for betaTest migration
         Route::get('migratePlantillaAssociatedDesignation', 'MigratePlantilla@migratePlantillas');
+        Route::get('seedOrganization', 'MigrateOrganizationStructureController@create');
     }
 );
 
