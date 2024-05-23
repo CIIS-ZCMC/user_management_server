@@ -680,34 +680,34 @@ class Helpers
 
         // Check for overlapping dates in Overtime Application's Activities and Dates
         $overlappingOvertimeActivities = DB::table('overtime_applications')
-        ->join('ovt_application_activities', 'overtime_applications.id', '=', 'ovt_application_activities.overtime_application_id')
-        ->join('ovt_application_datetimes', 'ovt_application_activities.id', '=', 'ovt_application_datetimes.ovt_application_activity_id')
-        ->join('ovt_application_employees', 'ovt_application_datetimes.id', '=', 'ovt_application_employees.ovt_application_datetime_id')
-        ->where('ovt_application_employees.employee_profile_id', $employeeId)
-        ->where('overtime_applications.status', '!=', 'declined')
-        ->where(function ($query) use ($start, $end) {
-            $query->whereBetween('ovt_application_datetimes.date', [$start, $end])
-                ->orWhere(function ($query) use ($start, $end) {
-                    $query->where('ovt_application_datetimes.date', '<=', $start)
-                        ->where('ovt_application_datetimes.date', '>=', $end);
-                });
-        })
-        ->exists();
+            ->join('ovt_application_activities', 'overtime_applications.id', '=', 'ovt_application_activities.overtime_application_id')
+            ->join('ovt_application_datetimes', 'ovt_application_activities.id', '=', 'ovt_application_datetimes.ovt_application_activity_id')
+            ->join('ovt_application_employees', 'ovt_application_datetimes.id', '=', 'ovt_application_employees.ovt_application_datetime_id')
+            ->where('ovt_application_employees.employee_profile_id', $employeeId)
+            ->where('overtime_applications.status', '!=', 'declined')
+            ->where(function ($query) use ($start, $end) {
+                $query->whereBetween('ovt_application_datetimes.date', [$start, $end])
+                    ->orWhere(function ($query) use ($start, $end) {
+                        $query->where('ovt_application_datetimes.date', '<=', $start)
+                            ->where('ovt_application_datetimes.date', '>=', $end);
+                    });
+            })
+            ->exists();
 
         // Check for overlapping dates directly in Overtime Applications
         $overlappingOvertimeDirect = DB::table('overtime_applications')
-        ->join('ovt_application_datetimes', 'overtime_applications.id', '=', 'ovt_application_datetimes.overtime_application_id')
-        ->join('ovt_application_employees', 'ovt_application_datetimes.id', '=', 'ovt_application_employees.ovt_application_datetime_id')
-        ->where('ovt_application_employees.employee_profile_id', $employeeId)
-        ->where('overtime_applications.status', '!=', 'declined')
-        ->where(function ($query) use ($start, $end) {
-            $query->whereBetween('ovt_application_datetimes.date', [$start, $end])
-                ->orWhere(function ($query) use ($start, $end) {
-                    $query->where('ovt_application_datetimes.date', '<=', $start)
-                        ->where('ovt_application_datetimes.date', '>=', $end);
-                });
-        })
-        ->exists();
+            ->join('ovt_application_datetimes', 'overtime_applications.id', '=', 'ovt_application_datetimes.overtime_application_id')
+            ->join('ovt_application_employees', 'ovt_application_datetimes.id', '=', 'ovt_application_employees.ovt_application_datetime_id')
+            ->where('ovt_application_employees.employee_profile_id', $employeeId)
+            ->where('overtime_applications.status', '!=', 'declined')
+            ->where(function ($query) use ($start, $end) {
+                $query->whereBetween('ovt_application_datetimes.date', [$start, $end])
+                    ->orWhere(function ($query) use ($start, $end) {
+                        $query->where('ovt_application_datetimes.date', '<=', $start)
+                            ->where('ovt_application_datetimes.date', '>=', $end);
+                    });
+            })
+            ->exists();
 
 
         // Return true if any overlap is found, otherwise false
@@ -750,15 +750,15 @@ class Helpers
 
         // Check for overlapping dates in Overtime Application's Activities and Dates
         $overlappingOvertimeActivities = DB::table('overtime_applications')
-        ->join('ovt_application_activities', 'overtime_applications.id', '=', 'ovt_application_activities.overtime_application_id')
-        ->join('ovt_application_datetimes', 'ovt_application_activities.id', '=', 'ovt_application_datetimes.ovt_application_activity_id')
-        ->join('ovt_application_employees', 'ovt_application_datetimes.id', '=', 'ovt_application_employees.ovt_application_datetime_id') // assuming pivot table name is ovt_application_employees
-        ->where('ovt_application_employees.employee_profile_id', $employeeId)
-        ->where('overtime_applications.status', '!=', 'declined')
-        ->where(function ($query) use ($date) {
-            $query->whereDate('ovt_application_datetimes.date', $date);
-        })
-        ->exists();
+            ->join('ovt_application_activities', 'overtime_applications.id', '=', 'ovt_application_activities.overtime_application_id')
+            ->join('ovt_application_datetimes', 'ovt_application_activities.id', '=', 'ovt_application_datetimes.ovt_application_activity_id')
+            ->join('ovt_application_employees', 'ovt_application_datetimes.id', '=', 'ovt_application_employees.ovt_application_datetime_id') // assuming pivot table name is ovt_application_employees
+            ->where('ovt_application_employees.employee_profile_id', $employeeId)
+            ->where('overtime_applications.status', '!=', 'declined')
+            ->where(function ($query) use ($date) {
+                $query->whereDate('ovt_application_datetimes.date', $date);
+            })
+            ->exists();
 
         // Check for overlapping dates directly in Overtime Applications
         $overlappingOvertimeDirect = DB::table('overtime_applications')
@@ -835,10 +835,10 @@ class Helpers
     public static function hasSchedule($start, $end, $employeeId)
     {
         return EmployeeSchedule::where('employee_profile_id', $employeeId)
-        ->whereHas('schedule', function ($query) use ($start, $end) {
-            $query->whereBetween('date', [$start, $end]);
-        })
-        ->exists();
+            ->whereHas('schedule', function ($query) use ($start, $end) {
+                $query->whereBetween('date', [$start, $end]);
+            })
+            ->exists();
     }
     public static function getTotalHours($start, $end, $employeeId)
     {
@@ -1113,14 +1113,90 @@ class Helpers
         // Check if the request was successful
         if ($response->successful()) {
             // Get the response body
-            $body = $response->body();   
-         
+            $body = $response->body();
+
         } else {
             // Handle the error
             $status = $response->status();
             return "HTTP request failed with status: $status";
         }
-            }
+    }
+
+    public static function checkEmployeeHead($user_id, $assigned_area)
+    {
+        switch ($assigned_area['sector']) {
+            case 'Division':
+                // If employee is Division head
+                if (Division::find($assigned_area['details']->id)->chief_employee_profile_id === $user_id) {
+                    $chief_officer = Division::where('code', $assigned_area['details']['code'])->first();
+
+                    if ($chief_officer !== null) {
+                        $officer_assigned_area = EmployeeProfile::where('id', $chief_officer->chief_employee_profile_id)->first();
+                    }
+
+                    return [
+                        "head" => $chief_officer->chief_employee_profile_id,
+                        "area" => $officer_assigned_area->assignArea,
+                    ];
+                }
+
+                return ["head" => null];
+
+            case 'Department':
+                // If employee is Department head
+                if (Department::find($assigned_area['details']->id)->head_employee_profile_id === $user_id) {
+                    $chief_officer = Department::where('code', $assigned_area['details']['code'])->first();
+
+                    if ($chief_officer !== null) {
+                        $officer_assigned_area = EmployeeProfile::where('id', $chief_officer->head_employee_profile_id)->first();
+                    }
+
+                    return [
+                        "head" => $chief_officer->head_employee_profile_id,
+                        "area" => $officer_assigned_area->assignArea,
+                    ];
+                }
+
+                return ["head" => null];
+
+            case 'Section':
+                // If employee is Section head
+                if (Section::find($assigned_area['details']->id)->supervisor_employee_profile_id === $user_id) {
+                    $chief_officer = Section::where('code', $assigned_area['details']['code'])->first();
+
+                    if ($chief_officer !== null) {
+                        $officer_assigned_area = EmployeeProfile::where('id', $chief_officer->supervisor_employee_profile_id)->first();
+                    }
+
+                    return [
+                        "head" => $chief_officer->supervisor_employee_profile_id,
+                        "area" => $officer_assigned_area->assignedArea,
+                    ];
+                }
+
+                return ["head" => null];
+
+            case 'Unit':
+                // If employee is Unit head
+                if (Unit::find($assigned_area['details']->id)->head_employee_profile_id === $user_id) {
+                    $chief_officer = Unit::where('code', $assigned_area['details']['code'])->first();
+
+                    if ($chief_officer !== null) {
+                        $officer_assigned_area = EmployeeProfile::where('id', $chief_officer->head_employee_profile_id)->first();
+                    }
+
+                    return [
+                        "head" => $chief_officer->head_employee_profile_id,
+                        "area" => $officer_assigned_area->assignedArea,
+                    ];
+                }
+
+                return ["head" => null];
+
+            default:
+                return null;
+        }
+    }
 
 }
 

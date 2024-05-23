@@ -213,7 +213,7 @@ class TimeAdjustmentController extends Controller
             $data->update([
                 'daily_time_record_id' => $dtr ? $dtr->id : ($data->daily_time_record_id ?? null),
                 'approval_date' => Carbon::now(),
-                'remarks' => $request->remarks,
+                'reason' => $request->reasons,
                 'status' => $status,
             ]);
 

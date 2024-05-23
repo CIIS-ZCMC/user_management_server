@@ -65,10 +65,12 @@ class EmployeeScheduleController extends Controller
                     return $schedule->timeShift->total_hours ?? 0;
                 });
             });
+
             return response()->json([
                 'data' => ScheduleResource::collection($data),
                 'dates' => $dates_with_day,
             ], Response::HTTP_OK);
+
         } catch (\Throwable $th) {
 
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());

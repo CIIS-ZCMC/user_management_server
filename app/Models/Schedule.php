@@ -90,4 +90,13 @@ class Schedule extends Model
 
         return $employee_id; // not finish
     }
+
+    public function monthlyWorkingHours($date)
+    {
+        $month_year = Carbon::parse($date)->format('m-Y');
+        $monthlyWorkHours = MonthlyWorkHours::where('month_year', $month_year)->first();
+
+        return $monthlyWorkHours ? $monthlyWorkHours->work_hours : 0;
+
+    }
 }
