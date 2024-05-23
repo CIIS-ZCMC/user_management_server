@@ -272,22 +272,23 @@ class ScheduleController extends Controller
     public function FilterByAreaAndDate(Request $request)
     {
         try {
-            $area = $request->area_id;
+            $area_id = $request->area_id;
+            $area_sector = $request->area_sector;
             $year = Carbon::parse($request->date)->year;
             $month = Carbon::parse($request->date)->month;
 
             $data = EmployeeProfile::with([
                 'assignedArea',
-                'schedule' => function ($query) use ($year, $month) {
-                    $query->with(['timeShift', 'holiday'])
+                'schedule' => function ($innerQuery) use ($year, $month) {
+                    $innerQuery->with(['timeShift', 'holiday'])
                         ->whereYear('date', '=', $year)
                         ->whereMonth('date', '=', $month);
                 }
-            ])->whereHas('assignedArea', function ($query) use ($area) {
-                $query->where('id', $area);
+            ])->whereHas('assignedArea', function ($query) use ($area_id, $area_sector) {
+                $query->where($area_sector . '_id', $area_id);
             })->get();
 
-            return response()->json(['data' => $data], Response::HTTP_OK);
+            return response()->json(['data' => ScheduleResource::collection($data)], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'myAreas', $th->getMessage());
