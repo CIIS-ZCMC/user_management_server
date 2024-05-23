@@ -23,10 +23,10 @@ class TimeAdjustmentRequest extends FormRequest
     {
         return [
             'date' => 'required|date_format:Y-m-d',
-            'first_in' => 'date_format:H:i|nullable',
-            'first_out' => 'date_format:H:i|nullable',
-            'second_in' => 'date_format:H:i|nullable',
-            'second_out' => 'date_format:H:i|nullable',
+            'first_in' => 'date_format:H:i|required',
+            'first_out' => 'date_format:H:i|required',
+            'second_in' => 'date_format:H:i|required',
+            'second_out' => 'date_format:H:i|required',
             'remarks' => 'required|string',
             'attachment' => 'required|file',
             'employee_profile_id' => 'required|integer',

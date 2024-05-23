@@ -90,55 +90,47 @@ class TimeAdjustmentController extends Controller
 
             $user = $request->user;
 
-            $recommending_officer = null;
+            // $recommending_officer = null;
             $approving_officer = Section::where('code', 'HRMO')->first()->supervisor_employee_profile_id;
 
             $employee = EmployeeProfile::find($cleanData['employee_profile_id']);
-            $employee_area = $employee->assignedArea->findDetails();
 
             if ($employee->biometric_id === null) {
                 return response()->json(['message' => 'Biometric ID is not yet registered'], Response::HTTP_NOT_FOUND);
             }
 
-            $dtr = DailyTimeRecords::where([
-                ['biometric_id', '=', $employee->biometric_id],
-                ['dtr_date', '=', Carbon::parse($cleanData['date'])->format('Y-m-d')],
-            ])->first();
+            $find = TimeAdjustment::where('date', $cleanData['date'])
+                ->where('employee_profile_id', $cleanData['employee_profile_id'])
+                ->whereNot('status', 'declined')
+                ->first();
 
-            if ($dtr === null) {
-                $dtr = DailyTimeRecords::create([
-                    'biometric_id' => $employee->biometric_id,
-                    'dtr_date' => $cleanData['date'],
-                    'first_in' => $cleanData['date'] . " " . $cleanData['first_in'],
-                    'first_out' => $cleanData['date'] . " " . $cleanData['first_out'],
-                    'second_in' => $cleanData['date'] . " " . $cleanData['second_in'],
-                    'second_out' => $cleanData['date'] . " " . $cleanData['second_out'],
-                ]);
+            if ($find !== null) {
+                return response()->json(['message' => 'You already have a request on date: ' . $cleanData['date']], Response::HTTP_FORBIDDEN);
             }
 
-            switch ($employee_area['sector']) {
-                case 'Division':
-                    $recommending_officer = $employee->assignedArea->division->divisionHead;
-                    break;
+            // $employee_area = $employee->assignedArea->findDetails();
+            // switch ($employee_area['sector']) {
+            //     case 'Division':
+            //         $recommending_officer = $employee->assignedArea->division->divisionHead;
+            //         break;
 
-                case 'Department':
-                    $recommending_officer = $employee->assignedArea->department->head;
-                    break;
+            //     case 'Department':
+            //         $recommending_officer = $employee->assignedArea->department->head;
+            //         break;
 
-                case 'Section':
-                    $recommending_officer = $employee->assignedArea->section->supervisor_employee_profile_id;
-                    break;
+            //     case 'Section':
+            //         $recommending_officer = $employee->assignedArea->section->supervisor_employee_profile_id;
+            //         break;
 
-                case 'Unit':
-                    $recommending_officer = $employee->assignedArea->section->supervisor_employee_profile_id;
-                    break;
-            }
+            //     case 'Unit':
+            //         $recommending_officer = $employee->assignedArea->section->supervisor_employee_profile_id;
+            //         break;
+            // }
 
             if ($approving_officer === null) {
                 return response()->json(['message' => 'No approving officer assigned.'], Response::HTTP_FORBIDDEN);
             }
 
-            $cleanData['daily_time_record_id'] = $dtr->id;
             $cleanData['employee_profile_id'] = $employee->id;
             // $cleanData['recommending_officer'] = $recommending_officer ? $recommending_officer->id : null;
             $cleanData['approving_officer'] = $approving_officer;
@@ -190,25 +182,30 @@ class TimeAdjustmentController extends Controller
             $dtr = null;
 
             if ($request->status === 'approved' && $data->status === 'applied') {
-                $dtr = DailyTimeRecords::where('dtr_date', Carbon::parse($data->date))->first();
+                $employee = EmployeeProfile::find($data->employee_profile_id);
+
+                $dtr = DailyTimeRecords::where([
+                    ['biometric_id', '=', $employee->biometric_id],
+                    ['dtr_date', '=', Carbon::parse($data->date)->format('Y-m-d')],
+                ])->first();
 
                 if ($dtr === null) {
-                    $employees = EmployeeProfile::find($data->employee_profile_id);
-
                     $dtr = DailyTimeRecords::create([
-                        'biometric_id' => $employees->biometric_id,
+                        'biometric_id' => $employee->biometric_id,
                         'dtr_date' => $data->date,
                         'first_in' => $data->date . " " . $data->first_in,
                         'first_out' => $data->date . " " . $data->first_out,
                         'second_in' => $data->date . " " . $data->second_in,
                         'second_out' => $data->date . " " . $data->second_out,
+                        'is_time_adjustment' => 1
                     ]);
                 } else {
                     $dtr->update([
-                        'first_in' => $data->date . " " . $data->first_in ?? $dtr->first_in,
-                        'first_out' => $data->date . " " . $data->first_out ?? $dtr->first_out,
-                        'second_in' => $data->date . " " . $data->second_in ?? $dtr->second_in,
-                        'second_out' => $data->date . " " . $data->second_out ?? $dtr->second_out,
+                        'first_in' => $data->date . " " . $data->first_in,
+                        'first_out' => $data->date . " " . $data->first_out,
+                        'second_in' => $data->date . " " . $data->second_in,
+                        'second_out' => $data->date . " " . $data->second_out,
+                        'is_time_adjustment' => 1
                     ]);
                 }
             }

@@ -124,13 +124,13 @@ class OvertimeController extends Controller
             // }
 
             //    return response()->json(['message' => $employee_profile->position()['position']], Response::HTTP_INTERNAL_SERVER_ERROR);
-            if ($employee_profile->id === Helpers::getHrmoOfficer()) {
-                return response()->json([
-                    'data' => OvertimeApplication::collection(OvertimeApplication::where('status', 'approved')->get()),
-                    'message' => 'Retrieved all overtime  application'
+            // if ($employee_profile->id === Helpers::getHrmoOfficer()) {
+            //     return response()->json([
+            //         'data' => OvertimeApplication::collection(OvertimeApplication::where('status', 'approved')->get()),
+            //         'message' => 'Retrieved all overtime  application'
 
-                ], Response::HTTP_OK);
-            }
+            //     ], Response::HTTP_OK);
+            // }
 
             $overtime_application = OvertimeApplication::select('overtime_applications.*')
                 ->where(function ($query) use ($recommending, $approving, $employeeId) {
@@ -181,7 +181,7 @@ class OvertimeController extends Controller
             /** FOR NORMAL EMPLOYEE */
             if ($employee_profile->position() === null || $employee_profile->position()['position'] === 'Supervisor') {
 
-                $overtime_application = OvertimeApplication::with('dates')->where('employee_profile_id', $employee_profile->id)->get();
+                $overtime_application = OvertimeApplication::with('dates')->where('employee_profile_id', $employee_profile->id)->orderBy('created_at', 'desc')->get();
                 return response()->json([
                     'user_id' => $employeeId,
                     'data' => OvertimeResource::collection($overtime_application),
@@ -452,8 +452,6 @@ class OvertimeController extends Controller
             if (Helpers::getDivHead($assigned_area) === null || Helpers::getChiefOfficer() === null) {
                 return response()->json(['message' => 'No recommending officer and/or supervising officer assigned.'], Response::HTTP_FORBIDDEN);
             }
-
-
 
 
             foreach ($validatedData['employees'] as $index => $employeeList) {
@@ -902,6 +900,7 @@ class OvertimeController extends Controller
                             $query->where('employee_profile_id', $employeeId);
                         });
                 })
+                ->orderBy('created_at', 'desc')
                 ->get();
             return response()->json([
                 'data' => OvertimeResource::collection($overtime_applications),
