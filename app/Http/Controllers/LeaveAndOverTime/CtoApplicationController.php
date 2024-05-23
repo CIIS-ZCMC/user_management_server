@@ -275,13 +275,6 @@ class CtoApplicationController extends Controller
             if ($hrmo_officer === null || $approving_officer === null) {
                 return response()->json(['message' => 'No recommending officer and/or supervising officer assigned.'], Response::HTTP_FORBIDDEN);
             }
-            $date = Carbon::parse($request->date);
-
-            $checkSchedule = Helpers::hasSchedule($date, $date, $employeeId);
-            
-            if (!$checkSchedule) {
-                return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
-            }
 
             $cleanData = [];
 
@@ -306,7 +299,13 @@ class CtoApplicationController extends Controller
 
             foreach (json_decode($request->cto_applications) as $key => $value) {
 
+                $date = Carbon::parse($value->date)->format('Y-m-d');
 
+                $checkSchedule = Helpers::hasSchedule($date, $date, $employeeId);
+
+                if (!$checkSchedule) {
+                    return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
+                }
                 $first_valid_until = EmployeeOvertimeCredit::where('employee_profile_id', $employee_profile->id)
                     ->where('is_expired', false)
                     ->orderBy('valid_until')

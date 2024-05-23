@@ -80,7 +80,7 @@
     <table id="tabledate">
 
         <tr>
-            <th colspan="2" style="background-color: whitesmoke;border-bottom: 1px solid rgb(197, 196, 196);">
+            <th colspan="2" style="background-color: whitesmoke;border-bottom: 1px solid rgb(197, 196, 196);font-size:45px">
                 {{ date('F', strtotime($year . '-' . $month . '-1')) }}
             </th>
 
