@@ -1045,12 +1045,12 @@ AND id IN (
                   
                     $devID = $device['id'];
                     $devName =$this->getDeviceName($device['id']);
-                   
+                    $datepull =  date('Y-m-d H:i:s');
                     if(isset($new['device_id'])){
                        
                         $devID = $new['device_id'];
                         $devName = $this->getDeviceName($new['device_id']);
-                       
+                        $datepull = $new['datepull'];
                     }
 
 
@@ -1064,7 +1064,7 @@ AND id IN (
                         'device_id' => $devID,
                         'device_name' =>$devName,
                         'entry_status' =>  $entry,
-                        'datepull' => date('Y-m-d H:i:s')
+                        'datepull' =>$datepull
                     ];
                     $newt++;
                 }
