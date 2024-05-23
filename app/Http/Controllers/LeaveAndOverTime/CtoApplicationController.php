@@ -709,7 +709,7 @@ class CtoApplicationController extends Controller
 
             return response()->json([
                 'data' => $employeeResponse,
-                'message' =>  'Leave credits updated successfully'
+                'message' =>  'CTO credits updated successfully'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
