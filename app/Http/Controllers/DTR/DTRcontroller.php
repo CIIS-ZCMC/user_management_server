@@ -103,7 +103,9 @@ class DTRcontroller extends Controller
     }
 
     public function getUserDeviceLogs($biometric_id,$filterDate){
-
+        if(!$filterDate){
+          return  DailyTimeRecordLogs::where('biometric_id',$biometric_id)->get();
+        }
         $log = DailyTimeRecordLogs::where('biometric_id',$biometric_id)->where('dtr_date',$filterDate)->first();
 
         return [
@@ -118,13 +120,14 @@ class DTRcontroller extends Controller
     public function pullDTRuser(Request $request)
     {
         try {
-            
+
             $user = $request->user;
             $biometric_id = $user->biometric_id;
             $today = date('Y-m-d');
-          
+
             $selfRecord = DailyTimeRecords::where('biometric_id', $biometric_id)->where('dtr_date', $today)->first();
-            
+
+            $deviceLogs = $this->getUserDeviceLogs($biometric_id,false);
 
             if ($selfRecord) {
                 $bioentry =[
@@ -134,8 +137,8 @@ class DTRcontroller extends Controller
 
             $Schedule = $this->helper->CurrentSchedule($biometric_id,$bioentry, false);
             $hasMatchSchedule = count($Schedule['daySchedule']) >=1 ;
-            
-            $deviceLogs = $this->getUserDeviceLogs($biometric_id,$today);
+
+
 
             if($hasMatchSchedule){
                 if ($selfRecord->first_in !== NULL && $selfRecord->first_out !== NULL && $selfRecord->second_in === NULL && $selfRecord->second_out === NULL) {
@@ -158,9 +161,9 @@ class DTRcontroller extends Controller
                     'schedule'=>$Schedule['daySchedule'],
                     'deviceLogs'=>$deviceLogs
                 ];
-          
+
             }
-            }  
+            }
             return [
                 'dtr_date' => $today,
                 'first_in' => ' --:--',
@@ -168,7 +171,7 @@ class DTRcontroller extends Controller
                 'second_in' => ' --:--',
                 'second_out' => ' --:--',
                 'schedule'=>[],
-                'deviceLogs'=>[]
+                'deviceLogs'=>$deviceLogs
             ];
         } catch (\Throwable $th) {
             Helpersv2::errorLog($this->CONTROLLER_NAME, 'pullDTRuser', $th->getMessage());
@@ -204,7 +207,7 @@ class DTRcontroller extends Controller
     {
 
         try {
-          
+
             foreach ($this->devices as $device) {
                 if ($tad = $this->device->bIO($device)) { //Checking if connected to device
                     $logs = $tad->get_att_log();
@@ -233,14 +236,14 @@ class DTRcontroller extends Controller
                                 $Schedule = $this->helper->CurrentSchedule($biometric_id, $bioEntry, false);
                                 $DaySchedule = $Schedule['daySchedule'];
                                 $BreakTime = $Schedule['break_Time_Req'];
-                               
-                                 
+
+
 
                                     if (count($DaySchedule) >= 1) {
                                        if(isset($DaySchedule) && is_array($DaySchedule) && array_key_exists('first_entry', $DaySchedule) && $DaySchedule['first_entry']){
 
                                         if (count($BreakTime) >= 1) {
-                                        
+
                                             /**
                                              * With Schedule
                                              * 4 sets of sched
@@ -251,11 +254,11 @@ class DTRcontroller extends Controller
                                              * With Schedule
                                              * 2 sets of sched
                                              */
-                                          
+
                                             $this->DTR->NoBreaktimePull($DaySchedule, $bioEntry, $biometric_id);
                                         }
                                        }else {
-                                      
+
                                            /**
                                          * No Schedule Pulling
                                          */
@@ -263,14 +266,14 @@ class DTRcontroller extends Controller
                                        }
 
                                     } else {
-                                  
+
                                         /**
                                          * No Schedule Pulling
                                          */
                                        $this->DTR->NoSchedulePull($bioEntry, $biometric_id);
                                     }
                             }
-                          
+
                             //$this->helper->saveDTRRecords($check_Records, false);
                             /* Save DTR Logs */
                             $this->helper->saveDTRLogs($check_Records, 1, $device, 0);
