@@ -121,6 +121,23 @@ class Helpers
         return $data;
     }
 
+    public static function generateMyOTPDetails($employee_profile)
+    {
+        $otp_code = rand(100000, 999999);
+        $otp_expiry = date('Y-m-d H:i:s', strtotime('+5 minutes'));
+
+        $employee_profile->update(['otp' => $otp_code, 'otp_expiration' => $otp_expiry]);
+
+        $data = ['otpcode' => $otp_code];
+        $body = [
+            'email' => $employee_profile->personalinformation->contact->email_address,
+            'name' => $employee_profile->personalInformation->name(),
+            'data' => $data
+        ];
+
+        return $body;
+    }
+
     public static function validateOTP($otp, $employee_profile)
     {
         $otpExpirationMinutes = 5;

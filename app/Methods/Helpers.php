@@ -12,6 +12,7 @@ use App\Models\EmployeeProfile;
 use App\Models\Devices;
 use App\Models\TimeShift;
 use PHPUnit\Framework\MockObject\Stub\ReturnArgument;
+use PHPUnit\Framework\MockObject\Stub\ReturnSelf;
 
 class Helpers
 {
@@ -357,10 +358,10 @@ AND id IN (
     {
         $alloted_hours = config("app.alloted_valid_time_for_firstentry");
 
-
+    
         switch ($InType) {
             case "AM":
-                $this->inEntryAM($biometric_id, $alloted_hours, $scheduleEntry, $dtrentry);
+               $this->inEntryAM($biometric_id, $alloted_hours, $scheduleEntry, $dtrentry);
                 break;
             case "PM":
                 $this->inEntryPM($biometric_id, $alloted_hours, $scheduleEntry, $dtrentry);
@@ -370,20 +371,22 @@ AND id IN (
 
     public  function inEntryAM($biometric_id, $alloted_hours, $scheduleEntry, $dtrentry)
     {
-
+       
         $dtr_date = date('Y-m-d', strtotime($dtrentry['date_time']));
         $max_allowed_entry_for_oncall = config("app.max_allowed_entry_oncall");
-
+        
         $dtrentry = $dtrentry['date_time'];
         $schedule = $scheduleEntry['first_entry'] ?? config("app.firstin");
 
 
 
-
+       
         $alloted_mins_Oncall = 0.5; // 30 minutes
         if (count($scheduleEntry) >= 1) {
             /* With Schedule Entry */
             $in_Entry = $schedule;
+
+           
             // $time_stamp = strtotime($in_Entry);
             // $new_Time_stamp = $time_stamp - ($alloted_hours * 3600);
             // $Calculated_allotedHours = date('Y-m-d H:i:s', $new_Time_stamp);
@@ -410,15 +413,18 @@ AND id IN (
 
 
          //       if ($Calculated_allotedHours <=  $dtrentry) { //within alloted hours to timein
+
+            
                     DailyTimeRecords::create([
                         'biometric_id' => $biometric_id,
                         'dtr_date' => $dtr_date,
                         'first_in' =>  $dtrentry,
                         'is_biometric' => 1,
+                        'is_time_adjustment'=>0
                     ]);
               //  }
 
-
+                   
        //     }
         } else {
             /* No schedule Entry */
@@ -427,6 +433,7 @@ AND id IN (
                 'dtr_date' => $dtr_date,
                 'first_in' => $dtrentry,
                 'is_biometric' => 1,
+                'is_time_adjustment'=>0
             ]);
         }
     }
@@ -476,6 +483,7 @@ AND id IN (
                         'dtr_date' => $dtr_date,
                         'second_in' =>  $dtrentry,
                         'is_biometric' => 1,
+                        'is_time_adjustment'=>0
                     ]);
              //   }
            // }
@@ -486,6 +494,7 @@ AND id IN (
                 'dtr_date' => $dtr_date,
                 'second_in' => $dtrentry,
                 'is_biometric' => 1,
+                'is_time_adjustment'=>0
             ]);
         }
     }
@@ -780,7 +789,8 @@ AND id IN (
                 'undertime' => $attr['underTime_inWords'],
                 'undertime_minutes' => $attr['underTime_Minutes'],
                 'overtime' => $attr['overTime_inWords'],
-                'overtime_minutes' => $attr['overTime_Minutes']
+                'overtime_minutes' => $attr['overTime_Minutes'],
+                'is_time_adjustment'=>0
             ]);
         } else {
 
@@ -796,7 +806,8 @@ AND id IN (
                 'undertime' => $attr['underTime_inWords'],
                 'undertime_minutes' => $attr['underTime_Minutes'],
                 'overtime' => $attr['overTime_inWords'],
-                'overtime_minutes' => $attr['overTime_Minutes']
+                'overtime_minutes' => $attr['overTime_Minutes'],
+                'is_time_adjustment'=>0,
             ]);
         }
     }
@@ -828,6 +839,7 @@ AND id IN (
                 // 'second_in' => strtotime($sc['date_time']),
                 'second_in' => $sc['date_time'],
                 'interval_req' => json_encode($time_interval),
+                'is_time_adjustment'=>0
             ]);
         }
     }
@@ -1033,12 +1045,12 @@ AND id IN (
                   
                     $devID = $device['id'];
                     $devName =$this->getDeviceName($device['id']);
-                   
+                    $datepull =  date('Y-m-d H:i:s');
                     if(isset($new['device_id'])){
                        
                         $devID = $new['device_id'];
                         $devName = $this->getDeviceName($new['device_id']);
-                       
+                        $datepull = $new['datepull'];
                     }
 
 
@@ -1052,7 +1064,7 @@ AND id IN (
                         'device_id' => $devID,
                         'device_name' =>$devName,
                         'entry_status' =>  $entry,
-                        'datepull' => date('Y-m-d H:i:s')
+                        'datepull' =>$datepull
                     ];
                     $newt++;
                 }

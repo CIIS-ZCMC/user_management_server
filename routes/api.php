@@ -48,6 +48,7 @@ Route::
             Route::post('verify-email-and-send-otp', 'EmployeeProfileController@verifyEmailAndSendOTP');
             Route::post('verify-otp', 'EmployeeProfileController@verifyOTP');
             Route::post('new-password', 'EmployeeProfileController@newPassword');
+            Route::post('resend-otp', 'EmployeeProfileController@resendOTP');
             Route::get('retrieve-token', 'CsrfTokenController@generateCsrfToken');
             Route::get('validate-token', 'CsrfTokenController@validateToken');
             Route::post('employee-profile/signout-from-other-device', 'EmployeeProfileController@signOutFromOtherDevice');
@@ -2120,6 +2121,10 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function () {
             Route::get('schedules-my-areas', 'ScheduleController@myAreas');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function () {
+            Route::get('schedules-filter', 'ScheduleController@FilterByAreaAndDate');
         });
 
         Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function () {

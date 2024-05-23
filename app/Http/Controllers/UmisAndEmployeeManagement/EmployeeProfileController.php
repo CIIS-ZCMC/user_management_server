@@ -21,6 +21,7 @@ use App\Http\Requests\VoluntaryWorkRequest;
 use App\Http\Requests\WorkExperienceRequest;
 use App\Http\Resources\EmployeeProfileUpdateResource;
 use App\Http\Resources\ProfileUpdateRequestResource;
+use App\Jobs\SendEmailJob;
 use App\Models\CivilServiceEligibility;
 use App\Models\EducationalBackground;
 use App\Models\EmployeeSchedule;
@@ -312,6 +313,9 @@ class EmployeeProfileController extends Controller
              * For new account need to reset the password
              */
             if ($employee_profile->authorization_pin === null) {
+                $my_otp_details = Helpers::generateMyOTPDetails($employee_profile);
+                SendEmailJob::dispatch('email_verification', $my_otp_details['email'], $my_otp_details['name'], $my_otp_details['data']);
+
                 return response()->json(['message' => 'New account'], Response::HTTP_TEMPORARY_REDIRECT)
                     ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false); //status 307
             }
@@ -341,26 +345,24 @@ class EmployeeProfileController extends Controller
              * Reuse the created token of first instance of signin to have single access token.
              */
 
-            // $access_token = AccessToken::where('employee_profile_id', $employee_profile->id)->orderBy('token_exp')->first();
+            $access_token = AccessToken::where('employee_profile_id', $employee_profile->id)->orderBy('token_exp')->first();
 
-            // if ($access_token !== null && Carbon::parse(Carbon::now())->startOfDay()->lte($access_token->token_exp)) {
-            //     $ip = $request->ip();
+            if ($access_token !== null && Carbon::parse(Carbon::now())->startOfDay()->lte($access_token->token_exp)) {
+                $ip = $request->ip();
 
-            //     $login_trail = LoginTrail::where('employee_profile_id', $employee_profile->id)->first();
+                $login_trail = LoginTrail::where('employee_profile_id', $employee_profile->id)->first();
 
-            //     if ($login_trail !== null) {
-            //         if ($login_trail->ip_address !== $ip) {
-            //             $data = Helpers::generateMyOTP($employee_profile);
+                if ($login_trail !== null) {
+                    if ($login_trail->ip_address !== $ip) {
+                        $my_otp_details = Helpers::generateMyOTPDetails($employee_profile);
 
-            //             if ($this->mail->send($data)) {
-            //                 return response()->json(['message' => "You are currently logged on to other device. An OTP has been sent to your registered email. If you want to signout from that device, submit the OTP."], Response::HTTP_FOUND)
-            //                     ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false);
-            //             }
+                        SendEmailJob::dispatch('otp', $my_otp_details['email'], $my_otp_details['name'], $my_otp_details['data']);
 
-            //             return response()->json(['message' => "Your account is currently logged on to other device, sending otp to your email has failed please try again later."], Response::HTTP_INTERNAL_SERVER_ERROR);
-            //         }
-            //     }
-            // }
+                        response()->json(['message' => "You are currently logged on to other device. An OTP has been sent to your registered email. If you want to signout from that device, submit the OTP."], Response::HTTP_FOUND)
+                            ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false);
+                    }
+                }
+            }
 
             // if ($access_token !== null) {
             AccessToken::where('employee_profile_id', $employee_profile->id)->delete();
@@ -371,16 +373,12 @@ class EmployeeProfileController extends Controller
              * if 2FA is activated send OTP to email to validate ownership
              */
             if ((bool) $employee_profile->is_2fa) {
-                $data = Helpers::generateMyOTP($employee_profile);
+                $my_otp_details = Helpers::generateMyOTPDetails($employee_profile);
 
-                if ($this->mail->send($data)) {
-                    return response()->json(['message' => "OTP has sent to your email, submit the OTP to verify that this is your account."], Response::HTTP_FOUND)
-                        ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false);
-                }
+                SendEmailJob::dispatch('otp', $my_otp_details['email'], $my_otp_details['name'], $my_otp_details['data']);
 
-                return response()->json([
-                    'message' => 'Failed to send OTP to your email.'
-                ], Response::HTTP_BAD_REQUEST);
+                return response()->json(['message' => "OTP has sent to your email, submit the OTP to verify that this is your account."], Response::HTTP_FOUND)
+                    ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false);
             }
 
             $token = $employee_profile->createToken();
@@ -1181,17 +1179,12 @@ class EmployeeProfileController extends Controller
             }
 
             $employee = $contact->personalInformation->employeeProfile;
+            $my_employee_details = Helpers::generateMyOTPDetails($employee);
 
-            $data = Helpers::generateMyOTP($employee);
+            SendEmailJob::dispatch('otp', $my_employee_details['email'], $my_employee_details['name'], $my_employee_details['data']);
 
-            if ($this->mail->send($data)) {
-                return response()->json(['message' => 'Please check your email address for OTP.'], Response::HTTP_OK)
+            return response()->json(['message' => 'Please check your email address for OTP.'], Response::HTTP_OK)
                     ->cookie('employee_details', json_encode(['email' => $email, 'employee_id' => $employee->employee_id]), 60, '/', config('app.session_domain'), false);
-            }
-
-            return response()->json([
-                'message' => 'Failed to send OTP to your email.'
-            ], Response::HTTP_BAD_REQUEST);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'signOut', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -1408,6 +1401,22 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+    
+    public function resendOTP(Request $request)
+    {
+        try {
+            $employee_details = json_decode($request->cookie('employee_details'));
+            $employee_profile = EmployeeProfile::where('employee_id', $employee_details->employee_id)->first();
+
+            $my_otp_details = Helpers::generateMyOTPDetails($employee_profile);
+            SendEmailJob::dispatch('email_verification', $my_otp_details['email'], $my_otp_details['name'], $my_otp_details['data']);
+
+            return response()->json(['message' => 'Please check your email for the otp.'], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'resendOTP', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 
     public function newPassword(Request $request)
     {
@@ -1422,10 +1431,25 @@ class EmployeeProfileController extends Controller
                 return response()->json(['errors' => $validator->errors()], Response::HTTP_UNPROCESSABLE_ENTITY);
             }
 
-
             $employee_details = json_decode($request->cookie('employee_details'));
 
             $employee_profile = EmployeeProfile::where('employee_id', $employee_details->employee_id)->first();
+            
+            $otp = null;
+
+            if ($request->is_recover || $request->is_recover === 1) {
+                $otp = $request->otp;
+                
+                $currentDateTime = Carbon::now();
+                if((int) $otp !== $currentDateTime->greaterThan($otp->expires_at)){
+                    return response()->json(['message' => 'OTP is expired, Resend otp.']);
+                }
+
+                if((int) $otp !== $employee_profile->otp){
+                    return response()->json(['message' => "Invalid OTP."], Response::HTTP_BAD_REQUEST);
+                }
+            }
+
             $new_password = strip_tags($request->password);
 
             $cleanData['password'] = strip_tags($request->password);
@@ -1450,7 +1474,6 @@ class EmployeeProfileController extends Controller
                 return response()->json(['message' => "A problem encounter while trying to register new password."], Response::HTTP_BAD_REQUEST);
             }
 
-
             if ($request->is_recover || $request->is_recover === 1) {
                 $employee_profile->update([
                     'password_encrypted' => $encryptedPassword,
@@ -1459,6 +1482,7 @@ class EmployeeProfileController extends Controller
                 ]);
             } else {
                 $employee_profile->update([
+                    'email_verified_at' => Carbon::now(),
                     'password_encrypted' => $encryptedPassword,
                     'password_created_at' => now(),
                     'password_expiration_at' => $threeMonths,
@@ -2653,27 +2677,23 @@ class EmployeeProfileController extends Controller
 
             Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . '.');
 
-            $send_attempt = 3;
+            $data = [
+                'employeeID' => $employee_profile->employee_id,
+                'Password' => $default_password,
+                "Link" => config('app.client_domain')
+            ];
 
-            for ($i = 0; $i < $send_attempt; $i++) {
-                $body = view('mail.credentials', [
-                    'authorization_pin' => $employee_profile->authorization_pin,
-                    'employeeID' => $employee_profile->employee_id,
-                    'Password' => $default_password,
-                    "Link" => "http://192.168.5.1:8080"
-                ]);
+            $email = $employee_profile->personalinformation->contact->email_address;
+            $name = $employee_profile->personalInformation->name();
 
-                $data = [
-                    'Subject' => 'Your Zcmc Portal Account.',
-                    'To_receiver' => $employee_profile->personalinformation->contact->email_address,
-                    'Receiver_Name' => $employee_profile->personalInformation->name(),
-                    'Body' => $body
-                ];
+            $data = [
+                'Subject' => 'Your Zcmc Portal Account.',
+                'To_receiver' => $employee_profile->personalinformation->contact->email_address,
+                'Receiver_Name' => $employee_profile->personalInformation->name(),
+                'Body' => $body
+            ];
 
-                if ($this->mail->send($data)) {
-                    break;
-                }
-            }
+            SendEmailJob::dispatch('new_account', $email, $data);
 
             if ($in_valid_file) {
                 return response()->json(

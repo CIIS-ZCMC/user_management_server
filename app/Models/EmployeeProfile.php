@@ -21,7 +21,7 @@ class EmployeeProfile extends Authenticatable
 
     public $fillable = [
         'personal_information_id',
-        'employee_verified_at',
+        'email_verified_at',
         'employee_id',
         'profile_url',
         'date_hired',

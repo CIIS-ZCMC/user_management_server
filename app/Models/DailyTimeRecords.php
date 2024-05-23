@@ -28,6 +28,7 @@ class DailyTimeRecords extends Model
         'undertime_minutes',
         'overall_minutes_rendered',
         'total_minutes_reg',
-        'is_biometric'
+        'is_biometric',
+        'is_time_adjustment'
     ];
 }
