@@ -1108,7 +1108,7 @@ class Helpers
 
     public static function sendNotification($body)
     {
-        $response = Http::post(config('app.socket_server_domain'.'/notification'), $body);
+        $response = Http::post('http://localhost:8030/notification', $body);
 
         if ($response->successful()) {
             $body = $response->body();
