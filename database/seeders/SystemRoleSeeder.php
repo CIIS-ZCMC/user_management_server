@@ -155,7 +155,7 @@ class SystemRoleSeeder extends Seeder
                             $row['code'] === "UMIS-CT approve" ||
 
                             /* Time adjustment  */
-                            $row['code'] === "UMIS-TA write" ||
+                            $row['code'] === "UMIS-TA request" ||
                             $row['code'] === "UMIS-TA view-all" ||
                             $row['code'] === "UMIS-TA approve" ||
 
@@ -224,7 +224,7 @@ class SystemRoleSeeder extends Seeder
                             $row['code'] === "UMIS-CT approve" ||
 
                             /* Time adjustment  */
-                            $row['code'] === "UMIS-TA write" ||
+                            $row['code'] === "UMIS-TA request" ||
                             $row['code'] === "UMIS-TA view-all" ||
 
                             /* Schedule management */
