@@ -275,10 +275,10 @@ class CtoApplicationController extends Controller
             if ($hrmo_officer === null || $approving_officer === null) {
                 return response()->json(['message' => 'No recommending officer and/or supervising officer assigned.'], Response::HTTP_FORBIDDEN);
             }
-            $date = Carbon::parse($request->date);
+            $date = $request->date);
 
             $checkSchedule = Helpers::hasSchedule($date, $date, $employeeId);
-            
+
             if (!$checkSchedule) {
                 return response()->json(['message' => "You don't have a schedule within the specified date range."], Response::HTTP_FORBIDDEN);
             }
