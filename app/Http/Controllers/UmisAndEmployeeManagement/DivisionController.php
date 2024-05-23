@@ -5,9 +5,12 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 use App\Http\Controllers\Controller;
 
 use App\Http\Requests\AuthPinApprovalRequest;
+use App\Http\Resources\NotificationResource;
+use App\Models\Notifications;
 use App\Models\Role;
 use App\Models\SpecialAccessRole;
 use App\Models\SystemRole;
+use App\Models\UserNotifications;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -121,19 +124,30 @@ class DivisionController extends Controller
                 $access_right->delete();
             }
 
-            Helpers::notifications($employee_profile->id, "You been assigned as division head of " . $division->name . " division.");
-             // SEND NOTIF
-            //  Helpers::sendNotification([
-            //     'id' =>  $employee_profile->id,
-            //     'data' => new DivisionResource($division)                   
-            // ]);
 
+            $title = "Congratulations!";
+            $description = "You been assigned as division head of " . $division->name . " division.";
+            
+            
+            $notification = Notifications::create([
+                "title" => $title,
+                "description" => $description,
+                "module_path" => '/employees-per-area',
+            ]);
+
+            $user_notification = UserNotifications::create([
+                'notification_id' => $notification->id,
+                'employee_profile_id' => $employee_profile->id
+            ]);
+
+            Helpers::sendNotification([
+                "id" => $employee_profile->employee_id,
+                "data" => new NotificationResource($user_notification)
+            ]);
+          
           
             Helpers::registerSystemLogs($request, $id, true, 'Success in assigning division chief ' . $this->PLURAL_MODULE_NAME . '.');
 
-           
-            
-            
 
             return response()->json(
                 [
