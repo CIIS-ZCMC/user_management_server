@@ -48,6 +48,7 @@ Route::
             Route::post('verify-email-and-send-otp', 'EmployeeProfileController@verifyEmailAndSendOTP');
             Route::post('verify-otp', 'EmployeeProfileController@verifyOTP');
             Route::post('new-password', 'EmployeeProfileController@newPassword');
+            Route::post('resend-otp', 'EmployeeProfileController@resendOTP');
             Route::get('retrieve-token', 'CsrfTokenController@generateCsrfToken');
             Route::get('validate-token', 'CsrfTokenController@validateToken');
             Route::post('employee-profile/signout-from-other-device', 'EmployeeProfileController@signOutFromOtherDevice');

@@ -30,6 +30,7 @@ use App\Http\Resources\OtherInformationResource;
 use App\Http\Resources\TrainingResource;
 use App\Http\Resources\VoluntaryWorkResource;
 use App\Http\Resources\WorkExperienceResource;
+use App\Jobs\SendEmailJob;
 use App\Methods\MailConfig;
 use App\Models\AssignArea;
 use App\Models\EmployeeLeaveCredit;
@@ -510,25 +511,23 @@ class InActiveEmployeeController extends Controller
             DB::commit();
             Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . '.');
 
-            for ($i = 0; $i < $send_attempt; $i++) {
-                $body = view('mail.credentials', [
-                    'authorization_pin' => $employee_profile->authorization_pin,
-                    'employeeID' => $employee_profile->employee_id,
-                    'Password' => $default_password,
-                    "Link" => "http://192.168.5.1:8080"
-                ]);
+            $data = [
+                'employeeID' => $employee_profile->employee_id,
+                'Password' => $default_password,
+                "Link" => config('app.client_domain')
+            ];
 
-                $data = [
-                    'Subject' => 'Your Zcmc Portal Account.',
-                    'To_receiver' => $employee_profile->personalinformation->contact->email_address,
-                    'Receiver_Name' => $employee_profile->personalInformation->name(),
-                    'Body' => $body
-                ];
+            $email = $employee_profile->personalinformation->contact->email_address;
+            $name = $employee_profile->personalInformation->name();
 
-                if ($this->mail->send($data)) {
-                    break;
-                }
-            }
+            $data = [
+                'Subject' => 'Your Zcmc Portal Account.',
+                'To_receiver' => $employee_profile->personalinformation->contact->email_address,
+                'Receiver_Name' => $employee_profile->personalInformation->name(),
+                'Body' => $body
+            ];
+
+            SendEmailJob::dispatch('new_account', $email, $data);
 
             if ($in_valid_file) {
                 return response()->json(
