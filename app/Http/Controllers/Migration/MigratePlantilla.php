@@ -120,7 +120,7 @@ class MigratePlantilla extends Controller
                         ->where(DB::raw("REPLACE(LOWER(name), ' ', '')"), '=', "$desig")
                         ->get();
                     if (count($designatid) > 1 || count($designatid) < 1) {
-                        dd($desig);
+                        dd(['no designationid found, or duplicate designation found' => $desig]);
                     }
                     // dd($designatid[0]->id);
                     //===> get the designation_id of that employee and find plantilla that you generated in step1,

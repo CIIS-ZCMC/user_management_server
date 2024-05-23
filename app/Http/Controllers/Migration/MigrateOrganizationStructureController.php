@@ -251,13 +251,6 @@ class MigrateOrganizationStructureController extends Controller
                                 } else {
                                 }
                             }
-                        } else {
-
-                            Department::create([
-                                'name' => $dep1['name'],
-                                'code' => $dep1['code'],
-                                'division_id' => $division,
-                            ]);
                         }
                     }
                 } else {
