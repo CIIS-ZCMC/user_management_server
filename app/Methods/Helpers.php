@@ -361,7 +361,7 @@ AND id IN (
     
         switch ($InType) {
             case "AM":
-              return $this->inEntryAM($biometric_id, $alloted_hours, $scheduleEntry, $dtrentry);
+               $this->inEntryAM($biometric_id, $alloted_hours, $scheduleEntry, $dtrentry);
                 break;
             case "PM":
                 $this->inEntryPM($biometric_id, $alloted_hours, $scheduleEntry, $dtrentry);
