@@ -141,7 +141,7 @@ class DivisionController extends Controller
             ]);
 
             Helpers::sendNotification([
-                "id" => $employee_profile->employee_id,
+                "id" => $employee_profile->employee_id, // EMPLOYEE_ID eg. 2023010250
                 "data" => new NotificationResource($user_notification)
             ]);
           

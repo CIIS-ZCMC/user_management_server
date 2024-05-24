@@ -270,10 +270,6 @@ class ProcessApprovedOvertimeCredits extends Command
         }
     }
 
-    public function handlea()
-    {
-
-    }
 
 
 

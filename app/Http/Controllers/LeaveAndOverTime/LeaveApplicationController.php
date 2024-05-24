@@ -904,7 +904,7 @@ class LeaveApplicationController extends Controller
             }
 
             $employeeProfile = EmployeeProfile::find($employeeId);
-            
+
             if($employeeProfile->isUnderProbation()) {
                 return response()->json(['message' => 'You are under probation.'], Response::HTTP_FORBIDDEN);
             }
@@ -1099,7 +1099,7 @@ class LeaveApplicationController extends Controller
                         'leave_application_id' => $leave_application->id,
                         'action' => 'Applied'
                     ]);
-                } 
+                }
                 else {
                     $employee_credit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)
                         ->where('leave_type_id', $request->leave_type_id)->first();
