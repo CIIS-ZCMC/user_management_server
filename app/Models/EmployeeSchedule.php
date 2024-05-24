@@ -19,7 +19,7 @@ class EmployeeSchedule extends Model
         'schedule_id'
     ];
 
-    public $timestamps = true;
+    public $timestamps = false;
 
     public function employee()
     {
