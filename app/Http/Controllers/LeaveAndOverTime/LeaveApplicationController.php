@@ -223,7 +223,7 @@ class LeaveApplicationController extends Controller
              */
             if (Helpers::getHrmoOfficer() === $employee_profile->id) {
                 $employeeId = $employee_profile->id;
-                $hrmo = ["applied", "for recommending approval", "for approving approval","approved", "declined by hrmo officer", 'cancelled', 'received', 'cancelled by user', 'cancelled by hrmo'];
+                $hrmo = ["applied", "for recommending approval", "for approving approval", "approved", "declined by hrmo officer", 'cancelled', 'received', 'cancelled by user', 'cancelled by hrmo'];
                 // $recommending = ["for recommending approval", "for approving approval", "approved", "declined by recommending officer"];
 
                 $leave_applications = LeaveApplication::select('leave_applications.*')
@@ -443,7 +443,7 @@ class LeaveApplicationController extends Controller
                 ]);
             }
 
-            $result=[];
+            $result = [];
 
             $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id',  $leave_application->employee_profile_id)->get();
 
@@ -554,9 +554,7 @@ class LeaveApplicationController extends Controller
                         }
 
                         $remaining = $log->previous_credit + $log->leave_credits;
-                    }
-                    else
-                    {
+                    } else {
                         $remaining = $log->previous_credit - $log->leave_credits;
                     }
                     $allLogs[] = [
@@ -592,7 +590,15 @@ class LeaveApplicationController extends Controller
     {
         try {
 
-            $leaveCredits = EmployeeLeaveCredit::with(['employeeProfile.personalInformation', 'leaveType'])->get()->groupBy('employee_profile_id');
+            $leaveCredits = EmployeeLeaveCredit::with(['employeeProfile.personalInformation', 'leaveType'])
+                ->whereHas('employeeProfile', function ($query) {
+                    $query->whereNotNull('employee_id');
+                })
+                ->whereHas('employeeProfile', function ($query) {
+                    $query->where('employment_type_id', '!=', 5);
+                })
+                ->get()
+                ->groupBy('employee_profile_id');
             $response = [];
             foreach ($leaveCredits as $employeeProfileId => $leaveCreditGroup) {
                 $employeeDetails = $leaveCreditGroup->first()->employeeProfile->personalInformation->name();
@@ -922,7 +928,7 @@ class LeaveApplicationController extends Controller
 
             $employeeProfile = EmployeeProfile::find($employeeId);
 
-            if($employeeProfile->isUnderProbation()) {
+            if ($employeeProfile->isUnderProbation()) {
                 return response()->json(['message' => 'You are under probation.'], Response::HTTP_FORBIDDEN);
             }
 
@@ -1034,7 +1040,7 @@ class LeaveApplicationController extends Controller
                         }
                         $vldateDate->addDay();
                     }
-                    $message=$selected_date->toDateString();
+                    $message = $selected_date->toDateString();
                     if ($selected_date->lt($vldateDate)) {
 
                         return response()->json(['message' => "You cannot file for leave on $message. Please select a date 20 days or more from today."], Response::HTTP_FORBIDDEN);
@@ -1144,8 +1150,7 @@ class LeaveApplicationController extends Controller
                         'leave_application_id' => $leave_application->id,
                         'action' => 'Applied'
                     ]);
-                }
-                else {
+                } else {
 
 
                     $employee_credit = EmployeeLeaveCredit::where('employee_profile_id', $employee_profile->id)
@@ -1424,7 +1429,7 @@ class LeaveApplicationController extends Controller
                     'action' => 'add'
                 ]);
             }
-            $result=[];
+            $result = [];
 
             $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id',  $leave_application->employee_profile_id)->get();
 
@@ -1494,7 +1499,7 @@ class LeaveApplicationController extends Controller
                     'used_leave_credits' => $current_used_leave_credit - $leave_application->applied_credits
                 ]);
             }
-            $result=[];
+            $result = [];
 
             $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id',  $leave_application->employee_profile_id)->get();
 
@@ -1558,7 +1563,7 @@ class LeaveApplicationController extends Controller
                     'used_leave_credits' => $current_used_leave_credit - $leave_application->applied_credits
                 ]);
             }
-            $result=[];
+            $result = [];
 
             $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id',  $leave_application->employee_profile_id)->get();
 
@@ -1796,7 +1801,6 @@ class LeaveApplicationController extends Controller
             $overlapExists = Helpers::hasOverlappingRecords($start, $end, $user);
 
             if ($overlapExists) {
-
             }
 
             $leave_application = LeaveApplication::find($id);
@@ -1819,7 +1823,7 @@ class LeaveApplicationController extends Controller
                     'created_at' => Carbon::now(),
                 ]);
             }
-            $result=[];
+            $result = [];
 
             $employeeCredit = EmployeeLeaveCredit::where('employee_profile_id',  $leave_application->employee_profile_id)->get();
 
@@ -1835,7 +1839,7 @@ class LeaveApplicationController extends Controller
                 ];
             }
 
-            LeaveApplicationLog::where('leave_application_id',$leave_application->id)->delete();
+            LeaveApplicationLog::where('leave_application_id', $leave_application->id)->delete();
 
             LeaveApplicationLog::create([
                 'action_by' => $employee_profile->id,

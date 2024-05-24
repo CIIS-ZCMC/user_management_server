@@ -139,11 +139,11 @@ class CtoApplicationController extends Controller
             $sql = CtoApplication::where('employee_profile_id', $user->id)->get();
             $currentYear = Carbon::now()->year;
             $usedCreditThisYear = (float) CtoApplication::where('employee_profile_id', $user->id)
-            ->where(function ($query) {
-                $query->where('status', 'approved')
-                      ->orWhere('status', 'for recommending approval')
-                      ->orWhere('status', 'for approving approval');
-            })
+                ->where(function ($query) {
+                    $query->where('status', 'approved')
+                        ->orWhere('status', 'for recommending approval')
+                        ->orWhere('status', 'for approving approval');
+                })
                 ->whereYear('created_at', $currentYear)
                 ->sum('applied_credits');
 
@@ -217,19 +217,19 @@ class CtoApplicationController extends Controller
             $data->update(['status' => $status, 'remarks' => $request->remarks === 'null' || !$request->remarks ? null : $request->remarks]);
 
             $employeeCredit = EmployeeOvertimeCredit::where('employee_profile_id', $data->employee_profile_id)
-            ->where('is_expired', 0)
-            ->orderBy('valid_until', 'asc')
-            ->get();
+                ->where('is_expired', 0)
+                ->orderBy('valid_until', 'asc')
+                ->get();
 
 
             $currentYear = Carbon::now()->year;
 
             $usedCreditThisYear = (float) CtoApplication::where('employee_profile_id', $data->employee_profile_id)
-            ->where(function ($query) {
-                $query->where('status', 'approved')
-                      ->orWhere('status', 'for recommending approval')
-                      ->orWhere('status', 'for approving approval');
-            })
+                ->where(function ($query) {
+                    $query->where('status', 'approved')
+                        ->orWhere('status', 'for recommending approval')
+                        ->orWhere('status', 'for approving approval');
+                })
                 ->whereYear('created_at', $currentYear)
                 ->sum('applied_credits');
 
@@ -469,11 +469,11 @@ class CtoApplicationController extends Controller
 
             $currentYear = Carbon::now()->year;
             $usedCreditThisYear = (float) CtoApplication::where('employee_profile_id', $employeeId)
-            ->where(function ($query) {
-                $query->where('status', 'approved')
-                      ->orWhere('status', 'for recommending approval')
-                      ->orWhere('status', 'for approving approval');
-            })
+                ->where(function ($query) {
+                    $query->where('status', 'approved')
+                        ->orWhere('status', 'for recommending approval')
+                        ->orWhere('status', 'for approving approval');
+                })
                 ->whereYear('created_at', $currentYear)
                 ->sum('applied_credits');
 
@@ -545,19 +545,19 @@ class CtoApplicationController extends Controller
             ]);
 
             $employeeCredit = EmployeeOvertimeCredit::where('employee_profile_id', $cto_application->employee_profile_id)
-            ->where('is_expired', 0)
-            ->orderBy('valid_until', 'asc')
-            ->get();
+                ->where('is_expired', 0)
+                ->orderBy('valid_until', 'asc')
+                ->get();
 
 
             $currentYear = Carbon::now()->year;
 
             $usedCreditThisYear = (float) CtoApplication::where('employee_profile_id', $cto_application->employee_profile_id)
-            ->where(function ($query) {
-                $query->where('status', 'approved')
-                      ->orWhere('status', 'for recommending approval')
-                      ->orWhere('status', 'for approving approval');
-            })
+                ->where(function ($query) {
+                    $query->where('status', 'approved')
+                        ->orWhere('status', 'for recommending approval')
+                        ->orWhere('status', 'for approving approval');
+                })
                 ->whereYear('created_at', $currentYear)
                 ->sum('applied_credits');
 
@@ -650,6 +650,12 @@ class CtoApplicationController extends Controller
             if ($existingCredit) {
                 $existingCredit->earned_credit_by_hour += $creditValue;
                 $existingCredit->save();
+                $employee = EmployeeOvertimeCreditLog::create([
+                    'employee_ot_credit_id' => $employeeId,
+                    'action' => 'add',
+                    'reason' => 'Update Credit',
+                    'hours' => $creditValue
+                ]);
             } else {
 
                 $newCredit = EmployeeOvertimeCredit::create([
@@ -730,7 +736,7 @@ class CtoApplicationController extends Controller
             $totalCreditsEarnedNextYear = 0;
             $totalCreditsExpiringThisYear = 0;
             $totalCreditsExpiringNextYear = 0;
-            $totalUsableCredits=0;
+            $totalUsableCredits = 0;
             foreach ($employeeCredits as $employeeCredit) {
 
                 if (!$employeeName) {
@@ -739,14 +745,14 @@ class CtoApplicationController extends Controller
                     $employeePosition = $employeeCredit->employeeProfile->employmentType->name;
                     $employee_assign_area = $employeeCredit->employeeProfile->assignedArea->findDetails();
                 }
-                 $validUntilYear = Carbon::parse($employeeCredit->valid_until)->year;
+                $validUntilYear = Carbon::parse($employeeCredit->valid_until)->year;
 
                 if ($validUntilYear === $currentYear) {
                     $totalCreditsExpiringThisYear += $employeeCredit->earned_credit_by_hour;
                 } elseif ($validUntilYear === $nextYear) {
                     $totalCreditsExpiringNextYear += $employeeCredit->earned_credit_by_hour;
                 }
-                $totalUsableCredits =  $totalCreditsExpiringThisYear +  $totalCreditsExpiringNextYear ;
+                $totalUsableCredits =  $totalCreditsExpiringThisYear +  $totalCreditsExpiringNextYear;
 
                 $logs = $employeeCredit->logs;
 
@@ -800,7 +806,15 @@ class CtoApplicationController extends Controller
     {
         try {
 
-            $overtimeCredits = EmployeeOvertimeCredit::with(['employeeProfile.personalInformation'])->get()->groupBy('employee_profile_id');
+            $overtimeCredits = EmployeeOvertimeCredit::with(['employeeProfile.personalInformation'])
+                ->whereHas('employeeProfile', function ($query) {
+                    $query->whereNotNull('employee_id');
+                })
+                ->whereHas('employeeProfile', function ($query) {
+                    $query->where('employment_type_id', '!=', 5);
+                })
+                ->get()
+                ->groupBy('employee_profile_id');
             $response = [];
             foreach ($overtimeCredits as $employeeProfileId => $credits) {
                 $employeeDetails = $credits->first()->employeeProfile->personalInformation->name();
