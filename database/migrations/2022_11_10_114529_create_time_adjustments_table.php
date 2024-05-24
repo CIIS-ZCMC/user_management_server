@@ -33,6 +33,7 @@ return new class extends Migration {
             $table->string('remarks')->nullable();
             $table->string('attachment')->nullable();
             $table->string('status')->default('applied');
+            $table->string('reason')->nullable();
             $table->date('approval_date')->nullable();
 
             $table->softDeletes();

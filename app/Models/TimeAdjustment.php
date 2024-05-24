@@ -22,6 +22,7 @@ class TimeAdjustment extends Model
         'remarks',
         'attachment',
         'status',
+        'reason',
         'approval_date',
         'daily_time_record_id',
         'employee_profile_id',

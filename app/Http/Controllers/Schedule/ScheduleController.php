@@ -45,7 +45,11 @@ class ScheduleController extends Controller
             $month = $request->month;  // Replace with the desired month (1 to 12)
             $year = $request->year;   // Replace with the desired year
 
-            $dates = Helpers::getDatesInMonth($year, Carbon::parse($month)->month, "");
+            $get_dates = Helpers::getDatesInMonth($year, Carbon::parse($month)->month, "");
+
+            $dates = array_map(function ($item) {
+                return $item['date'];
+            }, $get_dates);
 
             $employees = [$request->employees];
             $employee_ids = explode(',', $employees[0]);

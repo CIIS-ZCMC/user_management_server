@@ -394,7 +394,7 @@ class Helpers
         ]);
     }
 
-    public static function getDatesInMonth($year, $month, $value)
+    public static function getDatesInMonth($year, $month, $value, $includeScheduleCount = true)
     {
         $start = new DateTime("{$year}-{$month}-01");
         $end = new DateTime("{$year}-{$month}-" . $start->format('t'));
@@ -407,29 +407,45 @@ class Helpers
         foreach ($period as $date) {
             switch ($value) {
                 case 'Day':
-                    $dates[] = $date->format('d');
+                    $formattedDate = $date->format('d');
                     break;
 
                 case 'Week':
-                    $dates[] = $date->format('D');
+                    $formattedDate = $date->format('D');
                     break;
 
                 case 'Month':
-                    $dates[] = $date->format('m');
+                    $formattedDate = $date->format('m');
                     break;
 
                 case 'Year':
-                    $dates[] = $date->format('Y');
+                    $formattedDate = $date->format('Y');
                     break;
 
                 case 'Days of Week':
-                    $dates[] = $date->format('Y-m-d D');
+                    $formattedDate = $date->format('Y-m-d D');
                     break;
 
                 default:
-                    $dates[] = $date->format('Y-m-d');
+                    $formattedDate = $date->format('Y-m-d');
                     break;
             }
+
+            if ($includeScheduleCount) {
+                // Fetch all schedules for the current date
+                $schedules = Schedule::where('date', $date->format('Y-m-d'))->get();
+                $countSchedulePerDate = 0;
+
+                // Sum the count of EmployeeSchedules for each schedule
+                foreach ($schedules as $schedule) {
+                    $countSchedulePerDate += EmployeeSchedule::where('schedule_id', $schedule->id)->count();
+                }
+
+                $dates[] = ['date' => $formattedDate, 'count' => $countSchedulePerDate];
+            } else {
+                $dates[] = $formattedDate;
+            }
+
         }
 
         return $dates;
