@@ -43,6 +43,7 @@ class EmployeeScheduleController extends Controller
             $isSpecialUser = $user->employee_id === "1918091351" || $assigned_area['details']['code'] === 'HRMO';
 
             $query = EmployeeProfile::with([
+                'personalInformation',
                 'schedule' => function ($query) use ($year, $month) {
                     $query->with(['timeShift', 'holiday'])
                         ->whereYear('date', '=', $year)
@@ -50,6 +51,7 @@ class EmployeeScheduleController extends Controller
                 }
             ])->whereNull('deactivated_at')
                 ->where('id', '!=', 1);
+            // ->orderBy('last_name');
 
             if (!$isSpecialUser) {
                 $myEmployees = $user->myEmployees($assigned_area, $user);
