@@ -23,6 +23,7 @@ Route::namespace('App\Http\Controllers\Migration')->group(
         Route::get('migratePlantillaAssociatedDesignation', 'MigratePlantilla@migratePlantillas');
         Route::get('seedOrganization', 'MigrateOrganizationStructureController@create');
         Route::get('migrateAreaAssign', 'MigrateAssignAreaController@create');
+        Route::get('mUpdateEmployeeContact', 'MigratePISubDetailsController@create');
     }
 );
 
