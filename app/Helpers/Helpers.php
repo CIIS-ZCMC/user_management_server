@@ -67,6 +67,10 @@ class Helpers
         return mb_substr($characters, mt_rand(0, mb_strlen($characters) - 1), 1);
     }
 
+    public static function getEmployeeID($id)
+    {
+        return EmployeeProfile::where('id', $id)->first()->employee_id;
+    }
     public static function getHrmoOfficer()
     {
         return Section::where('code', 'HRMO')->first()->supervisor_employee_profile_id;
@@ -858,7 +862,6 @@ class Helpers
 
             $schedule->save();
             $schedules[] = $schedule;
-
         }
 
         return $schedules;
@@ -1080,6 +1083,7 @@ class Helpers
             ->whereDate('dtr_date', $date)
             ->first();
 
+
         // Initialize first in and first out biometric times
         $firstInBiometric = null;
         $firstOutBiometric = null;
@@ -1089,8 +1093,8 @@ class Helpers
 
         if ($dailyTimeRecord) {
 
-            $overtimeFromTimestamp = Carbon::parse($overtimeFromTime)->format('H:i:s');
-            $overtimeToTimestamp = Carbon::parse($overtimeToTime)->format('H:i:s');
+            $overtimeFromTime = Carbon::parse($overtimeFromTime)->format('H:i:s');
+            $overtimeToTime = Carbon::parse($overtimeToTime)->format('H:i:s');
 
             $timeIn = Carbon::parse($dailyTimeRecord->first_in)->format('H:i:s');
             $timeOut = Carbon::parse($dailyTimeRecord->first_out)->format('H:i:s');
@@ -1115,7 +1119,6 @@ class Helpers
                     // Return the hours within the overtime range
                     return $totalOverlapHours;
                 }
-
             } else {
                 // Check if there is any overlap between biometric time range and overtime time range
                 if ($timeIn <= $overtimeToTime && $timeOut >= $overtimeFromTime) {
@@ -1135,7 +1138,6 @@ class Helpers
                     return $totalOverlapHours;
                 }
             }
-
         }
     }
 
@@ -1156,6 +1158,3 @@ class Helpers
         }
     }
 }
-
-
-

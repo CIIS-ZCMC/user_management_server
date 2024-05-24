@@ -152,7 +152,7 @@ class DivisionController extends Controller
             return response()->json(
                 [
                     'data' => new DivisionResource($division),
-                    'message' => 'New chief assigned in department.'
+                    'message' => 'New chief assigned in division.'
                 ],
                 Response::HTTP_OK
             );
@@ -210,7 +210,7 @@ class DivisionController extends Controller
 
             $division->update($cleanData);
 
-            Helpers::notifications($employee_profile->id, "You been assigned as officer in charge of " . $division->name . " division.");
+            // Helpers::notifications($employee_profile->id, "You been assigned as officer in charge of " . $division->name . " division.");
             Helpers::registerSystemLogs($request, $id, true, 'Success in assigning chief ' . $this->PLURAL_MODULE_NAME . '.');
 
             return response()->json([

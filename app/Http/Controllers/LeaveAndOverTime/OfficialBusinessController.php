@@ -3,13 +3,17 @@
 namespace App\Http\Controllers\LeaveAndOvertime;
 
 use App\Http\Requests\AuthPinApprovalRequest;
+use App\Http\Resources\NotificationResource;
 use App\Http\Resources\OfficialBusinessResource;
 use App\Http\Requests\OfficialBusinessRequest;
 use App\Helpers\Helpers;
 
+use App\Models\EmployeeProfile;
+use App\Models\Notifications;
 use App\Models\OfficialBusiness;
 
 use App\Http\Controllers\Controller;
+use App\Models\UserNotifications;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
@@ -198,6 +202,28 @@ class OfficialBusinessController extends Controller
                 $data->recommending_officer = $recommending_officer;
                 $data->save();
 
+
+                $employeeProfile = EmployeeProfile::find($employeeId);
+                $title = "New Official Business request";
+                $description = $employeeProfile->personalInformation->name()." filed a new official business request";
+                
+                
+                $notification = Notifications::create([
+                    "title" => $title,
+                    "description" => $description,
+                    "module_path" => '/ob-requests',
+                ]);
+    
+                $user_notification = UserNotifications::create([
+                    'notification_id' => $notification->id,
+                    'employee_profile_id' => $recommending_officer,
+                ]);
+    
+                Helpers::sendNotification([
+                    "id" => Helpers::getEmployeeID($recommending_officer),
+                    "data" => new NotificationResource($user_notification)
+                ]);
+                
                 Helpers::registerSystemLogs($request, $data->id, true, 'Success in storing ' . $this->PLURAL_MODULE_NAME . '.'); //System Logs
 
                 return response()->json([
@@ -253,6 +279,8 @@ class OfficialBusinessController extends Controller
             }
 
 
+            $employeeProfile = EmployeeProfile::find($data->employee_profile_id);
+            $officer='';
 
             if ($request->status === 'approved') {
                 switch ($data->status) {
@@ -265,7 +293,6 @@ class OfficialBusinessController extends Controller
                                 'message' => 'You have no access to approve this request.',
                             ], Response::HTTP_FORBIDDEN);
                         }
-
                         break;
 
                     case 'for approving approval':
@@ -277,13 +304,9 @@ class OfficialBusinessController extends Controller
                                 'message' => 'You have no access to approve this request.',
                             ], Response::HTTP_FORBIDDEN);
                         }
-
                         break;
-
                 }
             } else if ($request->status === 'declined') {
-
-
                 $ob_application_recommending = $data->recommending_officer;
                 $ob_application_approving = $data->approving_officer;
 
@@ -295,6 +318,7 @@ class OfficialBusinessController extends Controller
                         ], Response::HTTP_FORBIDDEN);
                     }
                     $status = 'declined by recommending officer';
+                    $officer= "Recommending";
                 } else if ($employee_profile->id === $ob_application_approving) {
                     if ($data->status === 'declined by approving officer') {
                         return response()->json([
@@ -302,13 +326,89 @@ class OfficialBusinessController extends Controller
                         ], Response::HTTP_FORBIDDEN);
                     }
                     $status = 'declined by approving officer';
+                    $officer= "Approving";
                 }
                 $log_action = 'Request Declined';
+
+                
             }
-
-
             $data->update(['status' => $status, 'remarks' => $request->remarks === 'null' || !$request->remarks ? null : $request->remarks]);
 
+            if ($data->status === 'approved')
+            {
+                //EMPLOYEE
+                $notification = Notifications::create([
+                    "title" => "Official Business request approved",
+                    "description" => "Your official business request has been approved by your Approving Officer. ",
+                    "module_path" => '/ob',
+                ]);
+
+                $user_notification = UserNotifications::create([
+                    'notification_id' => $notification->id,
+                    'employee_profile_id' => $data->employee_profile_id,
+                ]);
+
+                Helpers::sendNotification([
+                    "id" => Helpers::getEmployeeID($data->employee_profile_id),
+                    "data" => new NotificationResource($user_notification)
+                ]);
+            }
+            else if ($data->status === "declined by recommending officer" || $data->status === "declined by approving officer")
+            {
+                //EMPLOYEE
+                $notification = Notifications::create([
+                    "title" => "Official Business request declined",
+                    "description" => "Your official business request has been declined by your". $officer ."Officer. ",
+                    "module_path" => '/ob',
+                ]);
+
+                $user_notification = UserNotifications::create([
+                    'notification_id' => $notification->id,
+                    'employee_profile_id' => $data->employee_profile_id,
+                ]);
+
+                Helpers::sendNotification([
+                    "id" => Helpers::getEmployeeID($data->employee_profile_id),
+                    "data" => new NotificationResource($user_notification)
+                ]);
+            } 
+            else 
+            {
+                //NOTIFS
+                //NEXT APPROVING
+                $notification = Notifications::create([
+                    "title" =>  "New Official Business request",
+                    "description" => $employeeProfile->personalInformation->name()." filed a new official request.",
+                    "module_path" => '/ob-requests',
+                ]);
+    
+                $user_notification = UserNotifications::create([
+                    'notification_id' => $notification->id,
+                    'employee_profile_id' => $data->approving_officer,
+                ]);
+    
+                Helpers::sendNotification([
+                    "id" => Helpers::getEmployeeID($data->approving_officer),
+                    "data" => new NotificationResource($user_notification)
+                ]);
+
+                //EMPLOYEE
+                $notification = Notifications::create([
+                    "title" => "Official Business request approved",
+                    "description" => "Your official business request has been approved by your Recommending Officer. ",
+                    "module_path" => '/ob',
+                ]);
+    
+                $user_notification = UserNotifications::create([
+                    'notification_id' => $notification->id,
+                    'employee_profile_id' => $data->employee_profile_id,
+                ]);
+    
+                Helpers::sendNotification([
+                    "id" => Helpers::getEmployeeID($data->employee_profile_id),
+                    "data" => new NotificationResource($user_notification)
+                ]);
+            }
             Helpers::registerSystemLogs($request, $id, true, 'Success in updating ' . $this->SINGULAR_MODULE_NAME . '.'); //System Logs
             return response()->json([
                 'data' => OfficialBusinessResource::collection(OfficialBusiness::where('id', $data->id)->get()),
