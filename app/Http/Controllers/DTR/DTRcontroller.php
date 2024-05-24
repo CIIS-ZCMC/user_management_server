@@ -884,8 +884,6 @@ class DTRcontroller extends Controller
                 foreach ($officialBusiness as $rows) {
                     $obData[] = [
                         'purpose' => $rows['purpose'],
-                        // 'time_from' => $rows['time_from'],
-                        // 'time_to' => $rows['time_to'],
                         'date_from' => $rows['date_from'],
                         'date_to' => $rows['date_to'],
                         'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to']),
@@ -1319,8 +1317,6 @@ class DTRcontroller extends Controller
                 foreach ($officialBusiness as $rows) {
                     $obData[] = [
                         'purpose' => $rows['purpose'],
-                        // 'time_from' => $rows['time_from'],
-                        // 'time_to' => $rows['time_to'],
                         'date_from' => $rows['date_from'],
                         'date_to' => $rows['date_to'],
                         'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to']),
