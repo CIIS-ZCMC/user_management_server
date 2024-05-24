@@ -921,7 +921,7 @@ class LeaveApplicationController extends Controller
             }
 
             $employeeProfile = EmployeeProfile::find($employeeId);
-            
+
             if($employeeProfile->isUnderProbation()) {
                 return response()->json(['message' => 'You are under probation.'], Response::HTTP_FORBIDDEN);
             }
@@ -1092,7 +1092,7 @@ class LeaveApplicationController extends Controller
                     }
 
                     $leave_application = LeaveApplication::create($cleanData);
-                    // Helpers::pendingLeaveNotfication($cleanData['hrmo_officer'], $leave_type->name);   
+                    // Helpers::pendingLeaveNotfication($cleanData['hrmo_officer'], $leave_type->name);
 
                     if ($request->requirements) {
                         $index = 0;
@@ -1113,13 +1113,13 @@ class LeaveApplicationController extends Controller
                             $index++;
                         }
                     }
-                    
+
                     /**
                      * Sample for notification
                      */
                     $title = "New " . $leave_type->name . " request.";
                     $description = "Employee file for leave application. Please take a look to what need to do.";
-                    
+
                     $notification = Notifications::create([
                         "title" => $title,
                         "description" => $description,
@@ -1144,7 +1144,7 @@ class LeaveApplicationController extends Controller
                         'leave_application_id' => $leave_application->id,
                         'action' => 'Applied'
                     ]);
-                } 
+                }
                 else {
 
 

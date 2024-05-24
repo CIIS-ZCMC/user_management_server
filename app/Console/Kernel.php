@@ -55,6 +55,9 @@ class Kernel extends ConsoleKernel
         // Run RemoveOicLeaveApplication every day at 11:59 PM
         $schedule->command(RemoveOicLeaveApplication::class)->dailyAt('23:59');
 
+        $schedule->command(UpdateOicLeaveApplication::class)->everyFiveMinutes();
+        // $schedule->command(EmployeeSixMonthEarnSPLCredit::class)->runInBackground();
+
     }
 
     /**
