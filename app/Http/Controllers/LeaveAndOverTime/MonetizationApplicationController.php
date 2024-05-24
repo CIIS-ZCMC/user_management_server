@@ -6,6 +6,7 @@ use App\Helpers\Helpers;
 use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Resources\LeaveTypeResource;
 use App\Http\Resources\MonetizationApplicationResource;
+use App\Http\Resources\NotificationResource;
 use App\Models\Division;
 use App\Models\DocumentNumber;
 use App\Models\EmployeeLeaveCredit;
@@ -16,8 +17,10 @@ use App\Models\Department;
 use App\Models\EmployeeProfile;
 use App\Models\LeaveType as ModelsLeaveType;
 use App\Models\MoneApplicationLog;
+use App\Models\Notifications;
 use App\Models\Section;
 use App\Models\Unit;
+use App\Models\UserNotifications;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Http\Request;
@@ -294,44 +297,70 @@ class MonetizationApplicationController extends Controller
             $status = '';
             $log_status = '';
             $monetization_application = MonetizationApplication::find($id);
+            $message='';
+            $next_approving=null;
 
             if (!$monetization_application) {
-                return response()->json(['message' => "NO application found record."], Response::HTTP_NOT_FOUND);
+                return response()->json(['message' => "No application found record."], Response::HTTP_NOT_FOUND);
             }
-
+            $employeeProfile = EmployeeProfile::find($monetization_application->employee_profile_id);
             switch ($monetization_application->status) {
                 case 'applied':
-                    $employee_profile = $request->user;
-                    $process_name = "Approved by HRMO";
-                    $monetization_application->update(['status' => 'for recommending approval']);
+                    if($employee_profile->id === $monetization_application->hrmo_officer){
+                        $employee_profile = $request->user;
+                        $process_name = "Approved by HRMO";
+                        $monetization_application->update(['status' => 'for recommending approval']);
+                        $message="HRMO";
+                        $next_approving=$monetization_application->recommending_officer;
 
-                    $mone_application_log = new MoneApplicationLog();
-                    $mone_application_log->monetization_application_id = $monetization_application->id;
-                    $mone_application_log->action_by_id =$employee_profile->id;
-                    $mone_application_log->action = $process_name;
-                    $mone_application_log->save();
+                        $mone_application_log = new MoneApplicationLog();
+                        $mone_application_log->monetization_application_id = $monetization_application->id;
+                        $mone_application_log->action_by_id =$employee_profile->id;
+                        $mone_application_log->action = $process_name;
+                        $mone_application_log->save();
+                       
+                    }else{
+                        return response()->json([
+                            'message' => 'You have no access to  approve this request.',
+                        ], Response::HTTP_FORBIDDEN);
+                    }
                     break;
 
                 case 'for recommending approval':
+                    if($employee_profile->id === $monetization_application->recommending_officer){
                     $process_name = "Approved by Recommending Officer";
                     $monetization_application->update(['status' => 'for approving approval']);
+                    $message="Recommending Officer";
+                    $next_approving=$monetization_application->approving_officer;
 
                     $mone_application_log = new MoneApplicationLog();
                     $mone_application_log->monetization_application_id = $monetization_application->id;
                     $mone_application_log->action_by_id =$employee_profile->id;
                     $mone_application_log->action = $process_name;
                     $mone_application_log->save();
+                    }else{
+                        return response()->json([
+                            'message' => 'You have no access to  approve this request.',
+                        ], Response::HTTP_FORBIDDEN);
+                    }
                     break;
 
                 case 'for approving approval':
+                    if($employee_profile->id === $monetization_application->approving_officer){
                     $process_name = "Approved by Approving Officer";
                     $monetization_application->update(['status' => 'approved']);
+                    $message="Approving Officer";
 
                     $mone_application_log = new MoneApplicationLog();
                     $mone_application_log->monetization_application_id = $monetization_application->id;
                     $mone_application_log->action_by_id =$employee_profile->id;
                     $mone_application_log->action = $process_name;
                     $mone_application_log->save();
+                }else{
+                    return response()->json([
+                        'message' => 'You have no access to  approve this request.',
+                    ], Response::HTTP_FORBIDDEN);
+                }
                     break;
             }
 
@@ -352,7 +381,69 @@ class MonetizationApplicationController extends Controller
                     'used_leave_credits' => $usedCredits
                 ];
             }
+            if($monetization_application->status === 'approved'){
 
+                //EMPLOYEE
+                $title = "Monetization request approved";
+                $description = "Your monetization request of has been approved by your " . $message . ".";
+                
+                
+                $notification = Notifications::create([
+                    "title" => $title,
+                    "description" => $description,
+                    "module_path" => '/monetize-leave',
+                ]);
+    
+                $user_notification = UserNotifications::create([
+                    'notification_id' => $notification->id,
+                    'employee_profile_id' => $monetization_application->employee_profile_id,
+                ]);
+    
+                Helpers::sendNotification([
+                    "id" => Helpers::getEmployeeID($monetization_application->employee_profile_id),
+                    "data" => new NotificationResource($user_notification)
+                ]);
+            }
+            else
+            {
+                //NEXT APPROVING
+                $notification = Notifications::create([
+                    "title" =>  "New Monetization request",
+                    "description" => $employeeProfile->personalInformation->name()." filed a new monetization request",
+                    "module_path" => '/manage-leave-monetization',
+                ]);
+    
+                $user_notification = UserNotifications::create([
+                    'notification_id' => $notification->id,
+                    'employee_profile_id' => $next_approving,
+                ]);
+    
+                Helpers::sendNotification([
+                    "id" => Helpers::getEmployeeID($next_approving),
+                    "data" => new NotificationResource($user_notification)
+                ]);
+
+                //EMPLOYEE
+                $title = "Monetization request approved";
+                $description = "Your monetization request of has been approved by your " . $message . ".";
+                
+                
+                $notification = Notifications::create([
+                    "title" => $title,
+                    "description" => $description,
+                    "module_path" => '/monetize-leave',
+                ]);
+    
+                $user_notification = UserNotifications::create([
+                    'notification_id' => $notification->id,
+                    'employee_profile_id' => $monetization_application->employee_profile_id,
+                ]);
+    
+                Helpers::sendNotification([
+                    "id" => Helpers::getEmployeeID($monetization_application->employee_profile_id),
+                    "data" => new NotificationResource($user_notification)
+                ]);
+            }
             return response()->json([
                 'data' => new MonetizationApplicationResource($monetization_application),
                 'credits' => $result,
@@ -466,6 +557,29 @@ class MonetizationApplicationController extends Controller
                     'used_leave_credits' => $usedCredits
                 ];
             }
+
+            
+            $employeeProfile = EmployeeProfile::find($employee_profile->id);
+            $title = "New Monetization request";
+            $description = $employeeProfile->personalInformation->name()." filed a new monetization request";
+            
+            
+            $notification = Notifications::create([
+                "title" => $title,
+                "description" => $description,
+                "module_path" => '/manage-leave-monetization',
+            ]);
+
+            $user_notification = UserNotifications::create([
+                'notification_id' => $notification->id,
+                'employee_profile_id' => $recommending_officer->chief_employee_profile_id,
+            ]);
+
+            Helpers::sendNotification([
+                "id" => Helpers::getEmployeeID($recommending_officer->chief_employee_profile_id),
+                "data" => new NotificationResource($user_notification)
+            ]);
+
             return response()->json([
                 'data' => new MonetizationApplicationResource($new_monetization),
                 'credits' => $result,
@@ -503,12 +617,8 @@ class MonetizationApplicationController extends Controller
                     if($employee_profile->id === $mone_application_hrmo){
                         $status = 'declined by hrmo officer';
                         $declined_by = "HR";
-                        // Helpers::pendingLeaveNotfication($mone_application->recommending_officer, $mone_application->leaveType->name);
-                        // Helpers::notifications(
-                        //     $mone_application->employee_profile_id,
-                        //     "HR has approved your " . $mone_application->leaveType->name . " request.",
-                        //     $mone_application->leaveType->name
-                        // );
+
+                       
                     }else{
                         return response()->json([
                             'message' => 'You have no access to  decline this request.',
@@ -593,6 +703,27 @@ class MonetizationApplicationController extends Controller
                     'used_leave_credits' => $usedCredits
                 ];
             }
+
+             //EMPLOYEE notification
+             $title = "Monetization request declined";
+             $description = "Your monetization request has been declined by your " . $declined_by . ".";
+             
+             
+             $notification = Notifications::create([
+                 "title" => $title,
+                 "description" => $description,
+                 "module_path" => '/monetize-leave',
+             ]);
+ 
+             $user_notification = UserNotifications::create([
+                 'notification_id' => $notification->id,
+                 'employee_profile_id' => $mone_application->employee_profile_id,
+             ]);
+ 
+             Helpers::sendNotification([
+                 "id" => Helpers::getEmployeeID($mone_application->employee_profile_id),
+                 "data" => new NotificationResource($user_notification)
+             ]);
 
             return response()->json([
                 'data' => new MonetizationApplicationResource($mone_application),

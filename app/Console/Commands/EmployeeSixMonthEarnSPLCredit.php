@@ -2,10 +2,14 @@
 
 namespace App\Console\Commands;
 
+use App\Helpers\Helpers;
+use App\Http\Resources\NotificationResource;
 use App\Models\EmployeeLeaveCredit;
 use App\Models\EmployeeLeaveCreditLogs;
 use App\Models\EmployeeProfile;
 use App\Models\LeaveType;
+use App\Models\Notifications;
+use App\Models\UserNotifications;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 
@@ -81,6 +85,25 @@ class EmployeeSixMonthEarnSPLCredit extends Command
                             'action' => "add"
                         ]);
                     }
+
+                    $title = "Special Privilege Leave credited";
+                    $description = "Your SPL credits is now credited for year ". $currentYear." .";
+                    
+                    $notification = Notifications::create([
+                        "title" => $title,
+                        "description" => $description,
+                        "module_path" => '/leave-applications',
+                    ]);
+    
+                    $user_notification = UserNotifications::create([
+                        'notification_id' => $notification->id,
+                        'employee_profile_id' => $employee->id,
+                    ]);
+    
+                    Helpers::sendNotification([
+                        "id" => $employee->employee_id,
+                        "data" => new NotificationResource($user_notification)
+                    ]);
                 }
         }
     }

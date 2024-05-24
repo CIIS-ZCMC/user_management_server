@@ -2,8 +2,12 @@
 
 namespace App\Console\Commands;
 
+use App\Helpers\Helpers;
+use App\Http\Resources\NotificationResource;
 use App\Models\EmployeeLeaveCredit;
 use App\Models\EmployeeLeaveCreditLogs;
+use App\Models\Notifications;
+use App\Models\UserNotifications;
 use Carbon\Carbon;
 use App\Models\LeaveType;
 use App\Models\EmployeeProfile;
@@ -35,6 +39,8 @@ class EmployeeMonthlyEarnCredit extends Command
         $vacation_leave = LeaveType::where('code', 'VL')->first();
         $force_leave = LeaveType::where('code', 'FL')->first();
 
+        $month_before = Carbon::now()->subMonth()->format('F');;
+
         $employees = EmployeeProfile::where('employment_type_id', '!=', 5)
         ->where('id', '!=', 1)
         ->where('date_hired', '<', Carbon::now()->subDays(30))
@@ -62,6 +68,25 @@ class EmployeeMonthlyEarnCredit extends Command
                 'action' => "add"
             ]);
 
+            $title = "Sick Leave credited";
+            $description = $sick_monthly_value. " sick leave credits is credited for the month of ". $month_before . ".";
+            
+            $notification = Notifications::create([
+                "title" => $title,
+                "description" => $description,
+                "module_path" => '/leave-applications',
+            ]);
+
+            $user_notification = UserNotifications::create([
+                'notification_id' => $notification->id,
+                'employee_profile_id' => $employee->id,
+            ]);
+
+            Helpers::sendNotification([
+                "id" => $employee->employee_id,
+                "data" => new NotificationResource($user_notification)
+            ]);
+
             /**
              * Vacation Leave
              */
@@ -82,6 +107,24 @@ class EmployeeMonthlyEarnCredit extends Command
                 'leave_credits' => $vl_monthly_value,
                 'reason' => "Monthly Vacation Leave Credits",
                 'action' => "add"
+            ]);
+            $title = "Vacation Leave credited";
+            $description = $vl_monthly_value. " vacation leave credits is credited for the month of ". $month_before. ".";
+            
+            $notification = Notifications::create([
+                "title" => $title,
+                "description" => $description,
+                "module_path" => '/leave-applications',
+            ]);
+
+            $user_notification = UserNotifications::create([
+                'notification_id' => $notification->id,
+                'employee_profile_id' => $employee->id,
+            ]);
+
+            Helpers::sendNotification([
+                "id" => $employee->employee_id,
+                "data" => new NotificationResource($user_notification)
             ]);
 
             /**
@@ -117,7 +160,27 @@ class EmployeeMonthlyEarnCredit extends Command
 
                     ]);
                 }
+
+                $title = "Forced Leave credited";
+                $description = "You now have ".$fl_annual_value." forced leave credits credited for year ".now()->year." .";
+                
+                $notification = Notifications::create([
+                    "title" => $title,
+                    "description" => $description,
+                    "module_path" => '/leave-applications',
+                ]);
+
+                $user_notification = UserNotifications::create([
+                    'notification_id' => $notification->id,
+                    'employee_profile_id' => $employee->id,
+                ]);
+
+                Helpers::sendNotification([
+                    "id" => $employee->employee_id,
+                    "data" => new NotificationResource($user_notification)
+                ]);
             }
+
         }
     }
 }
