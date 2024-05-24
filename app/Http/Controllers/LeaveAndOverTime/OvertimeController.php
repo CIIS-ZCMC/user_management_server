@@ -102,33 +102,25 @@ class OvertimeController extends Controller
 
 
 
-         $dates = $data->dates;
+         $dates = $data->dates[0];
+         $preparedBy = $data->employee_profile;
+         $recommendingOfficer = $data->recommending_officer;
+         $approvingOfficer = $data->approving_officer;
+         $created_at = $data->created_at;
+         $updated_at = $data->updated_at;
         // $employees = $dates->employees;
 
-        return $dates;
-        // $uniqueEmployees = [];
 
-        // foreach ($activities as $activity) {
-        //     foreach ($activity->dates as $date) {
-        //         foreach ($date->employees as $employee) {
-        //             $employeeId = $employee->employee_profile->employee_id;
-        //             // Check if employee already exists in the uniqueEmployees array
-        //             if (!isset($uniqueEmployees[$employeeId])) {
-        //                 // If not, add the employee to the uniqueEmployees array
-        //                 $uniqueEmployees[$employeeId] = $employee->employee_profile;
-        //             }
-        //         }
-        //     }
-        // }
+        $time_from = $dates->time_from;
+        $time_to = $dates->time_to;
+        $date = $dates->date;
+        $employees = $dates->employees[0];
+        $requested=$dates->created_at;
 
-        // $listofEmployees = array_values($uniqueEmployees);
-        // $purposeofovertime = $data->purpose;
-        // $remarks = $data->remarks;
-        // $recommendingofficer = $data->recommending_officer;
-        // $approvingOfficer = $data->approving_officer;
-        // $requestedBy =  $data->employee_profile;
 
-        // $created = date("F j, Y", strtotime($data->created_at));
+
+        return view("overtimePast",compact('employees','time_from','time_to','preparedBy','recommendingOfficer','approvingOfficer'));
+
 
         // $options = new Options();
         // $options->set('isPhpEnabled', true);
