@@ -2673,11 +2673,7 @@ class EmployeeProfileController extends Controller
                 ]);
             }
 
-            DB::commit();
-
-            Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . '.');
-
-            $data = [
+            $body = [
                 'employeeID' => $employee_profile->employee_id,
                 'Password' => $default_password,
                 "Link" => config('app.client_domain')
@@ -2693,7 +2689,10 @@ class EmployeeProfileController extends Controller
                 'Body' => $body
             ];
 
-            SendEmailJob::dispatch('new_account', $email, $data);
+            SendEmailJob::dispatch('new_account', $email, $name, $data);
+
+            DB::commit();
+            Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . '.');
 
             if ($in_valid_file) {
                 return response()->json(
