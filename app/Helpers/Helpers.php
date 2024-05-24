@@ -67,6 +67,10 @@ class Helpers
         return mb_substr($characters, mt_rand(0, mb_strlen($characters) - 1), 1);
     }
 
+    public static function getEmployeeID($id)
+    {
+        return EmployeeProfile::where('id', $id)->first()->employee_id;
+    }
     public static function getHrmoOfficer()
     {
         return Section::where('code', 'HRMO')->first()->supervisor_employee_profile_id;
