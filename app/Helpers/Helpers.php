@@ -428,15 +428,20 @@ class Helpers
             }
 
             if ($includeScheduleCount) {
-                $schedule = Schedule::where('date', $date->format('Y-m-d'))->first();
+                // Fetch all schedules for the current date
+                $schedules = Schedule::where('date', $date->format('Y-m-d'))->get();
                 $countSchedulePerDate = 0;
-                if ($schedule) {
-                    $countSchedulePerDate = EmployeeSchedule::where('schedule_id', $schedule->id)->count();
+
+                // Sum the count of EmployeeSchedules for each schedule
+                foreach ($schedules as $schedule) {
+                    $countSchedulePerDate += EmployeeSchedule::where('schedule_id', $schedule->id)->count();
                 }
+
                 $dates[] = ['date' => $formattedDate, 'count' => $countSchedulePerDate];
             } else {
                 $dates[] = $formattedDate;
             }
+
         }
 
         return $dates;
