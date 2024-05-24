@@ -18,6 +18,7 @@ class NotificationResource extends JsonResource
 
         return [
             'id' => $this->id,
+            'title' => $notification->title,
             'description' => $notification->description,
             'module_path' => $notification->module_path,
             'employee_profile_id' => $this->employee_profile_id,

@@ -70,6 +70,14 @@ Route::middleware('auth.cookie')->group(function () {
             Route::put('notifications-seen-multiple', 'NotificationController@seenMultipleNotification');
         });
 
+        Route::middleware(['auth.permission:UMIS-PAM view'])->group(function () {
+            Route::delete('notifications-delete-multiple', 'NotificationController@destroyMultiple');
+        });
+
+        Route::middleware(['auth.permission:UMIS-PAM view'])->group(function () {
+            Route::delete('notification/{id}/delete', 'NotificationController@destroy');
+        });
+
         Route::middleware(['auth.permission:UMIS-SM write', 'request.timing'])->group(function () {
             Route::post('announcements', 'AnnouncementsController@store');
         });

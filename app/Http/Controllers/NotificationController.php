@@ -66,7 +66,7 @@ class NotificationController extends Controller
     {
         try{
             $user = $request->user;
-            $notifications = UserNotifications::where('employee_profile_id', $user->id)->get();
+            $notifications = UserNotifications::where('employee_profile_id', $user->id)->orderBy('created_at', 'desc')->get();
             
             return response()->json([
                 'data' => NotificationResource::collection($notifications), 
@@ -131,6 +131,37 @@ class NotificationController extends Controller
             ], Response::HTTP_OK);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'destroy', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function destroyMultiple(Request $request)
+    {
+        try{
+
+            foreach ($request->notifications as $id) {
+                $notification_id = strip_tags($id);
+                $notification = UserNotifications::find($notification_id);
+
+                if (!$notification) {
+                    $failed[] = $id;
+                    continue;
+                }
+
+               
+                    if(!$notification){
+                        return response()->json(['message' => "No record found"], Response::HTTP_BAD_REQUEST);
+                    }
+        
+                    $notification->delete();
+              
+            }
+        
+            return response()->json([ 
+                'message' => 'Notifications delete.'
+            ], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME,'destroyMultiple', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
