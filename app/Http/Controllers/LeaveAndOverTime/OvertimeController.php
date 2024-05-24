@@ -119,7 +119,13 @@ class OvertimeController extends Controller
 
 
 
-        return view("overtimePast",compact('employees','time_from','time_to','preparedBy','recommendingOfficer','approvingOfficer'));
+        return view("overtimePast",compact(
+        'employees',
+        'time_from',
+        'time_to',
+        'preparedBy',
+        'recommendingOfficer',
+        'approvingOfficer'));
 
 
         // $options = new Options();
