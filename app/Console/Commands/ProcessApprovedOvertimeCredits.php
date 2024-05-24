@@ -3,12 +3,15 @@
 namespace App\Console\Commands;
 
 use App\Helpers\Helpers;
+use App\Http\Resources\NotificationResource;
 use App\Models\DailyTimeRecords;
 use App\Models\EmployeeOvertimeCredit;
 use App\Models\EmployeeOvertimeCreditLog;
 use App\Models\EmployeeProfile;
 use App\Models\Holiday;
+use App\Models\Notifications;
 use App\Models\OvertimeApplication;
+use App\Models\UserNotifications;
 use Illuminate\Console\Command;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -137,6 +140,24 @@ class ProcessApprovedOvertimeCredits extends Command
                                         }
                                     }
                                 }
+                                $title = "COC earned credited";
+                                $description = "You have earned a COC of ". $totalOverlapHours . ".";
+                                
+                                $notification = Notifications::create([
+                                    "title" => $title,
+                                    "description" => $description,
+                                    "module_path" => '/cto',
+                                ]);
+                
+                                $user_notification = UserNotifications::create([
+                                    'notification_id' => $notification->id,
+                                    'employee_profile_id' => $employee->id,
+                                ]);
+                
+                                Helpers::sendNotification([
+                                    "id" => $employee->employee_id,
+                                    "data" => new NotificationResource($user_notification)
+                                ]);
                             }
                         }
                     }
@@ -223,6 +244,24 @@ class ProcessApprovedOvertimeCredits extends Command
                                     }
                                 }
                             }
+                            $title = "COC earned credited";
+                            $description = "You have earned a COC of ". $totalOverlapHours . ".";
+                            
+                            $notification = Notifications::create([
+                                "title" => $title,
+                                "description" => $description,
+                                "module_path" => '/cto',
+                            ]);
+            
+                            $user_notification = UserNotifications::create([
+                                'notification_id' => $notification->id,
+                                'employee_profile_id' => $employee->id,
+                            ]);
+            
+                            Helpers::sendNotification([
+                                "id" => $employee->employee_id,
+                                "data" => new NotificationResource($user_notification)
+                            ]);
                         }
                     }
                 }
