@@ -3,13 +3,17 @@
 namespace App\Http\Controllers\LeaveAndOverTime;
 
 use App\Http\Requests\AuthPinApprovalRequest;
+use App\Http\Resources\NotificationResource;
 use App\Http\Resources\OfficialTimeResource;
 use App\Http\Requests\OfficialTimeRequest;
 use App\Helpers\Helpers;
 
+use App\Models\EmployeeProfile;
+use App\Models\Notifications;
 use App\Models\OfficialTime;
 
 use App\Http\Controllers\Controller;
+use App\Models\UserNotifications;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -207,6 +211,29 @@ class OfficialTimeController extends Controller
                     $data->recommending_officer             = $recommending_officer;
                     $data->save();
 
+                    
+                    //NOTIFICATIONS
+                    $employeeProfile = EmployeeProfile::find($employeeId);
+                    $title = "New Official Time request";
+                    $description = $employeeProfile->personalInformation->name()." filed a new official time request.";
+                    
+                    
+                    $notification = Notifications::create([
+                        "title" => $title,
+                        "description" => $description,
+                        "module_path" => '/ot-requests',
+                    ]);
+        
+                    $user_notification = UserNotifications::create([
+                        'notification_id' => $notification->id,
+                        'employee_profile_id' => $recommending_officer,
+                    ]);
+        
+                    Helpers::sendNotification([
+                        "id" => Helpers::getEmployeeID($recommending_officer),
+                        "data" => new NotificationResource($user_notification)
+                    ]);
+                
                     Helpers::registerSystemLogs($request, $data->id, true, 'Success in storing '.$this->PLURAL_MODULE_NAME.'.'); //System Logs
 
                     return response()->json([
@@ -261,12 +288,16 @@ class OfficialTimeController extends Controller
                 return response()->json(['message' => "Invalid authorization pin."], Response::HTTP_FORBIDDEN);
             }
 
+            $employeeProfile = EmployeeProfile::find($data->employee_profile_id);
+            $officer='';
+
             if ($request->status === 'approved') {
                 switch ($data->status) {
                     case 'for recommending approval':
                         if($employee_profile->id === $data->recommending_officer){
                             $status = 'for approving approval';
                             $log_action = 'Approved by Recommending Officer';
+
                         }else{
                             return response()->json([
                                 'message' => 'You have no access to approve this request.',
@@ -279,6 +310,7 @@ class OfficialTimeController extends Controller
                         if($employee_profile->id === $data->approving_officer){
                             $status = 'approved';
                             $log_action = 'Approved by Approving Officer';
+
                         }else{
                             return response()->json([
                                 'message' => 'You have no access to approve this request.',
@@ -305,6 +337,7 @@ class OfficialTimeController extends Controller
                         ], Response::HTTP_FORBIDDEN); 
                     }
                     $status='declined by recommending officer';
+                    $officer='Recommending Officer';
                 }
                 else if($employee_profile->id === $ot_application_approving)
                 {
@@ -314,13 +347,90 @@ class OfficialTimeController extends Controller
                         ], Response::HTTP_FORBIDDEN); 
                     }
                     $status='declined by approving officer';
+                    $officer='Approving Officer';
                 }
                 $log_action = 'Request Declined';
             }
 
-
             $data->update(['status' => $status, 'remarks' => $request->remarks==='null' || !$request->remarks ? null : $request->remarks]);
 
+            //NOTIFICATIONS
+            if ($data->status === 'approved') 
+            {
+                //EMPLOYEE
+                $notification = Notifications::create([
+                    "title" => "Official Time request approved",
+                    "description" => "Your official time request has been approved by your Approving Officer. ",
+                    "module_path" => '/ot',
+                ]);
+    
+                $user_notification = UserNotifications::create([
+                    'notification_id' => $notification->id,
+                    'employee_profile_id' => $data->employee_profile_id,
+                ]);
+    
+                Helpers::sendNotification([
+                    "id" => Helpers::getEmployeeID($data->employee_profile_id),
+                    "data" => new NotificationResource($user_notification)
+                ]);
+            }
+            else if ($data->status === "declined by recommending officer" || $data->status === "declined by approving officer")
+            {
+                 //EMPLOYEE
+                $notification = Notifications::create([
+                    "title" => "Official Time request declined",
+                    "description" => "Your official time request has been declined by your". $officer ."Officer. ",
+                    "module_path" => '/ot',
+                ]);
+
+                $user_notification = UserNotifications::create([
+                    'notification_id' => $notification->id,
+                    'employee_profile_id' => $data->employee_profile_id,
+                ]);
+
+                Helpers::sendNotification([
+                    "id" => Helpers::getEmployeeID($data->employee_profile_id),
+                    "data" => new NotificationResource($user_notification)
+                ]);
+            }
+            else
+            {
+                 //NOTIFS
+                //NEXT APPROVING
+                $notification = Notifications::create([
+                    "title" =>  "New Official Time request",
+                    "description" => $employeeProfile->personalInformation->name()." filed a new official time.",
+                    "module_path" => '/ot-requests',
+                ]);
+    
+                $user_notification = UserNotifications::create([
+                    'notification_id' => $notification->id,
+                    'employee_profile_id' => $data->approving_officer,
+                ]);
+    
+                Helpers::sendNotification([
+                    "id" => Helpers::getEmployeeID($data->approving_officer),
+                    "data" => new NotificationResource($user_notification)
+                ]);
+
+                //EMPLOYEE
+                $notification = Notifications::create([
+                    "title" => "Official Time request approved",
+                    "description" => "Your official time request has been approved by your Recommending Officer. ",
+                    "module_path" => '/ot',
+                ]);
+    
+                $user_notification = UserNotifications::create([
+                    'notification_id' => $notification->id,
+                    'employee_profile_id' => $data->employee_profile_id,
+                ]);
+    
+                Helpers::sendNotification([
+                    "id" => Helpers::getEmployeeID($data->employee_profile_id),
+                    "data" => new NotificationResource($user_notification)
+                ]);
+            }
+           
             Helpers::registerSystemLogs($request, $id, true, 'Success in updating '.$this->SINGULAR_MODULE_NAME.'.'); //System Logs
             return response()->json(['data' => OfficialTimeResource::collection(OfficialTime::where('id', $data->id)->get()),
                                     'logs' => Helpers::registerOfficialTimeLogs($data->id, $employee_profile['id'], $log_action),

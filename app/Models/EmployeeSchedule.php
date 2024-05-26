@@ -16,7 +16,7 @@ class EmployeeSchedule extends Model
 
     protected $fillable = [
         'employee_profile_id',
-        'schedule_id',
+        'schedule_id'
     ];
 
     public $timestamps = false;

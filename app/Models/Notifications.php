@@ -12,6 +12,7 @@ class Notifications extends Model
     protected $table = 'notifications';
 
     public $fillable = [
+        'title',
         'description',
         'module_path',
         'seen',

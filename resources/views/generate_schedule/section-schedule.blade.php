@@ -297,7 +297,7 @@
             <div class="row-item">
                 <span> Prepared By </span>
                 <span class="signature">{{ $user->name() }}</span>
-                <span>{{ $user->position()['position'] ?? null }}</span>
+                <span>{{ $user->position()['position'] ?? 'Scheduler' }}</span>
             </div>
 
             <div class="row-item">

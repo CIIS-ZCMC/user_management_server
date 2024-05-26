@@ -160,7 +160,7 @@ class ExchangeDutyController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update($id, AuthPinApprovalRequest $request)
+    public function update($id, Request $request)
     {
         try {
             $user = $request->user;
@@ -256,30 +256,14 @@ class ExchangeDutyController extends Controller
         try {
             $user = $request->user->id;
 
-            $sql = EmployeeSchedule::where('employee_profile_id', $user)
+            $data = EmployeeSchedule::where('employee_profile_id', $user)
                 ->whereHas('schedule', function ($query) use ($request) {
                     $query->where('date', $request->date_selected);
                 })->get();
 
-            if ($sql->isEmpty()) {
+            if ($data->isEmpty()) {
                 return response()->json(['message' => "Please select a date with schedule."], Response::HTTP_OK);
             }
-
-            $schedule = [];
-            foreach ($sql as $value) {
-                $schedule[] = [
-                    'id' => $value->schedule->id,
-                    'start' => $value->schedule->date,
-                    'title' => $value->schedule->timeShift->timeShiftDetails(),
-                    'color' => $value->schedule->timeShift->color,
-                    'status' => $value->schedule->status,
-                ];
-            }
-
-            $data = [
-                'employee_id' => $sql->isEmpty() ? null : $sql->first()->employee_profile_id,
-                'schedule' => $schedule,
-            ];
 
             return response()->json(['data' => new EmployeeScheduleResource($data)], Response::HTTP_OK);
         } catch (\Throwable $th) {
@@ -309,30 +293,14 @@ class ExchangeDutyController extends Controller
                 }
             }
 
-            $sql = EmployeeSchedule::where('employee_profile_id', $reliever_id)
+            $data = EmployeeSchedule::where('employee_profile_id', $reliever_id)
                 ->whereHas('schedule', function ($query) use ($request) {
                     $query->where('date', $request->date_to_duty);
                 })->get();
 
-            if ($sql->isEmpty()) {
-                return response()->json(['message' => "Reliever has no schedule on date: " . $request->date_to_duty, $sql], Response::HTTP_OK);
+            if ($data->isEmpty()) {
+                return response()->json(['message' => "Reliever has no schedule on date: " . $request->date_to_duty, $data], Response::HTTP_OK);
             }
-
-            $schedule = [];
-            foreach ($sql as $value) {
-                $schedule[] = [
-                    'id' => $value->schedule->id,
-                    'start' => $value->schedule->date,
-                    'title' => $value->schedule->timeShift->timeShiftDetails(),
-                    'color' => $value->schedule->timeShift->color,
-                    'status' => $value->schedule->status,
-                ];
-            }
-
-            $data = [
-                'employee_id' => $sql->isEmpty() ? null : $sql->first()->employee_profile_id,
-                'schedule' => $schedule,
-            ];
 
             return response()->json(['data' => new EmployeeScheduleResource($data)], Response::HTTP_OK);
         } catch (\Throwable $th) {

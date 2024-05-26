@@ -47,23 +47,46 @@ Route::namespace('App\Http\Controllers')->group(function () {
     Route::get('news', 'NewsController@index');
     Route::get('news-search', 'NewsController@searchNews');
     Route::get('news/{id}', 'NewsController@show');
+    Route::get('notification', 'NotificationController@store');
 });
 
 Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
-    Route::post('sign-in', 'EmployeeProfileController@signIn');
-    Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
-    Route::post('skip-for-now', 'EmployeeProfileController@updatePasswordExpiration');
-    Route::post('verify-email-and-send-otp', 'EmployeeProfileController@verifyEmailAndSendOTP');
-    Route::post('verify-otp', 'EmployeeProfileController@verifyOTP');
-    Route::post('new-password', 'EmployeeProfileController@newPassword');
-    Route::get('retrieve-token', 'CsrfTokenController@generateCsrfToken');
-    Route::get('validate-token', 'CsrfTokenController@validateToken');
-    Route::post('employee-profile/signout-from-other-device', 'EmployeeProfileController@signOutFromOtherDevice');
-});
+        Route::post('sign-in', 'EmployeeProfileController@signIn');
+        Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
+        Route::post('skip-for-now', 'EmployeeProfileController@updatePasswordExpiration');
+        Route::post('verify-email-and-send-otp', 'EmployeeProfileController@verifyEmailAndSendOTP');
+        Route::post('verify-otp', 'EmployeeProfileController@verifyOTP');
+        Route::post('new-password', 'EmployeeProfileController@newPassword');
+        Route::post('resend-otp', 'EmployeeProfileController@resendOTP');
+        Route::get('retrieve-token', 'CsrfTokenController@generateCsrfToken');
+        Route::get('validate-token', 'CsrfTokenController@validateToken');
+        Route::post('employee-profile/signout-from-other-device', 'EmployeeProfileController@signOutFromOtherDevice');
+    });
 
 Route::middleware('auth.cookie')->group(function () {
 
     Route::namespace('App\Http\Controllers')->group(function () {
+
+        Route::middleware(['auth.permission:UMIS-PAM view'])->group(function () {
+            Route::get('notifications', 'NotificationController@getNotificationsById');
+        });
+
+        Route::middleware(['auth.permission:UMIS-PAM view'])->group(function () {
+            Route::put('notifications/{id}/seen', 'NotificationController@seen');
+        });
+
+        Route::middleware(['auth.permission:UMIS-PAM view'])->group(function () {
+            Route::put('notifications-seen-multiple', 'NotificationController@seenMultipleNotification');
+        });
+
+        Route::middleware(['auth.permission:UMIS-PAM view'])->group(function () {
+            Route::delete('notifications-delete-multiple', 'NotificationController@destroyMultiple');
+        });
+
+        Route::middleware(['auth.permission:UMIS-PAM view'])->group(function () {
+            Route::delete('notification/{id}/delete', 'NotificationController@destroy');
+        });
+
         Route::middleware(['auth.permission:UMIS-SM write', 'request.timing'])->group(function () {
             Route::post('announcements', 'AnnouncementsController@store');
         });
@@ -819,16 +842,16 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('employees-for-oic', 'EmployeeProfileController@employeesForOIC');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-PAM update'])->group(function () {
             Route::put('employee-profile-update-pin', 'EmployeeProfileController@updatePin');
         });
 
-        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-PAM update'])->group(function () {
             Route::put('employee-profile-update-password', 'EmployeeProfileController@updatePassword');
         });
 
 
-        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-PAM update'])->group(function () {
             Route::put('employee-profile-twofa-status', 'EmployeeProfileController@update2fa');
         });
 
@@ -1962,6 +1985,9 @@ Route::middleware('auth.cookie')->group(function () {
         Route::post('ovt-application', 'OvertimeController@store');
         // });
 
+        Route::get('ovt-application-printPast/{id}', 'OvertimeController@printPastOvertimeForm');
+
+
         Route::get('ovt-application-print/{id}', 'OvertimeController@printOvertimeForm');
 
         Route::middleware(['auth.permission:UMIS-OM request'])->group(function () {
@@ -2007,6 +2033,10 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-OM view'])->group(function () {
             Route::get('user-ovt-application', 'OvertimeController@getUserOvertime');
+        });
+
+        Route::middleware(['auth.permission:UMIS-OM view'])->group(function () {
+            Route::get('supervisor-ovt-application', 'OvertimeController@getSupervisor');
         });
 
         Route::middleware(['auth.permission:UMIS-OM approve'])->group(function () {
@@ -2113,6 +2143,10 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function () {
+            Route::get('schedules-filter', 'ScheduleController@FilterByAreaAndDate');
+        });
+
+        Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function () {
             Route::get('schedules-time-shift', 'TimeShiftController@index');
         });
 
@@ -2128,7 +2162,7 @@ Route::middleware('auth.cookie')->group(function () {
             Route::get('exchange-duty', 'ExchangeDutyController@create');
         });
 
-        Route::middleware(['auth.permission:UMIS-ES write'])->group(function () {
+        Route::middleware(['auth.permission:UMIS-ES request'])->group(function () {
             Route::post('exchange-duties', 'ExchangeDutyController@store');
         });
 

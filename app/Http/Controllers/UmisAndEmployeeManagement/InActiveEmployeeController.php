@@ -30,8 +30,11 @@ use App\Http\Resources\OtherInformationResource;
 use App\Http\Resources\TrainingResource;
 use App\Http\Resources\VoluntaryWorkResource;
 use App\Http\Resources\WorkExperienceResource;
+use App\Jobs\SendEmailJob;
+use App\Methods\MailConfig;
 use App\Models\AssignArea;
 use App\Models\EmployeeLeaveCredit;
+use App\Models\EmployeeOvertimeCredit;
 use App\Models\EmploymentType;
 use App\Models\LeaveType;
 use App\Models\PlantillaNumber;
@@ -57,6 +60,12 @@ class InActiveEmployeeController extends Controller
     private $CONTROLLER_NAME = 'In Active Employee Module';
     private $PLURAL_MODULE_NAME = 'In active employee modules';
     private $SINGULAR_MODULE_NAME = 'In active employee module';
+    private $mail;
+
+    public function __construct()
+    {
+        $this->mail = new MailConfig();
+    }
 
     // In Complete
     public function retireAndDeactivateAccount($id, Request $request)
@@ -473,7 +482,6 @@ class InActiveEmployeeController extends Controller
                 $plantilla_number->update(['employee_profile_id' => $employee_profile->id, 'is_vacant' => false, 'assigned_at' => now()]);
             }
 
-
             if ($plantilla_number_id !== null) {
                 $leave_types = LeaveType::where('is_special', 0)->get();
 
@@ -485,11 +493,41 @@ class InActiveEmployeeController extends Controller
                         'used_leave_credits' => 0
                     ]);
                 }
+                $currentYear = date('Y');
+                $validUntil = date('Y-m-d', strtotime("$currentYear-12-31"));
+
+                EmployeeOvertimeCredit::create([
+                    'employee_profile_id' => $employee_profile->id,
+                    'earned_credit_by_hour' => 0,
+                    'used_credit_by_hour' => 0,
+                    'valid_until' => $validUntil,
+                    'is_expired' => 0,
+                    'max_credit_monthly' => 40,
+                    'max_credit_annual' => 120
+                ]);
             }
 
             $in_active_employee->delete();
             DB::commit();
             Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . '.');
+
+            $data = [
+                'employeeID' => $employee_profile->employee_id,
+                'Password' => $default_password,
+                "Link" => config('app.client_domain')
+            ];
+
+            $email = $employee_profile->personalinformation->contact->email_address;
+            $name = $employee_profile->personalInformation->name();
+
+            $data = [
+                'Subject' => 'Your Zcmc Portal Account.',
+                'To_receiver' => $employee_profile->personalinformation->contact->email_address,
+                'Receiver_Name' => $employee_profile->personalInformation->name(),
+                'Body' => $body
+            ];
+
+            SendEmailJob::dispatch('new_account', $email, $data);
 
             if ($in_valid_file) {
                 return response()->json(

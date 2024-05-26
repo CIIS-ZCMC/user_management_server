@@ -79,7 +79,7 @@ class DesignationController extends Controller
 
             return response()->json([
                 'data' => DesignationTotalEmployeeResource::collection($total_employee_per_designation),
-                'message' => 'Total employee per disignation retrieved.'
+                'message' => 'Total employee per designation retrieved.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'totalEmployeePerDesignation', $th->getMessage());
@@ -94,7 +94,7 @@ class DesignationController extends Controller
 
             return response()->json([
                 'data' => DesignationTotalPlantillaResource::collection($total_plantilla_per_designation),
-                'message' => 'Total plantilla per designation retrieved.'
+                'message' => 'Total plantilla per plantilla retrieved.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'totalEmployeePerDesignation', $th->getMessage());
@@ -123,11 +123,12 @@ class DesignationController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if($key === 'probation' && ($value === null || $value === 'null')) continue;
+                if ($key === 'probation' && ($value === null || $value === 'null'))
+                    continue;
                 $cleanData[$key] = strip_tags($value);
             }
 
-            $check_if_exist =  Designation::where('name', $cleanData['name'])->where('code', $cleanData['code'])->first();
+            $check_if_exist = Designation::where('name', $cleanData['name'])->where('code', $cleanData['code'])->first();
 
             if ($check_if_exist !== null) {
                 return response()->json(['message' => 'Department already exist.'], Response::HTTP_FORBIDDEN);
@@ -153,11 +154,11 @@ class DesignationController extends Controller
             $user = $request->user;
             $cleanData['pin'] = strip_tags($request->password);
 
-            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+            if ($user['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
-            
+
             $failed = [];
             $designations = [];
             $designation_names = [];
@@ -261,7 +262,7 @@ class DesignationController extends Controller
                         $system_exist = true;
 
                         $build_role_details = $this->buildRoleDetails($system_role);
-    
+
                         /** Convert the array of object to array of string retrieving only the names of role */
                         $new_array_roles = collect($system['roles'])->pluck('name')->toArray();
 
@@ -276,12 +277,12 @@ class DesignationController extends Controller
                         // Convert the array of objects to a collection
                         $collection = collect($system['modules']);
 
-                        foreach($build_role_details['modules'] as $role_module){
+                        foreach ($build_role_details['modules'] as $role_module) {
                             // Find the module with code "UMIS-SM" and modify it in the collection
                             $collection->transform(function ($module) use ($role_module) {
                                 if ($module['code'] === $role_module['code']) {
                                     /** Iterate new permissions of other system role */
-                                    foreach($role_module['permissions'] as $permission){
+                                    foreach ($role_module['permissions'] as $permission) {
                                         /** If permission doesn't exist in current module then it will be added to the module permissions.*/
                                         if (!in_array($permission, $module['permissions'])) {
                                             $module['permissions'][] = $permission;
@@ -309,7 +310,7 @@ class DesignationController extends Controller
     private function buildSystemDetails($system_role)
     {
         $build_role_details = $this->buildRoleDetails($system_role);
-        
+
         $role = [
             'id' => $build_role_details['id'],
             'name' => $build_role_details['name'],
@@ -376,7 +377,7 @@ class DesignationController extends Controller
             $user = $request->user;
             $cleanData['pin'] = strip_tags($request->password);
 
-            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+            if ($user['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
@@ -385,7 +386,8 @@ class DesignationController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if($key === 'probation' && ($value === null || $value === 'null')) continue;
+                if ($key === 'probation' && ($value === null || $value === 'null'))
+                    continue;
                 $cleanData[$key] = strip_tags($value);
             }
 
@@ -412,7 +414,7 @@ class DesignationController extends Controller
             $user = $request->user;
             $cleanData['pin'] = strip_tags($request->password);
 
-            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+            if ($user['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 

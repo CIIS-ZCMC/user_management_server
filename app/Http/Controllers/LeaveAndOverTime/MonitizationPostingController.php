@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\LeaveAndOverTime;
 
+use App\Models\EmployeeProfile;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Http\Controllers\Controller;
@@ -91,7 +92,6 @@ class MonitizationPostingController extends Controller
             ->join('assigned_areas', 'assigned_areas.employee_profile_id', '=', 'ep.id')
             ->join('designations', 'designations.id', '=', 'assigned_areas.designation_id')
             ->join('salary_grades as sg', 'sg.id', '=', 'designations.salary_grade_id')
-            ->where('sg.salary_grade_number', '<=', 19)
             ->where(function ($query) {
                 $query->where(function ($query) {
                     $query->where('employee_leave_credits.leave_type_id', LeaveType::where('code', 'VL')->first()->id)
@@ -102,6 +102,8 @@ class MonitizationPostingController extends Controller
                 //         ->where('employee_leave_credits.total_leave_credits', '>=', 15);
                 // });
             })
+            ->where('ep.employment_type_id', '!=', 5)
+            ->where('ep.employee_id', '!=', null)
             ->get();
 
         $candidates = [];

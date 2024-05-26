@@ -33,50 +33,36 @@ class EmployeeScheduleController extends Controller
     {
         try {
             $user = $request->user;
-            $month = $request->month;   // Replace with the desired month (1 to 12)
-            $year = $request->year;     // Replace with the desired year
+            $month = $request->month;   // Desired month (1 to 12)
+            $year = $request->year;     // Desired year
             $assigned_area = $user->assignedArea->findDetails();
             $dates_with_day = Helpers::getDatesInMonth($year, $month, "Days of Week");
 
             $this->updateAutomaticScheduleStatus();
 
-            if ($user->employee_id === "1918091351" || $assigned_area['details']['code'] === 'HRMO') {
-                $data = EmployeeProfile::where('id', '!=', 1)
-                    ->with([
-                        'schedule' => function ($query) use ($year, $month) {
-                            $query->whereYear('date', '=', $year)
-                                ->whereMonth('date', '=', $month);
-                        }
-                    ])
-                    ->get();
+            $isSpecialUser = $user->employee_id === "1918091351" || $assigned_area['details']['code'] === 'HRMO';
 
-                // Calculate total working hours for each employee
-                $data->each(function ($employee) use ($year, $month) {
-                    $employee->total_working_hours = $employee->schedule->sum(function ($schedule) {
-                        return $schedule->timeShift->total_hours ?? 0;
-                    });
-                });
-
-                return response()->json([
-                    'data' => ScheduleResource::collection($data),
-                    'dates' => $dates_with_day,
-                ], Response::HTTP_OK);
-            }
-
-            $myEmployees = $user->myEmployees($assigned_area, $user);
-            $employee_ids = collect($myEmployees)->pluck('id')->toArray();
-
-            $data = EmployeeProfile::with([
-                'assignedArea',
+            $query = EmployeeProfile::with([
+                'personalInformation',
                 'schedule' => function ($query) use ($year, $month) {
                     $query->with(['timeShift', 'holiday'])
                         ->whereYear('date', '=', $year)
                         ->whereMonth('date', '=', $month);
                 }
-            ])->whereIn('id', $employee_ids)->get();
+            ])->whereNull('deactivated_at')
+                ->where('id', '!=', 1);
+            // ->orderBy('last_name');
+
+            if (!$isSpecialUser) {
+                $myEmployees = $user->myEmployees($assigned_area, $user);
+                $employee_ids = collect($myEmployees)->pluck('id')->toArray();
+                $query->whereIn('id', $employee_ids);
+            }
+
+            $data = $query->get();
 
             // Calculate total working hours for each employee
-            $data->each(function ($employee) use ($year, $month) {
+            $data->each(function ($employee) {
                 $employee->total_working_hours = $employee->schedule->sum(function ($schedule) {
                     return $schedule->timeShift->total_hours ?? 0;
                 });
@@ -88,41 +74,26 @@ class EmployeeScheduleController extends Controller
             ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
+
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
     /**
-     * Show the form for creating a new resource.
+     * API For Personal Calendar
      */
     public function create(Request $request)
     {
         try {
             $user = $request->user;
-            // API For Personal Calendar
             $model = EmployeeSchedule::where('employee_profile_id', $user->id)->get();
 
-            $schedule = [];
-            foreach ($model as $value) {
-                $schedule[] = [
-                    'id' => $value->schedule->timeShift->id,
-                    'start' => $value->schedule->date,
-                    'title' => $value->schedule->timeShift->timeShiftDetails(),
-                    'color' => $value->schedule->timeShift->color,
-                    'status' => $value->schedule->status,
-                ];
-            }
-
-            $data = [
-                'employee_id' => $model->isEmpty() ? null : $model->first()->employee_profile_id,
-                'schedule' => $schedule,
-            ];
-
             return response()->json([
-                'data' => new EmployeeScheduleResource($data),
+                'data' => new EmployeeScheduleResource($model),
                 'holiday' => HolidayResource::collection(Holiday::all())
             ], Response::HTTP_OK);
+
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'create', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -164,19 +135,12 @@ class EmployeeScheduleController extends Controller
             $employee_schedules = null;
 
             if ($selected_date === "") {
-                // foreach ($employees as $employee) {
                 $existing_employee_ids = EmployeeProfile::where('id', $employee)->pluck('id');
 
                 foreach ($existing_employee_ids as $employee_id) {
-                    $employee_schedules = EmployeeSchedule::where('employee_profile_id', $employee_id)
-                        // ->whereHas('schedule', function ($query) use ($employee_id) {
-                        //     $query->whereYear('date', '=', $year)
-                        //         ->whereMonth('date', '=', $month);
-                        // })
-                        ->first();
+                    $employee_schedules = EmployeeSchedule::where('employee_profile_id', $employee_id)->first();
                     $employee_schedules->delete();
                 }
-                // }
             } else {
                 // Delete existing data for the selected dates and time shifts
                 $schedule = EmployeeSchedule::where('employee_profile_id', $employee)->get();
@@ -248,24 +212,8 @@ class EmployeeScheduleController extends Controller
         try {
             $model = EmployeeSchedule::where('employee_profile_id', $id)->get();
 
-            $schedule = [];
-            foreach ($model as $value) {
-                $schedule[] = [
-                    'id' => $value->schedule->timeShift->id,
-                    'start' => $value->schedule->date,
-                    'title' => $value->schedule->timeShift->timeShiftDetails(),
-                    'color' => $value->schedule->timeShift->color,
-                    'status' => $value->schedule->status,
-                ];
-            }
-
-            $data = [
-                'employee_id' => $model->isEmpty() ? null : $model->first()->employee_profile_id,
-                'schedule' => $schedule,
-            ];
-
             return response()->json([
-                'data' => new EmployeeScheduleResource($data),
+                'data' => new EmployeeScheduleResource($model),
                 'holiday' => Holiday::all(),
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {

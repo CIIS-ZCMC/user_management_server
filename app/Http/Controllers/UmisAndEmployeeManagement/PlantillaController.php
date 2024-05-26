@@ -71,7 +71,7 @@ class PlantillaController extends Controller
 
     public function reAssignPlantilla($id, Request $request)
     {
-        try {           
+        try {
             /*
             toassign : New Plantilla_number_ID
             password : userPassword
@@ -123,7 +123,7 @@ class PlantillaController extends Controller
                     $newdepartment_id = $New->department_id;
                 }
                 if ($New->section_id !== NULL) {
-                    $newsection_id  = $New->section_id;
+                    $newsection_id = $New->section_id;
                 }
                 if ($New->unit_id !== NULL) {
                     $newunit_id = $New->unit_id;
@@ -144,14 +144,16 @@ class PlantillaController extends Controller
 
                 $plantilla_number = PlantillaNumber::where('id', $user_Current_Plantilla)->first();
 
-                if($plantilla_number->employmentType->name === 'Permanent CTI'){
+               
+                // CHANGE PLANTILLA EMP TYPE to EMPLOYEE PROFILE EMP TYPE
+                if ($employee_profile->employmentType->name === 'Permanent CTI') {
                     $plantilla_number->update([
                         'is_dissolve' => 1,
                         'is_vacant' => 0,
                         'employee_profile_id' => NULL,
                     ]);
-                }else{
-                    $plantilla_number->update(['is_vacant' => 1,'employee_profile_id' => NULL]);
+                } else {
+                    $plantilla_number->update(['is_vacant' => 1, 'employee_profile_id' => NULL]);
                     $plantilla = $plantilla_number->plantilla;
                     $plantilla->update(['total_used_plantilla_no' => $plantilla->total_used_plantilla_no + 1]);
                 }
@@ -161,7 +163,7 @@ class PlantillaController extends Controller
                     'is_vacant' => 0,
                     'is_dissolve' => 0,
                 ]);
-                
+
                 $plantilla = $newPlantilla;
                 $plantilla->update(['total_used_plantilla_no' => $plantilla->total_used_plantilla_no + 1]);
 
@@ -331,7 +333,7 @@ class PlantillaController extends Controller
 
             foreach ($request->all() as $key => $value) {
                 if ($key === 'plantilla_number') {
-                    $cleanData[$key] = json_decode($value);
+                    $cleanData[$key] = json_decode($value, true);
                     continue;
                 }
                 $cleanData[$key] = strip_tags($value);
@@ -347,23 +349,23 @@ class PlantillaController extends Controller
 
             $plantilla_numbers = [];
 
-            foreach (json_decode($cleanData['plantilla_number']) as $value->number) {
+            foreach ($cleanData['plantilla_number'] as $number) {
                 try {
-                    $existing = PlantillaNumber::where('number', $value->number)->first();
+                    $existing = PlantillaNumber::where('number', $number)->first();
 
-                    if($existing){
+                    if ($existing) {
                         DB::rollBack();
                         return response()->json(['message' => "Plantilla number already exist."], Response::HTTP_FORBIDDEN);
                     }
 
-                    if (!is_string($value->number) || $existing !== null) {
+                    if (!is_string($number) || $existing !== null) {
                         DB::rollBack();
                         return response()->json(['message' => "Invalid type require string."], Response::HTTP_FORBIDDEN);
                     }
 
                     $plantilla_number_new = PlantillaNumber::create([
-                        'number' => $value->number,
-                        'employment_type_id' => $value->employment_type_id,
+                        'number' => $number,
+                        // 'employment_type_id' => $value->employment_type_id,
                         'plantilla_id' => $plantilla->id
                     ]);
 
@@ -477,12 +479,13 @@ class PlantillaController extends Controller
                     $key = 'unit_id';
                     break;
             }
-            $cleanData[$key] =  strip_tags($request->area);
+            $cleanData[$key] = strip_tags($request->area);
 
             $key_list = ['division_id', 'department_id', 'section_id', 'unit_id'];
 
             foreach ($key_list as $value) {
-                if ($value === $key) continue;
+                if ($value === $key)
+                    continue;
                 $cleanData[$value] = null;
             }
             $plantilla_assign_area = PlantillaAssignedArea::create($cleanData);
@@ -521,33 +524,38 @@ class PlantillaController extends Controller
                 case 'division':
                     $key = 'division_id';
                     $division = Division::find($area_id);
-                    if (!$division) return response()->json(['message' => 'No division record found with ID ' . $area_id . '.'], Response::HTTP_NOT_FOUND);
+                    if (!$division)
+                        return response()->json(['message' => 'No division record found with ID ' . $area_id . '.'], Response::HTTP_NOT_FOUND);
                     break;
                 case 'department':
                     $key = 'department_id';
                     $department = Department::find($area_id);
-                    if (!$department) return response()->json(['message' => 'No department record found with ID ' . $area_id . '.'], Response::HTTP_NOT_FOUND);
+                    if (!$department)
+                        return response()->json(['message' => 'No department record found with ID ' . $area_id . '.'], Response::HTTP_NOT_FOUND);
                     break;
                 case 'section':
                     $key = 'section_id';
                     $section = Section::find($area_id);
-                    if (!$section) return response()->json(['message' => 'No section record found with ID ' . $area_id . '.'], Response::HTTP_NOT_FOUND);
+                    if (!$section)
+                        return response()->json(['message' => 'No section record found with ID ' . $area_id . '.'], Response::HTTP_NOT_FOUND);
                     break;
                 case 'unit':
                     $key = 'unit_id';
                     $unit = Unit::find($area_id);
-                    if (!$unit) return response()->json(['message' => 'No unit record found with ID ' . $area_id . '.'], Response::HTTP_NOT_FOUND);
+                    if (!$unit)
+                        return response()->json(['message' => 'No unit record found with ID ' . $area_id . '.'], Response::HTTP_NOT_FOUND);
                     break;
                 default:
                     return response()->json(['message' => 'In valid area ID.'], Response::HTTP_BAD_REQUEST);
             }
 
-            $cleanData[$key] =  strip_tags($request->area_id);
+            $cleanData[$key] = strip_tags($request->area_id);
 
             $key_list = ['division_id', 'department_id', 'section_id', 'unit_id'];
 
             foreach ($key_list as $value) {
-                if ($value === $key) continue;
+                if ($value === $key)
+                    continue;
                 $cleanData[$value] = null;
             }
 
@@ -620,10 +628,10 @@ class PlantillaController extends Controller
             $user = $request->user;
             $cleanData['pin'] = strip_tags($request->password);
 
-            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+            if ($user['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
-            
+
             $plantilla = Plantilla::find($id);
 
             if (!$plantilla) {
@@ -662,7 +670,7 @@ class PlantillaController extends Controller
             $user = $request->user;
             $cleanData['pin'] = strip_tags($request->password);
 
-            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+            if ($user['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 
@@ -712,7 +720,7 @@ class PlantillaController extends Controller
             $user = $request->user;
             $cleanData['pin'] = strip_tags($request->password);
 
-            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+            if ($user['authorization_pin'] !== $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
             }
 

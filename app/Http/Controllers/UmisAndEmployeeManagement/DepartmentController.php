@@ -5,9 +5,12 @@ namespace App\Http\Controllers\UmisAndEmployeeManagement;
 use App\Http\Controllers\Controller;
 
 use App\Http\Requests\AuthPinApprovalRequest;
+use App\Http\Resources\NotificationResource;
+use App\Models\Notifications;
 use App\Models\Role;
 use App\Models\SpecialAccessRole;
 use App\Models\SystemRole;
+use App\Models\UserNotifications;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -111,7 +114,28 @@ class DepartmentController extends Controller
                 $access_right->delete();
             }
 
-            Helpers::notifications($employee_profile->id, "You been assigned as department head of ".$department->name." department.");
+              
+            $title = "Congratulations!";
+            $description = "You been assigned as department head of " . $department->name;
+            
+            
+            $notification = Notifications::create([
+                "title" => $title,
+                "description" => $description,
+                "module_path" => '/employees-per-area',
+            ]);
+
+            $user_notification = UserNotifications::create([
+                'notification_id' => $notification->id,
+                'employee_profile_id' => $employee_profile->id
+            ]);
+
+            Helpers::sendNotification([
+                "id" => $employee_profile->employee_id, // EMPLOYEE_ID eg. 2023010250
+                "data" => new NotificationResource($user_notification)
+            ]);
+
+
             Helpers::registerSystemLogs($request, $id, true, 'Success in assigning head'.$this->PLURAL_MODULE_NAME.'.');
 
             return response()->json([
@@ -352,7 +376,7 @@ class DepartmentController extends Controller
     {
         try{
             $user = $request->user;
-            $cleanData['pin'] = strip_tags($request->password);
+            $cleanData['pin'] = strip_tags($request->pin);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);

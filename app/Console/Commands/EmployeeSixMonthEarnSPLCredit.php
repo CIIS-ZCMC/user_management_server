@@ -2,10 +2,14 @@
 
 namespace App\Console\Commands;
 
+use App\Helpers\Helpers;
+use App\Http\Resources\NotificationResource;
 use App\Models\EmployeeLeaveCredit;
 use App\Models\EmployeeLeaveCreditLogs;
 use App\Models\EmployeeProfile;
 use App\Models\LeaveType;
+use App\Models\Notifications;
+use App\Models\UserNotifications;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 
@@ -30,8 +34,7 @@ class EmployeeSixMonthEarnSPLCredit extends Command
      */
     public function handle()
     {
-        $employees = EmployeeProfile::all();
-
+        $employees = EmployeeProfile::where('employment_type_id', '!=', 5)->where('id', '!=', 1)->get();
         // Get the SPL leave type
         $special_privilege_leave = LeaveType::where('code', 'SPL')->first();
 
@@ -42,10 +45,11 @@ class EmployeeSixMonthEarnSPLCredit extends Command
                 // Check if the current date is after or equal to the 6-month interval from the hire date
                 if (Carbon::now()->isSameDay($six_months_after_hire) || Carbon::now()->gt($six_months_after_hire)) {
                     // Check if SPL credits have already been given for the current interval
+                    $currentYear = Carbon::now()->year;
                     $spls_given = EmployeeLeaveCreditLogs::whereHas('employeeLeaveCredit', function ($query) use ($employee, $six_months_after_hire) {
                         $query->where('employee_profile_id', $employee->id);
                     })
-                    ->where('created_at', '>=', $six_months_after_hire->subMonths(6)) // Check within the current 6-month interval
+                    ->whereYear('created_at', $currentYear)// Check within the current 6-month interval
                     ->where('reason', 'Annual SPL Credits')
                     ->exists();
 
@@ -81,6 +85,25 @@ class EmployeeSixMonthEarnSPLCredit extends Command
                             'action' => "add"
                         ]);
                     }
+
+                    $title = "Special Privilege Leave credited";
+                    $description = "Your SPL credits is now credited for year ". $currentYear." .";
+                    
+                    $notification = Notifications::create([
+                        "title" => $title,
+                        "description" => $description,
+                        "module_path" => '/leave-applications',
+                    ]);
+    
+                    $user_notification = UserNotifications::create([
+                        'notification_id' => $notification->id,
+                        'employee_profile_id' => $employee->id,
+                    ]);
+    
+                    Helpers::sendNotification([
+                        "id" => $employee->employee_id,
+                        "data" => new NotificationResource($user_notification)
+                    ]);
                 }
         }
     }
