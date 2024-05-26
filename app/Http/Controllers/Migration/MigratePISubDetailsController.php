@@ -16,6 +16,8 @@ use App\Models\LegalInformation;
 use App\Models\LegalInformationQuestion;
 use App\Models\PersonalInformation;
 use App\Models\Reference;
+use App\Models\SpecialAccessRole;
+use App\Models\SystemRole;
 use App\Models\Training;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
@@ -269,16 +271,28 @@ class MigratePISubDetailsController extends Controller
                     'approved_at' => Carbon::now(),
                     'attachment' => null
                 ]);
+                IssuanceInformation::create([
+                    'license_no' => 1313,
+                    'govt_issued_id' => 2323,
+                    'ctc_issued_date' => Carbon::now(),
+                    'ctc_issued_at' => 'zc',
+                    'person_administrative_oath' => 'sample',
+                    'employee_profile_id' => $piId
+                ]);
+
+                $system_role =  SystemRole::find(9);
+
+                $employee_profile = EmployeeProfile::where(
+                    'employee_id',
+                    $employee_no
+                )->first();
+                SpecialAccessRole::create([
+                    'employee_profile_id' => $employee_profile->id,
+                    'system_role_id' => $system_role->id,
+                ]);
             }
 
-            IssuanceInformation::create([
-                'license_no' => 1313,
-                'govt_issued_id' => 2323,
-                'ctc_issued_date' => Carbon::now(),
-                'ctc_issued_at' => 'zc',
-                'person_administrative_oath' => 'sample',
-                'employee_profile_id' => $piId
-            ]);
+
             DB::commit();
             return response()->json('Employee Contact successfully Import');
         } catch (\Throwable $th) {

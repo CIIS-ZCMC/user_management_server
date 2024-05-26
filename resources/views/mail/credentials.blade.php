@@ -62,7 +62,6 @@
          </span>
         </h4>
 
-
         <h3>
             <style>
                 /* Style for the table */
@@ -119,7 +118,7 @@ td:nth-child(2) {
                     <td style="  border: 1px solid rgb(150, 147, 147);
                     padding: 8px;
                     text-align: left;">
-                        {{$employeeID}}
+                        {{$Body['employeeID']}}
                     </td>
                 </tr>
                 <tr>
@@ -129,7 +128,7 @@ td:nth-child(2) {
                     <td  style="  border: 1px solid rgb(150, 147, 147);
                     padding: 8px;
                     text-align: left;">
-                        {{$Password}}
+                        {{$Body['Password']}}
                     </td>
                 </tr>
 
@@ -150,7 +149,7 @@ td:nth-child(2) {
                     <td  style="  border: 1px solid rgb(150, 147, 147);
                     padding: 8px;
                     text-align: left;">
-                        <a href="{{$Link}}">Link to ZCMC-Portal 2023</a>
+                        <a href={{$Body['Link']}}>Link to ZCMC-Portal 2023</a>
                     </td>
                 </tr>
                 <tr>

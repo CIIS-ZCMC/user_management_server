@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Migration;
 
+use App\Helpers\Helpers;
 use App\Http\Controllers\Controller;
+use App\Jobs\SendEmailJob;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -21,6 +23,26 @@ class MigrateController extends Controller
     {
         try {
 
+            $employee_profile = EmployeeProfile::find(471);
+            $default_password = Helpers::generatePassword();
+            $body = [
+                'employeeID' => $employee_profile->employee_id,
+                'Password' => $default_password,
+                "Link" => config('app.client_domain')
+            ];
+
+            $email = $employee_profile->personalinformation->contact->email_address;
+            $name = $employee_profile->personalInformation->name();
+
+            $data = [
+                'Subject' => 'Your Zcmc Portal Account.',
+                'To_receiver' => $employee_profile->personalinformation->contact->email_address,
+                'Receiver_Name' => $employee_profile->personalInformation->name(),
+                'Body' => $body
+            ];
+
+            SendEmailJob::dispatch('new_account', $email, $name, $data);
+            dd(['sent' => $email]);
             // For migrating the personal information
             DB::statement('SET FOREIGN_KEY_CHECKS=0');
 
@@ -73,6 +95,7 @@ class MigrateController extends Controller
                 // dd(EmploymentType::find(3)->id);
 
                 $password = 'Zcmc_Umis2023@';
+
                 $hashPassword = Hash::make($password . config('app.salt_value'));
                 $encryptedPassword = Crypt::encryptString($hashPassword);
 

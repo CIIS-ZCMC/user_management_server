@@ -2050,6 +2050,7 @@ class EmployeeProfileController extends Controller
                 'message' => 'list of employees retrieved.'
             ], Response::HTTP_OK);
         } catch (\Throwable $th) {
+            dd($th);
             Helpers::errorLog($this->CONTROLLER_NAME, 'employeesDTRList', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
