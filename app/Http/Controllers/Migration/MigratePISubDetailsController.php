@@ -5,15 +5,23 @@ namespace App\Http\Controllers\migration;
 use App\Http\Controllers\Controller;
 use App\Models\Address;
 use App\Models\Child;
+use App\Models\CivilServiceEligibility;
 use App\Models\Contact;
+use App\Models\EducationalBackground;
 use App\Models\EmployeeProfile;
 use App\Models\FamilyBackground;
 use App\Models\IdentificationNumber;
+use App\Models\IssuanceInformation;
+use App\Models\LegalInformation;
+use App\Models\LegalInformationQuestion;
 use App\Models\PersonalInformation;
+use App\Models\Reference;
+use App\Models\Training;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use League\Csv\Reader;
+use Carbon\Carbon;
 
 class MigratePISubDetailsController extends Controller
 {
@@ -41,7 +49,19 @@ class MigratePISubDetailsController extends Controller
             // DB::table('childs')->truncate();
             // DB::table('identification_numbers')->truncate();
             DB::table('family_backgrounds')->truncate();
+            DB::table('civil_service_eligibilities')->truncate();
+            DB::table('educational_backgrounds')->truncate();
+            DB::table('legal_information_questions')->truncate();
+            DB::table('legal_informations')->truncate();
+            DB::table('references')->truncate();
+            DB::table('trainings')->truncate();
             // Re-enable foreign key checks
+
+
+
+
+
+
 
             // DB::table('employee_profiles')->truncate();
             DB::statement('SET FOREIGN_KEY_CHECKS=1');
@@ -159,7 +179,7 @@ class MigratePISubDetailsController extends Controller
                 // $identification->personal_information_id = $piId;
                 // $identification->save();
 
-
+                //Temporary Background
                 FamilyBackground::create([
                     'spouse' => null,
                     'address' => null,
@@ -181,7 +201,84 @@ class MigratePISubDetailsController extends Controller
                     'mother_maiden_name' => null,
                     'personal_information_id' => $piId
                 ]);
+                CivilServiceEligibility::create([
+                    'career_service' => 'cse',
+                    'rating' => 80,
+                    'date_of_examination' => Carbon::now(),
+                    'place_of_examination' => 'zc',
+                    'license_number' => 123456,
+                    'license_release_at' => Carbon::now(),
+                    'personal_information_id' => $piId,
+                    'is_request' => 0,
+                    'approved_at' =>  Carbon::now(),
+                    'attachment' => null
+                ]);
+
+                EducationalBackground::create([
+                    'personal_information_id' => $piId,
+                    'level' => 1,
+                    'name' => 'elem',
+                    'degree_course' => 'it',
+                    'year_graduated' =>  Carbon::now(),
+                    'highest_grade' => 90,
+                    'inclusive_from' =>  Carbon::now(),
+                    'inclusive_to' =>  Carbon::now(),
+                    'academic_honors' => 'samp',
+                    'attachment' => null,
+                    'is_request' => 0,
+                    'approved_at' =>  Carbon::now(),
+                    'attachment' => null,
+                ]);
+
+                LegalInformationQuestion::create(
+                    [
+                        'order_by' => 1,
+                        'content_question' => 'Have you ever been found guilty by any administrative offense?',
+                        'has_detail' => 1,
+                        'has_yes_no' => 1,
+                        'has_date' => 0,
+                        'has_sub_question' => 0,
+                        'legal_iq_id' => null
+                    ]
+                );
+                LegalInformation::create([
+                    'legal_iq_id' => null,
+                    'personal_information_id' =>  $piId,
+                    'answer' => 1,
+                    'details' => 'sample',
+                    'date' => Carbon::now()
+                ]);
+
+                Reference::create([
+                    'name' => 'jose',
+                    'address' => 'gusu',
+                    'contact_no' => '299842',
+                    'personal_information_id' => $piId
+                ]);
+                Training::create([
+                    'title' => 'sample',
+                    'inclusive_from' => Carbon::now(),
+                    'inclusive_to' => Carbon::now(),
+                    'hours' => 2,
+                    'type_of_ld' => 'sampleidtype',
+                    'conducted_by' => 'dict',
+                    'total' => 2,
+                    'personal_information_id' => $piId,
+                    'attachment' => null,
+                    'is_request' => 0,
+                    'approved_at' => Carbon::now(),
+                    'attachment' => null
+                ]);
             }
+
+            IssuanceInformation::create([
+                'license_no' => 1313,
+                'govt_issued_id' => 2323,
+                'ctc_issued_date' => Carbon::now(),
+                'ctc_issued_at' => 'zc',
+                'person_administrative_oath' => 'sample',
+                'employee_profile_id' => $piId
+            ]);
             DB::commit();
             return response()->json('Employee Contact successfully Import');
         } catch (\Throwable $th) {
