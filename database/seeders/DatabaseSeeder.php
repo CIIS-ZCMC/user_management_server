@@ -13,7 +13,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([SystemConfigSeeder::class]);
-        $this->call([LegalInformationQuestionSeeder::class]);
+        // $this->call([LegalInformationQuestionSeeder::class]);
         $this->call([SystemSeeder::class]);
         $this->call([RoleSeeder::class]);
         $this->call([SystemModuleSeeder::class]);
@@ -24,10 +24,10 @@ class DatabaseSeeder extends Seeder
         $this->call([DesignationSeeder::class]);
         $this->call([PositionSystemRoleSeeder::class]);
         $this->call([EmploymentTypeSeeder::class]);
-        $this->call([DivisionSeeder::class]);
-        $this->call([DepartmentSeeder::class]);
-        $this->call([SectionSeeder::class]);
-        $this->call([UnitSeeder::class]);
+        // $this->call([DivisionSeeder::class]);
+        // $this->call([DepartmentSeeder::class]);
+        // $this->call([SectionSeeder::class]);
+        // $this->call([UnitSeeder::class]);
         $this->call([LeaveTypeRequirementSeeder::class]);
         $this->call([LeaveTypeSeeder::class]);
         $this->call([PersonalInformationSeeder::class]);
