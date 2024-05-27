@@ -50,8 +50,8 @@ class LeaveApplicationController extends Controller
             $employee_profile = $request->user;
 
             $employeeId = $employee_profile->id;
-            $recommending = ["for recommending approval", "for approving approval", "approved", "declined by recommending officer"];
-            $approving = ["for approving approval", "approved", "declined by approving officer"];
+            $recommending = ["for recommending approval", "for approving approval", "approved",  "received", "declined by recommending officer"];
+            $approving = ["for approving approval", "approved", "received", "declined by approving officer"];
 
             /**
              * Supervisor = for recommending, for approving, approved, de
@@ -119,7 +119,7 @@ class LeaveApplicationController extends Controller
              */
             if (Helpers::getHrmoOfficer() === $employee_profile->id) {
                 $employeeId = $employee_profile->id;
-                $hrmo = ["applied", "for recommending approval", "for approving approval","approved", "declined by hrmo officer", "cancelled", "received", "cancelled by user", "cancelled by hrmo"];
+                $hrmo = ["applied", "for recommending approval", "for approving approval","approved", "declined by hrmo officer", "cancelled", "received", "cancelled by user", "cancelled by hrmo", "cancelled by mcc"];
 
                 $leave_applications = LeaveApplication::select('leave_applications.*')
                     ->where(function ($query) use ($hrmo, $employeeId) {
