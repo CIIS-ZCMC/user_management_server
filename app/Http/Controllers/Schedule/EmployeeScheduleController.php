@@ -36,7 +36,7 @@ class EmployeeScheduleController extends Controller
             $month = $request->month;   // Desired month (1 to 12)
             $year = $request->year;     // Desired year
             $assigned_area = $user->assignedArea->findDetails();
-            $dates_with_day = Helpers::getDatesInMonth($year, $month, "Days of Week");
+            // $dates_with_day = Helpers::getDatesInMonth($year, $month, "Days of Week");
 
             $this->updateAutomaticScheduleStatus();
 
@@ -51,7 +51,6 @@ class EmployeeScheduleController extends Controller
                 }
             ])->whereNull('deactivated_at')
                 ->where('id', '!=', 1);
-            // ->orderBy('last_name');
 
             if (!$isSpecialUser) {
                 $myEmployees = $user->myEmployees($assigned_area, $user);
@@ -60,6 +59,9 @@ class EmployeeScheduleController extends Controller
             }
 
             $data = $query->get();
+
+            $employee_ids = isset($employee_ids) ? $employee_ids : collect($data)->pluck('id')->toArray(); // Ensure $employee_ids is defined
+            $dates_with_day = Helpers::getDatesInMonth($year, $month, "Days of Week", true, $employee_ids);
 
             // Calculate total working hours for each employee
             $data->each(function ($employee) {
@@ -74,7 +76,7 @@ class EmployeeScheduleController extends Controller
             ], Response::HTTP_OK);
 
         } catch (\Throwable $th) {
-
+            return $th;
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
