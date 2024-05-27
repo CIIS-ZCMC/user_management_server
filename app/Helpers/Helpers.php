@@ -394,7 +394,7 @@ class Helpers
         ]);
     }
 
-    public static function getDatesInMonth($year, $month, $value, $includeScheduleCount = true)
+    public static function getDatesInMonth($year, $month, $value, $includeScheduleCount = true, $employee_ids = [])
     {
         $start = new DateTime("{$year}-{$month}-01");
         $end = new DateTime("{$year}-{$month}-" . $start->format('t'));
@@ -438,7 +438,7 @@ class Helpers
 
                 // Sum the count of EmployeeSchedules for each schedule
                 foreach ($schedules as $schedule) {
-                    $countSchedulePerDate += EmployeeSchedule::where('schedule_id', $schedule->id)->count();
+                    $countSchedulePerDate += EmployeeSchedule::where('schedule_id', $schedule->id)->whereIn('employee_profile_id', $employee_ids)->count();
                 }
 
                 $dates[] = ['date' => $formattedDate, 'count' => $countSchedulePerDate];
