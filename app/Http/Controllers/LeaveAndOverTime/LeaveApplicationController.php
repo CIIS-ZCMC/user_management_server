@@ -1018,28 +1018,29 @@ class LeaveApplicationController extends Controller
             if ($leave_type->code === 'VL' && $request->country !== 'Philippines') {
                 // Get the current date
                 $currentDate = Carbon::now();
-                // Get the HRMO schedule for the next 5 days
-                $checkDate = $currentDate->copy();
-                $foundConsecutiveDays = 0;
-                $selected_date = $start->copy();
-                if (Helpers::hasSchedule($checkDate->toDateString(),  $checkDate->toDateString(), $hrmo_officer)) {
-                    $vldateDate = $currentDate->copy();
-                    $foundConsecutiveDays = 0;
-
-                    while ($foundConsecutiveDays  === 19) {
-                        if (Helpers::hasSchedule($vldateDate->toDateString(), $vldateDate->toDateString(), $hrmo_officer)) {
-                            // If a schedule is found, increment the counter
-                            $foundConsecutiveDays++;
-                        }
-                        $vldateDate->addDay();
-                    }
-                    $message = $selected_date->toDateString();
-                    if ($selected_date->lt($vldateDate)) {
-
-                        return response()->json(['message' => "You cannot file for leave on $message. Please select a date 20 days or more from today."], Response::HTTP_FORBIDDEN);
-                    }
-                } else {
+            
+                // Check if there is an HRMO schedule starting from today
+                if (!Helpers::hasSchedule($currentDate->toDateString(), $currentDate->toDateString(), $hrmo_officer)) {
                     return response()->json(['message' => "No schedule defined for HRMO"], Response::HTTP_FORBIDDEN);
+                }
+            
+                $consecutiveDaysNeeded = 19;
+                $foundConsecutiveDays = 0;
+                $checkDate = $currentDate->copy();
+            
+                // Loop to find 19 consecutive days with HRMO schedule
+                while ($foundConsecutiveDays < $consecutiveDaysNeeded) {
+                    if (Helpers::hasSchedule($checkDate->toDateString(), $checkDate->toDateString(), $hrmo_officer)) {
+                        $foundConsecutiveDays++;
+                    }
+                    $checkDate->addDay();
+                }
+            
+                $earliestValidDate = $checkDate->copy(); // This is the date after 19 consecutive days
+            
+                if ($start->lt($earliestValidDate)) {
+                    $message = $start->toDateString();
+                    return response()->json(['message' => "You cannot file for leave on $message. Please select a date 20 days or more from today."], Response::HTTP_FORBIDDEN);
                 }
             }
 
