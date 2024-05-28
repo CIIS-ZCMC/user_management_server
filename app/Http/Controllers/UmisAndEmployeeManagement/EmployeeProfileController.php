@@ -313,8 +313,8 @@ class EmployeeProfileController extends Controller
              * For new account need to reset the password
              */
             if ($employee_profile->authorization_pin === null) {
-                $my_otp_details = Helpers::generateMyOTPDetails($employee_profile);
-                SendEmailJob::dispatch('email_verification', $my_otp_details['email'], $my_otp_details['name'], $my_otp_details['data']);
+                // $my_otp_details = Helpers::generateMyOTPDetails($employee_profile);
+                // SendEmailJob::dispatch('email_verification', $my_otp_details['email'], $my_otp_details['name'], $my_otp_details['data']);
 
                 return response()->json(['message' => 'New account'], Response::HTTP_TEMPORARY_REDIRECT)
                     ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false); //status 307
@@ -1186,7 +1186,7 @@ class EmployeeProfileController extends Controller
             SendEmailJob::dispatch('otp', $my_employee_details['email'], $my_employee_details['name'], $my_employee_details['data']);
 
             return response()->json(['message' => 'Please check your email address for OTP.'], Response::HTTP_OK)
-                    ->cookie('employee_details', json_encode(['email' => $email, 'employee_id' => $employee->employee_id]), 60, '/', config('app.session_domain'), false);
+                ->cookie('employee_details', json_encode(['email' => $email, 'employee_id' => $employee->employee_id]), 60, '/', config('app.session_domain'), false);
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'signOut', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -1403,7 +1403,7 @@ class EmployeeProfileController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     public function resendOTP(Request $request)
     {
         try {
@@ -1436,21 +1436,21 @@ class EmployeeProfileController extends Controller
             $employee_details = json_decode($request->cookie('employee_details'));
 
             $employee_profile = EmployeeProfile::where('employee_id', $employee_details->employee_id)->first();
-            
+
             $otp = null;
 
-            if ($request->is_recover || $request->is_recover === 1) {
-                $otp = $request->otp;
-                
-                $currentDateTime = Carbon::now();
-                if((int) $otp !== $currentDateTime->greaterThan($otp->expires_at)){
-                    return response()->json(['message' => 'OTP is expired, Resend otp.']);
-                }
+            // if ($request->is_recover || $request->is_recover === 1) {
+            //     $otp = $request->otp;
 
-                if((int) $otp !== $employee_profile->otp){
-                    return response()->json(['message' => "Invalid OTP."], Response::HTTP_BAD_REQUEST);
-                }
-            }
+            //     $currentDateTime = Carbon::now();
+            //     if ((int) $otp !== $currentDateTime->greaterThan($otp->expires_at)) {
+            //         return response()->json(['message' => 'OTP is expired, Resend otp.']);
+            //     }
+
+            //     if ((int) $otp !== $employee_profile->otp) {
+            //         return response()->json(['message' => "Invalid OTP."], Response::HTTP_BAD_REQUEST);
+            //     }
+            // }
 
             $new_password = strip_tags($request->password);
 
@@ -2034,15 +2034,17 @@ class EmployeeProfileController extends Controller
     public function employeesDTRList(Request $request)
     {
         try {
-            if (isset($request->employment_type_id) && $request->employment_type_id !== null) {
-                $employee_profiles = EmployeeProfile::where('employment_type_id', $request->employment_type_id)
-                    ->get();
+            // if (isset($request->employment_type_id) && $request->employment_type_id !== null) {
+            //     $employee_profiles = EmployeeProfile::where('employment_type_id', $request->employment_type_id)
+            //         ->get();
 
-                return response()->json([
-                    'data' => EmployeeDTRList::collection($employee_profiles),
-                    'message' => 'list of employees retrieved.'
-                ], Response::HTTP_OK);
-            }
+            //     return $employee_profiles;
+
+            //     return response()->json([
+            //         'data' => EmployeeDTRList::collection($employee_profiles),
+            //         'message' => 'list of employees retrieved.'
+            //     ], Response::HTTP_OK);
+            // }
 
             $employee_profiles = EmployeeProfile::whereNotIn('id', [1])->whereNot('employee_id', null)->get();
             Helpers::registerSystemLogs($request, null, true, 'Success in fetching a ' . $this->PLURAL_MODULE_NAME . '.');
@@ -2652,7 +2654,7 @@ class EmployeeProfileController extends Controller
                         'employee_profile_id' => $employee_profile->id,
                         'schedule_id' => $schedule->id
                     ]);
-                } 
+                }
 
                 $schedule_next_month = Helpers::generateSchedule(Carbon::now()->addMonth()->startOfMonth(), $cleanData['employment_type_id'], $request->meridian);
 
