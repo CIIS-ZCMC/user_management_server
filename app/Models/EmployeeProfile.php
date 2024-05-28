@@ -454,13 +454,15 @@ class EmployeeProfile extends Authenticatable
             case 'Division':
                 $departments = Department::where('division_id', $assign_area['details']->id)->get();
                 foreach ($departments as $department) {
-                    $employees = array_merge((array) $department->head);
+                    $department_employees[] = $department->head;
                 }
 
                 $sections = Section::where('division_id', $assign_area['details']->id)->get();
                 foreach ($sections as $section) {
-                    $employees = array_merge((array) $section->supervisor);
+                    $section_employees[] = $section->supervisor;
                 }
+
+                $employees = array_merge($department_employees, $section_employees);
                 break;
 
             case 'Department':
@@ -475,7 +477,10 @@ class EmployeeProfile extends Authenticatable
                 $sections = Section::where('id', $assign_area['details']->id)->get();
                 foreach ($sections as $section) {
                     $my_employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1]);
-                    $employees = array_merge($my_employees, (array) $section->supervisor);
+                    $units = Unit::where('id', $assign_area['details']->id)->get();
+                    foreach ($units as $unit) {
+                        $employees = array_merge($my_employees, (array) $unit->head);
+                    }
                 }
                 break;
 
