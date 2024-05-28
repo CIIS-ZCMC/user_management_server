@@ -26,7 +26,7 @@ class EmployeeScheduleController extends Controller
     private $PLURAL_MODULE_NAME = 'employee schedules';
     private $SINGULAR_MODULE_NAME = 'employee schedule';
 
-    /** 
+    /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
@@ -68,11 +68,11 @@ class EmployeeScheduleController extends Controller
                 });
             });
 
+
             return response()->json([
                 'data' => ScheduleResource::collection($data),
                 'dates' => $dates_with_day,
             ], Response::HTTP_OK);
-
         } catch (\Throwable $th) {
 
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
@@ -93,7 +93,6 @@ class EmployeeScheduleController extends Controller
                 'data' => new EmployeeScheduleResource($model),
                 'holiday' => HolidayResource::collection(Holiday::all())
             ], Response::HTTP_OK);
-
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'create', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

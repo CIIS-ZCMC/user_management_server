@@ -99,10 +99,12 @@ class DepartmentController extends Controller
             $role = Role::where('code', 'DEPT-HEAD-01')->first();
             $system_role = SystemRole::where('role_id', $role->id)->first();
 
+
             SpecialAccessRole::create([
                 'system_role_id' => $system_role->id,
                 'employee_profile_id' => $employee_profile->id
             ]);
+
 
             /**
              * Revoke Previous Head rights as Division Head
@@ -128,10 +130,10 @@ class DepartmentController extends Controller
                 'employee_profile_id' => $employee_profile->id
             ]);
 
-            Helpers::sendNotification([
-                "id" => $employee_profile->employee_id, // EMPLOYEE_ID eg. 2023010250
-                "data" => new NotificationResource($user_notification)
-            ]);
+            // Helpers::sendNotification([
+            //     "id" => $employee_profile->employee_id, // EMPLOYEE_ID eg. 2023010250
+            //     "data" => new NotificationResource($user_notification)
+            // ]);
 
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in assigning head' . $this->PLURAL_MODULE_NAME . '.');

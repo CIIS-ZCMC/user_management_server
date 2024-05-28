@@ -313,8 +313,8 @@ class EmployeeProfileController extends Controller
              * For new account need to reset the password
              */
             if ($employee_profile->authorization_pin === null) {
-                $my_otp_details = Helpers::generateMyOTPDetails($employee_profile);
-                SendEmailJob::dispatch('email_verification', $my_otp_details['email'], $my_otp_details['name'], $my_otp_details['data']);
+                // $my_otp_details = Helpers::generateMyOTPDetails($employee_profile);
+                // SendEmailJob::dispatch('email_verification', $my_otp_details['email'], $my_otp_details['name'], $my_otp_details['data']);
 
                 return response()->json(['message' => 'New account'], Response::HTTP_TEMPORARY_REDIRECT)
                     ->cookie('employee_details', json_encode(['employee_id' => $employee_profile->employee_id]), 60, '/', config('app.session_domain'), false); //status 307
@@ -407,8 +407,7 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                }
-                ;
+                };
 
                 $trials--;
             } while ($trials !== 0);
@@ -1046,8 +1045,7 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                }
-                ;
+                };
 
                 $trials--;
             } while ($trials !== 0);
@@ -1120,8 +1118,7 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                }
-                ;
+                };
 
                 $trials--;
             } while ($trials !== 0);
@@ -1249,8 +1246,7 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                }
-                ;
+                };
 
                 $trials--;
             } while ($trials !== 0);
@@ -1532,8 +1528,7 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                }
-                ;
+                };
 
                 $trials--;
             } while ($trials !== 0);
@@ -1818,8 +1813,7 @@ class EmployeeProfileController extends Controller
                 if (count($side_bar_details['system']) === 0) {
                     Cache::forget($designation['name']);
                     break;
-                }
-                ;
+                };
 
                 $trials--;
             } while ($trials !== 0);
@@ -2038,15 +2032,17 @@ class EmployeeProfileController extends Controller
     public function employeesDTRList(Request $request)
     {
         try {
-            if (isset($request->employment_type_id) && $request->employment_type_id !== null) {
-                $employee_profiles = EmployeeProfile::where('employment_type_id', $request->employment_type_id)
-                    ->get();
+            // if (isset($request->employment_type_id) && $request->employment_type_id !== null) {
+            //     $employee_profiles = EmployeeProfile::where('employment_type_id', $request->employment_type_id)
+            //         ->get();
 
-                return response()->json([
-                    'data' => EmployeeDTRList::collection($employee_profiles),
-                    'message' => 'list of employees retrieved.'
-                ], Response::HTTP_OK);
-            }
+            //     return $employee_profiles;
+
+            //     return response()->json([
+            //         'data' => EmployeeDTRList::collection($employee_profiles),
+            //         'message' => 'list of employees retrieved.'
+            //     ], Response::HTTP_OK);
+            // }
 
             $employee_profiles = EmployeeProfile::whereNotIn('id', [1])->whereNot('employee_id', null)->get();
             Helpers::registerSystemLogs($request, null, true, 'Success in fetching a ' . $this->PLURAL_MODULE_NAME . '.');
