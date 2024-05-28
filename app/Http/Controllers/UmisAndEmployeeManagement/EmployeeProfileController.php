@@ -871,7 +871,8 @@ class EmployeeProfileController extends Controller
             'last_login' => $last_login === null ? null : $last_login->created_at,
             'biometric_id' => $employee_profile->biometric_id,
             'is_admin' => $special_access_role !== null ? true : false,
-            'is_allowed_ta' => $employee_profile->allow_time_adjustment
+            'is_allowed_ta' => $employee_profile->allow_time_adjustment,
+            'shifting' => $employee_profile->shifting
         ];
 
         $personal_information_data = [
@@ -945,6 +946,7 @@ class EmployeeProfileController extends Controller
             'designation' => $designation['name'],
             'plantilla_number_id' => $assigned_area['plantilla_number_id'],
             'plantilla_number' => $assigned_area['plantilla_number_id'] === NULL ? NULL : $assigned_area->plantillaNumber['number'],
+            'shifting' => $employee_profile->shifting,
             'employee_details' => [
                 'employee' => $employee,
                 'personal_information' => $personal_information_data,
@@ -2660,6 +2662,16 @@ class EmployeeProfileController extends Controller
                         'schedule_id' => $schedule->id
                     ]);
                 }
+            } else {
+                
+                $role = Role::where('code', 'SHIFTING')->first();
+                $system_role = SystemRole::where('role_id', $role->id)->first();
+
+                SpecialAccessRole::create([
+                    'system_role_id' => $system_role->id,
+                    'employee_profile_id' => $employee_profile->id,
+                    'effective_at' => now()
+                ]);
             }
 
             if (strip_tags($request->allow_time_adjustment) === 1) {
@@ -2877,7 +2889,8 @@ class EmployeeProfileController extends Controller
                 'biometric_id' => $employee_profile->biometric_id,
                 'total_months' => $totalMonths - ($totalYears * 12),
                 'total_years' => $totalYears,
-                'is_allowed_ta' => $employee_profile->allow_time_adjustment
+                'is_allowed_ta' => $employee_profile->allow_time_adjustment,
+                'shifting' => $employee_profile->shifting
             ];
 
             $personal_information_data = [
