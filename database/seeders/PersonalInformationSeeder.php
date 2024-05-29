@@ -30,6 +30,7 @@ use App\Models\Reference;
 use App\Models\PersonalInformation;
 use App\Models\OtherInformation;
 use App\Models\Section;
+use Illuminate\Support\Facades\DB;
 
 class PersonalInformationSeeder extends Seeder
 {
@@ -106,89 +107,89 @@ class PersonalInformationSeeder extends Seeder
             'personal_information_id' => $personal_information->id,
         ]);
 
-        LegalInformation::create([
-            'legal_iq_id' => LegalInformationQuestion::find(1)->id,
-            'answer' => TRUE,
-            'personal_information_id' => $personal_information->id
-        ]);
+        // LegalInformation::create([
+        //     'legal_iq_id' => LegalInformationQuestion::find(1)->id,
+        //     'answer' => TRUE,
+        //     'personal_information_id' => $personal_information->id
+        // ]);
 
-        LegalInformation::create([
-            'legal_iq_id' => LegalInformationQuestion::find(2)->id,
-            'answer' => TRUE,
-            'personal_information_id' => $personal_information->id
-        ]);
+        // LegalInformation::create([
+        //     'legal_iq_id' => LegalInformationQuestion::find(2)->id,
+        //     'answer' => TRUE,
+        //     'personal_information_id' => $personal_information->id
+        // ]);
 
-        LegalInformation::create([
-            'legal_iq_id' => LegalInformationQuestion::find(3)->id,
-            'answer' => TRUE,
-            'personal_information_id' => $personal_information->id
-        ]);
+        // LegalInformation::create([
+        //     'legal_iq_id' => LegalInformationQuestion::find(3)->id,
+        //     'answer' => TRUE,
+        //     'personal_information_id' => $personal_information->id
+        // ]);
 
-        LegalInformation::create([
-            'legal_iq_id' => LegalInformationQuestion::find(4)->id,
-            'answer' => TRUE,
-            'personal_information_id' => $personal_information->id
-        ]);
+        // LegalInformation::create([
+        //     'legal_iq_id' => LegalInformationQuestion::find(4)->id,
+        //     'answer' => TRUE,
+        //     'personal_information_id' => $personal_information->id
+        // ]);
 
-        LegalInformation::create([
-            'legal_iq_id' => LegalInformationQuestion::find(5)->id,
-            'answer' => TRUE,
-            'personal_information_id' => $personal_information->id
-        ]);
+        // LegalInformation::create([
+        //     'legal_iq_id' => LegalInformationQuestion::find(5)->id,
+        //     'answer' => TRUE,
+        //     'personal_information_id' => $personal_information->id
+        // ]);
 
-        LegalInformation::create([
-            'legal_iq_id' => LegalInformationQuestion::find(6)->id,
-            'answer' => TRUE,
-            'personal_information_id' => $personal_information->id
-        ]);
+        // LegalInformation::create([
+        //     'legal_iq_id' => LegalInformationQuestion::find(6)->id,
+        //     'answer' => TRUE,
+        //     'personal_information_id' => $personal_information->id
+        // ]);
 
-        LegalInformation::create([
-            'legal_iq_id' => LegalInformationQuestion::find(7)->id,
-            'answer' => TRUE,
-            'personal_information_id' => $personal_information->id
-        ]);
+        // LegalInformation::create([
+        //     'legal_iq_id' => LegalInformationQuestion::find(7)->id,
+        //     'answer' => TRUE,
+        //     'personal_information_id' => $personal_information->id
+        // ]);
 
-        LegalInformation::create([
-            'legal_iq_id' => LegalInformationQuestion::find(8)->id,
-            'answer' => TRUE,
-            'personal_information_id' => $personal_information->id
-        ]);
+        // LegalInformation::create([
+        //     'legal_iq_id' => LegalInformationQuestion::find(8)->id,
+        //     'answer' => TRUE,
+        //     'personal_information_id' => $personal_information->id
+        // ]);
 
-        LegalInformation::create([
-            'legal_iq_id' => LegalInformationQuestion::find(9)->id,
-            'answer' => TRUE,
-            'personal_information_id' => $personal_information->id
-        ]);
+        // LegalInformation::create([
+        //     'legal_iq_id' => LegalInformationQuestion::find(9)->id,
+        //     'answer' => TRUE,
+        //     'personal_information_id' => $personal_information->id
+        // ]);
 
-        LegalInformation::create([
-            'legal_iq_id' => LegalInformationQuestion::find(10)->id,
-            'answer' => TRUE,
-            'personal_information_id' => $personal_information->id
-        ]);
+        // LegalInformation::create([
+        //     'legal_iq_id' => LegalInformationQuestion::find(10)->id,
+        //     'answer' => TRUE,
+        //     'personal_information_id' => $personal_information->id
+        // ]);
 
-        LegalInformation::create([
-            'legal_iq_id' => LegalInformationQuestion::find(11)->id,
-            'answer' => TRUE,
-            'personal_information_id' => $personal_information->id
-        ]);
+        // LegalInformation::create([
+        //     'legal_iq_id' => LegalInformationQuestion::find(11)->id,
+        //     'answer' => TRUE,
+        //     'personal_information_id' => $personal_information->id
+        // ]);
 
-        LegalInformation::create([
-            'legal_iq_id' => LegalInformationQuestion::find(12)->id,
-            'answer' => TRUE,
-            'personal_information_id' => $personal_information->id
-        ]);
+        // LegalInformation::create([
+        //     'legal_iq_id' => LegalInformationQuestion::find(12)->id,
+        //     'answer' => TRUE,
+        //     'personal_information_id' => $personal_information->id
+        // ]);
 
-        LegalInformation::create([
-            'legal_iq_id' => LegalInformationQuestion::find(13)->id,
-            'answer' => TRUE,
-            'personal_information_id' => $personal_information->id
-        ]);
+        // LegalInformation::create([
+        //     'legal_iq_id' => LegalInformationQuestion::find(13)->id,
+        //     'answer' => TRUE,
+        //     'personal_information_id' => $personal_information->id
+        // ]);
 
-        LegalInformation::create([
-            'legal_iq_id' => LegalInformationQuestion::find(14)->id,
-            'answer' => TRUE,
-            'personal_information_id' => $personal_information->id
-        ]);
+        // LegalInformation::create([
+        //     'legal_iq_id' => LegalInformationQuestion::find(14)->id,
+        //     'answer' => TRUE,
+        //     'personal_information_id' => $personal_information->id
+        // ]);
 
         $password = 'Zcmc_Umis2023@';
         $hashPassword = Hash::make($password . Cache::get('salt_value'));
@@ -240,7 +241,7 @@ class PersonalInformationSeeder extends Seeder
             'ctc_issued_at' => 'ZCMC',
             'person_administrative_oath' => null
         ]);
-
+        DB::statement('SET FOREIGN_KEY_CHECKS=0');
         AssignArea::create([
             'employee_profile_id' => $employee_profile->id,
             'section_id' => Division::where('code', 'OMCC')->first()->id,
@@ -248,7 +249,7 @@ class PersonalInformationSeeder extends Seeder
             'effective_at' => now(),
             'end_date' => Carbon::now()->addYears(50)
         ]);
-
+        DB::statement('SET FOREIGN_KEY_CHECKS=1');
         $designations = Designation::all();
 
         foreach ($designations as $designation) {

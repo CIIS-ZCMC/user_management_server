@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\migration;
 
 use App\Http\Controllers\Controller;
+use App\Models\AssignArea;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Designation;
@@ -106,14 +107,25 @@ class MigratePlantilla extends Controller
 
             // Read the CSV data
             $csvData = $reader->getRecords();
+
+
+            /////FOR 
+
+            $filePath2 = storage_path('../app/json_data/areaassig.csv');
+            // Create a CSV reader
+            $reader2 = Reader::createFromPath($filePath2, 'r');
+            $reader2->setHeaderOffset(0); // Assumes first row is header
+            // Read the CSV data
+            $forAssigning = $reader2->getRecords();
+            /////
             $over = [];
+            $employeeThatMultipleAssignArea = [];
             foreach ($csvData as $index => $row) {
                 ////===> findout if the employee is Job order then if not continue this step.
                 $data = json_decode(json_encode($row));
                 if (!$data->isJO) {
                     // dd($data);
                     $desig = strtolower(str_replace(' ', '', $data->POSITON));
-
 
                     $designatid = DB::table('designations')
                         ->select('*', DB::raw("REPLACE(LOWER(name), ' ', '') AS label"))
@@ -135,18 +147,53 @@ class MigratePlantilla extends Controller
                         }
                     }
 
-                    PlantillaNumber::create([
-                        'number' => 'UMIS-BETA-' . str_pad($index, 4, '0', STR_PAD_LEFT),
-                        'is_vacant' => 0,
-                        'assigned_at' => Carbon::now(),
-                        'is_dissolve' => 0,
-                        'plantilla_id' => $PlantillaId[0]->id,
-                        'employee_profile_id' => $employeeId[0]->id,
-                    ]);
+                    PlantillaNumber::create(
+                        [
+                            'number' => 'UMIS-BETA-' . str_pad($index, 4, '0', STR_PAD_LEFT),
+                            'is_vacant' => 0,
+                            'assigned_at' => Carbon::now(),
+                            'is_dissolve' => 0,
+                            'plantilla_id' => $PlantillaId[0]->id,
+                            'employee_profile_id' => $employeeId[0]->id,
+                        ]
+                    );
                     //===> generate its unique plantilla number and record in planilla_number table
-
+                } else {
+                    $employeeThatMultipleAssignArea[] = ['id' => $data->id, 'designation' => $data->POSITON];
                 }
             }
+            // foreach ($employeeThatMultipleAssignArea as $data) {
+            //     //find the assign
+            //     $assignArea = AssignArea::where('employee_profile_id', $data['id'])->first();
+            //     if ($assignArea) {
+            //         // If the assigned area exists, update section, department, and division
+            //         if ($assignArea->division_id == null) {
+            //             $assignArea->division_id = $division == '' ? null : $division;
+            //         }
+            //         if ($assignArea->department_id == null) {
+            //             $assignArea->department_id = $department == '' ? null : $department;
+            //         }
+            //         if ($assignArea->section_id == null) {
+            //             $assignArea->section_id = $section == '' ? null : $section;
+            //         }
+
+            //         $assignArea->save();
+            //     } else {
+            //         // If the assigned area doesn't exist, create a new one
+            //         AssignArea::create([
+            //             'salary_grade_step' => 1,
+            //             'employee_profile_id' => $EmployeeProfile[0]->id,
+            //             'division_id' => $division == '' ? null : $division,
+            //             'department_id' => $department == '' ? null : $department,
+            //             'section_id' => $section == '' ? null : $section,
+            //             'unit_id' => null,
+            //             'designation_id' => $plantillaDesignation,
+            //             'plantilla_id' => $plantillaId,
+            //             'plantilla_number_id' => $plantillaNumberId[0]->id,
+            //             'effective_at' => Carbon::create(2025, 1, 1)
+            //         ]);
+            //     }
+            // }
             DB::commit();
             return response()->json('BETA: generated plantilla associated with designation');
         } catch (\Throwable $th) {

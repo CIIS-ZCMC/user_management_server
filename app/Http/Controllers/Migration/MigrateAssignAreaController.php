@@ -33,11 +33,11 @@ class MigrateAssignAreaController extends Controller
             DB::statement('SET FOREIGN_KEY_CHECKS=0');
 
             // Truncate the table
-            DB::table('assigned_areas')->truncate();
+            DB::table('assigned_areas')->where('id', '!=', 1)->delete();
             // Re-enable foreign key checks
 
             // DB::table('employee_profiles')->truncate();
-            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+
             DB::beginTransaction();
 
 
@@ -74,6 +74,7 @@ class MigrateAssignAreaController extends Controller
                 // dd($EmployeeProfile[0]->id);
                 $plantillaNumberId = PlantillaNumber::where("employee_profile_id", $EmployeeProfile[0]->id)->get();
                 if (count($plantillaNumberId) < 1) {
+                    //if JOB ORDER 
                     continue;
                 }
                 // if (count($plantillaNumberId) > 1) {
@@ -115,10 +116,9 @@ class MigrateAssignAreaController extends Controller
                         'effective_at' => Carbon::create(2025, 1, 1)
                     ]);
                 }
-
                 // dd($row['section'] === null || $row['section'] === "");
             }
-
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
             DB::commit();
             return response()->json('Employee successfully assigned');
         } catch (\Throwable $th) {

@@ -206,8 +206,7 @@ class MigrateOrganizationStructureController extends Controller
             DB::table('units')->truncate();
             // Re-enable foreign key checks
 
-            // DB::table('employee_profiles')->truncate();
-            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+
             DB::beginTransaction();
 
 
@@ -267,7 +266,7 @@ class MigrateOrganizationStructureController extends Controller
             // Department::create(['']);
             // Section::create(['']);
             // Unit::create(['']);
-
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
             return response()->json('Organization Seed success');
         } catch (\Throwable $th) {
             DB::rollBack();

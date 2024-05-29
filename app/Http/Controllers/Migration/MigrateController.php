@@ -23,35 +23,35 @@ class MigrateController extends Controller
     {
         try {
 
-            $employee_profile = EmployeeProfile::find(471);
-            $default_password = Helpers::generatePassword();
-            $body = [
-                'employeeID' => $employee_profile->employee_id,
-                'Password' => $default_password,
-                "Link" => config('app.client_domain')
-            ];
+            // $employee_profile = EmployeeProfile::find(471);
+            // $default_password = Helpers::generatePassword();
+            // $body = [
+            //     'employeeID' => $employee_profile->employee_id,
+            //     'Password' => $default_password,
+            //     "Link" => config('app.client_domain')
+            // ];
 
-            $email = $employee_profile->personalinformation->contact->email_address;
-            $name = $employee_profile->personalInformation->name();
+            // $email = $employee_profile->personalinformation->contact->email_address;
+            // $name = $employee_profile->personalInformation->name();
 
-            $data = [
-                'Subject' => 'Your Zcmc Portal Account.',
-                'To_receiver' => $employee_profile->personalinformation->contact->email_address,
-                'Receiver_Name' => $employee_profile->personalInformation->name(),
-                'Body' => $body
-            ];
+            // $data = [
+            //     'Subject' => 'Your Zcmc Portal Account.',
+            //     'To_receiver' => $employee_profile->personalinformation->contact->email_address,
+            //     'Receiver_Name' => $employee_profile->personalInformation->name(),
+            //     'Body' => $body
+            // ];
 
-            SendEmailJob::dispatch('new_account', $email, $name, $data);
-            dd(['sent' => $email]);
+            // SendEmailJob::dispatch('new_account', $email, $name, $data);
+            // dd(['sent' => $email]);
             // For migrating the personal information
             DB::statement('SET FOREIGN_KEY_CHECKS=0');
 
             // Truncate the table
-            DB::table('personal_informations')->truncate();
+            DB::table('personal_informations')->where('id', '!=', 1)->delete();
 
             // Re-enable foreign key checks
 
-            DB::table('employee_profiles')->truncate();
+            DB::table('employee_profiles')->where('id', '!=', 1)->delete();
             DB::statement('SET FOREIGN_KEY_CHECKS=1');
             DB::beginTransaction();
             // Path to the CSV file
@@ -70,7 +70,7 @@ class MigrateController extends Controller
                 $id = $row['employeeid'];
                 $yearsOfService = $this->calculateYearsOfService($id);
                 $data = $this->getPersonalInformation($id);
-
+                $index += 1;
                 // dd($data);
 
                 DB::table('personal_informations')->insert([
