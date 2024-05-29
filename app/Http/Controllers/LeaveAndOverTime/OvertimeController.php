@@ -119,39 +119,34 @@ class OvertimeController extends Controller
 
 
 
-        return view("overtimePast",compact(
-        'employees',
-        'time_from',
-        'time_to',
-        'preparedBy',
-        'recommendingOfficer',
-        'approvingOfficer'));
+        // return view("overtimePast",compact(
+        // 'employees',
+        // 'time_from',
+        // 'time_to',
+        // 'preparedBy',
+        // 'recommendingOfficer',
+        // 'approvingOfficer'));
 
 
-        // $options = new Options();
-        // $options->set('isPhpEnabled', true);
-        // $options->set('isHtml5ParserEnabled', true);
-        // $options->set('isRemoteEnabled', true);
-        // $dompdf = new Dompdf($options);
-        // $dompdf->getOptions()->setChroot([base_path() . '\public\storage']);
-        // $dompdf->loadHtml(view(
-        //     "overtimeAuthority",
-        //     compact(
-        //         'listofEmployees',
-        //         'activities',
-        //         'purposeofovertime',
-        //         'recommendingofficer',
-        //         'requestedBy',
-        //         'approvingOfficer',
-        //         'created'
-        //     )
-        // ));
+        $options = new Options();
+        $options->set('isPhpEnabled', true);
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('isRemoteEnabled', true);
+        $dompdf = new Dompdf($options);
+        $dompdf->getOptions()->setChroot([base_path() . '\public\storage']);
+        $dompdf->loadHtml(view("overtimePast",compact(
+            'employees',
+            'time_from',
+            'time_to',
+            'preparedBy',
+            'recommendingOfficer',
+            'approvingOfficer')));
 
-        // $dompdf->setPaper('Letter', 'portrait');
-        // $dompdf->render();
+        $dompdf->setPaper('Letter', 'landscape');
+        $dompdf->render();
 
-        // $filename = "OvertimeAuthority_{$purposeofovertime}.pdf";
-        // $dompdf->stream($filename);
+        $filename = "OvertimeAuthority_{$employees->employee_profile->name}.pdf";
+        $dompdf->stream($filename);
     }
 
     public function index(Request $request)
@@ -643,6 +638,7 @@ class OvertimeController extends Controller
             if (Helpers::getDivHead($assigned_area) === null || Helpers::getChiefOfficer() === null) {
                 return response()->json(['message' => 'No recommending officer and/or supervising officer assigned.'], Response::HTTP_FORBIDDEN);
             }
+
 
             foreach ($validatedData['dates'] as $index => $date) {
                 $employeeId = $validatedData['employees'][$index];
