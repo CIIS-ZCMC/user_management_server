@@ -25,6 +25,7 @@ Route::namespace('App\Http\Controllers\Migration')->group(
         Route::get('migrateAreaAssign', 'MigrateAssignAreaController@create');
         Route::get('mUpdateEmployeeContact', 'MigratePISubDetailsController@create');
         Route::get('resetPassword', 'MResetAllPass@create');
+        Route::get('migrate-employee-details', 'MigrateEmployeeDetailsController@personalInformation');
     }
 );
 
@@ -33,23 +34,23 @@ Route::get('/initialize-storage', function () {
 });
 
 Route::namespace('App\Http\Controllers')->group(function () {
-    Route::get('announcements', 'AnnouncementsController@index');
-    Route::get('announcements-search', 'AnnouncementsController@searchAnnouncement');
-    Route::get('announcements/{id}', 'AnnouncementsController@show');
+        Route::get('announcements', 'AnnouncementsController@index');
+        Route::get('announcements-search', 'AnnouncementsController@searchAnnouncement');
+        Route::get('announcements/{id}', 'AnnouncementsController@show');
 
-    Route::get('events', 'EventsController@index');
-    Route::get('events-search', 'EventsController@searchEvents');
-    Route::get('events/{id}', 'EventsController@show');
+        Route::get('events', 'EventsController@index');
+        Route::get('events-search', 'EventsController@searchEvents');
+        Route::get('events/{id}', 'EventsController@show');
 
-    Route::get('memorandums', 'MemorandumsController@index');
-    Route::get('memorandums-search', 'MemorandumsController@searchMemorandum');
-    Route::get('memorandums/{id}', 'MemorandumsController@show');
+        Route::get('memorandums', 'MemorandumsController@index');
+        Route::get('memorandums-search', 'MemorandumsController@searchMemorandum');
+        Route::get('memorandums/{id}', 'MemorandumsController@show');
 
-    Route::get('news', 'NewsController@index');
-    Route::get('news-search', 'NewsController@searchNews');
-    Route::get('news/{id}', 'NewsController@show');
-    Route::get('notification', 'NotificationController@store');
-});
+        Route::get('news', 'NewsController@index');
+        Route::get('news-search', 'NewsController@searchNews');
+        Route::get('news/{id}', 'NewsController@show');
+        Route::get('notification', 'NotificationController@store');
+    });
 
 Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
     Route::post('sign-in', 'EmployeeProfileController@signIn');
