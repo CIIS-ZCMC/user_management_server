@@ -1,0 +1,121 @@
+<?php
+
+namespace App\Http\Controllers\migration;
+
+use App\Helpers\Helpers;
+use App\Http\Controllers\Controller;
+use App\Jobs\SendEmailJob;
+use App\Models\EmployeeProfile;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
+
+class MResetAllPass extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index()
+    {
+        //
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        //
+        $emm = null;
+        try {
+            $employees = EmployeeProfile::all();
+            $temp = [];
+
+            foreach ($employees as $employee) {
+
+                $password = Helpers::generatePassword();
+                $hashPassword = Hash::make($password . config('app.salt_value'));
+                $employee->password_encrypted = Crypt::encryptString($hashPassword);
+                $employee->save();
+                // $temp[] = ['id' => $employee->employee_id, 'pass' => $password];
+                // if ($employee->id == 84 || $employee->id == 470) {
+                $employee_profile = EmployeeProfile::find($employee->id);
+                // $default_password = Helpers::generatePassword();
+                $body = [
+                    'employeeID' => $employee_profile->employee_id,
+                    'Password' => $password,
+                    "Link" => config('app.client_domain')
+                ];
+                if ($employee_profile->personalinformation->contact == null) {
+                    continue;
+                }
+                $email = $employee_profile->personalinformation->contact->email_address;
+                if ($email == 'd@gmail.com') {
+                    continue;
+                }
+
+                $name = $employee_profile->personalInformation->name();
+
+                $data = [
+                    'Subject' => 'Your Zcmc Portal Account.',
+                    'To_receiver' => $employee_profile->personalinformation->contact->email_address,
+                    'Receiver_Name' => $employee_profile->personalInformation->name(),
+                    'Body' => $body
+                ];
+
+                // SendEmailJob::dispatch('new_account', $email, $name, $data);
+                $temp[] = ['sent' => $email];
+                // }
+
+            }
+
+
+            dd($temp);
+        } catch (\Throwable $th) {
+            dd($th);
+            return response()->json([
+                'message' => $th->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request)
+    {
+        //
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(string $id)
+    {
+        //
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(string $id)
+    {
+        //
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, string $id)
+    {
+        //
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(string $id)
+    {
+        //
+    }
+}
