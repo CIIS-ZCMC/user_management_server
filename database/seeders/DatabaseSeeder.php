@@ -33,5 +33,6 @@ class DatabaseSeeder extends Seeder
         $this->call([PersonalInformationSeeder::class]);
         $this->call([SpecialAccessRoleSeeder::class]);
         $this->call([TimeShiftSeeder::class]);
+        $this->call([DocumentNumberSeeder::class]);
     }
 }
