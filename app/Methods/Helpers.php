@@ -190,7 +190,12 @@ AND id IN (
                 $dp =  $firstin . '-' . $firstout;
             }
             $arrival_d[] = $dp;
-
+            $total_hours = 8;
+            if(isset($row->total_hours) && $row->total_hours){
+                $total_hours = $row->total_hours ;
+            }else {
+                $total_hours = config("app.required_working_hours");
+            }
 
             $scheds[] = [
                 'scheduleDate' => $row->date ?? date('Y-m-d'),
@@ -198,7 +203,7 @@ AND id IN (
                 'second_entry' => $row->first_out ?? null,
                 'third_entry' => $row->second_in ?? null,
                 'last_entry' => $row->second_out ?? null,
-                'total_hours' => $row->total_hours ?? Cache::get('required_working_hours'),
+                'total_hours' => $total_hours,
                 'arrival_departure' => $dp ?? ""
             ];
         }
@@ -228,7 +233,7 @@ AND id IN (
             'second_entry' => null,
             'third_entry' => null,
             'last_entry' => null,
-            'total_hours' => config("app.required_working_hours"),
+            'total_hours' => config("app.required_working_hours") ?? 8,
             'date' => null,
             'date_end' => null,
         ];
@@ -555,6 +560,7 @@ AND id IN (
     {
         //return $this->toWordsMinutes(59.71);
 
+
         foreach ($sequence as $sc) {
             /* Entries */
             $validate = $data;
@@ -605,7 +611,7 @@ AND id IN (
                     $f4entry = $sc['date_time'];
                 }
             }
-            $required_WH = $time_stamps_req['total_hours'] ?? 8;
+            $required_WH = $time_stamps_req['total_hours'] ? $time_stamps_req['total_hours']:8;
             $required_WH_Minutes = $required_WH * 60;
 
 

@@ -2034,17 +2034,16 @@ class EmployeeProfileController extends Controller
     public function employeesDTRList(Request $request)
     {
         try {
-            // if (isset($request->employment_type_id) && $request->employment_type_id !== null) {
-            //     $employee_profiles = EmployeeProfile::where('employment_type_id', $request->employment_type_id)
-            //         ->get();
+            if (isset($request->employment_type_id) && $request->employment_type_id !== null) {
+                $employee_profiles = EmployeeProfile::where('employment_type_id', $request->employment_type_id)
+                    ->get();
 
-            //     return $employee_profiles;
 
-            //     return response()->json([
-            //         'data' => EmployeeDTRList::collection($employee_profiles),
-            //         'message' => 'list of employees retrieved.'
-            //     ], Response::HTTP_OK);
-            // }
+                return response()->json([
+                    'data' => EmployeeDTRList::collection($employee_profiles),
+                    'message' => 'list of employees retrieved.'
+                ], Response::HTTP_OK);
+            }
 
             $employee_profiles = EmployeeProfile::whereNotIn('id', [1])->whereNot('employee_id', null)->get();
             Helpers::registerSystemLogs($request, null, true, 'Success in fetching a ' . $this->PLURAL_MODULE_NAME . '.');
@@ -2665,7 +2664,7 @@ class EmployeeProfileController extends Controller
                     ]);
                 }
             } else {
-                
+
                 $role = Role::where('code', 'SHIFTING')->first();
                 $system_role = SystemRole::where('role_id', $role->id)->first();
 
