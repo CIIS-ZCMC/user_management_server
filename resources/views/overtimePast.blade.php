@@ -33,7 +33,7 @@
             padding: 5px
         }
         th, td {
-            border: 1px solid #ddd;
+            border: 1px solid #b3b2b2;
             text-align: center
             /* padding: 4px; */
 
@@ -43,7 +43,7 @@
             padding: 5px
         }
         tr, td {
-            border: 1px solid  #ddd;
+            border: 1px solid  #b3b2b2;
             padding: 1px;
             font-size:12px
 
@@ -148,10 +148,10 @@
 <body>
 
 
-{{-- <img id="zcmclogo" src="{{ base_path() . '\public\storage\logo/zcmc.jpeg' }}" alt="zcmcLogo">
-<img id="dohlogo" src="{{ base_path() . '\public\storage\logo/doh.jpeg' }}" alt="dohLogo"> --}}
-<img id="zcmclogo" src="{{ asset('storage/logo/zcmc.jpeg') }}" alt="zcmcLogo">
-<img id="dohlogo" src="{{ asset('storage/logo/doh.jpeg') }}" alt="dohLogo">
+<img id="zcmclogo" src="{{ base_path() . '\public\storage\logo/zcmc.jpeg' }}" alt="zcmcLogo">
+<img id="dohlogo" src="{{ base_path() . '\public\storage\logo/doh.jpeg' }}" alt="dohLogo">
+{{-- <img id="zcmclogo" src="{{ asset('storage/logo/zcmc.jpeg') }}" alt="zcmcLogo">
+<img id="dohlogo" src="{{ asset('storage/logo/doh.jpeg') }}" alt="dohLogo"> --}}
     <div id="titleBar">
 
 

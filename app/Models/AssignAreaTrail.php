@@ -13,6 +13,7 @@ class AssignAreaTrail extends Model
 
     public $fillable = [
         'salary_grade_step',
+        'salary_grade_id',
         'employee_profile_id',
         'division_id',
         'department_id',
