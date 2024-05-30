@@ -35,9 +35,14 @@ use App\Methods\MailConfig;
 use App\Models\AssignArea;
 use App\Models\EmployeeLeaveCredit;
 use App\Models\EmployeeOvertimeCredit;
+use App\Models\EmployeeSchedule;
 use App\Models\EmploymentType;
 use App\Models\LeaveType;
+use App\Models\PlantillaAssignedArea;
 use App\Models\PlantillaNumber;
+use App\Models\Role;
+use App\Models\SpecialAccessRole;
+use App\Models\SystemRole;
 use App\Models\WorkExperience;
 use Carbon\Carbon;
 use App\Http\Requests\AuthPinApprovalRequest;
@@ -465,6 +470,20 @@ class InActiveEmployeeController extends Controller
                 if (!$plantilla_number) {
                     return response()->json(['message' => 'No record found for plantilla number ' . $plantilla_number_id], Response::HTTP_NOT_FOUND);
                 }
+                
+                $key = strtolower($request->sector).'_id';
+                $cleanData[$key] = strip_tags($request->area);
+
+                $key_list = ['division_id', 'department_id', 'section_id', 'unit_id'];
+
+                foreach ($key_list as $value) {
+                    if ($value === $key)
+                        continue;
+                    $cleanData[$value] = null;
+                }
+
+                $plantilla_assign_area = PlantillaAssignedArea::create($cleanData);
+                $plantilla_number->update(['assigned_at' => now()]);
 
                 $plantilla = $plantilla_number->plantilla;
                 $designation = $plantilla->designation;
@@ -506,9 +525,49 @@ class InActiveEmployeeController extends Controller
                     'max_credit_annual' => 120
                 ]);
             }
+            
+            if (strip_tags($request->shifting) === "0") {
+                $schedule_this_month = Helpers::generateSchedule(Carbon::now(), $cleanData['employment_type_id'], $request->meridian);
+
+                foreach ($schedule_this_month as $schedule) {
+                    EmployeeSchedule::create([
+                        'employee_profile_id' => $employee_profile->id,
+                        'schedule_id' => $schedule->id
+                    ]);
+                }
+
+                $schedule_next_month = Helpers::generateSchedule(Carbon::now()->addMonth()->startOfMonth(), $cleanData['employment_type_id'], $request->meridian);
+
+                foreach ($schedule_next_month as $schedule) {
+                    EmployeeSchedule::create([
+                        'employee_profile_id' => $employee_profile->id,
+                        'schedule_id' => $schedule->id
+                    ]);
+                }
+            } else {
+                
+                $role = Role::where('code', 'SHIFTING')->first();
+                $system_role = SystemRole::where('role_id', $role->id)->first();
+
+                SpecialAccessRole::create([
+                    'system_role_id' => $system_role->id,
+                    'employee_profile_id' => $employee_profile->id,
+                    'effective_at' => now()
+                ]);
+            }
+
+            if (strip_tags($request->allow_time_adjustment) === 1) {
+                $role = Role::where('code', 'ATA')->first();
+                $system_role = SystemRole::where('role_id', $role->id)->first();
+
+                SpecialAccessRole::create([
+                    'system_role_id' => $system_role->id,
+                    'employee_profile_id' => $employee_profile->id,
+                    'effective_at' => now()
+                ]);
+            }
 
             $in_active_employee->delete();
-            DB::commit();
             Helpers::registerSystemLogs($request, $employee_profile->id, true, 'Success in creating a ' . $this->SINGULAR_MODULE_NAME . '.');
 
             $data = [
@@ -520,14 +579,8 @@ class InActiveEmployeeController extends Controller
             $email = $employee_profile->personalinformation->contact->email_address;
             $name = $employee_profile->personalInformation->name();
 
-            $data = [
-                'Subject' => 'Your Zcmc Portal Account.',
-                'To_receiver' => $employee_profile->personalinformation->contact->email_address,
-                'Receiver_Name' => $employee_profile->personalInformation->name(),
-                'Body' => $body
-            ];
-
-            SendEmailJob::dispatch('new_account', $email, $data);
+            SendEmailJob::dispatch('new_account', $email, $name, $data);
+            DB::commit();
 
             if ($in_valid_file) {
                 return response()->json(
