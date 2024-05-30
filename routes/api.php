@@ -1758,6 +1758,7 @@ Route::middleware('auth.cookie')->group(function () {
         //     Route::post('requirement/{id}', 'RequirementController@destroy');
         // });
 
+
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
             Route::get('leave-type-all', 'LeaveTypeController@index');
         });
@@ -1789,6 +1790,11 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
             Route::get('leave-application-all', 'LeaveApplicationController@index');
         });
+
+        Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
+            Route::get('countries', 'LeaveApplicationController@showCountries');
+        });
+
 
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
             Route::get('leave-application-hrmo-all', 'LeaveApplicationController@hrmoApproval');

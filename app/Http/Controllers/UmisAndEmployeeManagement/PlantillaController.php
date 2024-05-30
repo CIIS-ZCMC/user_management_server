@@ -144,19 +144,19 @@ class PlantillaController extends Controller
 
                 $plantilla_number = PlantillaNumber::where('id', $user_Current_Plantilla)->first();
 
-               
+
                 // CHANGE PLANTILLA EMP TYPE to EMPLOYEE PROFILE EMP TYPE
-                if ($employee_profile->employmentType->name === 'Permanent CTI') {
-                    $plantilla_number->update([
-                        'is_dissolve' => 1,
-                        'is_vacant' => 0,
-                        'employee_profile_id' => NULL,
-                    ]);
-                } else {
+                // if ($employee_profile->employmentType->name === 'Permanent CTI') {
+                //     $plantilla_number->update([
+                //         'is_dissolve' => 1,
+                //         'is_vacant' => 0,
+                //         'employee_profile_id' => NULL,
+                //     ]);
+                // } else {
                     $plantilla_number->update(['is_vacant' => 1, 'employee_profile_id' => NULL]);
                     $plantilla = $plantilla_number->plantilla;
                     $plantilla->update(['total_used_plantilla_no' => $plantilla->total_used_plantilla_no + 1]);
-                }
+                // }
 
                 PlantillaNumber::where('id', $to_assign)->update([
                     'employee_profile_id' => $id,
