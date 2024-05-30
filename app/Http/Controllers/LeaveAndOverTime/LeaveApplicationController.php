@@ -109,6 +109,51 @@ class LeaveApplicationController extends Controller
         }
     }
 
+    public function exportCsv()
+    {
+        // Step 1: Retrieve specific rows
+        $leave_applications = LeaveApplication::where('status', 'approved')
+            ->get();
+
+        // Step 2: Transform the data using the resource collection
+        $leave_application_resources = LeaveApplicationResource::collection($leave_applications);
+
+        // Step 3: Convert the transformed data to CSV format
+        $csvData = $this->convertToCsv($leave_application_resources);
+
+        // Step 4: Return the CSV as a download
+        return Response::make($csvData, 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="leave_applications.csv"',
+        ]);
+    }
+
+
+    private function convertToCsv($leave_applications)
+    {
+
+        $csvHeader = ['Employee Name', 'Leave Type', 'Date From', 'Date To', 'Without Pay'];
+
+        $file = fopen('php://memory', 'r+');
+        fputcsv($file, $csvHeader);
+        foreach ($leave_applications as $application) {
+            $applicationArray = $application->toArray(request());
+            fputcsv($file, [
+                $applicationArray['employee_profile']['name'],
+                $applicationArray['leave_type']['name'],
+                $applicationArray['date_from'],
+                $applicationArray['date_to'],
+                $applicationArray['without_pay']
+            ]);
+        }
+
+
+        rewind($file);
+        $csv = stream_get_contents($file);
+        fclose($file);
+        return $csv;
+    }
+
     public function hrmoApproval(Request $request)
     {
         try {
