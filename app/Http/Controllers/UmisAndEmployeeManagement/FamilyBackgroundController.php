@@ -161,36 +161,39 @@ class FamilyBackgroundController extends Controller
 
             $family_background = FamilyBackground::create($cleanData);
 
-            foreach (json_decode($request->children) as $child) {
-                $child_data = [];
-                foreach ($child as $key => $value) {
-                    if($key === 'id' && $value === null) continue;
-                    if ($value === null) {
-                        $child_data[$key] = $value;
+            if(isset($request->children)) {
+                foreach (json_decode($request->children) as $child) {
+                    $child_data = [];
+                    foreach ($child as $key => $value) {
+                        if($key === 'id' && $value === null) continue;
+                        if ($value === null) {
+                            $child_data[$key] = $value;
+                            continue;
+                        }
+                        $child_data[$key] = strip_tags($value);
+                    }
+                    
+                    if($child->id === null || $child->id === 'null'){
+                        $child_data['personal_information_id'] = $personal_info->id;
+                        $child_store = Child::create($child_data);
+                        if (!$child_store) {
+                            $failed[] = $child;
+                        }
                         continue;
                     }
-                    $child_data[$key] = strip_tags($value);
-                }
-                
-                if($child->id === null || $child->id === 'null'){
-                    $child_data['personal_information_id'] = $personal_info->id;
-                    $child_store = Child::create($child_data);
+    
+                    $child_store = Child::find($child_data['id']);
+                    $child_store->update($child_data);
+    
                     if (!$child_store) {
                         $failed[] = $child;
+                        continue;
                     }
-                    continue;
+    
+                    $success[] = $child_store;
                 }
-
-                $child_store = Child::find($child_data['id']);
-                $child_store->update($child_data);
-
-                if (!$child_store) {
-                    $failed[] = $child;
-                    continue;
-                }
-
-                $success[] = $child_store;
             }
+            
 
             return [
                 'family_background' => $family_background,

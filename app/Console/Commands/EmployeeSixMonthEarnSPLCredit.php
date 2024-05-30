@@ -84,26 +84,28 @@ class EmployeeSixMonthEarnSPLCredit extends Command
                             'reason' => "Annual SPL Credits",
                             'action' => "add"
                         ]);
+
+                        
+                        $title = "Special Privilege Leave credited";
+                        $description = "Your SPL credits is now credited for year ". $currentYear." .";
+                        
+                        $notification = Notifications::create([
+                            "title" => $title,
+                            "description" => $description,
+                            "module_path" => '/leave-applications',
+                        ]);
+        
+                        $user_notification = UserNotifications::create([
+                            'notification_id' => $notification->id,
+                            'employee_profile_id' => $employee->id,
+                        ]);
+        
+                        Helpers::sendNotification([
+                            "id" => $employee->employee_id,
+                            "data" => new NotificationResource($user_notification)
+                        ]);
                     }
 
-                    $title = "Special Privilege Leave credited";
-                    $description = "Your SPL credits is now credited for year ". $currentYear." .";
-                    
-                    $notification = Notifications::create([
-                        "title" => $title,
-                        "description" => $description,
-                        "module_path" => '/leave-applications',
-                    ]);
-    
-                    $user_notification = UserNotifications::create([
-                        'notification_id' => $notification->id,
-                        'employee_profile_id' => $employee->id,
-                    ]);
-    
-                    Helpers::sendNotification([
-                        "id" => $employee->employee_id,
-                        "data" => new NotificationResource($user_notification)
-                    ]);
                 }
         }
     }
