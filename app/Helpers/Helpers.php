@@ -816,7 +816,10 @@ class Helpers
         $duty_start = new DateTime($start_duty);
 
         // Get the last day of the duty start month
-        $duty_end = new DateTime("last day of " . $duty_start->format('Y-m'));
+        // $duty_end = new DateTime("last day of " . $duty_start->format('Y-m'));
+
+        // Calculate the first day of the next month
+        $duty_end = (clone $duty_start)->modify('first day of next month');
 
         // Generate schedule from $duty_start to $duty_end
         $scheduleDates = [];
