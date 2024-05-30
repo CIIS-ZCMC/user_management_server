@@ -2687,7 +2687,7 @@ class EmployeeProfileController extends Controller
                 ]);
             }
 
-            $body = [
+            $data = [
                 'employeeID' => $employee_profile->employee_id,
                 'Password' => $default_password,
                 "Link" => config('app.client_domain')
@@ -2696,12 +2696,12 @@ class EmployeeProfileController extends Controller
             $email = $employee_profile->personalinformation->contact->email_address;
             $name = $employee_profile->personalInformation->name();
 
-            $data = [
-                'Subject' => 'Your Zcmc Portal Account.',
-                'To_receiver' => $employee_profile->personalinformation->contact->email_address,
-                'Receiver_Name' => $employee_profile->personalInformation->name(),
-                'Body' => $body
-            ];
+            // $data = [
+            //     'Subject' => 'Your Zcmc Portal Account.',
+            //     'To_receiver' => $employee_profile->personalinformation->contact->email_address,
+            //     'Receiver_Name' => $employee_profile->personalInformation->name(),
+            //     'Body' => $body
+            // ];
 
             SendEmailJob::dispatch('new_account', $email, $name, $data);
 

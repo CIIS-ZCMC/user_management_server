@@ -22,7 +22,7 @@ class FamilyBackgroundRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id' => 'required|int|max:255',
+            'id' => 'required|integer',
             'spouse' => 'nullable|string|max:255',
             'address' => 'nullable|string|max:255',
             'zip_code' => 'nullable|string|max:255',
@@ -37,10 +37,10 @@ class FamilyBackgroundRequest extends FormRequest
             'father_middle_name' => 'nullable|string|max:255',
             'father_last_name' => 'nullable|string|max:255',
             'father_ext_name' => 'nullable|string|max:255',
-            'mother_first_name' => 'required|string|max:255',
+            'mother_first_name' => 'nullable|string|max:255',
             'mother_middle_name' => 'nullable|string|max:255',
-            'mother_last_name' => 'required|string|max:255',
-            'mother_ext_name' => 'nullable|string|max:255',
+            'mother_last_name' => 'nullable|string|max:255',
+            'mother_maiden_name' => 'nullable|string|max:255',
             'personal_information_id' => 'required|integer'
         ];
     }
