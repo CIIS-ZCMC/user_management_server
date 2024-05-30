@@ -822,8 +822,11 @@ class Helpers
         $scheduleDates = [];
 
         while ($duty_start <= $duty_end) {
-            // Add duty for $duty_start date to the schedule array
-            $scheduleDates[] = $duty_start->format('Y-m-d');
+            // Skip weekends
+            if ($duty_start->format('N') < 6) {
+                // Add duty for $duty_start date to the schedule array
+                $scheduleDates[] = $duty_start->format('Y-m-d');
+            }
 
             // Move to the next day
             $duty_start->add(new DateInterval('P1D'));
