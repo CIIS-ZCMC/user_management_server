@@ -55,7 +55,9 @@ class EmployeeProfileNewResource extends FormRequest
             'employment_type_id' => 'required|integer',
             'designation_id' => 'required|integer',
             // 'plantilla_number_id' => 'nullable|integer',
-            'allow_time_adjustment' => 'required|integer'
+            'allow_time_adjustment' => 'required|integer',
+            'salary_grade_id' => 'nullable|integer',
+            'salary_grade_step' => 'nullable|integer'
             // 'attachment' => 'nullable|file|mimes:jpeg,png,pdf,doc,docx'
         ];
     }
