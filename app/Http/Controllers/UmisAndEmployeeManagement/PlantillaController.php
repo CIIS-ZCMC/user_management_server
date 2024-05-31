@@ -332,7 +332,7 @@ class PlantillaController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if ($key === 'plantilla_number') {
+                if ($key === 'plantilla_numbers') {
                     $cleanData[$key] = json_decode($value, true);
                     continue;
                 }
@@ -349,30 +349,31 @@ class PlantillaController extends Controller
 
             $plantilla_numbers = [];
 
-            foreach (json_decode($cleanData['plantilla_numbers']) as $number) {
+            foreach ($cleanData['plantilla_numbers'] as $number) {
                 try {
-                    $existing = PlantillaNumber::where('number', $number->plantilla_number)->first();
+                    
+                    $existing = PlantillaNumber::where('number', $number['plantilla_number'])->first();
 
                     if ($existing) {
                         DB::rollBack();
                         return response()->json(['message' => "Plantilla number already exist."], Response::HTTP_FORBIDDEN);
                     }
 
-                    if (!is_string($number->plantilla_number) || $existing !== null) {
+                    if (!is_string($number['plantilla_number'] ) ) {
                         DB::rollBack();
                         return response()->json(['message' => "Invalid type require string."], Response::HTTP_FORBIDDEN);
                     }
-
+                   
                     $plantilla_number_new = PlantillaNumber::create([
-                        'number' => $number,
-                        'employment_type_id' => $number->employment_type_id,
+                        'number' => $number['plantilla_number'],
+                        'employment_type_id' => $number['employment_type_id'],
                         'plantilla_id' => $plantilla->id
                     ]);
 
                     $plantilla_numbers[] = $plantilla_number_new;
                 } catch (\Throwable $th) {
                     DB::rollBack();
-                    return response()->json(['message' => "Please check fields."], Response::HTTP_FORBIDDEN);
+                    return response()->json(['message' => 'Failed to registered plantilla'], Response::HTTP_FORBIDDEN);
                 }
             }
 
