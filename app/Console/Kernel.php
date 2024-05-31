@@ -51,7 +51,7 @@ class Kernel extends ConsoleKernel
         });
 
         // $schedule->command(EmployeeSixMonthEarnSPLCredit::class)->daily();
-        $schedule->command(EmployeeSoloParentCredit::class)->daily();
+        // $schedule->command(EmployeeSoloParentCredit::class)->daily();
         // Run UpdateOicLeaveApplication every day at 12:00 AM
         $schedule->command(UpdateOicLeaveApplication::class)->dailyAt('00:00');
         // Run RemoveOicLeaveApplication every day at 11:59 PM
