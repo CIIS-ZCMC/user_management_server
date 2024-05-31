@@ -952,9 +952,9 @@ class EmployeeProfileController extends Controller
             'employee_details' => [
                 'employee' => $employee,
                 'personal_information' => $personal_information_data,
-                'contact' => new ContactResource($personal_information->contact),
+                'contact' => $personal_information->contact === null? null: new ContactResource($personal_information->contact),
                 'address' => $address,
-                'family_background' => new FamilyBackGroundResource($personal_information->familyBackground),
+                'family_background' => $personal_information->family_background === null? null: new FamilyBackGroundResource($personal_information->familyBackground),
                 'children' => ChildResource::collection($personal_information->children),
                 'education' => EducationalBackgroundResource::collection($personal_information->educationalBackground->filter(function ($row) {
                     return $row->is_request === 0;
@@ -973,7 +973,7 @@ class EmployeeProfileController extends Controller
                 'issuance' => $employee_profile->issuanceInformation,
                 'reference' => $employee_profile->personalInformation->references,
                 'legal_information' => $employee_profile->personalInformation->legalInformation,
-                'identification' => new IdentificationNumberResource($employee_profile->personalInformation->identificationNumber)
+                'identification' => $employee_profile->personalInformation->identificationNumber === null? null: new IdentificationNumberResource($employee_profile->personalInformation->identificationNumber)
             ],
             'area_assigned' => $area_assigned['details']->name,
             'area_sector' => $area_assigned['sector'],
