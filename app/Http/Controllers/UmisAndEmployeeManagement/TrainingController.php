@@ -229,6 +229,33 @@ class TrainingController extends Controller
             throw new \Exception("Failed to register employee training record.", 400);
         }
     }
+    
+    public function updateSingleData($id, TrainingRequest $request)
+    {
+        try{
+            $cleanData = [];
+            $training = Training::find($id);
+
+            foreach ($training as $key => $value) {
+                if($key === 'attachment') continue;
+                if($value === null || $key === 'type_is_lnd'){
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+                $cleanData[$key] = strip_tags($value);
+            }
+
+            $training->update($cleanData);
+            
+            return response()->json([
+                'data' => new TrainingResource($training),
+                'message' => "Successfully update training."
+            ]);
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+            throw new \Exception("Failed to register employee training record.", 400);
+        }
+    }
 
     public function updateMany(TrainingManyRequest $request)
     {
