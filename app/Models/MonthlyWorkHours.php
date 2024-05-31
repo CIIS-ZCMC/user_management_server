@@ -20,4 +20,9 @@ class MonthlyWorkHours extends Model
     ];
 
     public $timestamps = true;
+
+    public function employmentType()
+    {
+        return $this->belongsTo(EmploymentType::class);
+    }
 }
