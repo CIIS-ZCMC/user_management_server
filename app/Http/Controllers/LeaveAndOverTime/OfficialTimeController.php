@@ -133,8 +133,8 @@ class OfficialTimeController extends Controller
         $response = [];
 
         foreach ($ot_applications as $ot_application) {
-            $employeeName = $ot_application->employeeProfile->name();
-            $employeeid = $ot_application->employeeProfile->employee_id;
+            $employeeName = $ot_application->employee->name();
+            $employeeid = $ot_application->employee->employee_id;
             $dateFrom = $ot_application->date_from;
             $dateTo = $ot_application->date_to;
             $timeFrom = $ot_application->time_from;

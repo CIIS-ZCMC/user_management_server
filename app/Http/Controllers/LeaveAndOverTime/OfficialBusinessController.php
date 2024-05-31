@@ -115,7 +115,7 @@ class OfficialBusinessController extends Controller
 
     public function exportCsv()
     {
-        $ob_applications = OfficialBusiness::with('employeeProfile')
+        $ob_applications = OfficialBusiness::with('employee')
                                 ->where('status', 'approved')
                                 ->get();
             // ->where('status', 'approved')
@@ -124,8 +124,8 @@ class OfficialBusinessController extends Controller
         $response = [];
 
         foreach ($ob_applications as $ob_application) {
-            $employeeName = $ob_application->employeeProfile->name();
-            $employeeid = $ob_application->employeeProfile->employee_id;
+            $employeeName = $ob_application->employee->name();
+            $employeeid = $ob_application->employee->employee_id;
             $dateFrom = $ob_application->date_from;
             $dateTo = $ob_application->date_to;
             $purpose = $ob_application->purpose;
