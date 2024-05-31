@@ -124,7 +124,7 @@ class OfficialTimeController extends Controller
 
     public function exportCsv()
     {
-        $ot_applications = OfficialTime::with('employeeProfile')
+        $ot_applications = OfficialTime::with('employee')
             ->where('status', 'approved')
             ->get();
         // ->where('status', 'approved')
