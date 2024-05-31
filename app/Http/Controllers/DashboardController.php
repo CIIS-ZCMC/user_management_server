@@ -3,20 +3,43 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\Helpers;
+use App\Http\Resources\NotificationResource;
+use App\Models\EmployeeLeaveCredit;
+use App\Models\EmployeeLeaveCreditLogs;
+use App\Models\EmployeeOvertimeCredit;
 use App\Models\EmployeeProfile;
 use App\Models\EmploymentType;
+use App\Models\LeaveType;
+use App\Models\Notifications;
 use App\Models\SystemLogs;
+use App\Models\UserNotifications;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Http\Resources\BirthdayCelebrantResource;
 use App\Models\PersonalInformation;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
     private $CONTROLLER_NAME = 'Dashboard Controller';
     private $PLURAL_MODULE_NAME = 'Announcements';
     private $SINGULAR_MODULE_NAME = 'Announcements';
+
+    /**
+     * Current month monitoring of request handle by the system.
+     */
+    public function test(Request $request)
+    {
+        try{
+
+            return response()->json(['message' => 'PASSED'], Response::HTTP_OK);
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME, 'requestMonitoring', $th->getMessage());
+            return response()->json(['data' => $th->getMessage(), 'message' => 'FAILED'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
 
     /**
      * Current month monitoring of request handle by the system.
