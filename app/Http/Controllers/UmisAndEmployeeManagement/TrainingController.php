@@ -73,7 +73,7 @@ class TrainingController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if($value === null || $key === 'type_is_lnd'){
+                if($value === null || $key === 'type_is_ld'){
                     $cleanData[$key] = $value;
                     continue;
                 }
@@ -151,7 +151,7 @@ class TrainingController extends Controller
                 $cleanData = [];
                 $cleanData['personal_information_id'] = $personal_information_id;
                 foreach ($training as $key => $value) {
-                    if($value === null || $key === 'type_is_lnd'){
+                    if($value === null){
                         $cleanData[$key] = $value;
                         continue;
                     }
@@ -203,7 +203,7 @@ class TrainingController extends Controller
                 $cleanData = [];
                 foreach ($training as $key => $value) {
                     if(($key === 'id' && $value === null) || $key === 'attachment') continue;
-                    if($value === null || $key === 'type_is_lnd'){
+                    if($value === null){
                         $cleanData[$key] = $value;
                         continue;
                     }
@@ -236,9 +236,9 @@ class TrainingController extends Controller
             $cleanData = [];
             $training = Training::find($id);
 
-            foreach ($training as $key => $value) {
+            foreach ($request->all() as $key => $value) {
                 if($key === 'attachment') continue;
-                if($value === null || $key === 'type_is_lnd'){
+                if($value === null){
                     $cleanData[$key] = $value;
                     continue;
                 }
@@ -249,7 +249,7 @@ class TrainingController extends Controller
             
             return response()->json([
                 'data' => new TrainingResource($training),
-                'message' => "Successfully update training."
+                'message' => "Training successfully updated"
             ]);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());

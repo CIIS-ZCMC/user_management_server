@@ -182,7 +182,7 @@ class WorkExperienceController extends Controller
         }
     }
     
-    public function updateSignleData($id, WorkExperienceRequest $request)
+    public function updateSingleData($id, WorkExperienceRequest $request)
     {
         try{
             $cleanData = [];
@@ -192,7 +192,7 @@ class WorkExperienceController extends Controller
                 return response()->json(['message' => "No record found."], Response::HTTP_NOT_FOUND);
             }
 
-            foreach ($work_experience as $key => $value) {
+            foreach ($request->all() as $key => $value) {
                 if($value===null){
                     $cleanData[$key] = $value;
                     continue;
@@ -204,11 +204,11 @@ class WorkExperienceController extends Controller
 
             return response()->json([
                 'data' => new WorkExperienceResource($work_experience),
-                'message' => "Successfully Update work experience."
+                'message' => "Work experience updated successfully"
             ]);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
-            throw new \Exception("Failed to register employee work experience.", 400);
+            throw new \Exception("Failed to update employee work experience.", 400);
         }
     }
 

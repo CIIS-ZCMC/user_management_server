@@ -1616,7 +1616,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
-            Route::put('work-experience-single-data/{id}', 'WorkExperienceController@updateSignleData');
+            Route::put('work-experience-single-data/{id}', 'WorkExperienceController@updateSingleData');
         });
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {

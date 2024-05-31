@@ -256,7 +256,7 @@ class EducationalBackgroundController extends Controller
 
             return response()->json([
                 'data' => new EducationalBackgroundResource($educational_background),
-                'message' => "Successfully "
+                'message' => "Educational background updated successfully"
             ]);
         }catch(\Throwable $th){
             throw new \Exception("Failed to register employee education record.", 400);
