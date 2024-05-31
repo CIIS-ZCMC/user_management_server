@@ -119,7 +119,7 @@ class UnitController extends Controller
 
               
             $title = "Congratulations!";
-            $description = "You been assigned as unit head of " . $unit->name;
+            $description = "You have been assigned as unit head of " . $unit->name;
             
             
             $notification = Notifications::create([

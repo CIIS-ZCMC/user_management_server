@@ -130,7 +130,7 @@ class SectionController extends Controller
 
             
             $title = "Congratulations!";
-            $description = "You been assigned as supervisor of " . $section->name;
+            $description = "You have been assigned as supervisor of " . $section->name;
             
             
             $notification = Notifications::create([
