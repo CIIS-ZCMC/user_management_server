@@ -178,6 +178,31 @@ class VoluntaryWorkController extends Controller
             throw new \Exception("Failed to register employee voluntary work.", 400);
         }
     }
+    
+    public function updateSingleData($id, VoluntaryWorkRequest $request)
+    {
+        try{
+            $cleanData = [];
+            $voluntary_work = VoluntaryWork::find($id);
+
+            foreach ($voluntary_work as $key => $value) {
+                if ($value === null) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+                $cleanData[$key] = strip_tags($value);
+            }
+            
+            $voluntary_work->update($cleanData);
+
+            return response()->json([
+                'data' => new VoluntaryWorkResource($voluntary_work),
+                'message' => "Successfully update voluntary work."
+            ]);
+        }catch(\Throwable $th){
+            throw new \Exception("Failed to register employee voluntary work.", 400);
+        }
+    }
 
     public function updateMany(VoluntaryWorkManyRequest $request)
     {

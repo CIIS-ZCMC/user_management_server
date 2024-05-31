@@ -444,6 +444,7 @@ class InActiveEmployeeController extends Controller
             } catch (\Throwable $th) {}
 
             $employee_data['allow_time_adjustment'] = strip_tags($request->allow_time_adjustment) === 1 ? true : false;
+            $employee_data['solo_parent'] = strip_tags($request->solo_parent) === 1 ? true : false;
             $employee_data['password_encrypted'] = $encryptedPassword;
             $employee_data['password_created_at'] = now();
             $employee_data['password_expiration_at'] = $threeMonths;

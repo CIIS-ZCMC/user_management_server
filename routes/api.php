@@ -583,6 +583,10 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::put('civil-service-eligibility-single-data/{id}', 'CivilServiceEligibilityController@updateSingleData');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::put('civil-service-eligibility/{id}', 'CivilServiceEligibilityController@update');
         });
 
@@ -736,6 +740,10 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::put('educational-background/{id}', 'EducationalBackgroundController@update');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::put('educational-background-single-data/{id}', 'EducationalBackgroundController@updateSingleData');
         });
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
@@ -1491,6 +1499,10 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::put('training-single-data/{id}', 'TrainingController@updateSingleData');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::put('training-many', 'TrainingController@updateMany');
         });
 
@@ -1557,6 +1569,10 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::put('voluntary-work-single-data/{id}', 'VoluntaryWorkController@updateSingleData');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::put('voluntary-work-many', 'VoluntaryWorkController@updateMany');
         });
 
@@ -1597,6 +1613,10 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::put('work-experience/{id}', 'WorkExperienceController@update');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::put('work-experience-single-data/{id}', 'WorkExperienceController@updateSignleData');
         });
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
