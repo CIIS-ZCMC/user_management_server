@@ -223,6 +223,7 @@ class InActiveEmployeeController extends Controller
             $personal_information_data = [];
 
             foreach ($personal_information_json as $key => $value) {
+                if(Str::contains($key, "_value")) continue;
                 $personal_information_data[$key] = $value;
             }
 
@@ -473,13 +474,13 @@ class InActiveEmployeeController extends Controller
                 }
                 
                 $key = strtolower($request->sector).'_id';
-                $cleanData[$key] = strip_tags($request->area);
+                $cleanData[$key] = strip_tags($request->area_id);
+                $cleanData['plantilla_number_id'] = $plantilla_number->id;
 
                 $key_list = ['division_id', 'department_id', 'section_id', 'unit_id'];
 
                 foreach ($key_list as $value) {
-                    if ($value === $key)
-                        continue;
+                    if ($value === $key) continue;
                     $cleanData[$value] = null;
                 }
 
@@ -528,7 +529,7 @@ class InActiveEmployeeController extends Controller
             }
             
             if (strip_tags($request->shifting) === "0") {
-                $schedule_this_month = Helpers::generateSchedule(Carbon::now(), $cleanData['employment_type_id'], $request->meridian);
+                $schedule_this_month = Helpers::generateSchedule(Carbon::now(), $employee_data['employment_type_id'], $request->meridian);
 
                 foreach ($schedule_this_month as $schedule) {
                     EmployeeSchedule::create([
@@ -537,7 +538,7 @@ class InActiveEmployeeController extends Controller
                     ]);
                 }
 
-                $schedule_next_month = Helpers::generateSchedule(Carbon::now()->addMonth()->startOfMonth(), $cleanData['employment_type_id'], $request->meridian);
+                $schedule_next_month = Helpers::generateSchedule(Carbon::now()->addMonth()->startOfMonth(), $employee_data['employment_type_id'], $request->meridian);
 
                 foreach ($schedule_next_month as $schedule) {
                     EmployeeSchedule::create([

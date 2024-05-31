@@ -2340,6 +2340,7 @@ class EmployeeProfileController extends Controller
             $personal_information_data = [];
 
             foreach ($personal_information_json as $key => $value) {
+                if(Str::contains($key, "_value")) continue;
                 $personal_information_data[$key] = $value;
             }
 
@@ -2613,13 +2614,13 @@ class EmployeeProfileController extends Controller
                 }
                 
                 $key = strtolower($request->sector).'_id';
-                $cleanData[$key] = strip_tags($request->area);
+                $cleanData['plantilla_number_id'] = $plantilla_number_id;
+                $cleanData[$key] = strip_tags($request->area_id);
 
                 $key_list = ['division_id', 'department_id', 'section_id', 'unit_id'];
 
                 foreach ($key_list as $value) {
-                    if ($value === $key)
-                        continue;
+                    if ($value === $key) continue;
                     $cleanData[$value] = null;
                 }
 

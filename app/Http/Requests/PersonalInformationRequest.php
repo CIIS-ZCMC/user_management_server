@@ -33,6 +33,7 @@ class PersonalInformationRequest extends FormRequest
             'place_of_birth' => 'required|string|max:255',
             'civil_status' => 'required|string|max:255',
             'citizenship' => 'required|string|max:255',
+            'country' => 'nullable|string|max:255',
             'height' => 'nullable|numeric',
             'weight' => 'nullable|numeric',
             'blood_type' => 'nullable|string|max:255',
