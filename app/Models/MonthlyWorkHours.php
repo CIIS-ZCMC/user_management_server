@@ -14,6 +14,7 @@ class MonthlyWorkHours extends Model
     protected $primaryKey = 'id';
 
     protected $fillable = [
+        'employment_type_id',
         'month_year',
         'work_hours',
     ];
