@@ -94,6 +94,10 @@ class DTRcontroller extends Controller
 
     }
     public function getValidatedEntry($firstin,$secondin){
+        if($firstin && $secondin){
+            return $firstin;
+        }
+
         if($firstin && !$secondin){
             return $firstin;
         }
@@ -171,7 +175,8 @@ class DTRcontroller extends Controller
                 'second_in' => ' --:--',
                 'second_out' => ' --:--',
                 'schedule'=>[],
-                'deviceLogs'=>$deviceLogs
+                'deviceLogs'=>$deviceLogs,
+                'rec'=>$selfRecord
             ];
         } catch (\Throwable $th) {
             Helpersv2::errorLog($this->CONTROLLER_NAME, 'pullDTRuser', $th->getMessage());
