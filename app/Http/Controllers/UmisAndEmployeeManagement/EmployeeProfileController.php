@@ -27,6 +27,7 @@ use App\Models\EducationalBackground;
 use App\Models\EmployeeSchedule;
 use App\Models\EmploymentType;
 use App\Models\OfficerInChargeTrail;
+use App\Models\PlantillaAssignedArea;
 use App\Models\Training;
 use App\Models\WorkExperience;
 use Carbon\Carbon;
@@ -857,9 +858,10 @@ class EmployeeProfileController extends Controller
         $last_login = LoginTrail::where('employee_profile_id', $employee_profile->id)->orderByDesc('created_at')->first();
 
         $special_access_role = SpecialAccessRole::where('employee_profile_id', $employee_profile->id)->where('system_role_id', 1)->first();
+        $profile_url = $employee_profile->profile_url === null? null: config('app.server_domain') . "/photo/profiles/" . $employee_profile->profile_url;
 
         $employee = [
-            'profile_url' => config('app.server_domain') . "/photo/profiles/" . $employee_profile->profile_url,
+            'profile_url' => $profile_url,
             'employee_id' => $employee_profile->employee_id,
             'position' => $position,
             'is_2fa' => $employee_profile->is_2fa,
@@ -950,9 +952,9 @@ class EmployeeProfileController extends Controller
             'employee_details' => [
                 'employee' => $employee,
                 'personal_information' => $personal_information_data,
-                'contact' => new ContactResource($personal_information->contact),
+                'contact' => $personal_information->contact === null? null: new ContactResource($personal_information->contact),
                 'address' => $address,
-                'family_background' => new FamilyBackGroundResource($personal_information->familyBackground),
+                'family_background' => $personal_information->family_background === null? null: new FamilyBackGroundResource($personal_information->familyBackground),
                 'children' => ChildResource::collection($personal_information->children),
                 'education' => EducationalBackgroundResource::collection($personal_information->educationalBackground->filter(function ($row) {
                     return $row->is_request === 0;
@@ -971,7 +973,7 @@ class EmployeeProfileController extends Controller
                 'issuance' => $employee_profile->issuanceInformation,
                 'reference' => $employee_profile->personalInformation->references,
                 'legal_information' => $employee_profile->personalInformation->legalInformation,
-                'identification' => new IdentificationNumberResource($employee_profile->personalInformation->identificationNumber)
+                'identification' => $employee_profile->personalInformation->identificationNumber === null? null: new IdentificationNumberResource($employee_profile->personalInformation->identificationNumber)
             ],
             'area_assigned' => $area_assigned['details']->name,
             'area_sector' => $area_assigned['sector'],
@@ -2337,6 +2339,7 @@ class EmployeeProfileController extends Controller
             $personal_information_data = [];
 
             foreach ($personal_information_json as $key => $value) {
+                if(Str::contains($key, "_value")) continue;
                 $personal_information_data[$key] = $value;
             }
 
@@ -2362,154 +2365,173 @@ class EmployeeProfileController extends Controller
             /**
              * Family background module
              */
+            if($request->family_background !== null){
+                $family_background_request = new FamilyBackgroundRequest();
+                $family_background_json = json_decode($request->family_background);
+                $family_background_data = [];
 
-            $family_background_request = new FamilyBackgroundRequest();
-            $family_background_json = json_decode($request->family_background);
-            $family_background_data = [];
+                foreach ($family_background_json as $key => $value) {
+                    $family_background_data[$key] = $value;
+                }
 
-            foreach ($family_background_json as $key => $value) {
-                $family_background_data[$key] = $value;
+                $family_background_request->merge($family_background_data);
+                $family_background_request->merge(['children' => $request->children]);
+                $family_background_controller = new FamilyBackgroundController();
+                $family_background_controller->store($personal_information->id, $family_background_request);
             }
-
-            $family_background_request->merge($family_background_data);
-            $family_background_request->merge(['children' => $request->children]);
-            $family_background_controller = new FamilyBackgroundController();
-            $family_background_controller->store($personal_information->id, $family_background_request);
 
             /**
              * Education module
              */
-            $education_request = new EducationalBackgroundRequest();
-            $education_json = json_decode($request->educations);
-            $education_data = [];
+            if($request->educations !== null){
+                $education_request = new EducationalBackgroundRequest();
+                $education_json = json_decode($request->educations);
+                $education_data = [];
 
-            foreach ($education_json as $key => $value) {
-                $education_data[$key] = $value;
+                foreach ($education_json as $key => $value) {
+                    $education_data[$key] = $value;
+                }
+
+                $education_request->merge(['educations' => $education_data]);
+                $education_controller = new EducationalBackgroundController();
+                $education_controller->storeMany($personal_information->id, $education_request);
             }
-
-            $education_request->merge(['educations' => $education_data]);
-            $education_controller = new EducationalBackgroundController();
-            $education_controller->storeMany($personal_information->id, $education_request);
 
             /**
              * Identification module
              */
-            $identification_request = new IdentificationNumberRequest();
-            $identification_json = json_decode($request->identification);
-            $identification_data = [];
+            if($request->identification !== null){
+                $identification_request = new IdentificationNumberRequest();
+                $identification_json = json_decode($request->identification);
+                $identification_data = [];
 
-            foreach ($identification_json as $key => $value) {
-                $identification_data[$key] = $value;
+                foreach ($identification_json as $key => $value) {
+                    $identification_data[$key] = $value;
+                }
+
+                $identification_request->merge($identification_data);
+                $identification_controller = new IdentificationNumberController();
+                $identification_controller->store($personal_information->id, $identification_request);
             }
-
-            $identification_request->merge($identification_data);
-            $identification_controller = new IdentificationNumberController();
-            $identification_controller->store($personal_information->id, $identification_request);
 
             /**
              * Work experience module
              */
-            $work_experience_request = new WorkExperienceRequest();
-            $work_experience_json = json_decode($request->work_experiences);
-            $work_experience_data = [];
+            if($request->work_experiences !== null){
+                $work_experience_request = new WorkExperienceRequest();
+                $work_experience_json = json_decode($request->work_experiences);
+                $work_experience_data = [];
 
-            foreach ($work_experience_json as $key => $value) {
-                $work_experience_data[$key] = $value;
+                foreach ($work_experience_json as $key => $value) {
+                    $work_experience_data[$key] = $value;
+                }
+
+                $work_experience_request->merge(['work_experiences' => $work_experience_data]);
+                $work_experience_controller = new WorkExperienceController();
+                $work_experience_controller->storeMany($personal_information->id, $work_experience_request);
             }
-
-            $work_experience_request->merge(['work_experiences' => $work_experience_data]);
-            $work_experience_controller = new WorkExperienceController();
-            $work_experience_controller->storeMany($personal_information->id, $work_experience_request);
 
             /**
              * Voluntary work module
              */
-            $voluntary_work_request = new VoluntaryWorkRequest();
-            $voluntary_work_json = json_decode($request->voluntary_work);
-            $voluntary_work_data = [];
+            if($request->voluntary_work !== null){
+                $voluntary_work_request = new VoluntaryWorkRequest();
+                $voluntary_work_json = json_decode($request->voluntary_work);
+                $voluntary_work_data = [];
 
-            foreach ($voluntary_work_json as $key => $value) {
-                $voluntary_work_data[$key] = $value;
+                foreach ($voluntary_work_json as $key => $value) {
+                    $voluntary_work_data[$key] = $value;
+                }
+
+                $voluntary_work_request->merge(['voluntary_work' => $voluntary_work_data]);
+                $voluntary_work_controller = new VoluntaryWorkController();
+                $voluntary_work_controller->storeMany($personal_information->id, $voluntary_work_request);
             }
-
-            $voluntary_work_request->merge(['voluntary_work' => $voluntary_work_data]);
-            $voluntary_work_controller = new VoluntaryWorkController();
-            $voluntary_work_controller->storeMany($personal_information->id, $voluntary_work_request);
 
             /**
              * Other module
              */
-            $other_request = new OtherInformationManyRequest();
-            $other_json = json_decode($request->others);
-            $other_data = [];
+            if($request->others !== null){
+                $other_request = new OtherInformationManyRequest();
+                $other_json = json_decode($request->others);
+                $other_data = [];
 
-            foreach ($other_json as $key => $value) {
-                $voluntary_work_data[$key] = $value;
+                foreach ($other_json as $key => $value) {
+                    $voluntary_work_data[$key] = $value;
+                }
+
+                $other_request->merge(['others' => $other_data]);
+                $other_controller = new OtherInformationController();
+                $other_controller->storeMany($personal_information->id, $other_request);
             }
-
-            $other_request->merge(['others' => $other_data]);
-            $other_controller = new OtherInformationController();
-            $other_controller->storeMany($personal_information->id, $other_request);
 
             /**
              * Legal information module
              */
-            $legal_info_request = new LegalInformationManyRequest();
-            $legal_info_json = json_decode($request->legal_information);
-            $legal_info_data = [];
+            if($request->legal_information !== null){
+                $legal_info_request = new LegalInformationManyRequest();
+                $legal_info_json = json_decode($request->legal_information);
+                $legal_info_data = [];
 
-            foreach ($legal_info_json as $key => $value) {
-                $legal_info_data[$key] = $value;
+                foreach ($legal_info_json as $key => $value) {
+                    $legal_info_data[$key] = $value;
+                }
+
+                $legal_info_request->merge(['legal_information' => $legal_info_data]);
+                $legal_information_controller = new LegalInformationController();
+                $legal_information_controller->storeMany($personal_information->id, $legal_info_request);
             }
-
-            $legal_info_request->merge(['legal_information' => $legal_info_data]);
-            $legal_information_controller = new LegalInformationController();
-            $legal_information_controller->storeMany($personal_information->id, $legal_info_request);
 
             /**
              * Training module
              */
-            $training_request = new TrainingManyRequest();
-            $training_json = json_decode($request->trainings);
-            $training_data = [];
+            if($request->trainings !== null){
+                $training_request = new TrainingManyRequest();
+                $training_json = json_decode($request->trainings);
+                $training_data = [];
 
-            foreach ($training_json as $key => $value) {
-                $training_data[$key] = $value;
+                foreach ($training_json as $key => $value) {
+                    $training_data[$key] = $value;
+                }
+
+                $training_request->merge(['trainings' => $training_data]);
+                $training_controller = new TrainingController();
+                $training_controller->storeMany($personal_information->id, $training_request);
             }
-
-            $training_request->merge(['trainings' => $training_data]);
-            $training_controller = new TrainingController();
-            $training_controller->storeMany($personal_information->id, $training_request);
 
             /**
              * Reference module
              */
-            $referrence_request = new ReferenceManyRequest();
-            $referrence_json = json_decode($request->reference);
-            $referrence_data = [];
+            if($request->reference !== null){
+                $referrence_request = new ReferenceManyRequest();
+                $referrence_json = json_decode($request->reference);
+                $referrence_data = [];
 
-            foreach ($referrence_json as $key => $value) {
-                $referrence_data[$key] = $value;
+                foreach ($referrence_json as $key => $value) {
+                    $referrence_data[$key] = $value;
+                }
+
+                $referrence_request->merge(['reference' => $referrence_data]);
+                $referrence_controller = new ReferencesController();
+                $referrence_controller->storeMany($personal_information->id, $referrence_request);
             }
-
-            $referrence_request->merge(['reference' => $referrence_data]);
-            $referrence_controller = new ReferencesController();
-            $referrence_controller->storeMany($personal_information->id, $referrence_request);
 
             /**
              * Eligibilities module
              */
-            $eligibilities_request = new CivilServiceEligibilityManyRequest();
-            $eligibilities_json = json_decode($request->eligibilities);
-            $eligibilities_data = [];
+            if($request->eligibilities !== null){
+                $eligibilities_request = new CivilServiceEligibilityManyRequest();
+                $eligibilities_json = json_decode($request->eligibilities);
+                $eligibilities_data = [];
 
-            foreach ($eligibilities_json as $key => $value) {
-                $eligibilities_data[$key] = $value;
+                foreach ($eligibilities_json as $key => $value) {
+                    $eligibilities_data[$key] = $value;
+                }
+
+                $eligibilities_request->merge(['eligibilities' => $eligibilities_data]);
+                $eligibilities_controller = new CivilServiceEligibilityController();
+                $eligibilities_controller->storeMany($personal_information->id, $eligibilities_request);
             }
-
-            $eligibilities_request->merge(['eligibilities' => $eligibilities_data]);
-            $eligibilities_controller = new CivilServiceEligibilityController();
-            $eligibilities_controller->storeMany($personal_information->id, $eligibilities_request);
 
             $in_valid_file = false;
 
@@ -2552,6 +2574,7 @@ class EmployeeProfileController extends Controller
             }
 
             $cleanData['allow_time_adjustment'] = strip_tags($request->allow) === 1 ? true : false;
+            $cleanData['solo_parent'] = strip_tags($request->solo_parent) === 1 ? true : false;
             $cleanData['shifting'] = strip_tags($request->shifting) === 1 ? true : false;
             $cleanData['password_encrypted'] = $encryptedPassword;
             $cleanData['password_created_at'] = now();
@@ -2588,6 +2611,20 @@ class EmployeeProfileController extends Controller
                 if (!$plantilla_number) {
                     return response()->json(['message' => 'No record found for plantilla number ' . $plantilla_number_id], Response::HTTP_NOT_FOUND);
                 }
+                
+                $key = strtolower($request->sector).'_id';
+                $cleanData['plantilla_number_id'] = $plantilla_number_id;
+                $cleanData[$key] = strip_tags($request->area_id);
+
+                $key_list = ['division_id', 'department_id', 'section_id', 'unit_id'];
+
+                foreach ($key_list as $value) {
+                    if ($value === $key) continue;
+                    $cleanData[$value] = null;
+                }
+
+                $plantilla_assign_area = PlantillaAssignedArea::create($cleanData);
+                $plantilla_number->update(['assigned_at' => now()]);
 
                 $plantilla = $plantilla_number->plantilla;
                 $designation = $plantilla->designation;
@@ -2686,7 +2723,7 @@ class EmployeeProfileController extends Controller
                 ]);
             }
 
-            $body = [
+            $data = [
                 'employeeID' => $employee_profile->employee_id,
                 'Password' => $default_password,
                 "Link" => config('app.client_domain')
@@ -2694,13 +2731,6 @@ class EmployeeProfileController extends Controller
 
             $email = $employee_profile->personalinformation->contact->email_address;
             $name = $employee_profile->personalInformation->name();
-
-            $data = [
-                'Subject' => 'Your Zcmc Portal Account.',
-                'To_receiver' => $employee_profile->personalinformation->contact->email_address,
-                'Receiver_Name' => $employee_profile->personalInformation->name(),
-                'Body' => $body
-            ];
 
             SendEmailJob::dispatch('new_account', $email, $name, $data);
 

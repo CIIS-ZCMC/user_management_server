@@ -229,6 +229,34 @@ class CivilServiceEligibilityController extends Controller
         }
     }
     
+    public function updateSingleData($id, CivilServiceEligibilityManyRequest $request)
+    {
+        try{
+            $cleanData = [];
+
+            $civil_service_eligibility_data = CivilServiceEligibility::find($id);
+
+            foreach ($request->all() as $key => $value) {
+                if($key === 'attachment') continue;
+                if($value === null){
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+                $cleanData[$key] = strip_tags($value);
+            }
+
+            $civil_service_eligibility_data->update($cleanData);
+
+            return response()->json([
+                'data' => new CivilServiceEligibilityResource($civil_service_eligibility_data),
+                'message' => "Successfully update Eligibility."
+            ]);
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+            throw new \Exception("Failed to register employee civil service eligibility record.", 400);
+        }
+    }
+    
     public function updateMany(CivilServiceEligibilityManyRequest $request)
     {
         try{

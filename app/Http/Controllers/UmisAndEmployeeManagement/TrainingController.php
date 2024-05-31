@@ -73,7 +73,7 @@ class TrainingController extends Controller
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if($value === null || $key === 'type_is_lnd'){
+                if($value === null || $key === 'type_is_ld'){
                     $cleanData[$key] = $value;
                     continue;
                 }
@@ -151,7 +151,7 @@ class TrainingController extends Controller
                 $cleanData = [];
                 $cleanData['personal_information_id'] = $personal_information_id;
                 foreach ($training as $key => $value) {
-                    if($value === null || $key === 'type_is_lnd'){
+                    if($value === null){
                         $cleanData[$key] = $value;
                         continue;
                     }
@@ -203,7 +203,7 @@ class TrainingController extends Controller
                 $cleanData = [];
                 foreach ($training as $key => $value) {
                     if(($key === 'id' && $value === null) || $key === 'attachment') continue;
-                    if($value === null || $key === 'type_is_lnd'){
+                    if($value === null){
                         $cleanData[$key] = $value;
                         continue;
                     }
@@ -224,6 +224,33 @@ class TrainingController extends Controller
             }
             
             return $success;
+        }catch(\Throwable $th){
+            Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
+            throw new \Exception("Failed to register employee training record.", 400);
+        }
+    }
+    
+    public function updateSingleData($id, TrainingRequest $request)
+    {
+        try{
+            $cleanData = [];
+            $training = Training::find($id);
+
+            foreach ($request->all() as $key => $value) {
+                if($key === 'attachment') continue;
+                if($value === null){
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+                $cleanData[$key] = strip_tags($value);
+            }
+
+            $training->update($cleanData);
+            
+            return response()->json([
+                'data' => new TrainingResource($training),
+                'message' => "Training successfully updated"
+            ]);
         }catch(\Throwable $th){
             Helpers::errorLog($this->CONTROLLER_NAME,'update', $th->getMessage());
             throw new \Exception("Failed to register employee training record.", 400);
