@@ -718,7 +718,7 @@ class PlantillaController extends Controller
         }
     }
 
-    public function destroy($id, AuthPinApprovalRequest $request)
+    public function destroy($id, Request $request)
     {
         try {
             $user = $request->user;
@@ -768,7 +768,7 @@ class PlantillaController extends Controller
         }
     }
 
-    public function destroyPlantillaNumber($id, AuthPinApprovalRequest $request)
+    public function destroyPlantillaNumber($id, Request $request)
     {
         try {
             $user = $request->user;
