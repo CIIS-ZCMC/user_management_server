@@ -127,7 +127,7 @@ class DivisionController extends Controller
 
 
             $title = "Congratulations!";
-            $description = "You been assigned as division head of " . $division->name . " division.";
+            $description = "You have been assigned as division head of " . $division->name . " division.";
 
 
             $notification = Notifications::create([
