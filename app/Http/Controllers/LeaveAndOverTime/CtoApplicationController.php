@@ -99,6 +99,50 @@ class CtoApplicationController extends Controller
         }
     }
 
+    public function exportCsv()
+    {
+        $leave_applications = CtoApplication::with('employeeProfile')
+                                ->where('status', 'approved')
+                                ->get();
+            // ->where('status', 'approved')
+
+
+        $response = [];
+
+        foreach ($leave_applications as $leave_application) {
+            $employeeName = $leave_application->employeeProfile->name();
+            $employeeid = $leave_application->employeeProfile->employee_id;
+            $leaveType = $leave_application->leaveType->name;
+            $dateFrom = $leave_application->date_from;
+            $dateTo = $leave_application->date_to;
+            $city = $leave_application->city;
+            $country = $leave_application->country;
+            $illness = $leave_application->illness;
+            $is_board = $leave_application->is_board;
+            $is_masters = $leave_application->is_masters;
+            $is_outpatient = $leave_application->is_outpatient;
+            $date_filed = $leave_application->created_at;
+            $credits = $leave_application->applied_credits;
+            $response[] = [
+                'Employee Id' => $employeeid,
+                'Employee Name' => $employeeName,
+                'Leave Type' => $leaveType,
+                'Date From' => $dateFrom,
+                'Date To' => $dateTo,
+                'Country' => $country,
+                'City' => $city,
+                'Illness' => $illness,
+                'Board Exam' => $is_board,
+                'Masters' => $is_masters,
+                'Outpatient' => $is_outpatient,
+                'Date Filed' => $date_filed,
+                'Total Credits' => $credits,
+                'Total Days' => $credits,
+
+            ];
+        }
+        return ['data' => $response];
+    }
     public function CtoApplicationUnderSameArea(Request $request)
     {
         try {
@@ -249,12 +293,12 @@ class CtoApplicationController extends Controller
                     "description" => "Your compensatory time-off request has been approved by your Approving Officer. ",
                     "module_path" => '/cto',
                 ]);
-    
+
                 $user_notification = UserNotifications::create([
                     'notification_id' => $notification->id,
                     'employee_profile_id' => $data->employee_profile_id,
                 ]);
-    
+
                 Helpers::sendNotification([
                     "id" => Helpers::getEmployeeID($data->employee_profile_id),
                     "data" => new NotificationResource($user_notification)
@@ -288,12 +332,12 @@ class CtoApplicationController extends Controller
                     "description" => $employeeProfile->personalInformation->name()." filed a new compensatory time-off request.",
                     "module_path" => '/cto-requests',
                 ]);
-    
+
                 $user_notification = UserNotifications::create([
                     'notification_id' => $notification->id,
                     'employee_profile_id' => $data->approving_officer,
                 ]);
-    
+
                 Helpers::sendNotification([
                     "id" => Helpers::getEmployeeID($data->approving_officer),
                     "data" => new NotificationResource($user_notification)
@@ -305,12 +349,12 @@ class CtoApplicationController extends Controller
                     "description" => "Your compensatory time-off request has been approved by your Recommending Officer. ",
                     "module_path" => '/cto',
                 ]);
-    
+
                 $user_notification = UserNotifications::create([
                     'notification_id' => $notification->id,
                     'employee_profile_id' => $data->employee_profile_id,
                 ]);
-    
+
                 Helpers::sendNotification([
                     "id" => Helpers::getEmployeeID($data->employee_profile_id),
                     "data" => new NotificationResource($user_notification)
@@ -450,7 +494,7 @@ class CtoApplicationController extends Controller
 
                 $totalEarnedCredits = $overtimeCredits->sum('earned_credit_by_hour');
                 $appliedCredits = $value->applied_credits;
-                
+
                 if ($appliedCredits > $totalEarnedCredits) {
 
                     $failed[] = $value;
@@ -518,19 +562,19 @@ class CtoApplicationController extends Controller
                     $employeeProfile = EmployeeProfile::find($employeeId);
                     $title = "New Compensatory Time Off request";
                     $description = $employeeProfile->personalInformation->name()." filed a new compensatory time-off request.";
-                    
-                    
+
+
                     $notification = Notifications::create([
                         "title" => $title,
                         "description" => $description,
                         "module_path" => '/cto-requests',
                     ]);
-        
+
                     $user_notification = UserNotifications::create([
                         'notification_id' => $notification->id,
                         'employee_profile_id' => $hrmo_officer,
                     ]);
-        
+
                     Helpers::sendNotification([
                         "id" => Helpers::getEmployeeID($hrmo_officer),
                         "data" => new NotificationResource($user_notification)
