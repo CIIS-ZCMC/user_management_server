@@ -1898,6 +1898,11 @@ Route::middleware('auth.cookie')->group(function () {
             Route::post('print-leave-application/{id}', 'LeaveApplicationController@updatePrint');
         });
 
+        Route::middleware(['auth.permission:UMIS-LM download'])->group(function () {
+            Route::get('export-csv','LeaveApplicationController@exportCsv');
+        });
+
+
         Route::middleware(['auth.permission:UMIS-LM write'])->group(function () {
             Route::post('leave-credit-add', 'LeaveApplicationController@addCredit');
         });
