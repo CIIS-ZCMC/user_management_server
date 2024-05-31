@@ -265,7 +265,7 @@ class Helpers
         $position = $employee_profile->position();
 
         if ($position !== null) {
-            if ($position['area']->code === 'OMCC') {
+            if (isset($position['area']) && $position['area']->code === 'OMCC') {
                 return [
                     'id' => null,
                     'name' => null
