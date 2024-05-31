@@ -112,9 +112,10 @@ class LeaveApplicationController extends Controller
     public function exportCsv()
     {
         $leave_applications = LeaveApplication::with('employeeProfile', 'leaveType')
-            ->where('status', 'approved')
-            ->orWhere('status', 'received')
-            ->get();
+                                ->where('status', 'received')
+                                ->get();
+            // ->where('status', 'approved')
+         
 
         $response = [];
 
