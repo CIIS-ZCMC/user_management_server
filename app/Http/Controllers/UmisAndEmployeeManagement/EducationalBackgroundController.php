@@ -233,6 +233,36 @@ class EducationalBackgroundController extends Controller
         }
     }
     
+    public function updateSingleData($id, EducationalBackgroundRequest $request)
+    {
+        try{
+            $cleanData = [];
+            $educational_background = EducationalBackground::find($id);
+
+            if(!$educational_background){
+                return response()->json(['message ' => "No record found."], Response::HTTP_NOT_FOUND);
+            }
+
+            foreach ($request->all() as $key => $value) {
+                if($key === 'attachment') continue;
+                if ($value === null) {
+                    $cleanData[$key] = $value;
+                    continue;
+                }
+                $cleanData[$key] = strip_tags($value);
+            }
+
+            $educational_background->update($cleanData);
+
+            return response()->json([
+                'data' => new EducationalBackgroundResource($educational_background),
+                'message' => "Educational background updated successfully"
+            ]);
+        }catch(\Throwable $th){
+            throw new \Exception("Failed to register employee education record.", 400);
+        }
+    }
+    
     public function updateMany(EducationalBackgroundManyRequest $request)
     {
         try{

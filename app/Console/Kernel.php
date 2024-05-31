@@ -5,6 +5,7 @@ namespace App\Console;
 use App\Console\Commands\EmployeeEarnAnnualSPLCredit;
 use App\Console\Commands\EmployeeMonthlyEarnCredit;
 use App\Console\Commands\EmployeeSixMonthEarnSPLCredit;
+use App\Console\Commands\EmployeeSoloParentCredit;
 use App\Console\Commands\ProcessApprovedOvertimeCredits;
 use App\Console\Commands\ProcessExpiredOvertimeCredits;
 use App\Console\Commands\ProcessUndertimeMonthly;
@@ -49,14 +50,15 @@ class Kernel extends ConsoleKernel
             return now()->day == 1;
         });
 
-        $schedule->command(EmployeeSixMonthEarnSPLCredit::class)->daily();
+        // $schedule->command(EmployeeSixMonthEarnSPLCredit::class)->daily();
+        // $schedule->command(EmployeeSoloParentCredit::class)->daily();
         // Run UpdateOicLeaveApplication every day at 12:00 AM
         $schedule->command(UpdateOicLeaveApplication::class)->dailyAt('00:00');
         // Run RemoveOicLeaveApplication every day at 11:59 PM
         $schedule->command(RemoveOicLeaveApplication::class)->dailyAt('23:59');
 
 
-      
+
         // $schedule->command(EmployeeMonthlyEarnCredit::class)->runInBackground();
         // $schedule->command(EmployeeSixMonthEarnSPLCredit::class)->runInBackground();
 

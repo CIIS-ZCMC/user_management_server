@@ -94,6 +94,10 @@ class DTRcontroller extends Controller
 
     }
     public function getValidatedEntry($firstin,$secondin){
+        if($firstin && $secondin){
+            return $firstin;
+        }
+
         if($firstin && !$secondin){
             return $firstin;
         }
@@ -171,7 +175,8 @@ class DTRcontroller extends Controller
                 'second_in' => ' --:--',
                 'second_out' => ' --:--',
                 'schedule'=>[],
-                'deviceLogs'=>$deviceLogs
+                'deviceLogs'=>$deviceLogs,
+                'rec'=>$selfRecord
             ];
         } catch (\Throwable $th) {
             Helpersv2::errorLog($this->CONTROLLER_NAME, 'pullDTRuser', $th->getMessage());
@@ -578,6 +583,7 @@ class DTRcontroller extends Controller
             }
 
             if (count($id) >= 2) {
+
                 return $this->GenerateMultiple($id, $month_of, $year_of, $view,$ishalf);
             }
 
@@ -670,6 +676,7 @@ class DTRcontroller extends Controller
 
             return $this->PrintDtr($month_of, $year_of, $biometric_id, $emp_Details, $view, $FrontDisplay,$ishalf);
         } catch (\Throwable $th) {
+            return $th;
             Helpersv2::errorLog($this->CONTROLLER_NAME, 'generateDTR', $th->getMessage());
             return response()->json(['message' =>  $th->getMessage()]);
         }
@@ -953,9 +960,16 @@ class DTRcontroller extends Controller
                 ]);
             }
             $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
-            $approvingDTR = Help::getApprovingDTR($employee->assignedArea, $employee);
-            $approver = isset($approvingDTR['name']) ? $approvingDTR['name'] : null;
+         //   $approvingDTR = Help::getApprovingDTR($employee->assignedArea, $employee);
 
+             $recommending =  Help::getRecommendingAndApprovingOfficer($employee->assignedArea->findDetails(),$employee->id)['recommending_officer'] ?? null;
+             $approver = null;
+             if($recommending){
+                $appr = EmployeeProfile::findorFail($recommending);
+                $approver = $appr->personalInformation->employeeName();
+             }
+          
+            
             if ($view) {
                 return view('generate_dtr.PrintDTRPDF',  [
                     'daysInMonth' => $days_In_Month,
@@ -1031,9 +1045,12 @@ class DTRcontroller extends Controller
 
     public function GenerateMultiple($id, $month_of, $year_of, $view,$ishalf)
     {
+
         $data = [];
         $emp_Details = [];
         foreach ($id as $key => $biometric_id) {
+
+
 
             if ($this->helper->isEmployee($biometric_id)) {
                 $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
@@ -1090,6 +1107,8 @@ class DTRcontroller extends Controller
                                     'second_out' => $val->second_out
                                 ],
                             ];
+
+
                             $this->helper->saveTotalWorkingHours(
                                 $validate,
                                 $val,
@@ -1103,7 +1122,7 @@ class DTRcontroller extends Controller
                     return response()->json(['message' =>  $th->getMessage()]);
                 }
 
-                $ohf[] = isset($DaySchedule) ? $DaySchedule['total_hours'] . ' HOURS' : null;
+                $ohf[] = isset($DaySchedule['total_hours']) ? $DaySchedule['total_hours'] . ' HOURS' : "8 HOURS";
 
                 $emp_Details[] = [
                     'OHF' => $ohf,
@@ -1113,6 +1132,7 @@ class DTRcontroller extends Controller
                     'biometric_ID' => $biometric_id
                 ];
             }
+
         }
 
 
@@ -1290,13 +1310,12 @@ class DTRcontroller extends Controller
                 ->get();
 
                 $employee = EmployeeProfile::where('biometric_id', $biometric_id)->first();
-
-                //Leave Applications
+                $leavedata = [];
+                if($employee->leaveApplications){
+                      //Leave Applications
                 $leaveapp  = $employee->leaveApplications->filter(function ($row) {
                     return $row['status'] == "received";
                 });
-
-                $leavedata = [];
                 foreach ($leaveapp as $rows) {
                     $leavedata[] = [
                         'country' => $rows['country'],
@@ -1308,12 +1327,15 @@ class DTRcontroller extends Controller
                         'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to'])
                     ];
                 }
+                }
 
-                //Official business
+                $obData = [];
+                if($employee->officialBusinessApplications){
+                     //Official business
                 $officialBusiness = array_values($employee->officialBusinessApplications->filter(function ($row) {
                     return $row['status'] == "approved";
                 })->toarray());
-                $obData = [];
+
                 foreach ($officialBusiness as $rows) {
                     $obData[] = [
                         'purpose' => $rows['purpose'],
@@ -1322,12 +1344,15 @@ class DTRcontroller extends Controller
                         'dates_covered' => $this->helper->getDateIntervals($rows['date_from'], $rows['date_to']),
                     ];
                 }
+                }
 
+        $otData = [];
                 //Official Time
-                $officialTime = $employee->officialTimeApplications->filter(function ($row) {
+                if($employee->officialTimeApplications){
+                        $officialTime = $employee->officialTimeApplications->filter(function ($row) {
                     return $row['status'] == "approved";
                 });
-                $otData = [];
+
                 foreach ($officialTime as $rows) {
                     $otData[] = [
                         'date_from' => $rows['date_from'],
@@ -1337,10 +1362,14 @@ class DTRcontroller extends Controller
                     ];
                 }
 
-                $CTO =  $employee->CTOApplication->filter(function ($row) {
+                }
+
+                $ctoData = [];
+                if($employee->CTOApplication){
+                        $CTO =  $employee->CTOApplication->filter(function ($row) {
                     return $row['status'] == "approved";
                 });
-                $ctoData = [];
+
                 foreach ($CTO as $rows) {
                     $ctoData[] = [
                         'date' => date('Y-m-d', strtotime($rows['date'])),
@@ -1348,6 +1377,8 @@ class DTRcontroller extends Controller
                         'remarks' => $rows['remarks'],
                     ];
                 }
+                }
+
 
 
 

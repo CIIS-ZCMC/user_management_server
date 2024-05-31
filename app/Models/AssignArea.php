@@ -18,6 +18,7 @@ class AssignArea extends Model
 
     public $fillable = [
         'salary_grade_step',
+        'salary_grade_id',
         'employee_profile_id',
         'division_id',
         'department_id',
@@ -55,6 +56,11 @@ class AssignArea extends Model
     public function unit()
     {
         return $this->belongsTo(Unit::class);
+    }
+
+    public function salaryGrade()
+    {
+        return $this->belongsTo(SalaryGrade::class);
     }
 
     public function designation()

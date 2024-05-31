@@ -116,7 +116,7 @@ class DepartmentController extends Controller
 
 
             $title = "Congratulations!";
-            $description = "You been assigned as department head of " . $department->name;
+            $description = "You have been assigned as department head of " . $department->name;
 
 
             $notification = Notifications::create([

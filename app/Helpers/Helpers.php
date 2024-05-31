@@ -265,7 +265,7 @@ class Helpers
         $position = $employee_profile->position();
 
         if ($position !== null) {
-            if ($position['area']->code === 'OMCC') {
+            if (isset($position['area']) && $position['area']->code === 'OMCC') {
                 return [
                     'id' => null,
                     'name' => null
@@ -876,11 +876,31 @@ class Helpers
 
     public static function hasSchedule($start, $end, $employeeId)
     {
-        return EmployeeSchedule::where('employee_profile_id', $employeeId)
-            ->whereHas('schedule', function ($query) use ($start, $end) {
-                $query->whereBetween('date', [$start, $end]);
-            })
-            ->exists();
+        $currentDate = $start;
+        while ($currentDate <= $end) {
+            // Check if there is a schedule for the current date
+            $hasSchedule = EmployeeSchedule::where('employee_profile_id', $employeeId)
+                ->whereHas('schedule', function ($query) use ($currentDate) {
+                    $query->where('date', $currentDate);
+                })
+                ->exists();
+    
+            // If schedule is missing for any day, return false
+            if (!$hasSchedule) {
+                return false;
+            }
+    
+            // Move to the next day
+            $currentDate = date('Y-m-d', strtotime($currentDate . ' +1 day'));
+        }
+    
+        // If schedules are found for every day, return true
+        return true;
+        // return EmployeeSchedule::where('employee_profile_id', $employeeId)
+        //     ->whereHas('schedule', function ($query) use ($start, $end) {
+        //         $query->whereBetween('date', [$start, $end]);
+        //     })
+        //     ->exists();
     }
     public static function getTotalHours($start, $end, $employeeId)
     {
