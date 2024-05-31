@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Migration;
 use App\Http\Controllers\Controller;
 use App\Models\EmployeeProfile;
 use App\Models\EmploymentType;
+use App\Models\LegalInformation;
+use App\Models\LegalInformationQuestion;
 use App\Models\PersonalInformation;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -86,6 +88,17 @@ class MigrateEmployeeDetailsController extends Controller
                     'employment_type_id' => $employment_type_id,
                     'personal_information_id' => $personal_information->id,
                 ]);
+
+                $legal_questions = LegalInformationQuestion::all();
+                foreach ($legal_questions as $value) {
+                    LegalInformation::create([
+                        'legal_iq_id' => $value->id,
+                        'personal_information_id' => $employee_profile->personal_information_id,
+                        'answer' => FALSE,
+                        'details' => null,
+                        'date' => now()
+                    ]);
+                }
 
                 Log::info('User Migrate Successfully', [
                     'user_detail' => $employee_profile,
