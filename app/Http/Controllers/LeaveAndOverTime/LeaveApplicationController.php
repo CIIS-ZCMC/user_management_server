@@ -111,48 +111,49 @@ class LeaveApplicationController extends Controller
 
     public function exportCsv()
     {
-        // Step 1: Retrieve specific rows
-        $leave_applications = LeaveApplication::where('status', 'approved')
+        $leave_applications = LeaveApplication::with('employeeProfile', 'leaveType')
+            ->where('status', 'approved')
+            ->orWhere('status', 'received')
             ->get();
 
-        // Step 2: Transform the data using the resource collection
-        $leave_application_resources = LeaveApplicationResource::collection($leave_applications);
+        $response = [];
 
-        // Step 3: Convert the transformed data to CSV format
-        $csvData = $this->convertToCsv($leave_application_resources);
+        foreach ($leave_applications as $leave_application) {
+            $employeeName = $leave_application->employeeProfile->name();
+            $employeeid = $leave_application->employeeProfile->employee_id;
+            $leaveType = $leave_application->leaveType->name;
+            $dateFrom = $leave_application->date_from;
+            $dateTo = $leave_application->date_to;
+            $city = $leave_application->city;
+            $country = $leave_application->country;
+            $illness = $leave_application->illness;
+            $is_board = $leave_application->is_board;
+            $is_masters = $leave_application->is_masters;
+            $is_outpatient = $leave_application->is_outpatient;
+            $date_filed = $leave_application->created_at;
+            $credits = $leave_application->applied_credits;
+            $response[] = [
+                'Employee Id' => $employeeid,
+                'Employee Name' => $employeeName,
+                'Leave Type' => $leaveType,
+                'Date From' => $dateFrom,
+                'Date To' => $dateTo,
+                'Country' => $country,
+                'City' => $city,
+                'Illness' => $illness,
+                'Board Exam' => $is_board,
+                'Masters' => $is_masters,
+                'Outpatient' => $is_outpatient,
+                'Date Filed' => $date_filed,
+                'Total Credits' => $credits,
+                'Total Days' => $credits,
 
-        // Step 4: Return the CSV as a download
-        return Response::make($csvData, 200, [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="leave_applications.csv"',
-        ]);
-    }
-
-
-    private function convertToCsv($leave_applications)
-    {
-
-        $csvHeader = ['Employee Name', 'Leave Type', 'Date From', 'Date To', 'Without Pay'];
-
-        $file = fopen('php://memory', 'r+');
-        fputcsv($file, $csvHeader);
-        foreach ($leave_applications as $application) {
-            $applicationArray = $application->toArray(request());
-            fputcsv($file, [
-                $applicationArray['employee_profile']['name'],
-                $applicationArray['leave_type']['name'],
-                $applicationArray['date_from'],
-                $applicationArray['date_to'],
-                $applicationArray['without_pay']
-            ]);
+            ];
         }
-
-
-        rewind($file);
-        $csv = stream_get_contents($file);
-        fclose($file);
-        return $csv;
+        return ['data' => $response];
     }
+
+
 
     public function hrmoApproval(Request $request)
     {
@@ -1063,16 +1064,16 @@ class LeaveApplicationController extends Controller
             if ($leave_type->code === 'VL' && $request->country !== 'Philippines') {
                 // Get the current date
                 $currentDate = Carbon::now();
-            
+
                 // Check if there is an HRMO schedule starting from today
                 if (!Helpers::hasSchedule($currentDate->toDateString(), $currentDate->toDateString(), $hrmo_officer)) {
                     return response()->json(['message' => "No schedule defined for HRMO"], Response::HTTP_FORBIDDEN);
                 }
-            
+
                 $consecutiveDaysNeeded = 19;
                 $foundConsecutiveDays = 0;
                 $checkDate = $currentDate->copy();
-            
+
                 // Loop to find 19 consecutive days with HRMO schedule
                 while ($foundConsecutiveDays < $consecutiveDaysNeeded) {
                     if (Helpers::hasSchedule($checkDate->toDateString(), $checkDate->toDateString(), $hrmo_officer)) {
@@ -1080,9 +1081,9 @@ class LeaveApplicationController extends Controller
                     }
                     $checkDate->addDay();
                 }
-            
+
                 $earliestValidDate = $checkDate->copy(); // This is the date after 19 consecutive days
-            
+
                 if ($start->lt($earliestValidDate)) {
                     $message = $start->toDateString();
                     return response()->json(['message' => "You cannot file for leave on $message. Please select a date 20 days or more from today."], Response::HTTP_FORBIDDEN);
