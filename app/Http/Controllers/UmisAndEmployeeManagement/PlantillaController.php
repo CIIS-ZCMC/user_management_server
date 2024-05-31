@@ -52,6 +52,75 @@ class PlantillaController extends Controller
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+    
+    public function plantillaNumberBaseOnJobPositionAndEmploymentType(Request $request)
+    {
+        try {
+            $employee_type_id = $request->employee_type_id;
+            $designation_id = $request->designation_id;
+
+            /**
+             * If Both employment Type and Job position not specified.
+             */
+            if($employee_type_id === null && $designation_id === null){
+
+                $plantillas = PlantillaNumber::where('is_dissolve', false)->get();
+
+                return response()->json([
+                    'data' => PlantillaNumberAllResource::collection($plantillas),
+                    'message' => 'Plantilla list retrieved.'
+                ], Response::HTTP_OK);
+            }
+
+            /**
+             * If Employment Type is specified but not the Job position
+             */
+            if($employee_type_id !== null && $designation_id === null){
+
+                $plantillas = PlantillaNumber::where('employment_type_id', $employee_type_id)
+                    ->where('is_dissolve', false)->get();
+
+                return response()->json([
+                    'data' => PlantillaNumberAllResource::collection($plantillas),
+                    'message' => 'Plantilla list retrieved.'
+                ], Response::HTTP_OK);
+            }
+
+            /**
+             * If Job position is specified but not the Employment Type
+             */
+            if($employee_type_id === null && $designation_id !== null){
+
+                $plantillas = PlantillaNumber::select('plantilla_numbers.*')
+                    ->join('plantillas as p', 'p.id', 'plantilla_numbers.plantilla_id')
+                    ->where('p.designation_id', $designation_id)
+                    ->where('plantilla_numbers.is_dissolve', false)->get();
+
+                return response()->json([
+                    'data' => PlantillaNumberAllResource::collection($plantillas),
+                    'message' => 'Plantilla list retrieved.'
+                ], Response::HTTP_OK);
+            }
+
+            /**
+             * If Both area specified
+             */
+
+            $plantillas = PlantillaNumber::select('plantilla_numbers.*')
+                    ->join('plantillas as p', 'p.id', 'plantilla_numbers.plantilla_id')
+                    ->where('p.designation_id', $designation_id)
+                    ->where('plantilla_numbers.employment_type_id', $employee_type_id)
+                    ->where('plantilla_numbers.is_dissolve', false)->get();
+
+            return response()->json([
+                'data' => PlantillaNumberAllResource::collection($plantillas),
+                'message' => 'Plantilla list retrieved.'
+            ], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
+            return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 
     /** [API] - plantilla-referrence-to-assignarea [METHOD] - GET */
     public function plantillaReferrenceToAssignArea(Request $request)
@@ -144,19 +213,19 @@ class PlantillaController extends Controller
 
                 $plantilla_number = PlantillaNumber::where('id', $user_Current_Plantilla)->first();
 
-               
+
                 // CHANGE PLANTILLA EMP TYPE to EMPLOYEE PROFILE EMP TYPE
-                if ($employee_profile->employmentType->name === 'Permanent CTI') {
-                    $plantilla_number->update([
-                        'is_dissolve' => 1,
-                        'is_vacant' => 0,
-                        'employee_profile_id' => NULL,
-                    ]);
-                } else {
+                // if ($employee_profile->employmentType->name === 'Permanent CTI') {
+                //     $plantilla_number->update([
+                //         'is_dissolve' => 1,
+                //         'is_vacant' => 0,
+                //         'employee_profile_id' => NULL,
+                //     ]);
+                // } else {
                     $plantilla_number->update(['is_vacant' => 1, 'employee_profile_id' => NULL]);
                     $plantilla = $plantilla_number->plantilla;
                     $plantilla->update(['total_used_plantilla_no' => $plantilla->total_used_plantilla_no + 1]);
-                }
+                // }
 
                 PlantillaNumber::where('id', $to_assign)->update([
                     'employee_profile_id' => $id,
@@ -328,11 +397,10 @@ class PlantillaController extends Controller
     public function store(PlantillaRequest $request)
     {
         try {
-
             $cleanData = [];
 
             foreach ($request->all() as $key => $value) {
-                if ($key === 'plantilla_number') {
+                if ($key === 'plantilla_numbers') {
                     $cleanData[$key] = json_decode($value, true);
                     continue;
                 }
@@ -349,37 +417,37 @@ class PlantillaController extends Controller
 
             $plantilla_numbers = [];
 
-            foreach ($cleanData['plantilla_number'] as $number) {
+            foreach ($cleanData['plantilla_numbers'] as $number) {
                 try {
-                    $existing = PlantillaNumber::where('number', $number)->first();
+                    
+                    $existing = PlantillaNumber::where('number', $number['plantilla_number'])->first();
 
                     if ($existing) {
                         DB::rollBack();
                         return response()->json(['message' => "Plantilla number already exist."], Response::HTTP_FORBIDDEN);
                     }
 
-                    if (!is_string($number) || $existing !== null) {
+                    if (!is_string($number['plantilla_number'] ) ) {
                         DB::rollBack();
                         return response()->json(['message' => "Invalid type require string."], Response::HTTP_FORBIDDEN);
                     }
-
+                   
                     $plantilla_number_new = PlantillaNumber::create([
-                        'number' => $number,
-                        // 'employment_type_id' => $value->employment_type_id,
+                        'number' => $number['plantilla_number'],
+                        'employment_type_id' => $number['employment_type_id'],
                         'plantilla_id' => $plantilla->id
                     ]);
 
                     $plantilla_numbers[] = $plantilla_number_new;
                 } catch (\Throwable $th) {
                     DB::rollBack();
-                    return response()->json(['message' => "Please check fields."], Response::HTTP_FORBIDDEN);
+                    return response()->json(['message' => 'Failed to registered plantilla'], Response::HTTP_FORBIDDEN);
                 }
             }
 
-            DB::commit();
-
             $data = PlantillaNumberAllResource::collection($plantilla_numbers);
             $message = 'Plantilla created successfully.';
+            DB::commit();
 
             Helpers::registerSystemLogs($request, null, true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
 
@@ -463,22 +531,8 @@ class PlantillaController extends Controller
             $cleanData['effective_at'] = $plantilla_number->plantilla->effective_at;
 
             $cleanData['plantilla_number_id'] = $plantilla_number->id;
-            $key = '';
-
-            switch ($request->sector) {
-                case 'division':
-                    $key = 'division_id';
-                    break;
-                case 'department':
-                    $key = 'department_id';
-                    break;
-                case 'section':
-                    $key = 'section_id';
-                    break;
-                default:
-                    $key = 'unit_id';
-                    break;
-            }
+            $key = strtolower($request->sector).'_id';
+            
             $cleanData[$key] = strip_tags($request->area);
 
             $key_list = ['division_id', 'department_id', 'section_id', 'unit_id'];

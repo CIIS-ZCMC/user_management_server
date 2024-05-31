@@ -232,6 +232,16 @@ class ScheduleController extends Controller
                             }
                         }
                     }
+
+                    $sections = Section::where('division_id', $my_area['details']->id)->get();
+                    foreach ($sections as $section) {
+                        $areas[] = ['id' => $section->id, 'name' => $section->name, 'code' => $section->code, 'sector' => 'Section'];
+
+                        $units = Unit::where('section_id', $section->id)->get();
+                        foreach ($units as $unit) {
+                            $areas[] = ['id' => $unit->id, 'name' => $unit->name, 'code' => $unit->code, 'sector' => 'Unit'];
+                        }
+                    }
                     break;
                 case "Department":
                     $areas[] = ['id' => $my_area['details']->id, 'name' => $my_area['details']->name, 'code' => $my_area['details']->code, 'sector' => $my_area['sector']];
@@ -265,7 +275,6 @@ class ScheduleController extends Controller
                 'data' => $areas,
                 'message' => 'Successfully retrieved all my areas.'
             ], Response::HTTP_OK);
-
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'myAreas', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -276,10 +285,14 @@ class ScheduleController extends Controller
     public function FilterByAreaAndDate(Request $request)
     {
         try {
+            $user = $request->user;
+
             $area_id = $request->area_id;
-            $area_sector = $request->area_sector;
+            $area_sector = strtolower($request->area_sector);
             $year = Carbon::parse($request->date)->year;
             $month = Carbon::parse($request->date)->month;
+
+
 
             $data = EmployeeProfile::with([
                 'assignedArea',
@@ -290,15 +303,14 @@ class ScheduleController extends Controller
                 }
             ])->whereHas('assignedArea', function ($query) use ($area_id, $area_sector) {
                 $query->where($area_sector . '_id', $area_id);
-            })->get();
+            })->whereInget();
+
 
             return response()->json(['data' => ScheduleResource::collection($data)], Response::HTTP_OK);
-
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'myAreas', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
     }
 
     private function updateAutomaticScheduleStatus()
@@ -361,7 +373,6 @@ class ScheduleController extends Controller
             }
 
             return $all_areas;
-
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'assignPlantillaToAreas', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

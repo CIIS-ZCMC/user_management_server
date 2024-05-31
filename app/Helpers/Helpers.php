@@ -394,7 +394,7 @@ class Helpers
         ]);
     }
 
-    public static function getDatesInMonth($year, $month, $value, $includeScheduleCount = true)
+    public static function getDatesInMonth($year, $month, $value, $includeScheduleCount = true, $employee_ids = [])
     {
         $start = new DateTime("{$year}-{$month}-01");
         $end = new DateTime("{$year}-{$month}-" . $start->format('t'));
@@ -438,7 +438,7 @@ class Helpers
 
                 // Sum the count of EmployeeSchedules for each schedule
                 foreach ($schedules as $schedule) {
-                    $countSchedulePerDate += EmployeeSchedule::where('schedule_id', $schedule->id)->count();
+                    $countSchedulePerDate += EmployeeSchedule::where('schedule_id', $schedule->id)->whereIn('employee_profile_id', $employee_ids)->count();
                 }
 
                 $dates[] = ['date' => $formattedDate, 'count' => $countSchedulePerDate];
@@ -816,14 +816,20 @@ class Helpers
         $duty_start = new DateTime($start_duty);
 
         // Get the last day of the duty start month
-        $duty_end = new DateTime("last day of " . $duty_start->format('Y-m'));
+        // $duty_end = new DateTime("last day of " . $duty_start->format('Y-m'));
+
+        // Calculate the first day of the next month
+        $duty_end = (clone $duty_start)->modify('first day of next month');
 
         // Generate schedule from $duty_start to $duty_end
         $scheduleDates = [];
 
         while ($duty_start <= $duty_end) {
-            // Add duty for $duty_start date to the schedule array
-            $scheduleDates[] = $duty_start->format('Y-m-d');
+            // Skip weekends
+            if ($duty_start->format('N') < 6) {
+                // Add duty for $duty_start date to the schedule array
+                $scheduleDates[] = $duty_start->format('Y-m-d');
+            }
 
             // Move to the next day
             $duty_start->add(new DateInterval('P1D'));
@@ -870,11 +876,31 @@ class Helpers
 
     public static function hasSchedule($start, $end, $employeeId)
     {
-        return EmployeeSchedule::where('employee_profile_id', $employeeId)
-            ->whereHas('schedule', function ($query) use ($start, $end) {
-                $query->whereBetween('date', [$start, $end]);
-            })
-            ->exists();
+        $currentDate = $start;
+        while ($currentDate <= $end) {
+            // Check if there is a schedule for the current date
+            $hasSchedule = EmployeeSchedule::where('employee_profile_id', $employeeId)
+                ->whereHas('schedule', function ($query) use ($currentDate) {
+                    $query->where('date', $currentDate);
+                })
+                ->exists();
+    
+            // If schedule is missing for any day, return false
+            if (!$hasSchedule) {
+                return false;
+            }
+    
+            // Move to the next day
+            $currentDate = date('Y-m-d', strtotime($currentDate . ' +1 day'));
+        }
+    
+        // If schedules are found for every day, return true
+        return true;
+        // return EmployeeSchedule::where('employee_profile_id', $employeeId)
+        //     ->whereHas('schedule', function ($query) use ($start, $end) {
+        //         $query->whereBetween('date', [$start, $end]);
+        //     })
+        //     ->exists();
     }
     public static function getTotalHours($start, $end, $employeeId)
     {
@@ -1143,7 +1169,8 @@ class Helpers
 
     public static function sendNotification($body)
     {
-        $response = Http::post('http://localhost:8030/notification', $body);
+
+        $response = Http::post('http://192.168.5.1:8033/notification', $body);
 
         if ($response->successful()) {
             $body = $response->body();

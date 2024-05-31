@@ -42,11 +42,12 @@ class DivisionController extends Controller
     public function index(Request $request)
     {
         try {
-            $cacheExpiration = Carbon::now()->addDay();
+            // $cacheExpiration = Carbon::now()->addDay();
 
-            $divisions = Cache::remember('divisions', $cacheExpiration, function () {
-                return Division::all();
-            });
+            // $divisions = Cache::remember('divisions', $cacheExpiration, function () {
+            //     return Division::all();
+            // });
+            $divisions = Division::all();
 
             return response()->json([
                 'data' => DivisionResource::collection($divisions),
@@ -126,9 +127,9 @@ class DivisionController extends Controller
 
 
             $title = "Congratulations!";
-            $description = "You been assigned as division head of " . $division->name . " division.";
-            
-            
+            $description = "You have been assigned as division head of " . $division->name . " division.";
+
+
             $notification = Notifications::create([
                 "title" => $title,
                 "description" => $description,
@@ -144,8 +145,8 @@ class DivisionController extends Controller
                 "id" => $employee_profile->employee_id, // EMPLOYEE_ID eg. 2023010250
                 "data" => new NotificationResource($user_notification)
             ]);
-          
-          
+
+
             Helpers::registerSystemLogs($request, $id, true, 'Success in assigning division chief ' . $this->PLURAL_MODULE_NAME . '.');
 
 
@@ -252,7 +253,7 @@ class DivisionController extends Controller
             Helpers::registerSystemLogs($request, $division['id'], true, 'Success in creating ' . $this->SINGULAR_MODULE_NAME . '.');
 
 
-            
+
             return response()->json([
                 'data' => new DivisionResource($division),
                 'message' => 'Division created successfully.'

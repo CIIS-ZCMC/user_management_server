@@ -33,6 +33,7 @@ return [
 
     'app_key' => env('APP_KEY'),
     'server_domain' => env('SERVER_DOMAIN'),
+    'client_domain' => env('CLIENT_DOMAIN'),
     'socket_server_domain' => env('SOCKET_SERVER_DOMAIN'),
     'client_domain' => env('CLIENT_DOMAIN'),
     'cookie_name' => env('COOKIE_NAME'),

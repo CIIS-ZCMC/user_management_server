@@ -36,7 +36,7 @@ class SendEmailJob implements ShouldQueue
                 $body = View::make('leave.mail', $data)->render();
                 break;
             case "new_account":
-                $subject = 'Your Zcmc Portal Account.';
+                $subject = 'Your ZCMC Portal Account.';
                 $body = View::make('mail.credentials', $data)->render();
                 break;
             case "email_verification":

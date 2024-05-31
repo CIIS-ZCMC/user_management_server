@@ -49,14 +49,14 @@ class EmployeeDTRList extends JsonResource
             }
         }
 
-        if ($sector === 'section') {
-            if ($assign_area->section->department !== null) {
-                $area_under[] = $assign_area->section->department->division->name;
-                $area_under[] = $assign_area->section->department->name;
-            } else {
-                $area_under[] = $assign_area->section->division->name;
-            }
-        }
+        // if ($sector === 'section') {
+        //     if ($assign_area->section->department !== null) {
+        //         $area_under[] = $assign_area->section->department->division->name;
+        //         $area_under[] = $assign_area->section->department->name;
+        //     } else {
+        //         $area_under[] = $assign_area->section->division->name;
+        //     }
+        // }
 
         if ($sector === 'unit') {
             if ($assign_area->unit->name !== null) {
@@ -74,7 +74,7 @@ class EmployeeDTRList extends JsonResource
             'biometric_id' => $this->biometric_id,
             'job_position' => isset($assign_area) ? $assign_area->designation->name : null,
             'area' => $area,
-            'area_under' => $area_under,
+            // 'area_under' => $area_under,
 
         ];
     }

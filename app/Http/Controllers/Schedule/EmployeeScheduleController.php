@@ -26,7 +26,7 @@ class EmployeeScheduleController extends Controller
     private $PLURAL_MODULE_NAME = 'employee schedules';
     private $SINGULAR_MODULE_NAME = 'employee schedule';
 
-    /** 
+    /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
@@ -36,7 +36,7 @@ class EmployeeScheduleController extends Controller
             $month = $request->month;   // Desired month (1 to 12)
             $year = $request->year;     // Desired year
             $assigned_area = $user->assignedArea->findDetails();
-            $dates_with_day = Helpers::getDatesInMonth($year, $month, "Days of Week");
+            // $dates_with_day = Helpers::getDatesInMonth($year, $month, "Days of Week");
 
             $this->updateAutomaticScheduleStatus();
 
@@ -51,7 +51,6 @@ class EmployeeScheduleController extends Controller
                 }
             ])->whereNull('deactivated_at')
                 ->where('id', '!=', 1);
-            // ->orderBy('last_name');
 
             if (!$isSpecialUser) {
                 $myEmployees = $user->myEmployees($assigned_area, $user);
@@ -61,6 +60,9 @@ class EmployeeScheduleController extends Controller
 
             $data = $query->get();
 
+            $employee_ids = isset($employee_ids) ? $employee_ids : collect($data)->pluck('id')->toArray(); // Ensure $employee_ids is defined
+            $dates_with_day = Helpers::getDatesInMonth($year, $month, "Days of Week", true, $employee_ids);
+
             // Calculate total working hours for each employee
             $data->each(function ($employee) {
                 $employee->total_working_hours = $employee->schedule->sum(function ($schedule) {
@@ -68,11 +70,11 @@ class EmployeeScheduleController extends Controller
                 });
             });
 
+
             return response()->json([
                 'data' => ScheduleResource::collection($data),
                 'dates' => $dates_with_day,
             ], Response::HTTP_OK);
-
         } catch (\Throwable $th) {
 
             Helpers::errorLog($this->CONTROLLER_NAME, 'index', $th->getMessage());
@@ -93,7 +95,6 @@ class EmployeeScheduleController extends Controller
                 'data' => new EmployeeScheduleResource($model),
                 'holiday' => HolidayResource::collection(Holiday::all())
             ], Response::HTTP_OK);
-
         } catch (\Throwable $th) {
             Helpers::errorLog($this->CONTROLLER_NAME, 'create', $th->getMessage());
             return response()->json(['message' => $th->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

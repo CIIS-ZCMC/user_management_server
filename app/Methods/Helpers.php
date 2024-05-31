@@ -65,9 +65,9 @@ class Helpers
 
     public function withinInterval($last_entry, $bio_entry)
     {
-       
+
         $With_Interval = date('Y-m-d H:i:s', strtotime($last_entry) + floor(config("app.alloted_dtr_interval") * 60));
-       
+
 
         if ($With_Interval <= $bio_entry[0]['date_time']) {
             return true;
@@ -190,7 +190,12 @@ AND id IN (
                 $dp =  $firstin . '-' . $firstout;
             }
             $arrival_d[] = $dp;
-
+            $total_hours = 8;
+            if(isset($row->total_hours) && $row->total_hours){
+                $total_hours = $row->total_hours ;
+            }else {
+                $total_hours = config("app.required_working_hours");
+            }
 
             $scheds[] = [
                 'scheduleDate' => $row->date ?? date('Y-m-d'),
@@ -198,7 +203,7 @@ AND id IN (
                 'second_entry' => $row->first_out ?? null,
                 'third_entry' => $row->second_in ?? null,
                 'last_entry' => $row->second_out ?? null,
-                'total_hours' => $row->total_hours ?? Cache::get('required_working_hours'),
+                'total_hours' => $total_hours,
                 'arrival_departure' => $dp ?? ""
             ];
         }
@@ -228,7 +233,7 @@ AND id IN (
             'second_entry' => null,
             'third_entry' => null,
             'last_entry' => null,
-            'total_hours' => config("app.required_working_hours"),
+            'total_hours' => config("app.required_working_hours") ?? 8,
             'date' => null,
             'date_end' => null,
         ];
@@ -322,18 +327,20 @@ AND id IN (
 
         $daySchedule = array_values(array_filter($schedule['schedule'], function ($row) use ($entry, $entryTime) {
             $entryDateTime = strtotime($entry . ' ' . $entryTime);
-        
+
             return date('Y-m-d', strtotime($row['scheduleDate'])) === $entry &&
                 (
                     (date('Y-m-d H:i', $entryDateTime) <= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['first_entry'] . ' +4 hours')) &&
                         date('Y-m-d H:i', $entryDateTime) >= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['first_entry'] . ' -4 hours'))) ||
                     (date('Y-m-d H:i', $entryDateTime) <= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['second_entry'] . ' +4 hours')) &&
                         date('Y-m-d H:i', $entryDateTime) >= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['second_entry'] . ' -4 hours'))) ||
+                        (date('Y-m-d H:i', $entryDateTime) <= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['third_entry'] . ' +4 hours')) &&
+                        date('Y-m-d H:i', $entryDateTime) >= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['third_entry'] . ' -4 hours'))) ||
                     (date('Y-m-d H:i', $entryDateTime) <= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['last_entry'] . ' +4 hours')) &&
                         date('Y-m-d H:i', $entryDateTime) >= date('Y-m-d H:i', strtotime($row['scheduleDate'] . ' ' . $row['last_entry'] . ' -4 hours')))
                 );
         }));
-        
+
 
 
 
@@ -358,7 +365,7 @@ AND id IN (
     {
         $alloted_hours = config("app.alloted_valid_time_for_firstentry");
 
-    
+
         switch ($InType) {
             case "AM":
                $this->inEntryAM($biometric_id, $alloted_hours, $scheduleEntry, $dtrentry);
@@ -371,22 +378,22 @@ AND id IN (
 
     public  function inEntryAM($biometric_id, $alloted_hours, $scheduleEntry, $dtrentry)
     {
-       
+
         $dtr_date = date('Y-m-d', strtotime($dtrentry['date_time']));
         $max_allowed_entry_for_oncall = config("app.max_allowed_entry_oncall");
-        
+
         $dtrentry = $dtrentry['date_time'];
         $schedule = $scheduleEntry['first_entry'] ?? config("app.firstin");
 
 
 
-       
+
         $alloted_mins_Oncall = 0.5; // 30 minutes
         if (count($scheduleEntry) >= 1) {
             /* With Schedule Entry */
             $in_Entry = $schedule;
 
-           
+
             // $time_stamp = strtotime($in_Entry);
             // $new_Time_stamp = $time_stamp - ($alloted_hours * 3600);
             // $Calculated_allotedHours = date('Y-m-d H:i:s', $new_Time_stamp);
@@ -414,7 +421,7 @@ AND id IN (
 
          //       if ($Calculated_allotedHours <=  $dtrentry) { //within alloted hours to timein
 
-            
+
                     DailyTimeRecords::create([
                         'biometric_id' => $biometric_id,
                         'dtr_date' => $dtr_date,
@@ -424,7 +431,7 @@ AND id IN (
                     ]);
               //  }
 
-                   
+
        //     }
         } else {
             /* No schedule Entry */
@@ -553,6 +560,7 @@ AND id IN (
     {
         //return $this->toWordsMinutes(59.71);
 
+
         foreach ($sequence as $sc) {
             /* Entries */
             $validate = $data;
@@ -603,7 +611,7 @@ AND id IN (
                     $f4entry = $sc['date_time'];
                 }
             }
-            $required_WH = $time_stamps_req['total_hours'] ?? 8;
+            $required_WH = $time_stamps_req['total_hours'] ? $time_stamps_req['total_hours']:8;
             $required_WH_Minutes = $required_WH * 60;
 
 
@@ -971,7 +979,7 @@ AND id IN (
             }
         }
 
-      
+
 
         foreach ($unique_Employee_IDs as $id) {
 
@@ -1009,7 +1017,7 @@ AND id IN (
             // /* Checking if DTR logs for the day is generated */
 
             $check_DTR_Logs = DailyTimeRecordlogs::whereDate('dtr_date', $date)->where('biometric_id', $id)->where('validated', 1);
-       
+
             if (count($check_DTR_Logs->get()) >= 1) {
                 // /* Counting logs data */
                 $log_Data = count($check_DTR_Logs->get()) >= 1 ? $check_DTR_Logs->get()[0]->json_logs : '';
@@ -1017,14 +1025,14 @@ AND id IN (
                 // /* Saving individually to user-attendance jsonLogs */
                 $log_data_Array = array_merge($log_data_Array, $new_Rec);
 
-             
+
                 $ndata = [];
                 foreach ($log_data_Array as $n) {
                     if ($n['biometric_id'] == $id) {
                         $ndata[] = $n;
                     }
                 }
-                
+
                 $newt = 0;
                 $nr = [];
                 foreach ($ndata as $new) {
@@ -1042,12 +1050,12 @@ AND id IN (
                         }
                     }
 
-                  
+
                     $devID = $device['id'];
                     $devName =$this->getDeviceName($device['id']);
                     $datepull =  date('Y-m-d H:i:s');
                     if(isset($new['device_id'])){
-                       
+
                         $devID = $new['device_id'];
                         $devName = $this->getDeviceName($new['device_id']);
                         $datepull = $new['datepull'];
@@ -1069,12 +1077,12 @@ AND id IN (
                     $newt++;
                 }
 
-              
+
                 $check_DTR_Logs->update([
                     'json_logs' => json_encode($nr)
                 ]);
             } else {
-              
+
 
                 $ndata = [];
                 foreach ($new_Rec as $n) {
@@ -1085,7 +1093,7 @@ AND id IN (
                 $newt = 0;
                 $nr = [];
 
-               
+
                 foreach ($ndata as $new) {
                     $rec = DailyTimeRecords::whereDate('dtr_date', date('Y-m-d', strtotime($new['date_time'])))->where('biometric_id', $new['biometric_id'])->first();
                     $entry = "Logged";
@@ -1099,12 +1107,12 @@ AND id IN (
                             $entry = "Daily Time Recorded";
                         }
                     }
-                  
-                  
+
+
 
                     $devID = $device['id'];
                     $devName =$this->getDeviceName($device['id']);
-                  
+
 
                     $nr[] = [
                         'timing' => $newt,
@@ -1121,7 +1129,7 @@ AND id IN (
                     $newt++;
                 }
 
-          
+
 
                 $chec_kDTR = DailyTimeRecords::whereDate('dtr_date', $date)->where('biometric_id', $id);
                 if (count($chec_kDTR->get()) >= 1) {

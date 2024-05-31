@@ -595,6 +595,10 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::put('civil-service-eligibility-single-data/{id}', 'CivilServiceEligibilityController@updateSingleData');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::put('civil-service-eligibility/{id}', 'CivilServiceEligibilityController@update');
         });
 
@@ -748,6 +752,10 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::put('educational-background/{id}', 'EducationalBackgroundController@update');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::put('educational-background-single-data/{id}', 'EducationalBackgroundController@updateSingleData');
         });
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
@@ -1247,6 +1255,10 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
+            Route::get('plantilla-filter-type-job', 'PlantillaController@plantillaNumberBaseOnJobPositionAndEmploymentType');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM view-all'])->group(function () {
             Route::get('plantilla-referrence-to-assignarea', 'PlantillaController@plantillaReferrenceToAssignArea');
         });
 
@@ -1498,6 +1510,10 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::put('training-single-data/{id}', 'TrainingController@updateSingleData');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::put('training-many', 'TrainingController@updateMany');
         });
 
@@ -1564,6 +1580,10 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::put('voluntary-work-single-data/{id}', 'VoluntaryWorkController@updateSingleData');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::put('voluntary-work-many', 'VoluntaryWorkController@updateMany');
         });
 
@@ -1604,6 +1624,10 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
             Route::put('work-experience/{id}', 'WorkExperienceController@update');
+        });
+
+        Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
+            Route::put('work-experience-single-data/{id}', 'WorkExperienceController@updateSingleData');
         });
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
@@ -1769,6 +1793,7 @@ Route::middleware('auth.cookie')->group(function () {
         //     Route::post('requirement/{id}', 'RequirementController@destroy');
         // });
 
+
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
             Route::get('leave-type-all', 'LeaveTypeController@index');
         });
@@ -1800,6 +1825,11 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
             Route::get('leave-application-all', 'LeaveApplicationController@index');
         });
+
+        Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
+            Route::get('countries', 'LeaveApplicationController@showCountries');
+        });
+
 
         Route::middleware(['auth.permission:UMIS-LM view-all'])->group(function () {
             Route::get('leave-application-hrmo-all', 'LeaveApplicationController@hrmoApproval');
@@ -1878,6 +1908,11 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-LM download'])->group(function () {
             Route::post('print-leave-application/{id}', 'LeaveApplicationController@updatePrint');
         });
+
+        Route::middleware(['auth.permission:UMIS-LM download'])->group(function () {
+            Route::get('export-csv','LeaveApplicationController@exportCsv');
+        });
+
 
         Route::middleware(['auth.permission:UMIS-LM write'])->group(function () {
             Route::post('leave-credit-add', 'LeaveApplicationController@addCredit');
@@ -2308,6 +2343,10 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-MWH delete'])->group(function () {
             Route::delete('monthly-work-hour/{id}', 'MonthlyWorkHoursController@destroy');
+        });
+
+        Route::middleware(['auth.permission:UMIS-MWH view-all'])->group(function () {
+            Route::get('employment-type', 'EmploymentTypeController@index');
         });
 
         Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function () {
