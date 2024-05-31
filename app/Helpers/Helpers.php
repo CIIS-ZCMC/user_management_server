@@ -265,7 +265,7 @@ class Helpers
         $position = $employee_profile->position();
 
         if ($position !== null) {
-            if ($position['area']->code === 'OMCC') {
+            if (isset($position['area']) && $position['area']->code === 'OMCC') {
                 return [
                     'id' => null,
                     'name' => null
@@ -816,14 +816,20 @@ class Helpers
         $duty_start = new DateTime($start_duty);
 
         // Get the last day of the duty start month
-        $duty_end = new DateTime("last day of " . $duty_start->format('Y-m'));
+        // $duty_end = new DateTime("last day of " . $duty_start->format('Y-m'));
+
+        // Calculate the first day of the next month
+        $duty_end = (clone $duty_start)->modify('first day of next month');
 
         // Generate schedule from $duty_start to $duty_end
         $scheduleDates = [];
 
         while ($duty_start <= $duty_end) {
-            // Add duty for $duty_start date to the schedule array
-            $scheduleDates[] = $duty_start->format('Y-m-d');
+            // Skip weekends
+            if ($duty_start->format('N') < 6) {
+                // Add duty for $duty_start date to the schedule array
+                $scheduleDates[] = $duty_start->format('Y-m-d');
+            }
 
             // Move to the next day
             $duty_start->add(new DateInterval('P1D'));

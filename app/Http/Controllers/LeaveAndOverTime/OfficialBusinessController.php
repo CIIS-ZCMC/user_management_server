@@ -113,6 +113,36 @@ class OfficialBusinessController extends Controller
         }
     }
 
+    public function exportCsv()
+    {
+        $ob_applications = OfficialBusiness::with('employee')
+                                ->where('status', 'approved')
+                                ->get();
+            // ->where('status', 'approved')
+
+
+        $response = [];
+
+        foreach ($ob_applications as $ob_application) {
+            $employeeName = $ob_application->employee->name();
+            $employeeid = $ob_application->employee->employee_id;
+            $dateFrom = $ob_application->date_from;
+            $dateTo = $ob_application->date_to;
+            $purpose = $ob_application->purpose;
+            $applied_date = $ob_application->created_at;
+            $response[] = [
+                'Employee Id' => $employeeid,
+                'Employee Name' => $employeeName,
+                'Date From' => $dateFrom,
+                'Date To' => $dateTo,
+                'Purpose' => $purpose,
+                'Date Filed' => $applied_date,
+
+
+            ];
+        }
+        return ['data' => $response];
+    }
     /**
      * Show the form for creating a new resource.
      */
@@ -206,24 +236,24 @@ class OfficialBusinessController extends Controller
                 $employeeProfile = EmployeeProfile::find($employeeId);
                 $title = "New Official Business request";
                 $description = $employeeProfile->personalInformation->name()." filed a new official business request";
-                
-                
+
+
                 $notification = Notifications::create([
                     "title" => $title,
                     "description" => $description,
                     "module_path" => '/ob-requests',
                 ]);
-    
+
                 $user_notification = UserNotifications::create([
                     'notification_id' => $notification->id,
                     'employee_profile_id' => $recommending_officer,
                 ]);
-    
+
                 Helpers::sendNotification([
                     "id" => Helpers::getEmployeeID($recommending_officer),
                     "data" => new NotificationResource($user_notification)
                 ]);
-                
+
                 Helpers::registerSystemLogs($request, $data->id, true, 'Success in storing ' . $this->PLURAL_MODULE_NAME . '.'); //System Logs
 
                 return response()->json([
@@ -330,7 +360,7 @@ class OfficialBusinessController extends Controller
                 }
                 $log_action = 'Request Declined';
 
-                
+
             }
             $data->update(['status' => $status, 'remarks' => $request->remarks === 'null' || !$request->remarks ? null : $request->remarks]);
 
@@ -371,8 +401,8 @@ class OfficialBusinessController extends Controller
                     "id" => Helpers::getEmployeeID($data->employee_profile_id),
                     "data" => new NotificationResource($user_notification)
                 ]);
-            } 
-            else 
+            }
+            else
             {
                 //NOTIFS
                 //NEXT APPROVING
@@ -381,12 +411,12 @@ class OfficialBusinessController extends Controller
                     "description" => $employeeProfile->personalInformation->name()." filed a new official request.",
                     "module_path" => '/ob-requests',
                 ]);
-    
+
                 $user_notification = UserNotifications::create([
                     'notification_id' => $notification->id,
                     'employee_profile_id' => $data->approving_officer,
                 ]);
-    
+
                 Helpers::sendNotification([
                     "id" => Helpers::getEmployeeID($data->approving_officer),
                     "data" => new NotificationResource($user_notification)
@@ -398,12 +428,12 @@ class OfficialBusinessController extends Controller
                     "description" => "Your official business request has been approved by your Recommending Officer. ",
                     "module_path" => '/ob',
                 ]);
-    
+
                 $user_notification = UserNotifications::create([
                     'notification_id' => $notification->id,
                     'employee_profile_id' => $data->employee_profile_id,
                 ]);
-    
+
                 Helpers::sendNotification([
                     "id" => Helpers::getEmployeeID($data->employee_profile_id),
                     "data" => new NotificationResource($user_notification)

@@ -58,7 +58,7 @@ Route::
 
 Route::middleware('auth.cookie')->group(function () {
 
-    Route::namespace ('App\Http\Controllers')->group(function () {
+    Route::namespace('App\Http\Controllers')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-PAM view'])->group(function () {
             Route::get('notifications', 'NotificationController@getNotificationsById');
@@ -143,7 +143,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
     });
 
-    Route::namespace ('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
+    Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
         Route::post('re-authenticate', 'EmployeeProfileController@revalidateAccessToken');
         Route::delete('signout', 'EmployeeProfileController@signOut');
 
@@ -166,7 +166,7 @@ Route::middleware('auth.cookie')->group(function () {
     /**
      * User Management Information System
      */
-    Route::namespace ('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
+    Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
         /**
          * System Module
          */
@@ -395,7 +395,7 @@ Route::middleware('auth.cookie')->group(function () {
     /**
      * Employee Management
      */
-    Route::namespace ('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
+    Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
 
         /**
          * Address Module
@@ -1618,7 +1618,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
-            Route::put('work-experience-single-data/{id}', 'WorkExperienceController@updateSignleData');
+            Route::put('work-experience-single-data/{id}', 'WorkExperienceController@updateSingleData');
         });
 
         Route::middleware(['auth.permission:UMIS-EM update'])->group(function () {
@@ -1641,7 +1641,7 @@ Route::middleware('auth.cookie')->group(function () {
     /**
      * Daily Time Record Management
      */
-    Route::namespace ('App\Http\Controllers\DTR')->group(function () {
+    Route::namespace('App\Http\Controllers\DTR')->group(function () {
         /** APPLY CODE HERE */
         Route::middleware(['auth.permission:UMIS-DTRM view-all'])->group(function () {
             Route::get('dtr-device-devices', 'BioMSController@index');
@@ -1699,7 +1699,7 @@ Route::middleware('auth.cookie')->group(function () {
     /**
      * Leave and Overtime Management
      */
-    Route::namespace ('App\Http\Controllers\LeaveAndOverTime')->group(function () {
+    Route::namespace('App\Http\Controllers\LeaveAndOverTime')->group(function () {
 
         /**
          * Monitization Posting Module
@@ -1900,6 +1900,11 @@ Route::middleware('auth.cookie')->group(function () {
             Route::post('print-leave-application/{id}', 'LeaveApplicationController@updatePrint');
         });
 
+        Route::middleware(['auth.permission:UMIS-LM download'])->group(function () {
+            Route::get('export-csv','LeaveApplicationController@exportCsv');
+        });
+
+
         Route::middleware(['auth.permission:UMIS-LM write'])->group(function () {
             Route::post('leave-credit-add', 'LeaveApplicationController@addCredit');
         });
@@ -1943,6 +1948,10 @@ Route::middleware('auth.cookie')->group(function () {
             Route::post('ob-application/{id}', 'OfficialBusinessController@update');
         });
 
+        Route::middleware(['auth.permission:UMIS-OB download'])->group(function () {
+            Route::get('export-csv-ob','OfficialBusinessController@exportCsv');
+        });
+
         /**
          * Official Time Module
          */
@@ -1960,6 +1969,10 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-OT approve'])->group(function () {
             Route::post('ot-application/{id}', 'OfficialTimeController@update');
+        });
+
+        Route::middleware(['auth.permission:UMIS-OT download'])->group(function () {
+            Route::get('export-csv-ot','OfficialTimeController@exportCsv');
         });
 
 
@@ -2106,12 +2119,16 @@ Route::middleware('auth.cookie')->group(function () {
         Route::middleware(['auth.permission:UMIS-CT view'])->group(function () {
             Route::get('cto-credit-employees', 'CtoApplicationController@getEmployees');
         });
+
+        Route::middleware(['auth.permission:UMIS-CT download'])->group(function () {
+            Route::get('export-csv-cto','CtoApplicationController@exportCsv');
+        });
     });
 
     /**
      * Schedule Management
      */
-    Route::namespace ('App\Http\Controllers\Schedule')->group(function () {
+    Route::namespace('App\Http\Controllers\Schedule')->group(function () {
         /**
          * Time Shift Module
          */
@@ -2329,6 +2346,10 @@ Route::middleware('auth.cookie')->group(function () {
 
         Route::middleware(['auth.permission:UMIS-MWH delete'])->group(function () {
             Route::delete('monthly-work-hour/{id}', 'MonthlyWorkHoursController@destroy');
+        });
+
+        Route::middleware(['auth.permission:UMIS-MWH view-all'])->group(function () {
+            Route::get('employment-type', 'EmploymentTypeController@index');
         });
 
         Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function () {

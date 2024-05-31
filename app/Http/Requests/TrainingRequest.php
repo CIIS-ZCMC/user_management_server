@@ -26,7 +26,7 @@ class TrainingRequest extends FormRequest
             'inclusive_from' => "required|date:Y-m-d",
             'inclusive_to' => "required|date:Y-m-d",
             'hours' => "nullable|numeric",
-            'type_is_lnd' => "required|string|max:255",
+            'type_is_ld' => "nullable|string|max:255",
             'conducted_by' => "nullable|string|max:255",
             'personal_information_id' => "required|integer"
         ];

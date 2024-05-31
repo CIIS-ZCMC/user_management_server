@@ -31,16 +31,19 @@ class OfficialBusiness extends Model
     ];
 
     public $timestamps = TRUE;
-    
-    public function employee() {
+
+    public function employee()
+    {
         return $this->belongsTo(EmployeeProfile::class, 'employee_profile_id');
     }
 
-    public function recommendingOfficer() {
+    public function recommendingOfficer()
+    {
         return $this->belongsTo(EmployeeProfile::class, 'recommending_officer');
     }
 
-    public function approvingOfficer() {
+    public function approvingOfficer()
+    {
         return $this->belongsTo(EmployeeProfile::class, 'approving_officer');
     }
 

@@ -27,29 +27,29 @@ class EmployeeProfileNewResource extends FormRequest
             //Family Background
             'family_background' => 'nullable|string',
             //Children
-            'children' => 'required|string',
+            'children' => 'nullable|string',
             //Contact
-            'contact' => 'required|string',
+            'contact' => 'nullable|string',
             //Educations
-            'educations' => 'required|string',
+            'educations' => 'nullable|string',
             //Identification
-            'identification' => 'required|string',
+            'identification' => 'nullable|string',
             //Work Experience
-            'work_experiences' => 'required|String',
+            'work_experiences' => 'nullable|String',
             //Voluntary Work
-            'voluntary_work' => 'required|string',
+            'voluntary_work' => 'nullable|string',
             //Others
-            'others' => 'required|string',
+            'others' => 'nullable|string',
             //Legal Information
-            'legal_information' => 'required|string',
+            'legal_information' => 'nullable|string',
             //Training
-            'trainings' => 'required|string',
+            'trainings' => 'nullable|string',
             //Reference
-            'reference' => 'required|string',
+            'reference' => 'nullable|string',
             //Civil Service Eligibility
-            'eligibilities' => 'required|string',
+            'eligibilities' => 'nullable|string',
             //Issuance Information
-            'issuance_information' => 'required|string',
+            'issuance_information' => 'nullable|string',
             //Employee Profile
             'date_hired' => "required|date:Y-m-d",
             'employment_type_id' => 'required|integer',
@@ -57,7 +57,7 @@ class EmployeeProfileNewResource extends FormRequest
             // 'plantilla_number_id' => 'nullable|integer',
             'allow_time_adjustment' => 'required|integer',
             'solo_parent' => 'nullable|integer',
-            'salary_grade_id' => 'nullable|number',
+            'salary_grade_id' => 'nullable|integer',
             'salary_grade_step' => 'nullable|integer',
             'sector' => 'nullable|string',
             // 'attachment' => 'nullable|file|mimes:jpeg,png,pdf,doc,docx'
