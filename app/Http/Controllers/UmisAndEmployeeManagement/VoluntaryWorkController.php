@@ -185,7 +185,7 @@ class VoluntaryWorkController extends Controller
             $cleanData = [];
             $voluntary_work = VoluntaryWork::find($id);
 
-            foreach ($voluntary_work as $key => $value) {
+            foreach ($request->all() as $key => $value) {
                 if ($value === null) {
                     $cleanData[$key] = $value;
                     continue;
@@ -197,7 +197,7 @@ class VoluntaryWorkController extends Controller
 
             return response()->json([
                 'data' => new VoluntaryWorkResource($voluntary_work),
-                'message' => "Successfully update voluntary work."
+                'message' => "Voluntary work updated successfully"
             ]);
         }catch(\Throwable $th){
             throw new \Exception("Failed to register employee voluntary work.", 400);
