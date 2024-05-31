@@ -8,7 +8,10 @@ use App\Jobs\SendEmailJob;
 use App\Models\EmployeeProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+
+use function Laravel\Prompts\select;
 
 class MResetAllPass extends Controller
 {
@@ -30,46 +33,52 @@ class MResetAllPass extends Controller
         try {
             $employees = EmployeeProfile::all();
             $temp = [];
-
+            $employeeProfiles = EmployeeProfile::leftJoin('assigned_areas as aa', 'employee_profiles.id', '=', 'aa.employee_profile_id')
+                ->select('employee_profiles.employee_id', 'aa.*')
+                ->where(function ($query) {
+                    $query->where('aa.section_id', 12)
+                        ->orWhere('aa.unit_id', 15);
+                })
+                ->get()->pluck('employee_profile_id');
+            // dd($employeeProfiles);
             foreach ($employees as $employee) {
 
                 $password = Helpers::generatePassword();
                 $hashPassword = Hash::make($password . config('app.salt_value'));
+                $employee->authorization_pin = null;
                 $employee->password_encrypted = Crypt::encryptString($hashPassword);
                 $employee->save();
+
                 // $temp[] = ['id' => $employee->employee_id, 'pass' => $password];
-                // if ($employee->id == 84 || $employee->id == 470) {
-                $employee_profile = EmployeeProfile::find($employee->id);
-                // $default_password = Helpers::generatePassword();
-                $body = [
-                    'employeeID' => $employee_profile->employee_id,
-                    'Password' => $password,
-                    "Link" => config('app.client_domain')
-                ];
-                if ($employee_profile->personalinformation->contact == null) {
-                    continue;
+                if (in_array($employee->id, $employeeProfiles->toArray())) {
+                    $employee_profile = EmployeeProfile::find($employee->id);
+                    // $default_password = Helpers::generatePassword();
+                    $data = [
+                        'employeeID' => $employee_profile->employee_id,
+                        'Password' => $password,
+                        "Link" => config('app.client_domain')
+                    ];
+                    if ($employee_profile->personalinformation->contact == null) {
+                        continue;
+                    }
+                    $email = $employee_profile->personalinformation->contact->email_address;
+                    if ($email == 'd@gmail.com') {
+                        continue;
+                    }
+
+                    $name = $employee_profile->personalInformation->name();
+
+
+                    SendEmailJob::dispatch('new_account', $email, $name, $data);
+                    $temp[] = ['sent' => $email];
+                    \Log::info('RESET', [
+                        'employeeID' => $employee->employee_id,
+                        'password' => $password,
+                    ]);
                 }
-                $email = $employee_profile->personalinformation->contact->email_address;
-                if ($email == 'd@gmail.com') {
-                    continue;
-                }
-
-                $name = $employee_profile->personalInformation->name();
-
-                $data = [
-                    'Subject' => 'Your Zcmc Portal Account.',
-                    'To_receiver' => $employee_profile->personalinformation->contact->email_address,
-                    'Receiver_Name' => $employee_profile->personalInformation->name(),
-                    'Body' => $body
-                ];
-
-                // SendEmailJob::dispatch('new_account', $email, $name, $data);
-                $temp[] = ['sent' => $email];
-                // }
-
             }
 
-
+            \Log::info('P-Reset&sent Successfully', ["message" => 'Toinks']);
             dd($temp);
         } catch (\Throwable $th) {
             dd($th);
