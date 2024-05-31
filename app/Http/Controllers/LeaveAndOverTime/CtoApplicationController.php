@@ -101,7 +101,7 @@ class CtoApplicationController extends Controller
 
     public function exportCsv()
     {
-        $leave_applications = CtoApplication::with('employeeProfile')
+        $cto_applications = CtoApplication::with('employeeProfile')
                                 ->where('status', 'approved')
                                 ->get();
             // ->where('status', 'approved')
@@ -109,33 +109,23 @@ class CtoApplicationController extends Controller
 
         $response = [];
 
-        foreach ($leave_applications as $leave_application) {
-            $employeeName = $leave_application->employeeProfile->name();
-            $employeeid = $leave_application->employeeProfile->employee_id;
-            $leaveType = $leave_application->leaveType->name;
-            $dateFrom = $leave_application->date_from;
-            $dateTo = $leave_application->date_to;
-            $city = $leave_application->city;
-            $country = $leave_application->country;
-            $illness = $leave_application->illness;
-            $is_board = $leave_application->is_board;
-            $is_masters = $leave_application->is_masters;
-            $is_outpatient = $leave_application->is_outpatient;
-            $date_filed = $leave_application->created_at;
-            $credits = $leave_application->applied_credits;
+        foreach ($cto_applications as $cto_application) {
+            $employeeName = $cto_application->employeeProfile->name();
+            $employeeid = $cto_application->employeeProfile->employee_id;
+            $date= $cto_application->date;
+            $is_am = $cto_application->is_am;
+            $is_pm = $cto_application->is_pm;
+            $remarks = $cto_application->remarks;
+            $credits = $cto_application->applied_credits;
+            $applied_date = $cto_application->created_at;
             $response[] = [
                 'Employee Id' => $employeeid,
                 'Employee Name' => $employeeName,
-                'Leave Type' => $leaveType,
-                'Date From' => $dateFrom,
-                'Date To' => $dateTo,
-                'Country' => $country,
-                'City' => $city,
-                'Illness' => $illness,
-                'Board Exam' => $is_board,
-                'Masters' => $is_masters,
-                'Outpatient' => $is_outpatient,
-                'Date Filed' => $date_filed,
+                'Date' => $date,
+                'is_am' => $is_am,
+                'is_pm' => $is_pm,
+                'Remarks' => $remarks,
+                'Date Filed' => $applied_date,
                 'Total Credits' => $credits,
                 'Total Days' => $credits,
 
