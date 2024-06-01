@@ -37,22 +37,7 @@ class PlantillaNumberReAssignTask extends Command
 
         $area = $this->option('area');
         $sector = $this->option('sector');
-        $key = null;
-        
-        switch($sector){
-            case 'Division':
-                $key = 'division_id';
-                break;
-            case 'Department':
-                $key = 'department_id';
-                break;
-            case 'Section':
-                $key = 'section_id';
-                break;
-            case 'Unit':
-                $key = 'unit_id';
-                break;
-        }
+        $key = strtolower($sector)."_id";
 
         $new_area_assign_details = [];
         $areas = ['division_id', 'department_id', 'section_id', 'unit'];

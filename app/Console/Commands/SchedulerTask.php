@@ -30,8 +30,26 @@ class SchedulerTask extends Command
     public function handle()
     {
         try{
-            $employees = EmployeeProfile::where('is_shifting', 0)->get();
-            $next_month_schedules = Helpers::generateSchedule(Carbon::now()->addMonth()->startOfMonth());
+            /**
+             * Non Permanent Part time employee
+             */
+            $employees = EmployeeProfile::whereNot('employment_type_id', 2)->where('is_shifting', 0)->get();
+            $next_month_schedules = Helpers::generateSchedule(Carbon::now()->addMonth()->startOfMonth(), 1, 'AM');
+
+            foreach($employees as $employee){
+                foreach($next_month_schedules as $schedule){
+                    EmployeeSchedule::create([
+                        'employee_profile_id' => $employee->id,
+                        'schedule_id' => $schedule->id
+                    ]);
+                }
+            }
+
+            /**
+             * Permanent Part time employee
+             */
+            $employees = EmployeeProfile::where('employment_type_id', 2)->where('is_shifting', 0)->get();
+            $next_month_schedules = Helpers::generateSchedule(Carbon::now()->addMonth()->startOfMonth(), 2, 'AM');
 
             foreach($employees as $employee){
                 foreach($next_month_schedules as $schedule){
