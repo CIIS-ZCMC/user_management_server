@@ -14,9 +14,11 @@ class PlantillaNumberAllResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $salaryGrade = $this->plantilla->designation->salaryGrade;
+        $plantilla_data = $this->plantilla;
+        $designation_data = $plantilla_data->designation_id === null? null: $plantilla_data->designation;
+        $salaryGrade = $designation_data === null? null: $designation_data->salaryGrade;
 
-        $salary = [
+        $salary = $salaryGrade === null? null: [
             'salary_grade' => $salaryGrade['salary_grade_number'],
             'step' => 1,
             'amount' => $salaryGrade['one'],
@@ -24,24 +26,22 @@ class PlantillaNumberAllResource extends JsonResource
             'updated_at' => $salaryGrade['updated_at'],
         ];
 
-        $designationData = $this->plantilla->designation;
-
-        $designation = [
-            'id' => $designationData['id'],
-            'name' => $designationData['name'],
-            'code' => $designationData['code'],
+        $designation = $designation_data === null? null: [
+            'id' => $designation_data['id'],
+            'name' => $designation_data['name'],
+            'code' => $designation_data['code'],
             'created_at' => $salaryGrade['created_at'],
             'updated_at' => $salaryGrade['updated_at'],
         ];
 
-        $plantillaData = $this->plantilla;
-        $plantilla = [
-            'id' => $plantillaData['id'],
-            'slot' => $plantillaData['slot'],
-            'total_used_plantilla_no' => $plantillaData['total_user_plantilla_no'],
-            'created_at' => $salaryGrade['created_at'],
-            'updated_at' => $salaryGrade['updated_at'],
+        $plantilla = $plantilla_data === null?null: [
+            'id' => $plantilla_data['id'],
+            'slot' => $plantilla_data['slot'],
+            'total_used_plantilla_no' => $plantilla_data['total_user_plantilla_no'],
+            'created_at' => $salaryGrade === null? null: $salaryGrade['created_at'],
+            'updated_at' => $salaryGrade === null? null: $salaryGrade['updated_at'],
         ];
+
 
         $requirement = [];
 
@@ -65,8 +65,8 @@ class PlantillaNumberAllResource extends JsonResource
         return [
             'id' => $this->id,
             'number' => $this->number,
-            'job_position' => $designationData['name'],
-            'salary_grade' => $salaryGrade['salary_grade_number'],
+            'job_position' => $designation !==null? $designation['name']:null,
+            'salary_grade' => $salaryGrade !== null? $salaryGrade['salary_grade_number']:null,
             'is_vacant' =>$this->employee_profile_id !==null? 0: $this->is_vacant,
             'assigned_at' => $this->assigned_at,
             'plantilla' => $plantilla,

@@ -39,12 +39,17 @@ class EmployeeMonthlyEarnCredit extends Command
         $vacation_leave = LeaveType::where('code', 'VL')->first();
         $force_leave = LeaveType::where('code', 'FL')->first();
 
-        $month_before = Carbon::now()->subMonth()->format('F');;
+        $month_before = Carbon::now()->subMonth()->format('F');
 
         $employees = EmployeeProfile::where('employment_type_id', '!=', 5)
-        ->where('id', '!=', 1)
-        ->where('date_hired', '<', Carbon::now()->subDays(30))
-        ->get();
+            ->where('id', '!=', 1)
+            ->where('deactivated_at', null)
+            ->where('date_hired', '<', Carbon::now()->subDays(30))
+            ->get();
+
+        if(count($employees) === 0){
+            return response()->json(['message' => "PASSED [No employees]"], 200);
+        }
 
         foreach ($employees as $employee) {
             /**
@@ -138,9 +143,11 @@ class EmployeeMonthlyEarnCredit extends Command
 
                 $force_leave_current_credit = $force_leave_credit->total_leave_credits;
                 $fl_annual_value = $force_leave->annual_credit;
+                
                 if ($employee->employmentType->name === 'Permanent Part-time') {
                     $fl_annual_value = $force_leave->annual_credit / 2;
                 }
+
                 $log_entry_exists = EmployeeLeaveCreditLogs::join('employee_leave_credits', 'employee_leave_credit_logs.employee_leave_credit_id', '=', 'employee_leave_credits.id')
                     ->where('employee_leave_credits.employee_profile_id', $employee->id)
                     ->where('employee_leave_credits.leave_type_id', $force_leave->id)

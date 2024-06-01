@@ -102,6 +102,14 @@ class ContactController extends Controller
     public function update($id, ContactRequest $request)
     {
         try {
+
+            $user = $request->user;
+            $cleanData['pin'] = strip_tags($request->password);
+
+            if ($user['authorization_pin'] !==  $cleanData['pin']) {
+                return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
+            }
+            
             $contact = Contact::where('personal_information_id', $id)->first();
 
             if (!$contact) {
