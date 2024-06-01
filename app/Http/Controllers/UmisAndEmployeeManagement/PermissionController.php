@@ -122,7 +122,7 @@ class PermissionController extends Controller
         }
     }
     
-    public function activate($id, AuthPinApprovalRequest $request)
+    public function activate($id, Request $request)
     {
         try{
             $user = $request->user;
@@ -153,7 +153,7 @@ class PermissionController extends Controller
         }
     }
     
-    public function deactivate($id, AuthPinApprovalRequest $request)
+    public function deactivate($id, Request $request)
     {
         try{
             $user = $request->user;
@@ -184,7 +184,7 @@ class PermissionController extends Controller
         }
     }
     
-    public function destroy($id, AuthPinApprovalRequest $request)
+    public function destroy($id, Request $request)
     {
         try{
             $user = $request->user;
