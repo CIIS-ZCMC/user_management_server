@@ -611,7 +611,7 @@ AND id IN (
                     $f4entry = $sc['date_time'];
                 }
             }
-            $required_WH = $time_stamps_req['total_hours'] ? $time_stamps_req['total_hours']:8;
+            $required_WH =isset($time_stamps_req['total_hours']) && $time_stamps_req['total_hours'] ? $time_stamps_req['total_hours']:8;
             $required_WH_Minutes = $required_WH * 60;
 
 
