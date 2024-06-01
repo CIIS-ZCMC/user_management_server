@@ -2349,7 +2349,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-MWH view-all'])->group(function () {
-            Route::get('employment-type', 'EmploymentTypeController@index');
+            Route::get('get-employment-type', 'MonthlyWorkHoursController@getEmploymentType');
         });
 
         Route::middleware(['auth.permission:UMIS-ScM view-all'])->group(function () {

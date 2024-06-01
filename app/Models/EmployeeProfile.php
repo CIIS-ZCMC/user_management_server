@@ -486,7 +486,7 @@ class EmployeeProfile extends Authenticatable
                 $sections = Section::where('id', $assign_area['details']->id)->get();
                 foreach ($sections as $section) {
                     $my_employees = $this->retrieveEmployees($employees, 'section_id', $section->id, [$user->id, 1]);
-                    $units = Unit::where('id', $assign_area['details']->id)->get();
+                    $units = Unit::where('section_id', $section->id)->get();
                     foreach ($units as $unit) {
                         $employees = array_merge($my_employees, (array) $unit->head);
                     }
