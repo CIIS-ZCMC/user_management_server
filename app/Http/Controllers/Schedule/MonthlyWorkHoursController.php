@@ -14,6 +14,7 @@ use App\Services\RequestLogger;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 class MonthlyWorkHoursController extends Controller
 {
