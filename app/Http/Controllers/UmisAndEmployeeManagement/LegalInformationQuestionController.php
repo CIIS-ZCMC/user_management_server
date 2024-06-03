@@ -28,9 +28,7 @@ class LegalInformationQuestionController extends Controller
         try{
             $cacheExpiration = Carbon::now()->addDay();
 
-            $legal_information_questions = Cache::remember('legal_information_questions', $cacheExpiration, function(){
-                return LegalInformationQuestion::where('legal_iq_id', null)->orderBy('order_by', 'asc')->get();
-            });
+            $legal_information_questions = LegalInformationQuestion::where('legal_iq_id', null)->orderBy('order_by', 'asc')->get();
 
             return response()->json([
                 'data' => LegalInformationQuestionResource::collection($legal_information_questions),
