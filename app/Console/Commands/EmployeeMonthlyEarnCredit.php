@@ -70,7 +70,7 @@ class EmployeeMonthlyEarnCredit extends Command
 
             $title = "Sick Leave credited";
             $description = $sick_monthly_value. " sick leave credits is credited for the month of ". $month_before . ".";
-            
+
             $notification = Notifications::create([
                 "title" => $title,
                 "description" => $description,
@@ -110,7 +110,7 @@ class EmployeeMonthlyEarnCredit extends Command
             ]);
             $title = "Vacation Leave credited";
             $description = $vl_monthly_value. " vacation leave credits is credited for the month of ". $month_before. ".";
-            
+
             $notification = Notifications::create([
                 "title" => $title,
                 "description" => $description,
@@ -131,55 +131,58 @@ class EmployeeMonthlyEarnCredit extends Command
              * Force Leave
              */
 
-            if ($vacation_leave_credit->total_leave_credits >= 10) {
+            // if ($vacation_leave_credit->total_leave_credits >= 10) {
 
-                $force_leave_credit = EmployeeLeaveCredit::where('employee_profile_id', $employee->id)
-                    ->where('leave_type_id', $force_leave->id)->first();
+            //     $force_leave_credit = EmployeeLeaveCredit::where('employee_profile_id', $employee->id)
+            //         ->where('leave_type_id', $force_leave->id)->first();
 
-                $force_leave_current_credit = $force_leave_credit->total_leave_credits;
-                $fl_annual_value = $force_leave->annual_credit;
-                if ($employee->employmentType->name === 'Permanent Part-time') {
-                    $fl_annual_value = $force_leave->annual_credit / 2;
-                }
-                $log_entry_exists = EmployeeLeaveCreditLogs::join('employee_leave_credits', 'employee_leave_credit_logs.employee_leave_credit_id', '=', 'employee_leave_credits.id')
-                    ->where('employee_leave_credits.employee_profile_id', $employee->id)
-                    ->where('employee_leave_credits.leave_type_id', $force_leave->id)
-                    ->where('employee_leave_credit_logs.reason', 'Annual Forced Leave Credits')
-                    ->whereYear('employee_leave_credit_logs.created_at', now()->year)
-                    ->exists();
+            //     $force_leave_current_credit = $force_leave_credit->total_leave_credits;
+            //     $fl_annual_value = $force_leave->annual_credit;
+            //     if ($employee->employmentType->name === 'Permanent Part-time') {
+            //         $fl_annual_value = $force_leave->annual_credit / 2;
+            //     }
+            //     $log_entry_exists = EmployeeLeaveCreditLogs::join('employee_leave_credits', 'employee_leave_credit_logs.employee_leave_credit_id', '=', 'employee_leave_credits.id')
+            //         ->where('employee_leave_credits.employee_profile_id', $employee->id)
+            //         ->where('employee_leave_credits.leave_type_id', $force_leave->id)
+            //         ->where(function ($query) {
+            //             $query->where('employee_leave_credit_logs.reason', 'Annual Forced Leave Credits')
+            //                   ->orWhere('employee_leave_credit_logs.reason', 'Update Credits');
+            //         })
+            //         ->whereYear('employee_leave_credit_logs.created_at', now()->year)
+            //         ->exists();
 
-                if (!$log_entry_exists) {
-                    $force_leave_credit->increment('total_leave_credits', $fl_annual_value);
-                    // Log the leave credit increment
-                    EmployeeLeaveCreditLogs::create([
-                        'employee_leave_credit_id' => $force_leave_credit->id,
-                        'reason' => 'Annual Forced Leave Credits',
-                        'action' => "add",
-                        'previous_credit' => $force_leave_current_credit,
-                        'leave_credits' => $fl_annual_value,
+            //     if (!$log_entry_exists) {
+            //         $force_leave_credit->increment('total_leave_credits', $fl_annual_value);
+            //         // Log the leave credit increment
+            //         EmployeeLeaveCreditLogs::create([
+            //             'employee_leave_credit_id' => $force_leave_credit->id,
+            //             'reason' => 'Annual Forced Leave Credits',
+            //             'action' => "add",
+            //             'previous_credit' => $force_leave_current_credit,
+            //             'leave_credits' => $fl_annual_value,
 
-                    ]);
-                }
+            //         ]);
+            //     }
 
-                $title = "Forced Leave credited";
-                $description = "You now have ".$fl_annual_value." forced leave credits credited for year ".now()->year." .";
-                
-                $notification = Notifications::create([
-                    "title" => $title,
-                    "description" => $description,
-                    "module_path" => '/leave-applications',
-                ]);
+            //     $title = "Forced Leave credited";
+            //     $description = "You now have ".$fl_annual_value." forced leave credits credited for year ".now()->year." .";
 
-                $user_notification = UserNotifications::create([
-                    'notification_id' => $notification->id,
-                    'employee_profile_id' => $employee->id,
-                ]);
+            //     $notification = Notifications::create([
+            //         "title" => $title,
+            //         "description" => $description,
+            //         "module_path" => '/leave-applications',
+            //     ]);
 
-                Helpers::sendNotification([
-                    "id" => $employee->employee_id,
-                    "data" => new NotificationResource($user_notification)
-                ]);
-            }
+            //     $user_notification = UserNotifications::create([
+            //         'notification_id' => $notification->id,
+            //         'employee_profile_id' => $employee->id,
+            //     ]);
+
+            //     Helpers::sendNotification([
+            //         "id" => $employee->employee_id,
+            //         "data" => new NotificationResource($user_notification)
+            //     ]);
+            // }
 
         }
     }
