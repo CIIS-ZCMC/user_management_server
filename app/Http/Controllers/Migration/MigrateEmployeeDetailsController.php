@@ -89,17 +89,6 @@ class MigrateEmployeeDetailsController extends Controller
                     'personal_information_id' => $personal_information->id,
                 ]);
 
-                $legal_questions = LegalInformationQuestion::all();
-                foreach ($legal_questions as $value) {
-                    LegalInformation::create([
-                        'legal_iq_id' => $value->id,
-                        'personal_information_id' => $employee_profile->personal_information_id,
-                        'answer' => FALSE,
-                        'details' => null,
-                        'date' => now()
-                    ]);
-                }
-
                 Log::info('User Migrate Successfully', [
                     'user_detail' => $employee_profile,
                     'user_name' => $employee_profile,
@@ -241,6 +230,30 @@ class MigrateEmployeeDetailsController extends Controller
             // Handle exceptions appropriately
             Log::error('Error fetching position', ['error' => $th->getMessage()]);
             return 1; // Default to regular employment type on error
+        }
+    }
+
+    public function legalInformation()
+    {
+        try {
+
+            $employee_profile = EmployeeProfile::all();
+            foreach ($employee_profile as $employee) {
+                $legal_questions = LegalInformationQuestion::all();
+                foreach ($legal_questions as $value) {
+                    LegalInformation::create([
+                        'legal_iq_id' => $value->id,
+                        'personal_information_id' => $employee->personal_information_id,
+                        'answer' => true,
+                        'details' => null,
+                        'date' => now()
+                    ]);
+                }
+            }
+            return response()->json('success');
+
+        } catch (\Throwable $th) {
+            return $th;
         }
     }
 }

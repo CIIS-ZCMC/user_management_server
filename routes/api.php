@@ -15,56 +15,56 @@ use Illuminate\Support\Facades\Route;
 // Attach CSP in response
 // Route::middleware('csp.token')->group(function(){});
 Route::namespace('App\Http\Controllers\Migration')->group(
-    function () {
-        Route::get('migrateTS', 'MigrateTimeShift@index');
-        Route::get('migrate', 'MigrateController@import');
-        Route::get('plantilla', 'MigratePlantilla@import');
-        // for betaTest migration
-        Route::get('migratePlantillaAssociatedDesignation', 'MigratePlantilla@migratePlantillas');
-        Route::get('seedOrganization', 'MigrateOrganizationStructureController@create');
-        Route::get('migrateAreaAssign', 'MigrateAssignAreaController@create');
-        Route::get('mUpdateEmployeeContact', 'MigratePISubDetailsController@create');
-        Route::get('resetPassword', 'MResetAllPass@create');
-        Route::get('migrate-employee-details', 'MigrateEmployeeDetailsController@personalInformation');
-        Route::get('pharma', 'PharmaExport@exportToCSVPerDay');
-    }
-);
+        function () {
+            Route::get('migrateTS', 'MigrateTimeShift@index');
+            Route::get('migrate', 'MigrateController@import');
+            Route::get('plantilla', 'MigratePlantilla@import');
+            // for betaTest migration
+            Route::get('migratePlantillaAssociatedDesignation', 'MigratePlantilla@migratePlantillas');
+            Route::get('seedOrganization', 'MigrateOrganizationStructureController@create');
+            Route::get('migrateAreaAssign', 'MigrateAssignAreaController@create');
+            Route::get('mUpdateEmployeeContact', 'MigratePISubDetailsController@create');
+            Route::get('resetPassword', 'MResetAllPass@create');
+            Route::get('migrate-employee-details', 'MigrateEmployeeDetailsController@personalInformation');
+            Route::get('migrate-legal-information', 'MigrateEmployeeDetailsController@legalInformation');
+        }
+    );
 
 Route::get('/initialize-storage', function () {
     Artisan::call('storage:link');
 });
 
 Route::namespace('App\Http\Controllers')->group(function () {
-    Route::get('announcements', 'AnnouncementsController@index');
-    Route::get('announcements-search', 'AnnouncementsController@searchAnnouncement');
-    Route::get('announcements/{id}', 'AnnouncementsController@show');
+        Route::get('announcements', 'AnnouncementsController@index');
+        Route::get('announcements-search', 'AnnouncementsController@searchAnnouncement');
+        Route::get('announcements/{id}', 'AnnouncementsController@show');
 
-    Route::get('events', 'EventsController@index');
-    Route::get('events-search', 'EventsController@searchEvents');
-    Route::get('events/{id}', 'EventsController@show');
+        Route::get('events', 'EventsController@index');
+        Route::get('events-search', 'EventsController@searchEvents');
+        Route::get('events/{id}', 'EventsController@show');
 
-    Route::get('memorandums', 'MemorandumsController@index');
-    Route::get('memorandums-search', 'MemorandumsController@searchMemorandum');
-    Route::get('memorandums/{id}', 'MemorandumsController@show');
+        Route::get('memorandums', 'MemorandumsController@index');
+        Route::get('memorandums-search', 'MemorandumsController@searchMemorandum');
+        Route::get('memorandums/{id}', 'MemorandumsController@show');
 
-    Route::get('news', 'NewsController@index');
-    Route::get('news-search', 'NewsController@searchNews');
-    Route::get('news/{id}', 'NewsController@show');
-    Route::get('notification', 'NotificationController@store');
-});
+        Route::get('news', 'NewsController@index');
+        Route::get('news-search', 'NewsController@searchNews');
+        Route::get('news/{id}', 'NewsController@show');
+        Route::get('notification', 'NotificationController@store');
+    });
 
 Route::namespace('App\Http\Controllers\UmisAndEmployeeManagement')->group(function () {
-    Route::post('sign-in', 'EmployeeProfileController@signIn');
-    Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
-    Route::post('skip-for-now', 'EmployeeProfileController@updatePasswordExpiration');
-    Route::post('verify-email-and-send-otp', 'EmployeeProfileController@verifyEmailAndSendOTP');
-    Route::post('verify-otp', 'EmployeeProfileController@verifyOTP');
-    Route::post('new-password', 'EmployeeProfileController@newPassword');
-    Route::post('resend-otp', 'EmployeeProfileController@resendOTP');
-    Route::get('retrieve-token', 'CsrfTokenController@generateCsrfToken');
-    Route::get('validate-token', 'CsrfTokenController@validateToken');
-    Route::post('employee-profile/signout-from-other-device', 'EmployeeProfileController@signOutFromOtherDevice');
-});
+        Route::post('sign-in', 'EmployeeProfileController@signIn');
+        Route::post('sign-in-with-otp', 'EmployeeProfileController@signInWithOTP');
+        Route::post('skip-for-now', 'EmployeeProfileController@updatePasswordExpiration');
+        Route::post('verify-email-and-send-otp', 'EmployeeProfileController@verifyEmailAndSendOTP');
+        Route::post('verify-otp', 'EmployeeProfileController@verifyOTP');
+        Route::post('new-password', 'EmployeeProfileController@newPassword');
+        Route::post('resend-otp', 'EmployeeProfileController@resendOTP');
+        Route::get('retrieve-token', 'CsrfTokenController@generateCsrfToken');
+        Route::get('validate-token', 'CsrfTokenController@validateToken');
+        Route::post('employee-profile/signout-from-other-device', 'EmployeeProfileController@signOutFromOtherDevice');
+    });
 
 Route::middleware('auth.cookie')->group(function () {
 
@@ -1910,7 +1910,7 @@ Route::middleware('auth.cookie')->group(function () {
         });
 
         Route::middleware(['auth.permission:UMIS-LM download'])->group(function () {
-            Route::get('export-csv','LeaveApplicationController@exportCsv');
+            Route::get('export-csv', 'LeaveApplicationController@exportCsv');
         });
 
 
