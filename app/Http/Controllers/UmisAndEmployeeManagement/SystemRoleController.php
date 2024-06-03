@@ -498,7 +498,7 @@ class SystemRoleController extends Controller
         }
     }
 
-    public function destroy($id, AuthPinApprovalRequest $request)
+    public function destroy($id, Request $request)
     {
         try {
             $user = $request->user;

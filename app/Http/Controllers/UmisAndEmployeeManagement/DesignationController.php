@@ -42,7 +42,7 @@ class DesignationController extends Controller
             $cacheExpiration = Carbon::now()->addDay();
 
             $designations = Cache::remember('designations', $cacheExpiration, function () {
-                return Designation::all();
+                return Designation::orderBy('name', "asc")->get();
             });
 
             return response()->json([

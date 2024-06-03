@@ -30,6 +30,7 @@ use App\Http\Requests\LeaveApplicationRequest;
 use App\Http\Requests\PasswordApprovalRequest;
 use App\Http\Resources\EmployeeLeaveCredit as ResourcesEmployeeLeaveCredit;
 use App\Http\Resources\LeaveApplicationResource;
+use App\Jobs\SendEmailJob;
 use App\Models\Country;
 use App\Models\CtoApplication;
 use App\Models\EmployeeLeaveCredit;
@@ -112,10 +113,10 @@ class LeaveApplicationController extends Controller
     public function exportCsv()
     {
         $leave_applications = LeaveApplication::with('employeeProfile', 'leaveType')
-                                ->where('status', 'received')
-                                ->get();
-            // ->where('status', 'approved')
-         
+            ->where('status', 'received')
+            ->get();
+        // ->where('status', 'approved')
+
 
         $response = [];
 
@@ -894,6 +895,21 @@ class LeaveApplicationController extends Controller
                     "id" => Helpers::getEmployeeID($next_approving),
                     "data" => new NotificationResource($user_notification)
                 ]);
+                $officer = EmployeeProfile::where('id', $next_approving)->first();
+                $email = $officer->personalinformation->contact->email_address;
+                $name = $officer->personalInformation->name();
+
+                $data = [
+                    'name' =>  $message,
+                    'employeeName' =>  $employee_profile->personalInformation->name(),
+                    'employeeID' => $employee_profile->employee_id,
+                    'leaveType' =>  $leave_type->name,
+                    'dateFrom' =>  $leave_application->date_from,
+                    'dateTo' =>  $leave_application->date_to,
+                    "Link" => config('app.client_domain')
+                ];
+
+                SendEmailJob::dispatch('leave_request', $email, $name, $data);
 
                 //EMPLOYEE
                 $notification = Notifications::create([
@@ -1281,6 +1297,7 @@ class LeaveApplicationController extends Controller
                         'reason' => 'apply',
                         'action' => 'deduct'
                     ]);
+                  
                 }
             }
 
@@ -1317,6 +1334,22 @@ class LeaveApplicationController extends Controller
                 "id" => Helpers::getEmployeeID($hrmo_officer),
                 "data" => new NotificationResource($user_notification)
             ]);
+
+            $hrmo = EmployeeProfile::where('id', $hrmo_officer)->first();
+            $email = $hrmo->personalinformation->contact->email_address;
+            $name = $hrmo->personalInformation->name();
+
+            $data = [
+                'name' =>  'HRMO',
+                'employeeName' =>  $employee_profile->personalInformation->name(),
+                'employeeID' => $employee_profile->employee_id,
+                'leaveType' =>  $leave_type->name,
+                'dateFrom' =>  $request->date_from,
+                'dateTo' =>  $request->date_to,
+                "Link" => config('app.client_domain')
+            ];
+
+            SendEmailJob::dispatch('leave_request', $email, $name, $data);
 
             // Helpers::registerSystemLogs($request, $data->id, true, 'Success in storing ' . $this->PLURAL_MODULE_NAME . '.'); //System Logs
 

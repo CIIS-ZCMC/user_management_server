@@ -250,11 +250,11 @@ class SystemModuleController extends Controller
         }
     }
     
-    public function destroy($id, AuthPinApprovalRequest $request)
+    public function destroy($id, Request $request)
     {
         try{
             $user = $request->user;
-            $cleanData['pin'] = strip_tags($request->pin);
+            $cleanData['pin'] = strip_tags($request->password);
 
             if ($user['authorization_pin'] !==  $cleanData['pin']) {
                 return response()->json(['message' => "Request rejected invalid approval pin."], Response::HTTP_FORBIDDEN);
@@ -285,7 +285,7 @@ class SystemModuleController extends Controller
         }
     }
     
-    public function destroyAllPermission($id, AuthPinApprovalRequest $request)
+    public function destroyAllPermission($id, Request $request)
     {
         try{
             $user = $request->user;

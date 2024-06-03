@@ -112,7 +112,7 @@ class SystemController extends Controller
      * finding a system record according to the ID given and if found
      * the system status will be updated.
      */
-    public function updateSystemStatus($id, AuthPinApprovalRequest $request)
+    public function updateSystemStatus($id, Request $request)
     {
         try{
             $user = $request->user;
@@ -208,7 +208,7 @@ class SystemController extends Controller
         }
     }
 
-    public function destroy($id, AuthPinApprovalRequest $request)
+    public function destroy($id, Request $request)
     {
         try{
             $user = $request->user;
