@@ -895,6 +895,21 @@ class LeaveApplicationController extends Controller
                     "id" => Helpers::getEmployeeID($next_approving),
                     "data" => new NotificationResource($user_notification)
                 ]);
+                $officer = EmployeeProfile::where('id', $next_approving)->first();
+                $email = $officer->personalinformation->contact->email_address;
+                $name = $officer->personalInformation->name();
+
+                $data = [
+                    'name' =>  $message,
+                    'employeeName' =>  $employee_profile->personalInformation->name(),
+                    'employeeID' => $employee_profile->employee_id,
+                    'leaveType' =>  $leave_type->name,
+                    'dateFrom' =>  $leave_application->date_from,
+                    'dateTo' =>  $leave_application->date_to,
+                    "Link" => config('app.client_domain')
+                ];
+
+                SendEmailJob::dispatch('leave_request', $email, $name, $data);
 
                 //EMPLOYEE
                 $notification = Notifications::create([
