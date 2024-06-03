@@ -224,6 +224,12 @@ class SystemController extends Controller
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
             }
 
+            $system_role = $system->systemRoles;
+
+            if(count($system_role) > 0){
+                return response()->json(['message' => "Record is being used by other data."], Response::HTTP_FORBIDDEN);
+            }
+
             $system -> delete();
 
             Helpers::registerSystemLogs($request, $id, true, 'Success in deleting '.$this->SINGULAR_MODULE_NAME.'.');

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 
 use App\Http\Requests\AuthPinApprovalRequest;
 use App\Http\Requests\PasswordApprovalRequest;
+use App\Models\ModulePermission;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Helpers\Helpers;
@@ -199,6 +200,12 @@ class PermissionController extends Controller
             if(!$permission)
             {
                 return response()->json(['message' => 'No record found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $module_permissions = $permission->modulePermission;
+
+            if(count($module_permissions) > 0){
+                return response()->json(['message' => "Record is being use by other data."], Response::HTTP_FORBIDDEN);
             }
 
             $permission->delete();
