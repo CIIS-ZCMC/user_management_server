@@ -2611,7 +2611,7 @@ class EmployeeProfileController extends Controller
                 if (!$plantilla_number) {
                     return response()->json(['message' => 'No record found for plantilla number ' . $plantilla_number_id], Response::HTTP_NOT_FOUND);
                 }
-                
+
                 $key = strtolower($request->sector).'_id';
                 $cleanData['plantilla_number_id'] = $plantilla_number_id;
                 $cleanData[$key] = strip_tags($request->area_id);
