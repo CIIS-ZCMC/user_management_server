@@ -120,7 +120,19 @@ class ContactController extends Controller
 
             $cleanData = [];
 
-            foreach ($request->contact as $key => $value) {
+
+            
+            if (isset($request->password)) {
+                foreach ($request->contact as $key => $value) {
+                    if ($value === null || $key === 'password') {
+                        $cleanData[$key] = $value;
+                        continue;
+                    }
+                    $cleanData[$key] = strip_tags($value);
+                }
+            } 
+
+            foreach ($request->all() as $key => $value) {
                 if ($value === null || $key === 'password') {
                     $cleanData[$key] = $value;
                     continue;
